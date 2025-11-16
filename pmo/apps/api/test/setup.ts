@@ -9,7 +9,8 @@ process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '1h';
 process.env.BCRYPT_SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS ?? '4';
 
 const databasePath = path.join(__dirname, 'test.db');
-process.env.DATABASE_URL = process.env.DATABASE_URL ?? `file:${databasePath}`;
+const testDatabaseUrl = `file:${databasePath}`;
+process.env.DATABASE_URL = testDatabaseUrl;
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 const schemaPath = path.join(projectRoot, 'prisma', 'schema.prisma');
