@@ -10,7 +10,7 @@ const router = Router();
 
 const cookieOptions = {
   httpOnly: true,
-  sameSite: 'lax' as const,
+  sameSite: 'none' as const,
   secure: env.nodeEnv === 'production',
 };
 
