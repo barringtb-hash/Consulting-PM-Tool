@@ -23,8 +23,11 @@ jobs:
       - name: Run lint
         run: npm run lint
 
-      - name: Run tests
-        run: npm run test
+      - name: Run API tests
+        run: npm run test --workspace pmo-api
+
+      - name: Run web tests
+        run: npm run test --workspace pmo-web
 
       - name: Build
         run: npm run build
