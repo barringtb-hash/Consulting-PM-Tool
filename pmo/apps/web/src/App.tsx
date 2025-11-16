@@ -1,9 +1,68 @@
-function App() {
+import React, { useState } from 'react';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from './auth/AuthContext';
+import ProtectedRoute from './auth/ProtectedRoute';
+import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/LoginPage';
+
+function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
+  const { user, status, logout, isLoading } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    setError(null);
+    try {
+      await logout();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to logout';
+      setError(message);
+    }
+  };
+
   return (
-    <main>
-      <h1>AI Consulting PMO – Web App Shell</h1>
-      <p>Welcome to the consulting PMO dashboard experience.</p>
-    </main>
+    <div className="app-shell">
+      <header>
+        <div>
+          <Link to="/">
+            <strong>AI Consulting PMO</strong>
+          </Link>
+        </div>
+        <nav>
+          <Link to="/dashboard">Dashboard</Link>
+        </nav>
+        <div>
+          {status === 'authenticated' && user ? (
+            <div>
+              <span>
+                Signed in as <strong>{user.name || user.email}</strong>
+              </span>
+              <button type="button" onClick={handleLogout} disabled={isLoading}>
+                Logout
+              </button>
+              {error && <p role="alert">{error}</p>}
+            </div>
+          ) : (
+            <Link to="/login">Login</Link>
+          )}
+        </div>
+      </header>
+      <section>{children}</section>
+    </div>
+  );
+}
+
+function App(): JSX.Element {
+  return (
+    <AppLayout>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AppLayout>
   );
 }
 
