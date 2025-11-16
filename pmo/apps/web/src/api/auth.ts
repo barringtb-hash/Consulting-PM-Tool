@@ -9,7 +9,7 @@ interface ApiError {
   message?: string;
 }
 
-const AUTH_BASE_PATH = '/api/auth';
+const AUTH_BASE_PATH = '/auth';
 
 function buildOptions(options?: RequestInit): RequestInit {
   const headers = {
