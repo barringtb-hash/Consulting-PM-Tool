@@ -13,6 +13,9 @@
     "format": "prettier \"**/*.{ts,tsx,js,jsx,json,md}\" --write",
     "prepare": "node ./scripts/install-husky.mjs"
   },
+  "prisma": {
+    "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' --transpile-only prisma/seed.ts"
+  },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": [
       "prettier --write"
