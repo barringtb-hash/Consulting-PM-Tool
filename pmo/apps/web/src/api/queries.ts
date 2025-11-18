@@ -26,11 +26,30 @@ import {
   type ContactFilters,
   type ContactPayload,
 } from './contacts';
+import {
+  createProject,
+  fetchProjectById,
+  fetchProjects,
+  updateProject,
+  type Project,
+  type ProjectFilters,
+  type ProjectPayload,
+} from './projects';
+import {
+  fetchDocuments,
+  generateDocument,
+  type Document,
+  type DocumentFilters,
+  type DocumentPayload,
+} from './documents';
 
 export const queryKeys = {
   clients: (filters?: ClientFilters) => ['clients', filters] as const,
   client: (id: number) => ['client', id] as const,
   contacts: (clientId?: number) => ['contacts', clientId] as const,
+  projects: (filters?: ProjectFilters) => ['projects', filters] as const,
+  project: (id: number) => ['project', id] as const,
+  documents: (filters?: DocumentFilters) => ['documents', filters] as const,
 };
 
 export function useClients(filters?: ClientFilters) {
@@ -65,6 +84,111 @@ export function useClient(clientId?: number) {
       }
 
       return undefined;
+    },
+  });
+}
+
+export function useProjects(filters?: ProjectFilters) {
+  return useQuery({
+    queryKey: queryKeys.projects(filters),
+    queryFn: () => fetchProjects(filters),
+  });
+}
+
+export function useProject(projectId?: number) {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: projectId ? queryKeys.project(projectId) : ['project'],
+    enabled: Boolean(projectId),
+    queryFn: () => fetchProjectById(projectId as number),
+    initialData: () => {
+      if (!projectId) {
+        return undefined;
+      }
+
+      const cachedLists = queryClient.getQueriesData<Project[]>({
+        queryKey: queryKeys.projects(),
+        type: 'active',
+      });
+
+      for (const [, projects] of cachedLists) {
+        const match = projects?.find((entry) => entry.id === projectId);
+        if (match) {
+          return match;
+        }
+      }
+
+      return undefined;
+    },
+  });
+}
+
+export function useCreateProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ProjectPayload) => createProject(payload),
+    onSuccess: (project) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects() });
+      queryClient.setQueryData(queryKeys.project(project.id), project);
+    },
+  });
+}
+
+export function useUpdateProject(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Partial<ProjectPayload>) =>
+      updateProject(projectId, payload),
+    onSuccess: (project) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects() });
+      queryClient.setQueryData(queryKeys.project(projectId), project);
+    },
+  });
+}
+
+export function useDocuments(filters?: DocumentFilters) {
+  const queryFilters = useMemo<DocumentFilters | undefined>(() => {
+    if (!filters) {
+      return undefined;
+    }
+
+    return {
+      clientId: filters.clientId,
+      projectId: filters.projectId,
+    };
+  }, [filters]);
+
+  return useQuery({
+    queryKey: queryKeys.documents(queryFilters),
+    enabled: Boolean(queryFilters),
+    queryFn: () => fetchDocuments(queryFilters),
+  });
+}
+
+export function useGenerateDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: DocumentPayload) => generateDocument(payload),
+    onSuccess: (document, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.documents() });
+
+      if (variables.projectId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.project(variables.projectId),
+        });
+      }
+
+      queryClient.setQueryData<Document[]>(
+        queryKeys.documents({
+          clientId: variables.clientId,
+          projectId: variables.projectId,
+        }),
+        (current) => (current ? [document, ...current] : [document]),
+      );
     },
   });
 }
