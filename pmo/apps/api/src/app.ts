@@ -3,6 +3,8 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 
 import authRouter from './auth/auth.routes';
+import clientsRouter from './routes/clients';
+import contactsRouter from './routes/contacts';
 import healthRouter from './routes/health';
 
 export function createApp(): express.Express {
@@ -17,6 +19,8 @@ export function createApp(): express.Express {
   app.use(express.json());
   app.use(cookieParser());
   app.use(authRouter);
+  app.use('/api/clients', clientsRouter);
+  app.use('/api/contacts', contactsRouter);
   app.use(healthRouter);
 
   return app;

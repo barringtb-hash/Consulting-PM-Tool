@@ -29,11 +29,21 @@ beforeAll(async () => {
     },
   );
 
+  execSync(`npx prisma generate --schema "${schemaPath}"`, {
+    cwd: projectRoot,
+    env: {
+      ...process.env,
+    },
+    stdio: 'inherit',
+  });
+
   const { default: prisma } = await import('../src/prisma/client');
   prismaClient = prisma;
 });
 
 beforeEach(async () => {
+  await prismaClient.contact.deleteMany();
+  await prismaClient.client.deleteMany();
   await prismaClient.user.deleteMany();
 });
 
