@@ -1,0 +1,141 @@
+import { Router } from 'express';
+
+import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
+import {
+  archiveContact,
+  createContact,
+  deleteContact,
+  listContacts,
+  updateContact,
+} from '../services/contact.service';
+import prisma from '../prisma/client';
+import {
+  contactCreateSchema,
+  contactUpdateSchema,
+} from '../validation/contact.schema';
+
+const router = Router();
+
+router.use(requireAuth);
+
+router.get('/', async (req: AuthenticatedRequest, res) => {
+  const { search, clientId, archived } = req.query;
+  const parsedClientId =
+    typeof clientId === 'string' && clientId.length > 0
+      ? Number(clientId)
+      : undefined;
+
+  if (parsedClientId !== undefined && Number.isNaN(parsedClientId)) {
+    res.status(400).json({ error: 'Invalid client id' });
+    return;
+  }
+
+  const includeArchived = archived === 'true';
+
+  const contacts = await listContacts({
+    search: typeof search === 'string' ? search : undefined,
+    clientId: parsedClientId,
+    includeArchived,
+  });
+
+  res.json({ contacts });
+});
+
+router.post('/', async (req: AuthenticatedRequest, res) => {
+  const parsed = contactCreateSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    res
+      .status(400)
+      .json({ error: 'Invalid contact data', details: parsed.error.format() });
+    return;
+  }
+
+  const client = await prisma.client.findUnique({
+    where: { id: parsed.data.clientId },
+  });
+
+  if (!client) {
+    res.status(404).json({ error: 'Client not found' });
+    return;
+  }
+
+  const contact = await createContact(parsed.data);
+  res.status(201).json({ contact });
+});
+
+router.put('/:id', async (req: AuthenticatedRequest, res) => {
+  const contactId = Number(req.params.id);
+
+  if (Number.isNaN(contactId)) {
+    res.status(400).json({ error: 'Invalid contact id' });
+    return;
+  }
+
+  const parsed = contactUpdateSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    res
+      .status(400)
+      .json({ error: 'Invalid contact data', details: parsed.error.format() });
+    return;
+  }
+
+  if (parsed.data.clientId) {
+    const client = await prisma.client.findUnique({
+      where: { id: parsed.data.clientId },
+    });
+
+    if (!client) {
+      res.status(404).json({ error: 'Client not found' });
+      return;
+    }
+  }
+
+  const updated = await updateContact(contactId, parsed.data);
+
+  if (!updated) {
+    res.status(404).json({ error: 'Contact not found' });
+    return;
+  }
+
+  res.json({ contact: updated });
+});
+
+router.patch('/:id/archive', async (req: AuthenticatedRequest, res) => {
+  const contactId = Number(req.params.id);
+
+  if (Number.isNaN(contactId)) {
+    res.status(400).json({ error: 'Invalid contact id' });
+    return;
+  }
+
+  const archivedContact = await archiveContact(contactId);
+
+  if (!archivedContact) {
+    res.status(404).json({ error: 'Contact not found' });
+    return;
+  }
+
+  res.json({ contact: archivedContact });
+});
+
+router.delete('/:id', async (req: AuthenticatedRequest, res) => {
+  const contactId = Number(req.params.id);
+
+  if (Number.isNaN(contactId)) {
+    res.status(400).json({ error: 'Invalid contact id' });
+    return;
+  }
+
+  const deleted = await deleteContact(contactId);
+
+  if (!deleted) {
+    res.status(404).json({ error: 'Contact not found' });
+    return;
+  }
+
+  res.status(204).send();
+});
+
+export default router;
