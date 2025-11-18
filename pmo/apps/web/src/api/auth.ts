@@ -1,46 +1,12 @@
+import { buildOptions, handleResponse } from './http';
+
 export interface AuthUser {
   id: string;
   email: string;
   name?: string;
 }
 
-interface ApiError {
-  error?: string;
-  message?: string;
-}
-
 const AUTH_BASE_PATH = '/auth';
-
-function buildOptions(options?: RequestInit): RequestInit {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options?.headers ?? {}),
-  };
-
-  return {
-    credentials: 'include',
-    ...options,
-    headers,
-  };
-}
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  const contentType = response.headers.get('content-type');
-  const isJson = contentType?.includes('application/json');
-  const payload = isJson
-    ? await response.json().catch(() => null)
-    : await response.text();
-
-  if (!response.ok) {
-    const { message, error } = (payload as ApiError) || {};
-    const fallbackMessage =
-      typeof payload === 'string' && payload ? payload : 'Request failed';
-
-    throw new Error(message || error || fallbackMessage);
-  }
-
-  return (payload as T) ?? (null as T);
-}
 
 export async function login(
   email: string,

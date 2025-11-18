@@ -4,6 +4,8 @@ import { useAuth } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
+import ClientsPage from './pages/ClientsPage';
+import ClientDetailsPage from './pages/ClientDetailsPage';
 
 function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
   const { user, status, logout, isLoading } = useAuth();
@@ -29,6 +31,7 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
         </div>
         <nav>
           <Link to="/dashboard">Dashboard</Link>
+          <Link to="/clients">Clients</Link>
         </nav>
         <div>
           {status === 'authenticated' && user ? (
@@ -59,6 +62,8 @@ function App(): JSX.Element {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

@@ -12,6 +12,9 @@ function DashboardPage(): JSX.Element {
         <li>
           <Link to="/dashboard">Dashboard</Link>
         </li>
+        <li>
+          <Link to="/clients">Clients</Link>
+        </li>
       </ul>
     </section>
   );
