@@ -6,6 +6,10 @@ import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import ClientsPage from './pages/ClientsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
+import ClientIntakePage from './pages/ClientIntakePage';
+import ProjectSetupPage from './pages/ProjectSetupPage';
+import ProjectDashboardPage from './pages/ProjectDashboardPage';
+import { ClientProjectProvider } from './pages/ClientProjectContext';
 
 function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
   const { user, status, logout, isLoading } = useAuth();
@@ -32,6 +36,8 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
         <nav>
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/clients">Clients</Link>
+          <Link to="/client-intake">Client intake</Link>
+          <Link to="/projects/new">New project</Link>
         </nav>
         <div>
           {status === 'authenticated' && user ? (
@@ -56,18 +62,23 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
 
 function App(): JSX.Element {
   return (
-    <AppLayout>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </AppLayout>
+    <ClientProjectProvider>
+      <AppLayout>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
+            <Route path="/client-intake" element={<ClientIntakePage />} />
+            <Route path="/projects/new" element={<ProjectSetupPage />} />
+            <Route path="/projects/:id" element={<ProjectDashboardPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AppLayout>
+    </ClientProjectProvider>
   );
 }
 
