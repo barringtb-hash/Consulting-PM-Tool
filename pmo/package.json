@@ -11,7 +11,7 @@
     "test": "npm run test --workspaces --if-present",
     "build": "echo \"No build configured\"",
     "format": "prettier \"**/*.{ts,tsx,js,jsx,json,md}\" --write",
-    "prepare": "node ./scripts/install-husky.mjs"
+    "prepare": "node ./scripts/install-husky.mjs || echo \"[husky] prepare failed, skipping\""
   },
   "prisma": {
     "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' --transpile-only prisma/seed.ts"
