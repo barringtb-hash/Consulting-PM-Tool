@@ -17,15 +17,23 @@ The `pmo` directory is an npm workspace with the following structure:
    cd pmo
    npm install
    ```
-2. Start the frontend and API in watch mode (separate terminals):
+2. Set up API environment variables and database (from `/pmo`):
+   ```bash
+   # Copy the example env into the API workspace
+   cp ../Docs/api.env.example apps/api/.env
+
+   # Apply Prisma migrations (uses SQLite file:./dev.db by default)
+   npx prisma migrate dev --name init
+   ```
+3. Start the frontend and API in watch mode (separate terminals):
    ```bash
    npm run dev --workspace pmo-web
    npm run dev --workspace pmo-api
    ```
-3. Common scripts from `/pmo`:
+4. Common scripts from `/pmo`:
    ```bash
    npm run lint    # Lint TypeScript/JavaScript sources
-   npm run test    # Run test suite (placeholder at present)
+   npm run test    # Run workspace test suites
    npm run build   # Build artifacts (placeholder at present)
    npm run format  # Prettier formatting across the repo
    ```
@@ -44,5 +52,7 @@ The `pmo` directory is an npm workspace with the following structure:
 - Lint locally before committing: `npm run lint`.
 - Run tests and builds from `/pmo` when available: `npm run test` and `npm run build`.
 - Follow contribution etiquette and additional workspace guidance in `pmo/AGENT.md`.
+
+For fast onboarding tips, see `Docs/ai-coding-notes.md`, which summarizes key entry points, required env vars, and common commands for both apps.
 
 For architecture, data model, and feature scope details, refer to the linked product requirements and implementation codex in the `Docs` directory.
