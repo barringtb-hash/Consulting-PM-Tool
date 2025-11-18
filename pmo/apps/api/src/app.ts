@@ -5,7 +5,9 @@ import cookieParser from 'cookie-parser';
 import authRouter from './auth/auth.routes';
 import clientsRouter from './routes/clients';
 import contactsRouter from './routes/contacts';
+import documentsRouter from './routes/documents';
 import healthRouter from './routes/health';
+import projectsRouter from './routes/projects';
 
 export function createApp(): express.Express {
   const app = express();
@@ -21,6 +23,8 @@ export function createApp(): express.Express {
   app.use(authRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);
+  app.use('/api/documents', documentsRouter);
+  app.use('/api/projects', projectsRouter);
   app.use(healthRouter);
 
   return app;
