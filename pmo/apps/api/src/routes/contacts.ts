@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { Prisma } from '@prisma/client';
+import { NextFunction, Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
 import {
@@ -41,7 +42,7 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
   res.json({ contacts });
 });
 
-router.post('/', async (req: AuthenticatedRequest, res) => {
+router.post('/', async (req: AuthenticatedRequest, res, next: NextFunction) => {
   const parsed = contactCreateSchema.safeParse(req.body);
 
   if (!parsed.success) {
@@ -60,47 +61,79 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const contact = await createContact(parsed.data);
-  res.status(201).json({ contact });
-});
-
-router.put('/:id', async (req: AuthenticatedRequest, res) => {
-  const contactId = Number(req.params.id);
-
-  if (Number.isNaN(contactId)) {
-    res.status(400).json({ error: 'Invalid contact id' });
-    return;
-  }
-
-  const parsed = contactUpdateSchema.safeParse(req.body);
-
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: 'Invalid contact data', details: parsed.error.format() });
-    return;
-  }
-
-  if (parsed.data.clientId) {
-    const client = await prisma.client.findUnique({
-      where: { id: parsed.data.clientId },
-    });
-
-    if (!client) {
-      res.status(404).json({ error: 'Client not found' });
+  try {
+    const contact = await createContact(parsed.data);
+    res.status(201).json({ contact });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      res.status(409).json({
+        error: 'A contact with this email already exists for the client',
+      });
       return;
     }
+
+    next(error);
   }
-
-  const updated = await updateContact(contactId, parsed.data);
-
-  if (!updated) {
-    res.status(404).json({ error: 'Contact not found' });
-    return;
-  }
-
-  res.json({ contact: updated });
 });
+
+router.put(
+  '/:id',
+  async (req: AuthenticatedRequest, res, next: NextFunction) => {
+    const contactId = Number(req.params.id);
+
+    if (Number.isNaN(contactId)) {
+      res.status(400).json({ error: 'Invalid contact id' });
+      return;
+    }
+
+    const parsed = contactUpdateSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid contact data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    if (parsed.data.clientId) {
+      const client = await prisma.client.findUnique({
+        where: { id: parsed.data.clientId },
+      });
+
+      if (!client) {
+        res.status(404).json({ error: 'Client not found' });
+        return;
+      }
+    }
+
+    try {
+      const updated = await updateContact(contactId, parsed.data);
+
+      if (!updated) {
+        res.status(404).json({ error: 'Contact not found' });
+        return;
+      }
+
+      res.json({ contact: updated });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        res.status(409).json({
+          error: 'A contact with this email already exists for the client',
+        });
+        return;
+      }
+
+      next(error);
+    }
+  },
+);
 
 router.patch('/:id/archive', async (req: AuthenticatedRequest, res) => {
   const contactId = Number(req.params.id);
