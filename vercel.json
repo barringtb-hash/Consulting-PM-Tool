@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "installCommand": "cd pmo && npm install",
+  "buildCommand": "cd pmo && npm run build --workspace pmo-web",
+  "outputDirectory": "pmo/apps/web/dist"
+}

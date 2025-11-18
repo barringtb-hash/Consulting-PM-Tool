@@ -51,53 +51,60 @@ This guide assumes:
 ## 3. Set up the web app on Vercel
 
 1. Create a new Vercel project from the same GitHub repo.
-2. Set the **root directory** to `/apps/web`.
-3. Build command:
+2. Set the **root directory** to `pmo` so the workspace package.json is detected.
+3. Build settings:
 
-   ```bash
-   npm install && npm run build
-   ```
+   - Install command: `npm install` (default).
+   - Build command:
 
-   (or the pnpm/yarn equivalent)
+     ```bash
+     npm run build --workspace pmo-web
+     ```
 
-4. Output directory: `dist`.
+   - Output directory: `apps/web/dist`.
+   - The repo root includes a `vercel.json` mirroring these commands for Vercel CLI users.
 
-5. Set environment variables in Vercel (Project → Settings → Environment Variables):
+4. Environment variables in Vercel (Project → Settings → Environment Variables):
    - `VITE_API_BASE_URL` – the base URL of your Render API, e.g. `https://your-api.onrender.com/api`.
 
-6. The web app should use `import.meta.env.VITE_API_BASE_URL` when configuring React Query / fetch.
+5. The frontend reads `import.meta.env.VITE_API_BASE_URL` via a small helper and falls back to relative `/api/...` calls when the variable is empty (useful for local proxies).
 
 ---
 
 ## 4. Local development
 
 1. Create `.env` files:
-   - `/apps/api/.env` based on `api.env.example`.
-   - `/apps/web/.env` containing `VITE_API_BASE_URL="http://localhost:4000/api"`.
+   - `/apps/api/.env` based on `Docs/api.env.example`.
+   - `/apps/web/.env` from `/apps/web/.env.example` (contains `VITE_API_BASE_URL="http://localhost:4000/api"`).
+     - With `VITE_API_BASE_URL` set, the frontend calls the API directly at that base.
+     - If you leave it blank, the frontend falls back to relative `/api/...` paths so you can use a Vite dev proxy or same-origin API.
 
-2. Start services:
+2. Start services from `/pmo`:
 
    ```bash
    # in one terminal
-   cd apps/api
-   npm install
-   npx prisma migrate dev --name init
-   npm run dev
+   npm run dev --workspace pmo-api
 
    # in another terminal
-   cd apps/web
-   npm install
-   npm run dev
+   npm run dev --workspace pmo-web
    ```
 
 3. Open `http://localhost:5173` for the web app.
 
 ---
 
-## 5. Post-deploy checklist
+## 5. Deployment checklist
 
-- [ ] Health checks passing on Render API.
-- [ ] Prisma migrations applied (`prisma migrate deploy`).
+- [ ] Render PostgreSQL database created and `DATABASE_URL` configured.
+- [ ] Render API service healthy with required env vars (`DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `BCRYPT_SALT_ROUNDS`, `NODE_ENV=production`, optional `PORT`, and `CORS_ORIGIN` pointing to the Vercel URL).
+- [ ] Vercel project set to root `pmo` with build command `npm run build --workspace pmo-web` and output `apps/web/dist`.
+- [ ] `VITE_API_BASE_URL` set in Vercel to the Render API base (e.g., `https://your-api.onrender.com/api`).
+- [ ] Deployments succeed and the Vercel app passes basic smoke tests (load app, login, CRUD clients/projects/contacts/documents).
+
+---
+
+## 6. Post-deploy smoke test
+
 - [ ] Web app loads from Vercel and can:
   - [ ] Login.
   - [ ] Create a client.

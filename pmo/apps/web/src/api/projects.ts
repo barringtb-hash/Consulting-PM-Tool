@@ -1,3 +1,4 @@
+import { buildApiUrl } from './config';
 import { ApiError, buildOptions, handleResponse } from './http';
 
 export type ProjectStatus =
@@ -32,7 +33,7 @@ export interface ProjectPayload {
   endDate?: string;
 }
 
-const PROJECTS_BASE_PATH = '/api/projects';
+const PROJECTS_BASE_PATH = buildApiUrl('/projects');
 
 export async function fetchProjects(
   filters?: ProjectFilters,
