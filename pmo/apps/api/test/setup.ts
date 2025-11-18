@@ -8,7 +8,8 @@ process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'test-secret';
 process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '1h';
 process.env.BCRYPT_SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS ?? '4';
 
-const databasePath = path.join(__dirname, 'test.db');
+const workerId = process.env.VITEST_WORKER_ID ?? '1';
+const databasePath = path.join(__dirname, `test-${workerId}.db`);
 const testDatabaseUrl = `file:${databasePath}`;
 process.env.DATABASE_URL = testDatabaseUrl;
 
