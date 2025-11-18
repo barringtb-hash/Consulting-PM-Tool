@@ -53,6 +53,10 @@ The `pmo` directory is an npm workspace with the following structure:
 - Run tests and builds from `/pmo` when available: `npm run test` and `npm run build`.
 - Follow contribution etiquette and additional workspace guidance in `pmo/AGENT.md`.
 
+## Deployment overview
+- Runtime code lives under the `pmo/` workspace; configure Vercel or other hosts to treat `pmo` as the project root when building the web app.
+- For step-by-step Render + Vercel guidance (including required environment variables), see [Docs/deploy-notes-render-vercel.md](Docs/deploy-notes-render-vercel.md).
+
 For fast onboarding tips, see `Docs/ai-coding-notes.md`, which summarizes key entry points, required env vars, and common commands for both apps.
 
 For architecture, data model, and feature scope details, refer to the linked product requirements and implementation codex in the `Docs` directory.

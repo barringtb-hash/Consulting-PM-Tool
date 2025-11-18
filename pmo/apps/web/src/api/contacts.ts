@@ -1,3 +1,4 @@
+import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 
 export interface Contact {
@@ -28,7 +29,7 @@ export interface ContactPayload {
   notes?: string;
 }
 
-const CONTACTS_BASE_PATH = '/api/contacts';
+const CONTACTS_BASE_PATH = buildApiUrl('/contacts');
 
 export async function fetchContacts(
   filters?: ContactFilters,

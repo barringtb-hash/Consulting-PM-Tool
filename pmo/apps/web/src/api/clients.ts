@@ -1,3 +1,4 @@
+import { buildApiUrl } from './config';
 import { ApiError, buildOptions, handleResponse } from './http';
 
 export type CompanySize = 'MICRO' | 'SMALL' | 'MEDIUM';
@@ -32,7 +33,7 @@ export interface ClientPayload {
   notes?: string;
 }
 
-const CLIENTS_BASE_PATH = '/api/clients';
+const CLIENTS_BASE_PATH = buildApiUrl('/clients');
 
 export async function fetchClients(filters?: ClientFilters): Promise<Client[]> {
   const params = new URLSearchParams();

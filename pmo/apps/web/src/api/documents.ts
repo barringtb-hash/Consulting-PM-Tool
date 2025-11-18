@@ -1,3 +1,4 @@
+import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 
 export type DocumentType =
@@ -32,7 +33,7 @@ export interface DocumentPayload {
   url?: string;
 }
 
-const DOCUMENTS_BASE_PATH = '/api/documents';
+const DOCUMENTS_BASE_PATH = buildApiUrl('/documents');
 
 export async function fetchDocuments(
   filters?: DocumentFilters,
