@@ -1,5 +1,4 @@
-import { buildApiUrl } from './config';
-import { buildOptions, handleResponse } from './http';
+import { api } from '../lib/apiClient';
 
 export interface Contact {
   id: number;
@@ -29,8 +28,6 @@ export interface ContactPayload {
   notes?: string;
 }
 
-const CONTACTS_BASE_PATH = buildApiUrl('/contacts');
-
 export async function fetchContacts(
   filters?: ContactFilters,
 ): Promise<Contact[]> {
@@ -49,22 +46,13 @@ export async function fetchContacts(
   }
 
   const query = params.toString();
-  const url = query ? `${CONTACTS_BASE_PATH}?${query}` : CONTACTS_BASE_PATH;
-  const response = await fetch(url, buildOptions({ method: 'GET' }));
-  const data = await handleResponse<{ contacts: Contact[] }>(response);
+  const url = query ? `/contacts?${query}` : '/contacts';
+  const data = await api.get<{ contacts: Contact[] }>(url);
   return data.contacts;
 }
 
 export async function createContact(payload: ContactPayload): Promise<Contact> {
-  const response = await fetch(
-    CONTACTS_BASE_PATH,
-    buildOptions({
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
-  );
-
-  const data = await handleResponse<{ contact: Contact }>(response);
+  const data = await api.post<{ contact: Contact }>('/contacts', payload);
   return data.contact;
 }
 
@@ -72,37 +60,20 @@ export async function updateContact(
   contactId: number,
   payload: Partial<Omit<ContactPayload, 'clientId'>> & { clientId?: number },
 ): Promise<Contact> {
-  const response = await fetch(
-    `${CONTACTS_BASE_PATH}/${contactId}`,
-    buildOptions({
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
+  const data = await api.put<{ contact: Contact }>(
+    `/contacts/${contactId}`,
+    payload,
   );
-
-  const data = await handleResponse<{ contact: Contact }>(response);
   return data.contact;
 }
 
 export async function archiveContact(contactId: number): Promise<Contact> {
-  const response = await fetch(
-    `${CONTACTS_BASE_PATH}/${contactId}/archive`,
-    buildOptions({
-      method: 'PATCH',
-    }),
+  const data = await api.patch<{ contact: Contact }>(
+    `/contacts/${contactId}/archive`,
   );
-
-  const data = await handleResponse<{ contact: Contact }>(response);
   return data.contact;
 }
 
 export async function deleteContact(contactId: number): Promise<void> {
-  const response = await fetch(
-    `${CONTACTS_BASE_PATH}/${contactId}`,
-    buildOptions({
-      method: 'DELETE',
-    }),
-  );
-
-  await handleResponse<void>(response);
+  await api.delete(`/contacts/${contactId}`);
 }

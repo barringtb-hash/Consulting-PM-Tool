@@ -20,12 +20,12 @@ export function createApp(): express.Express {
   );
   app.use(express.json());
   app.use(cookieParser());
-  app.use(authRouter);
+  app.use('/api', healthRouter);
+  app.use('/api', authRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);
   app.use('/api/documents', documentsRouter);
   app.use('/api/projects', projectsRouter);
-  app.use(healthRouter);
 
   return app;
 }

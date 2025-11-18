@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { isApiError } from '../api/http';
+import { isApiError } from '../lib/apiClient';
 
 function useRedirectOnUnauthorized(error: unknown): void {
   const navigate = useNavigate();

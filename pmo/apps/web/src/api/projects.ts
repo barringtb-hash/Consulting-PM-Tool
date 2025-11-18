@@ -1,5 +1,4 @@
-import { buildApiUrl } from './config';
-import { ApiError, buildOptions, handleResponse } from './http';
+import { ApiError, api } from '../lib/apiClient';
 
 export type ProjectStatus =
   | 'PLANNING'
@@ -33,8 +32,6 @@ export interface ProjectPayload {
   endDate?: string;
 }
 
-const PROJECTS_BASE_PATH = buildApiUrl('/projects');
-
 export async function fetchProjects(
   filters?: ProjectFilters,
 ): Promise<Project[]> {
@@ -49,32 +46,18 @@ export async function fetchProjects(
   }
 
   const query = params.toString();
-  const url = query ? `${PROJECTS_BASE_PATH}?${query}` : PROJECTS_BASE_PATH;
-  const response = await fetch(url, buildOptions({ method: 'GET' }));
-  const data = await handleResponse<{ projects: Project[] }>(response);
+  const url = query ? `/projects?${query}` : '/projects';
+  const data = await api.get<{ projects: Project[] }>(url);
   return data.projects;
 }
 
 export async function fetchProjectById(projectId: number): Promise<Project> {
-  const response = await fetch(
-    `${PROJECTS_BASE_PATH}/${projectId}`,
-    buildOptions({ method: 'GET' }),
-  );
-
-  const data = await handleResponse<{ project: Project }>(response);
+  const data = await api.get<{ project: Project }>(`/projects/${projectId}`);
   return data.project;
 }
 
 export async function createProject(payload: ProjectPayload): Promise<Project> {
-  const response = await fetch(
-    PROJECTS_BASE_PATH,
-    buildOptions({
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
-  );
-
-  const data = await handleResponse<{ project: Project }>(response);
+  const data = await api.post<{ project: Project }>('/projects', payload);
   return data.project;
 }
 
@@ -82,15 +65,10 @@ export async function updateProject(
   projectId: number,
   payload: Partial<ProjectPayload>,
 ): Promise<Project> {
-  const response = await fetch(
-    `${PROJECTS_BASE_PATH}/${projectId}`,
-    buildOptions({
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
+  const data = await api.put<{ project: Project }>(
+    `/projects/${projectId}`,
+    payload,
   );
-
-  const data = await handleResponse<{ project: Project }>(response);
   return data.project;
 }
 

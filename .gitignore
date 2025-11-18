@@ -2,3 +2,7 @@ node_modules/
 pmo/node_modules/
 pmo/prisma/dev.db
 pmo/prisma/*.db-journal
+.env
+pmo/.env
+pmo/apps/api/.env
+pmo/apps/web/.env

@@ -14,7 +14,7 @@
     "prepare": "node ./scripts/install-husky.mjs || echo \"[husky] prepare failed, skipping\""
   },
   "prisma": {
-    "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' --transpile-only prisma/seed.ts"
+    "seed": "ts-node --project tsconfig.seed.json --transpile-only prisma/seed.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": [

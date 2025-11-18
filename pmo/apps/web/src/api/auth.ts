@@ -1,49 +1,28 @@
-import { buildApiUrl } from './config';
-import { buildOptions, handleResponse } from './http';
+import { api } from '../lib/apiClient';
 
 export interface AuthUser {
-  id: string;
+  id: number;
   email: string;
   name?: string;
+  timezone?: string;
 }
-
-const AUTH_BASE_PATH = buildApiUrl('/auth', { useApiPrefix: false });
 
 export async function login(
   email: string,
   password: string,
 ): Promise<AuthUser> {
-  const response = await fetch(
-    `${AUTH_BASE_PATH}/login`,
-    buildOptions({
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
-  );
-
-  const data = await handleResponse<{ user: AuthUser }>(response);
+  const data = await api.post<{ user: AuthUser }>(`/auth/login`, {
+    email,
+    password,
+  });
   return data.user;
 }
 
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
-  const response = await fetch(
-    `${AUTH_BASE_PATH}/me`,
-    buildOptions({
-      method: 'GET',
-    }),
-  );
-
-  const data = await handleResponse<{ user: AuthUser | null }>(response);
+  const data = await api.get<{ user: AuthUser | null }>(`/auth/me`);
   return data.user ?? null;
 }
 
 export async function logout(): Promise<void> {
-  const response = await fetch(
-    `${AUTH_BASE_PATH}/logout`,
-    buildOptions({
-      method: 'POST',
-    }),
-  );
-
-  await handleResponse<void>(response);
+  await api.post(`/auth/logout`, {});
 }

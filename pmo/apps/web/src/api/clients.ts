@@ -1,5 +1,4 @@
-import { buildApiUrl } from './config';
-import { ApiError, buildOptions, handleResponse } from './http';
+import { ApiError, api } from '../lib/apiClient';
 
 export type CompanySize = 'MICRO' | 'SMALL' | 'MEDIUM';
 export type AiMaturity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
@@ -33,8 +32,6 @@ export interface ClientPayload {
   notes?: string;
 }
 
-const CLIENTS_BASE_PATH = buildApiUrl('/clients');
-
 export async function fetchClients(filters?: ClientFilters): Promise<Client[]> {
   const params = new URLSearchParams();
 
@@ -55,9 +52,8 @@ export async function fetchClients(filters?: ClientFilters): Promise<Client[]> {
   }
 
   const query = params.toString();
-  const url = query ? `${CLIENTS_BASE_PATH}?${query}` : CLIENTS_BASE_PATH;
-  const response = await fetch(url, buildOptions({ method: 'GET' }));
-  const data = await handleResponse<{ clients: Client[] }>(response);
+  const url = query ? `/clients?${query}` : '/clients';
+  const data = await api.get<{ clients: Client[] }>(url);
   return data.clients;
 }
 
@@ -78,15 +74,7 @@ export async function fetchClientById(
 }
 
 export async function createClient(payload: ClientPayload): Promise<Client> {
-  const response = await fetch(
-    CLIENTS_BASE_PATH,
-    buildOptions({
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
-  );
-
-  const data = await handleResponse<{ client: Client }>(response);
+  const data = await api.post<{ client: Client }>('/clients', payload);
   return data.client;
 }
 
@@ -94,26 +82,16 @@ export async function updateClient(
   clientId: number,
   payload: Partial<ClientPayload>,
 ): Promise<Client> {
-  const response = await fetch(
-    `${CLIENTS_BASE_PATH}/${clientId}`,
-    buildOptions({
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
+  const data = await api.put<{ client: Client }>(
+    `/clients/${clientId}`,
+    payload,
   );
-
-  const data = await handleResponse<{ client: Client }>(response);
   return data.client;
 }
 
 export async function archiveClient(clientId: number): Promise<Client> {
-  const response = await fetch(
-    `${CLIENTS_BASE_PATH}/${clientId}/archive`,
-    buildOptions({
-      method: 'PATCH',
-    }),
+  const data = await api.patch<{ client: Client }>(
+    `/clients/${clientId}/archive`,
   );
-
-  const data = await handleResponse<{ client: Client }>(response);
   return data.client;
 }

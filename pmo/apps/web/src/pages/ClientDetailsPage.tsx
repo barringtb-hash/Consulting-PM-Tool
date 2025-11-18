@@ -13,7 +13,7 @@ import {
 import ContactForm, { ContactFormValues } from '../components/ContactForm';
 import ClientForm, { ClientFormValues } from '../components/ClientForm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
-import { isApiError } from '../api/http';
+import { isApiError } from '../lib/apiClient';
 
 function mapClientFormToPayload(values: ClientFormValues) {
   return {

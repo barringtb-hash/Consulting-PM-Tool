@@ -9,8 +9,12 @@ process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '1h';
 process.env.BCRYPT_SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS ?? '4';
 
 const workerId = process.env.VITEST_WORKER_ID ?? '1';
-const databasePath = path.join(__dirname, `test-${workerId}.db`);
-const testDatabaseUrl = `file:${databasePath}`;
+const testSchema = `test_${workerId}`;
+const baseDatabaseUrl =
+  process.env.TEST_DATABASE_URL ??
+  process.env.DATABASE_URL ??
+  'postgresql://postgres:postgres@localhost:5432/pmo_dev';
+const testDatabaseUrl = `${baseDatabaseUrl}?schema=${testSchema}`;
 process.env.DATABASE_URL = testDatabaseUrl;
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');

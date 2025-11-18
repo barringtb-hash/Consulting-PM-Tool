@@ -17,25 +17,29 @@ The `pmo` directory is an npm workspace with the following structure:
    cd pmo
    npm install
    ```
-2. Set up API environment variables and database (from `/pmo`):
+2. Set up and run the API (from `/pmo/apps/api`):
    ```bash
-   # Copy the example env into the API workspace
-   cp ../Docs/api.env.example apps/api/.env
-
-   # Apply Prisma migrations (uses SQLite file:./dev.db by default)
-   npx prisma migrate dev --name init
+   cd pmo/apps/api
+   cp .env.example .env
+   # update DATABASE_URL to point to your Postgres instance and set JWT_SECRET
+   npx prisma migrate dev --name init_postgres_mvp
+   npx prisma db seed
+   npm run dev
    ```
-3. Start the frontend and API in watch mode (separate terminals):
+   The API listens on port 4000 by default and exposes routes under `/api` (e.g., `/api/health`).
+3. Start the frontend (from `/pmo/apps/web`):
    ```bash
-   npm run dev --workspace pmo-web
-   npm run dev --workspace pmo-api
+   cd pmo/apps/web
+   cp .env.example .env
+   # ensure VITE_API_BASE_URL matches your API base, e.g., http://localhost:4000/api
+   npm run dev
    ```
 4. Common scripts from `/pmo`:
    ```bash
    npm run lint    # Lint TypeScript/JavaScript sources
    npm run test    # Run workspace test suites
    npm run build   # Build artifacts (placeholder at present)
-   npm run format  # Prettier formatting across the repo
+   npm run format  # Prettier formatting across Markdown and source files
    ```
 
 ## Shared tooling

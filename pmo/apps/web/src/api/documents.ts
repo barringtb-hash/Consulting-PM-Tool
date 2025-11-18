@@ -1,5 +1,4 @@
-import { buildApiUrl } from './config';
-import { buildOptions, handleResponse } from './http';
+import { api } from '../lib/apiClient';
 
 export type DocumentType =
   | 'REQUIREMENTS'
@@ -33,8 +32,6 @@ export interface DocumentPayload {
   url?: string;
 }
 
-const DOCUMENTS_BASE_PATH = buildApiUrl('/documents');
-
 export async function fetchDocuments(
   filters?: DocumentFilters,
 ): Promise<Document[]> {
@@ -49,23 +46,17 @@ export async function fetchDocuments(
   }
 
   const query = params.toString();
-  const url = query ? `${DOCUMENTS_BASE_PATH}?${query}` : DOCUMENTS_BASE_PATH;
-  const response = await fetch(url, buildOptions({ method: 'GET' }));
-  const data = await handleResponse<{ documents: Document[] }>(response);
+  const url = query ? `/documents?${query}` : '/documents';
+  const data = await api.get<{ documents: Document[] }>(url);
   return data.documents;
 }
 
 export async function generateDocument(
   payload: DocumentPayload,
 ): Promise<Document> {
-  const response = await fetch(
-    `${DOCUMENTS_BASE_PATH}/generate`,
-    buildOptions({
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+  const data = await api.post<{ document: Document }>(
+    `/documents/generate`,
+    payload,
   );
-
-  const data = await handleResponse<{ document: Document }>(response);
   return data.document;
 }

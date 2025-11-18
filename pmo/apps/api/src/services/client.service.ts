@@ -26,10 +26,11 @@ export const listClients = async ({
   };
 
   if (search) {
+    const searchFilter = { contains: search, mode: 'insensitive' as const };
     where.OR = [
-      { name: { contains: search } },
-      { industry: { contains: search } },
-      { notes: { contains: search } },
+      { name: searchFilter },
+      { industry: searchFilter },
+      { notes: searchFilter },
     ];
   }
 
