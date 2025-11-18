@@ -19,16 +19,18 @@ The `pmo` directory is an npm workspace with the following structure:
    ```
 2. Set up API environment variables and database (from `/pmo`):
    ```bash
-   # Copy the example env into the API workspace
-   cp ../Docs/api.env.example apps/api/.env
-
-   # Apply Prisma migrations (uses SQLite file:./dev.db by default)
-   npx prisma migrate dev --name init
+   # Copy the example env into the API workspace and edit DATABASE_URL for Postgres
+   cd apps/api
+   cp .env.example .env
+   # point DATABASE_URL to your local Postgres instance
+   npx prisma migrate dev --name init_postgres_mvp
+   npm run dev
    ```
-3. Start the frontend and API in watch mode (separate terminals):
+3. Set up the frontend (from `/pmo`):
    ```bash
-   npm run dev --workspace pmo-web
-   npm run dev --workspace pmo-api
+   cd apps/web
+   cp .env.example .env
+   npm run dev
    ```
 4. Common scripts from `/pmo`:
    ```bash
@@ -37,6 +39,32 @@ The `pmo` directory is an npm workspace with the following structure:
    npm run build   # Build artifacts (placeholder at present)
    npm run format  # Prettier formatting across the repo
    ```
+
+## Running locally
+
+From the repository root:
+
+### Backend
+
+```bash
+cd pmo/apps/api
+cp .env.example .env
+# update DATABASE_URL to point at your local Postgres instance
+npx prisma migrate dev --name init_postgres_mvp
+npm run dev
+```
+
+The seed script provisions a demo user (`demo@pmo.test` / `password123`) and starter client records.
+
+### Frontend
+
+```bash
+cd pmo/apps/web
+cp .env.example .env
+npm run dev
+```
+
+The `VITE_API_BASE_URL` variable controls which API the SPA talks to (e.g., `http://localhost:4000/api` locally or the Render URL in production).
 
 ## Shared tooling
 - TypeScript is configured via the base `tsconfig.base.json` applied across workspaces.

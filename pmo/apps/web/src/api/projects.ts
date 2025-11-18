@@ -1,4 +1,5 @@
-import { ApiError, buildOptions, handleResponse } from './http';
+import { api } from '../lib/apiClient';
+import { ApiError } from './http';
 
 export type ProjectStatus =
   | 'PLANNING'
@@ -32,7 +33,7 @@ export interface ProjectPayload {
   endDate?: string;
 }
 
-const PROJECTS_BASE_PATH = '/api/projects';
+const PROJECTS_BASE_PATH = '/projects';
 
 export async function fetchProjects(
   filters?: ProjectFilters,
@@ -49,31 +50,22 @@ export async function fetchProjects(
 
   const query = params.toString();
   const url = query ? `${PROJECTS_BASE_PATH}?${query}` : PROJECTS_BASE_PATH;
-  const response = await fetch(url, buildOptions({ method: 'GET' }));
-  const data = await handleResponse<{ projects: Project[] }>(response);
+  const data = await api.get<{ projects: Project[] }>(url);
   return data.projects;
 }
 
 export async function fetchProjectById(projectId: number): Promise<Project> {
-  const response = await fetch(
+  const data = await api.get<{ project: Project }>(
     `${PROJECTS_BASE_PATH}/${projectId}`,
-    buildOptions({ method: 'GET' }),
   );
-
-  const data = await handleResponse<{ project: Project }>(response);
   return data.project;
 }
 
 export async function createProject(payload: ProjectPayload): Promise<Project> {
-  const response = await fetch(
+  const data = await api.post<{ project: Project }>(
     PROJECTS_BASE_PATH,
-    buildOptions({
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+    payload,
   );
-
-  const data = await handleResponse<{ project: Project }>(response);
   return data.project;
 }
 
@@ -81,15 +73,10 @@ export async function updateProject(
   projectId: number,
   payload: Partial<ProjectPayload>,
 ): Promise<Project> {
-  const response = await fetch(
+  const data = await api.put<{ project: Project }>(
     `${PROJECTS_BASE_PATH}/${projectId}`,
-    buildOptions({
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
+    payload,
   );
-
-  const data = await handleResponse<{ project: Project }>(response);
   return data.project;
 }
 

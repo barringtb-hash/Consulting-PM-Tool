@@ -7,19 +7,6 @@ export function isApiError(error: unknown): error is ApiError {
   return error instanceof Error && 'status' in error;
 }
 
-export function buildOptions(options?: RequestInit): RequestInit {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options?.headers ?? {}),
-  };
-
-  return {
-    credentials: 'include',
-    ...options,
-    headers,
-  };
-}
-
 export async function handleResponse<T>(response: Response): Promise<T> {
   const contentType = response.headers.get('content-type');
   const isJson = contentType?.includes('application/json');

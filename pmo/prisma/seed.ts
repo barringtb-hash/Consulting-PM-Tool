@@ -1,6 +1,15 @@
+import bcrypt from 'bcrypt';
+
 import { AiMaturity, CompanySize, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+const defaultUser = {
+  name: 'Demo User',
+  email: 'demo@pmo.test',
+  password: 'password123',
+  timezone: 'UTC',
+};
 
 const clients = [
   {
@@ -55,6 +64,23 @@ const clients = [
 ];
 
 async function main() {
+  const passwordHash = await bcrypt.hash(defaultUser.password, 10);
+
+  await prisma.user.upsert({
+    where: { email: defaultUser.email },
+    update: {
+      name: defaultUser.name,
+      passwordHash,
+      timezone: defaultUser.timezone,
+    },
+    create: {
+      name: defaultUser.name,
+      email: defaultUser.email,
+      passwordHash,
+      timezone: defaultUser.timezone,
+    },
+  });
+
   for (const clientData of clients) {
     const existingClient = await prisma.client.findFirst({
       where: { name: clientData.name },
