@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useProjects } from '../api/queries';
+import { useAuth } from '../auth/AuthContext';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { TASK_PRIORITIES, TASK_STATUSES, useMyTasks } from '../hooks/tasks';
 
@@ -28,7 +29,9 @@ function MyTasksPage(): JSX.Element {
     search: '',
   });
 
-  const tasksQuery = useMyTasks();
+  const { user } = useAuth();
+  const ownerId = user ? Number(user.id) : undefined;
+  const tasksQuery = useMyTasks(ownerId);
   const projectsQuery = useProjects();
 
   useRedirectOnUnauthorized(tasksQuery.error);

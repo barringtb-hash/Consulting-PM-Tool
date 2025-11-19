@@ -39,10 +39,13 @@ export function useProjectTasks(
   });
 }
 
-export function useMyTasks(): UseQueryResult<TaskWithProject[], Error> {
+export function useMyTasks(
+  ownerId?: number,
+): UseQueryResult<TaskWithProject[], Error> {
   return useQuery({
-    queryKey: taskQueryKeys.myTasks,
-    queryFn: () => fetchMyTasks(),
+    queryKey: [...taskQueryKeys.myTasks, ownerId],
+    enabled: Boolean(ownerId),
+    queryFn: () => fetchMyTasks(ownerId),
   });
 }
 

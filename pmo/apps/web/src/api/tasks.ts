@@ -117,7 +117,13 @@ export async function deleteTask(taskId: number): Promise<void> {
   );
 }
 
-export async function fetchMyTasks(): Promise<TaskWithProject[]> {
+export async function fetchMyTasks(
+  ownerId?: number,
+): Promise<TaskWithProject[]> {
+  if (!ownerId) {
+    return [];
+  }
+
   const projects = await fetchProjects();
   const projectLookup = new Map<number, Project>();
   projects.forEach((project) => projectLookup.set(project.id, project));
@@ -126,8 +132,11 @@ export async function fetchMyTasks(): Promise<TaskWithProject[]> {
     projects.map((project) => fetchProjectTasks(project.id)),
   );
 
-  return tasksByProject.flat().map((task) => ({
-    ...task,
-    projectName: projectLookup.get(task.projectId)?.name,
-  }));
+  return tasksByProject
+    .flat()
+    .filter((task) => task.ownerId === ownerId)
+    .map((task) => ({
+      ...task,
+      projectName: projectLookup.get(task.projectId)?.name,
+    }));
 }
