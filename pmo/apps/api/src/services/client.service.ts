@@ -26,14 +26,17 @@ export const listClients = async ({
   };
 
   if (search) {
-    const searchFilter: Prisma.StringFilter = {
-      contains: search,
-      mode: 'insensitive',
+    const buildSearchFilter = (): Prisma.StringFilter => {
+      const base: Prisma.StringFilter = { contains: search };
+      if (!process.env.DATABASE_URL?.startsWith('file:')) {
+        base.mode = 'insensitive';
+      }
+      return base;
     };
     where.OR = [
-      { name: searchFilter },
-      { industry: searchFilter },
-      { notes: searchFilter },
+      { name: buildSearchFilter() },
+      { industry: buildSearchFilter() },
+      { notes: buildSearchFilter() },
     ];
   }
 

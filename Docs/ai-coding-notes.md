@@ -19,7 +19,7 @@ A quick-reference map for future AI contributors working in this repository.
 - Auth: `apps/api/src/auth/auth.routes.ts` exposes `/auth/login`, `/auth/logout`, and `/auth/me`; login issues an httpOnly `token` cookie via `signToken` and `requireAuth` in `auth.middleware.ts` checks it to set `req.userId`.
 - Validation: Zod schemas live under `apps/api/src/validation/` (e.g., `client.schema.ts`); routes parse input with `safeParse` and return structured errors when invalid.
 - Data layer: Prisma client is configured in `apps/api/src/prisma/client.ts` against the shared `prisma/schema.prisma` models (User, Client, Contact, Project with owner/client relations, Document with client/project/owner links).
-- Tests: `apps/api/test/setup.ts` provisions a per-worker SQLite database, runs `prisma migrate reset`, and generates the client before Vitest cases covering auth, clients, contacts, and password hashing.
+- Tests: `apps/api/test/setup.ts` provisions a per-worker database, using PostgreSQL only when `POSTGRES_TEST_ADMIN_URL` is set and otherwise falling back to SQLite before running `prisma migrate reset` and generating the client.
 
 ## Frontend (apps/web)
 - Bootstrap: `apps/web/src/main.tsx` wires `AuthProvider`, React Router, and TanStack Query via `QueryClientProvider` before rendering `App`.
