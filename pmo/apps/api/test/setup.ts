@@ -14,7 +14,9 @@ const baseDatabaseUrl =
   process.env.TEST_DATABASE_URL ??
   process.env.DATABASE_URL ??
   'postgresql://postgres:postgres@localhost:5432/pmo_dev';
-const testDatabaseUrl = `${baseDatabaseUrl}?schema=${testSchema}`;
+const url = new URL(baseDatabaseUrl);
+url.searchParams.set('schema', testSchema);
+const testDatabaseUrl = url.toString();
 process.env.DATABASE_URL = testDatabaseUrl;
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
