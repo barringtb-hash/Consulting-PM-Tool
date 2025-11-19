@@ -7,7 +7,9 @@ import clientsRouter from './routes/clients';
 import contactsRouter from './routes/contacts';
 import documentsRouter from './routes/documents';
 import healthRouter from './routes/health';
+import milestonesRouter from './routes/milestone.routes';
 import projectsRouter from './routes/projects';
+import tasksRouter from './routes/task.routes';
 
 export function createApp(): express.Express {
   const app = express();
@@ -24,7 +26,9 @@ export function createApp(): express.Express {
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);
   app.use('/api/documents', documentsRouter);
+  app.use('/api', milestonesRouter);
   app.use('/api/projects', projectsRouter);
+  app.use('/api', tasksRouter);
   app.use(healthRouter);
 
   return app;
