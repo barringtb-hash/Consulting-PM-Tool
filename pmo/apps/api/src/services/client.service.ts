@@ -26,10 +26,14 @@ export const listClients = async ({
   };
 
   if (search) {
+    const searchFilter: Prisma.StringFilter = {
+      contains: search,
+      mode: 'insensitive',
+    };
     where.OR = [
-      { name: { contains: search } },
-      { industry: { contains: search } },
-      { notes: { contains: search } },
+      { name: searchFilter },
+      { industry: searchFilter },
+      { notes: searchFilter },
     ];
   }
 

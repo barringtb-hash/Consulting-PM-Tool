@@ -9,9 +9,33 @@ process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '1h';
 process.env.BCRYPT_SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS ?? '4';
 
 const workerId = process.env.VITEST_WORKER_ID ?? '1';
-const databasePath = path.join(__dirname, `test-${workerId}.db`);
-const testDatabaseUrl = `file:${databasePath}`;
-process.env.DATABASE_URL = testDatabaseUrl;
+const adminDatabaseUrl =
+  process.env.POSTGRES_TEST_ADMIN_URL ??
+  'postgresql://postgres:postgres@localhost:5432/postgres';
+const testDatabaseName =
+  process.env.POSTGRES_TEST_DATABASE ?? `pmo_test_${workerId}`;
+const testDatabaseUrl = new URL(adminDatabaseUrl);
+testDatabaseUrl.pathname = `/${testDatabaseName}`;
+
+const sharedExecOptions = {
+  cwd: process.cwd(),
+  env: {
+    ...process.env,
+  },
+  stdio: 'inherit' as const,
+};
+
+execSync(
+  `psql "${adminDatabaseUrl}" -c "DROP DATABASE IF EXISTS \"${testDatabaseName}\";"`,
+  sharedExecOptions,
+);
+execSync(
+  `psql "${adminDatabaseUrl}" -c "CREATE DATABASE \"${testDatabaseName}\";"`,
+  sharedExecOptions,
+);
+
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL ?? testDatabaseUrl.toString();
 
 const workspaceRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(workspaceRoot, '..', '..');

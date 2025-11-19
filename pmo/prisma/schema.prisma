@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -118,6 +118,7 @@ model Project {
   owner     User       @relation(fields: [ownerId], references: [id])
   documents Document[]
   tasks     Task[]
+  meetings  Meeting[]
   milestones Milestone[]
 }
 
@@ -171,7 +172,27 @@ model Task {
   project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   owner     User      @relation(fields: [ownerId], references: [id])
   milestone Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  sourceMeeting Meeting? @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
 
   @@index([projectId, status, priority])
   @@index([ownerId, status])
+}
+
+model Meeting {
+  id            Int       @id @default(autoincrement())
+  projectId     Int
+  title         String
+  date          DateTime
+  time          String
+  attendees     String[]
+  notes         String?
+  decisions     String?
+  risks         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceTasks   Task[]
+
+  @@index([projectId, date(sort: Desc)])
 }
