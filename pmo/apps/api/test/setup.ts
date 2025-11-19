@@ -4,6 +4,8 @@ import { afterAll, beforeAll, beforeEach } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
 import getDatabase from '@databases/pg-test';
 
+import { buildTestDatabaseUrl } from './buildTestDatabaseUrl';
+
 process.env.NODE_ENV = process.env.NODE_ENV ?? 'test';
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'test-secret';
 process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '1h';
@@ -42,9 +44,7 @@ const schemaPath = path.join(projectRoot, 'prisma', 'schema.prisma');
 
 beforeAll(async () => {
   const baseDatabaseUrl = await resolveDatabaseUrl();
-  const url = new URL(baseDatabaseUrl);
-  url.searchParams.set('schema', testSchema);
-  const testDatabaseUrl = url.toString();
+  const testDatabaseUrl = buildTestDatabaseUrl(baseDatabaseUrl, testSchema);
   process.env.DATABASE_URL = testDatabaseUrl;
 
   execSync(
