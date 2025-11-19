@@ -184,7 +184,7 @@ model Meeting {
   title         String
   date          DateTime
   time          String
-  attendees     String[]
+  attendees     Json
   notes         String?
   decisions     String?
   risks         String?

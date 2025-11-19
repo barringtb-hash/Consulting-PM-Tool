@@ -19,13 +19,20 @@ export const listClients = async ({
   aiMaturity,
   includeArchived = false,
 }: ListClientsParams) => {
+  const provider = (
+    process.env.DATABASE_PROVIDER ?? 'postgresql'
+  ).toLowerCase();
+  const isSqlite = provider === 'sqlite';
   const where: Prisma.ClientWhereInput = {
     companySize,
     aiMaturity,
     archived: includeArchived ? undefined : false,
   };
 
-  if (search) {
+  type ClientList = Awaited<ReturnType<typeof prisma.client.findMany>>;
+  let clientFilter: ((clients: ClientList) => ClientList) | undefined;
+
+  if (search && !isSqlite) {
     const searchFilter: Prisma.StringFilter = {
       contains: search,
       mode: 'insensitive',
@@ -35,12 +42,26 @@ export const listClients = async ({
       { industry: searchFilter },
       { notes: searchFilter },
     ];
+  } else if (search) {
+    const normalizedSearch = search.toLowerCase();
+    clientFilter = (clients) =>
+      clients.filter((client) => {
+        const fields = [client.name, client.industry, client.notes ?? null];
+        return fields.some((field) => {
+          if (!field) {
+            return false;
+          }
+          return field.toLowerCase().includes(normalizedSearch);
+        });
+      });
   }
 
-  return prisma.client.findMany({
+  const clients = await prisma.client.findMany({
     where,
     orderBy: { createdAt: 'desc' },
   });
+
+  return clientFilter ? clientFilter(clients) : clients;
 };
 
 export const createClient = async (data: ClientCreateInput) =>
