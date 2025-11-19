@@ -2,19 +2,17 @@ import {
   AiMaturity,
   CompanySize,
   MilestoneStatus,
+  Prisma,
   PrismaClient,
   Priority,
   ProjectStatus,
   TaskStatus,
 } from '@prisma/client';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 if (!process.env.DATABASE_URL) {
-  const sqlitePath = path.resolve(currentDir, 'dev.db');
-  process.env.DATABASE_URL = `file:${sqlitePath}`;
+  process.env.DATABASE_URL =
+    process.env.POSTGRES_PRISMA_URL ??
+    'postgresql://postgres:postgres@localhost:5432/pmo';
 }
 
 const prisma = new PrismaClient();
@@ -100,6 +98,33 @@ const projectSeeds = [
     status: ProjectStatus.IN_PROGRESS,
     startDate: new Date('2024-01-15'),
     endDate: new Date('2024-08-30'),
+    meetings: [
+      {
+        title: 'Operations Pulse Check',
+        date: new Date('2024-02-05'),
+        time: '09:00 AM CT',
+        attendees: [
+          'Avery Chen',
+          'Dana Patel',
+          'Miguel Rodriguez',
+          'Priya Desai',
+        ],
+        notes: 'Reviewed historian export progress and CMMS cleanup blockers.',
+        decisions:
+          'Agreed to prioritize validation on the top three bottleneck assets.',
+        risks:
+          'Data pipeline delay if historian credentials are not provisioned.',
+      },
+      {
+        title: 'Pilot Kickoff Prep',
+        date: new Date('2024-02-15'),
+        time: '02:00 PM CT',
+        attendees: ['Avery Chen', 'Dana Patel', 'Plant 3 supervisors'],
+        notes: 'Walked through pilot plan and asset readiness checklist.',
+        decisions: 'Pilot scope limited to extrusion and packing lines.',
+        risks: 'Need final sign-off on OT change window.',
+      },
+    ],
     milestones: [
       {
         name: 'Data Lake Readiness',
@@ -114,6 +139,7 @@ const projectSeeds = [
             status: TaskStatus.IN_PROGRESS,
             priority: Priority.P1,
             dueDate: new Date('2024-02-29'),
+            sourceMeetingTitle: 'Operations Pulse Check',
           },
           {
             title: 'Finalize historian access policy',
@@ -136,6 +162,7 @@ const projectSeeds = [
             description: 'Confirm memory footprint and redundancy plans.',
             status: TaskStatus.BACKLOG,
             priority: Priority.P1,
+            sourceMeetingTitle: 'Pilot Kickoff Prep',
           },
         ],
       },
@@ -153,6 +180,7 @@ const projectSeeds = [
         description: 'Standing meeting with plant ops and data team.',
         status: TaskStatus.DONE,
         priority: Priority.P2,
+        sourceMeetingTitle: 'Operations Pulse Check',
       },
       {
         title: 'Model drift alerts',
@@ -170,6 +198,18 @@ const projectSeeds = [
     status: ProjectStatus.PLANNING,
     startDate: new Date('2024-02-01'),
     endDate: new Date('2024-06-15'),
+    meetings: [
+      {
+        title: 'Care Team Interviews Readout',
+        date: new Date('2024-02-08'),
+        time: '11:30 AM PT',
+        attendees: ['Priya Desai', 'Sarah Kim', 'Omar Greene', 'Marco Silva'],
+        notes:
+          'Summarized interview insights and mapped automation candidates.',
+        decisions: 'Prototype should cover referral intake and triage routing.',
+        risks: 'Need anonymization plan for sample transcripts.',
+      },
+    ],
     milestones: [
       {
         name: 'Patient Journey Mapping',
@@ -183,6 +223,7 @@ const projectSeeds = [
             status: TaskStatus.IN_PROGRESS,
             priority: Priority.P1,
             dueDate: new Date('2024-02-26'),
+            sourceMeetingTitle: 'Care Team Interviews Readout',
           },
           {
             title: 'Journey artifacts sign-off',
@@ -215,6 +256,7 @@ const projectSeeds = [
         priority: Priority.P1,
         ownerEmail: 'marco.silva@pmo.test',
         milestoneName: 'Automation Prototype',
+        sourceMeetingTitle: 'Care Team Interviews Readout',
       },
     ],
   },
@@ -339,6 +381,44 @@ async function main() {
         });
 
     const milestoneMap = new Map<string, number>();
+    const meetingMap = new Map<string, number>();
+
+    for (const meetingSeed of projectSeed.meetings ?? []) {
+      const attendees = meetingSeed.attendees as Prisma.JsonArray;
+      const existingMeeting = await prisma.meeting.findFirst({
+        where: {
+          projectId: project.id,
+          title: meetingSeed.title,
+          date: meetingSeed.date,
+        },
+      });
+
+      const meeting = existingMeeting
+        ? await prisma.meeting.update({
+            where: { id: existingMeeting.id },
+            data: {
+              time: meetingSeed.time,
+              attendees,
+              notes: meetingSeed.notes,
+              decisions: meetingSeed.decisions,
+              risks: meetingSeed.risks,
+            },
+          })
+        : await prisma.meeting.create({
+            data: {
+              projectId: project.id,
+              title: meetingSeed.title,
+              date: meetingSeed.date,
+              time: meetingSeed.time,
+              attendees,
+              notes: meetingSeed.notes,
+              decisions: meetingSeed.decisions,
+              risks: meetingSeed.risks,
+            },
+          });
+
+      meetingMap.set(meeting.title, meeting.id);
+    }
 
     for (const milestoneSeed of projectSeed.milestones) {
       const existingMilestone = await prisma.milestone.findFirst({
@@ -375,11 +455,22 @@ async function main() {
             `Task owner ${resolvedOwnerEmail} not found during seeding.`,
           );
         }
+        const sourceMeetingId = taskSeed.sourceMeetingTitle
+          ? meetingMap.get(taskSeed.sourceMeetingTitle)
+          : undefined;
+
+        if (taskSeed.sourceMeetingTitle && !sourceMeetingId) {
+          throw new Error(
+            `Meeting ${taskSeed.sourceMeetingTitle} not found for project ${projectSeed.name}.`,
+          );
+        }
+
         await upsertTask({
           projectId: project.id,
           taskSeed,
           ownerId: taskOwnerId,
           milestoneId: milestone.id,
+          sourceMeetingId,
         });
       }
     }
@@ -397,11 +488,22 @@ async function main() {
         );
       }
 
+      const sourceMeetingId = taskSeed.sourceMeetingTitle
+        ? meetingMap.get(taskSeed.sourceMeetingTitle)
+        : undefined;
+
+      if (taskSeed.sourceMeetingTitle && !sourceMeetingId) {
+        throw new Error(
+          `Meeting ${taskSeed.sourceMeetingTitle} not found for project ${projectSeed.name}.`,
+        );
+      }
+
       await upsertTask({
         projectId: project.id,
         taskSeed,
         ownerId: taskOwnerId,
         milestoneId,
+        sourceMeetingId,
       });
     }
   }
@@ -417,9 +519,11 @@ type TaskSeedInput = {
     dueDate?: Date;
     ownerEmail?: string;
     milestoneName?: string;
+    sourceMeetingTitle?: string;
   };
   ownerId: number;
   milestoneId?: number;
+  sourceMeetingId?: number;
 };
 
 async function upsertTask({
@@ -427,6 +531,7 @@ async function upsertTask({
   taskSeed,
   ownerId,
   milestoneId,
+  sourceMeetingId,
 }: TaskSeedInput) {
   const existingTask = await prisma.task.findFirst({
     where: { projectId, title: taskSeed.title },
@@ -439,6 +544,7 @@ async function upsertTask({
     priority: taskSeed.priority,
     dueDate: taskSeed.dueDate,
     milestoneId: milestoneId ?? null,
+    sourceMeetingId: sourceMeetingId ?? null,
   } as const;
 
   if (existingTask) {
@@ -457,6 +563,7 @@ async function upsertTask({
         status: taskSeed.status,
         priority: taskSeed.priority,
         dueDate: taskSeed.dueDate,
+        sourceMeetingId: sourceMeetingId ?? undefined,
       },
     });
   }

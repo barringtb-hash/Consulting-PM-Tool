@@ -19,24 +19,41 @@ export const listClients = async ({
   aiMaturity,
   includeArchived = false,
 }: ListClientsParams) => {
+  const provider = process.env.DATABASE_PROVIDER ?? 'postgresql';
+  const supportsInsensitiveSearch = provider !== 'sqlite';
   const where: Prisma.ClientWhereInput = {
     companySize,
     aiMaturity,
     archived: includeArchived ? undefined : false,
   };
 
-  if (search) {
+  if (search && supportsInsensitiveSearch) {
+    const searchFilter: Prisma.StringFilter = {
+      contains: search,
+      mode: 'insensitive',
+    };
     where.OR = [
-      { name: { contains: search } },
-      { industry: { contains: search } },
-      { notes: { contains: search } },
+      { name: searchFilter },
+      { industry: searchFilter },
+      { notes: searchFilter },
     ];
   }
 
-  return prisma.client.findMany({
+  const clients = await prisma.client.findMany({
     where,
     orderBy: { createdAt: 'desc' },
   });
+
+  if (!search || supportsInsensitiveSearch) {
+    return clients;
+  }
+
+  const needle = search.toLowerCase();
+  return clients.filter((client) =>
+    [client.name, client.industry ?? '', client.notes ?? ''].some((field) =>
+      field.toLowerCase().includes(needle),
+    ),
+  );
 };
 
 export const createClient = async (data: ClientCreateInput) =>
