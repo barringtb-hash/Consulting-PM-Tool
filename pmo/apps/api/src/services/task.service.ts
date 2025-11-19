@@ -131,10 +131,18 @@ export const updateTask = async (
     return { error: 'forbidden' as const };
   }
 
+  const targetProjectId = data.projectId ?? existing.projectId;
+
+  const projectAccess = await validateProjectAccess(targetProjectId, ownerId);
+
+  if (projectAccess === 'not_found' || projectAccess === 'forbidden') {
+    return { error: projectAccess } as const;
+  }
+
   if (data.milestoneId !== undefined && data.milestoneId !== null) {
     const milestoneValid = await validateMilestoneForProject(
       data.milestoneId,
-      existing.projectId,
+      targetProjectId,
     );
 
     if (!milestoneValid) {
@@ -146,6 +154,7 @@ export const updateTask = async (
     where: { id },
     data: {
       ...data,
+      projectId: data.projectId ?? undefined,
       milestoneId:
         data.milestoneId === undefined ? undefined : data.milestoneId,
     },

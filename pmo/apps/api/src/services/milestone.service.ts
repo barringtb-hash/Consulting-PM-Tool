@@ -102,9 +102,20 @@ export const updateMilestone = async (
     return { error: 'forbidden' as const };
   }
 
+  const targetProjectId = data.projectId ?? existing.projectId;
+
+  const projectAccess = await validateProjectAccess(targetProjectId, ownerId);
+
+  if (projectAccess === 'not_found' || projectAccess === 'forbidden') {
+    return { error: projectAccess } as const;
+  }
+
   const updated = await prisma.milestone.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      projectId: data.projectId ?? undefined,
+    },
   });
 
   return { milestone: updated } as const;
