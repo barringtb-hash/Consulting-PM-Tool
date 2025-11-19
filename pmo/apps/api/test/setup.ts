@@ -67,6 +67,10 @@ if (!usePostgres) {
   schemaContents = schemaContents
     .replace(/\(sort:\s*Desc\)/g, '')
     .replace(/\(sort:\s*Asc\)/g, '');
+  schemaContents = schemaContents.replace(
+    /attendees\s+Json/g,
+    'attendees     String',
+  );
   fs.writeFileSync(tempSchemaPath, schemaContents);
   prismaSchemaPath = tempSchemaPath;
 } else if (fs.existsSync(tempSchemaPath)) {
