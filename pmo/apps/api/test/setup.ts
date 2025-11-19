@@ -34,8 +34,7 @@ execSync(
   sharedExecOptions,
 );
 
-process.env.DATABASE_URL =
-  process.env.DATABASE_URL ?? testDatabaseUrl.toString();
+process.env.DATABASE_URL = testDatabaseUrl.toString();
 
 const workspaceRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(workspaceRoot, '..', '..');
