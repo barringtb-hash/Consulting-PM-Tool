@@ -17,24 +17,50 @@ export const listContacts = async ({
   clientId,
   includeArchived = false,
 }: ListContactsParams) => {
+  const provider = (
+    process.env.DATABASE_PROVIDER ?? 'postgresql'
+  ).toLowerCase();
+  const isSqlite = provider === 'sqlite';
   const where: Prisma.ContactWhereInput = {
     clientId,
     archived: includeArchived ? undefined : false,
   };
 
-  if (search) {
+  type ContactList = Awaited<ReturnType<typeof prisma.contact.findMany>>;
+  let contactFilter: ((contacts: ContactList) => ContactList) | undefined;
+
+  if (search && !isSqlite) {
+    const searchFilter: Prisma.StringFilter = {
+      contains: search,
+      mode: 'insensitive',
+    };
     where.OR = [
-      { name: { contains: search } },
-      { email: { contains: search } },
-      { role: { contains: search } },
-      { phone: { contains: search } },
+      { name: searchFilter },
+      { email: searchFilter },
+      { role: searchFilter },
+      { phone: searchFilter },
     ];
+  } else if (search) {
+    const normalized = search.toLowerCase();
+    contactFilter = (contacts) =>
+      contacts.filter((contact) => {
+        const fields = [
+          contact.name,
+          contact.email,
+          contact.role,
+          contact.phone,
+        ].filter((value): value is string => Boolean(value));
+
+        return fields.some((value) => value.toLowerCase().includes(normalized));
+      });
   }
 
-  return prisma.contact.findMany({
+  const contacts = await prisma.contact.findMany({
     where,
     orderBy: { createdAt: 'desc' },
   });
+
+  return contactFilter ? contactFilter(contacts) : contacts;
 };
 
 export const createContact = async (data: ContactCreateInput) =>
