@@ -59,12 +59,15 @@ const tempSchemaPath = path.join(
 let prismaSchemaPath = schemaPath;
 
 if (!usePostgres) {
-  const schemaContents = fs.readFileSync(schemaPath, 'utf8');
-  const updatedSchema = schemaContents.replace(
+  let schemaContents = fs.readFileSync(schemaPath, 'utf8');
+  schemaContents = schemaContents.replace(
     /provider\s*=\s*"postgresql"/,
     'provider = "sqlite"',
   );
-  fs.writeFileSync(tempSchemaPath, updatedSchema);
+  schemaContents = schemaContents
+    .replace(/\(sort:\s*Desc\)/g, '')
+    .replace(/\(sort:\s*Asc\)/g, '');
+  fs.writeFileSync(tempSchemaPath, schemaContents);
   prismaSchemaPath = tempSchemaPath;
 } else if (fs.existsSync(tempSchemaPath)) {
   fs.rmSync(tempSchemaPath);
