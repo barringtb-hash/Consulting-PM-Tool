@@ -13,8 +13,9 @@ const databasePath = path.join(__dirname, `test-${workerId}.db`);
 const testDatabaseUrl = `file:${databasePath}`;
 process.env.DATABASE_URL = testDatabaseUrl;
 
-const projectRoot = path.resolve(__dirname, '..', '..', '..');
-const schemaPath = path.join(projectRoot, 'prisma', 'schema.prisma');
+const workspaceRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(workspaceRoot, '..', '..');
+const schemaPath = path.join(repoRoot, 'prisma', 'schema.prisma');
 
 let prismaClient: PrismaClient;
 
@@ -22,7 +23,7 @@ beforeAll(async () => {
   execSync(
     `npx prisma migrate reset --force --skip-generate --skip-seed --schema "${schemaPath}"`,
     {
-      cwd: projectRoot,
+      cwd: workspaceRoot,
       env: {
         ...process.env,
       },
@@ -31,7 +32,7 @@ beforeAll(async () => {
   );
 
   execSync(`npx prisma generate --schema "${schemaPath}"`, {
-    cwd: projectRoot,
+    cwd: workspaceRoot,
     env: {
       ...process.env,
     },
