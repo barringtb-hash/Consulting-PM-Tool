@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
-import DashboardPage from './pages/DashboardPage';
-import LoginPage from './pages/LoginPage';
 import ClientsPage from './pages/ClientsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import ClientIntakePage from './pages/ClientIntakePage';
+import DashboardPage from './pages/DashboardPage';
 import ProjectSetupPage from './pages/ProjectSetupPage';
 import ProjectDashboardPage from './pages/ProjectDashboardPage';
+import LoginPage from './pages/LoginPage';
 import { ClientProjectProvider } from './pages/ClientProjectContext';
+import MyTasksPage from './pages/MyTasksPage';
 
 function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
   const { user, status, logout, isLoading } = useAuth();
@@ -35,6 +36,7 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
         </div>
         <nav>
           <Link to="/dashboard">Dashboard</Link>
+          <Link to="/tasks">My tasks</Link>
           <Link to="/clients">Clients</Link>
           <Link to="/client-intake">Client intake</Link>
           <Link to="/projects/new">New project</Link>
@@ -69,6 +71,7 @@ function App(): JSX.Element {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/tasks" element={<MyTasksPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
             <Route path="/client-intake" element={<ClientIntakePage />} />
