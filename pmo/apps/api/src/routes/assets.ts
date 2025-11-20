@@ -2,6 +2,7 @@ import { AssetType } from '@prisma/client';
 import { Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
+import prisma from '../prisma/client';
 import {
   archiveAsset,
   cloneAsset,
@@ -100,6 +101,17 @@ router.post('/assets', async (req: AuthenticatedRequest, res) => {
       .status(400)
       .json({ error: 'Invalid asset data', details: parsed.error.format() });
     return;
+  }
+
+  if (parsed.data.clientId) {
+    const client = await prisma.client.findUnique({
+      where: { id: parsed.data.clientId },
+    });
+
+    if (!client) {
+      res.status(404).json({ error: 'Client not found' });
+      return;
+    }
   }
 
   const asset = await createAsset(req.userId, parsed.data);
