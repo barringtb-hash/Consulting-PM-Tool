@@ -1,6 +1,7 @@
 import {
   AiMaturity,
   CompanySize,
+  AssetType,
   MilestoneStatus,
   PrismaClient,
   Priority,
@@ -261,6 +262,76 @@ const projectSeeds = [
   },
 ];
 
+const aiAssetSeeds = [
+  {
+    name: 'Discovery Workshop Prompt Kit',
+    type: AssetType.PROMPT_TEMPLATE,
+    description:
+      'System and user prompt templates to summarize discovery calls with clients.',
+    content: {
+      systemPrompt:
+        'You are an AI project analyst. Summarize discovery notes with risks, blockers, and next actions.',
+      placeholders: ['client_context', 'meeting_notes', 'next_steps'],
+    },
+    tags: ['template', 'prompt', 'discovery'],
+    isTemplate: true,
+    createdByEmail: 'avery.chen@pmo.test',
+  },
+  {
+    name: 'Guardrail - PHI Redaction',
+    type: AssetType.GUARDRAIL,
+    description:
+      'Regex and policy snippets to prevent PHI leakage in chat transcripts and summaries.',
+    content: {
+      blockedPatterns: ['SSN', 'MRN', 'phone', 'address'],
+      action: 'mask',
+    },
+    tags: ['guardrail', 'compliance', 'healthcare'],
+    isTemplate: true,
+    createdByEmail: 'priya.desai@pmo.test',
+  },
+  {
+    name: 'Plant 3 Downtime Playbook',
+    type: AssetType.WORKFLOW,
+    clientName: 'Acme Manufacturing',
+    projectNames: ['Predictive Maintenance Rollout'],
+    description:
+      'Workflow for triaging downtime anomalies on Plant 3 extrusion lines.',
+    content: {
+      steps: [
+        'Collect 24h historian window with pressure/temperature tags',
+        'Run anomaly notebook and attach plots',
+        'Draft Slack update using maintenance template',
+      ],
+      outputs: ['notebook_link', 'slack_update'],
+    },
+    tags: ['workflow', 'maintenance', 'pilot'],
+    createdByEmail: 'avery.chen@pmo.test',
+  },
+  {
+    name: 'Intake Triage Evaluation Set',
+    type: AssetType.EVALUATION,
+    clientName: 'Brightside Health Group',
+    projectNames: ['AI Intake Modernization'],
+    description:
+      'Sample referral transcripts and expected routing labels for triage quality checks.',
+    content: {
+      examples: [
+        {
+          transcript: 'Referral for oncology consult with urgent symptoms',
+          label: 'urgent',
+        },
+        {
+          transcript: 'New patient seeking therapist with Spanish fluency',
+          label: 'standard',
+        },
+      ],
+    },
+    tags: ['evaluation', 'routing', 'healthcare'],
+    createdByEmail: 'marco.silva@pmo.test',
+  },
+];
+
 async function main() {
   const userMap = new Map<string, number>();
   for (const userData of users) {
@@ -282,6 +353,7 @@ async function main() {
   }
 
   const clientMap = new Map<string, number>();
+  const projectMap = new Map<string, { id: number; clientId: number }>();
   for (const clientData of clients) {
     const existingClient = await prisma.client.findFirst({
       where: { name: clientData.name },
@@ -381,6 +453,8 @@ async function main() {
 
     const milestoneMap = new Map<string, number>();
     const meetingMap = new Map<string, number>();
+    const projectKey = `${projectSeed.clientName}::${projectSeed.name}`;
+    projectMap.set(projectKey, { id: project.id, clientId });
 
     for (const meetingSeed of projectSeed.meetings ?? []) {
       const existingMeeting = await prisma.meeting.findFirst({
@@ -502,6 +576,84 @@ async function main() {
         ownerId: taskOwnerId,
         milestoneId,
         sourceMeetingId,
+      });
+    }
+  }
+
+  for (const assetSeed of aiAssetSeeds) {
+    const clientId = assetSeed.clientName
+      ? clientMap.get(assetSeed.clientName)
+      : undefined;
+
+    if (assetSeed.clientName && !clientId) {
+      throw new Error(
+        `Client ${assetSeed.clientName} not found for AI asset seeding.`,
+      );
+    }
+
+    const createdById = assetSeed.createdByEmail
+      ? userMap.get(assetSeed.createdByEmail)
+      : undefined;
+
+    if (assetSeed.createdByEmail && !createdById) {
+      throw new Error(
+        `Creator ${assetSeed.createdByEmail} not found for AI asset ${assetSeed.name}.`,
+      );
+    }
+
+    const asset = await prisma.aIAsset.upsert({
+      where: {
+        name_clientId: {
+          name: assetSeed.name,
+          clientId: clientId ?? null,
+        },
+      },
+      update: {
+        type: assetSeed.type,
+        description: assetSeed.description,
+        content: assetSeed.content,
+        tags: assetSeed.tags ?? [],
+        isTemplate: assetSeed.isTemplate ?? false,
+        clientId: clientId ?? null,
+        createdById: createdById ?? null,
+      },
+      create: {
+        name: assetSeed.name,
+        type: assetSeed.type,
+        description: assetSeed.description,
+        content: assetSeed.content,
+        tags: assetSeed.tags ?? [],
+        isTemplate: assetSeed.isTemplate ?? false,
+        clientId: clientId ?? undefined,
+        createdById: createdById ?? undefined,
+      },
+    });
+
+    for (const projectName of assetSeed.projectNames ?? []) {
+      const projectKey = `${assetSeed.clientName}::${projectName}`;
+      const project = projectMap.get(projectKey);
+
+      if (!project) {
+        throw new Error(
+          `Project ${projectName} not found for client ${assetSeed.clientName} during AI asset linking.`,
+        );
+      }
+
+      await prisma.projectAIAsset.upsert({
+        where: {
+          projectId_assetId: {
+            projectId: project.id,
+            assetId: asset.id,
+          },
+        },
+        update: {
+          notes: assetSeed.projectNotes ?? null,
+        },
+        create: {
+          projectId: project.id,
+          assetId: asset.id,
+          notes: assetSeed.projectNotes,
+        },
       });
     }
   }
