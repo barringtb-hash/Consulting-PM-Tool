@@ -47,6 +47,14 @@ enum MilestoneStatus {
   DONE
 }
 
+enum AssetType {
+  PROMPT_TEMPLATE
+  WORKFLOW
+  DATASET
+  EVALUATION
+  GUARDRAIL
+}
+
 enum DocumentType {
   REQUIREMENTS
   PROPOSAL
@@ -67,6 +75,7 @@ model User {
   ownedProjects Project[]
   documents     Document[]
   tasks         Task[]
+  createdAssets AIAsset[]
 }
 
 model Client {
@@ -84,6 +93,7 @@ model Client {
   contacts  Contact[]
   projects  Project[]
   documents Document[]
+  aiAssets  AIAsset[]
 }
 
 model Contact {
@@ -120,6 +130,7 @@ model Project {
   tasks     Task[]
   meetings  Meeting[]
   milestones Milestone[]
+  assets    ProjectAIAsset[]
 }
 
 model Document {
@@ -195,4 +206,37 @@ model Meeting {
   sourceTasks   Task[]
 
   @@index([projectId, date(sort: Desc)])
+}
+
+model AIAsset {
+  id          Int         @id @default(autoincrement())
+  type        AssetType
+  name        String
+  description String?
+  content     Json?
+  tags        String[]    @default([])
+  isTemplate  Boolean     @default(false)
+  clientId    Int?
+  createdById Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  createdBy User?     @relation(fields: [createdById], references: [id])
+  projects  ProjectAIAsset[]
+
+  @@unique([name, clientId])
+}
+
+model ProjectAIAsset {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  assetId   Int
+  notes     String?
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  asset   AIAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, assetId])
 }
