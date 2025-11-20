@@ -32,6 +32,7 @@ import {
 } from '../hooks/tasks';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { useClientProjectContext } from './ClientProjectContext';
+import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
 
 const statusOptions: ProjectStatus[] = [
   'PLANNING',
@@ -687,6 +688,8 @@ function ProjectDashboardPage(): JSX.Element {
           </ul>
         )}
       </section>
+
+      <ProjectMeetingsPanel projectId={projectId} />
 
       <section aria-label="project-tasks">
         <h2>Tasks</h2>
