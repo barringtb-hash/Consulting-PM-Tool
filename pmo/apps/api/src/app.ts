@@ -8,6 +8,7 @@ import contactsRouter from './routes/contacts';
 import documentsRouter from './routes/documents';
 import healthRouter from './routes/health';
 import milestonesRouter from './routes/milestone.routes';
+import meetingRouter from './modules/meetings/meeting.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 
@@ -27,6 +28,7 @@ export function createApp(): express.Express {
   app.use('/api/contacts', contactsRouter);
   app.use('/api/documents', documentsRouter);
   app.use('/api', milestonesRouter);
+  app.use('/api', meetingRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api', tasksRouter);
   app.use(healthRouter);
