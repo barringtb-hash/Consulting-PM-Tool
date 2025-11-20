@@ -1,4 +1,4 @@
-import { AiMaturity, CompanySize, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
 import {
@@ -8,8 +8,8 @@ import {
 
 export interface ListClientsParams {
   search?: string;
-  companySize?: CompanySize;
-  aiMaturity?: AiMaturity;
+  companySize?: Prisma.ClientWhereInput['companySize'];
+  aiMaturity?: Prisma.ClientWhereInput['aiMaturity'];
   includeArchived?: boolean;
 }
 
