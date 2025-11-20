@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage';
 import { ClientProjectProvider } from './pages/ClientProjectContext';
 import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
+import AssetsPage from './pages/AssetsPage';
 
 function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
   const { user, status, logout, isLoading } = useAuth();
@@ -38,6 +39,7 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
         <nav>
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/tasks">My tasks</Link>
+          <Link to="/assets">Assets</Link>
           <Link to="/clients">Clients</Link>
           <Link to="/client-intake">Client intake</Link>
           <Link to="/projects/new">New project</Link>
@@ -73,6 +75,7 @@ function App(): JSX.Element {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<MyTasksPage />} />
+            <Route path="/assets" element={<AssetsPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
             <Route path="/client-intake" element={<ClientIntakePage />} />

@@ -42,6 +42,20 @@ import {
   type DocumentFilters,
   type DocumentPayload,
 } from './documents';
+import {
+  archiveAsset,
+  createAsset,
+  fetchAssetById,
+  fetchAssets,
+  fetchProjectAssets,
+  linkAssetToProject,
+  unlinkAssetFromProject,
+  updateAsset,
+  type Asset,
+  type AssetFilters,
+  type AssetPayload,
+  type ProjectAssetLink,
+} from './assets';
 
 export const queryKeys = {
   clients: (filters?: ClientFilters) => ['clients', filters] as const,
@@ -50,6 +64,10 @@ export const queryKeys = {
   projects: (filters?: ProjectFilters) => ['projects', filters] as const,
   project: (id: number) => ['project', id] as const,
   documents: (filters?: DocumentFilters) => ['documents', filters] as const,
+  assets: (filters?: AssetFilters) => ['assets', filters] as const,
+  asset: (id: number) => ['asset', id] as const,
+  projectAssets: (projectId: number, includeArchived?: boolean) =>
+    ['project-assets', projectId, includeArchived] as const,
 };
 
 export function useClients(filters?: ClientFilters) {
@@ -189,6 +207,186 @@ export function useGenerateDocument() {
         }),
         (current) => (current ? [document, ...current] : [document]),
       );
+    },
+  });
+}
+
+export function useAssets(filters?: AssetFilters) {
+  return useQuery({
+    queryKey: queryKeys.assets(filters),
+    queryFn: () => fetchAssets(filters),
+  });
+}
+
+export function useAsset(assetId?: number) {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: assetId ? queryKeys.asset(assetId) : ['asset'],
+    enabled: Boolean(assetId),
+    queryFn: () => fetchAssetById(assetId as number),
+    initialData: () => {
+      if (!assetId) {
+        return undefined;
+      }
+
+      const cachedLists = queryClient.getQueriesData<Asset[]>({
+        queryKey: queryKeys.assets(),
+        type: 'active',
+      });
+
+      for (const [, assets] of cachedLists) {
+        const match = assets?.find((entry) => entry.id === assetId);
+        if (match) {
+          return match;
+        }
+      }
+
+      const projectAssets = queryClient.getQueriesData<ProjectAssetLink[]>({
+        predicate: (query) => query.queryKey[0] === 'project-assets',
+        type: 'active',
+      });
+
+      for (const [, links] of projectAssets) {
+        const match = links?.find((link) => link.asset.id === assetId);
+        if (match) {
+          return match.asset;
+        }
+      }
+
+      return undefined;
+    },
+  });
+}
+
+export function useCreateAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AssetPayload) => createAsset(payload),
+    onSuccess: (asset) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.assets() });
+      queryClient.setQueryData(queryKeys.asset(asset.id), asset);
+    },
+  });
+}
+
+export function useUpdateAsset(assetId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Partial<AssetPayload>) =>
+      updateAsset(assetId, payload),
+    onSuccess: (asset) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.assets() });
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'project-assets',
+      });
+      queryClient.setQueryData(queryKeys.asset(assetId), asset);
+    },
+  });
+}
+
+export function useArchiveAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (assetId: number) => archiveAsset(assetId),
+    onSuccess: (_, assetId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.assets() });
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'project-assets',
+      });
+      queryClient.removeQueries({ queryKey: queryKeys.asset(assetId) });
+    },
+  });
+}
+
+export function useProjectAssets(
+  projectId?: number,
+  includeArchived?: boolean,
+) {
+  return useQuery({
+    queryKey: queryKeys.projectAssets(projectId ?? 0, includeArchived),
+    enabled: Boolean(projectId),
+    queryFn: () => fetchProjectAssets(projectId as number, includeArchived),
+  });
+}
+
+export function useLinkAssetToProject(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ assetId, notes }: { assetId: number; notes?: string }) =>
+      linkAssetToProject(projectId, assetId, { notes }),
+    onSuccess: (link) => {
+      const projectAssetQueries = queryClient.getQueriesData<
+        ProjectAssetLink[]
+      >({
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
+        type: 'active',
+      });
+
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.assets() });
+
+      for (const [queryKey, current] of projectAssetQueries) {
+        queryClient.setQueryData<ProjectAssetLink[] | undefined>(
+          queryKey,
+          () => {
+            if (!current) {
+              return [link];
+            }
+
+            const filtered = current.filter(
+              (existing) => existing.assetId !== link.assetId,
+            );
+            return [link, ...filtered];
+          },
+        );
+      }
+    },
+  });
+}
+
+export function useUnlinkAssetFromProject(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (assetId: number) => unlinkAssetFromProject(projectId, assetId),
+    onSuccess: (_, assetId) => {
+      const projectAssetQueries = queryClient.getQueriesData<
+        ProjectAssetLink[]
+      >({
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
+        type: 'active',
+      });
+
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
+      });
+
+      for (const [queryKey, current] of projectAssetQueries) {
+        queryClient.setQueryData<ProjectAssetLink[] | undefined>(
+          queryKey,
+          (currentLinks) =>
+            (currentLinks ?? current)?.filter(
+              (link) => link.assetId !== assetId,
+            ) ??
+            currentLinks ??
+            current,
+        );
+      }
     },
   });
 }
