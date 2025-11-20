@@ -4,11 +4,20 @@ import {
   useClient,
   useDocuments,
   useGenerateDocument,
+  useAssets,
   useProject,
+  useProjectAssets,
   useUpdateProject,
+  useCreateAsset,
+  useLinkAssetToProject,
+  useUnlinkAssetFromProject,
 } from '../api/queries';
 import { type Project, type ProjectStatus } from '../api/projects';
 import { type DocumentType } from '../api/documents';
+import AssetForm, {
+  assetFormValuesToPayload,
+  type AssetFormValues,
+} from '../components/AssetForm';
 import { type Milestone } from '../api/milestones';
 import {
   type Task,
@@ -89,6 +98,14 @@ interface MilestoneFormValues {
 function ProjectDashboardPage(): JSX.Element {
   const { id } = useParams();
   const projectId = useMemo(() => Number(id), [id]);
+  const [assetSearch, setAssetSearch] = useState('');
+  const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [assetNotes, setAssetNotes] = useState('');
+  const [showAssetForm, setShowAssetForm] = useState(false);
+  const [assetError, setAssetError] = useState<string | null>(null);
+  const [assetFormError, setAssetFormError] = useState<string | null>(null);
+  const [assetToast, setAssetToast] = useState<string | null>(null);
+  const [showArchivedAssets, setShowArchivedAssets] = useState(false);
 
   const projectQuery = useProject(
     Number.isNaN(projectId) ? undefined : projectId,
@@ -109,6 +126,15 @@ function ProjectDashboardPage(): JSX.Element {
   const createMilestoneMutation = useCreateMilestone();
   const updateMilestoneMutation = useUpdateMilestone(projectId);
   const deleteMilestoneMutation = useDeleteMilestone(projectId);
+  const projectAssetsQuery = useProjectAssets(projectId, showArchivedAssets);
+  const linkAssetMutation = useLinkAssetToProject(projectId || 0);
+  const unlinkAssetMutation = useUnlinkAssetFromProject(projectId || 0);
+  const availableAssetsQuery = useAssets(
+    project
+      ? { clientId: project.clientId, search: assetSearch || undefined }
+      : undefined,
+  );
+  const createAssetForProjectMutation = useCreateAsset();
   const { setSelectedClient, setSelectedProject } = useClientProjectContext();
 
   const [updateValues, setUpdateValues] = useState<ProjectUpdateFormValues>({
@@ -160,6 +186,11 @@ function ProjectDashboardPage(): JSX.Element {
   useRedirectOnUnauthorized(createMilestoneMutation.error);
   useRedirectOnUnauthorized(updateMilestoneMutation.error);
   useRedirectOnUnauthorized(deleteMilestoneMutation.error);
+  useRedirectOnUnauthorized(projectAssetsQuery.error);
+  useRedirectOnUnauthorized(linkAssetMutation.error);
+  useRedirectOnUnauthorized(unlinkAssetMutation.error);
+  useRedirectOnUnauthorized(availableAssetsQuery.error);
+  useRedirectOnUnauthorized(createAssetForProjectMutation.error);
 
   useEffect(() => {
     if (project) {
@@ -177,6 +208,15 @@ function ProjectDashboardPage(): JSX.Element {
       setSelectedClient(clientQuery.data);
     }
   }, [clientQuery.data, setSelectedClient]);
+
+  useEffect(() => {
+    if (assetToast) {
+      const timer = setTimeout(() => setAssetToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [assetToast]);
 
   const milestones = useMemo(
     () => milestonesQuery.data ?? [],
@@ -198,6 +238,29 @@ function ProjectDashboardPage(): JSX.Element {
       })),
     [tasks],
   );
+  const projectAssets = useMemo(
+    () => projectAssetsQuery.data ?? [],
+    [projectAssetsQuery.data],
+  );
+  const availableAssets = useMemo(() => {
+    const linkedIds = new Set(projectAssets.map((entry) => entry.assetId));
+    const list = availableAssetsQuery.data ?? [];
+    const filtered = list.filter((asset) => !linkedIds.has(asset.id));
+
+    if (!assetSearch) {
+      return filtered;
+    }
+
+    const term = assetSearch.toLowerCase();
+
+    return filtered.filter((asset) =>
+      [
+        asset.name.toLowerCase(),
+        asset.description?.toLowerCase() ?? '',
+        asset.tags.join(' ').toLowerCase(),
+      ].some((value) => value.includes(term)),
+    );
+  }, [assetSearch, availableAssetsQuery.data, projectAssets]);
 
   const milestoneLabel = (milestoneId?: number | null) => {
     if (!milestoneId) {
@@ -205,6 +268,83 @@ function ProjectDashboardPage(): JSX.Element {
     }
 
     return milestoneLookup.get(milestoneId)?.name ?? 'Unassigned';
+  };
+
+  const handleLinkAsset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAssetError(null);
+
+    if (!selectedAssetId) {
+      setAssetError('Select an asset to link');
+      return;
+    }
+
+    try {
+      await linkAssetMutation.mutateAsync({
+        assetId: Number(selectedAssetId),
+        notes: assetNotes || undefined,
+      });
+      setSelectedAssetId('');
+      setAssetNotes('');
+      setAssetToast('Asset linked to project');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to link asset to project';
+      setAssetError(message);
+    }
+  };
+
+  const handleUnlinkAsset = async (assetId: number) => {
+    setAssetError(null);
+
+    try {
+      await unlinkAssetMutation.mutateAsync(assetId);
+      setAssetToast('Asset removed from project');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to unlink asset';
+      setAssetError(message);
+    }
+  };
+
+  const handleCreateProjectAsset = async (values: AssetFormValues) => {
+    setAssetFormError(null);
+
+    if (!project) {
+      setAssetFormError('Project context missing');
+      return;
+    }
+
+    if (!values.name.trim()) {
+      setAssetFormError('Name is required');
+      return;
+    }
+
+    if (!values.type) {
+      setAssetFormError('Asset type is required');
+      return;
+    }
+
+    const payload = assetFormValuesToPayload({
+      ...values,
+      clientId:
+        values.clientId || (project?.clientId ? String(project.clientId) : ''),
+    });
+
+    try {
+      const asset = await createAssetForProjectMutation.mutateAsync(payload);
+      await linkAssetMutation.mutateAsync({
+        assetId: asset.id,
+        notes: undefined,
+      });
+      setShowAssetForm(false);
+      setAssetToast('Asset created and linked');
+      setAssetNotes('');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to create asset';
+      setAssetFormError(message);
+    }
   };
 
   const handleUpdateProject = async (event: React.FormEvent) => {
@@ -687,6 +827,154 @@ function ProjectDashboardPage(): JSX.Element {
             ))}
           </ul>
         )}
+      </section>
+
+      <section aria-label="project-assets">
+        <h2>Assets</h2>
+        <p>Attach reusable prompts, workflows, and datasets to this project.</p>
+        {assetToast && <div className="toast">{assetToast}</div>}
+        <label>
+          <input
+            type="checkbox"
+            checked={showArchivedAssets}
+            onChange={(event) => setShowArchivedAssets(event.target.checked)}
+          />
+          Show archived links
+        </label>
+        {projectAssetsQuery.isLoading && <p>Loading assets…</p>}
+        {projectAssetsQuery.error && (
+          <p role="alert">Unable to load project assets.</p>
+        )}
+        {!projectAssetsQuery.isLoading && projectAssets.length === 0 && (
+          <p>
+            No assets linked yet. Link an existing asset or create one below.
+          </p>
+        )}
+        {projectAssets.length > 0 && (
+          <ul className="asset-list">
+            {projectAssets.map((entry) => (
+              <li key={entry.id} className="asset-card">
+                <div className="card__header">
+                  <div>
+                    <strong>{entry.asset.name}</strong> ({entry.asset.type}){' '}
+                    {entry.asset.archived && <span>(Archived)</span>}
+                  </div>
+                  <div>{entry.asset.isTemplate ? 'Template' : 'Custom'}</div>
+                </div>
+                <p>{entry.asset.description || 'No description provided.'}</p>
+                <p>
+                  <strong>Tags:</strong> {entry.asset.tags.join(', ') || 'None'}
+                </p>
+                {entry.notes && (
+                  <p>
+                    <strong>Notes:</strong> {entry.notes}
+                  </p>
+                )}
+                <div className="card__actions">
+                  <button
+                    type="button"
+                    onClick={() => handleUnlinkAsset(entry.assetId)}
+                    disabled={unlinkAssetMutation.isPending}
+                  >
+                    Unlink
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {assetError && <p role="alert">{assetError}</p>}
+
+        <div className="stack">
+          <h3>Link existing asset</h3>
+          {availableAssetsQuery.isLoading && <p>Loading asset library…</p>}
+          <form onSubmit={handleLinkAsset}>
+            <div>
+              <label htmlFor="asset-search-input">Search library</label>
+              <input
+                id="asset-search-input"
+                value={assetSearch}
+                onChange={(event) => setAssetSearch(event.target.value)}
+                placeholder="Filter by name, description, or tags"
+              />
+            </div>
+            <div>
+              <label htmlFor="asset-select">Asset</label>
+              <select
+                id="asset-select"
+                value={selectedAssetId}
+                onChange={(event) => setSelectedAssetId(event.target.value)}
+              >
+                <option value="">Select an asset</option>
+                {availableAssets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.name} ({asset.type})
+                    {asset.isTemplate ? ' • Template' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {!availableAssetsQuery.isLoading &&
+              availableAssetsQuery.data &&
+              availableAssets.length === 0 && (
+                <p>No matching assets for this project/client context.</p>
+              )}
+            <div>
+              <label htmlFor="asset-notes">Notes (optional)</label>
+              <input
+                id="asset-notes"
+                value={assetNotes}
+                onChange={(event) => setAssetNotes(event.target.value)}
+                placeholder="Context for this project"
+              />
+            </div>
+            <div>
+              <button type="submit" disabled={linkAssetMutation.isPending}>
+                Link asset
+              </button>
+              <button
+                type="button"
+                onClick={() => availableAssetsQuery.refetch()}
+                disabled={availableAssetsQuery.isFetching}
+              >
+                Refresh library
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="stack">
+          <h3>Create new asset for this project</h3>
+          {showAssetForm ? (
+            <AssetForm
+              initialValues={{
+                name: '',
+                type: '',
+                description: '',
+                clientId: project ? String(project.clientId) : '',
+                tags: '',
+                isTemplate: false,
+              }}
+              onSubmit={handleCreateProjectAsset}
+              submitLabel="Create and link"
+              isSubmitting={
+                createAssetForProjectMutation.isPending ||
+                linkAssetMutation.isPending
+              }
+              onCancel={() => {
+                setShowAssetForm(false);
+                setAssetFormError(null);
+              }}
+              error={assetFormError}
+              clients={clientQuery.data ? [clientQuery.data] : []}
+              disableClientSelection
+            />
+          ) : (
+            <button type="button" onClick={() => setShowAssetForm(true)}>
+              New asset
+            </button>
+          )}
+        </div>
       </section>
 
       <ProjectMeetingsPanel projectId={projectId} />
