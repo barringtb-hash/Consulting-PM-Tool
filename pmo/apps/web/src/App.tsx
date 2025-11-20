@@ -11,6 +11,7 @@ import ProjectDashboardPage from './pages/ProjectDashboardPage';
 import LoginPage from './pages/LoginPage';
 import { ClientProjectProvider } from './pages/ClientProjectContext';
 import MyTasksPage from './pages/MyTasksPage';
+import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 
 function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
   const { user, status, logout, isLoading } = useAuth();
@@ -77,6 +78,7 @@ function App(): JSX.Element {
             <Route path="/client-intake" element={<ClientIntakePage />} />
             <Route path="/projects/new" element={<ProjectSetupPage />} />
             <Route path="/projects/:id" element={<ProjectDashboardPage />} />
+            <Route path="/meetings/:id" element={<MeetingDetailPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
