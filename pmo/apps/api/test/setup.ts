@@ -10,12 +10,19 @@ process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? '1h';
 process.env.BCRYPT_SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS ?? '4';
 
 const workerId = process.env.VITEST_WORKER_ID ?? '1';
-const usePostgres = Boolean(process.env.POSTGRES_TEST_ADMIN_URL);
+const requestedProvider = (
+  process.env.DATABASE_PROVIDER ?? 'postgresql'
+).toLowerCase();
+const usePostgres = requestedProvider !== 'sqlite';
 const databaseProvider = usePostgres ? 'postgresql' : 'sqlite';
 process.env.DATABASE_PROVIDER = databaseProvider;
 
+const adminDatabaseUrl =
+  process.env.POSTGRES_TEST_ADMIN_URL ??
+  'postgresql://postgres:postgres@localhost:5432/postgres';
+process.env.POSTGRES_TEST_ADMIN_URL = adminDatabaseUrl;
+
 if (usePostgres) {
-  const adminDatabaseUrl = process.env.POSTGRES_TEST_ADMIN_URL as string;
   const testDatabaseName =
     process.env.POSTGRES_TEST_DATABASE ?? `pmo_test_${workerId}`;
   const testDatabaseUrl = new URL(adminDatabaseUrl);

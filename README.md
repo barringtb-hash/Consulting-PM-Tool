@@ -22,7 +22,7 @@ The `pmo` directory is an npm workspace with the following structure:
    # Copy the example env into the API workspace
    cp ../Docs/api.env.example apps/api/.env
 
-   # Apply Prisma migrations (uses SQLite file:./dev.db by default)
+   # Apply Prisma migrations (defaults to local Postgres; set DATABASE_PROVIDER=sqlite in apps/api/.env to use file:./dev.db)
    npx prisma migrate dev --name init
    ```
 3. Start the frontend and API in watch mode (separate terminals):
@@ -37,6 +37,8 @@ The `pmo` directory is an npm workspace with the following structure:
    npm run build   # Build artifacts (placeholder at present)
    npm run format  # Prettier formatting across the repo
    ```
+
+> Test databases default to PostgreSQL. The Vitest setup will use `POSTGRES_TEST_ADMIN_URL` if provided, otherwise it falls back to `postgresql://postgres:postgres@localhost:5432/postgres`. Set `DATABASE_PROVIDER=sqlite` in `apps/api/.env` to force the SQLite test harness when Postgres isn't available locally.
 
 ## Shared tooling
 - TypeScript is configured via the base `tsconfig.base.json` applied across workspaces.
