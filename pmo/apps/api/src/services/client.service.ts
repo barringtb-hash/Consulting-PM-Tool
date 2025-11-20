@@ -19,10 +19,8 @@ export const listClients = async ({
   aiMaturity,
   includeArchived = false,
 }: ListClientsParams) => {
-  const provider = (
-    process.env.DATABASE_PROVIDER ?? 'postgresql'
-  ).toLowerCase();
-  const isSqlite = provider === 'sqlite';
+  const provider = (process.env.DATABASE_PROVIDER ?? '').toLowerCase();
+  const isPostgres = provider.startsWith('postgres');
   const where: Prisma.ClientWhereInput = {
     companySize,
     aiMaturity,
@@ -32,7 +30,7 @@ export const listClients = async ({
   type ClientList = Awaited<ReturnType<typeof prisma.client.findMany>>;
   let clientFilter: ((clients: ClientList) => ClientList) | undefined;
 
-  if (search && !isSqlite) {
+  if (search && isPostgres) {
     const searchFilter: Prisma.StringFilter = {
       contains: search,
       mode: 'insensitive',

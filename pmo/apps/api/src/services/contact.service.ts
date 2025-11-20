@@ -17,10 +17,8 @@ export const listContacts = async ({
   clientId,
   includeArchived = false,
 }: ListContactsParams) => {
-  const provider = (
-    process.env.DATABASE_PROVIDER ?? 'postgresql'
-  ).toLowerCase();
-  const isSqlite = provider === 'sqlite';
+  const provider = (process.env.DATABASE_PROVIDER ?? '').toLowerCase();
+  const isPostgres = provider.startsWith('postgres');
   const where: Prisma.ContactWhereInput = {
     clientId,
     archived: includeArchived ? undefined : false,
@@ -29,7 +27,7 @@ export const listContacts = async ({
   type ContactList = Awaited<ReturnType<typeof prisma.contact.findMany>>;
   let contactFilter: ((contacts: ContactList) => ContactList) | undefined;
 
-  if (search && !isSqlite) {
+  if (search && isPostgres) {
     const searchFilter: Prisma.StringFilter = {
       contains: search,
       mode: 'insensitive',

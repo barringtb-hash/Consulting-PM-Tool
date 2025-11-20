@@ -13,8 +13,9 @@ const workerId = process.env.VITEST_WORKER_ID ?? '1';
 const requestedProvider = (
   process.env.DATABASE_PROVIDER ?? 'sqlite'
 ).toLowerCase();
+const isPostgresRequested = requestedProvider.startsWith('postgres');
 const hasPostgresEnv = Boolean(process.env.POSTGRES_TEST_ADMIN_URL);
-const usePostgres = requestedProvider === 'postgresql' && hasPostgresEnv;
+const usePostgres = isPostgresRequested && hasPostgresEnv;
 const databaseProvider = usePostgres ? 'postgresql' : 'sqlite';
 process.env.DATABASE_PROVIDER = databaseProvider;
 
@@ -65,16 +66,12 @@ let prismaSchemaPath = schemaPath;
 if (!usePostgres) {
   let schemaContents = fs.readFileSync(schemaPath, 'utf8');
   schemaContents = schemaContents.replace(
-    /provider\s*=\s*"postgresql"/,
-    'provider = "sqlite"',
+    /(datasource\s+db\s+\{[\s\S]*?provider\s*=\s*")[^"]+("[\s\S]*?\})/,
+    '$1sqlite$2',
   );
   schemaContents = schemaContents
     .replace(/\(sort:\s*Desc\)/g, '')
     .replace(/\(sort:\s*Asc\)/g, '');
-  schemaContents = schemaContents.replace(
-    /attendees\s+Json/g,
-    'attendees     String',
-  );
   fs.writeFileSync(tempSchemaPath, schemaContents);
   prismaSchemaPath = tempSchemaPath;
 } else if (fs.existsSync(tempSchemaPath)) {
