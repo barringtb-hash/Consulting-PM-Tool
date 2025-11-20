@@ -12,6 +12,9 @@ A quick-reference map for future AI contributors working in this repository.
   - Web: `npm run dev --workspace pmo-web`
   - API tests: `npm run test --workspace pmo-api` (Vitest + Prisma SQLite reset per worker)
   - Web tests: `npm run test --workspace pmo-web` (Vitest + Testing Library)
+- Seed data: `npx prisma migrate dev --name init` (or `npx prisma db seed`) hashes and loads sample users. Login credentials:
+  - Admin: `admin@pmo.test` / `AdminDemo123!`
+  - Consultants: `avery.chen@pmo.test`, `priya.desai@pmo.test`, `marco.silva@pmo.test` all use `PmoDemo123!`
 
 ## Backend (apps/api)
 - Entry point: `apps/api/src/index.ts` boots the Express app constructed in `apps/api/src/app.ts`, which attaches auth, clients, contacts, documents, projects, and health routers.
