@@ -34,9 +34,17 @@ The `pmo` directory is an npm workspace with the following structure:
    ```bash
    npm run lint    # Lint TypeScript/JavaScript sources
    npm run test    # Run workspace test suites
-   npm run build   # Build artifacts (placeholder at present)
-   npm run format  # Prettier formatting across the repo
-   ```
+ npm run build   # Build artifacts (placeholder at present)
+  npm run format  # Prettier formatting across the repo
+  ```
+
+## Seeded test accounts
+Running `npx prisma migrate dev --name init` (or `npx prisma db seed`) from `/pmo` loads sample users for quick logins during manual testing:
+
+- **Testing Admin** — `admin@pmo.test` / `AdminDemo123!` (UTC timezone)
+- **Consultant accounts** — `avery.chen@pmo.test`, `priya.desai@pmo.test`, `marco.silva@pmo.test` all use `PmoDemo123!`
+
+Use these credentials when signing into the web app or exercising `/auth/login` directly.
 
 ## Shared tooling
 - TypeScript is configured via the base `tsconfig.base.json` applied across workspaces.

@@ -1,3 +1,5 @@
+import bcrypt from 'bcrypt';
+
 import {
   AiMaturity,
   CompanySize,
@@ -17,24 +19,37 @@ if (!process.env.DATABASE_URL) {
 
 const prisma = new PrismaClient();
 
-const users = [
+type SeedUser = {
+  name: string;
+  email: string;
+  password: string;
+  timezone: string;
+};
+
+const users: SeedUser[] = [
   {
     name: 'Avery Chen',
     email: 'avery.chen@pmo.test',
-    passwordHash: 'demo-password-hash',
+    password: 'PmoDemo123!',
     timezone: 'America/Chicago',
   },
   {
     name: 'Priya Desai',
     email: 'priya.desai@pmo.test',
-    passwordHash: 'demo-password-hash',
+    password: 'PmoDemo123!',
     timezone: 'America/New_York',
   },
   {
     name: 'Marco Silva',
     email: 'marco.silva@pmo.test',
-    passwordHash: 'demo-password-hash',
+    password: 'PmoDemo123!',
     timezone: 'America/Los_Angeles',
+  },
+  {
+    name: 'Testing Admin',
+    email: 'admin@pmo.test',
+    password: 'AdminDemo123!',
+    timezone: 'UTC',
   },
 ];
 
@@ -333,19 +348,27 @@ const aiAssetSeeds = [
 ];
 
 async function main() {
+  const bcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
+
+  if (Number.isNaN(bcryptSaltRounds)) {
+    throw new Error('BCRYPT_SALT_ROUNDS must be a number');
+  }
+
   const userMap = new Map<string, number>();
   for (const userData of users) {
+    const passwordHash = await bcrypt.hash(userData.password, bcryptSaltRounds);
+
     const user = await prisma.user.upsert({
       where: { email: userData.email },
       update: {
         name: userData.name,
-        passwordHash: userData.passwordHash,
+        passwordHash,
         timezone: userData.timezone,
       },
       create: {
         name: userData.name,
         email: userData.email,
-        passwordHash: userData.passwordHash,
+        passwordHash,
         timezone: userData.timezone,
       },
     });
