@@ -281,9 +281,9 @@ Happy-path scenario:
 1. Login.
 2. Create a new client.
 3. Create a project for that client from a template.
-4. Add a meeting with notes.
-5. Select text in notes → create task.
-6. See the task in the project Kanban board.
+4. Add a meeting with notes and decisions.
+5. Highlight text in the meeting notes, use **Create task from selection**, and submit the modal (status/priority optional).
+6. Confirm the task appears in the project Kanban board with a link back to the source meeting.
 7. Link an AI asset to the project.
 8. View the project status snapshot & summary.
 
