@@ -13,6 +13,8 @@ type TaskWithOwner = Prisma.TaskGetPayload<{
 
 type TaskWithoutProject = Omit<TaskWithOwner, 'project'>;
 
+type TaskCreateData = TaskCreateInput & { sourceMeetingId?: number };
+
 const stripProject = ({
   project,
   ...taskData
@@ -88,7 +90,7 @@ export const getTaskForOwner = async (id: number, ownerId: number) => {
   return { task: stripProject(task) } as const;
 };
 
-export const createTask = async (ownerId: number, data: TaskCreateInput) => {
+export const createTask = async (ownerId: number, data: TaskCreateData) => {
   const projectAccess = await validateProjectAccess(data.projectId, ownerId);
 
   if (projectAccess === 'not_found' || projectAccess === 'forbidden') {
@@ -110,6 +112,7 @@ export const createTask = async (ownerId: number, data: TaskCreateInput) => {
     data: {
       ...data,
       ownerId,
+      sourceMeetingId: data.sourceMeetingId ?? undefined,
     },
   });
 
