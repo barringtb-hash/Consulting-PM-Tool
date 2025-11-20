@@ -1,17 +1,15 @@
-import { AssetType } from '@prisma/client';
 import { z } from 'zod';
 
-export const assetCreateSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  type: z.nativeEnum(AssetType),
-  clientId: z.number().int().positive().nullable().optional(),
-  description: z.string().optional(),
-  content: z.unknown().optional(),
-  tags: z.array(z.string()).optional(),
-  isTemplate: z.boolean().optional(),
-});
+import {
+  CreateAIAssetSchema,
+  UpdateAIAssetSchema,
+  type CreateAIAssetInput,
+  type UpdateAIAssetInput,
+} from '../../../../packages/types/assets';
 
-export const assetUpdateSchema = assetCreateSchema.partial();
+export const assetCreateSchema = CreateAIAssetSchema;
+
+export const assetUpdateSchema = UpdateAIAssetSchema;
 
 export const assetCloneSchema = z.object({
   name: z.string().min(1).optional(),
@@ -25,7 +23,7 @@ export const assetProjectLinkSchema = z.object({
   notes: z.string().optional(),
 });
 
-export type AssetCreateInput = z.infer<typeof assetCreateSchema>;
-export type AssetUpdateInput = z.infer<typeof assetUpdateSchema>;
+export type AssetCreateInput = CreateAIAssetInput;
+export type AssetUpdateInput = UpdateAIAssetInput;
 export type AssetCloneInput = z.infer<typeof assetCloneSchema>;
 export type AssetProjectLinkInput = z.infer<typeof assetProjectLinkSchema>;
