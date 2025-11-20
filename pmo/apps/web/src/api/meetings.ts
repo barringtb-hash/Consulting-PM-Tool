@@ -124,10 +124,12 @@ export async function updateMeeting(
 }
 
 export async function deleteMeeting(meetingId: number): Promise<void> {
-  await fetch(
+  const response = await fetch(
     buildApiUrl(`/meetings/${meetingId}`),
     buildOptions({ method: 'DELETE' }),
   );
+
+  await handleResponse(response);
 }
 
 export type CreateTaskFromSelectionPayload = Omit<
