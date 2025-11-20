@@ -7,7 +7,7 @@ export interface AuthUser {
   name?: string;
 }
 
-const AUTH_BASE_PATH = buildApiUrl('/auth', { useApiPrefix: false });
+const AUTH_BASE_PATH = buildApiUrl('/auth');
 
 export async function login(
   email: string,
