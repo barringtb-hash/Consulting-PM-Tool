@@ -9,6 +9,7 @@ CREATE TABLE "AIAsset" (
     "description" TEXT,
     "content" JSONB,
     "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "archived" BOOLEAN NOT NULL DEFAULT false,
     "isTemplate" BOOLEAN NOT NULL DEFAULT false,
     "clientId" INTEGER,
     "createdById" INTEGER,
