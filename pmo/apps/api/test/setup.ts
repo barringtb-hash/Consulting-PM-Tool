@@ -66,8 +66,8 @@ let prismaSchemaPath = schemaPath;
 if (!usePostgres) {
   let schemaContents = fs.readFileSync(schemaPath, 'utf8');
   schemaContents = schemaContents.replace(
-    /(datasource\s+db\s+\{[\s\S]*?provider\s*=\s*")[^"]+("[\s\S]*?\})/,
-    '$1sqlite$2',
+    /provider\s*=\s*"postgresql"/,
+    'provider = "sqlite"',
   );
   schemaContents = schemaContents
     .replace(/\(sort:\s*Desc\)/g, '')
