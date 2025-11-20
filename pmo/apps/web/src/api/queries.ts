@@ -320,23 +320,37 @@ export function useLinkAssetToProject(projectId: number) {
     mutationFn: ({ assetId, notes }: { assetId: number; notes?: string }) =>
       linkAssetToProject(projectId, assetId, { notes }),
     onSuccess: (link) => {
+      const projectAssetQueries = queryClient.getQueriesData<
+        ProjectAssetLink[]
+      >({
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
+        type: 'active',
+      });
+
       queryClient.invalidateQueries({
-        queryKey: queryKeys.projectAssets(projectId),
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.assets() });
-      queryClient.setQueryData<ProjectAssetLink[] | undefined>(
-        queryKeys.projectAssets(projectId),
-        (current) => {
-          if (!current) {
-            return [link];
-          }
 
-          const filtered = current.filter(
-            (existing) => existing.assetId !== link.assetId,
-          );
-          return [link, ...filtered];
-        },
-      );
+      for (const [queryKey, current] of projectAssetQueries) {
+        queryClient.setQueryData<ProjectAssetLink[] | undefined>(
+          queryKey,
+          () => {
+            if (!current) {
+              return [link];
+            }
+
+            const filtered = current.filter(
+              (existing) => existing.assetId !== link.assetId,
+            );
+            return [link, ...filtered];
+          },
+        );
+      }
     },
   });
 }
@@ -347,14 +361,32 @@ export function useUnlinkAssetFromProject(projectId: number) {
   return useMutation({
     mutationFn: (assetId: number) => unlinkAssetFromProject(projectId, assetId),
     onSuccess: (_, assetId) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.projectAssets(projectId),
+      const projectAssetQueries = queryClient.getQueriesData<
+        ProjectAssetLink[]
+      >({
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
+        type: 'active',
       });
-      queryClient.setQueryData<ProjectAssetLink[] | undefined>(
-        queryKeys.projectAssets(projectId),
-        (current) =>
-          current?.filter((link) => link.assetId !== assetId) ?? current,
-      );
+
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'project-assets' &&
+          query.queryKey[1] === projectId,
+      });
+
+      for (const [queryKey, current] of projectAssetQueries) {
+        queryClient.setQueryData<ProjectAssetLink[] | undefined>(
+          queryKey,
+          (currentLinks) =>
+            (currentLinks ?? current)?.filter(
+              (link) => link.assetId !== assetId,
+            ) ??
+            currentLinks ??
+            current,
+        );
+      }
     },
   });
 }
