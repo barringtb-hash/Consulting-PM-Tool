@@ -3,6 +3,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 
 import authRouter from './auth/auth.routes';
+import assetsRouter from './routes/assets';
 import clientsRouter from './routes/clients';
 import contactsRouter from './routes/contacts';
 import documentsRouter from './routes/documents';
@@ -24,6 +25,7 @@ export function createApp(): express.Express {
   app.use(express.json());
   app.use(cookieParser());
   app.use(authRouter);
+  app.use('/api', assetsRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);
   app.use('/api/documents', documentsRouter);
