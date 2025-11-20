@@ -11,18 +11,15 @@ process.env.BCRYPT_SALT_ROUNDS = process.env.BCRYPT_SALT_ROUNDS ?? '4';
 
 const workerId = process.env.VITEST_WORKER_ID ?? '1';
 const requestedProvider = (
-  process.env.DATABASE_PROVIDER ?? 'postgresql'
+  process.env.DATABASE_PROVIDER ?? 'sqlite'
 ).toLowerCase();
-const usePostgres = requestedProvider !== 'sqlite';
+const hasPostgresEnv = Boolean(process.env.POSTGRES_TEST_ADMIN_URL);
+const usePostgres = requestedProvider === 'postgresql' && hasPostgresEnv;
 const databaseProvider = usePostgres ? 'postgresql' : 'sqlite';
 process.env.DATABASE_PROVIDER = databaseProvider;
 
-const adminDatabaseUrl =
-  process.env.POSTGRES_TEST_ADMIN_URL ??
-  'postgresql://postgres:postgres@localhost:5432/postgres';
-process.env.POSTGRES_TEST_ADMIN_URL = adminDatabaseUrl;
-
 if (usePostgres) {
+  const adminDatabaseUrl = process.env.POSTGRES_TEST_ADMIN_URL!;
   const testDatabaseName =
     process.env.POSTGRES_TEST_DATABASE ?? `pmo_test_${workerId}`;
   const testDatabaseUrl = new URL(adminDatabaseUrl);
@@ -83,6 +80,8 @@ if (!usePostgres) {
 } else if (fs.existsSync(tempSchemaPath)) {
   fs.rmSync(tempSchemaPath);
 }
+
+process.env.PRISMA_SCHEMA_PATH = prismaSchemaPath;
 
 let prismaClient: PrismaClient;
 
