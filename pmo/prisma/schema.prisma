@@ -215,6 +215,7 @@ model AIAsset {
   description String?
   content     Json?
   tags        String[]    @default([])
+  archived    Boolean     @default(false)
   isTemplate  Boolean     @default(false)
   clientId    Int?
   createdById Int?
