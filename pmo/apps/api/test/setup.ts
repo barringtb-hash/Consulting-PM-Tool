@@ -62,8 +62,8 @@ beforeAll(async () => {
     stdio: 'inherit',
   });
 
-  const { default: prisma } = await import('../src/prisma/client');
-  prismaClient = prisma;
+  const prismaModule = await import('../src/prisma/client');
+  prismaClient = prismaModule.default ?? prismaModule.prisma;
 });
 
 beforeEach(async () => {
@@ -73,5 +73,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await prismaClient.$disconnect();
+  if (prismaClient) {
+    await prismaClient.$disconnect();
+  }
 });
