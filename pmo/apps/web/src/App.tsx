@@ -13,6 +13,7 @@ import { ClientProjectProvider } from './pages/ClientProjectContext';
 import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 import AssetsPage from './pages/AssetsPage';
+import { AdminCreateUserPage } from './pages/AdminCreateUserPage';
 
 function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
   const { user, status, logout, isLoading } = useAuth();
@@ -43,6 +44,7 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
           <Link to="/clients">Clients</Link>
           <Link to="/client-intake">Client intake</Link>
           <Link to="/projects/new">New project</Link>
+          <Link to="/admin/users/new">Create user</Link>
         </nav>
         <div>
           {status === 'authenticated' && user ? (
@@ -82,6 +84,7 @@ function App(): JSX.Element {
             <Route path="/projects/new" element={<ProjectSetupPage />} />
             <Route path="/projects/:id" element={<ProjectDashboardPage />} />
             <Route path="/meetings/:id" element={<MeetingDetailPage />} />
+            <Route path="/admin/users/new" element={<AdminCreateUserPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
