@@ -7,7 +7,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "npm rebuild bcrypt --build-from-source"
   },
   "dependencies": {
     "@types/express": "^4.17.21",
