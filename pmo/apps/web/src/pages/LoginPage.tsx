@@ -18,7 +18,6 @@ function LoginPage(): JSX.Element {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -29,15 +28,13 @@ function LoginPage(): JSX.Element {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
     setIsSubmitting(true);
 
     try {
       await login(email, password);
-      navigate(redirectPath, { replace: true });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to login';
-      setError(message);
+      // Navigation is handled by useEffect when status changes to 'authenticated'
+    } catch {
+      // Error is already handled and set by AuthContext
     } finally {
       setIsSubmitting(false);
     }
@@ -73,7 +70,7 @@ function LoginPage(): JSX.Element {
               required
             />
           </div>
-          {(error || authError) && <p role="alert">{error || authError}</p>}
+          {authError && <p role="alert">{authError}</p>}
           <button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>

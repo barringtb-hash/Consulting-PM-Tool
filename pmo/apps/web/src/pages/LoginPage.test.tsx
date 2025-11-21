@@ -7,13 +7,17 @@ import LoginPage from './LoginPage';
 
 const mockLogin = vi.fn();
 const mockNavigate = vi.fn();
+let mockAuthError: string | null = null;
+let mockAuthStatus: 'loading' | 'authenticated' | 'unauthenticated' =
+  'unauthenticated';
+let mockUser: { id: string; email: string; name: string } | null = null;
 
 vi.mock('../auth/AuthContext', () => ({
   useAuth: () => ({
     login: mockLogin,
-    status: 'unauthenticated',
-    user: null,
-    error: null,
+    status: mockAuthStatus,
+    user: mockUser,
+    error: mockAuthError,
     isLoading: false,
     logout: vi.fn(),
   }),
@@ -35,17 +39,23 @@ describe('LoginPage', () => {
   beforeEach(() => {
     mockLogin.mockReset();
     mockNavigate.mockReset();
+    mockAuthError = null;
+    mockAuthStatus = 'unauthenticated';
+    mockUser = null;
   });
 
   it('submits credentials and navigates after a successful login', async () => {
-    mockLogin.mockResolvedValue({
-      id: 1,
-      email: 'test@example.com',
-      name: 'Test User',
-      timezone: 'UTC',
+    mockLogin.mockImplementation(async () => {
+      mockAuthStatus = 'authenticated';
+      mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+      };
+      return mockUser;
     });
 
-    render(
+    const { rerender } = render(
       <MemoryRouter initialEntries={[{ pathname: '/login' }]}>
         <LoginPage />
       </MemoryRouter>,
@@ -58,6 +68,16 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123');
+    });
+
+    // Force a rerender to trigger useEffect with updated status
+    rerender(
+      <MemoryRouter initialEntries={[{ pathname: '/login' }]}>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard', {
         replace: true,
       });
@@ -65,9 +85,12 @@ describe('LoginPage', () => {
   });
 
   it('shows an error when login fails', async () => {
-    mockLogin.mockRejectedValue(new Error('Invalid credentials'));
+    mockLogin.mockImplementation(async () => {
+      mockAuthError = 'Invalid credentials';
+      throw new Error('Invalid credentials');
+    });
 
-    render(
+    const { rerender } = render(
       <MemoryRouter initialEntries={[{ pathname: '/login' }]}>
         <LoginPage />
       </MemoryRouter>,
@@ -76,6 +99,13 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText(/password/i), 'wrong');
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    // Force a rerender to pick up the error state change
+    rerender(
+      <MemoryRouter initialEntries={[{ pathname: '/login' }]}>
+        <LoginPage />
+      </MemoryRouter>,
+    );
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Invalid credentials',
