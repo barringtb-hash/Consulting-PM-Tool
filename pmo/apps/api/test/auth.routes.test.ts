@@ -29,7 +29,7 @@ describe('auth routes', () => {
     const { user, password } = await createTestUser();
 
     const response = await request(app)
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({ email: user.email, password });
 
     expect(response.status).toBe(200);
@@ -46,7 +46,7 @@ describe('auth routes', () => {
     await createTestUser();
 
     const response = await request(app)
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({ email: 'test@example.com', password: 'wrong' });
 
     expect(response.status).toBe(401);
@@ -54,7 +54,9 @@ describe('auth routes', () => {
   });
 
   it('returns 400 when email or password is missing', async () => {
-    const response = await request(app).post('/auth/login').send({ email: '' });
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({ email: '' });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Email and password are required' });
@@ -65,12 +67,12 @@ describe('auth routes', () => {
 
     const agent = request.agent(app);
     const loginResponse = await agent
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({ email: user.email, password });
 
     expect(loginResponse.status).toBe(200);
 
-    const meResponse = await agent.get('/auth/me');
+    const meResponse = await agent.get('/api/auth/me');
 
     expect(meResponse.status).toBe(200);
     expect(meResponse.body.user).toMatchObject({
@@ -85,9 +87,9 @@ describe('auth routes', () => {
     const { user, password } = await createTestUser();
     const agent = request.agent(app);
 
-    await agent.post('/auth/login').send({ email: user.email, password });
+    await agent.post('/api/auth/login').send({ email: user.email, password });
 
-    const logoutResponse = await agent.post('/auth/logout');
+    const logoutResponse = await agent.post('/api/auth/logout');
 
     expect(logoutResponse.status).toBe(200);
     expect(
@@ -98,7 +100,7 @@ describe('auth routes', () => {
   });
 
   it('blocks access to /auth/me without authentication', async () => {
-    const response = await request(app).get('/auth/me');
+    const response = await request(app).get('/api/auth/me');
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual({ error: 'Unauthorized' });
