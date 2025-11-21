@@ -8,6 +8,8 @@ export type ProjectStatus =
   | 'COMPLETED'
   | 'CANCELLED';
 
+export type ProjectHealthStatus = 'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK';
+
 export interface Project {
   id: number;
   clientId: number;
@@ -18,6 +20,10 @@ export interface Project {
   endDate?: string | null;
   createdAt: string;
   updatedAt: string;
+  // M7 - Status & Reporting
+  healthStatus?: ProjectHealthStatus;
+  statusSummary?: string | null;
+  statusUpdatedAt?: string | null;
 }
 
 export interface ProjectFilters {
@@ -106,4 +112,106 @@ export async function fetchProjectOrThrow(projectId: number): Promise<Project> {
 
     throw error;
   }
+}
+
+// M7 - Status & Reporting API Functions
+
+export interface ProjectStatusSnapshot {
+  projectId: number;
+  healthStatus: ProjectHealthStatus;
+  statusSummary: string | null;
+  statusUpdatedAt: string | null;
+  taskCounts: Record<string, number>;
+  overdueTasks: Array<{
+    id: number;
+    title: string;
+    dueDate: string;
+    status: string;
+  }>;
+  upcomingTasks: Array<{
+    id: number;
+    title: string;
+    dueDate: string;
+    status: string;
+  }>;
+  upcomingMilestones: Array<{
+    id: number;
+    name: string;
+    dueDate: string;
+    status: string;
+  }>;
+  currentMilestone: {
+    id: number;
+    name: string;
+    dueDate: string;
+    status: string;
+  } | null;
+  recentRisks: Array<{ meetingId: number; snippet: string; date: string }>;
+  recentDecisions: Array<{ meetingId: number; snippet: string; date: string }>;
+}
+
+export interface UpdateHealthStatusPayload {
+  healthStatus: ProjectHealthStatus;
+  statusSummary?: string;
+}
+
+export interface StatusSummaryRequest {
+  from?: string;
+  to?: string;
+  rangeDays?: number;
+}
+
+export interface StatusSummaryResponse {
+  range: { from: string; to: string };
+  completedTasks: Array<{ id: number; title: string; completedAt: string }>;
+  upcomingTasks: Array<{ id: number; title: string; dueDate: string }>;
+  upcomingMilestones: Array<{ id: number; name: string; dueDate: string }>;
+  markdown: string;
+}
+
+export async function fetchProjectStatus(
+  projectId: number,
+  rangeDays = 7,
+): Promise<ProjectStatusSnapshot> {
+  const params = new URLSearchParams({ rangeDays: String(rangeDays) });
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/status?${params.toString()}`,
+    buildOptions({ method: 'GET' }),
+  );
+
+  return handleResponse<ProjectStatusSnapshot>(response);
+}
+
+export async function updateProjectHealthStatus(
+  projectId: number,
+  payload: UpdateHealthStatusPayload,
+): Promise<{
+  healthStatus: ProjectHealthStatus;
+  statusSummary: string | null;
+  statusUpdatedAt: string | null;
+}> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/status`,
+    buildOptions({
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  return handleResponse(response);
+}
+
+export async function generateStatusSummary(
+  projectId: number,
+  request: StatusSummaryRequest = {},
+): Promise<StatusSummaryResponse> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/status-summary`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  );
+
+  return handleResponse<StatusSummaryResponse>(response);
 }

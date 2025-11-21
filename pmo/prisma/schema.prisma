@@ -28,6 +28,12 @@ enum ProjectStatus {
   CANCELLED
 }
 
+enum ProjectHealthStatus {
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+}
+
 enum TaskStatus {
   BACKLOG
   IN_PROGRESS
@@ -123,6 +129,11 @@ model Project {
   endDate   DateTime?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
+
+  // M7 - Status & Reporting
+  healthStatus      ProjectHealthStatus @default(ON_TRACK)
+  statusSummary     String?
+  statusUpdatedAt   DateTime?
 
   client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
   owner     User       @relation(fields: [ownerId], references: [id])
