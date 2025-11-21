@@ -28,40 +28,45 @@ type ProjectListRequest = AuthenticatedRequest<
 >;
 
 router.get('/', async (req: ProjectListRequest, res: Response) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { clientId, status } = req.query;
+    const parsedClientId =
+      typeof clientId === 'string' && clientId.length > 0
+        ? Number(clientId)
+        : undefined;
+
+    if (parsedClientId !== undefined && Number.isNaN(parsedClientId)) {
+      res.status(400).json({ error: 'Invalid client id' });
+      return;
+    }
+
+    const parsedStatus =
+      typeof status === 'string' &&
+      Object.values(ProjectStatus).includes(status as ProjectStatus)
+        ? (status as ProjectStatus)
+        : undefined;
+
+    if (status && !parsedStatus) {
+      res.status(400).json({ error: 'Invalid project status' });
+      return;
+    }
+
+    const projects = await listProjects({
+      ownerId: req.userId,
+      clientId: parsedClientId,
+      status: parsedStatus,
+    });
+
+    res.json({ projects });
+  } catch (error) {
+    console.error('List projects error:', error);
+    res.status(500).json({ error: 'Failed to list projects' });
   }
-
-  const { clientId, status } = req.query;
-  const parsedClientId =
-    typeof clientId === 'string' && clientId.length > 0
-      ? Number(clientId)
-      : undefined;
-
-  if (parsedClientId !== undefined && Number.isNaN(parsedClientId)) {
-    res.status(400).json({ error: 'Invalid client id' });
-    return;
-  }
-
-  const parsedStatus =
-    typeof status === 'string' &&
-    Object.values(ProjectStatus).includes(status as ProjectStatus)
-      ? (status as ProjectStatus)
-      : undefined;
-
-  if (status && !parsedStatus) {
-    res.status(400).json({ error: 'Invalid project status' });
-    return;
-  }
-
-  const projects = await listProjects({
-    ownerId: req.userId,
-    clientId: parsedClientId,
-    status: parsedStatus,
-  });
-
-  res.json({ projects });
 });
 
 type ProjectParams = { id: string };
@@ -69,80 +74,47 @@ type ProjectParams = { id: string };
 router.get(
   '/:id',
   async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
-    if (!req.userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+
+      if (Number.isNaN(projectId)) {
+        res.status(400).json({ error: 'Invalid project id' });
+        return;
+      }
+
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      if (project.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      res.json({ project });
+    } catch (error) {
+      console.error('Get project error:', error);
+      res.status(500).json({ error: 'Failed to get project' });
     }
-
-    const projectId = Number(req.params.id);
-
-    if (Number.isNaN(projectId)) {
-      res.status(400).json({ error: 'Invalid project id' });
-      return;
-    }
-
-    const project = await getProjectById(projectId);
-
-    if (!project) {
-      res.status(404).json({ error: 'Project not found' });
-      return;
-    }
-
-    if (project.ownerId !== req.userId) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
-
-    res.json({ project });
   },
 );
 
 router.post('/', async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-
-  const parsed = projectCreateSchema.safeParse(req.body);
-
-  if (!parsed.success) {
-    res.status(400).json({
-      error: 'Invalid project data',
-      details: parsed.error.format(),
-    });
-    return;
-  }
-
-  const client = await prisma.client.findUnique({
-    where: { id: parsed.data.clientId },
-  });
-
-  if (!client) {
-    res.status(404).json({ error: 'Client not found' });
-    return;
-  }
-
-  const project = await createProject(req.userId, parsed.data);
-
-  res.status(201).json({ project });
-});
-
-router.put(
-  '/:id',
-  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
+  try {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
-    const projectId = Number(req.params.id);
-
-    if (Number.isNaN(projectId)) {
-      res.status(400).json({ error: 'Invalid project id' });
-      return;
-    }
-
-    const parsed = projectUpdateSchema.safeParse(req.body);
+    const parsed = projectCreateSchema.safeParse(req.body);
 
     if (!parsed.success) {
       res.status(400).json({
@@ -152,32 +124,80 @@ router.put(
       return;
     }
 
-    const project = await getProjectById(projectId);
+    const client = await prisma.client.findUnique({
+      where: { id: parsed.data.clientId },
+    });
 
-    if (!project) {
-      res.status(404).json({ error: 'Project not found' });
+    if (!client) {
+      res.status(404).json({ error: 'Client not found' });
       return;
     }
 
-    if (project.ownerId !== req.userId) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
+    const project = await createProject(req.userId, parsed.data);
 
-    if (parsed.data.clientId && parsed.data.clientId !== project.clientId) {
-      const client = await prisma.client.findUnique({
-        where: { id: parsed.data.clientId },
-      });
+    res.status(201).json({ project });
+  } catch (error) {
+    console.error('Create project error:', error);
+    res.status(500).json({ error: 'Failed to create project' });
+  }
+});
 
-      if (!client) {
-        res.status(404).json({ error: 'Client not found' });
+router.put(
+  '/:id',
+  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
         return;
       }
+
+      const projectId = Number(req.params.id);
+
+      if (Number.isNaN(projectId)) {
+        res.status(400).json({ error: 'Invalid project id' });
+        return;
+      }
+
+      const parsed = projectUpdateSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: 'Invalid project data',
+          details: parsed.error.format(),
+        });
+        return;
+      }
+
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      if (project.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      if (parsed.data.clientId && parsed.data.clientId !== project.clientId) {
+        const client = await prisma.client.findUnique({
+          where: { id: parsed.data.clientId },
+        });
+
+        if (!client) {
+          res.status(404).json({ error: 'Client not found' });
+          return;
+        }
+      }
+
+      const updated = await updateProject(projectId, parsed.data);
+
+      res.json({ project: updated });
+    } catch (error) {
+      console.error('Update project error:', error);
+      res.status(500).json({ error: 'Failed to update project' });
     }
-
-    const updated = await updateProject(projectId, parsed.data);
-
-    res.json({ project: updated });
   },
 );
 
