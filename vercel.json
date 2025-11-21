@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "buildCommand": "cd pmo/apps/web && HUSKY=0 npm install && npm run build",
   "outputDirectory": "pmo/apps/web/dist",
   "installCommand": "HUSKY=0 npm install --prefix pmo"
