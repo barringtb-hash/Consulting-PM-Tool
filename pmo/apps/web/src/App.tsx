@@ -13,6 +13,7 @@ import { ClientProjectProvider } from './pages/ClientProjectContext';
 import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 import AssetsPage from './pages/AssetsPage';
+import { featureFlags } from './config/featureFlags';
 
 function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
   const { user, status, logout, isLoading } = useAuth();
@@ -45,18 +46,24 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
           <Link to="/projects/new">New project</Link>
         </nav>
         <div>
-          {status === 'authenticated' && user ? (
-            <div>
-              <span>
-                Signed in as <strong>{user.name || user.email}</strong>
-              </span>
-              <button type="button" onClick={handleLogout} disabled={isLoading}>
-                Logout
-              </button>
-              {error && <p role="alert">{error}</p>}
-            </div>
+          {featureFlags.login ? (
+            status === 'authenticated' && user ? (
+              <div>
+                <span>
+                  Signed in as <strong>{user.name || user.email}</strong>
+                </span>
+                <button type="button" onClick={handleLogout} disabled={isLoading}>
+                  Logout
+                </button>
+                {error && <p role="alert">{error}</p>}
+              </div>
+            ) : (
+              <Link to="/login">Login</Link>
+            )
           ) : (
-            <Link to="/login">Login</Link>
+            <span style={{ fontSize: '0.9em', color: '#666' }}>
+              (Login disabled)
+            </span>
           )}
         </div>
       </header>
@@ -70,7 +77,7 @@ function App(): JSX.Element {
     <ClientProjectProvider>
       <AppLayout>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          {featureFlags.login && <Route path="/login" element={<LoginPage />} />}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
