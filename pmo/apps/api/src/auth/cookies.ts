@@ -1,10 +1,7 @@
 // pmo/apps/api/src/auth/cookies.ts
-import { env } from '../config/env';
 import type { CookieOptions } from 'express';
 
 export function buildAuthCookieOptions(): CookieOptions {
-  const isProd = env.nodeEnv === 'production';
-
   return {
     httpOnly: true,
     // Use 'none' for cross-origin requests (production Vercel + Render, or dev without proxy).
