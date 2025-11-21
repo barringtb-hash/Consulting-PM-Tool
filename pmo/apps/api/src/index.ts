@@ -18,11 +18,14 @@ const server = app.listen(Number(port), () => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason: Error) => {
+process.on('unhandledRejection', (reason: unknown) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+
   console.error('UNHANDLED REJECTION! Shutting down...', {
-    message: reason.message,
-    stack: reason.stack,
+    message: error.message,
+    stack: error.stack,
   });
+
   server.close(() => {
     process.exit(1);
   });
