@@ -12,6 +12,7 @@ import {
   login as loginRequest,
   logout as logoutRequest,
 } from '../api/auth';
+import { isApiError } from '../api/http';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -91,7 +92,22 @@ export function AuthProvider({
       setStatus('authenticated');
       return authenticatedUser;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
+      let message = 'Login failed';
+
+      if (isApiError(err)) {
+        if (err.status === 400 || err.status === 401) {
+          message = 'Invalid email or password';
+        } else if (err.status === 403) {
+          message = 'Access forbidden. Please contact an administrator.';
+        } else if (err.status >= 500) {
+          message = 'Server error. Please try again later.';
+        } else {
+          message = err.message || 'Login failed';
+        }
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+
       setError(message);
       setStatus('unauthenticated');
       throw err instanceof Error ? err : new Error(message);

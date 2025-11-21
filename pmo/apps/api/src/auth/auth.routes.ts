@@ -1,18 +1,14 @@
 import { Router } from 'express';
 
 import prisma from '../prisma/client';
-import { env } from '../config/env';
 import { comparePassword } from './password';
 import { signToken } from './jwt';
 import { AuthenticatedRequest, requireAuth } from './auth.middleware';
+import { buildAuthCookieOptions } from './cookies';
 
 const router = Router();
 
-const cookieOptions = {
-  httpOnly: true,
-  sameSite: 'none' as const,
-  secure: env.nodeEnv === 'production',
-};
+const cookieOptions = buildAuthCookieOptions();
 
 router.post('/auth/login', async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };

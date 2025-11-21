@@ -2,3 +2,7 @@ node_modules/
 pmo/node_modules/
 pmo/prisma/dev.db
 pmo/prisma/*.db-journal
+
+# Environment files (contain secrets and local config)
+.env
+pmo/apps/*/.env
