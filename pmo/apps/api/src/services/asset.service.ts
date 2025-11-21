@@ -12,6 +12,20 @@ type AssetWithOwner = Prisma.AIAssetGetPayload<{
   include: { client: true };
 }>;
 
+const normalizeJsonInput = (
+  value: unknown,
+): Prisma.InputJsonValue | Prisma.JsonNull | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return Prisma.JsonNull;
+  }
+
+  return value as Prisma.InputJsonValue;
+};
+
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
   const project = await prisma.project.findUnique({ where: { id: projectId } });
 
@@ -67,16 +81,20 @@ export const getAssetById = async (id: number, includeArchived = false) =>
     where: { id, archived: includeArchived ? undefined : false },
   });
 
-export const createAsset = async (ownerId: number, data: AssetCreateInput) =>
-  prisma.aIAsset.create({
+export const createAsset = async (ownerId: number, data: AssetCreateInput) => {
+  const { content, ...rest } = data;
+
+  return prisma.aIAsset.create({
     data: {
-      ...data,
+      ...rest,
+      content: normalizeJsonInput(content),
       createdById: ownerId,
       isTemplate: data.isTemplate ?? false,
       tags: data.tags ?? [],
       clientId: data.clientId ?? null,
     },
   });
+};
 
 export const updateAsset = async (id: number, data: AssetUpdateInput) => {
   const existing = await prisma.aIAsset.findUnique({ where: { id } });
@@ -85,10 +103,13 @@ export const updateAsset = async (id: number, data: AssetUpdateInput) => {
     return null;
   }
 
+  const { content, ...rest } = data;
+
   return prisma.aIAsset.update({
     where: { id },
     data: {
-      ...data,
+      ...rest,
+      content: normalizeJsonInput(content),
       clientId: data.clientId ?? undefined,
       tags: data.tags ?? undefined,
     },
@@ -126,7 +147,7 @@ export const cloneAsset = async (
       name,
       type: source.type,
       description: overrides.description ?? source.description,
-      content: source.content,
+      content: normalizeJsonInput(source.content),
       tags: overrides.tags ?? source.tags,
       isTemplate: overrides.isTemplate ?? false,
       clientId: overrides.clientId ?? source.clientId ?? null,

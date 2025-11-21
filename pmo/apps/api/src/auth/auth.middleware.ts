@@ -1,10 +1,17 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, ParamsDictionary, Request, Response } from 'express';
+import { ParsedQs } from 'qs';
 
 import { verifyToken } from './jwt';
 
-export interface AuthenticatedRequest extends Request {
+export type AuthenticatedRequest<
+  Params = ParamsDictionary,
+  ResBody = unknown,
+  ReqBody = unknown,
+  ReqQuery = ParsedQs,
+  Locals extends Record<string, unknown> = Record<string, unknown>,
+> = Request<Params, ResBody, ReqBody, ReqQuery, Locals> & {
   userId?: number;
-}
+};
 
 export const requireAuth = (
   req: AuthenticatedRequest,

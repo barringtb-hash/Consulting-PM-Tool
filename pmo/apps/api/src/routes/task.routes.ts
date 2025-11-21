@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
 import {
@@ -21,7 +21,7 @@ router.use(requireAuth);
 
 router.get(
   '/projects/:projectId/tasks',
-  async (req: AuthenticatedRequest, res) => {
+  async (req: AuthenticatedRequest<{ projectId: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -50,35 +50,38 @@ router.get(
   },
 );
 
-router.get('/tasks/:id', async (req: AuthenticatedRequest, res) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.get(
+  '/tasks/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  const taskId = Number(req.params.id);
+    const taskId = Number(req.params.id);
 
-  if (Number.isNaN(taskId)) {
-    res.status(400).json({ error: 'Invalid task id' });
-    return;
-  }
+    if (Number.isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task id' });
+      return;
+    }
 
-  const result = await getTaskForOwner(taskId, req.userId);
+    const result = await getTaskForOwner(taskId, req.userId);
 
-  if (result.error === 'not_found') {
-    res.status(404).json({ error: 'Task not found' });
-    return;
-  }
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
 
-  if (result.error === 'forbidden') {
-    res.status(403).json({ error: 'Forbidden' });
-    return;
-  }
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-  res.json({ task: result.task });
-});
+    res.json({ task: result.task });
+  },
+);
 
-router.post('/tasks', async (req: AuthenticatedRequest, res) => {
+router.post('/tasks', async (req: AuthenticatedRequest, res: Response) => {
   if (!req.userId) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
@@ -113,116 +116,129 @@ router.post('/tasks', async (req: AuthenticatedRequest, res) => {
   res.status(201).json({ task: result.task });
 });
 
-router.patch('/tasks/:id', async (req: AuthenticatedRequest, res) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.patch(
+  '/tasks/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  const taskId = Number(req.params.id);
+    const taskId = Number(req.params.id);
 
-  if (Number.isNaN(taskId)) {
-    res.status(400).json({ error: 'Invalid task id' });
-    return;
-  }
+    if (Number.isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task id' });
+      return;
+    }
 
-  const parsed = taskUpdateSchema.safeParse(req.body);
+    const parsed = taskUpdateSchema.safeParse(req.body);
 
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: 'Invalid task data', details: parsed.error.format() });
-    return;
-  }
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid task data', details: parsed.error.format() });
+      return;
+    }
 
-  const result = await updateTask(taskId, req.userId, parsed.data);
+    const result = await updateTask(taskId, req.userId, parsed.data);
 
-  if (result.error === 'not_found') {
-    res.status(404).json({ error: 'Task not found' });
-    return;
-  }
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
 
-  if (result.error === 'forbidden') {
-    res.status(403).json({ error: 'Forbidden' });
-    return;
-  }
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-  if (result.error === 'invalid_milestone') {
-    res.status(400).json({ error: 'Milestone does not belong to the project' });
-    return;
-  }
+    if (result.error === 'invalid_milestone') {
+      res
+        .status(400)
+        .json({ error: 'Milestone does not belong to the project' });
+      return;
+    }
 
-  res.json({ task: result.task });
-});
+    res.json({ task: result.task });
+  },
+);
 
-router.patch('/tasks/:id/move', async (req: AuthenticatedRequest, res) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.patch(
+  '/tasks/:id/move',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  const taskId = Number(req.params.id);
+    const taskId = Number(req.params.id);
 
-  if (Number.isNaN(taskId)) {
-    res.status(400).json({ error: 'Invalid task id' });
-    return;
-  }
+    if (Number.isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task id' });
+      return;
+    }
 
-  const parsed = taskMoveSchema.safeParse(req.body);
+    const parsed = taskMoveSchema.safeParse(req.body);
 
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: 'Invalid task data', details: parsed.error.format() });
-    return;
-  }
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid task data', details: parsed.error.format() });
+      return;
+    }
 
-  const result = await moveTask(taskId, req.userId, parsed.data);
+    const result = await moveTask(taskId, req.userId, parsed.data);
 
-  if (result.error === 'not_found') {
-    res.status(404).json({ error: 'Task not found' });
-    return;
-  }
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
 
-  if (result.error === 'forbidden') {
-    res.status(403).json({ error: 'Forbidden' });
-    return;
-  }
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-  if (result.error === 'invalid_milestone') {
-    res.status(400).json({ error: 'Milestone does not belong to the project' });
-    return;
-  }
+    if (result.error === 'invalid_milestone') {
+      res
+        .status(400)
+        .json({ error: 'Milestone does not belong to the project' });
+      return;
+    }
 
-  res.json({ task: result.task });
-});
+    res.json({ task: result.task });
+  },
+);
 
-router.delete('/tasks/:id', async (req: AuthenticatedRequest, res) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.delete(
+  '/tasks/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  const taskId = Number(req.params.id);
+    const taskId = Number(req.params.id);
 
-  if (Number.isNaN(taskId)) {
-    res.status(400).json({ error: 'Invalid task id' });
-    return;
-  }
+    if (Number.isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task id' });
+      return;
+    }
 
-  const result = await deleteTask(taskId, req.userId);
+    const result = await deleteTask(taskId, req.userId);
 
-  if (result.error === 'not_found') {
-    res.status(404).json({ error: 'Task not found' });
-    return;
-  }
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
 
-  if (result.error === 'forbidden') {
-    res.status(403).json({ error: 'Forbidden' });
-    return;
-  }
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-  res.status(204).send();
-});
+    res.status(204).send();
+  },
+);
 
 export default router;
