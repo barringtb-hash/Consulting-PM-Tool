@@ -8,6 +8,7 @@ import {
   PrismaClient,
   Priority,
   ProjectStatus,
+  ProjectHealthStatus,
   TaskStatus,
 } from '@prisma/client';
 
@@ -113,6 +114,11 @@ const projectSeeds = [
     status: ProjectStatus.IN_PROGRESS,
     startDate: new Date('2024-01-15'),
     endDate: new Date('2024-08-30'),
+    // M7 - Status & Reporting
+    healthStatus: ProjectHealthStatus.AT_RISK,
+    statusSummary:
+      'Data pipeline delays due to pending historian credentials. Working to unblock access this week.',
+    statusUpdatedAt: new Date('2024-02-10'),
     meetings: [
       {
         title: 'Operations Pulse Check',
@@ -213,6 +219,11 @@ const projectSeeds = [
     status: ProjectStatus.PLANNING,
     startDate: new Date('2024-02-01'),
     endDate: new Date('2024-06-15'),
+    // M7 - Status & Reporting
+    healthStatus: ProjectHealthStatus.ON_TRACK,
+    statusSummary:
+      'Care team interviews completed. Moving forward with journey mapping and prototype planning.',
+    statusUpdatedAt: new Date('2024-02-08'),
     meetings: [
       {
         title: 'Care Team Interviews Readout',
@@ -461,6 +472,9 @@ async function main() {
             status: projectSeed.status,
             startDate: projectSeed.startDate,
             endDate: projectSeed.endDate,
+            healthStatus: projectSeed.healthStatus,
+            statusSummary: projectSeed.statusSummary,
+            statusUpdatedAt: projectSeed.statusUpdatedAt,
           },
         })
       : await prisma.project.create({
@@ -471,6 +485,9 @@ async function main() {
             status: projectSeed.status,
             startDate: projectSeed.startDate,
             endDate: projectSeed.endDate,
+            healthStatus: projectSeed.healthStatus,
+            statusSummary: projectSeed.statusSummary,
+            statusUpdatedAt: projectSeed.statusUpdatedAt,
           },
         });
 

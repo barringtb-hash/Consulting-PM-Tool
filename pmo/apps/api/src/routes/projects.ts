@@ -15,6 +15,15 @@ import {
   projectCreateSchema,
   projectUpdateSchema,
 } from '../validation/project.schema';
+import {
+  getProjectStatus,
+  buildStatusSummary,
+} from '../services/projectStatus.service';
+import {
+  projectStatusQuerySchema,
+  updateProjectHealthStatusSchema,
+  statusSummaryRequestSchema,
+} from '../validation/projectStatus.schema';
 
 const router = Router();
 
@@ -197,6 +206,192 @@ router.put(
     } catch (error) {
       console.error('Update project error:', error);
       res.status(500).json({ error: 'Failed to update project' });
+    }
+  },
+);
+
+// M7 - Status & Reporting Routes
+
+/**
+ * GET /projects/:id/status
+ * Get project status snapshot with metrics and aggregated data
+ */
+router.get(
+  '/:id/status',
+  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+
+      if (Number.isNaN(projectId)) {
+        res.status(400).json({ error: 'Invalid project id' });
+        return;
+      }
+
+      // Validate query params
+      const queryParsed = projectStatusQuerySchema.safeParse(req.query);
+
+      if (!queryParsed.success) {
+        res.status(400).json({
+          error: 'Invalid query parameters',
+          details: queryParsed.error.format(),
+        });
+        return;
+      }
+
+      // Check project exists and user has access
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      if (project.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      // Get status snapshot
+      const snapshot = await getProjectStatus(
+        projectId,
+        queryParsed.data.rangeDays,
+      );
+
+      res.json(snapshot);
+    } catch (error) {
+      console.error('Get project status error:', error);
+      res.status(500).json({ error: 'Failed to get project status' });
+    }
+  },
+);
+
+/**
+ * PATCH /projects/:id/status
+ * Update project health status and summary
+ */
+router.patch(
+  '/:id/status',
+  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+
+      if (Number.isNaN(projectId)) {
+        res.status(400).json({ error: 'Invalid project id' });
+        return;
+      }
+
+      // Validate body
+      const bodyParsed = updateProjectHealthStatusSchema.safeParse(req.body);
+
+      if (!bodyParsed.success) {
+        res.status(400).json({
+          error: 'Invalid status data',
+          details: bodyParsed.error.format(),
+        });
+        return;
+      }
+
+      // Check project exists and user has access
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      if (project.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      // Update project status
+      const updated = await prisma.project.update({
+        where: { id: projectId },
+        data: {
+          healthStatus: bodyParsed.data.healthStatus,
+          statusSummary: bodyParsed.data.statusSummary,
+          statusUpdatedAt: new Date(),
+        },
+      });
+
+      res.json({
+        healthStatus: updated.healthStatus,
+        statusSummary: updated.statusSummary,
+        statusUpdatedAt: updated.statusUpdatedAt,
+      });
+    } catch (error) {
+      console.error('Update project status error:', error);
+      res.status(500).json({ error: 'Failed to update project status' });
+    }
+  },
+);
+
+/**
+ * POST /projects/:id/status-summary
+ * Generate a time-boxed status summary for reporting
+ */
+router.post(
+  '/:id/status-summary',
+  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+
+      if (Number.isNaN(projectId)) {
+        res.status(400).json({ error: 'Invalid project id' });
+        return;
+      }
+
+      // Validate body
+      const bodyParsed = statusSummaryRequestSchema.safeParse(req.body);
+
+      if (!bodyParsed.success) {
+        res.status(400).json({
+          error: 'Invalid summary request',
+          details: bodyParsed.error.format(),
+        });
+        return;
+      }
+
+      // Check project exists and user has access
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      if (project.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      // Build status summary
+      const summary = await buildStatusSummary({
+        projectId,
+        from: bodyParsed.data.from,
+        to: bodyParsed.data.to,
+        rangeDays: bodyParsed.data.rangeDays,
+      });
+
+      res.json(summary);
+    } catch (error) {
+      console.error('Generate status summary error:', error);
+      res.status(500).json({ error: 'Failed to generate status summary' });
     }
   },
 );

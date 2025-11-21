@@ -30,10 +30,15 @@ import {
   createProject,
   fetchProjectById,
   fetchProjects,
+  fetchProjectStatus,
+  generateStatusSummary,
   updateProject,
+  updateProjectHealthStatus,
   type Project,
   type ProjectFilters,
   type ProjectPayload,
+  type StatusSummaryRequest,
+  type UpdateHealthStatusPayload,
 } from './projects';
 import {
   fetchDocuments,
@@ -63,6 +68,8 @@ export const queryKeys = {
   contacts: (clientId?: number) => ['contacts', clientId] as const,
   projects: (filters?: ProjectFilters) => ['projects', filters] as const,
   project: (id: number) => ['project', id] as const,
+  projectStatus: (id: number, rangeDays?: number) =>
+    ['project-status', id, rangeDays] as const,
   documents: (filters?: DocumentFilters) => ['documents', filters] as const,
   assets: (filters?: AssetFilters) => ['assets', filters] as const,
   asset: (id: number) => ['asset', id] as const,
@@ -164,6 +171,42 @@ export function useUpdateProject(projectId: number) {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects() });
       queryClient.setQueryData(queryKeys.project(projectId), project);
     },
+  });
+}
+
+// M7 - Status & Reporting Hooks
+
+export function useProjectStatus(projectId?: number, rangeDays = 7) {
+  return useQuery({
+    queryKey: projectId
+      ? queryKeys.projectStatus(projectId, rangeDays)
+      : ['project-status'],
+    enabled: Boolean(projectId),
+    queryFn: () => fetchProjectStatus(projectId as number, rangeDays),
+  });
+}
+
+export function useUpdateProjectHealthStatus(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateHealthStatusPayload) =>
+      updateProjectHealthStatus(projectId, payload),
+    onSuccess: () => {
+      // Invalidate both the project and project status queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.project(projectId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.projectStatus(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects() });
+    },
+  });
+}
+
+export function useGenerateStatusSummary(projectId: number) {
+  return useMutation({
+    mutationFn: (request: StatusSummaryRequest) =>
+      generateStatusSummary(projectId, request),
   });
 }
 
