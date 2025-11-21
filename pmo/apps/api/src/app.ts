@@ -24,7 +24,7 @@ export function createApp(): express.Express {
   );
   app.use(express.json());
   app.use(cookieParser());
-  app.use(authRouter);
+  app.use('/api', authRouter);
   app.use('/api', assetsRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);

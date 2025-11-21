@@ -23,7 +23,7 @@ const createAuthenticatedAgent = async () => {
   });
 
   const agent = request.agent(app);
-  await agent.post('/auth/login').send({ email: user.email, password });
+  await agent.post('/api/auth/login').send({ email: user.email, password });
 
   return { agent, user };
 };
