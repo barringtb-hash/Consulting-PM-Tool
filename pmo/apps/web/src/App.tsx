@@ -52,7 +52,11 @@ function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
                 <span>
                   Signed in as <strong>{user.name || user.email}</strong>
                 </span>
-                <button type="button" onClick={handleLogout} disabled={isLoading}>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoading}
+                >
                   Logout
                 </button>
                 {error && <p role="alert">{error}</p>}
@@ -77,7 +81,9 @@ function App(): JSX.Element {
     <ClientProjectProvider>
       <AppLayout>
         <Routes>
-          {featureFlags.login && <Route path="/login" element={<LoginPage />} />}
+          {featureFlags.login && (
+            <Route path="/login" element={<LoginPage />} />
+          )}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
