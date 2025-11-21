@@ -1,5 +1,6 @@
 import { ProjectStatus } from '@prisma/client';
-import { ParamsDictionary, Router, Response } from 'express';
+import { Router, Response } from 'express';
+import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';

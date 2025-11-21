@@ -1,4 +1,5 @@
-import { NextFunction, ParamsDictionary, Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
 
 import { verifyToken } from './jwt';
