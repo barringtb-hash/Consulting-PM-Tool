@@ -12,6 +12,7 @@ import milestonesRouter from './routes/milestone.routes';
 import meetingRouter from './modules/meetings/meeting.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
+import usersRouter from './routes/users';
 
 export function createApp(): express.Express {
   const app = express();
@@ -33,6 +34,7 @@ export function createApp(): express.Express {
   app.use('/api', meetingRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api', tasksRouter);
+  app.use('/api/users', usersRouter);
   app.use(healthRouter);
 
   return app;
