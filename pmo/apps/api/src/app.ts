@@ -13,6 +13,7 @@ import meetingRouter from './modules/meetings/meeting.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
+import { errorHandler } from './middleware/error.middleware';
 
 export function createApp(): express.Express {
   const app = express();
@@ -36,6 +37,9 @@ export function createApp(): express.Express {
   app.use('/api', tasksRouter);
   app.use('/api/users', usersRouter);
   app.use(healthRouter);
+
+  // Error handling middleware must be last
+  app.use(errorHandler);
 
   return app;
 }
