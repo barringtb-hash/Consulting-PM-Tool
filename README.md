@@ -61,6 +61,10 @@ Use these credentials when signing into the web app or exercising `/auth/login` 
 - Run tests and builds from `/pmo` when available: `npm run test` and `npm run build`.
 - Follow contribution etiquette and additional workspace guidance in `pmo/AGENT.md`.
 
+## Frontend environment
+- Copy `/pmo/apps/web/.env.example` to `/pmo/apps/web/.env` and set `VITE_API_BASE_URL`.
+- In production (Vercel), `VITE_API_BASE_URL` **must** point to the public Render API base, e.g. `https://your-api.onrender.com/api`.
+
 ## Deployment overview
 - Runtime code lives under the `pmo/` workspace; configure Vercel or other hosts to treat `pmo` as the project root when building the web app.
 - For step-by-step Render + Vercel guidance (including required environment variables), see [Docs/deploy-notes-render-vercel.md](Docs/deploy-notes-render-vercel.md).

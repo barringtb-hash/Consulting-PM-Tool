@@ -65,9 +65,9 @@ This guide assumes:
    - The repo root includes a `vercel.json` mirroring these commands for Vercel CLI users.
 
 4. Environment variables in Vercel (Project → Settings → Environment Variables):
-   - `VITE_API_BASE_URL` – the base URL of your Render API, e.g. `https://your-api.onrender.com/api`.
+   - `VITE_API_BASE_URL` – **required**. Point this to the Render API base (e.g., `https://your-api.onrender.com/api`) so production traffic reaches the backend instead of falling back to relative paths.
 
-5. The frontend reads `import.meta.env.VITE_API_BASE_URL` via a small helper and falls back to relative `/api/...` calls when the variable is empty (useful for local proxies).
+5. The frontend reads `import.meta.env.VITE_API_BASE_URL` via a small helper and falls back to relative `/api/...` calls when the variable is empty (useful for local proxies). In production, the app logs an error if this value is missing to help catch misconfigured deployments.
 
 ---
 

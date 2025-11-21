@@ -1,6 +1,13 @@
 const rawBase = import.meta.env.VITE_API_BASE_URL ?? '';
 const API_BASE = rawBase.replace(/\/$/, '');
 
+if (!API_BASE && import.meta.env.PROD) {
+  // Avoid silent 404s when the production deployment forgets to set the base URL.
+  console.error(
+    '[API config] VITE_API_BASE_URL is missing in production. Set it to your Render API base (e.g., https://<render-app>.onrender.com/api) so requests reach the backend.',
+  );
+}
+
 function ensureLeadingSlash(path: string): string {
   return path.startsWith('/') ? path : `/${path}`;
 }
