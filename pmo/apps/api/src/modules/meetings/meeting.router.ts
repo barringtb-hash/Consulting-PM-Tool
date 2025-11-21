@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import {
   CreateMeetingSchema,
   CreateTaskFromSelectionSchema,
   UpdateMeetingSchema,
-} from '../../../../../packages/types/meeting';
+} from '../../types/meeting';
 import {
   createMeeting,
   createTaskFromSelection,
@@ -21,7 +21,7 @@ router.use(requireAuth);
 
 router.get(
   '/projects/:projectId/meetings',
-  async (req: AuthenticatedRequest, res) => {
+  async (req: AuthenticatedRequest<{ projectId: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -52,7 +52,7 @@ router.get(
 
 router.post(
   '/projects/:projectId/meetings',
-  async (req: AuthenticatedRequest, res) => {
+  async (req: AuthenticatedRequest<{ projectId: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -91,102 +91,112 @@ router.post(
   },
 );
 
-router.get('/meetings/:id', async (req: AuthenticatedRequest, res) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.get(
+  '/meetings/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  const meetingId = Number(req.params.id);
+    const meetingId = Number(req.params.id);
 
-  if (Number.isNaN(meetingId)) {
-    res.status(400).json({ error: 'Invalid meeting id' });
-    return;
-  }
+    if (Number.isNaN(meetingId)) {
+      res.status(400).json({ error: 'Invalid meeting id' });
+      return;
+    }
 
-  const result = await getMeetingById(meetingId, req.userId);
+    const result = await getMeetingById(meetingId, req.userId);
 
-  if (result.error === 'not_found') {
-    res.status(404).json({ error: 'Meeting not found' });
-    return;
-  }
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Meeting not found' });
+      return;
+    }
 
-  if (result.error === 'forbidden') {
-    res.status(403).json({ error: 'Forbidden' });
-    return;
-  }
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-  res.json({ meeting: result.meeting });
-});
+    res.json({ meeting: result.meeting });
+  },
+);
 
-router.put('/meetings/:id', async (req: AuthenticatedRequest, res) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.put(
+  '/meetings/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  const meetingId = Number(req.params.id);
+    const meetingId = Number(req.params.id);
 
-  if (Number.isNaN(meetingId)) {
-    res.status(400).json({ error: 'Invalid meeting id' });
-    return;
-  }
+    if (Number.isNaN(meetingId)) {
+      res.status(400).json({ error: 'Invalid meeting id' });
+      return;
+    }
 
-  const parsed = UpdateMeetingSchema.safeParse(req.body);
+    const parsed = UpdateMeetingSchema.safeParse(req.body);
 
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: 'Invalid meeting data', details: parsed.error.format() });
-    return;
-  }
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid meeting data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
 
-  const result = await updateMeeting(meetingId, req.userId, parsed.data);
+    const result = await updateMeeting(meetingId, req.userId, parsed.data);
 
-  if (result.error === 'not_found') {
-    res.status(404).json({ error: 'Meeting not found' });
-    return;
-  }
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Meeting not found' });
+      return;
+    }
 
-  if (result.error === 'forbidden') {
-    res.status(403).json({ error: 'Forbidden' });
-    return;
-  }
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-  res.json({ meeting: result.meeting });
-});
+    res.json({ meeting: result.meeting });
+  },
+);
 
-router.delete('/meetings/:id', async (req: AuthenticatedRequest, res) => {
-  if (!req.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.delete(
+  '/meetings/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  const meetingId = Number(req.params.id);
+    const meetingId = Number(req.params.id);
 
-  if (Number.isNaN(meetingId)) {
-    res.status(400).json({ error: 'Invalid meeting id' });
-    return;
-  }
+    if (Number.isNaN(meetingId)) {
+      res.status(400).json({ error: 'Invalid meeting id' });
+      return;
+    }
 
-  const result = await deleteMeeting(meetingId, req.userId);
+    const result = await deleteMeeting(meetingId, req.userId);
 
-  if (result.error === 'not_found') {
-    res.status(404).json({ error: 'Meeting not found' });
-    return;
-  }
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Meeting not found' });
+      return;
+    }
 
-  if (result.error === 'forbidden') {
-    res.status(403).json({ error: 'Forbidden' });
-    return;
-  }
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-  res.status(204).send();
-});
+    res.status(204).send();
+  },
+);
 
 router.post(
   '/meetings/:id/tasks/from-selection',
-  async (req: AuthenticatedRequest, res) => {
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -205,9 +215,10 @@ router.post(
     });
 
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: 'Invalid task data', details: parsed.error.format() });
+      res.status(400).json({
+        error: 'Invalid task data',
+        details: parsed.error.format(),
+      });
       return;
     }
 

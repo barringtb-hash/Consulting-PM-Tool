@@ -6,7 +6,7 @@ import {
   CreateMeetingInput,
   CreateTaskFromSelectionInput,
   UpdateMeetingInput,
-} from '../../../../../packages/types/meeting';
+} from '../../types/meeting';
 
 type MeetingWithOwner = Prisma.MeetingGetPayload<{
   include: { project: { select: { ownerId: true } } };

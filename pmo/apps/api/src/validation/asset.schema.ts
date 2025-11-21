@@ -5,7 +5,7 @@ import {
   UpdateAIAssetSchema,
   type CreateAIAssetInput,
   type UpdateAIAssetInput,
-} from '../../../../packages/types/assets';
+} from '../types/assets';
 
 export const assetCreateSchema = CreateAIAssetSchema;
 
