@@ -7,10 +7,11 @@ export function buildAuthCookieOptions(): CookieOptions {
 
   return {
     httpOnly: true,
-    // In prod we want cross-site cookie (Vercel frontend + API),
-    // in dev we use lax to avoid SameSite=None+Secure=false rejection.
-    sameSite: isProd ? 'none' : 'lax',
-    secure: isProd,
+    // Use 'none' for cross-origin requests (production Vercel + Render, or dev without proxy).
+    // Browsers allow sameSite='none' on localhost even without HTTPS.
+    sameSite: 'none',
+    // Always secure for cross-site cookies. Modern browsers allow this for localhost.
+    secure: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
   };
