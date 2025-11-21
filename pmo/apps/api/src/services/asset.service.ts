@@ -14,7 +14,7 @@ type AssetWithOwner = Prisma.AIAssetGetPayload<{
 
 const normalizeJsonInput = (
   value: unknown,
-): Prisma.InputJsonValue | Prisma.JsonNull | undefined => {
+): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined => {
   if (value === undefined) {
     return undefined;
   }

@@ -65,7 +65,10 @@ router.post(
       return;
     }
 
-    const parsed = CreateMeetingSchema.safeParse({ ...req.body, projectId });
+    const parsed = CreateMeetingSchema.safeParse({
+      ...(req.body as Record<string, unknown>),
+      projectId,
+    });
 
     if (!parsed.success) {
       res.status(400).json({
@@ -210,7 +213,7 @@ router.post(
     }
 
     const parsed = CreateTaskFromSelectionSchema.safeParse({
-      ...req.body,
+      ...(req.body as Record<string, unknown>),
       meetingId,
     });
 
