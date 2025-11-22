@@ -4,6 +4,7 @@ import { cn } from './utils';
 export type BadgeVariant =
   | 'default'
   | 'primary'
+  | 'secondary'
   | 'success'
   | 'warning'
   | 'danger'
@@ -17,6 +18,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 const variantStyles: Record<BadgeVariant, string> = {
   default: 'bg-neutral-100 text-neutral-700',
   primary: 'bg-primary-100 text-primary-700',
+  secondary: 'bg-neutral-200 text-neutral-600',
   success: 'bg-success-100 text-success-700',
   warning: 'bg-warning-100 text-warning-700',
   danger: 'bg-danger-100 text-danger-700',
