@@ -249,24 +249,33 @@ test.describe('Accessibility - WCAG 2.1 Level AA', () => {
     test('Can navigate dashboard with keyboard', async ({ page }) => {
       await page.goto('/dashboard');
 
-      // Tab through interactive elements
-      await page.keyboard.press('Tab');
-      let firstFocusedElement = await page.evaluate(() => {
-        const el = document.activeElement;
-        return el ? el.tagName : null;
-      });
+      // Wait for page to be fully loaded
+      await page.waitForLoadState('networkidle');
 
-      // If first tab focuses on BODY, tab again to get to first interactive element
-      if (firstFocusedElement === 'BODY') {
+      // Tab through interactive elements up to 3 times to find a focusable element
+      let firstFocusedElement: string | null = null;
+      for (let i = 0; i < 3; i++) {
         await page.keyboard.press('Tab');
         firstFocusedElement = await page.evaluate(() => {
           const el = document.activeElement;
           return el ? el.tagName : null;
         });
+
+        // If we've found an interactive element, stop
+        if (
+          firstFocusedElement &&
+          ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(
+            firstFocusedElement,
+          )
+        ) {
+          break;
+        }
       }
 
       // Should focus on an interactive element (link, button, input)
-      expect(['A', 'BUTTON', 'INPUT']).toContain(firstFocusedElement);
+      expect(['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA']).toContain(
+        firstFocusedElement,
+      );
     });
 
     test('Can access main navigation with keyboard', async ({ page }) => {

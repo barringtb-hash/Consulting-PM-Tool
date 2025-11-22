@@ -169,6 +169,7 @@ function ProjectSetupPage(): JSX.Element {
   // Check URL params for initial step (useful for testing)
   const urlParams = new URLSearchParams(window.location.search);
   const urlStep = urlParams.get('step') as WizardStep | null;
+  const urlClientId = urlParams.get('clientId');
   const initialStep: WizardStep =
     urlStep && ['client', 'template', 'details', 'preview'].includes(urlStep)
       ? urlStep
@@ -176,8 +177,8 @@ function ProjectSetupPage(): JSX.Element {
 
   const [step, setStep] = useState<WizardStep>(initialStep);
   const [formData, setFormData] = useState<ProjectFormData>({
-    clientId: selectedClient?.id ?? '',
-    templateId: '',
+    clientId: urlClientId ? Number(urlClientId) : (selectedClient?.id ?? ''),
+    templateId: urlParams.get('templateId') || '',
     name: '',
     type: '',
     status: 'PLANNING',
