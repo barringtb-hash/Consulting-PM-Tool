@@ -119,7 +119,9 @@ export function TaskKanbanBoard({
     if (!over) return;
 
     const taskId = active.id as number;
-    const newStatus = over.id as TaskStatus;
+    // Get the container ID (column status) instead of the item ID
+    const newStatus = (over.data?.current?.sortable?.containerId ||
+      over.id) as TaskStatus;
 
     const task = tasks.find((t) => t.id === taskId);
     if (task && task.status !== newStatus) {
