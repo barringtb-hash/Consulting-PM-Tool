@@ -295,7 +295,9 @@ function MyTasksPage(): JSX.Element {
                 <Badge variant="primary">Priority: {filters.priority}</Badge>
               )}
               {filters.search && (
-                <Badge variant="primary">Search: "{filters.search}"</Badge>
+                <Badge variant="primary">
+                  Search: &quot;{filters.search}&quot;
+                </Badge>
               )}
             </div>
           )}
