@@ -79,9 +79,7 @@ describe('Client Intake Flow', () => {
     });
 
     // Should still be on Step 1
-    expect(
-      screen.getByText('Step 1: Organization Basics'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Step 1: Organization Basics')).toBeInTheDocument();
   });
 
   it('completes Step 1: Organization with valid data', async () => {
