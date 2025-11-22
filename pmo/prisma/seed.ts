@@ -641,33 +641,74 @@ async function main() {
       );
     }
 
-    const asset = await prisma.aIAsset.upsert({
-      where: {
-        name_clientId: {
-          name: assetSeed.name,
-          clientId: clientId ?? null,
+    // Handle template assets (clientId is null) differently due to unique constraint
+    let asset;
+    if (clientId) {
+      // Client-specific asset: use upsert with compound key
+      asset = await prisma.aIAsset.upsert({
+        where: {
+          name_clientId: {
+            name: assetSeed.name,
+            clientId: clientId,
+          },
         },
-      },
-      update: {
-        type: assetSeed.type,
-        description: assetSeed.description,
-        content: assetSeed.content,
-        tags: assetSeed.tags ?? [],
-        isTemplate: assetSeed.isTemplate ?? false,
-        clientId: clientId ?? null,
-        createdById: createdById ?? null,
-      },
-      create: {
-        name: assetSeed.name,
-        type: assetSeed.type,
-        description: assetSeed.description,
-        content: assetSeed.content,
-        tags: assetSeed.tags ?? [],
-        isTemplate: assetSeed.isTemplate ?? false,
-        clientId: clientId ?? undefined,
-        createdById: createdById ?? undefined,
-      },
-    });
+        update: {
+          type: assetSeed.type,
+          description: assetSeed.description,
+          content: assetSeed.content,
+          tags: assetSeed.tags ?? [],
+          isTemplate: assetSeed.isTemplate ?? false,
+          createdById: createdById ?? null,
+        },
+        create: {
+          name: assetSeed.name,
+          type: assetSeed.type,
+          description: assetSeed.description,
+          content: assetSeed.content,
+          tags: assetSeed.tags ?? [],
+          isTemplate: assetSeed.isTemplate ?? false,
+          clientId: clientId,
+          createdById: createdById ?? undefined,
+        },
+      });
+    } else {
+      // Template asset (clientId is null): find or create
+      asset = await prisma.aIAsset.findFirst({
+        where: {
+          name: assetSeed.name,
+          clientId: null,
+        },
+      });
+
+      if (asset) {
+        // Update existing template
+        asset = await prisma.aIAsset.update({
+          where: { id: asset.id },
+          data: {
+            type: assetSeed.type,
+            description: assetSeed.description,
+            content: assetSeed.content,
+            tags: assetSeed.tags ?? [],
+            isTemplate: assetSeed.isTemplate ?? false,
+            createdById: createdById ?? null,
+          },
+        });
+      } else {
+        // Create new template
+        asset = await prisma.aIAsset.create({
+          data: {
+            name: assetSeed.name,
+            type: assetSeed.type,
+            description: assetSeed.description,
+            content: assetSeed.content,
+            tags: assetSeed.tags ?? [],
+            isTemplate: assetSeed.isTemplate ?? false,
+            clientId: null,
+            createdById: createdById ?? undefined,
+          },
+        });
+      }
+    }
 
     for (const projectName of assetSeed.projectNames ?? []) {
       const projectKey = `${assetSeed.clientName}::${projectName}`;
