@@ -173,7 +173,10 @@ function MyTasksPage(): JSX.Element {
         taskId,
         payload: { status: newStatus },
       });
-      showToast(`Task status updated to ${formatStatusLabel(newStatus)}`, 'success');
+      showToast(
+        `Task status updated to ${formatStatusLabel(newStatus)}`,
+        'success',
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to update task status';

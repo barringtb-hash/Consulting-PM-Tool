@@ -62,11 +62,15 @@ describe('Client Intake Flow', () => {
     renderWithProviders(<ClientIntakePage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Step 1: Organization Basics')).toBeInTheDocument();
+      expect(
+        screen.getByText('Step 1: Organization Basics'),
+      ).toBeInTheDocument();
     });
 
     // Try to submit without filling the name
-    const submitButton = screen.getByRole('button', { name: /Next: Add contact/i });
+    const submitButton = screen.getByRole('button', {
+      name: /Next: Add contact/i,
+    });
     await user.click(submitButton);
 
     // Should not proceed due to validation
@@ -90,7 +94,9 @@ describe('Client Intake Flow', () => {
     renderWithProviders(<ClientIntakePage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Step 1: Organization Basics')).toBeInTheDocument();
+      expect(
+        screen.getByText('Step 1: Organization Basics'),
+      ).toBeInTheDocument();
     });
 
     // Fill in the form
@@ -101,7 +107,9 @@ describe('Client Intake Flow', () => {
     await user.type(industryInput, 'Technology');
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /Next: Add contact/i });
+    const submitButton = screen.getByRole('button', {
+      name: /Next: Add contact/i,
+    });
     await user.click(submitButton);
 
     // Wait for mutation to be called
@@ -110,7 +118,7 @@ describe('Client Intake Flow', () => {
         expect.objectContaining({
           name: 'Acme Corp',
           industry: 'Technology',
-        })
+        }),
       );
     });
 
@@ -131,13 +139,17 @@ describe('Client Intake Flow', () => {
 
     // Complete Step 1
     await waitFor(() => {
-      expect(screen.getByText('Step 1: Organization Basics')).toBeInTheDocument();
+      expect(
+        screen.getByText('Step 1: Organization Basics'),
+      ).toBeInTheDocument();
     });
 
     const nameInput = screen.getByLabelText(/Name/i);
     await user.type(nameInput, 'Acme Corp');
 
-    const submitButton = screen.getByRole('button', { name: /Next: Add contact/i });
+    const submitButton = screen.getByRole('button', {
+      name: /Next: Add contact/i,
+    });
     await user.click(submitButton);
 
     // Wait for Step 2
@@ -151,7 +163,9 @@ describe('Client Intake Flow', () => {
 
     // Should proceed to Step 3
     await waitFor(() => {
-      expect(screen.getByText('Step 3: Engagement Context')).toBeInTheDocument();
+      expect(
+        screen.getByText('Step 3: Engagement Context'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -178,7 +192,9 @@ describe('Client Intake Flow', () => {
     });
 
     await user.type(screen.getByLabelText(/Name/i), 'Acme Corp');
-    await user.click(screen.getByRole('button', { name: /Next: Add contact/i }));
+    await user.click(
+      screen.getByRole('button', { name: /Next: Add contact/i }),
+    );
 
     // Step 2: Contact (skip)
     await waitFor(() => {
@@ -188,7 +204,9 @@ describe('Client Intake Flow', () => {
 
     // Step 3: Engagement Context
     await waitFor(() => {
-      expect(screen.getByText('Step 3: Engagement Context')).toBeInTheDocument();
+      expect(
+        screen.getByText('Step 3: Engagement Context'),
+      ).toBeInTheDocument();
     });
 
     const saveButton = screen.getByRole('button', { name: /Save & finish/i });

@@ -81,7 +81,9 @@ describe('Project Setup Flow', () => {
 
     // Should show validation error
     await waitFor(() => {
-      expect(screen.getByText('Please select a client to continue')).toBeInTheDocument();
+      expect(
+        screen.getByText('Please select a client to continue'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -126,7 +128,9 @@ describe('Project Setup Flow', () => {
       expect(screen.getByText('AI Discovery & Roadmap')).toBeInTheDocument();
     });
 
-    const templateButton = screen.getByRole('button', { name: /AI Discovery & Roadmap/i });
+    const templateButton = screen.getByRole('button', {
+      name: /AI Discovery & Roadmap/i,
+    });
     await user.click(templateButton);
 
     // Verify template is selected
@@ -154,11 +158,15 @@ describe('Project Setup Flow', () => {
     await waitFor(() => {
       expect(screen.getByText('AI Discovery & Roadmap')).toBeInTheDocument();
     });
-    await user.click(screen.getByRole('button', { name: /AI Discovery & Roadmap/i }));
+    await user.click(
+      screen.getByRole('button', { name: /AI Discovery & Roadmap/i }),
+    );
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Project Name/i)).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(/Project Name/i),
+      ).toBeInTheDocument();
     });
 
     // Clear the auto-filled name
@@ -196,7 +204,9 @@ describe('Project Setup Flow', () => {
     await waitFor(() => {
       expect(screen.getByText('AI Discovery & Roadmap')).toBeInTheDocument();
     });
-    await user.click(screen.getByRole('button', { name: /AI Discovery & Roadmap/i }));
+    await user.click(
+      screen.getByRole('button', { name: /AI Discovery & Roadmap/i }),
+    );
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     // Step 3: Fill Details
@@ -211,7 +221,9 @@ describe('Project Setup Flow', () => {
       expect(screen.getByText('Review Project Details')).toBeInTheDocument();
     });
 
-    const createButton = screen.getByRole('button', { name: /Create Project/i });
+    const createButton = screen.getByRole('button', {
+      name: /Create Project/i,
+    });
     await user.click(createButton);
 
     // Should call the mutation
@@ -221,7 +233,7 @@ describe('Project Setup Flow', () => {
           clientId: 1,
           name: expect.any(String),
           status: 'PLANNING',
-        })
+        }),
       );
     });
 
@@ -229,7 +241,7 @@ describe('Project Setup Flow', () => {
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith(
         expect.stringContaining('created successfully'),
-        'success'
+        'success',
       );
     });
 
