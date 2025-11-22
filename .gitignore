@@ -10,3 +10,9 @@ pmo/apps/*/dist/
 # Environment files (contain secrets and local config)
 .env
 pmo/apps/*/.env
+
+# Playwright
+pmo/e2e/.auth/
+pmo/test-results/
+pmo/playwright-report/
+pmo/playwright/.cache/
