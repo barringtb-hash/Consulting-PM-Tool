@@ -21,7 +21,9 @@ test.describe('M2: Clients & Contacts Management', () => {
     await page.goto('/clients');
 
     // Wait for clients page to load
-    await expect(page.getByRole('heading', { name: /clients/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /clients/i }).first(),
+    ).toBeVisible();
 
     // Fill in client name
     await page.getByLabel(/name/i).fill(clientName);
@@ -59,7 +61,9 @@ test.describe('M2: Clients & Contacts Management', () => {
       name: /add contact|new contact|create contact/i,
     });
 
-    if (await addContactButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await addContactButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await addContactButton.click();
 
       // Fill contact details
@@ -104,7 +108,9 @@ test.describe('M2: Clients & Contacts Management', () => {
     await page.goto('/clients');
 
     // Verify heading
-    await expect(page.getByRole('heading', { name: /clients/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /clients/i }).first(),
+    ).toBeVisible();
 
     // Should see our created client
     await expect(page.getByText(clientName)).toBeVisible();
@@ -133,7 +139,9 @@ test.describe('M2: Clients & Contacts Management', () => {
     }
   });
 
-  test('should navigate between clients list and detail pages', async ({ page }) => {
+  test('should navigate between clients list and detail pages', async ({
+    page,
+  }) => {
     await page.goto('/clients');
 
     // Click on client

@@ -39,13 +39,17 @@ test.describe('M5: Meetings', () => {
     const newProjectButton = page.getByRole('button', {
       name: /new project|create project/i,
     });
-    if (await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newProjectButton.click();
     } else {
       await page.goto('/projects/new');
     }
 
-    await page.getByLabel(/project name|name/i).first().fill(projectName);
+    const projectNameInput = page.getByLabel(/project name|name/i).first();
+    await projectNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await projectNameInput.fill(projectName);
     await page.getByRole('button', { name: /create|save/i }).click();
     await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
 
@@ -60,7 +64,9 @@ test.describe('M5: Meetings', () => {
       name: /new meeting|create meeting|add meeting/i,
     });
 
-    if (await newMeetingButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newMeetingButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newMeetingButton.click();
 
       // Fill meeting details
@@ -79,7 +85,9 @@ test.describe('M5: Meetings', () => {
       }
 
       // Save meeting
-      await page.getByRole('button', { name: /save meeting|create meeting|save/i }).click();
+      await page
+        .getByRole('button', { name: /save meeting|create meeting|save/i })
+        .click();
 
       // Verify meeting was created
       await expect(page.getByText(meetingTitle)).toBeVisible({ timeout: 5000 });
@@ -129,12 +137,17 @@ test.describe('M5: Meetings', () => {
       name: /create task|new task|add task/i,
     });
 
-    if (await createTaskButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await createTaskButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await createTaskButton.click();
 
       // Fill task details
       const taskFromMeetingTitle = `Task from Meeting ${Date.now()}`;
-      await page.getByLabel(/title|task name|name/i).first().fill(taskFromMeetingTitle);
+      await page
+        .getByLabel(/title|task name|name/i)
+        .first()
+        .fill(taskFromMeetingTitle);
 
       const descField = page.getByLabel(/description/i);
       if (await descField.isVisible({ timeout: 1000 }).catch(() => false)) {
@@ -142,21 +155,29 @@ test.describe('M5: Meetings', () => {
       }
 
       // Save task
-      await page.getByRole('button', { name: /save task|create task|save/i }).click();
+      await page
+        .getByRole('button', { name: /save task|create task|save/i })
+        .click();
 
       // Verify task was created
-      await expect(page.getByText(taskFromMeetingTitle)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(taskFromMeetingTitle)).toBeVisible({
+        timeout: 5000,
+      });
 
       // Verify task appears in project tasks tab
       const tasksTab = page.getByRole('tab', { name: /tasks/i });
       if (await tasksTab.isVisible({ timeout: 2000 }).catch(() => false)) {
         await tasksTab.click();
-        await expect(page.getByText(taskFromMeetingTitle)).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(taskFromMeetingTitle)).toBeVisible({
+          timeout: 5000,
+        });
       }
 
       // Verify task appears in global My Tasks
       await page.goto('/tasks');
-      await expect(page.getByText(taskFromMeetingTitle)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(taskFromMeetingTitle)).toBeVisible({
+        timeout: 5000,
+      });
     }
   });
 
@@ -175,7 +196,9 @@ test.describe('M5: Meetings', () => {
       await expect(page.getByText(meetingTitle)).toBeVisible();
 
       // Verify meetings are listed (even if just one)
-      const meetingItems = page.locator('[data-testid*="meeting"], .meeting-item');
+      const meetingItems = page.locator(
+        '[data-testid*="meeting"], .meeting-item',
+      );
       const count = await meetingItems.count().catch(() => 0);
 
       // At least our meeting should be there
@@ -231,7 +254,9 @@ test.describe('M5: Meetings', () => {
     // Look for participants section
     const participantsSection = page.getByText(/participants|attendees/i);
 
-    if (await participantsSection.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await participantsSection.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       // Verify section exists
       expect(await participantsSection.isVisible()).toBeTruthy();
     }

@@ -34,13 +34,17 @@ test.describe('M4: Tasks & Milestones', () => {
     const newProjectButton = page.getByRole('button', {
       name: /new project|create project/i,
     });
-    if (await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newProjectButton.click();
     } else {
       await page.goto('/projects/new');
     }
 
-    await page.getByLabel(/project name|name/i).first().fill(projectName);
+    const projectNameInput = page.getByLabel(/project name|name/i).first();
+    await projectNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await projectNameInput.fill(projectName);
     await page.getByRole('button', { name: /create|save/i }).click();
     await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
 
@@ -62,10 +66,15 @@ test.describe('M4: Tasks & Milestones', () => {
       await newTaskButton.click();
 
       // Fill task details
-      await page.getByLabel(/title|task name|name/i).first().fill(taskTitle);
+      await page
+        .getByLabel(/title|task name|name/i)
+        .first()
+        .fill(taskTitle);
 
       const descriptionField = page.getByLabel(/description|details/i);
-      if (await descriptionField.isVisible({ timeout: 1000 }).catch(() => false)) {
+      if (
+        await descriptionField.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
         await descriptionField.fill('Task description for E2E test');
       }
 
@@ -112,7 +121,7 @@ test.describe('M4: Tasks & Milestones', () => {
 
     // Verify we're on tasks page
     await expect(
-      page.getByRole('heading', { name: /tasks|my tasks/i }),
+      page.getByRole('heading', { name: /tasks|my tasks/i }).first(),
     ).toBeVisible();
 
     // Our task should appear here
@@ -136,11 +145,16 @@ test.describe('M4: Tasks & Milestones', () => {
         name: /new milestone|create milestone|add milestone/i,
       });
 
-      if (await newMilestoneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await newMilestoneButton.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await newMilestoneButton.click();
 
         // Fill milestone details
-        await page.getByLabel(/name|title/i).first().fill(milestoneName);
+        await page
+          .getByLabel(/name|title/i)
+          .first()
+          .fill(milestoneName);
 
         const descField = page.getByLabel(/description/i);
         if (await descField.isVisible({ timeout: 1000 }).catch(() => false)) {
@@ -157,7 +171,9 @@ test.describe('M4: Tasks & Milestones', () => {
         await page.getByRole('button', { name: /save|create|add/i }).click();
 
         // Verify milestone was created
-        await expect(page.getByText(milestoneName)).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(milestoneName)).toBeVisible({
+          timeout: 5000,
+        });
       }
     }
   });
@@ -175,13 +191,17 @@ test.describe('M4: Tasks & Milestones', () => {
       // Find our milestone
       const milestoneElement = page.getByText(milestoneName);
 
-      if (await milestoneElement.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await milestoneElement.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         // Look for "Mark as Complete" or checkbox
         const completeButton = page.getByRole('button', {
           name: /mark as reached|mark as complete|complete/i,
         });
 
-        if (await completeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+        if (
+          await completeButton.isVisible({ timeout: 1000 }).catch(() => false)
+        ) {
           await completeButton.click();
 
           // Verify milestone is marked as complete
@@ -235,7 +255,9 @@ test.describe('M4: Tasks & Milestones', () => {
         await page.getByRole('button', { name: /save|update/i }).click();
 
         // Verify update
-        await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(updatedTitle)).toBeVisible({
+          timeout: 5000,
+        });
       }
     }
   });

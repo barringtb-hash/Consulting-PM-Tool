@@ -78,14 +78,18 @@ test.describe('Accessibility - WCAG 2.1 Level AA', () => {
     const newProjectButton = page.getByRole('button', {
       name: /new project|create project/i,
     });
-    if (await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newProjectButton.click();
     } else {
       await page.goto('/projects/new');
     }
 
     const projectName = `A11y Project ${Date.now()}`;
-    await page.getByLabel(/project name|name/i).first().fill(projectName);
+    const projectNameInput = page.getByLabel(/project name|name/i).first();
+    await projectNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await projectNameInput.fill(projectName);
     await page.getByRole('button', { name: /create|save/i }).click();
     await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
 
@@ -247,10 +251,19 @@ test.describe('Accessibility - WCAG 2.1 Level AA', () => {
 
       // Tab through interactive elements
       await page.keyboard.press('Tab');
-      const firstFocusedElement = await page.evaluate(() => {
+      let firstFocusedElement = await page.evaluate(() => {
         const el = document.activeElement;
         return el ? el.tagName : null;
       });
+
+      // If first tab focuses on BODY, tab again to get to first interactive element
+      if (firstFocusedElement === 'BODY') {
+        await page.keyboard.press('Tab');
+        firstFocusedElement = await page.evaluate(() => {
+          const el = document.activeElement;
+          return el ? el.tagName : null;
+        });
+      }
 
       // Should focus on an interactive element (link, button, input)
       expect(['A', 'BUTTON', 'INPUT']).toContain(firstFocusedElement);
