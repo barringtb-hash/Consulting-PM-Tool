@@ -8,21 +8,24 @@ const authFile = path.join(__dirname, '.auth', 'user.json');
  * This uses seeded test account from prisma/seed.ts
  */
 setup('authenticate', async ({ page }) => {
-  // Navigate to login page
-  await page.goto('/login');
+  // Navigate to login page - use default 'load' waitUntil
+  await page.goto('/login', { waitUntil: 'load' });
 
-  // Wait for page to load
-  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  // Wait for the email input to appear
+  const emailInput = page.locator('input[type="email"]');
+  await emailInput.waitFor({ state: 'visible', timeout: 30000 });
 
   // Fill in credentials (from seeded test account)
-  await page.getByLabel('Email').fill('admin@pmo.test');
-  await page.getByLabel('Password').fill('AdminDemo123!');
+  await emailInput.fill('admin@pmo.test');
+
+  const passwordInput = page.locator('input[type="password"]');
+  await passwordInput.fill('AdminDemo123!');
 
   // Submit form
   await page.getByRole('button', { name: 'Sign in' }).click();
 
   // Wait for navigation to complete (should redirect to dashboard)
-  await page.waitForURL('/dashboard');
+  await page.waitForURL('/dashboard', { timeout: 15000 });
 
   // Verify we're authenticated
   await expect(page).toHaveURL('/dashboard');

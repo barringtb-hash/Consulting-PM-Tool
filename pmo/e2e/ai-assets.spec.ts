@@ -24,7 +24,7 @@ test.describe('M6: AI Assets', () => {
 
     // Verify we're on assets page
     await expect(
-      page.getByRole('heading', { name: /assets|ai assets/i }),
+      page.getByRole('heading', { name: /assets|ai assets/i }).first(),
     ).toBeVisible();
 
     // Page should load without errors
@@ -43,14 +43,21 @@ test.describe('M6: AI Assets', () => {
       await newAssetButton.click();
 
       // Fill asset details
-      await page.getByLabel(/name|title/i).first().fill(assetName);
+      await page
+        .getByLabel(/name|title/i)
+        .first()
+        .fill(assetName);
 
       // Select asset type if available
       const typeSelector = page.getByLabel(/type|category/i);
       if (await typeSelector.isVisible({ timeout: 1000 }).catch(() => false)) {
         await typeSelector.click();
-        const templateOption = page.getByRole('option', { name: /template/i }).first();
-        if (await templateOption.isVisible({ timeout: 500 }).catch(() => false)) {
+        const templateOption = page
+          .getByRole('option', { name: /template/i })
+          .first();
+        if (
+          await templateOption.isVisible({ timeout: 500 }).catch(() => false)
+        ) {
           await templateOption.click();
         }
       }
@@ -94,18 +101,28 @@ test.describe('M6: AI Assets', () => {
 
       // Create client-specific asset
       const clientSpecificAssetName = `Client Asset ${Date.now()}`;
-      await page.getByLabel(/name|title/i).first().fill(clientSpecificAssetName);
+      await page
+        .getByLabel(/name|title/i)
+        .first()
+        .fill(clientSpecificAssetName);
 
       // Select client
       const clientSelector = page.getByLabel(/client/i);
-      if (await clientSelector.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await clientSelector.click();
-        await page.getByText(clientName).click();
+      if (
+        await clientSelector.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
+        await clientSelector.selectOption({ label: clientName });
       }
 
       // Mark as client-specific if checkbox exists
-      const clientSpecificCheckbox = page.getByLabel(/client-specific|specific to client/i);
-      if (await clientSpecificCheckbox.isVisible({ timeout: 1000 }).catch(() => false)) {
+      const clientSpecificCheckbox = page.getByLabel(
+        /client-specific|specific to client/i,
+      );
+      if (
+        await clientSpecificCheckbox
+          .isVisible({ timeout: 1000 })
+          .catch(() => false)
+      ) {
         await clientSpecificCheckbox.check();
       }
 
@@ -113,7 +130,9 @@ test.describe('M6: AI Assets', () => {
       await page.getByRole('button', { name: /save|create/i }).click();
 
       // Verify creation
-      await expect(page.getByText(clientSpecificAssetName)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(clientSpecificAssetName)).toBeVisible({
+        timeout: 5000,
+      });
     }
   });
 
@@ -125,13 +144,17 @@ test.describe('M6: AI Assets', () => {
     const newProjectButton = page.getByRole('button', {
       name: /new project|create project/i,
     });
-    if (await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newProjectButton.click();
     } else {
       await page.goto('/projects/new');
     }
 
-    await page.getByLabel(/project name|name/i).first().fill(projectName);
+    const projectNameInput = page.getByLabel(/project name|name/i).first();
+    await projectNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await projectNameInput.fill(projectName);
     await page.getByRole('button', { name: /create|save/i }).click();
     await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
 
@@ -145,7 +168,9 @@ test.describe('M6: AI Assets', () => {
         name: /link asset|add asset|attach asset/i,
       });
 
-      if (await linkAssetButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await linkAssetButton.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await linkAssetButton.click();
 
         // Select our asset from the list
@@ -154,13 +179,19 @@ test.describe('M6: AI Assets', () => {
           await assetOption.click();
 
           // Confirm linking
-          const confirmButton = page.getByRole('button', { name: /link|attach|save/i });
-          if (await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+          const confirmButton = page.getByRole('button', {
+            name: /link|attach|save/i,
+          });
+          if (
+            await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)
+          ) {
             await confirmButton.click();
           }
 
           // Verify asset is linked
-          await expect(page.getByText(assetName)).toBeVisible({ timeout: 5000 });
+          await expect(page.getByText(assetName)).toBeVisible({
+            timeout: 5000,
+          });
         }
       }
     }
@@ -201,8 +232,12 @@ test.describe('M6: AI Assets', () => {
         await unlinkButton.click();
 
         // Confirm if needed
-        const confirmButton = page.getByRole('button', { name: /confirm|yes|unlink/i });
-        if (await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+        const confirmButton = page.getByRole('button', {
+          name: /confirm|yes|unlink/i,
+        });
+        if (
+          await confirmButton.isVisible({ timeout: 1000 }).catch(() => false)
+        ) {
           await confirmButton.click();
         }
 
@@ -224,7 +259,9 @@ test.describe('M6: AI Assets', () => {
 
       // Select a filter option
       const templateOption = page.getByRole('option', { name: /template/i });
-      if (await templateOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+      if (
+        await templateOption.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
         await templateOption.click();
 
         // Assets should be filtered
@@ -260,8 +297,12 @@ test.describe('M6: AI Assets', () => {
       await expect(page.getByText(assetName)).toBeVisible();
 
       // Details page should show description, content, etc.
-      const detailsSection = page.locator('[data-testid*="asset-details"], .asset-content');
-      if (await detailsSection.isVisible({ timeout: 1000 }).catch(() => false)) {
+      const detailsSection = page.locator(
+        '[data-testid*="asset-details"], .asset-content',
+      );
+      if (
+        await detailsSection.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
         expect(await detailsSection.isVisible()).toBeTruthy();
       }
     }

@@ -18,9 +18,7 @@ test.describe('Core PMO Workflow - Happy Path', () => {
 
     // Step 2: Navigate to Clients and create a new client
     await page.goto('/clients');
-    await expect(
-      page.getByRole('heading', { name: /clients/i }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /clients/i })).toBeVisible();
 
     // Fill in client name and create
     const clientName = `E2E Test Client ${Date.now()}`;
@@ -42,7 +40,9 @@ test.describe('Core PMO Workflow - Happy Path', () => {
     const newProjectButton = page.getByRole('button', {
       name: /new project|create project/i,
     });
-    if (await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newProjectButton.click();
     } else {
       // Alternative: navigate directly to project setup if button not found
@@ -51,7 +51,9 @@ test.describe('Core PMO Workflow - Happy Path', () => {
 
     // Fill in project details
     const projectName = `E2E Test Project ${Date.now()}`;
-    await page.getByLabel(/project name|name/i).first().fill(projectName);
+    const projectNameInput = page.getByLabel(/project name|name/i).first();
+    await projectNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await projectNameInput.fill(projectName);
 
     // Submit the project form
     const createButton = page.getByRole('button', {
@@ -77,7 +79,9 @@ test.describe('Core PMO Workflow - Happy Path', () => {
     const newMeetingButton = page.getByRole('button', {
       name: /new meeting|add meeting|create meeting/i,
     });
-    if (await newMeetingButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newMeetingButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newMeetingButton.click();
 
       // Fill in meeting details
@@ -85,7 +89,8 @@ test.describe('Core PMO Workflow - Happy Path', () => {
       await page.getByLabel(/title|meeting name/i).fill(meetingTitle);
 
       // Add notes
-      const meetingNotes = 'Need to implement new feature X\nReview design mockups';
+      const meetingNotes =
+        'Need to implement new feature X\nReview design mockups';
       const notesField = page.getByLabel(/notes/i);
       if (await notesField.isVisible({ timeout: 1000 }).catch(() => false)) {
         await notesField.fill(meetingNotes);
@@ -113,7 +118,10 @@ test.describe('Core PMO Workflow - Happy Path', () => {
 
         // Fill task details
         const taskTitle = `E2E Test Task ${Date.now()}`;
-        await page.getByLabel(/title|task name|name/i).first().fill(taskTitle);
+        await page
+          .getByLabel(/title|task name|name/i)
+          .first()
+          .fill(taskTitle);
 
         // Save task
         const saveTaskButton = page.getByRole('button', {

@@ -37,7 +37,9 @@ test.describe('M3: Projects Management', () => {
       name: /new project|create project/i,
     });
 
-    if (await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newProjectButton.click();
     } else {
       // Alternative: navigate to project setup directly
@@ -45,7 +47,9 @@ test.describe('M3: Projects Management', () => {
     }
 
     // Fill in project details
-    await page.getByLabel(/project name|name/i).first().fill(projectName);
+    const projectNameInput = page.getByLabel(/project name|name/i).first();
+    await projectNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await projectNameInput.fill(projectName);
 
     // Look for client selector if needed
     const clientSelector = page.getByLabel(/client/i);
@@ -128,17 +132,28 @@ test.describe('M3: Projects Management', () => {
     // Look for template selection
     const templateSelector = page.getByLabel(/template|use template/i);
 
-    if (await templateSelector.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await templateSelector.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await templateSelector.click();
 
       // Select a template (e.g., first available)
       const templateOption = page.getByRole('option').first();
-      if (await templateOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+      if (
+        await templateOption.isVisible({ timeout: 1000 }).catch(() => false)
+      ) {
         await templateOption.click();
 
         // Fill project name
         const templateProjectName = `E2E Template Project ${Date.now()}`;
-        await page.getByLabel(/project name|name/i).first().fill(templateProjectName);
+        const templateProjectNameInput = page
+          .getByLabel(/project name|name/i)
+          .first();
+        await templateProjectNameInput.waitFor({
+          state: 'visible',
+          timeout: 10000,
+        });
+        await templateProjectNameInput.fill(templateProjectName);
 
         // Select client
         const clientField = page.getByLabel(/client/i);
@@ -151,7 +166,9 @@ test.describe('M3: Projects Management', () => {
         await page.getByRole('button', { name: /create|save/i }).click();
 
         // Verify creation
-        await expect(page.getByText(templateProjectName)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText(templateProjectName)).toBeVisible({
+          timeout: 10000,
+        });
       }
     }
   });

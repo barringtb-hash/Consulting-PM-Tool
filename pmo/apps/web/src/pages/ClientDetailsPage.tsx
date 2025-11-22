@@ -319,7 +319,20 @@ function ClientDetailsPage(): JSX.Element {
       <ContactList clientId={clientId} />
 
       <section aria-label="projects">
-        <h2>Projects</h2>
+        <header>
+          <h2>Projects</h2>
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                `/projects/new?clientId=${clientId}&step=details&templateId=custom`,
+              )
+            }
+            aria-label="Create new project"
+          >
+            New Project
+          </button>
+        </header>
         <p>Project tracking for this client is coming soon.</p>
       </section>
 

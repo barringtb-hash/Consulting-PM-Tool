@@ -166,17 +166,34 @@ function ProjectSetupPage(): JSX.Element {
   const clientsQuery = useClients({ includeArchived: false });
   const createProjectMutation = useCreateProject();
 
-  const [step, setStep] = useState<WizardStep>('client');
-  const [formData, setFormData] = useState<ProjectFormData>({
-    clientId: selectedClient?.id ?? '',
-    templateId: '',
-    name: '',
-    type: '',
-    status: 'PLANNING',
-    startDate: '',
-    endDate: '',
-    goals: '',
-    description: '',
+  // Check URL params for initial step (useful for testing)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlStep = urlParams.get('step') as WizardStep | null;
+  const urlClientId = urlParams.get('clientId');
+  const initialStep: WizardStep =
+    urlStep && ['client', 'template', 'details', 'preview'].includes(urlStep)
+      ? urlStep
+      : 'client';
+
+  const [step, setStep] = useState<WizardStep>(initialStep);
+  const [formData, setFormData] = useState<ProjectFormData>(() => {
+    const clientId = urlClientId
+      ? Number(urlClientId)
+      : (selectedClient?.id ?? '');
+    const templateId = urlParams.get('templateId') || '';
+    const template = PROJECT_TEMPLATES.find((t) => t.id === templateId);
+
+    return {
+      clientId,
+      templateId,
+      name: '',
+      type: template?.type || '',
+      status: 'PLANNING',
+      startDate: '',
+      endDate: '',
+      goals: '',
+      description: '',
+    };
   });
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -187,8 +204,12 @@ function ProjectSetupPage(): JSX.Element {
   useEffect(() => {
     if (selectedClient && !formData.clientId) {
       setFormData((prev) => ({ ...prev, clientId: selectedClient.id }));
+      // If client is pre-selected and we're on the client step, skip to template
+      if (step === 'client') {
+        setStep('template');
+      }
     }
-  }, [selectedClient, formData.clientId]);
+  }, [selectedClient, formData.clientId, step]);
 
   const selectedTemplate = useMemo(
     () => PROJECT_TEMPLATES.find((t) => t.id === formData.templateId),

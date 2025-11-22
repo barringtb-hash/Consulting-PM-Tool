@@ -31,13 +31,17 @@ test.describe('M7: Status & Reporting', () => {
     const newProjectButton = page.getByRole('button', {
       name: /new project|create project/i,
     });
-    if (await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await newProjectButton.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
       await newProjectButton.click();
     } else {
       await page.goto('/projects/new');
     }
 
-    await page.getByLabel(/project name|name/i).first().fill(projectName);
+    const projectNameInput = page.getByLabel(/project name|name/i).first();
+    await projectNameInput.waitFor({ state: 'visible', timeout: 10000 });
+    await projectNameInput.fill(projectName);
     await page.getByRole('button', { name: /create|save/i }).click();
     await expect(page.getByText(projectName)).toBeVisible({ timeout: 10000 });
 
@@ -68,7 +72,9 @@ test.describe('M7: Status & Reporting', () => {
       // Look for RAG (Red/Amber/Green) status indicators
       const healthIndicators = page.getByText(/health|status|rag/i);
 
-      if (await healthIndicators.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await healthIndicators.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         expect(await healthIndicators.isVisible()).toBeTruthy();
       }
 
@@ -94,7 +100,12 @@ test.describe('M7: Status & Reporting', () => {
       await statusTab.click();
 
       // Look for date fields
-      const dateLabels = [/start date/i, /target date/i, /due date/i, /completion/i];
+      const dateLabels = [
+        /start date/i,
+        /target date/i,
+        /due date/i,
+        /completion/i,
+      ];
 
       for (const dateLabel of dateLabels) {
         const dateElement = page.getByText(dateLabel);
@@ -200,10 +211,15 @@ test.describe('M7: Status & Reporting', () => {
     if (await tasksTab.isVisible({ timeout: 2000 }).catch(() => false)) {
       await tasksTab.click();
 
-      const newTaskButton = page.getByRole('button', { name: /new task|add task/i });
+      const newTaskButton = page.getByRole('button', {
+        name: /new task|add task/i,
+      });
       if (await newTaskButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await newTaskButton.click();
-        await page.getByLabel(/title|name/i).first().fill('Status Test Task');
+        await page
+          .getByLabel(/title|name/i)
+          .first()
+          .fill('Status Test Task');
         await page.getByRole('button', { name: /save|create/i }).click();
       }
     }
@@ -235,9 +251,14 @@ test.describe('M7: Status & Reporting', () => {
       const newMilestoneButton = page.getByRole('button', {
         name: /new milestone|add milestone/i,
       });
-      if (await newMilestoneButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await newMilestoneButton.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await newMilestoneButton.click();
-        await page.getByLabel(/name|title/i).first().fill('Status Test Milestone');
+        await page
+          .getByLabel(/name|title/i)
+          .first()
+          .fill('Status Test Milestone');
         await page.getByRole('button', { name: /save|create/i }).click();
       }
     }
@@ -249,7 +270,9 @@ test.describe('M7: Status & Reporting', () => {
 
       // Should show milestone count
       const milestoneCount = page.getByText(/\d+ milestone/i);
-      if (await milestoneCount.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await milestoneCount.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         expect(await milestoneCount.isVisible()).toBeTruthy();
       }
     }
@@ -270,7 +293,9 @@ test.describe('M7: Status & Reporting', () => {
         name: /update status|change status/i,
       });
 
-      if (await updateStatusButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (
+        await updateStatusButton.isVisible({ timeout: 2000 }).catch(() => false)
+      ) {
         await updateStatusButton.click();
 
         // Select a status (e.g., Green/On Track)
@@ -278,12 +303,16 @@ test.describe('M7: Status & Reporting', () => {
           name: /green|on track|healthy/i,
         });
 
-        if (await statusOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+        if (
+          await statusOption.isVisible({ timeout: 1000 }).catch(() => false)
+        ) {
           await statusOption.click();
 
           // Save status update
           const saveButton = page.getByRole('button', { name: /save|update/i });
-          if (await saveButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+          if (
+            await saveButton.isVisible({ timeout: 1000 }).catch(() => false)
+          ) {
             await saveButton.click();
           }
 
