@@ -75,7 +75,10 @@ export function TaskKanbanCard({ task }: TaskKanbanCardProps): JSX.Element {
 
         <div className="flex items-center gap-2 flex-wrap">
           {task.priority && (
-            <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs">
+            <Badge
+              variant={getPriorityBadgeVariant(task.priority)}
+              className="text-xs"
+            >
               {task.priority}
             </Badge>
           )}

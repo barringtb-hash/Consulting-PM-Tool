@@ -28,7 +28,10 @@ interface TaskKanbanBoardProps {
 }
 
 function formatStatusLabel(status: TaskStatus): string {
-  return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  return status
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 function getStatusBadgeVariant(status: TaskStatus): BadgeVariant {
@@ -70,8 +73,13 @@ function formatDate(value?: string | null): string {
   });
 }
 
-export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps): JSX.Element {
-  const [activeTask, setActiveTask] = React.useState<TaskWithProject | null>(null);
+export function TaskKanbanBoard({
+  tasks,
+  onTaskMove,
+}: TaskKanbanBoardProps): JSX.Element {
+  const [activeTask, setActiveTask] = React.useState<TaskWithProject | null>(
+    null,
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -81,7 +89,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps): JS
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const tasksByStatus = React.useMemo(() => {
@@ -160,9 +168,7 @@ function KanbanColumn({ status, tasks }: KanbanColumnProps): JSX.Element {
           <h3 className="font-semibold text-sm text-neutral-900">
             {formatStatusLabel(status)}
           </h3>
-          <Badge variant={getStatusBadgeVariant(status)}>
-            {tasks.length}
-          </Badge>
+          <Badge variant={getStatusBadgeVariant(status)}>{tasks.length}</Badge>
         </div>
       </div>
 
@@ -177,9 +183,7 @@ function KanbanColumn({ status, tasks }: KanbanColumnProps): JSX.Element {
               No tasks
             </div>
           ) : (
-            tasks.map((task) => (
-              <TaskKanbanCard key={task.id} task={task} />
-            ))
+            tasks.map((task) => <TaskKanbanCard key={task.id} task={task} />)
           )}
         </div>
       </SortableContext>
@@ -213,7 +217,10 @@ function TaskCard({ task, isDragging = false }: TaskCardProps): JSX.Element {
 
         <div className="flex items-center gap-2 flex-wrap">
           {task.priority && (
-            <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs">
+            <Badge
+              variant={getPriorityBadgeVariant(task.priority)}
+              className="text-xs"
+            >
               {task.priority}
             </Badge>
           )}

@@ -71,7 +71,10 @@ function getPriorityBadgeVariant(priority?: TaskPriority | null): BadgeVariant {
 }
 
 function formatStatusLabel(status: TaskStatus): string {
-  return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  return status
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 function MyTasksPage(): JSX.Element {
@@ -144,7 +147,8 @@ function MyTasksPage(): JSX.Element {
   };
 
   const handleToggleDone = async (task: TaskWithProject) => {
-    const newStatus: TaskStatus = task.status === 'DONE' ? 'IN_PROGRESS' : 'DONE';
+    const newStatus: TaskStatus =
+      task.status === 'DONE' ? 'IN_PROGRESS' : 'DONE';
     await updateTaskMutation.mutateAsync({
       taskId: task.id,
       payload: { status: newStatus },
@@ -159,7 +163,7 @@ function MyTasksPage(): JSX.Element {
   };
 
   const selectedProject = projects.find(
-    (p) => p.id === Number(filters.projectId)
+    (p) => p.id === Number(filters.projectId),
   );
 
   return (
@@ -203,11 +207,7 @@ function MyTasksPage(): JSX.Element {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-neutral-900">Filters</h2>
             {activeFilterCount > 0 && (
-              <Button
-                variant="subtle"
-                size="sm"
-                onClick={clearFilters}
-              >
+              <Button variant="subtle" size="sm" onClick={clearFilters}>
                 Clear filters ({activeFilterCount})
               </Button>
             )}
@@ -284,9 +284,7 @@ function MyTasksPage(): JSX.Element {
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="text-sm text-neutral-600">Active filters:</span>
               {filters.projectId && selectedProject && (
-                <Badge variant="primary">
-                  Project: {selectedProject.name}
-                </Badge>
+                <Badge variant="primary">Project: {selectedProject.name}</Badge>
               )}
               {filters.status && (
                 <Badge variant="primary">
@@ -304,14 +302,21 @@ function MyTasksPage(): JSX.Element {
         </section>
 
         {/* Tasks Section */}
-        <section className={viewMode === 'board' ? '' : 'bg-white rounded-lg border border-neutral-200 shadow-sm'}>
+        <section
+          className={
+            viewMode === 'board'
+              ? ''
+              : 'bg-white rounded-lg border border-neutral-200 shadow-sm'
+          }
+        >
           {viewMode === 'list' && (
             <div className="px-6 py-4 border-b border-neutral-200">
               <h2 className="text-lg font-semibold text-neutral-900">
                 Tasks
                 {filteredTasks.length > 0 && (
                   <span className="ml-2 text-sm font-normal text-neutral-600">
-                    ({filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'})
+                    ({filteredTasks.length}{' '}
+                    {filteredTasks.length === 1 ? 'task' : 'tasks'})
                   </span>
                 )}
               </h2>
@@ -370,175 +375,195 @@ function MyTasksPage(): JSX.Element {
                   Unable to load tasks
                 </p>
                 <p className="text-neutral-600 text-sm mt-1">
-                  Please try refreshing the page or contact support if the problem persists.
+                  Please try refreshing the page or contact support if the
+                  problem persists.
                 </p>
               </div>
             </div>
           )}
 
           {/* Empty State */}
-          {!tasksQuery.isLoading && !tasksQuery.error && filteredTasks.length === 0 && (
-            <div className="px-6 py-12">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 mb-4">
-                  <svg
-                    className="w-6 h-6 text-neutral-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    />
-                  </svg>
+          {!tasksQuery.isLoading &&
+            !tasksQuery.error &&
+            filteredTasks.length === 0 && (
+              <div className="px-6 py-12">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 mb-4">
+                    <svg
+                      className="w-6 h-6 text-neutral-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                  </div>
+                  {activeFilterCount > 0 ? (
+                    <>
+                      <p className="text-neutral-900 font-medium">
+                        No tasks match your filters
+                      </p>
+                      <p className="text-neutral-600 text-sm mt-1">
+                        Try adjusting or clearing your filters to see more
+                        tasks.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-neutral-900 font-medium">
+                        No tasks yet
+                      </p>
+                      <p className="text-neutral-600 text-sm mt-1">
+                        Tasks are created within projects. Visit a project to
+                        create your first task.
+                      </p>
+                    </>
+                  )}
                 </div>
-                {activeFilterCount > 0 ? (
-                  <>
-                    <p className="text-neutral-900 font-medium">No tasks match your filters</p>
-                    <p className="text-neutral-600 text-sm mt-1">
-                      Try adjusting or clearing your filters to see more tasks.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-neutral-900 font-medium">No tasks yet</p>
-                    <p className="text-neutral-600 text-sm mt-1">
-                      Tasks are created within projects. Visit a project to create your first task.
-                    </p>
-                  </>
-                )}
               </div>
-            </div>
-          )}
+            )}
 
           {/* List View - Tasks Table */}
-          {viewMode === 'list' && !tasksQuery.isLoading && !tasksQuery.error && filteredTasks.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-neutral-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider w-8">
-                      Done
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
-                      Project
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
-                      Priority
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
-                      Due Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-neutral-200">
-                  {filteredTasks.map((task) => (
-                    <tr
-                      key={task.id}
-                      className="hover:bg-neutral-50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <Checkbox
-                          checked={task.status === 'DONE'}
-                          onChange={() => handleToggleDone(task)}
-                          aria-label={`Mark task "${task.title}" as ${task.status === 'DONE' ? 'not done' : 'done'}`}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="max-w-md">
-                          <p
-                            className={`text-sm font-medium ${
-                              task.status === 'DONE'
-                                ? 'line-through text-neutral-500'
-                                : 'text-neutral-900'
-                            }`}
-                            title={task.title}
-                          >
-                            {task.title}
-                          </p>
-                          {task.description && (
+          {viewMode === 'list' &&
+            !tasksQuery.isLoading &&
+            !tasksQuery.error &&
+            filteredTasks.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-neutral-50 border-b border-neutral-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider w-8">
+                        Done
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                        Title
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                        Project
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                        Priority
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                        Due Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-neutral-200">
+                    {filteredTasks.map((task) => (
+                      <tr
+                        key={task.id}
+                        className="hover:bg-neutral-50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <Checkbox
+                            checked={task.status === 'DONE'}
+                            onChange={() => handleToggleDone(task)}
+                            aria-label={`Mark task "${task.title}" as ${task.status === 'DONE' ? 'not done' : 'done'}`}
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="max-w-md">
                             <p
-                              className="text-xs text-neutral-600 mt-1 line-clamp-2"
-                              title={task.description}
+                              className={`text-sm font-medium ${
+                                task.status === 'DONE'
+                                  ? 'line-through text-neutral-500'
+                                  : 'text-neutral-900'
+                              }`}
+                              title={task.title}
                             >
-                              {task.description}
+                              {task.title}
                             </p>
+                            {task.description && (
+                              <p
+                                className="text-xs text-neutral-600 mt-1 line-clamp-2"
+                                title={task.description}
+                              >
+                                {task.description}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {task.projectName && (
+                            <Link
+                              to={`/projects/${task.projectId}`}
+                              className="text-sm text-primary-600 hover:text-primary-700 hover:underline"
+                            >
+                              {task.projectName}
+                            </Link>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {task.projectName && (
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={getStatusBadgeVariant(task.status)}>
+                              {formatStatusLabel(task.status)}
+                            </Badge>
+                            <select
+                              value={task.status}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  task.id,
+                                  e.target.value as TaskStatus,
+                                )
+                              }
+                              className="text-xs border border-neutral-300 bg-white rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-600"
+                              aria-label={`Change status for task "${task.title}"`}
+                            >
+                              {TASK_STATUSES.map((status) => (
+                                <option key={status} value={status}>
+                                  {formatStatusLabel(status)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge
+                            variant={getPriorityBadgeVariant(task.priority)}
+                          >
+                            {task.priority ?? 'None'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
+                          {formatDate(task.dueDate)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                           <Link
                             to={`/projects/${task.projectId}`}
-                            className="text-sm text-primary-600 hover:text-primary-700 hover:underline"
+                            className="text-primary-600 hover:text-primary-700 font-medium"
                           >
-                            {task.projectName}
+                            View Project
                           </Link>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getStatusBadgeVariant(task.status)}>
-                            {formatStatusLabel(task.status)}
-                          </Badge>
-                          <select
-                            value={task.status}
-                            onChange={(e) =>
-                              handleStatusChange(task.id, e.target.value as TaskStatus)
-                            }
-                            className="text-xs border border-neutral-300 bg-white rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-600"
-                            aria-label={`Change status for task "${task.title}"`}
-                          >
-                            {TASK_STATUSES.map((status) => (
-                              <option key={status} value={status}>
-                                {formatStatusLabel(status)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={getPriorityBadgeVariant(task.priority)}>
-                          {task.priority ?? 'None'}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
-                        {formatDate(task.dueDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <Link
-                          to={`/projects/${task.projectId}`}
-                          className="text-primary-600 hover:text-primary-700 font-medium"
-                        >
-                          View Project
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
           {/* Board View - Kanban */}
-          {viewMode === 'board' && !tasksQuery.isLoading && !tasksQuery.error && filteredTasks.length > 0 && (
-            <TaskKanbanBoard
-              tasks={filteredTasks}
-              onTaskMove={handleStatusChange}
-            />
-          )}
+          {viewMode === 'board' &&
+            !tasksQuery.isLoading &&
+            !tasksQuery.error &&
+            filteredTasks.length > 0 && (
+              <TaskKanbanBoard
+                tasks={filteredTasks}
+                onTaskMove={handleStatusChange}
+              />
+            )}
         </section>
       </main>
     </div>
