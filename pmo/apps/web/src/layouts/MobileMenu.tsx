@@ -66,6 +66,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
   const location = useLocation();
   const menuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const prevPathnameRef = useRef<string>(location.pathname);
 
   const isActive = (path: string): boolean => {
     if (path === '/dashboard') {
@@ -77,9 +78,12 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
   const mainNavItems = navItems.filter((item) => item.group === 'main');
   const adminNavItems = navItems.filter((item) => item.group === 'admin');
 
-  // Close menu on route change
+  // Close menu on route change (only when pathname actually changes)
   useEffect(() => {
-    onClose();
+    if (prevPathnameRef.current !== location.pathname) {
+      prevPathnameRef.current = location.pathname;
+      onClose();
+    }
   }, [location.pathname, onClose]);
 
   // Focus trap and ESC key handler
