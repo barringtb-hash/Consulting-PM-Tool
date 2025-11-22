@@ -140,7 +140,9 @@ describe('Project Setup Flow', () => {
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Project Details')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Project Details' }),
+      ).toBeInTheDocument();
     });
   });
 

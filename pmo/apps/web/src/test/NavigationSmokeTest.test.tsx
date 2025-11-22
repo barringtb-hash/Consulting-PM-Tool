@@ -101,7 +101,9 @@ describe('Navigation Smoke Tests', () => {
     renderWithProviders(<ClientsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Clients')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Clients' }),
+      ).toBeInTheDocument();
     });
 
     expect(screen.getByText('Filters')).toBeInTheDocument();
@@ -141,7 +143,8 @@ describe('Navigation Smoke Tests', () => {
     renderWithProviders(<AssetsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('No assets found')).toBeInTheDocument();
+      const emptyStateMessages = screen.getAllByText('No assets found');
+      expect(emptyStateMessages.length).toBeGreaterThan(0);
     });
   });
 });

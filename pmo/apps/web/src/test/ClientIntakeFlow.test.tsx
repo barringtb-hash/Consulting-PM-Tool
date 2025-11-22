@@ -74,9 +74,9 @@ describe('Client Intake Flow', () => {
     await user.click(submitButton);
 
     // Should not proceed due to validation
-    await waitFor(() => {
-      expect(screen.getByText('Client name is required')).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText('Client name is required'),
+    ).toBeInTheDocument();
   });
 
   it('completes Step 1: Organization with valid data', async () => {
