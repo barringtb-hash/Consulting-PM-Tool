@@ -73,9 +73,14 @@ describe('Client Intake Flow', () => {
     });
     await user.click(submitButton);
 
-    // Should not proceed due to validation
+    // Should not proceed due to validation - mutation should not be called
+    await waitFor(() => {
+      expect(mockMutateAsync).not.toHaveBeenCalled();
+    });
+
+    // Should still be on Step 1
     expect(
-      await screen.findByText('Client name is required'),
+      screen.getByText('Step 1: Organization Basics'),
     ).toBeInTheDocument();
   });
 
