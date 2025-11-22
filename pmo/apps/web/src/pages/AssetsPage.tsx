@@ -7,7 +7,6 @@ import {
   useCreateAsset,
   useUpdateAsset,
 } from '../api/queries';
-import { type Client } from '../api/clients';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
@@ -16,7 +15,13 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Checkbox } from '../ui/Checkbox';
 import { Badge } from '../ui/Badge';
-import { Search, Plus, Edit2, Archive, FileText, FolderOpen } from 'lucide-react';
+import {
+  Plus,
+  Edit2,
+  Archive,
+  FileText,
+  FolderOpen,
+} from 'lucide-react';
 import AssetDetailModal from '../features/assets/AssetDetailModal';
 import AssetFormCard from '../features/assets/AssetFormCard';
 
@@ -28,7 +33,10 @@ const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   GUARDRAIL: 'Guardrail',
 };
 
-const ASSET_TYPE_VARIANTS: Record<AssetType, 'primary' | 'success' | 'warning' | 'neutral' | 'secondary'> = {
+const ASSET_TYPE_VARIANTS: Record<
+  AssetType,
+  'primary' | 'success' | 'warning' | 'neutral' | 'secondary'
+> = {
   PROMPT_TEMPLATE: 'primary',
   WORKFLOW: 'success',
   DATASET: 'warning',
@@ -45,7 +53,6 @@ function AssetsPage(): JSX.Element {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const filterParams = useMemo(
@@ -81,8 +88,6 @@ function AssetsPage(): JSX.Element {
   }, [toast]);
 
   const handleArchive = async (assetId: number) => {
-    setFormError(null);
-
     try {
       await archiveAssetMutation.mutateAsync(assetId);
       if (editingAsset?.id === assetId) {
@@ -96,7 +101,6 @@ function AssetsPage(): JSX.Element {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to archive asset';
-      setFormError(message);
       setToast(message);
     }
   };
@@ -113,13 +117,11 @@ function AssetsPage(): JSX.Element {
   const handleCancelEdit = () => {
     setEditingAsset(null);
     setShowCreateForm(false);
-    setFormError(null);
   };
 
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
     setEditingAsset(null);
-    setFormError(null);
   };
 
   const formatDate = (dateStr: string): string => {
@@ -281,122 +283,137 @@ function AssetsPage(): JSX.Element {
           )}
 
           {/* Empty State */}
-          {!assetsQuery.isLoading && !assetsQuery.error && assets.length === 0 && (
-            <Card>
-              <CardBody>
-                <div className="text-center py-12">
-                  <FolderOpen className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                    No assets found
-                  </h3>
-                  <p className="text-neutral-600 text-sm mb-6 max-w-md mx-auto">
-                    {search || type || template || clientId
-                      ? 'Try adjusting your filters to find what you\'re looking for.'
-                      : 'Get started by creating your first asset — a prompt template, workflow, dataset, or training material.'}
-                  </p>
-                  {!showCreateForm && (
-                    <Button onClick={() => setShowCreateForm(true)}>
-                      <Plus className="w-4 h-4" />
-                      Create Your First Asset
-                    </Button>
-                  )}
-                </div>
-              </CardBody>
-            </Card>
-          )}
+          {!assetsQuery.isLoading &&
+            !assetsQuery.error &&
+            assets.length === 0 && (
+              <Card>
+                <CardBody>
+                  <div className="text-center py-12">
+                    <FolderOpen className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                      No assets found
+                    </h3>
+                    <p className="text-neutral-600 text-sm mb-6 max-w-md mx-auto">
+                      {search || type || template || clientId
+                        ? "Try adjusting your filters to find what you're looking for."
+                        : 'Get started by creating your first asset — a prompt template, workflow, dataset, or training material.'}
+                    </p>
+                    {!showCreateForm && (
+                      <Button onClick={() => setShowCreateForm(true)}>
+                        <Plus className="w-4 h-4" />
+                        Create Your First Asset
+                      </Button>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            )}
 
           {/* Asset Cards Grid */}
-          {!assetsQuery.isLoading && !assetsQuery.error && assets.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {assets.map((asset) => {
-                const client = clients.find((c) => c.id === asset.clientId);
-                return (
-                  <Card
-                    key={asset.id}
-                    className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => setSelectedAsset(asset)}
-                  >
-                    <CardBody className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-neutral-900 truncate">
-                            {asset.name}
-                          </h3>
-                          {asset.archived && (
-                            <Badge variant="danger" className="mt-1">
-                              Archived
-                            </Badge>
-                          )}
-                        </div>
-                        <Badge variant={ASSET_TYPE_VARIANTS[asset.type]}>
-                          {ASSET_TYPE_LABELS[asset.type]}
-                        </Badge>
-                      </div>
-
-                      <p className="text-sm text-neutral-600 line-clamp-2 min-h-[2.5rem]">
-                        {asset.description || 'No description provided'}
-                      </p>
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-neutral-400" />
-                          <span className="text-neutral-600">
-                            {client ? client.name : asset.isTemplate ? 'Global Template' : 'Unassigned'}
-                          </span>
-                        </div>
-
-                        {asset.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {asset.tags.slice(0, 3).map((tag) => (
-                              <Badge key={tag} variant="neutral" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                            {asset.tags.length > 3 && (
-                              <Badge variant="neutral" className="text-xs">
-                                +{asset.tags.length - 3} more
+          {!assetsQuery.isLoading &&
+            !assetsQuery.error &&
+            assets.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {assets.map((asset) => {
+                  const client = clients.find((c) => c.id === asset.clientId);
+                  return (
+                    <Card
+                      key={asset.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => setSelectedAsset(asset)}
+                    >
+                      <CardBody className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-neutral-900 truncate">
+                              {asset.name}
+                            </h3>
+                            {asset.archived && (
+                              <Badge variant="danger" className="mt-1">
+                                Archived
                               </Badge>
                             )}
                           </div>
-                        )}
-
-                        <div className="text-xs text-neutral-500">
-                          Updated {formatDate(asset.updatedAt)}
+                          <Badge variant={ASSET_TYPE_VARIANTS[asset.type]}>
+                            {ASSET_TYPE_LABELS[asset.type]}
+                          </Badge>
                         </div>
-                      </div>
 
-                      <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(asset);
-                          }}
+                        <p className="text-sm text-neutral-600 line-clamp-2 min-h-[2.5rem]">
+                          {asset.description || 'No description provided'}
+                        </p>
+
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-neutral-400" />
+                            <span className="text-neutral-600">
+                              {client
+                                ? client.name
+                                : asset.isTemplate
+                                  ? 'Global Template'
+                                  : 'Unassigned'}
+                            </span>
+                          </div>
+
+                          {asset.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {asset.tags.slice(0, 3).map((tag) => (
+                                <Badge
+                                  key={tag}
+                                  variant="neutral"
+                                  className="text-xs"
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {asset.tags.length > 3 && (
+                                <Badge variant="neutral" className="text-xs">
+                                  +{asset.tags.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="text-xs text-neutral-500">
+                            Updated {formatDate(asset.updatedAt)}
+                          </div>
+                        </div>
+
+                        <div
+                          className="flex gap-2 pt-2"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Edit2 className="w-3 h-3" />
-                          Edit
-                        </Button>
-                        {!asset.archived && (
                           <Button
                             size="sm"
-                            variant="subtle"
+                            variant="secondary"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleArchive(asset.id);
+                              handleEdit(asset);
                             }}
-                            disabled={archiveAssetMutation.isPending}
                           >
-                            <Archive className="w-3 h-3" />
+                            <Edit2 className="w-3 h-3" />
+                            Edit
                           </Button>
-                        )}
-                      </div>
-                    </CardBody>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                          {!asset.archived && (
+                            <Button
+                              size="sm"
+                              variant="subtle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleArchive(asset.id);
+                              }}
+                              disabled={archiveAssetMutation.isPending}
+                            >
+                              <Archive className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardBody>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
         </div>
       </div>
 

@@ -50,7 +50,9 @@ function AssetFormCard({
   onSuccess,
 }: AssetFormCardProps): JSX.Element {
   const [values, setValues] = useState<FormValues>(defaultValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormValues, string>>
+  >({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
   const createAssetMutation = useCreateAsset();
@@ -137,7 +139,8 @@ function AssetFormCard({
     }
   };
 
-  const isSubmitting = createAssetMutation.isPending || updateAssetMutation.isPending;
+  const isSubmitting =
+    createAssetMutation.isPending || updateAssetMutation.isPending;
 
   return (
     <Card>

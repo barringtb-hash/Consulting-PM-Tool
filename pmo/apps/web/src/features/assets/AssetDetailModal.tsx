@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Edit2, Archive, FileText, Tag, Calendar, User } from 'lucide-react';
+import { X, Edit2, Archive, FileText, Tag, Calendar } from 'lucide-react';
 import { type Asset } from '../../api/assets';
 import { type Client } from '../../api/clients';
 import { Badge } from '../../ui/Badge';
@@ -21,7 +21,10 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   GUARDRAIL: 'Guardrail',
 };
 
-const ASSET_TYPE_VARIANTS: Record<string, 'primary' | 'success' | 'warning' | 'neutral' | 'secondary'> = {
+const ASSET_TYPE_VARIANTS: Record<
+  string,
+  'primary' | 'success' | 'warning' | 'neutral' | 'secondary'
+> = {
   PROMPT_TEMPLATE: 'primary',
   WORKFLOW: 'success',
   DATASET: 'warning',
@@ -74,12 +77,8 @@ function AssetDetailModal({
                 <Badge variant={ASSET_TYPE_VARIANTS[asset.type]}>
                   {ASSET_TYPE_LABELS[asset.type]}
                 </Badge>
-                {asset.isTemplate && (
-                  <Badge variant="primary">Template</Badge>
-                )}
-                {asset.archived && (
-                  <Badge variant="danger">Archived</Badge>
-                )}
+                {asset.isTemplate && <Badge variant="primary">Template</Badge>}
+                {asset.archived && <Badge variant="danger">Archived</Badge>}
               </div>
             </div>
             <button
@@ -110,7 +109,11 @@ function AssetDetailModal({
                 Client Assignment
               </h3>
               <p className="text-neutral-900">
-                {client ? client.name : asset.isTemplate ? 'Global Template' : 'Unassigned'}
+                {client
+                  ? client.name
+                  : asset.isTemplate
+                    ? 'Global Template'
+                    : 'Unassigned'}
               </p>
             </div>
 
