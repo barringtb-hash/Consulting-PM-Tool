@@ -75,7 +75,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run dev --workspace pmo-api',
-      url: 'http://localhost:4000/api/healthz',
+      url: 'http://localhost:4000/healthz',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       stdout: 'pipe',
