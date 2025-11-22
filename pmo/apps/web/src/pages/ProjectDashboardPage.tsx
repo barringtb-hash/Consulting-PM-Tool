@@ -483,7 +483,11 @@ function ProjectDashboardPage(): JSX.Element {
 
       {/* Tabbed Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs
+          defaultValue="overview"
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
           <TabsList className="mb-6">
             <TabsTrigger value="overview">
               <LayoutDashboard className="w-4 h-4" />
