@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { type Asset, type AssetType } from '../api/assets';
 import {
   useArchiveAsset,
@@ -15,6 +15,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Checkbox } from '../ui/Checkbox';
 import { Badge } from '../ui/Badge';
+import { useToast } from '../ui/Toast';
 import { Plus, Edit2, Archive, FileText, FolderOpen } from 'lucide-react';
 import AssetDetailModal from '../features/assets/AssetDetailModal';
 import AssetFormCard from '../features/assets/AssetFormCard';
@@ -47,7 +48,8 @@ function AssetsPage(): JSX.Element {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+
+  const { showToast } = useToast();
 
   const filterParams = useMemo(
     () => ({
@@ -73,14 +75,6 @@ function AssetsPage(): JSX.Element {
   useRedirectOnUnauthorized(updateAssetMutation.error);
   useRedirectOnUnauthorized(archiveAssetMutation.error);
 
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [toast]);
-
   const handleArchive = async (assetId: number) => {
     try {
       await archiveAssetMutation.mutateAsync(assetId);
@@ -91,11 +85,11 @@ function AssetsPage(): JSX.Element {
       if (selectedAsset?.id === assetId) {
         setSelectedAsset(null);
       }
-      setToast('Asset archived successfully');
+      showToast('Asset archived successfully', 'success');
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to archive asset';
-      setToast(message);
+      showToast(message, 'error');
     }
   };
 
@@ -146,13 +140,6 @@ function AssetsPage(): JSX.Element {
       />
 
       <div className="container-padding py-6 space-y-6">
-        {/* Toast */}
-        {toast && (
-          <div className="fixed top-4 right-4 z-50 bg-success-600 text-white px-4 py-3 rounded-lg shadow-lg">
-            {toast}
-          </div>
-        )}
-
         {/* Create/Edit Form */}
         {showCreateForm && (
           <AssetFormCard

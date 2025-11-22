@@ -106,9 +106,170 @@ To extend component variants:
 2. Define styles in the `variantStyles` object
 3. Export the type for consumers
 
+#### Navigation & Feedback
+
+- **`<Tabs>`** – Context-based tab navigation with TabsList, TabsTrigger, and TabsContent
+- **`<ToastProvider>` & `useToast()`** – Toast notification system for user feedback
+  - Supports `success`, `error`, and `info` variants
+  - Auto-dismisses after 5 seconds
+  - Accessible with `aria-live` regions
+
+**Toast Usage:**
+```tsx
+import { useToast } from '../ui/Toast';
+
+function MyComponent() {
+  const { showToast } = useToast();
+
+  const handleAction = async () => {
+    try {
+      await someAction();
+      showToast('Action completed successfully!', 'success');
+    } catch (error) {
+      showToast('Failed to complete action', 'error');
+    }
+  };
+}
+```
+
 ### Accessibility
 
 - All form controls support proper labeling and ARIA attributes
 - Focus states are visible with `focus-visible` styles
 - Error states use `aria-invalid` and `aria-describedby`
 - Interactive elements meet WCAG contrast requirements
+- Toast notifications use `aria-live="polite"` for screen reader support
+
+## Application Layout & Routing
+
+### AppLayout
+
+The main application layout (`/src/layouts/AppLayout.tsx`) provides:
+- Persistent sidebar navigation
+- Top navigation bar with user menu
+- Mobile-responsive hamburger menu
+- Protected route wrapper
+
+All authenticated pages should be wrapped in `<AppLayout>`:
+```tsx
+<AppLayout>
+  <YourPageContent />
+</AppLayout>
+```
+
+### Routing Conventions
+
+Routes are defined in `/src/App.tsx` using React Router v6:
+
+- `/` – Dashboard (protected)
+- `/login` – Login page (public)
+- `/clients` – Clients list (protected)
+- `/client-intake` – Client creation wizard (protected)
+- `/clients/:id` – Client detail page (protected)
+- `/tasks` – My tasks page (protected)
+- `/projects/new` – Project creation wizard (protected)
+- `/projects/:id` – Project dashboard (protected)
+- `/assets` – Assets library (protected)
+- `/admin/users/new` – Create user (protected, admin only)
+
+Protected routes require authentication and redirect to `/login` if the user is not authenticated.
+
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test --workspace pmo-web
+
+# Run tests in watch mode
+npm test --workspace pmo-web -- --watch
+
+# Run tests with coverage
+npm test --workspace pmo-web -- --coverage
+```
+
+### Test Structure
+
+Tests are organized in `/src/test`:
+- **`setup.ts`** – Global test configuration and jest-dom matchers
+- **`utils.tsx`** – Test utilities including `renderWithProviders()`
+- **`*.test.tsx`** – Test files colocated with test utilities
+
+### Test Utilities
+
+**`renderWithProviders()`** wraps components with:
+- `MemoryRouter` for routing
+- `QueryClientProvider` for React Query
+- `ToastProvider` for notifications
+
+Example:
+```tsx
+import { renderWithProviders } from './test/utils';
+
+it('renders component', () => {
+  renderWithProviders(<MyComponent />);
+  expect(screen.getByText('Hello')).toBeInTheDocument();
+});
+```
+
+### Smoke Tests
+
+Comprehensive smoke tests ensure core flows work:
+- **NavigationSmokeTest.test.tsx** – All major pages render without crashing
+- **ClientIntakeFlow.test.tsx** – Client creation wizard happy path
+- **ProjectSetupFlow.test.tsx** – Project creation wizard happy path
+
+### Mocking APIs
+
+Use Vitest mocks for API calls:
+```tsx
+vi.mock('../api/queries', () => ({
+  useClients: vi.fn(() => ({
+    data: mockData,
+    isLoading: false,
+    error: null,
+  })),
+}));
+```
+
+## Development Workflow
+
+### Adding a New Page
+
+1. Create page component in `/src/pages`
+2. Add route in `/src/App.tsx`
+3. Add navigation link in `/src/layouts/Sidebar.tsx`
+4. Wrap with `<AppLayout>` if authenticated
+5. Add smoke test in `/src/test`
+
+### Adding a New Form
+
+1. Use existing form components from `/src/ui`
+2. Implement validation with local state or validation library
+3. Use React Query mutations for submission
+4. Show success/error feedback with `useToast()`
+5. Handle loading states with `isLoading` props
+
+### Styling Guidelines
+
+- Use Tailwind utility classes for styling
+- Follow existing color palette (primary, neutral, success, warning, danger)
+- Use design system components instead of raw HTML elements
+- Maintain responsive design with `sm:`, `md:`, `lg:` breakpoints
+- Use semantic HTML (`<header>`, `<section>`, `<nav>`, etc.)
+
+## Linting & Code Quality
+
+```bash
+# Run ESLint
+npm run lint --workspace pmo-web
+
+# Fix auto-fixable issues
+npm run lint --workspace pmo-web -- --fix
+```
+
+ESLint is configured with:
+- React and TypeScript support
+- React Hooks rules
+- Accessibility (a11y) checks

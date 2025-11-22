@@ -8,6 +8,7 @@ import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
 import { Checkbox } from '../../ui/Checkbox';
 import { Button } from '../../ui/Button';
+import { useToast } from '../../ui/Toast';
 import { Save, X } from 'lucide-react';
 
 interface AssetFormCardProps {
@@ -55,6 +56,7 @@ function AssetFormCard({
   >({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
+  const { showToast } = useToast();
   const createAssetMutation = useCreateAsset();
   const updateAssetMutation = useUpdateAsset(editingAsset?.id ?? 0);
 
@@ -128,14 +130,17 @@ function AssetFormCard({
     try {
       if (editingAsset) {
         await updateAssetMutation.mutateAsync(payload);
+        showToast(`Asset "${values.name}" updated successfully`, 'success');
       } else {
         await createAssetMutation.mutateAsync(payload);
+        showToast(`Asset "${values.name}" created successfully`, 'success');
       }
       onSuccess();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to save asset';
       setGeneralError(message);
+      showToast(message, 'error');
     }
   };
 
