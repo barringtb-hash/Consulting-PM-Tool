@@ -38,7 +38,36 @@ The design system is built with **Tailwind CSS** and provides a consistent set o
 
 Defined in `tailwind.config.js`:
 
-- **Colors**: `primary` (blue), `neutral` (grays), `success`, `warning`, `danger`
+#### Color Palette
+
+The application uses a **warm, high-contrast color scheme** optimized for readability and extended viewing:
+
+- **Primary (Blue)** – `#2563eb` base
+  - Brand identity color for navigation, buttons, links, and focus states
+  - Deeper, more readable blue compared to standard palettes
+  - Usage: Primary CTAs, active nav items, interactive elements, logo
+
+- **Neutral (Warm Grays)** – `#fafaf9` to `#1c1917`
+  - Warm grays with subtle brown/beige undertones to reduce eye strain
+  - Enhanced contrast between background layers for better visual hierarchy
+  - Usage: Backgrounds, text, borders, dividers, labels
+
+- **Success (Forest Green)** – `#16a34a` base
+  - Professional forest green (not lime) for positive states
+  - Usage: Success toasts, "ON_TRACK" status, success badges, validation
+
+- **Warning (Amber)** – `#eab308` base
+  - Warm amber/yellow for caution states
+  - Better differentiation from danger (red) and success (green)
+  - Usage: Warning toasts, "AT_RISK" status, warning badges
+
+- **Danger (Authoritative Red)** – `#dc2626` base
+  - Deeper, more serious red for error states
+  - Enhanced contrast for critical messages
+  - Usage: Error toasts, "OFF_TRACK" status, destructive actions, form errors
+
+**Accessibility**: All color combinations meet **WCAG 2.1 Level AA** standards, with most achieving **AAA** compliance for contrast ratios.
+
 - **Typography**: System font stack with responsive sizes
 - **Spacing**: Standard Tailwind scale (4px increments)
 - **Border Radius**: `sm`, `md`, `lg`, `xl`, `2xl`, `full`

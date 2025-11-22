@@ -12,15 +12,15 @@ interface ProjectStatusPillProps {
 const healthStatusConfig = {
   ON_TRACK: {
     label: 'On Track',
-    className: 'bg-green-100 border-green-500 text-green-800',
+    className: 'bg-success-100 border-success-500 text-success-800',
   },
   AT_RISK: {
     label: 'At Risk',
-    className: 'bg-yellow-100 border-yellow-500 text-yellow-800',
+    className: 'bg-warning-100 border-warning-500 text-warning-800',
   },
   OFF_TRACK: {
     label: 'Off Track',
-    className: 'bg-red-100 border-red-500 text-red-800',
+    className: 'bg-danger-100 border-danger-500 text-danger-800',
   },
 };
 
