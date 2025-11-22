@@ -8,123 +8,33 @@ import {
   useUpdateAsset,
 } from '../api/queries';
 import { type Client } from '../api/clients';
-import AssetForm, {
-  assetFormValuesToPayload,
-  type AssetFormValues,
-} from '../components/AssetForm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
+import { PageHeader } from '../ui/PageHeader';
+import { Button } from '../ui/Button';
+import { Card, CardBody, CardHeader, CardTitle } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Checkbox } from '../ui/Checkbox';
+import { Badge } from '../ui/Badge';
+import { Search, Plus, Edit2, Archive, FileText, FolderOpen } from 'lucide-react';
+import AssetDetailModal from '../features/assets/AssetDetailModal';
+import AssetFormCard from '../features/assets/AssetFormCard';
 
-interface AssetFilterProps {
-  search: string;
-  type: AssetType | '';
-  template: '' | 'true' | 'false';
-  clientId: string;
-  includeArchived: boolean;
-  clients?: Client[];
-  onChange: (filters: {
-    search: string;
-    type: AssetType | '';
-    template: '' | 'true' | 'false';
-    clientId: string;
-    includeArchived: boolean;
-  }) => void;
-}
+const ASSET_TYPE_LABELS: Record<AssetType, string> = {
+  PROMPT_TEMPLATE: 'Prompt Template',
+  WORKFLOW: 'Workflow',
+  DATASET: 'Dataset',
+  EVALUATION: 'Evaluation',
+  GUARDRAIL: 'Guardrail',
+};
 
-function AssetFilters({
-  search,
-  type,
-  template,
-  clientId,
-  includeArchived,
-  clients,
-  onChange,
-}: AssetFilterProps) {
-  const handleChange = (
-    key: keyof Omit<AssetFilterProps, 'clients' | 'onChange'>,
-    value: string | boolean,
-  ) => {
-    onChange({
-      search,
-      type,
-      template,
-      clientId,
-      includeArchived,
-      [key]: value,
-    } as AssetFilterProps);
-  };
-
-  return (
-    <fieldset>
-      <legend>Filters</legend>
-      <div>
-        <label htmlFor="asset-search">Search</label>
-        <input
-          id="asset-search"
-          value={search}
-          onChange={(event) => handleChange('search', event.target.value)}
-          placeholder="Search by name, description, or tag"
-        />
-      </div>
-      <div>
-        <label htmlFor="asset-type-filter">Type</label>
-        <select
-          id="asset-type-filter"
-          value={type}
-          onChange={(event) => handleChange('type', event.target.value)}
-        >
-          <option value="">Any</option>
-          <option value="PROMPT_TEMPLATE">Prompt template</option>
-          <option value="WORKFLOW">Workflow</option>
-          <option value="DATASET">Dataset</option>
-          <option value="EVALUATION">Evaluation</option>
-          <option value="GUARDRAIL">Guardrail</option>
-        </select>
-      </div>
-      <div>
-        <label htmlFor="asset-template-filter">Template</label>
-        <select
-          id="asset-template-filter"
-          value={template}
-          onChange={(event) =>
-            handleChange(
-              'template',
-              event.target.value as '' | 'true' | 'false',
-            )
-          }
-        >
-          <option value="">Any</option>
-          <option value="true">Templates only</option>
-          <option value="false">Non-templates</option>
-        </select>
-      </div>
-      <div>
-        <label htmlFor="asset-client-filter">Client</label>
-        <select
-          id="asset-client-filter"
-          value={clientId}
-          onChange={(event) => handleChange('clientId', event.target.value)}
-        >
-          <option value="">Any client</option>
-          {clients?.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <label>
-        <input
-          type="checkbox"
-          checked={includeArchived}
-          onChange={(event) =>
-            handleChange('includeArchived', event.target.checked)
-          }
-        />
-        Show archived
-      </label>
-    </fieldset>
-  );
-}
+const ASSET_TYPE_VARIANTS: Record<AssetType, 'primary' | 'success' | 'warning' | 'neutral' | 'secondary'> = {
+  PROMPT_TEMPLATE: 'primary',
+  WORKFLOW: 'success',
+  DATASET: 'warning',
+  EVALUATION: 'secondary',
+  GUARDRAIL: 'neutral',
+};
 
 function AssetsPage(): JSX.Element {
   const [search, setSearch] = useState('');
@@ -132,7 +42,9 @@ function AssetsPage(): JSX.Element {
   const [template, setTemplate] = useState<'' | 'true' | 'false'>('');
   const [clientId, setClientId] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -168,41 +80,6 @@ function AssetsPage(): JSX.Element {
     return undefined;
   }, [toast]);
 
-  const handleSave = async (values: AssetFormValues) => {
-    setFormError(null);
-
-    if (!values.name.trim()) {
-      setFormError('Name is required');
-      return;
-    }
-
-    if (!values.type) {
-      setFormError('Asset type is required');
-      return;
-    }
-
-    const payload = assetFormValuesToPayload(values);
-
-    try {
-      if (editingAsset) {
-        await updateAssetMutation.mutateAsync(payload);
-        setEditingAsset(null);
-        setToast('Asset updated successfully');
-      } else {
-        await createAssetMutation.mutateAsync(payload);
-        setToast('Asset created successfully');
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unable to save asset';
-      setFormError(message);
-    }
-  };
-
-  const handleEdit = (asset: Asset) => {
-    setEditingAsset(asset);
-  };
-
   const handleArchive = async (assetId: number) => {
     setFormError(null);
 
@@ -210,173 +87,332 @@ function AssetsPage(): JSX.Element {
       await archiveAssetMutation.mutateAsync(assetId);
       if (editingAsset?.id === assetId) {
         setEditingAsset(null);
+        setShowCreateForm(false);
       }
-      setToast('Asset archived');
+      if (selectedAsset?.id === assetId) {
+        setSelectedAsset(null);
+      }
+      setToast('Asset archived successfully');
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to archive asset';
       setFormError(message);
+      setToast(message);
     }
   };
 
   const assets = assetsQuery.data ?? [];
+  const clients = clientsQuery.data ?? [];
+
+  const handleEdit = (asset: Asset) => {
+    setEditingAsset(asset);
+    setShowCreateForm(true);
+    setSelectedAsset(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAsset(null);
+    setShowCreateForm(false);
+    setFormError(null);
+  };
+
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false);
+    setEditingAsset(null);
+    setFormError(null);
+  };
+
+  const formatDate = (dateStr: string): string => {
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return 'Invalid date';
+    }
+  };
 
   return (
-    <main>
-      <header>
-        <h1>Assets</h1>
-        <p>Manage AI prompts, workflows, datasets, and reusable templates.</p>
-      </header>
-
-      {toast && <div className="toast">{toast}</div>}
-
-      <AssetFilters
-        search={search}
-        type={type}
-        template={template}
-        clientId={clientId}
-        includeArchived={includeArchived}
-        clients={clientsQuery.data}
-        onChange={({ search, type, template, clientId, includeArchived }) => {
-          setSearch(search);
-          setType(type);
-          setTemplate(template);
-          setClientId(clientId);
-          setIncludeArchived(includeArchived);
-        }}
+    <div className="min-h-screen bg-neutral-50">
+      <PageHeader
+        title="Assets Library"
+        description="Manage AI prompts, workflows, datasets, and reusable templates"
+        actions={
+          !showCreateForm && (
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="w-4 h-4" />
+              Create Asset
+            </Button>
+          )
+        }
       />
 
-      <section aria-label="asset-list">
-        <h2>Asset library</h2>
-        {assetsQuery.isLoading && <p>Loading assets…</p>}
-        {assetsQuery.error && (
-          <p role="alert">Unable to load assets. Please try again.</p>
+      <div className="container-padding py-6 space-y-6">
+        {/* Toast */}
+        {toast && (
+          <div className="fixed top-4 right-4 z-50 bg-success-600 text-white px-4 py-3 rounded-lg shadow-lg">
+            {toast}
+          </div>
         )}
-        {!assetsQuery.isLoading &&
-          !assetsQuery.error &&
-          assets.length === 0 && (
-            <p>No assets found. Try adjusting your filters.</p>
-          )}
-        {assets.length > 0 && (
-          <>
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Client</th>
-                  <th>Template</th>
-                  <th>Tags</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assets.map((asset) => (
-                  <tr key={asset.id}>
-                    <td>{asset.name}</td>
-                    <td>{asset.type}</td>
-                    <td>
-                      {asset.clientId
-                        ? clientsQuery.data?.find(
-                            (client) => client.id === asset.clientId,
-                          )?.name || '—'
-                        : 'Unassigned'}
-                    </td>
-                    <td>{asset.isTemplate ? 'Yes' : 'No'}</td>
-                    <td>{asset.tags.join(', ') || '—'}</td>
-                    <td>
-                      <button type="button" onClick={() => handleEdit(asset)}>
-                        Edit
-                      </button>
-                      {!asset.archived && (
-                        <button
-                          type="button"
-                          onClick={() => handleArchive(asset.id)}
-                          disabled={archiveAssetMutation.isPending}
-                        >
-                          Archive
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
 
-            <div className="card-grid">
-              {assets.map((asset) => (
-                <article key={asset.id} className="card">
-                  <header className="card__header">
-                    <div>
-                      <strong>{asset.name}</strong>
-                      {asset.archived && <span> (Archived)</span>}
+        {/* Create/Edit Form */}
+        {showCreateForm && (
+          <AssetFormCard
+            editingAsset={editingAsset}
+            clients={clients}
+            onCancel={handleCancelEdit}
+            onSuccess={handleCreateSuccess}
+          />
+        )}
+
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle as="h2">Filters</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-3">
+                <Input
+                  label="Search"
+                  placeholder="Search by name, description, or tag..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              <Select
+                label="Type"
+                value={type}
+                onChange={(e) => setType(e.target.value as AssetType | '')}
+              >
+                <option value="">All Types</option>
+                <option value="PROMPT_TEMPLATE">Prompt Template</option>
+                <option value="WORKFLOW">Workflow</option>
+                <option value="DATASET">Dataset</option>
+                <option value="EVALUATION">Evaluation</option>
+                <option value="GUARDRAIL">Guardrail</option>
+              </Select>
+
+              <Select
+                label="Template Status"
+                value={template}
+                onChange={(e) =>
+                  setTemplate(e.target.value as '' | 'true' | 'false')
+                }
+              >
+                <option value="">All Assets</option>
+                <option value="true">Templates Only</option>
+                <option value="false">Client-Specific Only</option>
+              </Select>
+
+              <Select
+                label="Client"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+              >
+                <option value="">All Clients</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </Select>
+
+              <div className="lg:col-span-3">
+                <Checkbox
+                  label="Show archived assets"
+                  checked={includeArchived}
+                  onChange={(e) => setIncludeArchived(e.target.checked)}
+                />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Asset List */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              {assets.length === 0
+                ? 'No assets found'
+                : `${assets.length} asset${assets.length === 1 ? '' : 's'}`}
+            </h2>
+          </div>
+
+          {/* Loading State */}
+          {assetsQuery.isLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i}>
+                  <CardBody>
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
+                      <div className="h-16 bg-neutral-200 rounded"></div>
+                      <div className="flex gap-2">
+                        <div className="h-6 bg-neutral-200 rounded w-16"></div>
+                        <div className="h-6 bg-neutral-200 rounded w-20"></div>
+                      </div>
                     </div>
-                    <span>{asset.type}</span>
-                  </header>
-                  <p>{asset.description || 'No description provided.'}</p>
-                  <p>
-                    <strong>Client:</strong>{' '}
-                    {asset.clientId
-                      ? clientsQuery.data?.find(
-                          (client) => client.id === asset.clientId,
-                        )?.name || '—'
-                      : 'Unassigned'}
-                  </p>
-                  <p>
-                    <strong>Tags:</strong> {asset.tags.join(', ') || 'None'}
-                  </p>
-                  <p>
-                    <strong>Template:</strong> {asset.isTemplate ? 'Yes' : 'No'}
-                  </p>
-                  <div className="card__actions">
-                    <button type="button" onClick={() => handleEdit(asset)}>
-                      Edit
-                    </button>
-                    {!asset.archived && (
-                      <button
-                        type="button"
-                        onClick={() => handleArchive(asset.id)}
-                        disabled={archiveAssetMutation.isPending}
-                      >
-                        Archive
-                      </button>
-                    )}
-                  </div>
-                </article>
+                  </CardBody>
+                </Card>
               ))}
             </div>
-          </>
-        )}
-      </section>
+          )}
 
-      <section aria-label="asset-form-section">
-        <h2>{editingAsset ? 'Edit asset' : 'Create a new asset'}</h2>
-        <AssetForm
-          initialValues={
-            editingAsset
-              ? {
-                  name: editingAsset.name,
-                  type: editingAsset.type,
-                  description: editingAsset.description ?? '',
-                  clientId: editingAsset.clientId
-                    ? String(editingAsset.clientId)
-                    : '',
-                  tags: editingAsset.tags.join(', '),
-                  isTemplate: editingAsset.isTemplate,
-                }
-              : undefined
-          }
-          onSubmit={handleSave}
-          submitLabel={editingAsset ? 'Update asset' : 'Create asset'}
-          isSubmitting={
-            createAssetMutation.isPending || updateAssetMutation.isPending
-          }
-          onCancel={editingAsset ? () => setEditingAsset(null) : undefined}
-          error={formError}
-          clients={clientsQuery.data}
+          {/* Error State */}
+          {assetsQuery.error && (
+            <Card>
+              <CardBody>
+                <div className="text-center py-8">
+                  <p className="text-danger-600 font-medium">
+                    Unable to load assets
+                  </p>
+                  <p className="text-neutral-600 text-sm mt-2">
+                    Please try again later
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Empty State */}
+          {!assetsQuery.isLoading && !assetsQuery.error && assets.length === 0 && (
+            <Card>
+              <CardBody>
+                <div className="text-center py-12">
+                  <FolderOpen className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                    No assets found
+                  </h3>
+                  <p className="text-neutral-600 text-sm mb-6 max-w-md mx-auto">
+                    {search || type || template || clientId
+                      ? 'Try adjusting your filters to find what you\'re looking for.'
+                      : 'Get started by creating your first asset — a prompt template, workflow, dataset, or training material.'}
+                  </p>
+                  {!showCreateForm && (
+                    <Button onClick={() => setShowCreateForm(true)}>
+                      <Plus className="w-4 h-4" />
+                      Create Your First Asset
+                    </Button>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Asset Cards Grid */}
+          {!assetsQuery.isLoading && !assetsQuery.error && assets.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {assets.map((asset) => {
+                const client = clients.find((c) => c.id === asset.clientId);
+                return (
+                  <Card
+                    key={asset.id}
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => setSelectedAsset(asset)}
+                  >
+                    <CardBody className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-neutral-900 truncate">
+                            {asset.name}
+                          </h3>
+                          {asset.archived && (
+                            <Badge variant="danger" className="mt-1">
+                              Archived
+                            </Badge>
+                          )}
+                        </div>
+                        <Badge variant={ASSET_TYPE_VARIANTS[asset.type]}>
+                          {ASSET_TYPE_LABELS[asset.type]}
+                        </Badge>
+                      </div>
+
+                      <p className="text-sm text-neutral-600 line-clamp-2 min-h-[2.5rem]">
+                        {asset.description || 'No description provided'}
+                      </p>
+
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-neutral-400" />
+                          <span className="text-neutral-600">
+                            {client ? client.name : asset.isTemplate ? 'Global Template' : 'Unassigned'}
+                          </span>
+                        </div>
+
+                        {asset.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {asset.tags.slice(0, 3).map((tag) => (
+                              <Badge key={tag} variant="neutral" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {asset.tags.length > 3 && (
+                              <Badge variant="neutral" className="text-xs">
+                                +{asset.tags.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="text-xs text-neutral-500">
+                          Updated {formatDate(asset.updatedAt)}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(asset);
+                          }}
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          Edit
+                        </Button>
+                        {!asset.archived && (
+                          <Button
+                            size="sm"
+                            variant="subtle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleArchive(asset.id);
+                            }}
+                            disabled={archiveAssetMutation.isPending}
+                          >
+                            <Archive className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Asset Detail Modal */}
+      {selectedAsset && (
+        <AssetDetailModal
+          asset={selectedAsset}
+          client={clients.find((c) => c.id === selectedAsset.clientId)}
+          onClose={() => setSelectedAsset(null)}
+          onEdit={() => {
+            handleEdit(selectedAsset);
+          }}
+          onArchive={() => handleArchive(selectedAsset.id)}
         />
-      </section>
-    </main>
+      )}
+    </div>
   );
 }
 
