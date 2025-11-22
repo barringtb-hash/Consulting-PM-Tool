@@ -15,13 +15,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Checkbox } from '../ui/Checkbox';
 import { Badge } from '../ui/Badge';
-import {
-  Plus,
-  Edit2,
-  Archive,
-  FileText,
-  FolderOpen,
-} from 'lucide-react';
+import { Plus, Edit2, Archive, FileText, FolderOpen } from 'lucide-react';
 import AssetDetailModal from '../features/assets/AssetDetailModal';
 import AssetFormCard from '../features/assets/AssetFormCard';
 
