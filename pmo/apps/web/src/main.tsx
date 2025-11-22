@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import App from './App';
 import { queryClient } from './api/queries';
+import './index.css';
 
 const rootElement = document.getElementById('root');
 
