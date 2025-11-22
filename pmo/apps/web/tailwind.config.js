@@ -4,58 +4,58 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary brand color (blue)
+        // Primary brand color (blue) - Deeper, more readable blues
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
           200: '#bfdbfe',
           300: '#93c5fd',
           400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          500: '#2563eb', // Shifted from bright #3b82f6 to deeper blue
+          600: '#1d4ed8', // Enhanced contrast for interactive elements
+          700: '#1e40af', // Stronger hover states
+          800: '#1e3a8a',
+          900: '#172554',
+          950: '#0f172a',
         },
-        // Neutral grays
+        // Neutral grays - Warm grays with subtle brown/beige undertones
         neutral: {
-          50: '#fafafa',
-          100: '#f5f5f5',
-          200: '#e5e5e5',
-          300: '#d4d4d4',
-          400: '#a3a3a3',
-          500: '#737373',
-          600: '#525252',
-          700: '#404040',
-          800: '#262626',
-          900: '#171717',
-          950: '#0a0a0a',
+          50: '#fafaf9',  // Warmer page background
+          100: '#f5f5f4', // Warmer card backgrounds
+          200: '#e7e5e4', // More visible borders
+          300: '#d6d3d1', // Warmer mid-tone
+          400: '#a8a29e', // Balanced warm gray
+          500: '#78716c', // Warm medium gray
+          600: '#57534e', // Deeper warm gray
+          700: '#44403c', // Warm text labels, easier on eyes
+          800: '#292524', // Dark warm gray
+          900: '#1c1917', // Warmer primary text with higher contrast
+          950: '#0c0a09', // Deepest warm black
         },
-        // Semantic colors
+        // Semantic colors - Enhanced for better readability
         success: {
           50: '#f0fdf4',
           100: '#dcfce7',
           200: '#bbf7d0',
           300: '#86efac',
           400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
+          500: '#16a34a', // Shifted from bright lime to professional forest green
+          600: '#15803d', // Deeper for better contrast
+          700: '#166534',
+          800: '#14532d', // Enhanced text readability
+          900: '#052e16',
         },
         warning: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
+          50: '#fefce8',  // Warmer yellow-beige background
+          100: '#fef9c3', // Amber tones
+          200: '#fef08a',
+          300: '#fde047',
+          400: '#facc15',
+          500: '#eab308', // Shifted from orange to amber for better differentiation
+          600: '#ca8a04', // More distinct from danger
+          700: '#a16207',
+          800: '#854d0e', // Better text contrast
+          900: '#713f12',
         },
         danger: {
           50: '#fef2f2',
@@ -63,11 +63,11 @@ module.exports = {
           200: '#fecaca',
           300: '#fca5a5',
           400: '#f87171',
-          500: '#ef4444',
-          600: '#dc2626',
-          700: '#b91c1c',
-          800: '#991b1b',
-          900: '#7f1d1d',
+          500: '#dc2626', // Deeper, more authoritative red
+          600: '#b91c1c', // Enhanced contrast for error states
+          700: '#991b1b',
+          800: '#7f1d1d', // Better text readability
+          900: '#450a0a',
         },
       },
       fontFamily: {
