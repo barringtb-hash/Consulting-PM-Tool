@@ -134,12 +134,13 @@ function ClientsPage(): JSX.Element {
     if (!newClientName.trim()) return;
 
     try {
-      const client = await createClient.mutateAsync({
+      await createClient.mutateAsync({
         name: newClientName.trim(),
       });
       setNewClientName('');
       showToast('Client created successfully', 'success');
-      navigate(`/clients/${client.id}`);
+      // Don't navigate away - let user see the created client in the list
+      // They can click on it if they want to view details
     } catch {
       showToast('Failed to create client', 'error');
     }

@@ -169,7 +169,15 @@ function ContactForm({
               {onBack ? 'Skip' : 'Cancel'}
             </Button>
           )}
-          <Button type="submit" isLoading={isSubmitting}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            aria-label={
+              submitLabel.includes('Update')
+                ? 'Update contact details'
+                : 'Create new contact'
+            }
+          >
             {submitLabel}
           </Button>
         </div>

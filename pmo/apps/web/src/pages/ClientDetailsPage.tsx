@@ -324,8 +324,11 @@ function ClientDetailsPage(): JSX.Element {
           <button
             type="button"
             onClick={() =>
-              navigate(`/projects/new?clientId=${clientId}&step=template`)
+              navigate(
+                `/projects/new?clientId=${clientId}&step=details&templateId=custom`,
+              )
             }
+            aria-label="Create new project"
           >
             New Project
           </button>

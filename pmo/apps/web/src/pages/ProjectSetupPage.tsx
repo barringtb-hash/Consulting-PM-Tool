@@ -176,16 +176,24 @@ function ProjectSetupPage(): JSX.Element {
       : 'client';
 
   const [step, setStep] = useState<WizardStep>(initialStep);
-  const [formData, setFormData] = useState<ProjectFormData>({
-    clientId: urlClientId ? Number(urlClientId) : (selectedClient?.id ?? ''),
-    templateId: urlParams.get('templateId') || '',
-    name: '',
-    type: '',
-    status: 'PLANNING',
-    startDate: '',
-    endDate: '',
-    goals: '',
-    description: '',
+  const [formData, setFormData] = useState<ProjectFormData>(() => {
+    const clientId = urlClientId
+      ? Number(urlClientId)
+      : (selectedClient?.id ?? '');
+    const templateId = urlParams.get('templateId') || '';
+    const template = PROJECT_TEMPLATES.find((t) => t.id === templateId);
+
+    return {
+      clientId,
+      templateId,
+      name: '',
+      type: template?.type || '',
+      status: 'PLANNING',
+      startDate: '',
+      endDate: '',
+      goals: '',
+      description: '',
+    };
   });
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
