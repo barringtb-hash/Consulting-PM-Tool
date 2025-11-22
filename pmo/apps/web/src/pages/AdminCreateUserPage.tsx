@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
 import { createUser, type CreateUserInput } from '../api/users';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Container,
+  Input,
+  PageHeader,
+  Section,
+  Select,
+} from '../ui';
 
 export function AdminCreateUserPage() {
   const [form, setForm] = useState<CreateUserInput>({
@@ -38,172 +50,122 @@ export function AdminCreateUserPage() {
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
-      <h1>Create New User</h1>
+    <div>
+      <PageHeader
+        title="Create New User"
+        description="Add a new user to the AI Consulting PMO platform."
+      />
 
-      {success && (
-        <div
-          style={{
-            padding: '1rem',
-            marginBottom: '1rem',
-            backgroundColor: '#d4edda',
-            color: '#155724',
-            border: '1px solid #c3e6cb',
-            borderRadius: '4px',
-          }}
-        >
-          User created successfully!
-        </div>
-      )}
+      <Section>
+        <Container maxWidth="md">
+          {success && (
+            <div
+              className="mb-6 p-4 bg-success-50 border border-success-200 rounded-lg text-success-800"
+              role="alert"
+            >
+              <strong className="font-medium">Success!</strong> User created
+              successfully.
+            </div>
+          )}
 
-      {error && (
-        <div
-          style={{
-            padding: '1rem',
-            marginBottom: '1rem',
-            backgroundColor: '#f8d7da',
-            color: '#721c24',
-            border: '1px solid #f5c6cb',
-            borderRadius: '4px',
-          }}
-        >
-          {error}
-        </div>
-      )}
+          {error && (
+            <div
+              className="mb-6 p-4 bg-danger-50 border border-danger-200 rounded-lg text-danger-800"
+              role="alert"
+            >
+              <strong className="font-medium">Error:</strong> {error}
+            </div>
+          )}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label
-            htmlFor="name"
-            style={{ display: 'block', marginBottom: '0.5rem' }}
-          >
-            Name <span style={{ color: 'red' }}>*</span>
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-            maxLength={255}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              fontSize: '1rem',
-            }}
-          />
-        </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>User Details</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <Input
+                  label="Name"
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  maxLength={255}
+                  placeholder="Enter full name"
+                />
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label
-            htmlFor="email"
-            style={{ display: 'block', marginBottom: '0.5rem' }}
-          >
-            Email <span style={{ color: 'red' }}>*</span>
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            maxLength={255}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              fontSize: '1rem',
-            }}
-          />
-        </div>
+                <Input
+                  label="Email"
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  maxLength={255}
+                  placeholder="user@example.com"
+                />
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label
-            htmlFor="password"
-            style={{ display: 'block', marginBottom: '0.5rem' }}
-          >
-            Password <span style={{ color: 'red' }}>*</span>
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            minLength={8}
-            maxLength={255}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              fontSize: '1rem',
-            }}
-          />
-          <small style={{ color: '#666', fontSize: '0.875rem' }}>
-            Must be at least 8 characters with uppercase, lowercase, number, and
-            special character
-          </small>
-        </div>
+                <Input
+                  label="Password"
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  minLength={8}
+                  maxLength={255}
+                  placeholder="Enter password"
+                  helperText="Must be at least 8 characters with uppercase, lowercase, number, and special character"
+                />
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label
-            htmlFor="timezone"
-            style={{ display: 'block', marginBottom: '0.5rem' }}
-          >
-            Timezone <span style={{ color: 'red' }}>*</span>
-          </label>
-          <select
-            id="timezone"
-            name="timezone"
-            value={form.timezone}
-            onChange={handleChange}
-            required
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              fontSize: '1rem',
-            }}
-          >
-            <option value="America/New_York">Eastern Time</option>
-            <option value="America/Chicago">Central Time</option>
-            <option value="America/Denver">Mountain Time</option>
-            <option value="America/Los_Angeles">Pacific Time</option>
-            <option value="UTC">UTC</option>
-            <option value="Europe/London">London</option>
-            <option value="Europe/Paris">Paris</option>
-            <option value="Asia/Tokyo">Tokyo</option>
-            <option value="Asia/Shanghai">Shanghai</option>
-            <option value="Australia/Sydney">Sydney</option>
-          </select>
-        </div>
+                <Select
+                  label="Timezone"
+                  id="timezone"
+                  name="timezone"
+                  value={form.timezone}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="America/New_York">Eastern Time</option>
+                  <option value="America/Chicago">Central Time</option>
+                  <option value="America/Denver">Mountain Time</option>
+                  <option value="America/Los_Angeles">Pacific Time</option>
+                  <option value="UTC">UTC</option>
+                  <option value="Europe/London">London</option>
+                  <option value="Europe/Paris">Paris</option>
+                  <option value="Asia/Tokyo">Tokyo</option>
+                  <option value="Asia/Shanghai">Shanghai</option>
+                  <option value="Australia/Sydney">Sydney</option>
+                </Select>
 
-        <div style={{ marginTop: '1.5rem' }}>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: loading ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {loading ? 'Creating...' : 'Create User'}
-          </button>
-        </div>
-      </form>
+                <div className="flex gap-3 pt-4">
+                  <Button type="submit" isLoading={loading} disabled={loading}>
+                    {loading ? 'Creating...' : 'Create User'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setForm({
+                        name: '',
+                        email: '',
+                        password: '',
+                        timezone: 'America/Chicago',
+                      })
+                    }
+                    disabled={loading}
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </form>
+            </CardBody>
+          </Card>
+        </Container>
+      </Section>
     </div>
   );
 }

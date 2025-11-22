@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Global typography defaults */
+  html {
+    @apply antialiased;
+    font-size: 16px;
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900;
+    line-height: 1.6;
+  }
+
+  /* Headings */
+  h1 {
+    @apply text-3xl font-bold tracking-tight text-neutral-900;
+    line-height: 1.2;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight text-neutral-900;
+    line-height: 1.3;
+  }
+
+  h3 {
+    @apply text-xl font-semibold text-neutral-900;
+    line-height: 1.4;
+  }
+
+  h4 {
+    @apply text-lg font-medium text-neutral-900;
+    line-height: 1.5;
+  }
+
+  h5 {
+    @apply text-base font-medium text-neutral-900;
+  }
+
+  h6 {
+    @apply text-sm font-medium text-neutral-900;
+  }
+
+  /* Links */
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors;
+  }
+
+  a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-600 rounded;
+  }
+
+  /* Focus styles for interactive elements */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-600 rounded;
+  }
+
+  /* Improve readability of paragraphs */
+  p {
+    @apply mb-4 last:mb-0;
+  }
+
+  /* Code */
+  code {
+    @apply font-mono text-sm bg-neutral-100 px-1 py-0.5 rounded;
+  }
+
+  pre {
+    @apply font-mono text-sm bg-neutral-100 p-4 rounded overflow-x-auto;
+  }
+
+  pre code {
+    @apply bg-transparent p-0;
+  }
+}
+
+@layer utilities {
+  /* Custom vertical rhythm utilities */
+  .section-spacing {
+    @apply py-8 md:py-12;
+  }
+
+  .container-padding {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+
+  /* Text overflow utilities */
+  .text-truncate {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+}
