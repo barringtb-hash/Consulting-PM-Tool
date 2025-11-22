@@ -31,9 +31,7 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <TopBar onMenuClick={toggleMobileMenu} />
-        <main className="flex-1 overflow-y-auto bg-neutral-50">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto bg-neutral-50">{children}</main>
       </div>
     </div>
   );

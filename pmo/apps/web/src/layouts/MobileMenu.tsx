@@ -157,7 +157,10 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-neutral-200">
-          <Link to="/dashboard" className="flex items-center gap-2 no-underline">
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-2 no-underline"
+          >
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">AI</span>
             </div>

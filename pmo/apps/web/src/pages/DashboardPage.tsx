@@ -17,17 +17,26 @@ function DashboardPage(): JSX.Element {
               <CardTitle className="mb-4">Quick Links</CardTitle>
               <ul className="space-y-2">
                 <li>
-                  <Link to="/clients" className="text-primary-600 hover:text-primary-700">
+                  <Link
+                    to="/clients"
+                    className="text-primary-600 hover:text-primary-700"
+                  >
                     View Clients
                   </Link>
                 </li>
                 <li>
-                  <Link to="/tasks" className="text-primary-600 hover:text-primary-700">
+                  <Link
+                    to="/tasks"
+                    className="text-primary-600 hover:text-primary-700"
+                  >
                     My Tasks
                   </Link>
                 </li>
                 <li>
-                  <Link to="/assets" className="text-primary-600 hover:text-primary-700">
+                  <Link
+                    to="/assets"
+                    className="text-primary-600 hover:text-primary-700"
+                  >
                     Asset Library
                   </Link>
                 </li>
