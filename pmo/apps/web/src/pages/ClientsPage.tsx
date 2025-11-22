@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 
 import { AiMaturity, CompanySize } from '../api/clients';
-import { useClients, useProjects } from '../api/queries';
+import { useClients, useCreateClient, useProjects } from '../api/queries';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { PageHeader } from '../ui/PageHeader';
 import { Select } from '../ui/Select';
+import { useToast } from '../ui/Toast';
 
 interface Filters {
   search: string;
@@ -40,6 +41,8 @@ function formatDate(dateString: string): string {
 
 function ClientsPage(): JSX.Element {
   const navigate = useNavigate();
+  const toast = useToast();
+  const [newClientName, setNewClientName] = useState('');
   const [filters, setFilters] = useState<Filters>({
     search: '',
     industry: '',
@@ -47,6 +50,8 @@ function ClientsPage(): JSX.Element {
     aiMaturity: '',
     includeArchived: false,
   });
+
+  const createClient = useCreateClient();
 
   const filterParams = useMemo(
     () => ({
@@ -124,6 +129,22 @@ function ClientsPage(): JSX.Element {
     navigate(`/clients/${clientId}`);
   };
 
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClientName.trim()) return;
+
+    try {
+      const client = await createClient.mutateAsync({
+        name: newClientName.trim(),
+      });
+      setNewClientName('');
+      toast.success('Client created successfully');
+      navigate(`/clients/${client.id}`);
+    } catch {
+      toast.error('Failed to create client');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <PageHeader
@@ -138,6 +159,32 @@ function ClientsPage(): JSX.Element {
       />
 
       <main className="container-padding py-6 space-y-6">
+        {/* Quick Create Client Form */}
+        <section className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+            Quick Create Client
+          </h2>
+          <form onSubmit={handleCreateClient} className="flex gap-3">
+            <div className="flex-1">
+              <Input
+                label="Name"
+                type="text"
+                placeholder="Enter client name"
+                value={newClientName}
+                onChange={(e) => setNewClientName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                type="submit"
+                disabled={!newClientName.trim() || createClient.isPending}
+              >
+                {createClient.isPending ? 'Creating...' : 'Create Client'}
+              </Button>
+            </div>
+          </form>
+        </section>
         {/* Filters Section */}
         <section className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
@@ -257,7 +304,7 @@ function ClientsPage(): JSX.Element {
         <section className="bg-white rounded-lg border border-neutral-200 shadow-sm">
           <div className="px-6 py-4 border-b border-neutral-200">
             <h2 className="text-lg font-semibold text-neutral-900">
-              Clients
+              Client List
               {filteredClients.length > 0 && (
                 <span className="ml-2 text-sm font-normal text-neutral-600">
                   ({filteredClients.length}{' '}
