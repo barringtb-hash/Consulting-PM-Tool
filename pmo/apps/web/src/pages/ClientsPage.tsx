@@ -41,7 +41,7 @@ function formatDate(dateString: string): string {
 
 function ClientsPage(): JSX.Element {
   const navigate = useNavigate();
-  const toast = useToast();
+  const { showToast } = useToast();
   const [newClientName, setNewClientName] = useState('');
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -138,10 +138,10 @@ function ClientsPage(): JSX.Element {
         name: newClientName.trim(),
       });
       setNewClientName('');
-      toast.success('Client created successfully');
+      showToast('Client created successfully', 'success');
       navigate(`/clients/${client.id}`);
     } catch {
-      toast.error('Failed to create client');
+      showToast('Failed to create client', 'error');
     }
   };
 
