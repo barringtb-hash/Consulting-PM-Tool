@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Link, Navigate, Route, Routes } from 'react-router-dom';
-import { useAuth } from './auth/AuthContext';
+import React from 'react';
+import { Navigate, Route, Routes, Outlet } from 'react-router-dom';
 import ProtectedRoute from './auth/ProtectedRoute';
+import AppLayout from './layouts/AppLayout';
 import ClientsPage from './pages/ClientsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import ClientIntakePage from './pages/ClientIntakePage';
@@ -15,65 +15,24 @@ import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 import AssetsPage from './pages/AssetsPage';
 import { AdminCreateUserPage } from './pages/AdminCreateUserPage';
 
-function AppLayout({ children }: { children: React.ReactNode }): JSX.Element {
-  const { user, status, logout, isLoading } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-
-  const handleLogout = async () => {
-    setError(null);
-    try {
-      await logout();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to logout';
-      setError(message);
-    }
-  };
-
+function AuthenticatedLayout(): JSX.Element {
   return (
-    <div className="app-shell">
-      <header>
-        <div>
-          <Link to="/">
-            <strong>AI Consulting PMO</strong>
-          </Link>
-        </div>
-        <nav>
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/tasks">My tasks</Link>
-          <Link to="/assets">Assets</Link>
-          <Link to="/clients">Clients</Link>
-          <Link to="/client-intake">Client intake</Link>
-          <Link to="/projects/new">New project</Link>
-          <Link to="/admin/users/new">Create user</Link>
-        </nav>
-        <div>
-          {status === 'authenticated' && user ? (
-            <div>
-              <span>
-                Signed in as <strong>{user.name || user.email}</strong>
-              </span>
-              <button type="button" onClick={handleLogout} disabled={isLoading}>
-                Logout
-              </button>
-              {error && <p role="alert">{error}</p>}
-            </div>
-          ) : (
-            <Link to="/login">Login</Link>
-          )}
-        </div>
-      </header>
-      <section>{children}</section>
-    </div>
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
   );
 }
 
 function App(): JSX.Element {
   return (
     <ClientProjectProvider>
-      <AppLayout>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route element={<ProtectedRoute />}>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Protected routes with layout */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AuthenticatedLayout />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<MyTasksPage />} />
@@ -86,9 +45,11 @@ function App(): JSX.Element {
             <Route path="/meetings/:id" element={<MeetingDetailPage />} />
             <Route path="/admin/users/new" element={<AdminCreateUserPage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AppLayout>
+        </Route>
+
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </ClientProjectProvider>
   );
 }
