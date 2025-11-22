@@ -164,13 +164,13 @@ describe('Project Setup Flow', () => {
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByLabelText(/Project Name/i),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText(/Project Name/i)).toBeInTheDocument();
     });
 
     // Clear the auto-filled name
-    const nameInput = screen.getByLabelText(/Project Name/i) as HTMLInputElement;
+    const nameInput = screen.getByLabelText(
+      /Project Name/i,
+    ) as HTMLInputElement;
     await user.clear(nameInput);
 
     // Try to proceed
