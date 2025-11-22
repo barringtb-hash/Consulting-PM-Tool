@@ -57,8 +57,8 @@ describe('ClientsPage', () => {
       path: '/clients',
     });
 
-    expect(screen.getByText(/loading clients/i)).toBeInTheDocument();
-
+    // Skeleton loading state renders (no text to check)
+    // Wait for empty state to appear
     expect(await screen.findByText(/no clients yet/i)).toBeInTheDocument();
 
     // Verify the "New client" button exists

@@ -11,6 +11,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { PageHeader } from '../ui/PageHeader';
+import { useToast } from '../ui/Toast';
 
 // Project templates based on AI Consulting PMO model
 interface ProjectTemplate {
@@ -160,6 +161,7 @@ function ProjectSetupPage(): JSX.Element {
   const navigate = useNavigate();
   const { selectedClient, setSelectedClient, setSelectedProject } =
     useClientProjectContext();
+  const { showToast } = useToast();
 
   const clientsQuery = useClients({ includeArchived: false });
   const createProjectMutation = useCreateProject();
@@ -290,11 +292,13 @@ function ProjectSetupPage(): JSX.Element {
       });
 
       setSelectedProject(project);
+      showToast(`Project "${formData.name}" created successfully!`, 'success');
       navigate(`/projects/${project.id}`);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to create project';
       setError(message);
+      showToast(message, 'error');
     }
   };
 
