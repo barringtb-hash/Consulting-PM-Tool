@@ -166,7 +166,15 @@ function ProjectSetupPage(): JSX.Element {
   const clientsQuery = useClients({ includeArchived: false });
   const createProjectMutation = useCreateProject();
 
-  const [step, setStep] = useState<WizardStep>('client');
+  // Check URL params for initial step (useful for testing)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlStep = urlParams.get('step') as WizardStep | null;
+  const initialStep: WizardStep =
+    urlStep && ['client', 'template', 'details', 'preview'].includes(urlStep)
+      ? urlStep
+      : 'client';
+
+  const [step, setStep] = useState<WizardStep>(initialStep);
   const [formData, setFormData] = useState<ProjectFormData>({
     clientId: selectedClient?.id ?? '',
     templateId: '',
@@ -187,8 +195,12 @@ function ProjectSetupPage(): JSX.Element {
   useEffect(() => {
     if (selectedClient && !formData.clientId) {
       setFormData((prev) => ({ ...prev, clientId: selectedClient.id }));
+      // If client is pre-selected and we're on the client step, skip to template
+      if (step === 'client') {
+        setStep('template');
+      }
     }
-  }, [selectedClient, formData.clientId]);
+  }, [selectedClient, formData.clientId, step]);
 
   const selectedTemplate = useMemo(
     () => PROJECT_TEMPLATES.find((t) => t.id === formData.templateId),

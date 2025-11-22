@@ -439,12 +439,16 @@ function ClientsPage(): JSX.Element {
                     {filteredClients.map((client) => (
                       <tr
                         key={client.id}
+                        data-testid={`client-row-${client.id}`}
                         onClick={() => handleClientClick(client.id)}
                         className="hover:bg-neutral-50 transition-colors cursor-pointer"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-neutral-900">
+                            <span
+                              data-testid={`client-name-${client.id}`}
+                              className="text-sm font-medium text-neutral-900"
+                            >
                               {client.name}
                             </span>
                             {client.archived && (
