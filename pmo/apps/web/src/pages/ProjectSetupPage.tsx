@@ -1,26 +1,159 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useClients, useCreateProject } from '../api/queries';
 import { type ProjectStatus } from '../api/projects';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { useClientProjectContext } from './ClientProjectContext';
+import { Button } from '../ui/Button';
+import { Card, CardBody, CardHeader, CardTitle } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
+import { PageHeader } from '../ui/PageHeader';
 
-interface ProjectDetailsForm {
+// Project templates based on AI Consulting PMO model
+interface ProjectTemplate {
+  id: string;
   name: string;
+  type: string;
+  description: string;
+  duration: string;
+  milestones: string[];
+  tasks: string[];
+}
+
+const PROJECT_TEMPLATES: ProjectTemplate[] = [
+  {
+    id: 'discovery',
+    name: 'AI Discovery & Roadmap',
+    type: 'Discovery',
+    description:
+      'Comprehensive discovery phase to assess AI readiness, identify use cases, and create a strategic roadmap.',
+    duration: '2-4 weeks',
+    milestones: [
+      'Kickoff & stakeholder alignment',
+      'Current state assessment',
+      'Use case identification & prioritization',
+      'Roadmap delivery',
+    ],
+    tasks: [
+      'Conduct stakeholder interviews',
+      'Assess data infrastructure',
+      'Identify quick wins and strategic initiatives',
+      'Create prioritized roadmap',
+    ],
+  },
+  {
+    id: 'poc',
+    name: 'Proof of Concept / Pilot',
+    type: 'PoC',
+    description:
+      'Build and validate a small-scale AI solution to prove feasibility and business value.',
+    duration: '4-8 weeks',
+    milestones: [
+      'Requirements finalization',
+      'Prototype development',
+      'Testing & validation',
+      'Results presentation',
+    ],
+    tasks: [
+      'Define success criteria',
+      'Build minimal viable solution',
+      'Conduct user testing',
+      'Document findings and recommendations',
+    ],
+  },
+  {
+    id: 'implementation',
+    name: 'Implementation / Rollout',
+    type: 'Implementation',
+    description:
+      'Full-scale implementation of AI solution with production deployment and user adoption.',
+    duration: '8-16 weeks',
+    milestones: [
+      'Solution design & architecture',
+      'Development & integration',
+      'Testing & QA',
+      'Deployment & go-live',
+      'Post-launch support',
+    ],
+    tasks: [
+      'Design system architecture',
+      'Develop core features',
+      'Integrate with existing systems',
+      'Conduct UAT',
+      'Deploy to production',
+      'Monitor and optimize',
+    ],
+  },
+  {
+    id: 'training',
+    name: 'Training & Workshop',
+    type: 'Training',
+    description:
+      'Hands-on training and workshops to build AI literacy and enable teams.',
+    duration: '1-2 weeks',
+    milestones: [
+      'Training content development',
+      'Workshop delivery',
+      'Hands-on exercises',
+      'Post-training support',
+    ],
+    tasks: [
+      'Create training materials',
+      'Conduct interactive workshops',
+      'Provide hands-on examples',
+      'Share resources and documentation',
+    ],
+  },
+  {
+    id: 'retainer',
+    name: 'Retainer / Ongoing Support',
+    type: 'Retainer',
+    description:
+      'Continuous advisory and support for AI initiatives, optimization, and troubleshooting.',
+    duration: 'Ongoing',
+    milestones: ['Monthly check-ins', 'Quarterly reviews'],
+    tasks: [
+      'Regular advisory sessions',
+      'Performance monitoring',
+      'Optimization recommendations',
+      'Ad-hoc support',
+    ],
+  },
+  {
+    id: 'custom',
+    name: 'Custom / Mixed',
+    type: 'Mixed',
+    description: 'Flexible project structure combining multiple engagement types.',
+    duration: 'Variable',
+    milestones: [],
+    tasks: [],
+  },
+];
+
+const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
+  { value: 'PLANNING', label: 'Planning' },
+  { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'ON_HOLD', label: 'On Hold' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
+interface ProjectFormData {
+  clientId: number | '';
+  templateId: string;
+  name: string;
+  type: string;
   status: ProjectStatus;
   startDate: string;
   endDate: string;
+  goals: string;
+  description: string;
 }
 
-type ProjectSetupStep = 'client' | 'details' | 'review';
-
-const statusOptions: ProjectStatus[] = [
-  'PLANNING',
-  'IN_PROGRESS',
-  'ON_HOLD',
-  'COMPLETED',
-  'CANCELLED',
-];
+type WizardStep = 'client' | 'template' | 'details' | 'preview';
 
 function ProjectSetupPage(): JSX.Element {
   const navigate = useNavigate();
@@ -30,72 +163,115 @@ function ProjectSetupPage(): JSX.Element {
   const clientsQuery = useClients({ includeArchived: false });
   const createProjectMutation = useCreateProject();
 
-  const [step, setStep] = useState<ProjectSetupStep>('client');
-  const [clientId, setClientId] = useState<number | ''>(
-    selectedClient?.id ?? '',
-  );
-  const [formValues, setFormValues] = useState<ProjectDetailsForm>({
+  const [step, setStep] = useState<WizardStep>('client');
+  const [formData, setFormData] = useState<ProjectFormData>({
+    clientId: selectedClient?.id ?? '',
+    templateId: '',
     name: '',
+    type: '',
     status: 'PLANNING',
     startDate: '',
     endDate: '',
+    goals: '',
+    description: '',
   });
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useRedirectOnUnauthorized(clientsQuery.error);
   useRedirectOnUnauthorized(createProjectMutation.error);
 
   useEffect(() => {
-    if (selectedClient && !clientId) {
-      setClientId(selectedClient.id);
+    if (selectedClient && !formData.clientId) {
+      setFormData((prev) => ({ ...prev, clientId: selectedClient.id }));
     }
-  }, [clientId, selectedClient]);
+  }, [selectedClient, formData.clientId]);
 
-  const isSubmitting = useMemo(
-    () => createProjectMutation.isPending,
-    [createProjectMutation.isPending],
+  const selectedTemplate = useMemo(
+    () => PROJECT_TEMPLATES.find((t) => t.id === formData.templateId),
+    [formData.templateId],
   );
 
-  const selectedClientName = useMemo(() => {
-    const match = clientsQuery.data?.find((entry) => entry.id === clientId);
-    return match?.name || selectedClient?.name || '';
-  }, [clientId, clientsQuery.data, selectedClient]);
+  const selectedClientData = useMemo(
+    () => clientsQuery.data?.find((c) => c.id === formData.clientId),
+    [clientsQuery.data, formData.clientId],
+  );
 
-  const handleClientStepSubmit = () => {
-    if (!clientId) {
-      setError('Please select a client to continue');
-      return;
-    }
+  const filteredClients = useMemo(() => {
+    if (!clientsQuery.data) return [];
+    if (!clientSearchTerm) return clientsQuery.data;
 
-    const found = clientsQuery.data?.find((entry) => entry.id === clientId);
-    if (found) {
-      setSelectedClient(found);
-    }
+    const term = clientSearchTerm.toLowerCase();
+    return clientsQuery.data.filter((client) =>
+      client.name.toLowerCase().includes(term),
+    );
+  }, [clientsQuery.data, clientSearchTerm]);
 
+  const stepConfig = [
+    { key: 'client' as const, label: 'Choose Client', number: 1 },
+    { key: 'template' as const, label: 'Choose Template', number: 2 },
+    { key: 'details' as const, label: 'Project Details', number: 3 },
+    { key: 'preview' as const, label: 'Review & Create', number: 4 },
+  ];
+
+  const currentStepIndex = stepConfig.findIndex((s) => s.key === step);
+
+  const handleNext = () => {
     setError(null);
-    setStep('details');
+
+    if (step === 'client') {
+      if (!formData.clientId) {
+        setError('Please select a client to continue');
+        return;
+      }
+      const client = clientsQuery.data?.find((c) => c.id === formData.clientId);
+      if (client) {
+        setSelectedClient(client);
+      }
+      setStep('template');
+    } else if (step === 'template') {
+      if (!formData.templateId) {
+        setError('Please select a template to continue');
+        return;
+      }
+      setStep('details');
+    } else if (step === 'details') {
+      if (!formData.name.trim()) {
+        setError('Project name is required');
+        return;
+      }
+      setStep('preview');
+    }
   };
 
-  const handleDetailsSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleBack = () => {
     setError(null);
+    if (step === 'template') setStep('client');
+    else if (step === 'details') setStep('template');
+    else if (step === 'preview') setStep('details');
+  };
 
-    if (!clientId) {
-      setError('Select a client before creating a project');
-      setStep('client');
-      return;
+  const handleSelectTemplate = (templateId: string) => {
+    const template = PROJECT_TEMPLATES.find((t) => t.id === templateId);
+    if (template) {
+      setFormData((prev) => ({
+        ...prev,
+        templateId: template.id,
+        type: template.type,
+        // Auto-fill project name if empty
+        name: prev.name || `${selectedClientData?.name || 'Client'} - ${template.name}`,
+      }));
     }
-
-    if (!formValues.name.trim()) {
-      setError('Project name is required');
-      return;
-    }
-
-    setStep('review');
   };
 
   const handleCreateProject = async () => {
-    if (!clientId) {
+    if (!formData.clientId) {
+      setError('Client is required');
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      setError('Project name is required');
       return;
     }
 
@@ -103,19 +279,14 @@ function ProjectSetupPage(): JSX.Element {
 
     try {
       const project = await createProjectMutation.mutateAsync({
-        clientId,
-        name: formValues.name,
-        status: formValues.status,
-        startDate: formValues.startDate || undefined,
-        endDate: formValues.endDate || undefined,
+        clientId: formData.clientId,
+        name: formData.name,
+        status: formData.status,
+        startDate: formData.startDate || undefined,
+        endDate: formData.endDate || undefined,
       });
 
       setSelectedProject(project);
-      const client = clientsQuery.data?.find((entry) => entry.id === clientId);
-      if (client) {
-        setSelectedClient(client);
-      }
-
       navigate(`/projects/${project.id}`);
     } catch (err) {
       const message =
@@ -125,171 +296,547 @@ function ProjectSetupPage(): JSX.Element {
   };
 
   return (
-    <main>
-      <header>
-        <h1>Project setup</h1>
-        <p>Create a new project and configure the initial timeline.</p>
-        <Link to="/dashboard">Back to dashboard</Link>
-      </header>
+    <div className="min-h-screen bg-neutral-50">
+      <PageHeader
+        title="New Project Setup"
+        description="Create a new project using guided workflow templates"
+        action={
+          <Button variant="secondary" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+        }
+      />
 
-      {step === 'client' && (
-        <section aria-label="select-client-step">
-          <h2>Step 1: Choose client</h2>
-          <p>Select which client this project belongs to.</p>
-          {clientsQuery.isLoading && <p>Loading clients…</p>}
-          {clientsQuery.error && <p role="alert">Unable to load clients.</p>}
-          {clientsQuery.data && (
-            <div>
-              <label htmlFor="project-client">Client</label>
-              <select
-                id="project-client"
-                value={clientId}
-                onChange={(event) =>
-                  setClientId(Number(event.target.value) || '')
-                }
-              >
-                <option value="">Select a client</option>
-                {clientsQuery.data.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Progress Steps */}
+        <div className="mb-8">
+          <nav aria-label="Progress">
+            <ol className="flex items-center justify-between">
+              {stepConfig.map((s, idx) => {
+                const isActive = s.key === step;
+                const isCompleted = idx < currentStepIndex;
+                const isAccessible = idx <= currentStepIndex;
+
+                return (
+                  <li key={s.key} className="flex items-center flex-1">
+                    <div
+                      className={`flex items-center ${idx < stepConfig.length - 1 ? 'w-full' : ''}`}
+                    >
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
+                            isCompleted
+                              ? 'bg-primary-600 border-primary-600'
+                              : isActive
+                                ? 'border-primary-600 bg-white'
+                                : 'border-neutral-300 bg-white'
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <Check className="w-5 h-5 text-white" />
+                          ) : (
+                            <span
+                              className={`text-sm font-medium ${
+                                isActive
+                                  ? 'text-primary-600'
+                                  : 'text-neutral-500'
+                              }`}
+                            >
+                              {s.number}
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className={`mt-2 text-xs font-medium ${
+                            isAccessible ? 'text-neutral-900' : 'text-neutral-500'
+                          }`}
+                        >
+                          {s.label}
+                        </span>
+                      </div>
+                      {idx < stepConfig.length - 1 && (
+                        <div
+                          className={`flex-1 h-0.5 mx-4 ${
+                            isCompleted ? 'bg-primary-600' : 'bg-neutral-300'
+                          }`}
+                        />
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        </div>
+
+        {/* Step Content */}
+        {step === 'client' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Select a Client</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <p className="text-neutral-600">
+                Choose which client this project belongs to. You can also{' '}
+                <Link
+                  to="/client-intake"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  create a new client
+                </Link>{' '}
+                if needed.
+              </p>
+
+              {clientsQuery.isLoading && (
+                <p className="text-neutral-600">Loading clients…</p>
+              )}
+
+              {clientsQuery.error && (
+                <p className="text-danger-600">Unable to load clients.</p>
+              )}
+
+              {clientsQuery.data && (
+                <>
+                  <div>
+                    <label htmlFor="client-search" className="sr-only">
+                      Search clients
+                    </label>
+                    <Input
+                      id="client-search"
+                      type="text"
+                      placeholder="Search clients by name..."
+                      value={clientSearchTerm}
+                      onChange={(e) => setClientSearchTerm(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+                    {filteredClients.map((client) => (
+                      <button
+                        key={client.id}
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            clientId: client.id,
+                          }))
+                        }
+                        className={`p-4 text-left border-2 rounded-lg transition-all ${
+                          formData.clientId === client.id
+                            ? 'border-primary-600 bg-primary-50'
+                            : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-neutral-900">
+                              {client.name}
+                            </h3>
+                            {client.industry && (
+                              <p className="text-sm text-neutral-600 mt-1">
+                                {client.industry}
+                              </p>
+                            )}
+                          </div>
+                          {formData.clientId === client.id && (
+                            <Check className="w-5 h-5 text-primary-600 flex-shrink-0" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {filteredClients.length === 0 && (
+                    <p className="text-neutral-600 text-center py-4">
+                      No clients found matching your search.
+                    </p>
+                  )}
+                </>
+              )}
+
+              {error && (
+                <p className="text-danger-600 text-sm font-medium">{error}</p>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {step === 'template' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Choose a Project Template</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <p className="text-neutral-600">
+                Select a template that best matches your engagement type. Templates
+                provide suggested milestones and tasks to help you get started
+                quickly.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {PROJECT_TEMPLATES.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => handleSelectTemplate(template.id)}
+                    className={`p-4 text-left border-2 rounded-lg transition-all ${
+                      formData.templateId === template.id
+                        ? 'border-primary-600 bg-primary-50'
+                        : 'border-neutral-200 bg-white hover:border-neutral-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-neutral-900">
+                        {template.name}
+                      </h3>
+                      {formData.templateId === template.id && (
+                        <Check className="w-5 h-5 text-primary-600 flex-shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-sm text-neutral-600 mb-2">
+                      {template.description}
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      Duration: {template.duration}
+                    </p>
+                  </button>
                 ))}
-              </select>
-            </div>
-          )}
-          {error && <p role="alert">{error}</p>}
-          <div>
-            <button type="button" onClick={handleClientStepSubmit}>
-              Continue
-            </button>
-            <Link to="/client-intake">Create a new client</Link>
+              </div>
+
+              {error && (
+                <p className="text-danger-600 text-sm font-medium">{error}</p>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {step === 'details' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Details</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label
+                    htmlFor="project-name"
+                    className="block text-sm font-medium text-neutral-900 mb-1"
+                  >
+                    Project Name <span className="text-danger-600">*</span>
+                  </label>
+                  <Input
+                    id="project-name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder="e.g., Acme Corp - AI Discovery & Roadmap"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="project-type"
+                    className="block text-sm font-medium text-neutral-900 mb-1"
+                  >
+                    Project Type
+                  </label>
+                  <Input
+                    id="project-type"
+                    value={formData.type}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, type: e.target.value }))
+                    }
+                    placeholder="e.g., Discovery, PoC, Implementation"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Auto-filled from template, can be customized
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="project-status"
+                    className="block text-sm font-medium text-neutral-900 mb-1"
+                  >
+                    Initial Status
+                  </label>
+                  <Select
+                    id="project-status"
+                    value={formData.status}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        status: e.target.value as ProjectStatus,
+                      }))
+                    }
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="project-start-date"
+                    className="block text-sm font-medium text-neutral-900 mb-1"
+                  >
+                    Start Date
+                  </label>
+                  <Input
+                    id="project-start-date"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        startDate: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="project-end-date"
+                    className="block text-sm font-medium text-neutral-900 mb-1"
+                  >
+                    Target End Date
+                  </label>
+                  <Input
+                    id="project-end-date"
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label
+                    htmlFor="project-goals"
+                    className="block text-sm font-medium text-neutral-900 mb-1"
+                  >
+                    Goals & Objectives
+                  </label>
+                  <Textarea
+                    id="project-goals"
+                    value={formData.goals}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, goals: e.target.value }))
+                    }
+                    rows={3}
+                    placeholder="What are the key goals and success criteria for this project?"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label
+                    htmlFor="project-description"
+                    className="block text-sm font-medium text-neutral-900 mb-1"
+                  >
+                    Description
+                  </label>
+                  <Textarea
+                    id="project-description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    rows={4}
+                    placeholder="Additional context, scope, or notes about this project..."
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <p className="text-danger-600 text-sm font-medium">{error}</p>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {step === 'preview' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Review Project Details</CardTitle>
+              </CardHeader>
+              <CardBody className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      Client
+                    </h4>
+                    <p className="text-neutral-900">
+                      {selectedClientData?.name || 'Not selected'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      Template
+                    </h4>
+                    <p className="text-neutral-900">
+                      {selectedTemplate?.name || 'Not selected'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      Project Name
+                    </h4>
+                    <p className="text-neutral-900">{formData.name}</p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      Type
+                    </h4>
+                    <p className="text-neutral-900">
+                      {formData.type || 'Not specified'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      Status
+                    </h4>
+                    <p className="text-neutral-900">
+                      {STATUS_OPTIONS.find((s) => s.value === formData.status)
+                        ?.label || formData.status}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      Duration
+                    </h4>
+                    <p className="text-neutral-900">
+                      {formData.startDate && formData.endDate
+                        ? `${new Date(formData.startDate).toLocaleDateString()} - ${new Date(formData.endDate).toLocaleDateString()}`
+                        : formData.startDate
+                          ? `From ${new Date(formData.startDate).toLocaleDateString()}`
+                          : 'Not specified'}
+                    </p>
+                  </div>
+
+                  {formData.goals && (
+                    <div className="md:col-span-2">
+                      <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                        Goals
+                      </h4>
+                      <p className="text-neutral-900 whitespace-pre-wrap">
+                        {formData.goals}
+                      </p>
+                    </div>
+                  )}
+
+                  {formData.description && (
+                    <div className="md:col-span-2">
+                      <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                        Description
+                      </h4>
+                      <p className="text-neutral-900 whitespace-pre-wrap">
+                        {formData.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {error && (
+                  <p className="text-danger-600 text-sm font-medium">{error}</p>
+                )}
+              </CardBody>
+            </Card>
+
+            {selectedTemplate && selectedTemplate.milestones.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Suggested Milestones & Tasks</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <p className="text-neutral-600 mb-4">
+                    Based on the {selectedTemplate.name} template, here are
+                    suggested milestones and tasks. You can customize these after
+                    creating the project.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 mb-2">
+                        Milestones
+                      </h4>
+                      <ul className="list-disc list-inside space-y-1 text-neutral-700">
+                        {selectedTemplate.milestones.map((milestone, idx) => (
+                          <li key={idx}>{milestone}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-neutral-900 mb-2">Tasks</h4>
+                      <ul className="list-disc list-inside space-y-1 text-neutral-700">
+                        {selectedTemplate.tasks.map((task, idx) => (
+                          <li key={idx}>{task}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <p className="text-xs text-neutral-500 italic">
+                      Note: Automatic milestone and task creation from templates will
+                      be enabled in a future update. For now, you'll need to add
+                      these manually after project creation.
+                    </p>
+                  </div>
+                </CardBody>
+              </Card>
+            )}
           </div>
-        </section>
-      )}
+        )}
 
-      {step === 'details' && (
-        <section aria-label="project-details-step">
-          <h2>Step 2: Project details</h2>
-          <p>Define the project scope, status, and expected dates.</p>
-          <form onSubmit={handleDetailsSubmit}>
-            <div>
-              <label htmlFor="project-name">Name</label>
-              <input
-                id="project-name"
-                value={formValues.name}
-                onChange={(event) =>
-                  setFormValues((prev) => ({
-                    ...prev,
-                    name: event.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="project-status">Status</label>
-              <select
-                id="project-status"
-                value={formValues.status}
-                onChange={(event) =>
-                  setFormValues((prev) => ({
-                    ...prev,
-                    status: event.target.value as ProjectStatus,
-                  }))
-                }
-              >
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="project-start">Start date</label>
-              <input
-                id="project-start"
-                type="date"
-                value={formValues.startDate}
-                onChange={(event) =>
-                  setFormValues((prev) => ({
-                    ...prev,
-                    startDate: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <label htmlFor="project-end">End date</label>
-              <input
-                id="project-end"
-                type="date"
-                value={formValues.endDate}
-                onChange={(event) =>
-                  setFormValues((prev) => ({
-                    ...prev,
-                    endDate: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            {error && <p role="alert">{error}</p>}
-            <div>
-              <button type="submit">Review project</button>
-              <button type="button" onClick={() => setStep('client')}>
+        {/* Navigation Buttons */}
+        <div className="flex items-center justify-between mt-8">
+          <div>
+            {currentStepIndex > 0 && (
+              <Button variant="secondary" onClick={handleBack}>
+                <ArrowLeft className="w-4 h-4" />
                 Back
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
-
-      {step === 'review' && (
-        <section aria-label="project-review-step">
-          <h2>Step 3: Confirm project</h2>
-          <p>Verify the details before creating the project.</p>
-          <dl>
-            <div>
-              <dt>Client</dt>
-              <dd>{selectedClientName || 'Not selected'}</dd>
-            </div>
-            <div>
-              <dt>Name</dt>
-              <dd>{formValues.name}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{formValues.status}</dd>
-            </div>
-            <div>
-              <dt>Start date</dt>
-              <dd>{formValues.startDate || 'Not set'}</dd>
-            </div>
-            <div>
-              <dt>End date</dt>
-              <dd>{formValues.endDate || 'Not set'}</dd>
-            </div>
-          </dl>
-          {error && <p role="alert">{error}</p>}
-          <div>
-            <button
-              type="button"
-              onClick={handleCreateProject}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating…' : 'Create project'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep('details')}
-              disabled={isSubmitting}
-            >
-              Back
-            </button>
+              </Button>
+            )}
           </div>
-        </section>
-      )}
-    </main>
+
+          <div className="flex gap-3">
+            {step !== 'preview' && (
+              <Button onClick={handleNext}>
+                Next
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+
+            {step === 'preview' && (
+              <Button
+                onClick={handleCreateProject}
+                isLoading={createProjectMutation.isPending}
+                disabled={createProjectMutation.isPending}
+              >
+                <Check className="w-4 h-4" />
+                Create Project
+              </Button>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
 

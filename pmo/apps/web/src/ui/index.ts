@@ -8,4 +8,5 @@ export * from './Badge';
 export * from './Card';
 export * from './PageHeader';
 export * from './Section';
+export * from './Tabs';
 export * from './utils';

@@ -1,111 +1,81 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
+  ArrowLeft,
+  LayoutDashboard,
+  CheckSquare,
+  Target,
+  Users,
+  FolderOpen,
+  Settings,
+} from 'lucide-react';
+import {
   useClient,
-  useDocuments,
-  useGenerateDocument,
-  useAssets,
   useProject,
-  useProjectAssets,
   useUpdateProject,
-  useCreateAsset,
-  useLinkAssetToProject,
-  useUnlinkAssetFromProject,
 } from '../api/queries';
 import { type Project, type ProjectStatus } from '../api/projects';
-import { type DocumentType } from '../api/documents';
+import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
+import { useClientProjectContext } from './ClientProjectContext';
+import { Button } from '../ui/Button';
+import { PageHeader } from '../ui/PageHeader';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
+import { ProjectOverviewTab } from '../features/projects/ProjectOverviewTab';
+import { ProjectStatusTab } from '../features/status/ProjectStatusTab';
+import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
+import { Badge } from '../ui/Badge';
+import { ProjectStatusPill } from '../components/ProjectStatusPill';
+import { Card, CardBody, CardHeader, CardTitle } from '../ui/Card';
+import { Select } from '../ui/Select';
+import { Input } from '../ui/Input';
+
+// Import task and milestone components
+import { useProjectTasks, useMoveTask } from '../hooks/tasks';
+import { TaskKanbanBoard } from '../components/TaskKanbanBoard';
+import {
+  useProjectMilestones,
+  useCreateMilestone,
+  useUpdateMilestone,
+  useDeleteMilestone,
+  MILESTONE_STATUSES,
+} from '../hooks/milestones';
+import {
+  useProjectAssets,
+  useLinkAssetToProject,
+  useUnlinkAssetFromProject,
+  useAssets,
+  useCreateAsset,
+} from '../api/queries';
+import { type Milestone } from '../api/milestones';
 import AssetForm, {
   assetFormValuesToPayload,
   type AssetFormValues,
 } from '../components/AssetForm';
-import { type Milestone } from '../api/milestones';
-import {
-  type Task,
-  type TaskPriority,
-  TASK_PRIORITIES,
-  TASK_STATUSES,
-} from '../api/tasks';
-import {
-  MILESTONE_STATUSES,
-  useCreateMilestone,
-  useDeleteMilestone,
-  useProjectMilestones,
-  useUpdateMilestone,
-} from '../hooks/milestones';
-import {
-  useCreateTask,
-  useDeleteTask,
-  useMoveTask,
-  useProjectTasks,
-  useUpdateTask,
-} from '../hooks/tasks';
-import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
-import { useClientProjectContext } from './ClientProjectContext';
-import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
 
-const statusOptions: ProjectStatus[] = [
-  'PLANNING',
-  'IN_PROGRESS',
-  'ON_HOLD',
-  'COMPLETED',
-  'CANCELLED',
+const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
+  { value: 'PLANNING', label: 'Planning' },
+  { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'ON_HOLD', label: 'On Hold' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
-const documentTypeOptions: DocumentType[] = [
-  'REQUIREMENTS',
-  'PROPOSAL',
-  'CONTRACT',
-  'REPORT',
-  'OTHER',
-];
-
-function formatDate(value?: string | null) {
-  if (!value) {
-    return 'Not set';
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return 'Not set';
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return 'Invalid date';
   }
-
-  return new Date(value).toLocaleDateString();
-}
-
-interface DocumentFormValues {
-  filename: string;
-  type: DocumentType;
-  url: string;
-}
-
-interface ProjectUpdateFormValues {
-  status: ProjectStatus;
-  startDate: string;
-  endDate: string;
-}
-
-interface TaskFormValues {
-  title: string;
-  description: string;
-  status: Task['status'];
-  priority: TaskPriority | '';
-  dueDate: string;
-  milestoneId: string;
-}
-
-interface MilestoneFormValues {
-  name: string;
-  description: string;
-  status: Milestone['status'];
-  dueDate: string;
 }
 
 function ProjectDashboardPage(): JSX.Element {
   const { id } = useParams();
   const projectId = useMemo(() => Number(id), [id]);
-  const [assetSearch, setAssetSearch] = useState('');
-  const [selectedAssetId, setSelectedAssetId] = useState('');
-  const [assetNotes, setAssetNotes] = useState('');
-  const [showAssetForm, setShowAssetForm] = useState(false);
-  const [assetError, setAssetError] = useState<string | null>(null);
-  const [assetFormError, setAssetFormError] = useState<string | null>(null);
-  const [assetToast, setAssetToast] = useState<string | null>(null);
-  const [showArchivedAssets, setShowArchivedAssets] = useState(false);
 
   const projectQuery = useProject(
     Number.isNaN(projectId) ? undefined : projectId,
@@ -113,93 +83,56 @@ function ProjectDashboardPage(): JSX.Element {
   const project = projectQuery.data as Project | undefined;
   const clientQuery = useClient(project?.clientId);
   const updateProjectMutation = useUpdateProject(projectId || 0);
-  const documentsQuery = useDocuments(
-    project ? { clientId: project.clientId, projectId: project.id } : undefined,
-  );
-  const generateDocumentMutation = useGenerateDocument();
+  const { setSelectedClient, setSelectedProject } = useClientProjectContext();
+
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showStatusEditor, setShowStatusEditor] = useState(false);
+  const [editedStatus, setEditedStatus] = useState<ProjectStatus>('PLANNING');
+  const [editedStartDate, setEditedStartDate] = useState('');
+  const [editedEndDate, setEditedEndDate] = useState('');
+
+  // Tasks
   const tasksQuery = useProjectTasks(projectId);
-  const milestonesQuery = useProjectMilestones(projectId);
-  const createTaskMutation = useCreateTask();
-  const updateTaskMutation = useUpdateTask(projectId);
   const moveTaskMutation = useMoveTask(projectId);
-  const deleteTaskMutation = useDeleteTask(projectId);
+
+  // Milestones
+  const milestonesQuery = useProjectMilestones(projectId);
   const createMilestoneMutation = useCreateMilestone();
   const updateMilestoneMutation = useUpdateMilestone(projectId);
   const deleteMilestoneMutation = useDeleteMilestone(projectId);
+  const [milestoneForm, setMilestoneForm] = useState({
+    name: '',
+    description: '',
+    status: 'NOT_STARTED' as Milestone['status'],
+    dueDate: '',
+  });
+  const [editingMilestoneId, setEditingMilestoneId] = useState<number | null>(
+    null,
+  );
+
+  // Assets
+  const [showArchivedAssets, setShowArchivedAssets] = useState(false);
   const projectAssetsQuery = useProjectAssets(projectId, showArchivedAssets);
   const linkAssetMutation = useLinkAssetToProject(projectId || 0);
   const unlinkAssetMutation = useUnlinkAssetFromProject(projectId || 0);
   const availableAssetsQuery = useAssets(
-    project
-      ? { clientId: project.clientId, search: assetSearch || undefined }
-      : undefined,
+    project ? { clientId: project.clientId } : undefined,
   );
-  const createAssetForProjectMutation = useCreateAsset();
-  const { setSelectedClient, setSelectedProject } = useClientProjectContext();
-
-  const [updateValues, setUpdateValues] = useState<ProjectUpdateFormValues>({
-    status: 'PLANNING',
-    startDate: '',
-    endDate: '',
-  });
-  const [documentValues, setDocumentValues] = useState<DocumentFormValues>({
-    filename: '',
-    type: 'OTHER',
-    url: '',
-  });
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [taskFormValues, setTaskFormValues] = useState<TaskFormValues>({
-    title: '',
-    description: '',
-    status: 'BACKLOG',
-    priority: 'P1',
-    dueDate: '',
-    milestoneId: '',
-  });
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [taskError, setTaskError] = useState<string | null>(null);
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  const [milestoneFormValues, setMilestoneFormValues] =
-    useState<MilestoneFormValues>({
-      name: '',
-      description: '',
-      status: 'NOT_STARTED',
-      dueDate: '',
-    });
-  const [editingMilestoneId, setEditingMilestoneId] = useState<number | null>(
-    null,
-  );
-  const [milestoneError, setMilestoneError] = useState<string | null>(null);
+  const createAssetMutation = useCreateAsset();
+  const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [assetNotes, setAssetNotes] = useState('');
+  const [showAssetForm, setShowAssetForm] = useState(false);
+  const [assetError, setAssetError] = useState<string | null>(null);
 
   useRedirectOnUnauthorized(projectQuery.error);
   useRedirectOnUnauthorized(clientQuery.error);
-  useRedirectOnUnauthorized(updateProjectMutation.error);
-  useRedirectOnUnauthorized(generateDocumentMutation.error);
-  useRedirectOnUnauthorized(documentsQuery.error);
-  useRedirectOnUnauthorized(tasksQuery.error);
-  useRedirectOnUnauthorized(milestonesQuery.error);
-  useRedirectOnUnauthorized(createTaskMutation.error);
-  useRedirectOnUnauthorized(updateTaskMutation.error);
-  useRedirectOnUnauthorized(moveTaskMutation.error);
-  useRedirectOnUnauthorized(deleteTaskMutation.error);
-  useRedirectOnUnauthorized(createMilestoneMutation.error);
-  useRedirectOnUnauthorized(updateMilestoneMutation.error);
-  useRedirectOnUnauthorized(deleteMilestoneMutation.error);
-  useRedirectOnUnauthorized(projectAssetsQuery.error);
-  useRedirectOnUnauthorized(linkAssetMutation.error);
-  useRedirectOnUnauthorized(unlinkAssetMutation.error);
-  useRedirectOnUnauthorized(availableAssetsQuery.error);
-  useRedirectOnUnauthorized(createAssetForProjectMutation.error);
 
   useEffect(() => {
     if (project) {
       setSelectedProject(project);
-      setUpdateValues({
-        status: project.status,
-        startDate: project.startDate?.slice(0, 10) ?? '',
-        endDate: project.endDate?.slice(0, 10) ?? '',
-      });
+      setEditedStatus(project.status);
+      setEditedStartDate(project.startDate?.slice(0, 10) ?? '');
+      setEditedEndDate(project.endDate?.slice(0, 10) ?? '');
     }
   }, [project, setSelectedProject]);
 
@@ -209,73 +142,96 @@ function ProjectDashboardPage(): JSX.Element {
     }
   }, [clientQuery.data, setSelectedClient]);
 
-  useEffect(() => {
-    if (assetToast) {
-      const timer = setTimeout(() => setAssetToast(null), 4000);
-      return () => clearTimeout(timer);
+  const handleTaskMove = async (taskId: number, newStatus: string) => {
+    try {
+      await moveTaskMutation.mutateAsync({
+        taskId,
+        payload: { status: newStatus as any },
+      });
+    } catch (err) {
+      console.error('Failed to move task:', err);
     }
-
-    return undefined;
-  }, [assetToast]);
-
-  const milestones = useMemo(
-    () => milestonesQuery.data ?? [],
-    [milestonesQuery.data],
-  );
-  const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
-
-  const milestoneLookup = useMemo(() => {
-    const lookup = new Map<number, Milestone>();
-    milestones.forEach((milestone) => lookup.set(milestone.id, milestone));
-    return lookup;
-  }, [milestones]);
-
-  const groupedTasks = useMemo(
-    () =>
-      TASK_STATUSES.map((status) => ({
-        status,
-        tasks: tasks.filter((task) => task.status === status),
-      })),
-    [tasks],
-  );
-  const projectAssets = useMemo(
-    () => projectAssetsQuery.data ?? [],
-    [projectAssetsQuery.data],
-  );
-  const availableAssets = useMemo(() => {
-    const linkedIds = new Set(projectAssets.map((entry) => entry.assetId));
-    const list = availableAssetsQuery.data ?? [];
-    const filtered = list.filter((asset) => !linkedIds.has(asset.id));
-
-    if (!assetSearch) {
-      return filtered;
-    }
-
-    const term = assetSearch.toLowerCase();
-
-    return filtered.filter((asset) =>
-      [
-        asset.name.toLowerCase(),
-        asset.description?.toLowerCase() ?? '',
-        asset.tags.join(' ').toLowerCase(),
-      ].some((value) => value.includes(term)),
-    );
-  }, [assetSearch, availableAssetsQuery.data, projectAssets]);
-
-  const milestoneLabel = (milestoneId?: number | null) => {
-    if (!milestoneId) {
-      return 'Unassigned';
-    }
-
-    return milestoneLookup.get(milestoneId)?.name ?? 'Unassigned';
   };
 
-  const handleLinkAsset = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setAssetError(null);
+  const handleUpdateProjectStatus = async () => {
+    if (!project) return;
 
+    try {
+      await updateProjectMutation.mutateAsync({
+        status: editedStatus,
+        startDate: editedStartDate || undefined,
+        endDate: editedEndDate || undefined,
+      });
+      setShowStatusEditor(false);
+    } catch (err) {
+      console.error('Failed to update project:', err);
+    }
+  };
+
+  const handleSaveMilestone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!project) return;
+
+    const payload = {
+      projectId: project.id,
+      name: milestoneForm.name,
+      description: milestoneForm.description || undefined,
+      status: milestoneForm.status,
+      dueDate: milestoneForm.dueDate || undefined,
+    };
+
+    try {
+      if (editingMilestoneId) {
+        await updateMilestoneMutation.mutateAsync({
+          milestoneId: editingMilestoneId,
+          payload: { ...payload, dueDate: milestoneForm.dueDate || null },
+        });
+      } else {
+        await createMilestoneMutation.mutateAsync(payload);
+      }
+
+      setMilestoneForm({
+        name: '',
+        description: '',
+        status: 'NOT_STARTED',
+        dueDate: '',
+      });
+      setEditingMilestoneId(null);
+    } catch (err) {
+      console.error('Failed to save milestone:', err);
+    }
+  };
+
+  const handleEditMilestone = (milestone: Milestone) => {
+    setEditingMilestoneId(milestone.id);
+    setMilestoneForm({
+      name: milestone.name,
+      description: milestone.description ?? '',
+      status: milestone.status,
+      dueDate: milestone.dueDate?.slice(0, 10) ?? '',
+    });
+  };
+
+  const handleDeleteMilestone = async (milestoneId: number) => {
+    try {
+      await deleteMilestoneMutation.mutateAsync(milestoneId);
+      if (editingMilestoneId === milestoneId) {
+        setMilestoneForm({
+          name: '',
+          description: '',
+          status: 'NOT_STARTED',
+          dueDate: '',
+        });
+        setEditingMilestoneId(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete milestone:', err);
+    }
+  };
+
+  const handleLinkAsset = async () => {
     if (!selectedAssetId) {
-      setAssetError('Select an asset to link');
+      setAssetError('Please select an asset');
       return;
     }
 
@@ -286,44 +242,24 @@ function ProjectDashboardPage(): JSX.Element {
       });
       setSelectedAssetId('');
       setAssetNotes('');
-      setAssetToast('Asset linked to project');
+      setAssetError(null);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to link asset to project';
-      setAssetError(message);
+      setAssetError(
+        err instanceof Error ? err.message : 'Failed to link asset',
+      );
     }
   };
 
   const handleUnlinkAsset = async (assetId: number) => {
-    setAssetError(null);
-
     try {
       await unlinkAssetMutation.mutateAsync(assetId);
-      setAssetToast('Asset removed from project');
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to unlink asset';
-      setAssetError(message);
+      console.error('Failed to unlink asset:', err);
     }
   };
 
-  const handleCreateProjectAsset = async (values: AssetFormValues) => {
-    setAssetFormError(null);
-
-    if (!project) {
-      setAssetFormError('Project context missing');
-      return;
-    }
-
-    if (!values.name.trim()) {
-      setAssetFormError('Name is required');
-      return;
-    }
-
-    if (!values.type) {
-      setAssetFormError('Asset type is required');
-      return;
-    }
+  const handleCreateAsset = async (values: AssetFormValues) => {
+    if (!project) return;
 
     const payload = assetFormValuesToPayload({
       ...values,
@@ -332,1011 +268,639 @@ function ProjectDashboardPage(): JSX.Element {
     });
 
     try {
-      const asset = await createAssetForProjectMutation.mutateAsync(payload);
+      const asset = await createAssetMutation.mutateAsync(payload);
       await linkAssetMutation.mutateAsync({
         assetId: asset.id,
         notes: undefined,
       });
       setShowAssetForm(false);
-      setAssetToast('Asset created and linked');
-      setAssetNotes('');
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to create asset';
-      setAssetFormError(message);
+      console.error('Failed to create asset:', err);
     }
   };
 
-  const handleUpdateProject = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const projectAssets = useMemo(
+    () => projectAssetsQuery.data ?? [],
+    [projectAssetsQuery.data],
+  );
 
-    if (!project) {
-      return;
-    }
+  const availableAssets = useMemo(() => {
+    const linkedIds = new Set(projectAssets.map((entry) => entry.assetId));
+    const list = availableAssetsQuery.data ?? [];
+    return list.filter((asset) => !linkedIds.has(asset.id));
+  }, [availableAssetsQuery.data, projectAssets]);
 
-    setFormError(null);
+  const milestones = useMemo(
+    () => milestonesQuery.data ?? [],
+    [milestonesQuery.data],
+  );
 
-    try {
-      await updateProjectMutation.mutateAsync({
-        status: updateValues.status,
-        startDate: updateValues.startDate || undefined,
-        endDate: updateValues.endDate || undefined,
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to update project';
-      setFormError(message);
-    }
-  };
-
-  const handleGenerateDocument = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!project) {
-      return;
-    }
-
-    setFormError(null);
-
-    try {
-      await generateDocumentMutation.mutateAsync({
-        clientId: project.clientId,
-        projectId: project.id,
-        filename: documentValues.filename,
-        type: documentValues.type,
-        url: documentValues.url || undefined,
-      });
-      setShowGenerator(false);
-      setDocumentValues({ filename: '', type: 'OTHER', url: '' });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to generate document';
-      setFormError(message);
-    }
-  };
-
-  const resetTaskForm = () => {
-    setTaskFormValues({
-      title: '',
-      description: '',
-      status: 'BACKLOG',
-      priority: 'P1',
-      dueDate: '',
-      milestoneId: '',
-    });
-    setEditingTask(null);
-  };
-
-  const handleOpenTask = (task?: Task) => {
-    if (task) {
-      setEditingTask(task);
-      setTaskFormValues({
-        title: task.title,
-        description: task.description ?? '',
-        status: task.status,
-        priority: task.priority ?? '',
-        dueDate: task.dueDate?.slice(0, 10) ?? '',
-        milestoneId: task.milestoneId ? String(task.milestoneId) : '',
-      });
-    } else {
-      resetTaskForm();
-    }
-
-    setTaskError(null);
-    setShowTaskModal(true);
-  };
-
-  const handleSaveTask = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!project) {
-      return;
-    }
-
-    setTaskError(null);
-
-    const payload = {
-      projectId: project.id,
-      title: taskFormValues.title,
-      description: taskFormValues.description || undefined,
-      status: taskFormValues.status,
-      priority: (taskFormValues.priority || undefined) as
-        | TaskPriority
-        | undefined,
-      dueDate: taskFormValues.dueDate || undefined,
-      milestoneId: taskFormValues.milestoneId
-        ? Number(taskFormValues.milestoneId)
-        : undefined,
-    };
-
-    try {
-      if (editingTask) {
-        await updateTaskMutation.mutateAsync({
-          taskId: editingTask.id,
-          payload: {
-            ...payload,
-            dueDate: taskFormValues.dueDate || null,
-            milestoneId: taskFormValues.milestoneId
-              ? Number(taskFormValues.milestoneId)
-              : null,
-          },
-        });
-      } else {
-        await createTaskMutation.mutateAsync(payload);
-      }
-
-      setShowTaskModal(false);
-      resetTaskForm();
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to save task';
-      setTaskError(message);
-    }
-  };
-
-  const handleTaskStatusChange = async (
-    taskId: number,
-    status: Task['status'],
-  ) => {
-    setTaskError(null);
-    try {
-      await moveTaskMutation.mutateAsync({ taskId, payload: { status } });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to move task';
-      setTaskError(message);
-    }
-  };
-
-  const handleTaskMilestoneChange = async (
-    taskId: number,
-    milestoneId: string,
-  ) => {
-    setTaskError(null);
-    try {
-      await moveTaskMutation.mutateAsync({
-        taskId,
-        payload: { milestoneId: milestoneId ? Number(milestoneId) : null },
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to move task';
-      setTaskError(message);
-    }
-  };
-
-  const handleDeleteTask = async (taskId: number) => {
-    setTaskError(null);
-    try {
-      await deleteTaskMutation.mutateAsync(taskId);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to delete task';
-      setTaskError(message);
-    }
-  };
-
-  const resetMilestoneForm = () => {
-    setMilestoneFormValues({
-      name: '',
-      description: '',
-      status: 'NOT_STARTED',
-      dueDate: '',
-    });
-    setEditingMilestoneId(null);
-  };
-
-  const handleSaveMilestone = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!project) {
-      return;
-    }
-
-    setMilestoneError(null);
-
-    const payload = {
-      projectId: project.id,
-      name: milestoneFormValues.name,
-      description: milestoneFormValues.description || undefined,
-      status: milestoneFormValues.status,
-      dueDate: milestoneFormValues.dueDate || undefined,
-    };
-
-    try {
-      if (editingMilestoneId) {
-        await updateMilestoneMutation.mutateAsync({
-          milestoneId: editingMilestoneId,
-          payload: { ...payload, dueDate: milestoneFormValues.dueDate || null },
-        });
-      } else {
-        await createMilestoneMutation.mutateAsync(payload);
-      }
-
-      resetMilestoneForm();
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to save milestone';
-      setMilestoneError(message);
-    }
-  };
-
-  const handleEditMilestone = (milestone: Milestone) => {
-    setEditingMilestoneId(milestone.id);
-    setMilestoneFormValues({
-      name: milestone.name,
-      description: milestone.description ?? '',
-      status: milestone.status,
-      dueDate: milestone.dueDate?.slice(0, 10) ?? '',
-    });
-  };
-
-  const handleDeleteMilestone = async (milestoneId: number) => {
-    setMilestoneError(null);
-    try {
-      await deleteMilestoneMutation.mutateAsync(milestoneId);
-      if (editingMilestoneId === milestoneId) {
-        resetMilestoneForm();
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to delete milestone';
-      setMilestoneError(message);
-    }
-  };
+  const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   if (projectQuery.isLoading) {
     return (
-      <main>
-        <p>Loading project…</p>
+      <main className="p-6">
+        <p className="text-neutral-600">Loading project…</p>
       </main>
     );
   }
 
-  if (projectQuery.error && !project) {
+  if (projectQuery.error || !project) {
     return (
-      <main>
-        <p role="alert">Unable to load project.</p>
-        <Link to="/dashboard">Back to dashboard</Link>
-      </main>
-    );
-  }
-
-  if (!project) {
-    return (
-      <main>
-        <p role="alert">Project not found.</p>
-        <Link to="/dashboard">Back to dashboard</Link>
+      <main className="p-6">
+        <p className="text-danger-600">
+          {projectQuery.error
+            ? 'Unable to load project'
+            : 'Project not found'}
+        </p>
+        <Link to="/dashboard">
+          <Button variant="secondary" className="mt-4">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
       </main>
     );
   }
 
   return (
-    <main>
-      <header>
-        <h1>{project.name}</h1>
-        <p>Project dashboard and documentation.</p>
-        <Link to="/dashboard">Back to dashboard</Link>
-      </header>
-
-      <section aria-label="project-overview">
-        <h2>Overview</h2>
-        <dl>
-          <div>
-            <dt>Status</dt>
-            <dd>{project.status}</dd>
-          </div>
-          <div>
-            <dt>Client</dt>
-            <dd>
-              {clientQuery.isLoading && 'Loading client…'}
-              {clientQuery.data && (
-                <Link to={`/clients/${clientQuery.data.id}`}>
-                  {clientQuery.data.name}
-                </Link>
-              )}
-              {clientQuery.error && 'Unable to load client'}
-            </dd>
-          </div>
-          <div>
-            <dt>Start date</dt>
-            <dd>{formatDate(project.startDate)}</dd>
-          </div>
-          <div>
-            <dt>End date</dt>
-            <dd>{formatDate(project.endDate)}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section aria-label="project-settings">
-        <h2>Update project</h2>
-        <p>Change status or key dates as the engagement progresses.</p>
-        <form onSubmit={handleUpdateProject}>
-          <div>
-            <label htmlFor="project-status">Status</label>
-            <select
-              id="project-status"
-              value={updateValues.status}
-              onChange={(event) =>
-                setUpdateValues((prev) => ({
-                  ...prev,
-                  status: event.target.value as ProjectStatus,
-                }))
-              }
-            >
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="project-start-date">Start date</label>
-            <input
-              id="project-start-date"
-              type="date"
-              value={updateValues.startDate}
-              onChange={(event) =>
-                setUpdateValues((prev) => ({
-                  ...prev,
-                  startDate: event.target.value,
-                }))
-              }
-            />
-          </div>
-          <div>
-            <label htmlFor="project-end-date">End date</label>
-            <input
-              id="project-end-date"
-              type="date"
-              value={updateValues.endDate}
-              onChange={(event) =>
-                setUpdateValues((prev) => ({
-                  ...prev,
-                  endDate: event.target.value,
-                }))
-              }
-            />
-          </div>
-          {formError && <p role="alert">{formError}</p>}
-          <button type="submit" disabled={updateProjectMutation.isPending}>
-            {updateProjectMutation.isPending ? 'Saving…' : 'Save changes'}
-          </button>
-        </form>
-      </section>
-
-      <section aria-label="milestones">
-        <h2>Milestones</h2>
-        <p>Track delivery checkpoints and connect tasks to them.</p>
-        <form onSubmit={handleSaveMilestone} className="milestone-form">
-          <div>
-            <label htmlFor="milestone-name">Name</label>
-            <input
-              id="milestone-name"
-              value={milestoneFormValues.name}
-              onChange={(event) =>
-                setMilestoneFormValues((prev) => ({
-                  ...prev,
-                  name: event.target.value,
-                }))
-              }
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="milestone-status">Status</label>
-            <select
-              id="milestone-status"
-              value={milestoneFormValues.status}
-              onChange={(event) =>
-                setMilestoneFormValues((prev) => ({
-                  ...prev,
-                  status: event.target.value as Milestone['status'],
-                }))
-              }
-            >
-              {MILESTONE_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="milestone-due-date">Due date</label>
-            <input
-              id="milestone-due-date"
-              type="date"
-              value={milestoneFormValues.dueDate}
-              onChange={(event) =>
-                setMilestoneFormValues((prev) => ({
-                  ...prev,
-                  dueDate: event.target.value,
-                }))
-              }
-            />
-          </div>
-          <div>
-            <label htmlFor="milestone-description">Description</label>
-            <textarea
-              id="milestone-description"
-              value={milestoneFormValues.description}
-              onChange={(event) =>
-                setMilestoneFormValues((prev) => ({
-                  ...prev,
-                  description: event.target.value,
-                }))
-              }
-            />
-          </div>
-          {milestoneError && <p role="alert">{milestoneError}</p>}
-          <div>
-            <button
-              type="submit"
-              disabled={
-                createMilestoneMutation.isPending ||
-                updateMilestoneMutation.isPending
-              }
-            >
-              {editingMilestoneId ? 'Update milestone' : 'Add milestone'}
-            </button>
-            {editingMilestoneId && (
-              <button type="button" onClick={resetMilestoneForm}>
-                Cancel edit
-              </button>
-            )}
-          </div>
-        </form>
-        {milestonesQuery.isLoading && <p>Loading milestones…</p>}
-        {milestonesQuery.error && (
-          <p role="alert">Unable to load milestones for this project.</p>
-        )}
-        {milestones.length === 0 && !milestonesQuery.isLoading && (
-          <p>No milestones created yet.</p>
-        )}
-        {milestones.length > 0 && (
-          <ul className="milestone-list">
-            {milestones.map((milestone) => (
-              <li key={milestone.id} className="milestone-card">
-                <div>
-                  <strong>{milestone.name}</strong>
-                  <div className="milestone-meta">
-                    <span>Status: {milestone.status}</span>
-                    <span>Due: {formatDate(milestone.dueDate)}</span>
-                  </div>
-                </div>
-                {milestone.description && <p>{milestone.description}</p>}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleEditMilestone(milestone)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteMilestone(milestone.id)}
-                    disabled={deleteMilestoneMutation.isPending}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-label="project-assets">
-        <h2>Assets</h2>
-        <p>Attach reusable prompts, workflows, and datasets to this project.</p>
-        {assetToast && <div className="toast">{assetToast}</div>}
-        <label>
-          <input
-            type="checkbox"
-            checked={showArchivedAssets}
-            onChange={(event) => setShowArchivedAssets(event.target.checked)}
-          />
-          Show archived links
-        </label>
-        {projectAssetsQuery.isLoading && <p>Loading assets…</p>}
-        {projectAssetsQuery.error && (
-          <p role="alert">Unable to load project assets.</p>
-        )}
-        {!projectAssetsQuery.isLoading && projectAssets.length === 0 && (
-          <p>
-            No assets linked yet. Link an existing asset or create one below.
-          </p>
-        )}
-        {projectAssets.length > 0 && (
-          <ul className="asset-list">
-            {projectAssets.map((entry) => (
-              <li key={entry.id} className="asset-card">
-                <div className="card__header">
-                  <div>
-                    <strong>{entry.asset.name}</strong> ({entry.asset.type}){' '}
-                    {entry.asset.archived && <span>(Archived)</span>}
-                  </div>
-                  <div>{entry.asset.isTemplate ? 'Template' : 'Custom'}</div>
-                </div>
-                <p>{entry.asset.description || 'No description provided.'}</p>
-                <p>
-                  <strong>Tags:</strong> {entry.asset.tags.join(', ') || 'None'}
-                </p>
-                {entry.notes && (
-                  <p>
-                    <strong>Notes:</strong> {entry.notes}
-                  </p>
-                )}
-                <div className="card__actions">
-                  <button
-                    type="button"
-                    onClick={() => handleUnlinkAsset(entry.assetId)}
-                    disabled={unlinkAssetMutation.isPending}
-                  >
-                    Unlink
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        {assetError && <p role="alert">{assetError}</p>}
-
-        <div className="stack">
-          <h3>Link existing asset</h3>
-          {availableAssetsQuery.isLoading && <p>Loading asset library…</p>}
-          <form onSubmit={handleLinkAsset}>
-            <div>
-              <label htmlFor="asset-search-input">Search library</label>
-              <input
-                id="asset-search-input"
-                value={assetSearch}
-                onChange={(event) => setAssetSearch(event.target.value)}
-                placeholder="Filter by name, description, or tags"
-              />
-            </div>
-            <div>
-              <label htmlFor="asset-select">Asset</label>
-              <select
-                id="asset-select"
-                value={selectedAssetId}
-                onChange={(event) => setSelectedAssetId(event.target.value)}
+    <div className="min-h-screen bg-neutral-50">
+      {/* Page Header */}
+      <PageHeader
+        title={project.name}
+        description={
+          clientQuery.data ? (
+            <span>
+              Client:{' '}
+              <Link
+                to={`/clients/${clientQuery.data.id}`}
+                className="text-primary-600 hover:text-primary-700"
               >
-                <option value="">Select an asset</option>
-                {availableAssets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.name} ({asset.type})
-                    {asset.isTemplate ? ' • Template' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {!availableAssetsQuery.isLoading &&
-              availableAssetsQuery.data &&
-              availableAssets.length === 0 && (
-                <p>No matching assets for this project/client context.</p>
-              )}
-            <div>
-              <label htmlFor="asset-notes">Notes (optional)</label>
-              <input
-                id="asset-notes"
-                value={assetNotes}
-                onChange={(event) => setAssetNotes(event.target.value)}
-                placeholder="Context for this project"
-              />
-            </div>
-            <div>
-              <button type="submit" disabled={linkAssetMutation.isPending}>
-                Link asset
-              </button>
-              <button
-                type="button"
-                onClick={() => availableAssetsQuery.refetch()}
-                disabled={availableAssetsQuery.isFetching}
-              >
-                Refresh library
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div className="stack">
-          <h3>Create new asset for this project</h3>
-          {showAssetForm ? (
-            <AssetForm
-              initialValues={{
-                name: '',
-                type: '',
-                description: '',
-                clientId: project ? String(project.clientId) : '',
-                tags: '',
-                isTemplate: false,
-              }}
-              onSubmit={handleCreateProjectAsset}
-              submitLabel="Create and link"
-              isSubmitting={
-                createAssetForProjectMutation.isPending ||
-                linkAssetMutation.isPending
-              }
-              onCancel={() => {
-                setShowAssetForm(false);
-                setAssetFormError(null);
-              }}
-              error={assetFormError}
-              clients={clientQuery.data ? [clientQuery.data] : []}
-              disableClientSelection
-            />
+                {clientQuery.data.name}
+              </Link>
+            </span>
           ) : (
-            <button type="button" onClick={() => setShowAssetForm(true)}>
-              New asset
-            </button>
+            'Loading client...'
+          )
+        }
+        action={
+          <Link to="/dashboard">
+            <Button variant="secondary">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        }
+      />
+
+      {/* Project Status Bar */}
+      <div className="bg-white border-b border-neutral-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-600">Status:</span>
+                <Badge
+                  variant={
+                    project.status === 'IN_PROGRESS'
+                      ? 'default'
+                      : project.status === 'COMPLETED'
+                        ? 'success'
+                        : project.status === 'ON_HOLD'
+                          ? 'warning'
+                          : 'secondary'
+                  }
+                >
+                  {project.status.replace('_', ' ')}
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-600">Health:</span>
+                <ProjectStatusPill
+                  healthStatus={project.healthStatus}
+                  statusSummary={project.statusSummary}
+                  statusUpdatedAt={project.statusUpdatedAt}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-neutral-600">
+                <span>{formatDate(project.startDate)}</span>
+                <span>→</span>
+                <span>{formatDate(project.endDate)}</span>
+              </div>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowStatusEditor(!showStatusEditor)}
+            >
+              <Settings className="w-4 h-4" />
+              Update Status
+            </Button>
+          </div>
+
+          {showStatusEditor && (
+            <Card className="mt-4">
+              <CardBody className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label
+                      htmlFor="edit-status"
+                      className="block text-sm font-medium text-neutral-900 mb-1"
+                    >
+                      Project Status
+                    </label>
+                    <Select
+                      id="edit-status"
+                      value={editedStatus}
+                      onChange={(e) =>
+                        setEditedStatus(e.target.value as ProjectStatus)
+                      }
+                    >
+                      {STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-start-date"
+                      className="block text-sm font-medium text-neutral-900 mb-1"
+                    >
+                      Start Date
+                    </label>
+                    <Input
+                      id="edit-start-date"
+                      type="date"
+                      value={editedStartDate}
+                      onChange={(e) => setEditedStartDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-end-date"
+                      className="block text-sm font-medium text-neutral-900 mb-1"
+                    >
+                      Target End Date
+                    </label>
+                    <Input
+                      id="edit-end-date"
+                      type="date"
+                      value={editedEndDate}
+                      onChange={(e) => setEditedEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleUpdateProjectStatus}
+                    isLoading={updateProjectMutation.isPending}
+                    size="sm"
+                  >
+                    Save Changes
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setShowStatusEditor(false);
+                      setEditedStatus(project.status);
+                      setEditedStartDate(project.startDate?.slice(0, 10) ?? '');
+                      setEditedEndDate(project.endDate?.slice(0, 10) ?? '');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
           )}
         </div>
-      </section>
+      </div>
 
-      <ProjectMeetingsPanel projectId={projectId} />
+      {/* Tabbed Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview">
+              <LayoutDashboard className="w-4 h-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="tasks">
+              <CheckSquare className="w-4 h-4" />
+              Tasks
+            </TabsTrigger>
+            <TabsTrigger value="milestones">
+              <Target className="w-4 h-4" />
+              Milestones
+            </TabsTrigger>
+            <TabsTrigger value="meetings">
+              <Users className="w-4 h-4" />
+              Meetings
+            </TabsTrigger>
+            <TabsTrigger value="assets">
+              <FolderOpen className="w-4 h-4" />
+              Assets
+            </TabsTrigger>
+            <TabsTrigger value="status">
+              <Settings className="w-4 h-4" />
+              Status & Reporting
+            </TabsTrigger>
+          </TabsList>
 
-      <section aria-label="project-tasks">
-        <h2>Tasks</h2>
-        <p>Break work down into actionable items for the team.</p>
-        <div>
-          <button type="button" onClick={() => handleOpenTask()}>
-            Add task
-          </button>
-          <button
-            type="button"
-            onClick={() => tasksQuery.refetch()}
-            disabled={tasksQuery.isFetching}
-          >
-            Refresh
-          </button>
-        </div>
-        {taskError && <p role="alert">{taskError}</p>}
-        {tasksQuery.isLoading && <p>Loading tasks…</p>}
-        {tasksQuery.error && (
-          <p role="alert">Unable to load tasks for this project.</p>
-        )}
-        {tasks.length === 0 && !tasksQuery.isLoading && (
-          <p>No tasks created yet.</p>
-        )}
-        {tasks.length > 0 && (
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Priority</th>
-                <th>Due date</th>
-                <th>Milestone</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((task) => (
-                <tr key={task.id}>
-                  <td>{task.title}</td>
-                  <td>{task.status}</td>
-                  <td>{task.priority ?? 'Unassigned'}</td>
-                  <td>{formatDate(task.dueDate)}</td>
-                  <td>{milestoneLabel(task.milestoneId)}</td>
-                  <td>
-                    <button type="button" onClick={() => handleOpenTask(task)}>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTask(task.id)}
-                      disabled={deleteTaskMutation.isPending}
+          <TabsContent value="overview">
+            <ProjectOverviewTab project={project} />
+          </TabsContent>
+
+          <TabsContent value="tasks">
+            {tasksQuery.isLoading && (
+              <Card>
+                <CardBody>
+                  <p className="text-neutral-600">Loading tasks...</p>
+                </CardBody>
+              </Card>
+            )}
+
+            {tasksQuery.error && (
+              <Card>
+                <CardBody>
+                  <p className="text-danger-600">Unable to load tasks</p>
+                </CardBody>
+              </Card>
+            )}
+
+            {!tasksQuery.isLoading && !tasksQuery.error && (
+              <TaskKanbanBoard tasks={tasks} onTaskMove={handleTaskMove} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="milestones">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {editingMilestoneId ? 'Edit Milestone' : 'Add Milestone'}
+                  </CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <form onSubmit={handleSaveMilestone} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          htmlFor="milestone-name"
+                          className="block text-sm font-medium text-neutral-900 mb-1"
+                        >
+                          Name
+                        </label>
+                        <Input
+                          id="milestone-name"
+                          value={milestoneForm.name}
+                          onChange={(e) =>
+                            setMilestoneForm((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="milestone-status"
+                          className="block text-sm font-medium text-neutral-900 mb-1"
+                        >
+                          Status
+                        </label>
+                        <Select
+                          id="milestone-status"
+                          value={milestoneForm.status}
+                          onChange={(e) =>
+                            setMilestoneForm((prev) => ({
+                              ...prev,
+                              status: e.target.value as Milestone['status'],
+                            }))
+                          }
+                        >
+                          {MILESTONE_STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                              {status.replace('_', ' ')}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="milestone-due-date"
+                          className="block text-sm font-medium text-neutral-900 mb-1"
+                        >
+                          Due Date
+                        </label>
+                        <Input
+                          id="milestone-due-date"
+                          type="date"
+                          value={milestoneForm.dueDate}
+                          onChange={(e) =>
+                            setMilestoneForm((prev) => ({
+                              ...prev,
+                              dueDate: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label
+                          htmlFor="milestone-description"
+                          className="block text-sm font-medium text-neutral-900 mb-1"
+                        >
+                          Description
+                        </label>
+                        <Input
+                          id="milestone-description"
+                          value={milestoneForm.description}
+                          onChange={(e) =>
+                            setMilestoneForm((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="submit"
+                        isLoading={
+                          createMilestoneMutation.isPending ||
+                          updateMilestoneMutation.isPending
+                        }
+                      >
+                        {editingMilestoneId ? 'Update' : 'Add'} Milestone
+                      </Button>
+                      {editingMilestoneId && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => {
+                            setMilestoneForm({
+                              name: '',
+                              description: '',
+                              status: 'NOT_STARTED',
+                              dueDate: '',
+                            });
+                            setEditingMilestoneId(null);
+                          }}
+                        >
+                          Cancel Edit
+                        </Button>
+                      )}
+                    </div>
+                  </form>
+                </CardBody>
+              </Card>
+
+              {milestonesQuery.isLoading && (
+                <Card>
+                  <CardBody>
+                    <p className="text-neutral-600">Loading milestones...</p>
+                  </CardBody>
+                </Card>
+              )}
+
+              {milestones.length === 0 && !milestonesQuery.isLoading && (
+                <Card>
+                  <CardBody>
+                    <p className="text-neutral-600">No milestones yet</p>
+                  </CardBody>
+                </Card>
+              )}
+
+              {milestones.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {milestones.map((milestone) => (
+                    <Card key={milestone.id}>
+                      <CardBody>
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="font-semibold text-neutral-900">
+                              {milestone.name}
+                            </h4>
+                            {milestone.description && (
+                              <p className="text-sm text-neutral-600 mt-1">
+                                {milestone.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                milestone.status === 'IN_PROGRESS'
+                                  ? 'default'
+                                  : milestone.status === 'DONE'
+                                    ? 'success'
+                                    : 'secondary'
+                              }
+                            >
+                              {milestone.status.replace('_', ' ')}
+                            </Badge>
+                            <span className="text-sm text-neutral-600">
+                              Due: {formatDate(milestone.dueDate)}
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleEditMilestone(milestone)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteMilestone(milestone.id)}
+                              isLoading={deleteMilestoneMutation.isPending}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="meetings">
+            <ProjectMeetingsPanel projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value="assets">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Linked Assets</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  {projectAssetsQuery.isLoading && (
+                    <p className="text-neutral-600">Loading assets...</p>
+                  )}
+
+                  {projectAssets.length === 0 &&
+                    !projectAssetsQuery.isLoading && (
+                      <p className="text-neutral-600">
+                        No assets linked to this project yet
+                      </p>
+                    )}
+
+                  {projectAssets.length > 0 && (
+                    <div className="space-y-3">
+                      {projectAssets.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="p-4 bg-neutral-50 rounded-lg"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className="font-semibold text-neutral-900">
+                                {entry.asset.name}
+                              </h4>
+                              <p className="text-sm text-neutral-600 mt-1">
+                                {entry.asset.description}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge>{entry.asset.type}</Badge>
+                                {entry.asset.isTemplate && (
+                                  <Badge variant="secondary">Template</Badge>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                handleUnlinkAsset(entry.assetId)
+                              }
+                            >
+                              Unlink
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Link Existing Asset</CardTitle>
+                </CardHeader>
+                <CardBody className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="asset-select"
+                      className="block text-sm font-medium text-neutral-900 mb-1"
                     >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      <section aria-label="project-kanban">
-        <h3>Kanban</h3>
-        <p>Move tasks between stages and milestone groupings.</p>
-        <div className="kanban-grid">
-          {groupedTasks.map((column) => (
-            <div key={column.status} className="kanban-column">
-              <h4>{column.status}</h4>
-              {column.tasks.length === 0 && <p>No tasks</p>}
-              {column.tasks.map((task) => (
-                <div key={task.id} className="kanban-card">
-                  <div className="kanban-card__header">
-                    <strong>{task.title}</strong>
-                    <span>Priority: {task.priority ?? 'Unassigned'}</span>
-                  </div>
-                  <div className="kanban-card__meta">
-                    <span>Milestone: {milestoneLabel(task.milestoneId)}</span>
-                    <span>Due: {formatDate(task.dueDate)}</span>
-                  </div>
-                  <div className="kanban-card__actions">
-                    <label>
-                      Status
-                      <select
-                        value={task.status}
-                        onChange={(event) =>
-                          handleTaskStatusChange(
-                            task.id,
-                            event.target.value as Task['status'],
-                          )
-                        }
-                      >
-                        {TASK_STATUSES.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
+                      Select Asset
                     </label>
-                    <label>
-                      Milestone
-                      <select
-                        value={task.milestoneId ?? ''}
-                        onChange={(event) =>
-                          handleTaskMilestoneChange(task.id, event.target.value)
-                        }
-                      >
-                        <option value="">Unassigned</option>
-                        {milestones.map((milestone) => (
-                          <option key={milestone.id} value={milestone.id}>
-                            {milestone.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <Select
+                      id="asset-select"
+                      value={selectedAssetId}
+                      onChange={(e) => setSelectedAssetId(e.target.value)}
+                    >
+                      <option value="">Choose an asset...</option>
+                      {availableAssets.map((asset) => (
+                        <option key={asset.id} value={asset.id}>
+                          {asset.name} ({asset.type})
+                        </option>
+                      ))}
+                    </Select>
                   </div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </section>
 
-      {showTaskModal && (
-        <section aria-label="task-modal" className="task-modal">
-          <h3>{editingTask ? 'Edit task' : 'New task'}</h3>
-          <form onSubmit={handleSaveTask}>
-            <div>
-              <label htmlFor="task-title">Title</label>
-              <input
-                id="task-title"
-                value={taskFormValues.title}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    title: event.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="task-description">Description</label>
-              <textarea
-                id="task-description"
-                value={taskFormValues.description}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <label htmlFor="task-status">Status</label>
-              <select
-                id="task-status"
-                value={taskFormValues.status}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    status: event.target.value as Task['status'],
-                  }))
-                }
-              >
-                {TASK_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="task-priority">Priority</label>
-              <select
-                id="task-priority"
-                value={taskFormValues.priority}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    priority: event.target.value as TaskPriority,
-                  }))
-                }
-              >
-                <option value="">Unassigned</option>
-                {TASK_PRIORITIES.map((priority) => (
-                  <option key={priority} value={priority}>
-                    {priority}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="task-due-date">Due date</label>
-              <input
-                id="task-due-date"
-                type="date"
-                value={taskFormValues.dueDate}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    dueDate: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <label htmlFor="task-milestone">Milestone</label>
-              <select
-                id="task-milestone"
-                value={taskFormValues.milestoneId}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    milestoneId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Unassigned</option>
-                {milestones.map((milestone) => (
-                  <option key={milestone.id} value={milestone.id}>
-                    {milestone.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {taskError && <p role="alert">{taskError}</p>}
-            <div>
-              <button
-                type="submit"
-                disabled={
-                  createTaskMutation.isPending || updateTaskMutation.isPending
-                }
-              >
-                {editingTask ? 'Update task' : 'Create task'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTaskModal(false);
-                  resetTaskForm();
-                }}
-                disabled={
-                  createTaskMutation.isPending || updateTaskMutation.isPending
-                }
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
+                  <div>
+                    <label
+                      htmlFor="asset-notes"
+                      className="block text-sm font-medium text-neutral-900 mb-1"
+                    >
+                      Notes (optional)
+                    </label>
+                    <Input
+                      id="asset-notes"
+                      value={assetNotes}
+                      onChange={(e) => setAssetNotes(e.target.value)}
+                      placeholder="Context for this project"
+                    />
+                  </div>
 
-      <section aria-label="documents">
-        <h2>Documents</h2>
-        <p>Generate and access project deliverables.</p>
-        <button type="button" onClick={() => setShowGenerator(true)}>
-          Generate document
-        </button>
-        {documentsQuery.isLoading && <p>Loading documents…</p>}
-        {documentsQuery.error && (
-          <p role="alert">Unable to load documents for this project.</p>
-        )}
-        {documentsQuery.data && documentsQuery.data.length === 0 && (
-          <p>No documents generated yet.</p>
-        )}
-        {documentsQuery.data && documentsQuery.data.length > 0 && (
-          <ul>
-            {documentsQuery.data.map((document) => (
-              <li key={document.id}>
-                <div>
-                  <strong>{document.filename}</strong> ({document.type})
-                </div>
-                <div>Created: {formatDate(document.createdAt)}</div>
-                <div>
-                  <a href={document.url} target="_blank" rel="noreferrer">
-                    Download
-                  </a>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  {assetError && (
+                    <p className="text-danger-600 text-sm">{assetError}</p>
+                  )}
 
-      {showGenerator && (
-        <section aria-label="document-generator">
-          <h3>Generate document</h3>
-          <form onSubmit={handleGenerateDocument}>
-            <div>
-              <label htmlFor="document-filename">Filename</label>
-              <input
-                id="document-filename"
-                value={documentValues.filename}
-                onChange={(event) =>
-                  setDocumentValues((prev) => ({
-                    ...prev,
-                    filename: event.target.value,
-                  }))
-                }
-                required
-              />
+                  <Button
+                    onClick={handleLinkAsset}
+                    isLoading={linkAssetMutation.isPending}
+                  >
+                    Link Asset
+                  </Button>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create New Asset</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  {!showAssetForm ? (
+                    <Button onClick={() => setShowAssetForm(true)}>
+                      New Asset
+                    </Button>
+                  ) : (
+                    <AssetForm
+                      initialValues={{
+                        name: '',
+                        type: '',
+                        description: '',
+                        clientId: project ? String(project.clientId) : '',
+                        tags: '',
+                        isTemplate: false,
+                      }}
+                      onSubmit={handleCreateAsset}
+                      submitLabel="Create and Link"
+                      isSubmitting={
+                        createAssetMutation.isPending ||
+                        linkAssetMutation.isPending
+                      }
+                      onCancel={() => setShowAssetForm(false)}
+                      clients={clientQuery.data ? [clientQuery.data] : []}
+                      disableClientSelection
+                    />
+                  )}
+                </CardBody>
+              </Card>
             </div>
-            <div>
-              <label htmlFor="document-type">Type</label>
-              <select
-                id="document-type"
-                value={documentValues.type}
-                onChange={(event) =>
-                  setDocumentValues((prev) => ({
-                    ...prev,
-                    type: event.target.value as DocumentType,
-                  }))
-                }
-              >
-                {documentTypeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="document-url">Document URL (optional)</label>
-              <input
-                id="document-url"
-                value={documentValues.url}
-                onChange={(event) =>
-                  setDocumentValues((prev) => ({
-                    ...prev,
-                    url: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            {formError && <p role="alert">{formError}</p>}
-            <div>
-              <button
-                type="submit"
-                disabled={generateDocumentMutation.isPending}
-              >
-                {generateDocumentMutation.isPending
-                  ? 'Generating…'
-                  : 'Create document'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowGenerator(false)}
-                disabled={generateDocumentMutation.isPending}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
-    </main>
+          </TabsContent>
+
+          <TabsContent value="status">
+            <ProjectStatusTab projectId={projectId} />
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
   );
 }
 
