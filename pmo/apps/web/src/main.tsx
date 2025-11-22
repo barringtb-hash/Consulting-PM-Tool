@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import App from './App';
 import { queryClient } from './api/queries';
+import { ToastProvider } from './ui/Toast';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -18,7 +19,9 @@ createRoot(rootElement).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
