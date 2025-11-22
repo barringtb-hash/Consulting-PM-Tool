@@ -54,14 +54,6 @@ beforeAll(async () => {
     },
   );
 
-  execSync(`npx prisma generate --schema "${schemaPath}"`, {
-    cwd: workspaceRoot,
-    env: {
-      ...process.env,
-    },
-    stdio: 'inherit',
-  });
-
   const prismaModule = await import('../src/prisma/client');
   prismaClient = prismaModule.default ?? prismaModule.prisma;
 });
