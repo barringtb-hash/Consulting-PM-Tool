@@ -16,7 +16,8 @@ export function Textarea({
   id,
   ...props
 }: TextareaProps): JSX.Element {
-  const textareaId = id || `textarea-${label?.replace(/\s+/g, '-').toLowerCase()}`;
+  const textareaId =
+    id || `textarea-${label?.replace(/\s+/g, '-').toLowerCase()}`;
   const hasError = Boolean(error);
 
   return (

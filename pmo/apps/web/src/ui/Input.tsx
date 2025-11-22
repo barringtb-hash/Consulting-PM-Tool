@@ -43,7 +43,11 @@ export function Input({
         )}
         aria-invalid={hasError}
         aria-describedby={
-          error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
+          error
+            ? `${inputId}-error`
+            : helperText
+              ? `${inputId}-helper`
+              : undefined
         }
         {...props}
       />

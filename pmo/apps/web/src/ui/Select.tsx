@@ -38,7 +38,7 @@ export function Select({
           'focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600',
           'disabled:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-500',
           'bg-white appearance-none',
-          'bg-[url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")] bg-[length:1.25rem] bg-[center_right_0.5rem] bg-no-repeat pr-10',
+          "bg-[url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")] bg-[length:1.25rem] bg-[center_right_0.5rem] bg-no-repeat pr-10",
           hasError
             ? 'border-danger-300 focus:ring-danger-600'
             : 'border-neutral-300',
@@ -66,7 +66,10 @@ export function Select({
         </p>
       )}
       {!error && helperText && (
-        <p id={`${selectId}-helper`} className="mt-1.5 text-sm text-neutral-500">
+        <p
+          id={`${selectId}-helper`}
+          className="mt-1.5 text-sm text-neutral-500"
+        >
           {helperText}
         </p>
       )}
