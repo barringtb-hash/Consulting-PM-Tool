@@ -116,7 +116,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm font-medium">Start Date</span>
               </div>
-              <p className="text-neutral-900">{formatDate(project.startDate)}</p>
+              <p className="text-neutral-900">
+                {formatDate(project.startDate)}
+              </p>
             </div>
 
             <div>
@@ -132,7 +134,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm font-medium">Created</span>
               </div>
-              <p className="text-neutral-900">{formatDate(project.createdAt)}</p>
+              <p className="text-neutral-900">
+                {formatDate(project.createdAt)}
+              </p>
             </div>
           </div>
         </CardBody>
@@ -222,9 +226,7 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   </Badge>
                 </div>
               ) : (
-                <p className="text-neutral-600 text-sm">
-                  No active milestone
-                </p>
+                <p className="text-neutral-600 text-sm">No active milestone</p>
               )}
             </CardBody>
           </Card>
@@ -268,7 +270,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             <ul className="space-y-2">
               {statusData.overdueTasks.map((task) => (
                 <li key={task.id} className="text-sm">
-                  <div className="font-medium text-danger-900">{task.title}</div>
+                  <div className="font-medium text-danger-900">
+                    {task.title}
+                  </div>
                   <div className="text-xs text-danger-700">
                     Was due: {formatDate(task.dueDate)}
                   </div>

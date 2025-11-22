@@ -9,11 +9,7 @@ import {
   FolderOpen,
   Settings,
 } from 'lucide-react';
-import {
-  useClient,
-  useProject,
-  useUpdateProject,
-} from '../api/queries';
+import { useClient, useProject, useUpdateProject } from '../api/queries';
 import { type Project, type ProjectStatus } from '../api/projects';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { useClientProjectContext } from './ClientProjectContext';
@@ -111,8 +107,7 @@ function ProjectDashboardPage(): JSX.Element {
   );
 
   // Assets
-  const [showArchivedAssets, setShowArchivedAssets] = useState(false);
-  const projectAssetsQuery = useProjectAssets(projectId, showArchivedAssets);
+  const projectAssetsQuery = useProjectAssets(projectId, false);
   const linkAssetMutation = useLinkAssetToProject(projectId || 0);
   const unlinkAssetMutation = useUnlinkAssetFromProject(projectId || 0);
   const availableAssetsQuery = useAssets(
@@ -142,11 +137,14 @@ function ProjectDashboardPage(): JSX.Element {
     }
   }, [clientQuery.data, setSelectedClient]);
 
-  const handleTaskMove = async (taskId: number, newStatus: string) => {
+  const handleTaskMove = async (
+    taskId: number,
+    newStatus: 'BACKLOG' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE',
+  ) => {
     try {
       await moveTaskMutation.mutateAsync({
         taskId,
-        payload: { status: newStatus as any },
+        payload: { status: newStatus },
       });
     } catch (err) {
       console.error('Failed to move task:', err);
@@ -309,9 +307,7 @@ function ProjectDashboardPage(): JSX.Element {
     return (
       <main className="p-6">
         <p className="text-danger-600">
-          {projectQuery.error
-            ? 'Unable to load project'
-            : 'Project not found'}
+          {projectQuery.error ? 'Unable to load project' : 'Project not found'}
         </p>
         <Link to="/dashboard">
           <Button variant="secondary" className="mt-4">
@@ -730,7 +726,9 @@ function ProjectDashboardPage(): JSX.Element {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => handleDeleteMilestone(milestone.id)}
+                              onClick={() =>
+                                handleDeleteMilestone(milestone.id)
+                              }
                               isLoading={deleteMilestoneMutation.isPending}
                             >
                               Delete
@@ -792,9 +790,7 @@ function ProjectDashboardPage(): JSX.Element {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() =>
-                                handleUnlinkAsset(entry.assetId)
-                              }
+                              onClick={() => handleUnlinkAsset(entry.assetId)}
                             >
                               Unlink
                             </Button>

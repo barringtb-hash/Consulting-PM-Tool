@@ -126,7 +126,8 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     id: 'custom',
     name: 'Custom / Mixed',
     type: 'Mixed',
-    description: 'Flexible project structure combining multiple engagement types.',
+    description:
+      'Flexible project structure combining multiple engagement types.',
     duration: 'Variable',
     milestones: [],
     tasks: [],
@@ -259,7 +260,9 @@ function ProjectSetupPage(): JSX.Element {
         templateId: template.id,
         type: template.type,
         // Auto-fill project name if empty
-        name: prev.name || `${selectedClientData?.name || 'Client'} - ${template.name}`,
+        name:
+          prev.name ||
+          `${selectedClientData?.name || 'Client'} - ${template.name}`,
       }));
     }
   };
@@ -349,7 +352,9 @@ function ProjectSetupPage(): JSX.Element {
                         </div>
                         <span
                           className={`mt-2 text-xs font-medium ${
-                            isAccessible ? 'text-neutral-900' : 'text-neutral-500'
+                            isAccessible
+                              ? 'text-neutral-900'
+                              : 'text-neutral-500'
                           }`}
                         >
                           {s.label}
@@ -469,9 +474,9 @@ function ProjectSetupPage(): JSX.Element {
             </CardHeader>
             <CardBody className="space-y-4">
               <p className="text-neutral-600">
-                Select a template that best matches your engagement type. Templates
-                provide suggested milestones and tasks to help you get started
-                quickly.
+                Select a template that best matches your engagement type.
+                Templates provide suggested milestones and tasks to help you get
+                started quickly.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -613,7 +618,10 @@ function ProjectSetupPage(): JSX.Element {
                     type="date"
                     value={formData.endDate}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        endDate: e.target.value,
+                      }))
                     }
                   />
                 </div>
@@ -629,7 +637,10 @@ function ProjectSetupPage(): JSX.Element {
                     id="project-goals"
                     value={formData.goals}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, goals: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        goals: e.target.value,
+                      }))
                     }
                     rows={3}
                     placeholder="What are the key goals and success criteria for this project?"
@@ -767,8 +778,8 @@ function ProjectSetupPage(): JSX.Element {
                 <CardBody>
                   <p className="text-neutral-600 mb-4">
                     Based on the {selectedTemplate.name} template, here are
-                    suggested milestones and tasks. You can customize these after
-                    creating the project.
+                    suggested milestones and tasks. You can customize these
+                    after creating the project.
                   </p>
 
                   <div className="space-y-4">
@@ -784,7 +795,9 @@ function ProjectSetupPage(): JSX.Element {
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-neutral-900 mb-2">Tasks</h4>
+                      <h4 className="font-medium text-neutral-900 mb-2">
+                        Tasks
+                      </h4>
                       <ul className="list-disc list-inside space-y-1 text-neutral-700">
                         {selectedTemplate.tasks.map((task, idx) => (
                           <li key={idx}>{task}</li>
@@ -793,9 +806,9 @@ function ProjectSetupPage(): JSX.Element {
                     </div>
 
                     <p className="text-xs text-neutral-500 italic">
-                      Note: Automatic milestone and task creation from templates will
-                      be enabled in a future update. For now, you'll need to add
-                      these manually after project creation.
+                      Note: Automatic milestone and task creation from templates
+                      will be enabled in a future update. For now, you&apos;ll
+                      need to add these manually after project creation.
                     </p>
                   </div>
                 </CardBody>
