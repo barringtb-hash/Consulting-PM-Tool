@@ -112,3 +112,39 @@ export const RepurposeContentSchema = z.object({
   length: z.enum(['short', 'medium', 'long']).optional(),
 });
 export type RepurposeContentInput = z.infer<typeof RepurposeContentSchema>;
+
+// Campaign types
+export const CampaignStatus = {
+  PLANNING: 'PLANNING',
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+  COMPLETED: 'COMPLETED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type CampaignStatus =
+  (typeof CampaignStatus)[keyof typeof CampaignStatus];
+
+// Brand Profile types
+export const BrandAssetType = {
+  LOGO: 'LOGO',
+  IMAGE: 'IMAGE',
+  TEMPLATE: 'TEMPLATE',
+  DOCUMENT: 'DOCUMENT',
+  VIDEO: 'VIDEO',
+  OTHER: 'OTHER',
+} as const;
+
+export type BrandAssetType =
+  (typeof BrandAssetType)[keyof typeof BrandAssetType];
+
+// Publishing types
+export const PublishingPlatform = {
+  LINKEDIN: 'LINKEDIN',
+  TWITTER: 'TWITTER',
+  INSTAGRAM: 'INSTAGRAM',
+  FACEBOOK: 'FACEBOOK',
+} as const;
+
+export type PublishingPlatform =
+  (typeof PublishingPlatform)[keyof typeof PublishingPlatform];
