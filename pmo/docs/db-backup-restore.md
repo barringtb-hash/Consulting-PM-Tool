@@ -12,11 +12,11 @@ This document describes the backup and restore procedures for the AI Consulting 
 
 ### Backup Strategy
 
-| Backup Type | Frequency | Retention | Location |
-|-------------|-----------|-----------|----------|
-| **Automated** | Daily at 2:00 AM UTC | 30 days | Render backups |
-| **Manual** | Before deployments | 7 days | Local + S3 |
-| **Point-in-Time** | Continuous | 7 days | Render (if enabled) |
+| Backup Type       | Frequency            | Retention | Location            |
+| ----------------- | -------------------- | --------- | ------------------- |
+| **Automated**     | Daily at 2:00 AM UTC | 30 days   | Render backups      |
+| **Manual**        | Before deployments   | 7 days    | Local + S3          |
+| **Point-in-Time** | Continuous           | 7 days    | Render (if enabled) |
 
 ---
 
@@ -27,6 +27,7 @@ This document describes the backup and restore procedures for the AI Consulting 
 Render automatically creates daily backups for managed PostgreSQL databases.
 
 **Configuration**:
+
 1. Navigate to your database in Render dashboard
 2. Go to "Backups" tab
 3. Verify daily backups are enabled
@@ -35,6 +36,7 @@ Render automatically creates daily backups for managed PostgreSQL databases.
 **Schedule**: Daily at 2:00 AM UTC
 
 **Retention**:
+
 - Daily backups: 30 days
 - Weekly backups: 90 days (if available)
 
@@ -43,12 +45,14 @@ Render automatically creates daily backups for managed PostgreSQL databases.
 ### Verification
 
 **Check backup status**:
+
 1. Log into Render dashboard
 2. Select your database service
 3. Click "Backups" tab
 4. Verify recent backup exists (within last 24 hours)
 
 **Automated Alerts**:
+
 - Set up email notifications for failed backups
 - Monitor backup job status weekly
 
@@ -66,6 +70,7 @@ Render automatically creates daily backups for managed PostgreSQL databases.
 ### Using pg_dump
 
 **Prerequisites**:
+
 ```bash
 # Install PostgreSQL client tools
 # macOS
@@ -99,12 +104,14 @@ pg_dump \
 ```
 
 **Backup Options**:
+
 - `--format=custom`: Binary format (required for pg_restore)
 - `--compress=9`: Maximum compression
 - `--no-owner`: Exclude ownership information
 - `--no-acl`: Exclude access privileges
 
 **Verify Backup**:
+
 ```bash
 # Check file size (should be > 0)
 ls -lh backup_*.dump
@@ -154,6 +161,7 @@ aws s3api put-bucket-lifecycle-configuration \
 ```
 
 **lifecycle.json**:
+
 ```json
 {
   "Rules": [
@@ -253,6 +261,7 @@ Update `DATABASE_URL` in Render staging service to point to restore instance.
 **⚠️ Use only in emergencies. This will overwrite production data!**
 
 **Prerequisites**:
+
 - [ ] Incident declared
 - [ ] Root cause identified
 - [ ] All team members notified
@@ -366,6 +375,7 @@ curl https://api.pmo.yourdomain.com/api/healthz
 9. **Document incident**
 
 Create incident report:
+
 - Incident timeline
 - Root cause
 - Data loss (if any)
@@ -383,6 +393,7 @@ If Render supports PITR (or using AWS RDS):
 **Render**: Check if available in your plan
 
 **AWS RDS**:
+
 ```bash
 aws rds modify-db-instance \
   --db-instance-identifier pmo-db \
@@ -411,6 +422,7 @@ aws rds restore-db-instance-to-point-in-time \
 **Schedule**: First Monday of each month
 
 **Procedure**:
+
 1. Download latest automated backup from Render
 2. Create new staging database instance
 3. Restore backup to staging instance
@@ -422,6 +434,7 @@ aws rds restore-db-instance-to-point-in-time \
 6. Destroy staging instance
 
 **Success Criteria**:
+
 - ✅ Backup file downloads without errors
 - ✅ Restore completes in < 10 minutes
 - ✅ All tables present
@@ -459,6 +472,7 @@ fi
 ```
 
 **Cron Job** (run daily):
+
 ```bash
 # Add to crontab
 0 9 * * * /path/to/check-backups.sh
@@ -470,10 +484,10 @@ fi
 
 ### Target Metrics
 
-| Metric | Target | Current |
-|--------|--------|---------|
+| Metric                  | Target   | Current                  |
+| ----------------------- | -------- | ------------------------ |
 | **RPO** (Max data loss) | 24 hours | 24 hours (daily backups) |
-| **RTO** (Max downtime) | 1 hour | TBD |
+| **RTO** (Max downtime)  | 1 hour   | TBD                      |
 
 ### Improving RTO
 
@@ -486,14 +500,15 @@ fi
 
 ## Retention Policy
 
-| Backup Type | Keep For | Reason |
-|-------------|----------|--------|
-| Daily automated | 30 days | Compliance, recent recovery |
-| Weekly manual | 90 days | Monthly archival |
-| Pre-deployment | 7 days | Quick rollback |
-| Incident backups | 1 year | Post-mortem, legal |
+| Backup Type      | Keep For | Reason                      |
+| ---------------- | -------- | --------------------------- |
+| Daily automated  | 30 days  | Compliance, recent recovery |
+| Weekly manual    | 90 days  | Monthly archival            |
+| Pre-deployment   | 7 days   | Quick rollback              |
+| Incident backups | 1 year   | Post-mortem, legal          |
 
 **Cleanup**:
+
 ```bash
 # Delete backups older than 90 days (S3)
 aws s3 ls s3://your-bucket/pmo-backups/ \
@@ -520,12 +535,14 @@ aws s3 ls s3://your-bucket/pmo-backups/ \
 ### Communication Plan
 
 **Incident Response Team**:
+
 - Lead: [Name]
 - Database Admin: [Name]
 - DevOps: [Name]
 - Communications: [Name]
 
 **Notification Channels**:
+
 - Internal: Slack #incidents
 - External: Status page (status.pmo.yourdomain.com)
 
@@ -559,16 +576,19 @@ aws s3 ls s3://your-bucket/pmo-backups/ \
 ## Tools & Resources
 
 **Backup Tools**:
+
 - `pg_dump` - PostgreSQL backup utility
 - `pg_restore` - PostgreSQL restore utility
 - `pg_basebackup` - Base backup for PITR
 
 **Monitoring**:
+
 - Render Dashboard - View automated backups
 - AWS S3 - Cloud backup storage
 - Cron - Automated backup checks
 
 **Documentation**:
+
 - [PostgreSQL Backup & Restore](https://www.postgresql.org/docs/16/backup.html)
 - [Render Managed Databases](https://render.com/docs/databases)
 - [AWS RDS Backups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_CommonTasks.BackupRestore.html)

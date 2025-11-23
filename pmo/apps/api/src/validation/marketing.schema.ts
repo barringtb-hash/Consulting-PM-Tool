@@ -4,14 +4,17 @@ import {
   CreateMarketingContentSchema,
   UpdateMarketingContentSchema,
   GenerateContentSchema,
+  RepurposeContentSchema,
   type CreateMarketingContentInput,
   type UpdateMarketingContentInput,
   type GenerateContentInput,
+  type RepurposeContentInput,
 } from '../types/marketing';
 
 export const marketingContentCreateSchema = CreateMarketingContentSchema;
 export const marketingContentUpdateSchema = UpdateMarketingContentSchema;
 export const generateContentSchema = GenerateContentSchema;
+export const repurposeContentSchema = RepurposeContentSchema;
 
 export const marketingContentListQuerySchema = z.object({
   clientId: z.coerce.number().int().positive().optional(),
@@ -28,3 +31,4 @@ export type MarketingContentListQuery = z.infer<
   typeof marketingContentListQuerySchema
 >;
 export type GenerateContentParams = GenerateContentInput;
+export type RepurposeContentParams = RepurposeContentInput;

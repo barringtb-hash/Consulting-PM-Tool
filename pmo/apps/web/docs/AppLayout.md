@@ -59,8 +59,8 @@ const navItems: NavItem[] = [
   {
     label: 'Your Feature',
     path: '/your-path',
-    icon: YourIcon,  // from lucide-react
-    group: 'main',   // or 'admin'
+    icon: YourIcon, // from lucide-react
+    group: 'main', // or 'admin'
   },
 ];
 ```
@@ -81,6 +81,7 @@ The sidebar and mobile menu automatically highlight the active navigation item b
 ### Accessibility
 
 The mobile menu includes:
+
 - ARIA attributes (`aria-modal`, `aria-label`, `aria-expanded`, `aria-current`)
 - Focus trapping when open
 - ESC key to close
@@ -90,6 +91,7 @@ The mobile menu includes:
 ### User Menu
 
 The top bar includes a user menu dropdown showing:
+
 - Current user name or email
 - Logout button
 
@@ -127,9 +129,7 @@ function YourPage() {
         description="Page description"
         actions={<Button>Action</Button>}
       />
-      <Section>
-        {/* Your content here */}
-      </Section>
+      <Section>{/* Your content here */}</Section>
     </>
   );
 }
@@ -140,6 +140,7 @@ function YourPage() {
 Current navigation structure:
 
 **Main Group:**
+
 - Dashboard (`/dashboard`)
 - My Tasks (`/tasks`)
 - Clients (`/clients`)
@@ -147,6 +148,7 @@ Current navigation structure:
 - Assets (`/assets`)
 
 **Admin Group:**
+
 - Create User (`/admin/users/new`)
 
 To modify navigation, edit the `navItems` array in both `Sidebar.tsx` and `MobileMenu.tsx`.
@@ -154,6 +156,7 @@ To modify navigation, edit the `navItems` array in both `Sidebar.tsx` and `Mobil
 ## Icons
 
 The layout uses [Lucide React](https://lucide.dev/) for icons. Available icons include:
+
 - `LayoutDashboard`
 - `CheckSquare`
 - `Users`
@@ -176,9 +179,7 @@ Routes that should NOT have the AppLayout (e.g., login page) should be placed ou
 
   {/* Protected routes with layout */}
   <Route element={<ProtectedRoute />}>
-    <Route element={<AuthenticatedLayout />}>
-      {/* ... */}
-    </Route>
+    <Route element={<AuthenticatedLayout />}>{/* ... */}</Route>
   </Route>
 </Routes>
 ```

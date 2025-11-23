@@ -184,16 +184,16 @@ export async function scanPage(
 export async function scanCommonIssues(page: Page): Promise<ViolationSummary> {
   return runAccessibilityScan(page, {
     includeRules: [
-      'label',              // Form labels
-      'button-name',        // Button accessible names
-      'link-name',          // Link accessible names
-      'image-alt',          // Image alt text
+      'label', // Form labels
+      'button-name', // Button accessible names
+      'link-name', // Link accessible names
+      'image-alt', // Image alt text
       'aria-required-attr', // Required ARIA attributes
-      'aria-valid-attr',    // Valid ARIA attributes
-      'color-contrast',     // Color contrast
-      'heading-order',      // Heading hierarchy
-      'html-has-lang',      // HTML lang attribute
-      'landmark-one-main',  // Single main landmark
+      'aria-valid-attr', // Valid ARIA attributes
+      'color-contrast', // Color contrast
+      'heading-order', // Heading hierarchy
+      'html-has-lang', // HTML lang attribute
+      'landmark-one-main', // Single main landmark
     ],
   });
 }

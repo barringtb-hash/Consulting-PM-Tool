@@ -8,11 +8,11 @@
 
 The AI Consulting PMO Platform uses a three-tier environment strategy:
 
-| Environment | Purpose | URL | Branch | Auto-Deploy |
-|-------------|---------|-----|--------|-------------|
-| **Development** | Local development | `http://localhost:5173` | N/A | No |
-| **Staging** | Pre-production testing | TBD | `main` | Yes |
-| **Production** | Live user environment | TBD | `main` (tagged) | Manual |
+| Environment     | Purpose                | URL                     | Branch          | Auto-Deploy |
+| --------------- | ---------------------- | ----------------------- | --------------- | ----------- |
+| **Development** | Local development      | `http://localhost:5173` | N/A             | No          |
+| **Staging**     | Pre-production testing | TBD                     | `main`          | Yes         |
+| **Production**  | Live user environment  | TBD                     | `main` (tagged) | Manual      |
 
 ---
 
@@ -21,6 +21,7 @@ The AI Consulting PMO Platform uses a three-tier environment strategy:
 ### Local Setup
 
 **Requirements**:
+
 - Node.js 20+
 - PostgreSQL 16 (or SQLite for quick start)
 
@@ -51,6 +52,7 @@ npm run dev --workspace pmo-web   # Web: http://localhost:5173
 ### Environment Variables
 
 **API** (`apps/api/.env`):
+
 ```env
 # Database
 DATABASE_URL="file:../../prisma/dev.db"  # SQLite (default)
@@ -71,6 +73,7 @@ CORS_ORIGIN="http://localhost:5173"
 ```
 
 **Web** (`apps/web/.env`):
+
 ```env
 # API Base URL (leave blank to use Vite proxy)
 # VITE_API_BASE_URL="http://localhost:4000/api"
@@ -80,12 +83,12 @@ CORS_ORIGIN="http://localhost:5173"
 
 Seeded via `prisma/seed.ts`:
 
-| Email | Password | Role |
-|-------|----------|------|
-| `admin@pmo.test` | `AdminDemo123!` | Admin |
-| `avery.chen@pmo.test` | `PmoDemo123!` | Consultant |
-| `priya.desai@pmo.test` | `PmoDemo123!` | Consultant |
-| `marco.silva@pmo.test` | `PmoDemo123!` | Consultant |
+| Email                  | Password        | Role       |
+| ---------------------- | --------------- | ---------- |
+| `admin@pmo.test`       | `AdminDemo123!` | Admin      |
+| `avery.chen@pmo.test`  | `PmoDemo123!`   | Consultant |
+| `priya.desai@pmo.test` | `PmoDemo123!`   | Consultant |
+| `marco.silva@pmo.test` | `PmoDemo123!`   | Consultant |
 
 ---
 
@@ -94,6 +97,7 @@ Seeded via `prisma/seed.ts`:
 ### Purpose
 
 Staging mirrors production configuration and is used for:
+
 - Pre-production testing
 - E2E smoke tests
 - UAT (User Acceptance Testing)
@@ -104,6 +108,7 @@ Staging mirrors production configuration and is used for:
 **Hosting**: TBD (Recommended: Render for API, Vercel for Web)
 
 **Components**:
+
 - **Frontend**: Static build deployed to Vercel/Netlify
 - **Backend**: Node.js API on Render/Fly.io/Railway
 - **Database**: Managed PostgreSQL (Render Postgres, Railway, or Supabase)
@@ -115,12 +120,14 @@ Staging mirrors production configuration and is used for:
 **Service Type**: Web Service
 
 **Settings**:
+
 - **Build Command**: `cd apps/api && npm install && npm run build`
 - **Start Command**: `cd apps/api && npm run start`
 - **Node Version**: 20
 - **Health Check Path**: `/api/healthz`
 
 **Environment Variables**:
+
 ```env
 DATABASE_URL=<render-postgres-url>
 JWT_SECRET=<random-secret-64-chars>
@@ -132,6 +139,7 @@ CORS_ORIGIN=https://your-staging-web.vercel.app
 ```
 
 **Post-Deploy Command**:
+
 ```bash
 npx prisma migrate deploy
 ```
@@ -139,12 +147,14 @@ npx prisma migrate deploy
 #### Frontend (Vercel)
 
 **Settings**:
+
 - **Framework Preset**: Vite
 - **Root Directory**: `pmo`
 - **Build Command**: `npm run build --workspace pmo-web`
 - **Output Directory**: `apps/web/dist`
 
 **Environment Variables**:
+
 ```env
 VITE_API_BASE_URL=https://your-staging-api.onrender.com/api
 ```
@@ -170,6 +180,7 @@ VITE_API_BASE_URL=https://your-staging-api.onrender.com/api
 ### Access
 
 **URLs**:
+
 - **Web**: `https://pmo-staging.vercel.app` (TBD)
 - **API**: `https://pmo-api-staging.onrender.com` (TBD)
 
@@ -188,6 +199,7 @@ Live environment serving real users with production data.
 **Hosting**: TBD (Recommended: same as staging for consistency)
 
 **Components**:
+
 - **Frontend**: Vercel Pro (for better performance)
 - **Backend**: Render Standard or higher
 - **Database**: Managed PostgreSQL with automated backups
@@ -199,6 +211,7 @@ Live environment serving real users with production data.
 **Service Type**: Web Service
 
 **Settings**:
+
 - **Build Command**: `cd apps/api && npm install && npm run build`
 - **Start Command**: `cd apps/api && npm run start`
 - **Node Version**: 20
@@ -206,6 +219,7 @@ Live environment serving real users with production data.
 - **Auto-Deploy**: **Disabled** (manual deploys only)
 
 **Environment Variables**:
+
 ```env
 DATABASE_URL=<render-postgres-url-production>
 JWT_SECRET=<strong-random-secret-64-chars>
@@ -218,12 +232,14 @@ LOG_LEVEL=info
 ```
 
 **Scaling**:
+
 - Instances: 2+ for high availability
 - Auto-scale based on CPU/memory
 
 #### Frontend (Vercel)
 
 **Settings**:
+
 - **Framework Preset**: Vite
 - **Root Directory**: `pmo`
 - **Build Command**: `npm run build --workspace pmo-web`
@@ -231,11 +247,13 @@ LOG_LEVEL=info
 - **Custom Domain**: `pmo.yourdomain.com`
 
 **Environment Variables**:
+
 ```env
 VITE_API_BASE_URL=https://api.pmo.yourdomain.com/api
 ```
 
 **Performance**:
+
 - Enable Edge Network
 - Configure caching headers
 - Enable compression
@@ -243,6 +261,7 @@ VITE_API_BASE_URL=https://api.pmo.yourdomain.com/api
 #### Database (Render Postgres or equivalent)
 
 **Configuration**:
+
 - **Version**: PostgreSQL 16
 - **Plan**: Standard or higher
 - **Backups**: Daily automated backups (retain 30 days)
@@ -273,6 +292,7 @@ VITE_API_BASE_URL=https://api.pmo.yourdomain.com/api
 ### Access
 
 **URLs**:
+
 - **Web**: `https://pmo.yourdomain.com` (TBD)
 - **API**: `https://api.pmo.yourdomain.com` (TBD)
 
@@ -284,15 +304,15 @@ VITE_API_BASE_URL=https://api.pmo.yourdomain.com/api
 
 To ensure staging mirrors production:
 
-| Configuration | Dev | Staging | Production |
-|---------------|-----|---------|------------|
-| **Node.js** | 20+ | 20 | 20 |
-| **Database** | SQLite/Postgres | PostgreSQL 16 | PostgreSQL 16 |
-| **JWT Expiry** | 1h | 24h | 24h |
-| **BCRYPT Rounds** | 10 | 12 | 12 |
-| **CORS** | `*` or localhost | Specific origin | Specific origin |
-| **Logging** | debug | info | info/warn |
-| **Error Details** | Full stack | Sanitized | Sanitized |
+| Configuration     | Dev              | Staging         | Production      |
+| ----------------- | ---------------- | --------------- | --------------- |
+| **Node.js**       | 20+              | 20              | 20              |
+| **Database**      | SQLite/Postgres  | PostgreSQL 16   | PostgreSQL 16   |
+| **JWT Expiry**    | 1h               | 24h             | 24h             |
+| **BCRYPT Rounds** | 10               | 12              | 12              |
+| **CORS**          | `*` or localhost | Specific origin | Specific origin |
+| **Logging**       | debug            | info            | info/warn       |
+| **Error Details** | Full stack       | Sanitized       | Sanitized       |
 
 ---
 
@@ -301,16 +321,19 @@ To ensure staging mirrors production:
 ### Development
 
 Secrets stored in:
+
 - `apps/api/.env` (gitignored)
 - `apps/web/.env` (gitignored)
 
 ### Staging & Production
 
 Secrets stored in:
+
 - **Render**: Environment tab in service settings
 - **Vercel**: Project settings → Environment Variables
 
 **Best Practices**:
+
 - ✅ Use strong random secrets (64+ characters)
 - ✅ Rotate secrets quarterly
 - ✅ Different secrets per environment
@@ -318,6 +341,7 @@ Secrets stored in:
 - ❌ Never share secrets via Slack/email
 
 **Generate Secrets**:
+
 ```bash
 # Generate random secret
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -345,6 +369,7 @@ npx prisma migrate deploy
 ```
 
 **Important**:
+
 - Always test migrations on staging first
 - Backup database before running migrations in production
 - Migrations should be backwards compatible when possible
@@ -427,11 +452,13 @@ If issues are detected post-deployment:
 ### Logs
 
 **API Logs** (Render):
+
 - Access via Render dashboard → Logs
 - Structured JSON logs (using `pino`)
 - Log levels: error, warn, info, debug
 
 **Frontend Logs** (Vercel):
+
 - Runtime logs via Vercel dashboard
 - Browser console errors reported to error tracking
 
@@ -440,6 +467,7 @@ If issues are detected post-deployment:
 **Tool**: UptimeRobot, Pingdom, or similar
 
 **Configuration**:
+
 - Monitor API health endpoint every 5 minutes
 - Monitor web homepage every 5 minutes
 - Alert on 2+ consecutive failures
@@ -454,6 +482,7 @@ npm install @sentry/node @sentry/react
 ```
 
 **Configuration**:
+
 - Track unhandled exceptions
 - Track API errors (4xx, 5xx)
 - Set up alerts for critical errors
@@ -466,10 +495,12 @@ npm install @sentry/node @sentry/react
 **Current**: `.github/workflows/ci.yml`
 
 **Jobs**:
+
 1. **lint-test**: Lint, unit tests, build
 2. **e2e**: E2E tests with Playwright
 
 **Future Enhancements**:
+
 - [ ] Add deployment job for staging (auto-deploy on main)
 - [ ] Add deployment job for production (manual trigger)
 - [ ] Add smoke tests after deployment
@@ -490,6 +521,7 @@ npm install @sentry/node @sentry/react
 **Custom Domain**: `pmo.yourdomain.com`
 
 **DNS Configuration**:
+
 ```
 A     @      76.76.21.21       (Vercel IP)
 CNAME api    pmo-api.onrender.com

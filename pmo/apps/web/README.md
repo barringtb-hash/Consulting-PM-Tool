@@ -99,7 +99,16 @@ All UI primitives live in `/src/ui` and are exported from `/src/ui/index.ts`:
 ### Usage Example
 
 ```tsx
-import { Button, Card, CardBody, CardHeader, CardTitle, Input, PageHeader, Section } from '../ui';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Input,
+  PageHeader,
+  Section,
+} from '../ui';
 
 function MyPage() {
   return (
@@ -144,6 +153,7 @@ To extend component variants:
   - Accessible with `aria-live` regions
 
 **Toast Usage:**
+
 ```tsx
 import { useToast } from '../ui/Toast';
 
@@ -174,12 +184,14 @@ function MyComponent() {
 ### AppLayout
 
 The main application layout (`/src/layouts/AppLayout.tsx`) provides:
+
 - Persistent sidebar navigation
 - Top navigation bar with user menu
 - Mobile-responsive hamburger menu
 - Protected route wrapper
 
 All authenticated pages should be wrapped in `<AppLayout>`:
+
 ```tsx
 <AppLayout>
   <YourPageContent />
@@ -221,6 +233,7 @@ npm test --workspace pmo-web -- --coverage
 ### Test Structure
 
 Tests are organized in `/src/test`:
+
 - **`setup.ts`** – Global test configuration and jest-dom matchers
 - **`utils.tsx`** – Test utilities including `renderWithProviders()`
 - **`*.test.tsx`** – Test files colocated with test utilities
@@ -228,11 +241,13 @@ Tests are organized in `/src/test`:
 ### Test Utilities
 
 **`renderWithProviders()`** wraps components with:
+
 - `MemoryRouter` for routing
 - `QueryClientProvider` for React Query
 - `ToastProvider` for notifications
 
 Example:
+
 ```tsx
 import { renderWithProviders } from './test/utils';
 
@@ -245,6 +260,7 @@ it('renders component', () => {
 ### Smoke Tests
 
 Comprehensive smoke tests ensure core flows work:
+
 - **NavigationSmokeTest.test.tsx** – All major pages render without crashing
 - **ClientIntakeFlow.test.tsx** – Client creation wizard happy path
 - **ProjectSetupFlow.test.tsx** – Project creation wizard happy path
@@ -252,6 +268,7 @@ Comprehensive smoke tests ensure core flows work:
 ### Mocking APIs
 
 Use Vitest mocks for API calls:
+
 ```tsx
 vi.mock('../api/queries', () => ({
   useClients: vi.fn(() => ({
@@ -299,6 +316,7 @@ npm run lint --workspace pmo-web -- --fix
 ```
 
 ESLint is configured with:
+
 - React and TypeScript support
 - React Hooks rules
 - Accessibility (a11y) checks

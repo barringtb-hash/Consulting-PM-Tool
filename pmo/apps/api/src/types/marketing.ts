@@ -14,11 +14,22 @@ export const ContentType = {
 } as const;
 
 export const ContentStatus = {
+  IDEA: 'IDEA',
   DRAFT: 'DRAFT',
   IN_REVIEW: 'IN_REVIEW',
   APPROVED: 'APPROVED',
+  READY: 'READY',
   PUBLISHED: 'PUBLISHED',
   ARCHIVED: 'ARCHIVED',
+} as const;
+
+export const ContentChannel = {
+  WEB: 'WEB',
+  LINKEDIN: 'LINKEDIN',
+  INSTAGRAM: 'INSTAGRAM',
+  TWITTER: 'TWITTER',
+  EMAIL: 'EMAIL',
+  GENERIC: 'GENERIC',
 } as const;
 
 export const ContentTypeSchema = z.nativeEnum(ContentType);
@@ -26,6 +37,9 @@ export type ContentType = z.infer<typeof ContentTypeSchema>;
 
 export const ContentStatusSchema = z.nativeEnum(ContentStatus);
 export type ContentStatus = z.infer<typeof ContentStatusSchema>;
+
+export const ContentChannelSchema = z.nativeEnum(ContentChannel);
+export type ContentChannel = z.infer<typeof ContentChannelSchema>;
 
 /**
  * Content field structure for marketing assets:
@@ -37,11 +51,14 @@ export type ContentStatus = z.infer<typeof ContentStatusSchema>;
  */
 const MarketingContentBaseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  slug: z.string().optional(),
   type: ContentTypeSchema,
+  channel: ContentChannelSchema.optional(),
   status: ContentStatusSchema.optional(),
   clientId: z.number().int().positive(),
   projectId: z.number().int().positive().nullable().optional(),
   sourceMeetingId: z.number().int().positive().nullable().optional(),
+  sourceContentId: z.number().int().positive().nullable().optional(),
   content: z.unknown().optional(),
   summary: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -83,3 +100,15 @@ export const GenerateContentSchema = z.object({
   length: z.enum(['short', 'medium', 'long']).optional(),
 });
 export type GenerateContentInput = z.infer<typeof GenerateContentSchema>;
+
+// Schema for repurposing existing content
+export const RepurposeContentSchema = z.object({
+  targetType: ContentTypeSchema,
+  targetChannel: ContentChannelSchema.optional(),
+  additionalContext: z.string().optional(),
+  tone: z
+    .enum(['professional', 'casual', 'technical', 'enthusiastic'])
+    .optional(),
+  length: z.enum(['short', 'medium', 'long']).optional(),
+});
+export type RepurposeContentInput = z.infer<typeof RepurposeContentSchema>;
