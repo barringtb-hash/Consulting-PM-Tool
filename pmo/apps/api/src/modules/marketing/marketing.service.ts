@@ -61,9 +61,18 @@ const findContentWithAccess = async (id: number, ownerId: number) => {
     return { error: 'not_found' as const };
   }
 
-  // Check if user has access via project ownership or client access
-  if (content.project && content.project.ownerId !== ownerId) {
-    return { error: 'forbidden' as const };
+  // Check authorization:
+  // 1. If content has a project, user must own that project
+  // 2. If content has no project, user must have created it
+  if (content.project) {
+    if (content.project.ownerId !== ownerId) {
+      return { error: 'forbidden' as const };
+    }
+  } else {
+    // No project - check if user created this content
+    if (content.createdById !== ownerId) {
+      return { error: 'forbidden' as const };
+    }
   }
 
   return { content };
@@ -71,6 +80,7 @@ const findContentWithAccess = async (id: number, ownerId: number) => {
 
 /**
  * List marketing contents with optional filters
+ * IMPORTANT: Only returns content that the user owns (via project ownership or creation)
  */
 export const listMarketingContents = async (
   ownerId: number,
@@ -78,6 +88,22 @@ export const listMarketingContents = async (
 ) => {
   const where: Prisma.MarketingContentWhereInput = {
     archived: query.archived ?? false,
+    // CRITICAL: Authorization filter - only show content user has access to
+    OR: [
+      // Content linked to projects owned by this user
+      {
+        project: {
+          ownerId: ownerId,
+        },
+      },
+      // Content created by this user (for content without a project)
+      {
+        AND: [
+          { projectId: null },
+          { createdById: ownerId },
+        ],
+      },
+    ],
   };
 
   // Filter by client
@@ -102,9 +128,14 @@ export const listMarketingContents = async (
 
   // Search by name or summary
   if (query.search) {
-    where.OR = [
-      { name: { contains: query.search, mode: 'insensitive' } },
-      { summary: { contains: query.search, mode: 'insensitive' } },
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : []),
+      {
+        OR: [
+          { name: { contains: query.search, mode: 'insensitive' } },
+          { summary: { contains: query.search, mode: 'insensitive' } },
+        ],
+      },
     ];
   }
 
