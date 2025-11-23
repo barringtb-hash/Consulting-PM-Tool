@@ -104,7 +104,9 @@ function MyTasksPage(): JSX.Element {
   const projects = useMemo(() => {
     const allProjects = projectsQuery.data ?? [];
     const projectsWithUserTasks = new Set(tasks.map((task) => task.projectId));
-    return allProjects.filter((project) => projectsWithUserTasks.has(project.id));
+    return allProjects.filter((project) =>
+      projectsWithUserTasks.has(project.id),
+    );
   }, [projectsQuery.data, tasks]);
 
   const filteredTasks = useMemo(() => {
