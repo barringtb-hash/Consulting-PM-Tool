@@ -14,6 +14,8 @@ import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 import AssetsPage from './pages/AssetsPage';
 import { AdminCreateUserPage } from './pages/AdminCreateUserPage';
+import { AdminUsersListPage } from './pages/AdminUsersListPage';
+import { AdminUserEditPage } from './pages/AdminUserEditPage';
 import LeadsPage from './pages/LeadsPage';
 import PipelinePage from './pages/PipelinePage';
 
@@ -47,7 +49,9 @@ function App(): JSX.Element {
             <Route path="/meetings/:id" element={<MeetingDetailPage />} />
             <Route path="/sales/leads" element={<LeadsPage />} />
             <Route path="/sales/pipeline" element={<PipelinePage />} />
+            <Route path="/admin/users" element={<AdminUsersListPage />} />
             <Route path="/admin/users/new" element={<AdminCreateUserPage />} />
+            <Route path="/admin/users/:id" element={<AdminUserEditPage />} />
           </Route>
         </Route>
 

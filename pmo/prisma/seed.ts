@@ -10,6 +10,7 @@ import {
   ProjectStatus,
   ProjectHealthStatus,
   TaskStatus,
+  UserRole,
 } from '@prisma/client';
 
 if (!process.env.DATABASE_URL) {
@@ -25,6 +26,7 @@ type SeedUser = {
   email: string;
   password: string;
   timezone: string;
+  role: UserRole;
 };
 
 const users: SeedUser[] = [
@@ -33,24 +35,28 @@ const users: SeedUser[] = [
     email: 'avery.chen@pmo.test',
     password: 'PmoDemo123!',
     timezone: 'America/Chicago',
+    role: UserRole.USER,
   },
   {
     name: 'Priya Desai',
     email: 'priya.desai@pmo.test',
     password: 'PmoDemo123!',
     timezone: 'America/New_York',
+    role: UserRole.USER,
   },
   {
     name: 'Marco Silva',
     email: 'marco.silva@pmo.test',
     password: 'PmoDemo123!',
     timezone: 'America/Los_Angeles',
+    role: UserRole.USER,
   },
   {
     name: 'Testing Admin',
     email: 'admin@pmo.test',
     password: 'AdminDemo123!',
     timezone: 'UTC',
+    role: UserRole.ADMIN,
   },
 ];
 
@@ -375,12 +381,14 @@ async function main() {
         name: userData.name,
         passwordHash,
         timezone: userData.timezone,
+        role: userData.role,
       },
       create: {
         name: userData.name,
         email: userData.email,
         passwordHash,
         timezone: userData.timezone,
+        role: userData.role,
       },
     });
     userMap.set(user.email, user.id);

@@ -24,6 +24,39 @@ export const createUserSchema = z.object({
     .string()
     .min(1, 'Timezone is required')
     .max(255, 'Timezone must be less than 255 characters'),
+  role: z.enum(['USER', 'ADMIN']).optional(),
+});
+
+/**
+ * Validation schema for updating a user
+ */
+export const updateUserSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(255, 'Name must be less than 255 characters')
+    .optional(),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .max(255, 'Email must be less than 255 characters')
+    .optional(),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(255, 'Password must be less than 255 characters')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    )
+    .optional(),
+  timezone: z
+    .string()
+    .min(1, 'Timezone is required')
+    .max(255, 'Timezone must be less than 255 characters')
+    .optional(),
+  role: z.enum(['USER', 'ADMIN']).optional(),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;

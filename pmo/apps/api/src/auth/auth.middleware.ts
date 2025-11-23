@@ -3,6 +3,7 @@ import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
 
 import { verifyToken } from './jwt';
+import { prisma } from '../db/prisma';
 
 export type AuthenticatedRequest<
   Params = ParamsDictionary,
@@ -29,6 +30,39 @@ export const requireAuth = (
   try {
     const payload = verifyToken(token);
     req.userId = payload.userId;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+export const requireAdmin = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  const token = req.cookies?.token;
+
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    const payload = verifyToken(token);
+    req.userId = payload.userId;
+
+    // Check if user is an admin
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { role: true },
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Forbidden: Admin access required' });
+      return;
+    }
+
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });

@@ -8,6 +8,15 @@ export interface CreateUserInput {
   email: string;
   password: string;
   timezone: string;
+  role?: 'USER' | 'ADMIN';
+}
+
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+  password?: string;
+  timezone?: string;
+  role?: 'USER' | 'ADMIN';
 }
 
 export interface SafeUser {
@@ -15,6 +24,7 @@ export interface SafeUser {
   name: string;
   email: string;
   timezone: string;
+  role: 'USER' | 'ADMIN';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,6 +59,7 @@ export async function createUser(input: CreateUserInput): Promise<SafeUser> {
       email: input.email,
       passwordHash,
       timezone: input.timezone,
+      role: input.role ?? 'USER',
     },
   });
 
@@ -83,6 +94,79 @@ export async function getUserById(id: number): Promise<SafeUser | null> {
 }
 
 /**
+ * Update user by ID
+ * @throws Error if user not found or email already in use
+ */
+export async function updateUser(
+  id: number,
+  input: UpdateUserInput,
+): Promise<SafeUser> {
+  // Check if user exists
+  const existingUser = await prisma.user.findUnique({
+    where: { id },
+  });
+
+  if (!existingUser) {
+    throw new Error('User not found');
+  }
+
+  // If email is being updated, check if it's already in use by another user
+  if (input.email && input.email !== existingUser.email) {
+    const emailInUse = await prisma.user.findUnique({
+      where: { email: input.email },
+    });
+
+    if (emailInUse) {
+      throw new Error('Email already in use');
+    }
+  }
+
+  // Hash password if it's being updated
+  let passwordHash: string | undefined;
+  if (input.password) {
+    const bcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
+
+    if (Number.isNaN(bcryptSaltRounds)) {
+      throw new Error('BCRYPT_SALT_ROUNDS must be a valid number');
+    }
+
+    passwordHash = await bcrypt.hash(input.password, bcryptSaltRounds);
+  }
+
+  // Update user
+  const user = await prisma.user.update({
+    where: { id },
+    data: {
+      ...(input.name && { name: input.name }),
+      ...(input.email && { email: input.email }),
+      ...(passwordHash && { passwordHash }),
+      ...(input.timezone && { timezone: input.timezone }),
+      ...(input.role && { role: input.role }),
+    },
+  });
+
+  return sanitizeUser(user);
+}
+
+/**
+ * Delete user by ID
+ * @throws Error if user not found
+ */
+export async function deleteUser(id: number): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  await prisma.user.delete({
+    where: { id },
+  });
+}
+
+/**
  * Remove passwordHash from user object
  */
 function sanitizeUser(user: {
@@ -91,6 +175,7 @@ function sanitizeUser(user: {
   email: string;
   passwordHash: string;
   timezone: string;
+  role: 'USER' | 'ADMIN';
   createdAt: Date;
   updatedAt: Date;
 }): SafeUser {
