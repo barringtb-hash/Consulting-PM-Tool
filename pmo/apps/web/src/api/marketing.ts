@@ -15,7 +15,7 @@ import {
   type GenerateContentInput,
   type GeneratedContent,
   type MarketingContentListQuery,
-} from '../../../packages/types/marketing';
+} from '../../../../packages/types/marketing';
 
 interface MarketingContentResponse
   extends Omit<

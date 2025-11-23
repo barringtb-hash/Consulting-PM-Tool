@@ -13,7 +13,7 @@ import {
   type Client,
   CONTENT_TYPE_LABELS,
   CONTENT_STATUS_LABELS,
-} from '../../../../packages/types/marketing';
+} from '../../../../../packages/types/marketing';
 
 interface MarketingContentFormModalProps {
   isOpen: boolean;

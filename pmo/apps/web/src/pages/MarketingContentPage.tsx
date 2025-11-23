@@ -22,7 +22,7 @@ import {
   CONTENT_TYPE_LABELS,
   CONTENT_STATUS_LABELS,
   getContentTypeIcon,
-} from '../../../packages/types/marketing';
+} from '../../../../packages/types/marketing';
 import MarketingContentFormModal from '../features/marketing/MarketingContentFormModal';
 import MarketingContentDetailModal from '../features/marketing/MarketingContentDetailModal';
 
