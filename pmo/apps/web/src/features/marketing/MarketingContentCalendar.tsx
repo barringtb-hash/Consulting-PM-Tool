@@ -5,7 +5,6 @@ import { Badge } from '../../ui/Badge';
 import {
   type MarketingContent,
   CONTENT_TYPE_LABELS,
-  CONTENT_STATUS_LABELS,
   getContentTypeIcon,
 } from '../../../../../packages/types/marketing';
 

@@ -1048,9 +1048,8 @@ function ProjectDashboardPage(): JSX.Element {
                   {marketingContents.length === 0 &&
                     !projectMarketingContentsQuery.isLoading && (
                       <p className="text-neutral-600">
-                        No marketing content for this project yet. Click
-                        "Generate Marketing Content" to create content from this
-                        project.
+                        No marketing content for this project yet. Click &ldquo;Generate
+                        Marketing Content&rdquo; to create content from this project.
                       </p>
                     )}
 
