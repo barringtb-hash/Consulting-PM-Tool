@@ -3,8 +3,8 @@ set -e
 
 echo "🔍 Checking migration status..."
 
-# Navigate to the directory containing the Prisma schema
-cd "$(dirname "$0")/.."
+# Stay in the calling directory (apps/api) where node_modules with Prisma CLI exists
+# The Prisma schema path is configured in package.json: "prisma": { "schema": "../../prisma/schema.prisma" }
 
 # Check migration status and capture output
 MIGRATION_STATUS=$(npx prisma migrate status 2>&1 || true)
