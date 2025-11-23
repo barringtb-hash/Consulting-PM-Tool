@@ -62,7 +62,7 @@ export function formatStatus(status: string): string {
   return status
     .toLowerCase()
     .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
@@ -76,7 +76,7 @@ export function toTitleCase(str: string): string {
   return str
     .toLowerCase()
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
@@ -85,7 +85,7 @@ export function toTitleCase(str: string): string {
  */
 export function formatFieldValue(
   value: string | null | undefined,
-  emptyState: string = EMPTY_STATES.notProvided
+  emptyState: string = EMPTY_STATES.notProvided,
 ): string {
   return value || emptyState;
 }
@@ -95,7 +95,7 @@ export function formatFieldValue(
  */
 export function formatDateField(
   date: string | null | undefined,
-  emptyState: string = EMPTY_STATES.noDate
+  emptyState: string = EMPTY_STATES.noDate,
 ): string {
   return date || emptyState;
 }

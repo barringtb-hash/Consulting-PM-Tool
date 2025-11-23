@@ -737,7 +737,9 @@ function ProjectDashboardPage(): JSX.Element {
               {milestones.length === 0 && !milestonesQuery.isLoading && (
                 <Card>
                   <CardBody>
-                    <p className="text-neutral-600">{EMPTY_STATES.noMilestones}</p>
+                    <p className="text-neutral-600">
+                      {EMPTY_STATES.noMilestones}
+                    </p>
                   </CardBody>
                 </Card>
               )}
