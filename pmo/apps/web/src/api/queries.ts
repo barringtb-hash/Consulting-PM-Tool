@@ -68,7 +68,6 @@ import {
   fetchLeadById,
   fetchLeads,
   updateLead,
-  type InboundLead,
   type LeadConversionPayload,
   type LeadFilters,
   type LeadPayload,
@@ -615,14 +614,19 @@ export function useConvertLead(leadId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: LeadConversionPayload) => convertLead(leadId, payload),
+    mutationFn: (payload: LeadConversionPayload) =>
+      convertLead(leadId, payload),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       if (result.clientId) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.client(result.clientId) });
-        queryClient.invalidateQueries({ queryKey: queryKeys.contacts(result.clientId) });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.client(result.clientId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.contacts(result.clientId),
+        });
       }
       queryClient.setQueryData(queryKeys.lead(leadId), result.lead);
     },

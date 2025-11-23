@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Mail, Building2, Calendar, User } from 'lucide-react';
+import { Plus, Mail, Building2, User } from 'lucide-react';
 
 import {
   LeadSource,
@@ -7,7 +7,13 @@ import {
   ServiceInterest,
   InboundLead,
 } from '../api/leads';
-import { useLeads, useCreateLead, useUpdateLead, useConvertLead, useDeleteLead } from '../api/queries';
+import {
+  useLeads,
+  useCreateLead,
+  useUpdateLead,
+  useConvertLead,
+  useDeleteLead,
+} from '../api/queries';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -85,7 +91,6 @@ function LeadDetailPanel({
   onConvert,
   onDelete,
 }: LeadDetailPanelProps): JSX.Element {
-  const [isEditing, setIsEditing] = useState(false);
   const [status, setStatus] = useState(lead.status);
 
   const handleStatusChange = async (newStatus: LeadStatus) => {
@@ -94,7 +99,9 @@ function LeadDetailPanel({
   };
 
   const handleConvert = async () => {
-    if (confirm('Convert this lead to a client, contact, and pipeline project?')) {
+    if (
+      confirm('Convert this lead to a client, contact, and pipeline project?')
+    ) {
       await onConvert(lead.id);
       onClose();
     }
@@ -111,7 +118,9 @@ function LeadDetailPanel({
     <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl border-l border-neutral-200 overflow-y-auto z-50">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-neutral-900">Lead Details</h2>
+          <h2 className="text-xl font-semibold text-neutral-900">
+            Lead Details
+          </h2>
           <button
             onClick={onClose}
             className="text-neutral-500 hover:text-neutral-700"
@@ -150,7 +159,10 @@ function LeadDetailPanel({
               </div>
               <div className="flex items-center gap-2">
                 <Mail size={16} className="text-neutral-400" />
-                <a href={`mailto:${lead.email}`} className="text-primary-600 hover:underline">
+                <a
+                  href={`mailto:${lead.email}`}
+                  className="text-primary-600 hover:underline"
+                >
                   {lead.email}
                 </a>
               </div>
@@ -171,11 +183,15 @@ function LeadDetailPanel({
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-neutral-500">Source: </span>
-                <span className="font-medium">{formatLeadSource(lead.source)}</span>
+                <span className="font-medium">
+                  {formatLeadSource(lead.source)}
+                </span>
               </div>
               <div>
                 <span className="text-neutral-500">Interest: </span>
-                <span className="font-medium">{formatServiceInterest(lead.serviceInterest)}</span>
+                <span className="font-medium">
+                  {formatServiceInterest(lead.serviceInterest)}
+                </span>
               </div>
               <div>
                 <span className="text-neutral-500">Created: </span>
@@ -199,10 +215,7 @@ function LeadDetailPanel({
           {/* Actions */}
           <div className="space-y-2 pt-4 border-t border-neutral-200">
             {lead.status !== 'CONVERTED' && lead.status !== 'DISQUALIFIED' && (
-              <Button
-                onClick={handleConvert}
-                className="w-full"
-              >
+              <Button onClick={handleConvert} className="w-full">
                 Convert to Client
               </Button>
             )}
@@ -287,7 +300,7 @@ export function LeadsPage(): JSX.Element {
   };
 
   const handleUpdateLead = async (
-    leadId: number,
+    _leadId: number,
     updates: Partial<InboundLead>,
   ) => {
     try {
@@ -298,7 +311,7 @@ export function LeadsPage(): JSX.Element {
     }
   };
 
-  const handleConvertLead = async (leadId: number) => {
+  const handleConvertLead = async (_leadId: number) => {
     try {
       const result = await convertLead.mutateAsync({
         createClient: true,
@@ -309,7 +322,7 @@ export function LeadsPage(): JSX.Element {
         `Lead converted successfully! Created ${result.projectId ? 'client, contact, and project' : 'client and contact'}.`,
         'success',
       );
-    } catch (error) {
+    } catch {
       showToast('Failed to convert lead', 'error');
     }
   };
@@ -355,19 +368,27 @@ export function LeadsPage(): JSX.Element {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
             <div className="text-sm text-neutral-500">Total Leads</div>
-            <div className="text-2xl font-bold text-neutral-900">{stats.total}</div>
+            <div className="text-2xl font-bold text-neutral-900">
+              {stats.total}
+            </div>
           </div>
           <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
             <div className="text-sm text-neutral-500">New</div>
-            <div className="text-2xl font-bold text-blue-600">{stats.newLeads}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.newLeads}
+            </div>
           </div>
           <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
             <div className="text-sm text-neutral-500">Contacted</div>
-            <div className="text-2xl font-bold text-yellow-600">{stats.contacted}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.contacted}
+            </div>
           </div>
           <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
             <div className="text-sm text-neutral-500">Qualified</div>
-            <div className="text-2xl font-bold text-green-600">{stats.qualified}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.qualified}
+            </div>
           </div>
         </div>
 
@@ -453,7 +474,10 @@ export function LeadsPage(): JSX.Element {
                     placeholder="Any additional information..."
                     value={newLead.message}
                     onChange={(e) =>
-                      setNewLead((prev) => ({ ...prev, message: e.target.value }))
+                      setNewLead((prev) => ({
+                        ...prev,
+                        message: e.target.value,
+                      }))
                     }
                   />
                 </div>
@@ -565,7 +589,10 @@ export function LeadsPage(): JSX.Element {
               <tbody className="divide-y divide-neutral-200">
                 {leads.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-neutral-500">
+                    <td
+                      colSpan={6}
+                      className="px-6 py-8 text-center text-neutral-500"
+                    >
                       No leads found. Create your first lead to get started.
                     </td>
                   </tr>
@@ -581,7 +608,9 @@ export function LeadsPage(): JSX.Element {
                           <div className="text-sm font-medium text-neutral-900">
                             {lead.name || 'No name'}
                           </div>
-                          <div className="text-sm text-neutral-500">{lead.email}</div>
+                          <div className="text-sm text-neutral-500">
+                            {lead.email}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-neutral-900">

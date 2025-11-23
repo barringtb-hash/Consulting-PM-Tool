@@ -183,9 +183,13 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
         data: {
           clientId,
           ownerId: lead.ownerUserId || 1, // Default to first user if no owner
-          name: conversion.projectName || `${lead.company || lead.email} - ${lead.serviceInterest}`,
+          name:
+            conversion.projectName ||
+            `${lead.company || lead.email} - ${lead.serviceInterest}`,
           status: 'PLANNING',
-          pipelineStage: (conversion.pipelineStage as PipelineStage) || PipelineStage.NEW_LEAD,
+          pipelineStage:
+            (conversion.pipelineStage as PipelineStage) ||
+            PipelineStage.NEW_LEAD,
           pipelineValue: conversion.pipelineValue,
           leadSource: lead.source,
         },

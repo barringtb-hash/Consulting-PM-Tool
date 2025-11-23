@@ -110,7 +110,9 @@ export interface LeadConversionResult {
 
 const LEADS_BASE_PATH = buildApiUrl('/leads');
 
-export async function fetchLeads(filters?: LeadFilters): Promise<InboundLead[]> {
+export async function fetchLeads(
+  filters?: LeadFilters,
+): Promise<InboundLead[]> {
   const params = new URLSearchParams();
 
   if (filters?.search) {

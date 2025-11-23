@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Plus, DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,7 +30,11 @@ interface PipelineDeal {
   leadSource?: string;
 }
 
-const PIPELINE_STAGES: { value: PipelineStage; label: string; probability: number }[] = [
+const PIPELINE_STAGES: {
+  value: PipelineStage;
+  label: string;
+  probability: number;
+}[] = [
   { value: 'NEW_LEAD', label: 'New Lead', probability: 10 },
   { value: 'DISCOVERY', label: 'Discovery', probability: 20 },
   { value: 'SHAPING_SOLUTION', label: 'Shaping Solution', probability: 40 },
@@ -65,7 +69,8 @@ interface DealCardProps {
 }
 
 function DealCard({ deal, onClick }: DealCardProps): JSX.Element {
-  const probability = deal.probability ||
+  const probability =
+    deal.probability ||
     PIPELINE_STAGES.find((s) => s.value === deal.pipelineStage)?.probability ||
     0;
 
@@ -74,7 +79,9 @@ function DealCard({ deal, onClick }: DealCardProps): JSX.Element {
       onClick={onClick}
       className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm hover:shadow-md cursor-pointer transition-all"
     >
-      <h4 className="font-medium text-neutral-900 mb-2 line-clamp-2">{deal.name}</h4>
+      <h4 className="font-medium text-neutral-900 mb-2 line-clamp-2">
+        {deal.name}
+      </h4>
 
       <div className="text-sm text-neutral-600 mb-3">{deal.clientName}</div>
 
@@ -106,7 +113,11 @@ interface PipelineColumnProps {
   onDealClick: (deal: PipelineDeal) => void;
 }
 
-function PipelineColumn({ stage, deals, onDealClick }: PipelineColumnProps): JSX.Element {
+function PipelineColumn({
+  stage,
+  deals,
+  onDealClick,
+}: PipelineColumnProps): JSX.Element {
   const totalValue = useMemo(
     () => deals.reduce((sum, deal) => sum + (deal.pipelineValue || 0), 0),
     [deals],
@@ -116,7 +127,9 @@ function PipelineColumn({ stage, deals, onDealClick }: PipelineColumnProps): JSX
     () =>
       deals.reduce(
         (sum, deal) =>
-          sum + (deal.pipelineValue || 0) * ((deal.probability || stage.probability) / 100),
+          sum +
+          (deal.pipelineValue || 0) *
+            ((deal.probability || stage.probability) / 100),
         0,
       ),
     [deals, stage.probability],
@@ -127,7 +140,9 @@ function PipelineColumn({ stage, deals, onDealClick }: PipelineColumnProps): JSX
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-neutral-900">{stage.label}</h3>
-          <Badge className="bg-primary-100 text-primary-700">{deals.length}</Badge>
+          <Badge className="bg-primary-100 text-primary-700">
+            {deals.length}
+          </Badge>
         </div>
         <div className="text-xs text-neutral-600">
           <div>Total: {formatCurrency(totalValue)}</div>
@@ -142,7 +157,11 @@ function PipelineColumn({ stage, deals, onDealClick }: PipelineColumnProps): JSX
           </div>
         ) : (
           deals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} onClick={() => onDealClick(deal)} />
+            <DealCard
+              key={deal.id}
+              deal={deal}
+              onClick={() => onDealClick(deal)}
+            />
           ))
         )}
       </div>
@@ -175,7 +194,9 @@ export function PipelinePage(): JSX.Element {
         clientId: project.clientId,
         clientName: '', // We'd need to join with clients to get this
         pipelineStage: project.pipelineStage as PipelineStage,
-        pipelineValue: project.pipelineValue ? Number(project.pipelineValue) : undefined,
+        pipelineValue: project.pipelineValue
+          ? Number(project.pipelineValue)
+          : undefined,
         probability: project.probability || undefined,
         expectedCloseDate: project.expectedCloseDate || undefined,
         leadSource: project.leadSource || undefined,
@@ -209,13 +230,17 @@ export function PipelinePage(): JSX.Element {
       0,
     );
 
-    const weightedValue = pipelineDeals.reduce((sum, deal) => {
-      const probability =
-        deal.probability ||
-        PIPELINE_STAGES.find((s) => s.value === deal.pipelineStage)?.probability ||
-        0;
-      return sum + (deal.pipelineValue || 0) * (probability / 100);
-    }, 0);
+    const weightedValue = pipelineDeals.reduce(
+      (sum, deal) => {
+        const probability =
+          deal.probability ||
+          PIPELINE_STAGES.find((s) => s.value === deal.pipelineStage)
+            ?.probability ||
+          0;
+        return sum + (deal.pipelineValue || 0) * (probability / 100);
+      },
+      0,
+    );
 
     const avgDealSize =
       pipelineDeals.length > 0 ? totalValue / pipelineDeals.length : 0;
@@ -321,7 +346,10 @@ export function PipelinePage(): JSX.Element {
                 <Button onClick={() => navigate('/sales/leads')}>
                   View Leads
                 </Button>
-                <Button variant="subtle" onClick={() => navigate('/projects/new')}>
+                <Button
+                  variant="subtle"
+                  onClick={() => navigate('/projects/new')}
+                >
                   Create Deal
                 </Button>
               </div>
