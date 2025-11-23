@@ -3,20 +3,11 @@ import { Plus, DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useProjects } from '../api/queries';
+import { PipelineStage } from '../api/projects';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Button } from '../ui/Button';
 import { PageHeader } from '../ui/PageHeader';
 import { Badge } from '../ui/Badge';
-
-type PipelineStage =
-  | 'NEW_LEAD'
-  | 'DISCOVERY'
-  | 'SHAPING_SOLUTION'
-  | 'PROPOSAL_SENT'
-  | 'NEGOTIATION'
-  | 'VERBAL_YES'
-  | 'WON'
-  | 'LOST';
 
 interface PipelineDeal {
   id: number;

@@ -1,5 +1,6 @@
 import { buildApiUrl } from './config';
 import { ApiError, buildOptions, handleResponse } from './http';
+import type { LeadSource } from './leads';
 
 export type ProjectStatus =
   | 'PLANNING'
@@ -9,6 +10,16 @@ export type ProjectStatus =
   | 'CANCELLED';
 
 export type ProjectHealthStatus = 'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK';
+
+export type PipelineStage =
+  | 'NEW_LEAD'
+  | 'DISCOVERY'
+  | 'SHAPING_SOLUTION'
+  | 'PROPOSAL_SENT'
+  | 'NEGOTIATION'
+  | 'VERBAL_YES'
+  | 'WON'
+  | 'LOST';
 
 export interface Project {
   id: number;
@@ -24,6 +35,14 @@ export interface Project {
   healthStatus?: ProjectHealthStatus;
   statusSummary?: string | null;
   statusUpdatedAt?: string | null;
+  // Sales/Pipeline fields
+  pipelineStage?: PipelineStage | null;
+  pipelineValue?: string | number | null; // Decimal comes as string from API
+  currency?: string | null;
+  probability?: number | null;
+  expectedCloseDate?: string | null;
+  leadSource?: LeadSource | null;
+  lostReason?: string | null;
 }
 
 export interface ProjectFilters {
