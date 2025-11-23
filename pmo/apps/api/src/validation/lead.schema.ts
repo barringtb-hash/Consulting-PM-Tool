@@ -40,6 +40,26 @@ export const leadConvertSchema = z.object({
   pipelineValue: z.number().optional(),
 });
 
+export const publicLeadCreateSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  company: z.string().optional(),
+  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+  serviceInterest: z
+    .nativeEnum(ServiceInterest)
+    .default(ServiceInterest.NOT_SURE),
+  message: z.string().optional(),
+  source: z.nativeEnum(LeadSource).default(LeadSource.WEBSITE_CONTACT),
+  // Tracking fields
+  page: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmContent: z.string().optional(),
+  utmTerm: z.string().optional(),
+});
+
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>;
 export type LeadUpdateInput = z.infer<typeof leadUpdateSchema>;
 export type LeadConvertInput = z.infer<typeof leadConvertSchema>;
+export type PublicLeadCreateInput = z.infer<typeof publicLeadCreateSchema>;
