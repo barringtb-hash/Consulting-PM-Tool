@@ -10,6 +10,7 @@
     "test": "vitest run",
     "create-user": "ts-node scripts/create-user.ts",
     "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:deploy": "bash ../../scripts/deploy-migrations.sh",
     "prisma:seed": "prisma db seed"
   },
   "dependencies": {
