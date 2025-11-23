@@ -17,7 +17,7 @@ interface NavItem {
   label: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
-  group?: 'main' | 'sales' | 'admin';
+  group?: 'overview' | 'clients' | 'projects' | 'marketing' | 'sales' | 'admin';
 }
 
 const navItems: NavItem[] = [
@@ -25,37 +25,37 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     path: '/dashboard',
     icon: LayoutDashboard,
-    group: 'main',
+    group: 'overview',
   },
   {
     label: 'My Tasks',
     path: '/tasks',
     icon: CheckSquare,
-    group: 'main',
+    group: 'overview',
   },
   {
     label: 'Clients',
     path: '/clients',
     icon: Users,
-    group: 'main',
+    group: 'clients',
   },
   {
     label: 'Projects',
     path: '/projects',
     icon: FolderKanban,
-    group: 'main',
+    group: 'projects',
   },
   {
     label: 'Assets',
     path: '/assets',
     icon: FileText,
-    group: 'main',
+    group: 'projects',
   },
   {
     label: 'Marketing',
     path: '/marketing',
     icon: Megaphone,
-    group: 'main',
+    group: 'marketing',
   },
   {
     label: 'Leads',
@@ -87,9 +87,58 @@ export function Sidebar(): JSX.Element {
     return location.pathname.startsWith(path);
   };
 
-  const mainNavItems = navItems.filter((item) => item.group === 'main');
+  const overviewNavItems = navItems.filter((item) => item.group === 'overview');
+  const clientsNavItems = navItems.filter((item) => item.group === 'clients');
+  const projectsNavItems = navItems.filter((item) => item.group === 'projects');
+  const marketingNavItems = navItems.filter((item) => item.group === 'marketing');
   const salesNavItems = navItems.filter((item) => item.group === 'sales');
   const adminNavItems = navItems.filter((item) => item.group === 'admin');
+
+  const renderNavSection = (
+    items: NavItem[],
+    title?: string,
+    isFirst = false,
+  ) => {
+    if (items.length === 0) return null;
+
+    return (
+      <div className={`px-3 space-y-1 ${!isFirst ? 'mt-8' : ''}`}>
+        {title && (
+          <div className="px-3 mb-2">
+            <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              {title}
+            </h3>
+          </div>
+        )}
+        {items.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-underline',
+                active
+                  ? 'bg-primary-50 text-primary-700'
+                  : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
+              )}
+              aria-current={active ? 'page' : undefined}
+            >
+              <Icon
+                className={cn(
+                  'w-5 h-5 flex-shrink-0',
+                  active ? 'text-primary-600' : 'text-neutral-500',
+                )}
+              />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col w-60 bg-white border-r border-neutral-200 h-full">
@@ -107,109 +156,12 @@ export function Sidebar(): JSX.Element {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4">
-        {/* Main Navigation */}
-        <div className="px-3 space-y-1">
-          {mainNavItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-underline',
-                  active
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
-                )}
-                aria-current={active ? 'page' : undefined}
-              >
-                <Icon
-                  className={cn(
-                    'w-5 h-5 flex-shrink-0',
-                    active ? 'text-primary-600' : 'text-neutral-500',
-                  )}
-                />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Sales Section */}
-        {salesNavItems.length > 0 && (
-          <div className="mt-8 px-3 space-y-1">
-            <div className="px-3 mb-2">
-              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                Sales
-              </h3>
-            </div>
-            {salesNavItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-underline',
-                    active
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
-                  )}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <Icon
-                    className={cn(
-                      'w-5 h-5 flex-shrink-0',
-                      active ? 'text-primary-600' : 'text-neutral-500',
-                    )}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Admin Section */}
-        {adminNavItems.length > 0 && (
-          <div className="mt-8 px-3 space-y-1">
-            <div className="px-3 mb-2">
-              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                Admin
-              </h3>
-            </div>
-            {adminNavItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-underline',
-                    active
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
-                  )}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <Icon
-                    className={cn(
-                      'w-5 h-5 flex-shrink-0',
-                      active ? 'text-primary-600' : 'text-neutral-500',
-                    )}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        {renderNavSection(overviewNavItems, undefined, true)}
+        {renderNavSection(clientsNavItems, 'Clients')}
+        {renderNavSection(projectsNavItems, 'Projects')}
+        {renderNavSection(marketingNavItems, 'Marketing')}
+        {renderNavSection(salesNavItems, 'Sales')}
+        {renderNavSection(adminNavItems, 'Admin')}
       </nav>
     </div>
   );
