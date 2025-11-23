@@ -30,6 +30,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import { useToast } from '../ui/Toast';
+import { EMPTY_STATES, formatStatus } from '../utils/typography';
 
 // Import task and milestone components
 import { useProjectTasks, useMoveTask, useDeleteTask } from '../hooks/tasks';
@@ -63,7 +64,7 @@ const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
 ];
 
 function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return 'Not set';
+  if (!dateStr) return EMPTY_STATES.noDate;
   try {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
@@ -419,7 +420,7 @@ function ProjectDashboardPage(): JSX.Element {
                           : 'secondary'
                   }
                 >
-                  {project.status.replace('_', ' ')}
+                  {formatStatus(project.status)}
                 </Badge>
               </div>
 
@@ -647,7 +648,7 @@ function ProjectDashboardPage(): JSX.Element {
                         >
                           {MILESTONE_STATUSES.map((status) => (
                             <option key={status} value={status}>
-                              {status.replace('_', ' ')}
+                              {formatStatus(status)}
                             </option>
                           ))}
                         </Select>
@@ -736,7 +737,7 @@ function ProjectDashboardPage(): JSX.Element {
               {milestones.length === 0 && !milestonesQuery.isLoading && (
                 <Card>
                   <CardBody>
-                    <p className="text-neutral-600">No milestones yet</p>
+                    <p className="text-neutral-600">{EMPTY_STATES.noMilestones}</p>
                   </CardBody>
                 </Card>
               )}
@@ -768,7 +769,7 @@ function ProjectDashboardPage(): JSX.Element {
                                     : 'secondary'
                               }
                             >
-                              {milestone.status.replace('_', ' ')}
+                              {formatStatus(milestone.status)}
                             </Badge>
                             <span className="text-sm text-neutral-600">
                               Due: {formatDate(milestone.dueDate)}
@@ -821,7 +822,7 @@ function ProjectDashboardPage(): JSX.Element {
                   {projectAssets.length === 0 &&
                     !projectAssetsQuery.isLoading && (
                       <p className="text-neutral-600">
-                        No assets linked to this project yet
+                        {EMPTY_STATES.noLinkedAssets}
                       </p>
                     )}
 

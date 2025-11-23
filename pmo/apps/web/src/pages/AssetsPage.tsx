@@ -19,6 +19,7 @@ import { useToast } from '../ui/Toast';
 import { Plus, Edit2, Archive, FileText, FolderOpen } from 'lucide-react';
 import AssetDetailModal from '../features/assets/AssetDetailModal';
 import AssetFormCard from '../features/assets/AssetFormCard';
+import { EMPTY_STATES } from '../utils/typography';
 
 const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   PROMPT_TEMPLATE: 'Prompt Template',
@@ -221,7 +222,7 @@ function AssetsPage(): JSX.Element {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-neutral-900">
               {assets.length === 0
-                ? 'No assets found'
+                ? EMPTY_STATES.noAssets
                 : `${assets.length} asset${assets.length === 1 ? '' : 's'}`}
             </h2>
           </div>
@@ -272,7 +273,7 @@ function AssetsPage(): JSX.Element {
                   <div className="text-center py-12">
                     <FolderOpen className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                      No assets found
+                      {EMPTY_STATES.noAssets}
                     </h3>
                     <p className="text-neutral-600 text-sm mb-6 max-w-md mx-auto">
                       {search || type || template || clientId
@@ -321,7 +322,7 @@ function AssetsPage(): JSX.Element {
                         </div>
 
                         <p className="text-sm text-neutral-600 line-clamp-2 min-h-[2.5rem]">
-                          {asset.description || 'No description provided'}
+                          {asset.description || EMPTY_STATES.noDescription}
                         </p>
 
                         <div className="space-y-2 text-sm">

@@ -14,6 +14,7 @@ import ContactForm, { ContactFormValues } from '../components/ContactForm';
 import ClientForm, { ClientFormValues } from '../components/ClientForm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { isApiError } from '../api/http';
+import { EMPTY_STATES } from '../utils/typography';
 
 function mapClientFormToPayload(values: ClientFormValues) {
   return {
@@ -101,7 +102,9 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
     <section aria-label="contacts">
       <header>
         <h2>Contacts</h2>
-        <p>Manage points of contact for this client.</p>
+        <p className="text-sm text-neutral-600">
+          Manage points of contact for this client.
+        </p>
       </header>
 
       {contactsQuery.isLoading && <p>Loading contacts…</p>}
@@ -116,7 +119,7 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
       {!contactsQuery.isLoading && !contactsQuery.error && (
         <>
           {contactsQuery.data && contactsQuery.data.length === 0 ? (
-            <p>No contacts yet. Add the first point of contact.</p>
+            <p className="text-neutral-600">{EMPTY_STATES.noContacts}</p>
           ) : (
             <ul>
               {contactsQuery.data?.map((contact) => (
@@ -157,7 +160,7 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
       )}
 
       <section aria-label="contact-form-section">
-        <h3>{editingContact ? 'Edit contact' : 'Add a contact'}</h3>
+        <h3>{editingContact ? 'Edit Contact' : 'Add Contact'}</h3>
         <ContactForm
           initialValues={initialValues}
           onSubmit={handleSubmit}
@@ -267,34 +270,36 @@ function ClientDetailsPage(): JSX.Element {
       <header>
         <h1>{client.name}</h1>
         {client.archived && <p>This client is archived.</p>}
-        <p>{client.industry || 'No industry provided yet.'}</p>
+        <p className="text-neutral-600">
+          {client.industry || EMPTY_STATES.notProvided}
+        </p>
         <Link to="/clients">Back to clients</Link>
       </header>
 
       <section aria-label="client-details">
-        <h2>Client details</h2>
+        <h2>Client Details</h2>
         <dl>
           <div>
             <dt>Company size</dt>
-            <dd>{client.companySize || 'Not provided'}</dd>
+            <dd>{client.companySize || EMPTY_STATES.notProvided}</dd>
           </div>
           <div>
             <dt>Timezone</dt>
-            <dd>{client.timezone || 'Not provided'}</dd>
+            <dd>{client.timezone || EMPTY_STATES.notProvided}</dd>
           </div>
           <div>
             <dt>AI maturity</dt>
-            <dd>{client.aiMaturity || 'Not provided'}</dd>
+            <dd>{client.aiMaturity || EMPTY_STATES.notProvided}</dd>
           </div>
           <div>
             <dt>Notes</dt>
-            <dd>{client.notes || 'No notes recorded.'}</dd>
+            <dd>{client.notes || EMPTY_STATES.notProvided}</dd>
           </div>
         </dl>
       </section>
 
       <section aria-label="client-form">
-        <h2>Update client</h2>
+        <h2>Update Client</h2>
         <ClientForm
           initialValues={{
             name: client.name,
@@ -333,12 +338,16 @@ function ClientDetailsPage(): JSX.Element {
             New Project
           </button>
         </header>
-        <p>Project tracking for this client is coming soon.</p>
+        <p className="text-sm text-neutral-600">
+          Project tracking for this client is coming soon.
+        </p>
       </section>
 
       <section aria-label="meetings">
         <h2>Meetings</h2>
-        <p>Meeting notes and actions will appear here when available.</p>
+        <p className="text-sm text-neutral-600">
+          Meeting notes and actions will appear here when available.
+        </p>
       </section>
     </main>
   );

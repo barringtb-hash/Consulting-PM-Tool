@@ -16,6 +16,7 @@ import { Input } from '../ui/Input';
 import { PageHeader } from '../ui/PageHeader';
 import { Select } from '../ui/Select';
 import { useToast } from '../ui/Toast';
+import { EMPTY_STATES } from '../utils/typography';
 
 interface Filters {
   search: string;
@@ -422,7 +423,7 @@ function ClientsPage(): JSX.Element {
                   ) : (
                     <>
                       <p className="text-neutral-900 font-medium">
-                        No clients yet
+                        {EMPTY_STATES.noClients}
                       </p>
                       <p className="text-neutral-600 text-sm mt-1 mb-4">
                         Get started by adding your first client.

@@ -6,13 +6,14 @@ import { type Project } from '../../api/projects';
 import { Card, CardBody, CardHeader, CardTitle } from '../../ui/Card';
 import { ProjectStatusPill } from '../../components/ProjectStatusPill';
 import { Badge } from '../../ui/Badge';
+import { EMPTY_STATES, formatStatus } from '../../utils/typography';
 
 interface ProjectOverviewTabProps {
   project: Project;
 }
 
 function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return 'Not set';
+  if (!dateStr) return EMPTY_STATES.noDate;
   try {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
@@ -94,7 +95,7 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                           : 'secondary'
                   }
                 >
-                  {project.status.replace('_', ' ')}
+                  {formatStatus(project.status)}
                 </Badge>
               </div>
             </div>
@@ -190,7 +191,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                         <div className="text-xl font-semibold text-neutral-900">
                           {count}
                         </div>
-                        <div className="text-xs text-neutral-600">{status}</div>
+                        <div className="text-xs text-neutral-600">
+                          {formatStatus(status)}
+                        </div>
                       </div>
                     ),
                   )}
@@ -222,11 +225,13 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                           : 'secondary'
                     }
                   >
-                    {statusData.currentMilestone.status.replace('_', ' ')}
+                    {formatStatus(statusData.currentMilestone.status)}
                   </Badge>
                 </div>
               ) : (
-                <p className="text-neutral-600 text-sm">No active milestone</p>
+                <p className="text-neutral-600 text-sm">
+                  {EMPTY_STATES.noActiveMilestone}
+                </p>
               )}
             </CardBody>
           </Card>
@@ -251,7 +256,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   ))}
                 </ul>
               ) : (
-                <p className="text-neutral-600 text-sm">No upcoming tasks</p>
+                <p className="text-neutral-600 text-sm">
+                  {EMPTY_STATES.noUpcomingTasks}
+                </p>
               )}
             </CardBody>
           </Card>

@@ -6,6 +6,7 @@ import { Trash2 } from 'lucide-react';
 
 import type { TaskWithProject } from '../api/tasks';
 import { Badge, type BadgeVariant } from '../ui/Badge';
+import { EMPTY_STATES } from '../utils/typography';
 
 interface TaskKanbanCardProps {
   task: TaskWithProject;
@@ -27,7 +28,7 @@ function getPriorityBadgeVariant(priority?: string | null): BadgeVariant {
 
 function formatDate(value?: string | null): string {
   if (!value) {
-    return 'No due date';
+    return EMPTY_STATES.noDueDate;
   }
 
   return new Date(value).toLocaleDateString('en-US', {

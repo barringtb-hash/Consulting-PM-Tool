@@ -10,9 +10,10 @@ import { Badge, type BadgeVariant } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import type { TaskWithProject } from '../api/tasks';
 import type { Project } from '../api/projects';
+import { EMPTY_STATES } from '../utils/typography';
 
 function formatDate(dateString: string | null | undefined): string {
-  if (!dateString) return 'No due date';
+  if (!dateString) return EMPTY_STATES.noDueDate;
   const date = new Date(dateString);
   const today = new Date();
   const tomorrow = new Date(today);
@@ -354,7 +355,7 @@ function DashboardPage(): JSX.Element {
                     />
                   </svg>
                   <p className="text-neutral-600 font-medium mb-1">
-                    No projects yet
+                    {EMPTY_STATES.noProjects}
                   </p>
                   <p className="text-sm text-neutral-500 mb-4">
                     Create your first project to get started
