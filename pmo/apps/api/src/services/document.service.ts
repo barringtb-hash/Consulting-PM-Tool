@@ -60,3 +60,11 @@ export const generateDocument = async (
     },
   });
 };
+
+export const getDocumentById = async (id: number) =>
+  prisma.document.findUnique({ where: { id } });
+
+export const deleteDocument = async (id: number) =>
+  prisma.document.delete({
+    where: { id },
+  });

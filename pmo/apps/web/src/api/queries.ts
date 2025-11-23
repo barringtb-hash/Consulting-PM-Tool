@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 import {
   archiveClient,
   createClient,
+  deleteClient,
   fetchClientById,
   fetchClients,
   updateClient,
@@ -28,6 +29,7 @@ import {
 } from './contacts';
 import {
   createProject,
+  deleteProject,
   fetchProjectById,
   fetchProjects,
   fetchProjectStatus,
@@ -41,6 +43,7 @@ import {
   type UpdateHealthStatusPayload,
 } from './projects';
 import {
+  deleteDocument,
   fetchDocuments,
   generateDocument,
   type Document,
@@ -188,6 +191,19 @@ export function useUpdateProject(projectId: number) {
   });
 }
 
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (projectId: number) => deleteProject(projectId),
+    onSuccess: (_, projectId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects() });
+      queryClient.removeQueries({ queryKey: queryKeys.project(projectId) });
+      queryClient.removeQueries({ queryKey: queryKeys.projectStatus(projectId) });
+    },
+  });
+}
+
 // M7 - Status & Reporting Hooks
 
 export function useProjectStatus(projectId?: number, rangeDays = 7) {
@@ -264,6 +280,17 @@ export function useGenerateDocument() {
         }),
         (current) => (current ? [document, ...current] : [document]),
       );
+    },
+  });
+}
+
+export function useDeleteDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (documentId: number) => deleteDocument(documentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.documents() });
     },
   });
 }
@@ -481,6 +508,19 @@ export function useArchiveClient() {
     onSuccess: (client, clientId) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.setQueryData(queryKeys.client(clientId), client);
+    },
+  });
+}
+
+export function useDeleteClient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (clientId: number) => deleteClient(clientId),
+    onSuccess: (_, clientId) => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.removeQueries({ queryKey: queryKeys.client(clientId) });
     },
   });
 }

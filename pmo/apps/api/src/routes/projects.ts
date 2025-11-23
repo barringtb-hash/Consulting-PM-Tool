@@ -10,6 +10,7 @@ import {
   getProjectById,
   listProjects,
   updateProject,
+  deleteProject,
 } from '../services/project.service';
 import {
   projectCreateSchema,
@@ -206,6 +207,44 @@ router.put(
     } catch (error) {
       console.error('Update project error:', error);
       res.status(500).json({ error: 'Failed to update project' });
+    }
+  },
+);
+
+router.delete(
+  '/:id',
+  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+
+      if (Number.isNaN(projectId)) {
+        res.status(400).json({ error: 'Invalid project id' });
+        return;
+      }
+
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      if (project.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      await deleteProject(projectId);
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Delete project error:', error);
+      res.status(500).json({ error: 'Failed to delete project' });
     }
   },
 );

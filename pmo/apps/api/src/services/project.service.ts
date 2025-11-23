@@ -48,3 +48,8 @@ export const updateProject = async (id: number, data: ProjectUpdateInput) =>
     where: { id },
     data,
   });
+
+export const deleteProject = async (id: number) =>
+  prisma.project.delete({
+    where: { id },
+  });

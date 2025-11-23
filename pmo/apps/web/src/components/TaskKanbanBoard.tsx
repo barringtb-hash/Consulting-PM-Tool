@@ -25,6 +25,7 @@ import { TaskKanbanCard } from './TaskKanbanCard';
 interface TaskKanbanBoardProps {
   tasks: TaskWithProject[];
   onTaskMove: (taskId: number, newStatus: TaskStatus) => void;
+  onTaskDelete?: (taskId: number) => void;
 }
 
 function formatStatusLabel(status: TaskStatus): string {
@@ -76,6 +77,7 @@ function formatDate(value?: string | null): string {
 export function TaskKanbanBoard({
   tasks,
   onTaskMove,
+  onTaskDelete,
 }: TaskKanbanBoardProps): JSX.Element {
   const [activeTask, setActiveTask] = React.useState<TaskWithProject | null>(
     null,
@@ -142,6 +144,7 @@ export function TaskKanbanBoard({
             key={status}
             status={status}
             tasks={tasksByStatus[status]}
+            onTaskDelete={onTaskDelete}
           />
         ))}
       </div>
@@ -160,9 +163,14 @@ export function TaskKanbanBoard({
 interface KanbanColumnProps {
   status: TaskStatus;
   tasks: TaskWithProject[];
+  onTaskDelete?: (taskId: number) => void;
 }
 
-function KanbanColumn({ status, tasks }: KanbanColumnProps): JSX.Element {
+function KanbanColumn({
+  status,
+  tasks,
+  onTaskDelete,
+}: KanbanColumnProps): JSX.Element {
   return (
     <div className="flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 min-h-[500px]">
       <div className="px-4 py-3 border-b border-neutral-200 bg-white rounded-t-lg">
@@ -185,7 +193,13 @@ function KanbanColumn({ status, tasks }: KanbanColumnProps): JSX.Element {
               No tasks
             </div>
           ) : (
-            tasks.map((task) => <TaskKanbanCard key={task.id} task={task} />)
+            tasks.map((task) => (
+              <TaskKanbanCard
+                key={task.id}
+                task={task}
+                onDelete={onTaskDelete}
+              />
+            ))
           )}
         </div>
       </SortableContext>

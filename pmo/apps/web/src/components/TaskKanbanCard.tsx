@@ -2,12 +2,15 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 
 import type { TaskWithProject } from '../api/tasks';
 import { Badge, type BadgeVariant } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface TaskKanbanCardProps {
   task: TaskWithProject;
+  onDelete?: (taskId: number) => void;
 }
 
 function getPriorityBadgeVariant(priority?: string | null): BadgeVariant {
@@ -35,7 +38,10 @@ function formatDate(value?: string | null): string {
   });
 }
 
-export function TaskKanbanCard({ task }: TaskKanbanCardProps): JSX.Element {
+export function TaskKanbanCard({
+  task,
+  onDelete,
+}: TaskKanbanCardProps): JSX.Element {
   const {
     attributes,
     listeners,
@@ -44,6 +50,17 @@ export function TaskKanbanCard({ task }: TaskKanbanCardProps): JSX.Element {
     transition,
     isDragging,
   } = useSortable({ id: task.id });
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (
+      window.confirm(
+        `Are you sure you want to delete "${task.title}"? This action cannot be undone.`,
+      )
+    ) {
+      onDelete?.(task.id);
+    }
+  };
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -62,12 +79,24 @@ export function TaskKanbanCard({ task }: TaskKanbanCardProps): JSX.Element {
       } transition-shadow`}
     >
       <div className="space-y-3">
-        <div>
-          <p className="text-sm font-medium text-neutral-900 line-clamp-2">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-medium text-neutral-900 line-clamp-2 flex-1">
             {task.title}
           </p>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="text-neutral-400 hover:text-danger-600 transition-colors p-1 -m-1"
+              title="Delete task"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+        <div>
           {task.description && (
-            <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
+            <p className="text-xs text-neutral-600 line-clamp-2">
               {task.description}
             </p>
           )}
