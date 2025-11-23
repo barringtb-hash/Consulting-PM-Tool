@@ -59,10 +59,15 @@ export interface MarketingContent {
   sourceMeetingId?: number;
   createdById?: number;
   sourceContentId?: number;
+  campaignId?: number;
 
   // Publishing metadata
   publishedAt?: Date;
   scheduledFor?: Date;
+  publishingConnectionId?: number;
+  publishedUrl?: string;
+  publishError?: string;
+  lastPublishAttempt?: Date;
   archived: boolean;
 
   // Timestamps
@@ -93,6 +98,16 @@ export interface MarketingContent {
     name: string;
     type: ContentType;
   };
+  campaign?: {
+    id: number;
+    name: string;
+    status: string;
+  };
+  publishingConnection?: {
+    id: number;
+    platform: string;
+    accountName: string;
+  };
 }
 
 export interface CreateMarketingContentInput {
@@ -105,6 +120,7 @@ export interface CreateMarketingContentInput {
   projectId?: number;
   sourceMeetingId?: number;
   sourceContentId?: number;
+  campaignId?: number;
   content?: any;
   summary?: string;
   tags?: string[];
@@ -122,6 +138,7 @@ export interface UpdateMarketingContentInput {
   projectId?: number;
   sourceMeetingId?: number;
   sourceContentId?: number;
+  campaignId?: number;
   content?: any;
   summary?: string;
   tags?: string[];
@@ -197,6 +214,275 @@ export interface RepurposeContentInput {
   tone?: 'professional' | 'casual' | 'technical' | 'enthusiastic';
   length?: 'short' | 'medium' | 'long';
 }
+
+// ========================================
+// Campaign Types
+// ========================================
+
+export const CampaignStatus = {
+  PLANNING: 'PLANNING',
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+  COMPLETED: 'COMPLETED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type CampaignStatus =
+  (typeof CampaignStatus)[keyof typeof CampaignStatus];
+
+export interface Campaign {
+  id: number;
+  name: string;
+  description?: string;
+  goals?: any;
+  status: CampaignStatus;
+  startDate?: Date;
+  endDate?: Date;
+  archived: boolean;
+
+  // Relations
+  clientId: number;
+  projectId?: number;
+  createdById?: number;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Populated relations
+  client?: {
+    id: number;
+    name: string;
+  };
+  project?: {
+    id: number;
+    name: string;
+  };
+  createdBy?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  contents?: MarketingContent[];
+  _count?: {
+    contents: number;
+  };
+}
+
+export interface CreateCampaignInput {
+  name: string;
+  description?: string;
+  goals?: any;
+  status?: CampaignStatus;
+  startDate?: Date;
+  endDate?: Date;
+  clientId: number;
+  projectId?: number;
+}
+
+export interface UpdateCampaignInput {
+  name?: string;
+  description?: string;
+  goals?: any;
+  status?: CampaignStatus;
+  startDate?: Date;
+  endDate?: Date;
+  projectId?: number;
+  archived?: boolean;
+}
+
+export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
+  PLANNING: 'Planning',
+  ACTIVE: 'Active',
+  PAUSED: 'Paused',
+  COMPLETED: 'Completed',
+  ARCHIVED: 'Archived',
+};
+
+// ========================================
+// Brand Profile Types
+// ========================================
+
+export const BrandAssetType = {
+  LOGO: 'LOGO',
+  IMAGE: 'IMAGE',
+  TEMPLATE: 'TEMPLATE',
+  DOCUMENT: 'DOCUMENT',
+  VIDEO: 'VIDEO',
+  OTHER: 'OTHER',
+} as const;
+
+export type BrandAssetType =
+  (typeof BrandAssetType)[keyof typeof BrandAssetType];
+
+export interface BrandProfile {
+  id: number;
+  clientId: number;
+  name: string;
+  description?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  fonts?: any;
+  toneVoiceGuidelines?: string;
+  valueProposition?: string;
+  targetAudience?: string;
+  keyMessages: string[];
+  archived: boolean;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Populated relations
+  client?: {
+    id: number;
+    name: string;
+  };
+  assets?: BrandAsset[];
+}
+
+export interface BrandAsset {
+  id: number;
+  brandProfileId: number;
+  name: string;
+  type: BrandAssetType;
+  url: string;
+  description?: string;
+  tags: string[];
+  archived: boolean;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateBrandProfileInput {
+  clientId: number;
+  name: string;
+  description?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  fonts?: any;
+  toneVoiceGuidelines?: string;
+  valueProposition?: string;
+  targetAudience?: string;
+  keyMessages?: string[];
+}
+
+export interface UpdateBrandProfileInput {
+  name?: string;
+  description?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  fonts?: any;
+  toneVoiceGuidelines?: string;
+  valueProposition?: string;
+  targetAudience?: string;
+  keyMessages?: string[];
+  archived?: boolean;
+}
+
+export interface CreateBrandAssetInput {
+  brandProfileId: number;
+  name: string;
+  type: BrandAssetType;
+  url: string;
+  description?: string;
+  tags?: string[];
+}
+
+export interface UpdateBrandAssetInput {
+  name?: string;
+  type?: BrandAssetType;
+  url?: string;
+  description?: string;
+  tags?: string[];
+  archived?: boolean;
+}
+
+export const BRAND_ASSET_TYPE_LABELS: Record<BrandAssetType, string> = {
+  LOGO: 'Logo',
+  IMAGE: 'Image',
+  TEMPLATE: 'Template',
+  DOCUMENT: 'Document',
+  VIDEO: 'Video',
+  OTHER: 'Other',
+};
+
+// ========================================
+// Publishing Connection Types
+// ========================================
+
+export const PublishingPlatform = {
+  LINKEDIN: 'LINKEDIN',
+  TWITTER: 'TWITTER',
+  INSTAGRAM: 'INSTAGRAM',
+  FACEBOOK: 'FACEBOOK',
+} as const;
+
+export type PublishingPlatform =
+  (typeof PublishingPlatform)[keyof typeof PublishingPlatform];
+
+export interface PublishingConnection {
+  id: number;
+  clientId: number;
+  platform: PublishingPlatform;
+  accountName: string;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+  isActive: boolean;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Populated relations
+  client?: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface CreatePublishingConnectionInput {
+  clientId: number;
+  platform: PublishingPlatform;
+  accountName: string;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+}
+
+export interface UpdatePublishingConnectionInput {
+  accountName?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+  isActive?: boolean;
+}
+
+export const PUBLISHING_PLATFORM_LABELS: Record<PublishingPlatform, string> = {
+  LINKEDIN: 'LinkedIn',
+  TWITTER: 'Twitter',
+  INSTAGRAM: 'Instagram',
+  FACEBOOK: 'Facebook',
+};
+
+export interface PublishContentInput {
+  contentId: number;
+  publishingConnectionId?: number;
+  scheduledFor?: Date;
+}
+
+// ========================================
+// Helper Functions
+// ========================================
 
 // Helper function to get content type icon
 export const getContentTypeIcon = (type: ContentType): string => {
