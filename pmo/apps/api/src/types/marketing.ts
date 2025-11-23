@@ -50,12 +50,17 @@ const MarketingContentBaseSchema = z.object({
 });
 
 export const CreateMarketingContentSchema = MarketingContentBaseSchema;
-export type CreateMarketingContentInput = z.infer<typeof CreateMarketingContentSchema>;
+export type CreateMarketingContentInput = z.infer<
+  typeof CreateMarketingContentSchema
+>;
 
-export const UpdateMarketingContentSchema = MarketingContentBaseSchema.partial().extend({
-  archived: z.boolean().optional(),
-});
-export type UpdateMarketingContentInput = z.infer<typeof UpdateMarketingContentSchema>;
+export const UpdateMarketingContentSchema =
+  MarketingContentBaseSchema.partial().extend({
+    archived: z.boolean().optional(),
+  });
+export type UpdateMarketingContentInput = z.infer<
+  typeof UpdateMarketingContentSchema
+>;
 
 export const MarketingContentDTOSchema = MarketingContentBaseSchema.extend({
   id: z.number().int().positive(),
@@ -72,7 +77,9 @@ export const GenerateContentSchema = z.object({
   sourceType: z.enum(['project', 'meeting']),
   sourceId: z.number().int().positive(),
   additionalContext: z.string().optional(),
-  tone: z.enum(['professional', 'casual', 'technical', 'enthusiastic']).optional(),
+  tone: z
+    .enum(['professional', 'casual', 'technical', 'enthusiastic'])
+    .optional(),
   length: z.enum(['short', 'medium', 'long']).optional(),
 });
 export type GenerateContentInput = z.infer<typeof GenerateContentSchema>;

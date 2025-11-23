@@ -8,15 +8,16 @@ import {
 } from '../../types/marketing';
 import type { MarketingContentListQuery } from '../../validation/marketing.schema';
 import { generateMarketingContent } from '../../services/llm.service';
-
-type MarketingContentWithOwner = Prisma.MarketingContentGetPayload<{
-  include: { client: { select: { id: true } }; createdBy: { select: { id: true } } };
-}>;
+import { ContentType, ContentStatus } from '../../types/marketing';
 
 /**
  * Validate that the user has access to the client
  */
-const validateClientAccess = async (clientId: number, ownerId: number) => {
+const validateClientAccess = async (
+  clientId: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _ownerId: number,
+) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
 
   if (!client) {
@@ -98,10 +99,7 @@ export const listMarketingContents = async (
       },
       // Content created by this user (for content without a project)
       {
-        AND: [
-          { projectId: null },
-          { createdById: ownerId },
-        ],
+        AND: [{ projectId: null }, { createdById: ownerId }],
       },
     ],
   };
@@ -118,12 +116,12 @@ export const listMarketingContents = async (
 
   // Filter by type
   if (query.type) {
-    where.type = query.type as any;
+    where.type = query.type as ContentType;
   }
 
   // Filter by status
   if (query.status) {
-    where.status = query.status as any;
+    where.status = query.status as ContentStatus;
   }
 
   // Search by name or summary
@@ -231,7 +229,10 @@ export const updateMarketingContent = async (
   // Validate project access if changing projectId
   if (data.projectId !== undefined) {
     if (data.projectId !== null) {
-      const projectAccess = await validateProjectAccess(data.projectId, ownerId);
+      const projectAccess = await validateProjectAccess(
+        data.projectId,
+        ownerId,
+      );
 
       if (projectAccess === 'not_found' || projectAccess === 'forbidden') {
         return { error: projectAccess };

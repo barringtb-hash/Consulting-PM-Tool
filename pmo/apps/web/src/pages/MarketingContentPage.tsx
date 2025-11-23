@@ -1,8 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   useMarketingContents,
-  useCreateMarketingContent,
-  useUpdateMarketingContent,
   useArchiveMarketingContent,
 } from '../api/marketing';
 import { useClients } from '../api/queries';
@@ -43,8 +41,11 @@ function MarketingContentPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<ContentStatus | ''>('');
   const [clientIdFilter, setClientIdFilter] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
-  const [selectedContent, setSelectedContent] = useState<MarketingContent | null>(null);
-  const [editingContent, setEditingContent] = useState<MarketingContent | null>(null);
+  const [selectedContent, setSelectedContent] =
+    useState<MarketingContent | null>(null);
+  const [editingContent, setEditingContent] = useState<MarketingContent | null>(
+    null,
+  );
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -64,8 +65,6 @@ function MarketingContentPage(): JSX.Element {
 
   const contentsQuery = useMarketingContents(filterParams);
   const clientsQuery = useClients({ includeArchived: false });
-  const createContentMutation = useCreateMarketingContent();
-  const updateContentMutation = useUpdateMarketingContent();
   const archiveContentMutation = useArchiveMarketingContent();
 
   useRedirectOnUnauthorized(contentsQuery.error);
@@ -160,7 +159,9 @@ function MarketingContentPage(): JSX.Element {
               <Select
                 label="Content Type"
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as ContentType | '')}
+                onChange={(e) =>
+                  setTypeFilter(e.target.value as ContentType | '')
+                }
               >
                 <option value="">All Types</option>
                 {Object.entries(CONTENT_TYPE_LABELS).map(([key, label]) => (
@@ -172,7 +173,9 @@ function MarketingContentPage(): JSX.Element {
               <Select
                 label="Status"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as ContentStatus | '')}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as ContentStatus | '')
+                }
               >
                 <option value="">All Statuses</option>
                 {Object.entries(CONTENT_STATUS_LABELS).map(([key, label]) => (
@@ -214,25 +217,33 @@ function MarketingContentPage(): JSX.Element {
             {contentsQuery.isLoading ? (
               <Card>
                 <CardBody>
-                  <p className="text-center text-neutral-500">Loading content...</p>
+                  <p className="text-center text-neutral-500">
+                    Loading content...
+                  </p>
                 </CardBody>
               </Card>
             ) : contents.length === 0 ? (
               <Card>
                 <CardBody>
                   <p className="text-center text-neutral-500">
-                    No marketing content found. Create your first content to get started!
+                    No marketing content found. Create your first content to get
+                    started!
                   </p>
                 </CardBody>
               </Card>
             ) : (
               contents.map((content) => (
-                <Card key={content.id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={content.id}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardBody>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-2xl">{getContentTypeIcon(content.type)}</span>
+                          <span className="text-2xl">
+                            {getContentTypeIcon(content.type)}
+                          </span>
                           <div>
                             <h3
                               className="text-lg font-semibold text-neutral-900 cursor-pointer hover:text-primary-600"
@@ -241,10 +252,16 @@ function MarketingContentPage(): JSX.Element {
                               {content.name}
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant={CONTENT_STATUS_VARIANTS[content.status]}>
+                              <Badge
+                                variant={
+                                  CONTENT_STATUS_VARIANTS[content.status]
+                                }
+                              >
                                 {CONTENT_STATUS_LABELS[content.status]}
                               </Badge>
-                              <Badge variant="neutral">{CONTENT_TYPE_LABELS[content.type]}</Badge>
+                              <Badge variant="neutral">
+                                {CONTENT_TYPE_LABELS[content.type]}
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -254,11 +271,17 @@ function MarketingContentPage(): JSX.Element {
                           </p>
                         )}
                         <div className="flex items-center gap-4 mt-3 text-sm text-neutral-500">
-                          {content.client && <span>Client: {content.client.name}</span>}
-                          {content.project && <span>Project: {content.project.name}</span>}
+                          {content.client && (
+                            <span>Client: {content.client.name}</span>
+                          )}
+                          {content.project && (
+                            <span>Project: {content.project.name}</span>
+                          )}
                           <span>Created: {formatDate(content.createdAt)}</span>
                           {content.scheduledFor && (
-                            <span>Scheduled: {formatDate(content.scheduledFor)}</span>
+                            <span>
+                              Scheduled: {formatDate(content.scheduledFor)}
+                            </span>
                           )}
                         </div>
                         {content.tags && content.tags.length > 0 && (
@@ -275,7 +298,11 @@ function MarketingContentPage(): JSX.Element {
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="secondary" size="sm" onClick={() => handleEdit(content)}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleEdit(content)}
+                        >
                           <Edit2 className="w-4 h-4" />
                         </Button>
                         <Button
@@ -296,7 +323,8 @@ function MarketingContentPage(): JSX.Element {
           <Card>
             <CardBody>
               <p className="text-center text-neutral-500">
-                Calendar view coming soon! Use the list view to manage your content.
+                Calendar view coming soon! Use the list view to manage your
+                content.
               </p>
             </CardBody>
           </Card>

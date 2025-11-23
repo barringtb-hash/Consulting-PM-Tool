@@ -33,7 +33,9 @@ function GenerateContentButton({
 }: GenerateContentButtonProps): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [contentType, setContentType] = useState<ContentType>('BLOG_POST');
-  const [tone, setTone] = useState<'professional' | 'casual' | 'technical' | 'enthusiastic'>('professional');
+  const [tone, setTone] = useState<
+    'professional' | 'casual' | 'technical' | 'enthusiastic'
+  >('professional');
   const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
   const [additionalContext, setAdditionalContext] = useState('');
 
@@ -55,12 +57,14 @@ function GenerateContentButton({
       });
 
       // Create marketing content record with generated data
-      const created = await createMutation.mutateAsync({
-        name: generated.title || `Generated ${CONTENT_TYPE_LABELS[contentType]}`,
+      await createMutation.mutateAsync({
+        name:
+          generated.title || `Generated ${CONTENT_TYPE_LABELS[contentType]}`,
         type: contentType,
         status: 'DRAFT',
         clientId,
-        projectId: projectId || (sourceType === 'project' ? sourceId : undefined),
+        projectId:
+          projectId || (sourceType === 'project' ? sourceId : undefined),
         sourceMeetingId: sourceType === 'meeting' ? sourceId : undefined,
         content: generated,
         summary: generated.summary,
@@ -96,7 +100,8 @@ function GenerateContentButton({
       >
         <div className="space-y-4">
           <p className="text-sm text-neutral-600">
-            Use AI to generate marketing content based on your {sourceType} data.
+            Use AI to generate marketing content based on your {sourceType}{' '}
+            data.
           </p>
 
           <Select
@@ -115,7 +120,15 @@ function GenerateContentButton({
             <Select
               label="Tone"
               value={tone}
-              onChange={(e) => setTone(e.target.value as any)}
+              onChange={(e) =>
+                setTone(
+                  e.target.value as
+                    | 'professional'
+                    | 'casual'
+                    | 'technical'
+                    | 'enthusiastic',
+                )
+              }
             >
               <option value="professional">Professional</option>
               <option value="casual">Casual</option>
@@ -126,7 +139,9 @@ function GenerateContentButton({
             <Select
               label="Length"
               value={length}
-              onChange={(e) => setLength(e.target.value as any)}
+              onChange={(e) =>
+                setLength(e.target.value as 'short' | 'medium' | 'long')
+              }
             >
               <option value="short">Short</option>
               <option value="medium">Medium</option>
@@ -149,9 +164,9 @@ function GenerateContentButton({
 
           <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
             <p className="text-sm text-primary-900">
-              <strong>Note:</strong> AI will use data from your {sourceType} to generate
-              contextual marketing content. You can edit the generated content before
-              publishing.
+              <strong>Note:</strong> AI will use data from your {sourceType} to
+              generate contextual marketing content. You can edit the generated
+              content before publishing.
             </p>
           </div>
 

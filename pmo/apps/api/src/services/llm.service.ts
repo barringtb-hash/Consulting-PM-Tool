@@ -21,7 +21,7 @@ interface GeneratedContent {
   title?: string;
   body: string;
   summary?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -116,7 +116,8 @@ function buildUserPrompt(
   type: ContentType,
   context: GenerateContentOptions['context'],
 ): string {
-  let prompt = 'Please create marketing content based on the following information:\n\n';
+  let prompt =
+    'Please create marketing content based on the following information:\n\n';
 
   if (context.clientName) {
     prompt += `Client: ${context.clientName}\n`;
@@ -190,9 +191,10 @@ function getContentTypeInstructions(type: ContentType): string {
  * Parse generated content into structured format
  */
 function parseGeneratedContent(
-  type: ContentType,
+  _type: ContentType,
   generatedText: string,
-  context: GenerateContentOptions['context'],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _context: GenerateContentOptions['context'],
 ): GeneratedContent {
   try {
     // Try to parse as JSON first
@@ -206,7 +208,7 @@ function parseGeneratedContent(
         metadata: parsed.metadata,
       };
     }
-  } catch (e) {
+  } catch {
     // If JSON parsing fails, treat the whole text as body
   }
 
@@ -247,14 +249,12 @@ function generatePlaceholderContent(
     EMAIL_TEMPLATE: {
       title: `Success Story: ${context.projectName || 'AI Implementation'}`,
       body: `Hi there,\n\nI wanted to share an exciting update about our recent work with ${context.clientName || 'our client'}.\n\n${context.projectDescription || 'We successfully implemented an AI solution that delivered significant value.'}\n\nInterested in learning more about how we can help your organization?\n\nLet's connect!\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
-      summary:
-        'Sharing recent project success and offering to connect',
+      summary: 'Sharing recent project success and offering to connect',
     },
     WHITEPAPER: {
       title: `AI Consulting Best Practices: Insights from ${context.projectName || 'Recent Projects'}`,
       body: `# Executive Summary\n\nThis whitepaper explores best practices in AI consulting based on our work with ${context.clientName || 'leading organizations'}.\n\n## Introduction\n\nAI implementation requires careful planning and execution.\n\n## Key Findings\n\n${context.projectDescription || 'Our research reveals critical success factors.'}\n\n## Recommendations\n\nOrganizations should focus on strategic alignment and change management.\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
-      summary:
-        'Best practices and insights from AI consulting engagements',
+      summary: 'Best practices and insights from AI consulting engagements',
     },
     SOCIAL_STORY: {
       body: `🎯 ${context.projectName || 'Amazing project'} alert!\n\nWorking with ${context.clientName || 'an incredible client'} on ${context.industry || 'AI innovation'}\n\n✨ Results coming soon!\n\n[Swipe up to learn more]`,

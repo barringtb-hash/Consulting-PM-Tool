@@ -13,7 +13,6 @@ import {
   getMarketingContentById,
   updateMarketingContent,
   archiveMarketingContent,
-  deleteMarketingContent,
   getMarketingContentsByProject,
   generateContent,
 } from './marketing.service';
@@ -161,7 +160,11 @@ router.patch(
       return;
     }
 
-    const result = await updateMarketingContent(contentId, req.userId, parsed.data);
+    const result = await updateMarketingContent(
+      contentId,
+      req.userId,
+      parsed.data,
+    );
 
     if ('error' in result) {
       if (result.error === 'not_found') {

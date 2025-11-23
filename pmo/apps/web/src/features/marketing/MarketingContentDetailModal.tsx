@@ -52,28 +52,45 @@ function MarketingContentDetailModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Content Details" size="large">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Content Details"
+      size="large"
+    >
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <span className="text-4xl">{getContentTypeIcon(content.type)}</span>
             <div>
-              <h2 className="text-2xl font-bold text-neutral-900">{content.name}</h2>
+              <h2 className="text-2xl font-bold text-neutral-900">
+                {content.name}
+              </h2>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant={CONTENT_STATUS_VARIANTS[content.status]}>
                   {CONTENT_STATUS_LABELS[content.status]}
                 </Badge>
-                <Badge variant="neutral">{CONTENT_TYPE_LABELS[content.type]}</Badge>
+                <Badge variant="neutral">
+                  {CONTENT_TYPE_LABELS[content.type]}
+                </Badge>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => onEdit(content)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onEdit(content)}
+            >
               <Edit2 className="w-4 h-4" />
               Edit
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => onArchive(content.id)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onArchive(content.id)}
+            >
               <Archive className="w-4 h-4" />
               Archive
             </Button>
@@ -83,7 +100,9 @@ function MarketingContentDetailModal({
         {/* Summary */}
         {content.summary && (
           <div>
-            <h3 className="text-sm font-semibold text-neutral-700 mb-2">Summary</h3>
+            <h3 className="text-sm font-semibold text-neutral-700 mb-2">
+              Summary
+            </h3>
             <p className="text-neutral-900">{content.summary}</p>
           </div>
         )}
@@ -92,21 +111,27 @@ function MarketingContentDetailModal({
         <div className="grid grid-cols-2 gap-4">
           {content.client && (
             <div>
-              <h3 className="text-sm font-semibold text-neutral-700 mb-1">Client</h3>
+              <h3 className="text-sm font-semibold text-neutral-700 mb-1">
+                Client
+              </h3>
               <p className="text-neutral-900">{content.client.name}</p>
             </div>
           )}
 
           {content.project && (
             <div>
-              <h3 className="text-sm font-semibold text-neutral-700 mb-1">Project</h3>
+              <h3 className="text-sm font-semibold text-neutral-700 mb-1">
+                Project
+              </h3>
               <p className="text-neutral-900">{content.project.name}</p>
             </div>
           )}
 
           {content.sourceMeeting && (
             <div>
-              <h3 className="text-sm font-semibold text-neutral-700 mb-1">Source Meeting</h3>
+              <h3 className="text-sm font-semibold text-neutral-700 mb-1">
+                Source Meeting
+              </h3>
               <p className="text-neutral-900">{content.sourceMeeting.title}</p>
               <p className="text-sm text-neutral-500">
                 {formatDate(content.sourceMeeting.date)}
@@ -115,24 +140,36 @@ function MarketingContentDetailModal({
           )}
 
           <div>
-            <h3 className="text-sm font-semibold text-neutral-700 mb-1">Created</h3>
+            <h3 className="text-sm font-semibold text-neutral-700 mb-1">
+              Created
+            </h3>
             <p className="text-neutral-900">{formatDate(content.createdAt)}</p>
             {content.createdBy && (
-              <p className="text-sm text-neutral-500">{content.createdBy.name}</p>
+              <p className="text-sm text-neutral-500">
+                {content.createdBy.name}
+              </p>
             )}
           </div>
 
           {content.publishedAt && (
             <div>
-              <h3 className="text-sm font-semibold text-neutral-700 mb-1">Published</h3>
-              <p className="text-neutral-900">{formatDate(content.publishedAt)}</p>
+              <h3 className="text-sm font-semibold text-neutral-700 mb-1">
+                Published
+              </h3>
+              <p className="text-neutral-900">
+                {formatDate(content.publishedAt)}
+              </p>
             </div>
           )}
 
           {content.scheduledFor && (
             <div>
-              <h3 className="text-sm font-semibold text-neutral-700 mb-1">Scheduled For</h3>
-              <p className="text-neutral-900">{formatDate(content.scheduledFor)}</p>
+              <h3 className="text-sm font-semibold text-neutral-700 mb-1">
+                Scheduled For
+              </h3>
+              <p className="text-neutral-900">
+                {formatDate(content.scheduledFor)}
+              </p>
             </div>
           )}
         </div>
@@ -140,7 +177,9 @@ function MarketingContentDetailModal({
         {/* Tags */}
         {content.tags && content.tags.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold text-neutral-700 mb-2">Tags</h3>
+            <h3 className="text-sm font-semibold text-neutral-700 mb-2">
+              Tags
+            </h3>
             <div className="flex gap-2 flex-wrap">
               {content.tags.map((tag) => (
                 <span
@@ -157,7 +196,9 @@ function MarketingContentDetailModal({
         {/* Content */}
         {content.content && (
           <div>
-            <h3 className="text-sm font-semibold text-neutral-700 mb-2">Content</h3>
+            <h3 className="text-sm font-semibold text-neutral-700 mb-2">
+              Content
+            </h3>
             <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
               {typeof content.content === 'object' ? (
                 <div className="space-y-3">

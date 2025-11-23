@@ -11,6 +11,8 @@ import {
 import {
   type MarketingContent,
   type Client,
+  type ContentType,
+  type ContentStatus,
   CONTENT_TYPE_LABELS,
   CONTENT_STATUS_LABELS,
 } from '../../../../../packages/types/marketing';
@@ -30,8 +32,8 @@ function MarketingContentFormModal({
 }: MarketingContentFormModalProps): JSX.Element {
   const [formData, setFormData] = useState({
     name: '',
-    type: 'BLOG_POST' as any,
-    status: 'DRAFT' as any,
+    type: 'BLOG_POST' as ContentType,
+    status: 'DRAFT' as ContentStatus,
     clientId: '',
     projectId: '',
     summary: '',
@@ -78,7 +80,16 @@ function MarketingContentFormModal({
     }
 
     try {
-      const payload: any = {
+      const payload: {
+        name: string;
+        type: ContentType;
+        status: ContentStatus;
+        clientId: number;
+        projectId?: number;
+        summary?: string;
+        tags: string[];
+        content?: Record<string, unknown>;
+      } = {
         name: formData.name,
         type: formData.type,
         status: formData.status,
@@ -86,9 +97,14 @@ function MarketingContentFormModal({
         projectId: formData.projectId ? Number(formData.projectId) : undefined,
         summary: formData.summary || undefined,
         tags: formData.tags
-          ? formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+          ? formData.tags
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean)
           : [],
-        content: formData.content ? JSON.parse(formData.content) : undefined,
+        content: formData.content
+          ? (JSON.parse(formData.content) as Record<string, unknown>)
+          : undefined,
       };
 
       if (editingContent) {
@@ -128,7 +144,9 @@ function MarketingContentFormModal({
           <Select
             label="Type *"
             value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+            onChange={(e) =>
+              setFormData({ ...formData, type: e.target.value as ContentType })
+            }
             required
           >
             {Object.entries(CONTENT_TYPE_LABELS).map(([key, label]) => (
@@ -141,7 +159,12 @@ function MarketingContentFormModal({
           <Select
             label="Status"
             value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                status: e.target.value as ContentStatus,
+              })
+            }
           >
             {Object.entries(CONTENT_STATUS_LABELS).map(([key, label]) => (
               <option key={key} value={key}>
@@ -154,7 +177,9 @@ function MarketingContentFormModal({
         <Select
           label="Client *"
           value={formData.clientId}
-          onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, clientId: e.target.value })
+          }
           required
         >
           <option value="">Select a client</option>
@@ -168,7 +193,9 @@ function MarketingContentFormModal({
         <Input
           label="Summary"
           value={formData.summary}
-          onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, summary: e.target.value })
+          }
           placeholder="Brief summary of the content..."
         />
 
@@ -185,7 +212,9 @@ function MarketingContentFormModal({
           </label>
           <textarea
             value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, content: e.target.value })
+            }
             rows={8}
             className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm"
             placeholder='{"title": "...", "body": "..."}'

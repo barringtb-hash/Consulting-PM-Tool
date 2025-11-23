@@ -24,5 +24,7 @@ export const marketingContentListQuerySchema = z.object({
 
 export type MarketingContentCreateInput = CreateMarketingContentInput;
 export type MarketingContentUpdateInput = UpdateMarketingContentInput;
-export type MarketingContentListQuery = z.infer<typeof marketingContentListQuerySchema>;
+export type MarketingContentListQuery = z.infer<
+  typeof marketingContentListQuerySchema
+>;
 export type GenerateContentParams = GenerateContentInput;
