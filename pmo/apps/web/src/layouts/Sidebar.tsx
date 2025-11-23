@@ -90,7 +90,9 @@ export function Sidebar(): JSX.Element {
   const overviewNavItems = navItems.filter((item) => item.group === 'overview');
   const clientsNavItems = navItems.filter((item) => item.group === 'clients');
   const projectsNavItems = navItems.filter((item) => item.group === 'projects');
-  const marketingNavItems = navItems.filter((item) => item.group === 'marketing');
+  const marketingNavItems = navItems.filter(
+    (item) => item.group === 'marketing',
+  );
   const salesNavItems = navItems.filter((item) => item.group === 'sales');
   const adminNavItems = navItems.filter((item) => item.group === 'admin');
 
