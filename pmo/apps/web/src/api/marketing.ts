@@ -15,6 +15,7 @@ import {
   type GenerateContentInput,
   type GeneratedContent,
   type MarketingContentListQuery,
+  type RepurposeContentInput,
 } from '../../../../packages/types/marketing';
 
 interface MarketingContentResponse
@@ -222,6 +223,63 @@ export async function generateMarketingContent(
   return data.generated;
 }
 
+/**
+ * Generate marketing content from a specific project
+ */
+export async function generateMarketingContentFromProject(
+  projectId: number,
+  payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'>,
+): Promise<GeneratedContent> {
+  const response = await fetch(
+    buildApiUrl(`/projects/${projectId}/marketing-contents/generate`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  const data = await handleResponse<{ generated: GeneratedContent }>(response);
+  return data.generated;
+}
+
+/**
+ * Generate marketing content from a specific meeting
+ */
+export async function generateMarketingContentFromMeeting(
+  meetingId: number,
+  payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'>,
+): Promise<GeneratedContent> {
+  const response = await fetch(
+    buildApiUrl(`/meetings/${meetingId}/marketing-contents/generate`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  const data = await handleResponse<{ generated: GeneratedContent }>(response);
+  return data.generated;
+}
+
+/**
+ * Repurpose existing marketing content to a different type/channel
+ */
+export async function repurposeMarketingContent(
+  contentId: number,
+  payload: RepurposeContentInput,
+): Promise<GeneratedContent> {
+  const response = await fetch(
+    buildApiUrl(`/marketing-contents/${contentId}/repurpose`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  const data = await handleResponse<{ generated: GeneratedContent }>(response);
+  return data.generated;
+}
+
 // ============================================================================
 // React Query Hooks
 // ============================================================================
@@ -336,5 +394,50 @@ export function useGenerateMarketingContent(): UseMutationResult<
 > {
   return useMutation({
     mutationFn: generateMarketingContent,
+  });
+}
+
+/**
+ * Hook to generate marketing content from a project
+ */
+export function useGenerateMarketingContentFromProject(): UseMutationResult<
+  GeneratedContent,
+  Error,
+  { projectId: number; payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'> },
+  unknown
+> {
+  return useMutation({
+    mutationFn: ({ projectId, payload }) =>
+      generateMarketingContentFromProject(projectId, payload),
+  });
+}
+
+/**
+ * Hook to generate marketing content from a meeting
+ */
+export function useGenerateMarketingContentFromMeeting(): UseMutationResult<
+  GeneratedContent,
+  Error,
+  { meetingId: number; payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'> },
+  unknown
+> {
+  return useMutation({
+    mutationFn: ({ meetingId, payload }) =>
+      generateMarketingContentFromMeeting(meetingId, payload),
+  });
+}
+
+/**
+ * Hook to repurpose marketing content
+ */
+export function useRepurposeMarketingContent(): UseMutationResult<
+  GeneratedContent,
+  Error,
+  { contentId: number; payload: RepurposeContentInput },
+  unknown
+> {
+  return useMutation({
+    mutationFn: ({ contentId, payload }) =>
+      repurposeMarketingContent(contentId, payload),
   });
 }

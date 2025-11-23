@@ -19,19 +19,34 @@ export const ContentType = {
 export type ContentType = (typeof ContentType)[keyof typeof ContentType];
 
 export const ContentStatus = {
+  IDEA: 'IDEA',
   DRAFT: 'DRAFT',
   IN_REVIEW: 'IN_REVIEW',
   APPROVED: 'APPROVED',
+  READY: 'READY',
   PUBLISHED: 'PUBLISHED',
   ARCHIVED: 'ARCHIVED',
 } as const;
 
 export type ContentStatus = (typeof ContentStatus)[keyof typeof ContentStatus];
 
+export const ContentChannel = {
+  WEB: 'WEB',
+  LINKEDIN: 'LINKEDIN',
+  INSTAGRAM: 'INSTAGRAM',
+  TWITTER: 'TWITTER',
+  EMAIL: 'EMAIL',
+  GENERIC: 'GENERIC',
+} as const;
+
+export type ContentChannel = (typeof ContentChannel)[keyof typeof ContentChannel];
+
 export interface MarketingContent {
   id: number;
   name: string;
+  slug?: string;
   type: ContentType;
+  channel?: ContentChannel;
   status: ContentStatus;
   content?: any;
   summary?: string;
@@ -42,6 +57,7 @@ export interface MarketingContent {
   projectId?: number;
   sourceMeetingId?: number;
   createdById?: number;
+  sourceContentId?: number;
 
   // Publishing metadata
   publishedAt?: Date;
@@ -71,15 +87,23 @@ export interface MarketingContent {
     name: string;
     email: string;
   };
+  sourceContent?: {
+    id: number;
+    name: string;
+    type: ContentType;
+  };
 }
 
 export interface CreateMarketingContentInput {
   name: string;
+  slug?: string;
   type: ContentType;
+  channel?: ContentChannel;
   status?: ContentStatus;
   clientId: number;
   projectId?: number;
   sourceMeetingId?: number;
+  sourceContentId?: number;
   content?: any;
   summary?: string;
   tags?: string[];
@@ -89,11 +113,14 @@ export interface CreateMarketingContentInput {
 
 export interface UpdateMarketingContentInput {
   name?: string;
+  slug?: string;
   type?: ContentType;
+  channel?: ContentChannel;
   status?: ContentStatus;
   clientId?: number;
   projectId?: number;
   sourceMeetingId?: number;
+  sourceContentId?: number;
   content?: any;
   summary?: string;
   tags?: string[];
@@ -143,12 +170,32 @@ export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
 
 // Content status display names
 export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
+  IDEA: 'Idea',
   DRAFT: 'Draft',
   IN_REVIEW: 'In Review',
   APPROVED: 'Approved',
+  READY: 'Ready',
   PUBLISHED: 'Published',
   ARCHIVED: 'Archived',
 };
+
+// Content channel display names
+export const CONTENT_CHANNEL_LABELS: Record<ContentChannel, string> = {
+  WEB: 'Web',
+  LINKEDIN: 'LinkedIn',
+  INSTAGRAM: 'Instagram',
+  TWITTER: 'Twitter',
+  EMAIL: 'Email',
+  GENERIC: 'Generic',
+};
+
+export interface RepurposeContentInput {
+  targetType: ContentType;
+  targetChannel?: ContentChannel;
+  additionalContext?: string;
+  tone?: 'professional' | 'casual' | 'technical' | 'enthusiastic';
+  length?: 'short' | 'medium' | 'long';
+}
 
 // Helper function to get content type icon
 export const getContentTypeIcon = (type: ContentType): string => {
@@ -165,4 +212,21 @@ export const getContentTypeIcon = (type: ContentType): string => {
     OTHER: '📋',
   };
   return icons[type] || '📋';
+};
+
+// Helper function to get default channel for content type
+export const getDefaultChannelForType = (type: ContentType): ContentChannel => {
+  const channelMap: Record<ContentType, ContentChannel> = {
+    BLOG_POST: 'WEB',
+    CASE_STUDY: 'WEB',
+    LINKEDIN_POST: 'LINKEDIN',
+    TWITTER_POST: 'TWITTER',
+    EMAIL_TEMPLATE: 'EMAIL',
+    WHITEPAPER: 'WEB',
+    SOCIAL_STORY: 'INSTAGRAM',
+    VIDEO_SCRIPT: 'GENERIC',
+    NEWSLETTER: 'EMAIL',
+    OTHER: 'GENERIC',
+  };
+  return channelMap[type] || 'GENERIC';
 };

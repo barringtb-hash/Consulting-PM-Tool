@@ -6,6 +6,7 @@ import {
   marketingContentUpdateSchema,
   marketingContentListQuerySchema,
   generateContentSchema,
+  repurposeContentSchema,
 } from '../../validation/marketing.schema';
 import {
   listMarketingContents,
@@ -15,6 +16,7 @@ import {
   archiveMarketingContent,
   getMarketingContentsByProject,
   generateContent,
+  repurposeContent,
 } from './marketing.service';
 
 const router = Router();
@@ -295,6 +297,159 @@ router.post(
 
       if (result.error === 'invalid_source_type') {
         res.status(400).json({ error: 'Invalid source type' });
+        return;
+      }
+    }
+
+    res.json({ generated: result.generated });
+  },
+);
+
+/**
+ * POST /api/projects/:projectId/marketing-contents/generate
+ * Generate marketing content from a specific project
+ */
+router.post(
+  '/projects/:projectId/marketing-contents/generate',
+  async (req: AuthenticatedRequest<{ projectId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const projectId = Number(req.params.projectId);
+
+    if (Number.isNaN(projectId)) {
+      res.status(400).json({ error: 'Invalid project id' });
+      return;
+    }
+
+    // Validate the rest of the request body
+    const bodySchema = generateContentSchema.omit({ sourceType: true, sourceId: true });
+    const parsed = bodySchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid generation parameters',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const result = await generateContent(req.userId, {
+      ...parsed.data,
+      sourceType: 'project',
+      sourceId: projectId,
+    });
+
+    if ('error' in result) {
+      if (result.error === 'not_found') {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      if (result.error === 'forbidden') {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+    }
+
+    res.json({ generated: result.generated });
+  },
+);
+
+/**
+ * POST /api/meetings/:meetingId/marketing-contents/generate
+ * Generate marketing content from a specific meeting
+ */
+router.post(
+  '/meetings/:meetingId/marketing-contents/generate',
+  async (req: AuthenticatedRequest<{ meetingId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const meetingId = Number(req.params.meetingId);
+
+    if (Number.isNaN(meetingId)) {
+      res.status(400).json({ error: 'Invalid meeting id' });
+      return;
+    }
+
+    // Validate the rest of the request body
+    const bodySchema = generateContentSchema.omit({ sourceType: true, sourceId: true });
+    const parsed = bodySchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid generation parameters',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const result = await generateContent(req.userId, {
+      ...parsed.data,
+      sourceType: 'meeting',
+      sourceId: meetingId,
+    });
+
+    if ('error' in result) {
+      if (result.error === 'not_found') {
+        res.status(404).json({ error: 'Meeting not found' });
+        return;
+      }
+
+      if (result.error === 'forbidden') {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+    }
+
+    res.json({ generated: result.generated });
+  },
+);
+
+/**
+ * POST /api/marketing-contents/:id/repurpose
+ * Repurpose existing content to a different type/channel
+ */
+router.post(
+  '/marketing-contents/:id/repurpose',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const contentId = Number(req.params.id);
+
+    if (Number.isNaN(contentId)) {
+      res.status(400).json({ error: 'Invalid content id' });
+      return;
+    }
+
+    const parsed = repurposeContentSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid repurpose parameters',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const result = await repurposeContent(contentId, req.userId, parsed.data);
+
+    if ('error' in result) {
+      if (result.error === 'not_found') {
+        res.status(404).json({ error: 'Content not found' });
+        return;
+      }
+
+      if (result.error === 'forbidden') {
+        res.status(403).json({ error: 'Forbidden' });
         return;
       }
     }

@@ -132,11 +132,22 @@ enum ContentType {
 }
 
 enum ContentStatus {
+  IDEA
   DRAFT
   IN_REVIEW
   APPROVED
+  READY
   PUBLISHED
   ARCHIVED
+}
+
+enum ContentChannel {
+  WEB
+  LINKEDIN
+  INSTAGRAM
+  TWITTER
+  EMAIL
+  GENERIC
 }
 
 model User {
@@ -378,34 +389,42 @@ model ProjectAIAsset {
 }
 
 model MarketingContent {
-  id               Int           @id @default(autoincrement())
+  id               Int              @id @default(autoincrement())
   name             String
+  slug             String?          @unique
   type             ContentType
-  status           ContentStatus @default(DRAFT)
+  channel          ContentChannel?
+  status           ContentStatus    @default(DRAFT)
   content          Json?
   summary          String?
-  tags             String[]      @default([])
+  tags             String[]         @default([])
 
   // Relations
   clientId         Int
   projectId        Int?
   sourceMeetingId  Int?
   createdById      Int?
+  sourceContentId  Int?
 
   // Publishing metadata
   publishedAt      DateTime?
   scheduledFor     DateTime?
-  archived         Boolean       @default(false)
+  archived         Boolean          @default(false)
 
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  client           Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  project          Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  sourceMeeting    Meeting?      @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
-  createdBy        User?         @relation(fields: [createdById], references: [id])
+  client           Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project          Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  sourceMeeting    Meeting?         @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  createdBy        User?            @relation(fields: [createdById], references: [id])
+
+  // Self-referential relation for repurposed content
+  sourceContent    MarketingContent? @relation("RepurposedFrom", fields: [sourceContentId], references: [id], onDelete: SetNull)
+  repurposedContent MarketingContent[] @relation("RepurposedFrom")
 
   @@index([clientId, type])
   @@index([status, createdAt(sort: Desc)])
   @@index([projectId])
+  @@index([slug])
 }
