@@ -99,7 +99,15 @@ function MyTasksPage(): JSX.Element {
   useRedirectOnUnauthorized(projectsQuery.error);
 
   const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
-  const projects = projectsQuery.data ?? [];
+
+  // Only show projects that have tasks assigned to the current user
+  const projects = useMemo(() => {
+    const allProjects = projectsQuery.data ?? [];
+    const projectsWithUserTasks = new Set(tasks.map((task) => task.projectId));
+    return allProjects.filter((project) =>
+      projectsWithUserTasks.has(project.id),
+    );
+  }, [projectsQuery.data, tasks]);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
