@@ -23,6 +23,7 @@ import {
 } from '../../../../packages/types/marketing';
 import MarketingContentFormModal from '../features/marketing/MarketingContentFormModal';
 import MarketingContentDetailModal from '../features/marketing/MarketingContentDetailModal';
+import MarketingContentCalendar from '../features/marketing/MarketingContentCalendar';
 
 const CONTENT_STATUS_VARIANTS: Record<
   ContentStatus,
@@ -320,14 +321,10 @@ function MarketingContentPage(): JSX.Element {
             )}
           </div>
         ) : (
-          <Card>
-            <CardBody>
-              <p className="text-center text-neutral-500">
-                Calendar view coming soon! Use the list view to manage your
-                content.
-              </p>
-            </CardBody>
-          </Card>
+          <MarketingContentCalendar
+            contents={contents}
+            onContentClick={handleViewDetail}
+          />
         )}
       </div>
 

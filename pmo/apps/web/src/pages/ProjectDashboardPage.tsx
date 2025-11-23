@@ -8,6 +8,9 @@ import {
   Users,
   FolderOpen,
   Settings,
+  Megaphone,
+  Edit2,
+  Archive,
 } from 'lucide-react';
 import {
   useClient,
@@ -54,6 +57,19 @@ import AssetForm, {
   assetFormValuesToPayload,
   type AssetFormValues,
 } from '../components/AssetForm';
+import {
+  useProjectMarketingContents,
+  useArchiveMarketingContent,
+} from '../api/marketing';
+import { GenerateFromProjectButton } from '../features/marketing';
+import { MarketingContentFormModal } from '../features/marketing/MarketingContentFormModal';
+import { MarketingContentDetailModal } from '../features/marketing/MarketingContentDetailModal';
+import {
+  type MarketingContent,
+  CONTENT_TYPE_LABELS,
+  CONTENT_STATUS_LABELS,
+  getContentTypeIcon,
+} from '../../../packages/types/marketing';
 
 const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
   { value: 'PLANNING', label: 'Planning' },
@@ -129,6 +145,18 @@ function ProjectDashboardPage(): JSX.Element {
   const [assetNotes, setAssetNotes] = useState('');
   const [showAssetForm, setShowAssetForm] = useState(false);
   const [assetError, setAssetError] = useState<string | null>(null);
+
+  // Marketing
+  const projectMarketingContentsQuery = useProjectMarketingContents(projectId);
+  const archiveMarketingContentMutation = useArchiveMarketingContent();
+  const [selectedMarketingContent, setSelectedMarketingContent] =
+    useState<MarketingContent | null>(null);
+  const [editingMarketingContent, setEditingMarketingContent] =
+    useState<MarketingContent | null>(null);
+  const [showMarketingContentDetail, setShowMarketingContentDetail] =
+    useState(false);
+  const [showMarketingContentForm, setShowMarketingContentForm] =
+    useState(false);
 
   useRedirectOnUnauthorized(projectQuery.error);
   useRedirectOnUnauthorized(clientQuery.error);
@@ -335,6 +363,43 @@ function ProjectDashboardPage(): JSX.Element {
   );
 
   const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
+
+  const marketingContents = useMemo(
+    () => projectMarketingContentsQuery.data ?? [],
+    [projectMarketingContentsQuery.data],
+  );
+
+  const handleEditMarketingContent = (content: MarketingContent) => {
+    setEditingMarketingContent(content);
+    setShowMarketingContentForm(true);
+    setShowMarketingContentDetail(false);
+  };
+
+  const handleViewMarketingContent = (content: MarketingContent) => {
+    setSelectedMarketingContent(content);
+    setShowMarketingContentDetail(true);
+  };
+
+  const handleArchiveMarketingContent = async (contentId: number) => {
+    try {
+      await archiveMarketingContentMutation.mutateAsync(contentId);
+      if (editingMarketingContent?.id === contentId) {
+        setEditingMarketingContent(null);
+        setShowMarketingContentForm(false);
+      }
+      if (selectedMarketingContent?.id === contentId) {
+        setSelectedMarketingContent(null);
+        setShowMarketingContentDetail(false);
+      }
+      showToast('Marketing content archived successfully', 'success');
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unable to archive marketing content';
+      showToast(message, 'error');
+    }
+  };
 
   if (projectQuery.isLoading) {
     return (
@@ -561,6 +626,10 @@ function ProjectDashboardPage(): JSX.Element {
             <TabsTrigger value="assets">
               <FolderOpen className="w-4 h-4" />
               Assets
+            </TabsTrigger>
+            <TabsTrigger value="marketing">
+              <Megaphone className="w-4 h-4" />
+              Marketing
             </TabsTrigger>
             <TabsTrigger value="status">
               <Settings className="w-4 h-4" />
@@ -954,11 +1023,148 @@ function ProjectDashboardPage(): JSX.Element {
             </div>
           </TabsContent>
 
+          <TabsContent value="marketing">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Marketing Content</CardTitle>
+                    {project && (
+                      <GenerateFromProjectButton
+                        projectId={project.id}
+                        projectName={project.name}
+                        clientId={project.clientId}
+                      />
+                    )}
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {projectMarketingContentsQuery.isLoading && (
+                    <p className="text-neutral-600">
+                      Loading marketing content...
+                    </p>
+                  )}
+
+                  {marketingContents.length === 0 &&
+                    !projectMarketingContentsQuery.isLoading && (
+                      <p className="text-neutral-600">
+                        No marketing content for this project yet. Click
+                        "Generate Marketing Content" to create content from this
+                        project.
+                      </p>
+                    )}
+
+                  {marketingContents.length > 0 && (
+                    <div className="space-y-4">
+                      {marketingContents.map((content) => (
+                        <div
+                          key={content.id}
+                          className="p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-2xl">
+                                  {getContentTypeIcon(content.type)}
+                                </span>
+                                <div>
+                                  <h4
+                                    className="font-semibold text-neutral-900 cursor-pointer hover:text-primary-600"
+                                    onClick={() =>
+                                      handleViewMarketingContent(content)
+                                    }
+                                  >
+                                    {content.name}
+                                  </h4>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="neutral">
+                                      {CONTENT_TYPE_LABELS[content.type]}
+                                    </Badge>
+                                    <Badge variant="secondary">
+                                      {CONTENT_STATUS_LABELS[content.status]}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              {content.summary && (
+                                <p className="text-sm text-neutral-600 mt-2 line-clamp-2">
+                                  {content.summary}
+                                </p>
+                              )}
+                              {content.tags && content.tags.length > 0 && (
+                                <div className="flex gap-2 mt-2 flex-wrap">
+                                  {content.tags.map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="px-2 py-1 text-xs bg-neutral-200 text-neutral-700 rounded"
+                                    >
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  handleEditMarketingContent(content)
+                                }
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  handleArchiveMarketingContent(content.id)
+                                }
+                              >
+                                <Archive className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            </div>
+          </TabsContent>
+
           <TabsContent value="status">
             <ProjectStatusTab projectId={projectId} />
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Marketing Content Modals */}
+      {showMarketingContentForm && (
+        <MarketingContentFormModal
+          isOpen={showMarketingContentForm}
+          onClose={() => {
+            setShowMarketingContentForm(false);
+            setEditingMarketingContent(null);
+          }}
+          editingContent={editingMarketingContent}
+          clients={clientQuery.data ? [clientQuery.data] : []}
+        />
+      )}
+
+      {showMarketingContentDetail && selectedMarketingContent && (
+        <MarketingContentDetailModal
+          isOpen={showMarketingContentDetail}
+          onClose={() => {
+            setShowMarketingContentDetail(false);
+            setSelectedMarketingContent(null);
+          }}
+          content={selectedMarketingContent}
+          onEdit={handleEditMarketingContent}
+          onArchive={handleArchiveMarketingContent}
+        />
+      )}
     </div>
   );
 }
