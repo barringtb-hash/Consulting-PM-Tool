@@ -185,12 +185,15 @@ NODE_ENV=production
 
 To automate seeding on deployment, add to your Render build/start script:
 
-**Build Command:**
+**Build Command (with automatic migration error recovery):**
 ```bash
-cd pmo && npm ci && npm run build && cd apps/api && npx prisma migrate deploy && npx prisma db seed
+cd pmo/apps/api && npm install --ignore-scripts && npx prisma generate && npm run prisma:migrate:deploy && npm run build
 ```
 
-**Note:** The seed is idempotent (uses `upsert`), so it's safe to run on every deployment.
+**Note:**
+- The `prisma:migrate:deploy` script automatically handles failed migrations by marking them as rolled back before reapplying
+- The seed is idempotent (uses `upsert`), so it's safe to run on every deployment
+- To seed data, add `&& npx prisma db seed` to the end of the build command
 
 ## Development Workflow
 
@@ -270,6 +273,27 @@ curl -X POST http://localhost:4000/api/users \
    - Migration-based schema changes
 
 ## Troubleshooting
+
+### Failed Migration Error (P3009)
+
+**Symptom:** Deployment fails with error:
+```
+Error: P3009
+migrate found failed migrations in the target database
+```
+
+**Solution:**
+The deployment script at `pmo/scripts/deploy-migrations.sh` automatically handles this. Ensure your Render build command uses:
+```bash
+cd pmo/apps/api && npm install --ignore-scripts && npx prisma generate && npm run prisma:migrate:deploy && npm run build
+```
+
+**Manual resolution (if needed):**
+1. Access Render web shell
+2. Navigate to: `cd /opt/render/project/src/pmo/apps/api`
+3. Check status: `npx prisma migrate status`
+4. Resolve failed migration: `npx prisma migrate resolve --rolled-back "MIGRATION_NAME"`
+5. Deploy: `npx prisma migrate deploy`
 
 ### "Email already in use" error
 - User with that email already exists
