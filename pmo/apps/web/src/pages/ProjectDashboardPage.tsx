@@ -387,7 +387,9 @@ function ProjectDashboardPage(): JSX.Element {
               onClick={handleDeleteProject}
               disabled={deleteProjectMutation.isPending}
             >
-              {deleteProjectMutation.isPending ? 'Deleting...' : 'Delete Project'}
+              {deleteProjectMutation.isPending
+                ? 'Deleting...'
+                : 'Delete Project'}
             </Button>
             <Link to="/dashboard">
               <Button variant="secondary">

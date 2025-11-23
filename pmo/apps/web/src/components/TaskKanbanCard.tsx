@@ -6,7 +6,6 @@ import { Trash2 } from 'lucide-react';
 
 import type { TaskWithProject } from '../api/tasks';
 import { Badge, type BadgeVariant } from '../ui/Badge';
-import { Button } from '../ui/Button';
 
 interface TaskKanbanCardProps {
   task: TaskWithProject;
