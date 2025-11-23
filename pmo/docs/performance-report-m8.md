@@ -65,21 +65,21 @@ lighthouse http://localhost:3000/dashboard \
 
 ### Core Web Vitals
 
-| Metric | Good | Needs Improvement | Poor | Current |
-|--------|------|-------------------|------|---------|
-| **LCP** (Largest Contentful Paint) | < 2.5s | 2.5s - 4.0s | > 4.0s | TBD |
-| **FID** (First Input Delay) | < 100ms | 100ms - 300ms | > 300ms | TBD |
-| **CLS** (Cumulative Layout Shift) | < 0.1 | 0.1 - 0.25 | > 0.25 | TBD |
+| Metric                             | Good    | Needs Improvement | Poor    | Current |
+| ---------------------------------- | ------- | ----------------- | ------- | ------- |
+| **LCP** (Largest Contentful Paint) | < 2.5s  | 2.5s - 4.0s       | > 4.0s  | TBD     |
+| **FID** (First Input Delay)        | < 100ms | 100ms - 300ms     | > 300ms | TBD     |
+| **CLS** (Cumulative Layout Shift)  | < 0.1   | 0.1 - 0.25        | > 0.25  | TBD     |
 
 ### Lighthouse Metrics
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| **Performance Score** | ≥ 80 | TBD |
-| **First Contentful Paint (FCP)** | < 1.8s | TBD |
-| **Speed Index** | < 3.4s | TBD |
-| **Time to Interactive (TTI)** | < 3.5s | TBD |
-| **Total Blocking Time (TBT)** | < 200ms | TBD |
+| Metric                           | Target  | Current |
+| -------------------------------- | ------- | ------- |
+| **Performance Score**            | ≥ 80    | TBD     |
+| **First Contentful Paint (FCP)** | < 1.8s  | TBD     |
+| **Speed Index**                  | < 3.4s  | TBD     |
+| **Time to Interactive (TTI)**    | < 3.5s  | TBD     |
+| **Total Blocking Time (TBT)**    | < 200ms | TBD     |
 
 **Note**: TBD values will be populated once production build is tested.
 
@@ -148,6 +148,7 @@ export default defineConfig({
 ```
 
 **Action Items**:
+
 - [ ] Generate bundle visualization
 - [ ] Identify largest dependencies
 - [ ] Consider alternatives for heavy libraries (e.g., date-fns → dayjs)
@@ -188,6 +189,7 @@ export default defineConfig({
 ```
 
 **Action Items**:
+
 - [ ] Audit all images in the app
 - [ ] Convert to WebP/AVIF where possible
 - [ ] Add proper width/height attributes to prevent CLS
@@ -265,6 +267,7 @@ model Meeting {
 ```
 
 **Action Items**:
+
 - [ ] Review all Prisma queries for N+1 patterns
 - [ ] Add indexes for foreign keys and frequently filtered columns
 - [ ] Test query performance with larger datasets
@@ -304,6 +307,7 @@ router.get('/clients', async (req, res) => {
 ```
 
 **Action Items**:
+
 - [ ] Implement pagination for all list endpoints (clients, projects, tasks, meetings, assets)
 - [ ] Default page size: 20 items
 - [ ] Frontend: Implement infinite scroll or pagination UI
@@ -339,8 +343,8 @@ function ProjectStats({ tasks }: { tasks: Task[] }) {
   const stats = useMemo(() => {
     return {
       total: tasks.length,
-      completed: tasks.filter(t => t.status === 'done').length,
-      inProgress: tasks.filter(t => t.status === 'in_progress').length,
+      completed: tasks.filter((t) => t.status === 'done').length,
+      inProgress: tasks.filter((t) => t.status === 'in_progress').length,
     };
   }, [tasks]);
 
@@ -475,6 +479,7 @@ lhci autorun \
 ### Real User Monitoring (RUM)
 
 Consider integrating:
+
 - **Vercel Analytics** (if using Vercel)
 - **Google Analytics 4** with Web Vitals
 - **Sentry Performance Monitoring**
@@ -536,22 +541,25 @@ getTTFB(sendToAnalytics);
 Run Lighthouse on production build and fill in:
 
 ### Dashboard (`/dashboard`)
-- Performance Score: ____ / 100
-- LCP: ____ s
-- TBT: ____ ms
-- CLS: ____
+
+- Performance Score: \_\_\_\_ / 100
+- LCP: \_\_\_\_ s
+- TBT: \_\_\_\_ ms
+- CLS: \_\_\_\_
 
 ### Clients List (`/clients`)
-- Performance Score: ____ / 100
-- LCP: ____ s
-- TBT: ____ ms
-- CLS: ____
+
+- Performance Score: \_\_\_\_ / 100
+- LCP: \_\_\_\_ s
+- TBT: \_\_\_\_ ms
+- CLS: \_\_\_\_
 
 ### Project Details (`/projects/:id`)
-- Performance Score: ____ / 100
-- LCP: ____ s
-- TBT: ____ ms
-- CLS: ____
+
+- Performance Score: \_\_\_\_ / 100
+- LCP: \_\_\_\_ s
+- TBT: \_\_\_\_ ms
+- CLS: \_\_\_\_
 
 ---
 

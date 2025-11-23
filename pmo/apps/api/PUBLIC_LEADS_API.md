@@ -24,6 +24,7 @@ POST /api/public/inbound-leads
 ## Request Format
 
 ### Headers
+
 ```
 Content-Type: application/json
 ```
@@ -51,9 +52,11 @@ Content-Type: application/json
 ### Field Specifications
 
 #### Required Fields
+
 - `email` (string): Valid email address
 
 #### Optional Fields
+
 - `name` (string): Contact's full name
 - `company` (string): Company name
 - `website` (string): Company website (must be valid URL or empty string)
@@ -75,6 +78,7 @@ Content-Type: application/json
   - `OTHER`
 
 #### Tracking Fields (all optional)
+
 - `page` (string): URL path where form was submitted (e.g., `/contact`, `/services/ai-strategy`)
 - `utmSource` (string): Traffic source (e.g., `linkedin`, `google`, `twitter`)
 - `utmMedium` (string): Marketing medium (e.g., `social`, `email`, `cpc`)
@@ -100,6 +104,7 @@ Content-Type: application/json
 ### Error Responses
 
 #### Validation Error (400 Bad Request)
+
 ```json
 {
   "error": "Invalid lead data",
@@ -112,6 +117,7 @@ Content-Type: application/json
 ```
 
 #### Rate Limit Exceeded (429 Too Many Requests)
+
 ```json
 {
   "error": "Too many lead submissions. Please try again in 15 minutes.",
@@ -120,6 +126,7 @@ Content-Type: application/json
 ```
 
 #### Server Error (500 Internal Server Error)
+
 ```json
 {
   "error": "Failed to submit your information. Please try again later."
@@ -132,9 +139,9 @@ Content-Type: application/json
 
 ```html
 <form id="contact-form">
-  <input type="text" name="name" placeholder="Your Name" required>
-  <input type="email" name="email" placeholder="Email" required>
-  <input type="text" name="company" placeholder="Company">
+  <input type="text" name="name" placeholder="Your Name" required />
+  <input type="email" name="email" placeholder="Email" required />
+  <input type="text" name="company" placeholder="Company" />
   <select name="serviceInterest">
     <option value="NOT_SURE">Not sure yet</option>
     <option value="STRATEGY">AI Strategy</option>
@@ -148,43 +155,54 @@ Content-Type: application/json
 </form>
 
 <script>
-document.getElementById('contact-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  document
+    .getElementById('contact-form')
+    .addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-  const formData = new FormData(e.target);
-  const data = {
-    name: formData.get('name'),
-    email: formData.get('email'),
-    company: formData.get('company'),
-    serviceInterest: formData.get('serviceInterest'),
-    message: formData.get('message'),
-    source: 'WEBSITE_CONTACT',
-    page: window.location.pathname,
-    // Capture UTM parameters from URL
-    utmSource: new URLSearchParams(window.location.search).get('utm_source'),
-    utmMedium: new URLSearchParams(window.location.search).get('utm_medium'),
-    utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign'),
-  };
+      const formData = new FormData(e.target);
+      const data = {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        company: formData.get('company'),
+        serviceInterest: formData.get('serviceInterest'),
+        message: formData.get('message'),
+        source: 'WEBSITE_CONTACT',
+        page: window.location.pathname,
+        // Capture UTM parameters from URL
+        utmSource: new URLSearchParams(window.location.search).get(
+          'utm_source',
+        ),
+        utmMedium: new URLSearchParams(window.location.search).get(
+          'utm_medium',
+        ),
+        utmCampaign: new URLSearchParams(window.location.search).get(
+          'utm_campaign',
+        ),
+      };
 
-  try {
-    const response = await fetch('http://localhost:4000/api/public/inbound-leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      try {
+        const response = await fetch(
+          'http://localhost:4000/api/public/inbound-leads',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          },
+        );
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert(result.lead.message);
+          e.target.reset();
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('Network error. Please try again.');
+      }
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      alert(result.lead.message);
-      e.target.reset();
-    } else {
-      alert('Error: ' + result.error);
-    }
-  } catch (error) {
-    alert('Network error. Please try again.');
-  }
-});
 </script>
 ```
 
@@ -198,18 +216,23 @@ async function submitLead(leadData: {
   serviceInterest?: string;
   message?: string;
 }) {
-  const response = await fetch('http://localhost:4000/api/public/inbound-leads', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  const response = await fetch(
+    'http://localhost:4000/api/public/inbound-leads',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...leadData,
+        source: 'WEBSITE_CONTACT',
+        page: window.location.pathname,
+        utmSource: new URLSearchParams(window.location.search).get(
+          'utm_source',
+        ),
+      }),
     },
-    body: JSON.stringify({
-      ...leadData,
-      source: 'WEBSITE_CONTACT',
-      page: window.location.pathname,
-      utmSource: new URLSearchParams(window.location.search).get('utm_source'),
-    }),
-  });
+  );
 
   if (!response.ok) {
     const error = await response.json();

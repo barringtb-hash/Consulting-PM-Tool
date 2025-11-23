@@ -325,7 +325,10 @@ router.post(
     }
 
     // Validate the rest of the request body
-    const bodySchema = generateContentSchema.omit({ sourceType: true, sourceId: true });
+    const bodySchema = generateContentSchema.omit({
+      sourceType: true,
+      sourceId: true,
+    });
     const parsed = bodySchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -378,7 +381,10 @@ router.post(
     }
 
     // Validate the rest of the request body
-    const bodySchema = generateContentSchema.omit({ sourceType: true, sourceId: true });
+    const bodySchema = generateContentSchema.omit({
+      sourceType: true,
+      sourceId: true,
+    });
     const parsed = bodySchema.safeParse(req.body);
 
     if (!parsed.success) {

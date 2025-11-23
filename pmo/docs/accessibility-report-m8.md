@@ -14,6 +14,7 @@ This report documents the accessibility testing implementation and findings for 
 ### Implementation Status
 
 ✅ **Completed**:
+
 - Accessibility testing infrastructure set up with axe-core
 - Helper functions created for reusable accessibility scans
 - Automated accessibility tests added to E2E suite
@@ -23,16 +24,16 @@ This report documents the accessibility testing implementation and findings for 
 
 The following pages are scanned for accessibility violations:
 
-| Page | Route | Critical | Serious | Moderate | Minor |
-|------|-------|----------|---------|----------|-------|
-| Dashboard | `/dashboard` | TBD | TBD | TBD | TBD |
-| Clients List | `/clients` | TBD | TBD | TBD | TBD |
-| Client Details | `/clients/:id` | TBD | TBD | TBD | TBD |
-| Project Summary | `/projects/:id` (Summary tab) | TBD | TBD | TBD | TBD |
-| Project Status | `/projects/:id` (Status tab) | TBD | TBD | TBD | TBD |
-| Global Tasks | `/tasks` | TBD | TBD | TBD | TBD |
-| Assets Library | `/assets` | TBD | TBD | TBD | TBD |
-| Login | `/login` | TBD | TBD | TBD | TBD |
+| Page            | Route                         | Critical | Serious | Moderate | Minor |
+| --------------- | ----------------------------- | -------- | ------- | -------- | ----- |
+| Dashboard       | `/dashboard`                  | TBD      | TBD     | TBD      | TBD   |
+| Clients List    | `/clients`                    | TBD      | TBD     | TBD      | TBD   |
+| Client Details  | `/clients/:id`                | TBD      | TBD     | TBD      | TBD   |
+| Project Summary | `/projects/:id` (Summary tab) | TBD      | TBD     | TBD      | TBD   |
+| Project Status  | `/projects/:id` (Status tab)  | TBD      | TBD     | TBD      | TBD   |
+| Global Tasks    | `/tasks`                      | TBD      | TBD     | TBD      | TBD   |
+| Assets Library  | `/assets`                     | TBD      | TBD     | TBD      | TBD   |
+| Login           | `/login`                      | TBD      | TBD     | TBD      | TBD   |
 
 **Note**: TBD values will be populated once tests run in an environment where the app is fully operational.
 
@@ -64,23 +65,27 @@ The following pages are scanned for accessibility violations:
 The following accessibility rules are checked:
 
 **Form Controls**:
+
 - `label` - Form inputs have proper labels
 - `label-title-only` - Labels are not using title attribute alone
 - `button-name` - Buttons have accessible names
 - `link-name` - Links have descriptive text
 
 **ARIA**:
+
 - `aria-valid-attr` - ARIA attributes are valid
 - `aria-valid-attr-value` - ARIA attribute values are valid
 - `aria-required-attr` - Required ARIA attributes are present
 - `aria-allowed-attr` - Only allowed ARIA attributes are used
 
 **Semantics**:
+
 - `heading-order` - Headings are in logical order (h1 → h2 → h3)
 - `html-has-lang` - HTML element has lang attribute
 - `landmark-one-main` - Page has a single main landmark
 
 **Visual**:
+
 - `color-contrast` - Text has sufficient contrast ratio
 - `image-alt` - Images have alt text
 
@@ -93,11 +98,13 @@ The following accessibility rules are checked:
 **Location**: `pmo/e2e/_helpers/accessibility.ts`
 
 Key functions:
+
 - `runAccessibilityScan()` - Run full accessibility scan on current page
 - `scanPage()` - Navigate to URL and scan
 - `scanCommonIssues()` - Focused scan on most important rules
 
 Example usage:
+
 ```typescript
 import { runAccessibilityScan } from './_helpers/accessibility';
 
@@ -116,6 +123,7 @@ test('Page should be accessible', async ({ page }) => {
 **Location**: `pmo/e2e/accessibility.spec.ts`
 
 Contains:
+
 - 8 page-specific accessibility tests
 - 6 common accessibility rule tests
 - 2 keyboard navigation tests
@@ -131,6 +139,7 @@ Contains:
 **Status**: Tests created but not yet run with live application
 
 Once the application is running and tests execute, findings will be documented here with:
+
 1. Violation description
 2. Impact level
 3. Affected elements
@@ -148,6 +157,7 @@ Below are common issues found in web applications and their solutions:
 **Impact**: Serious - Screen readers cannot identify form fields
 
 **Fix**:
+
 ```tsx
 // ❌ Bad
 <input type="text" name="clientName" />
@@ -167,6 +177,7 @@ Below are common issues found in web applications and their solutions:
 **Impact**: Serious - Users cannot identify button purpose
 
 **Fix**:
+
 ```tsx
 // ❌ Bad
 <button><TrashIcon /></button>
@@ -185,6 +196,7 @@ Below are common issues found in web applications and their solutions:
 **Impact**: Moderate - Hard to read for users with visual impairments
 
 **Fix**:
+
 - Use WCAG AA contrast ratios: 4.5:1 for normal text, 3:1 for large text
 - Test with tools like WebAIM Contrast Checker
 - Adjust Tailwind theme colors if needed
@@ -204,6 +216,7 @@ Below are common issues found in web applications and their solutions:
 **Impact**: Moderate - Confusing for screen reader users
 
 **Fix**:
+
 ```tsx
 // ❌ Bad
 <h1>Dashboard</h1>
@@ -221,6 +234,7 @@ Below are common issues found in web applications and their solutions:
 **Impact**: Serious - Context is lost when navigating by links
 
 **Fix**:
+
 ```tsx
 // ❌ Bad
 <a href="/project/1">Click here</a>
@@ -241,6 +255,7 @@ Below are common issues found in web applications and their solutions:
 **Impact**: Serious - Images invisible to screen readers
 
 **Fix**:
+
 ```tsx
 // ❌ Bad
 <img src="/logo.png" />
@@ -259,6 +274,7 @@ Below are common issues found in web applications and their solutions:
 ### Expected Behavior
 
 Users should be able to:
+
 1. **Tab** through all interactive elements in logical order
 2. **Enter/Space** to activate buttons and links
 3. **Arrow keys** to navigate within components (dropdowns, tabs, etc.)
@@ -380,22 +396,24 @@ Accessibility tests run automatically in the CI pipeline as part of the E2E test
 
 ### Test Breakdown
 
-| Category | Tests | Purpose |
-|----------|-------|---------|
-| Page Scans | 8 | Scan key pages for all violations |
-| Common Checks | 6 | Focused scans on specific rules |
-| Keyboard Nav | 2 | Verify keyboard accessibility |
-| **Total** | **16** | Comprehensive accessibility coverage |
+| Category      | Tests  | Purpose                              |
+| ------------- | ------ | ------------------------------------ |
+| Page Scans    | 8      | Scan key pages for all violations    |
+| Common Checks | 6      | Focused scans on specific rules      |
+| Keyboard Nav  | 2      | Verify keyboard accessibility        |
+| **Total**     | **16** | Comprehensive accessibility coverage |
 
 ### Violation Reporting
 
 When tests run, violations are logged to console with:
+
 - Violation ID and description
 - Impact level (critical/serious/moderate/minor)
 - Help text and URL to documentation
 - Number of affected elements
 
 Example output:
+
 ```
 🔍 Accessibility Scan Results:
    Total violations: 3

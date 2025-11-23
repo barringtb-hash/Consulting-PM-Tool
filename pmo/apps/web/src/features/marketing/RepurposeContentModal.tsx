@@ -130,9 +130,7 @@ export function RepurposeContentModal({
                 </label>
                 <Select
                   value={targetType}
-                  onChange={(e) =>
-                    setTargetType(e.target.value as ContentType)
-                  }
+                  onChange={(e) => setTargetType(e.target.value as ContentType)}
                 >
                   {Object.entries(CONTENT_TYPE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -271,16 +269,16 @@ export function RepurposeContentModal({
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="secondary" onClick={() => setGeneratedContent(null)}>
+              <Button
+                variant="secondary"
+                onClick={() => setGeneratedContent(null)}
+              >
                 Regenerate
               </Button>
               <Button variant="secondary" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleSave}
-                disabled={createMutation.isPending}
-              >
+              <Button onClick={handleSave} disabled={createMutation.isPending}>
                 {createMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

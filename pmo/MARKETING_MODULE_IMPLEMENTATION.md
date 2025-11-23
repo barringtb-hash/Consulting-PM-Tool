@@ -77,6 +77,7 @@ ALTER TABLE "MarketingContent"
 ```
 
 **To apply migration:**
+
 ```bash
 cd /home/user/Consulting-PM-Tool/pmo
 npx prisma migrate deploy
@@ -91,6 +92,7 @@ npx prisma migrate deploy
 **Endpoint:** `POST /api/projects/:projectId/marketing-contents/generate`
 
 **Request Body:**
+
 ```typescript
 {
   type: ContentType;              // Required: BLOG_POST, CASE_STUDY, etc.
@@ -101,6 +103,7 @@ npx prisma migrate deploy
 ```
 
 **Response:**
+
 ```typescript
 {
   generated: {
@@ -113,6 +116,7 @@ npx prisma migrate deploy
 ```
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:3001/api/projects/123/marketing-contents/generate \
   -H "Content-Type: application/json" \
@@ -133,6 +137,7 @@ curl -X POST http://localhost:3001/api/projects/123/marketing-contents/generate 
 **Request Body:** Same as project generation
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:3001/api/meetings/456/marketing-contents/generate \
   -H "Content-Type: application/json" \
@@ -152,6 +157,7 @@ curl -X POST http://localhost:3001/api/meetings/456/marketing-contents/generate 
 **Endpoint:** `POST /api/marketing-contents/:id/repurpose`
 
 **Request Body:**
+
 ```typescript
 {
   targetType: ContentType;        // Required: Target content type
@@ -165,6 +171,7 @@ curl -X POST http://localhost:3001/api/meetings/456/marketing-contents/generate 
 **Response:** Same as generation endpoints
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:3001/api/marketing-contents/789/repurpose \
   -H "Content-Type: application/json" \
@@ -256,7 +263,7 @@ function MarketingContentCard({ content }) {
 ```tsx
 import {
   useGenerateMarketingContentFromProject,
-  useRepurposeMarketingContent
+  useRepurposeMarketingContent,
 } from '@/api/marketing';
 
 function CustomGenerationComponent({ projectId }) {
@@ -288,6 +295,7 @@ function CustomGenerationComponent({ projectId }) {
 ## Content Types & Channels
 
 ### Content Types
+
 ```typescript
 - BLOG_POST       → Web blog article
 - CASE_STUDY      → Client success story
@@ -302,6 +310,7 @@ function CustomGenerationComponent({ projectId }) {
 ```
 
 ### Content Channels (Auto-assigned)
+
 ```typescript
 BLOG_POST       → WEB
 CASE_STUDY      → WEB
@@ -316,6 +325,7 @@ OTHER           → GENERIC
 ```
 
 ### Content Statuses
+
 ```typescript
 IDEA       → Initial concept
 DRAFT      → Work in progress
@@ -337,6 +347,7 @@ The module uses **Anthropic Claude API** for content generation:
 - **Temperature:** Varies by tone (0.2-0.8)
 
 **Environment Variable:**
+
 ```bash
 ANTHROPIC_API_KEY=sk-ant-xxxxx
 ```
@@ -438,12 +449,14 @@ pmo/
 ## Future Enhancements (Phase 2 & 3)
 
 ### Phase 2 - Campaign Management
+
 - **MarketingCampaign** model
 - Campaign CRUD endpoints
 - Associate multiple content pieces with campaigns
 - Campaign analytics and tracking
 
 ### Phase 3 - Brand Profile
+
 - **BrandProfile** model (one per user/org)
 - Store brand voice, tone guidelines, taboo phrases
 - Auto-apply brand profile to all LLM prompts
@@ -454,18 +467,23 @@ pmo/
 ## Troubleshooting
 
 ### Issue: "Environment variable not found: DATABASE_URL"
+
 **Solution:** Ensure `.env` file exists with `DATABASE_URL` configured.
 
 ### Issue: Migration fails with "Prisma schema validation error"
+
 **Solution:** Run `npx prisma format` then retry migration.
 
 ### Issue: Generated content returns placeholder text
+
 **Solution:** Check that `ANTHROPIC_API_KEY` is set in environment variables.
 
 ### Issue: 403 Forbidden on generation endpoints
+
 **Solution:** Ensure user owns the project/meeting being used for generation.
 
 ### Issue: Components not rendering
+
 **Solution:** Check that Button, Modal, Select, Input components exist in `apps/web/src/ui/`
 
 ---
@@ -492,12 +510,14 @@ pmo/
 ## Support & Maintenance
 
 **Files to Update for New Content Types:**
+
 1. `prisma/schema.prisma` - Add to ContentType enum
 2. `packages/types/marketing.ts` - Update labels and icons
 3. `apps/api/src/services/llm.service.ts` - Add prompts for new type
 4. `apps/api/src/types/marketing.ts` - Update enum
 
 **Files to Update for New Channels:**
+
 1. `prisma/schema.prisma` - Add to ContentChannel enum
 2. `packages/types/marketing.ts` - Update labels and default mapping
 
@@ -506,6 +526,7 @@ pmo/
 ## Conclusion
 
 The Marketing & Content module is now fully implemented with:
+
 - ✅ 3 new API endpoints
 - ✅ Database schema updates and migration
 - ✅ Full type safety (frontend and backend)
@@ -515,6 +536,7 @@ The Marketing & Content module is now fully implemented with:
 - ✅ Drop-in components for easy integration
 
 **Next Steps:**
+
 1. Apply database migration
 2. Integrate generation buttons into Project and Meeting pages
 3. Test content generation with real projects

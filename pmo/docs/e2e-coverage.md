@@ -24,6 +24,7 @@ npm run test:e2e:ui       # Run with Playwright UI
 **File**: `e2e/global.setup.ts`
 
 Global authentication setup that:
+
 - Logs in once before all tests using seeded test account (`admin@pmo.test`)
 - Saves authentication state to `e2e/.auth/user.json`
 - All tests inherit this authenticated state
@@ -447,16 +448,16 @@ This test covers the primary user journey:
 
 ### By Module
 
-| Module | Test File | Tests | Key Flows Covered |
-|--------|-----------|-------|-------------------|
-| M1: Auth | `auth.spec.ts` | 6 | Login, logout, session, protected routes |
-| M2: Clients | `clients.spec.ts` | 7 | Create client, contacts, list, details |
-| M3: Projects | `projects.spec.ts` | 6 | Create project, tabs, summary, templates |
-| M4: Tasks | `tasks-milestones.spec.ts` | 7 | Create task, kanban, milestones, global view |
-| M5: Meetings | `meetings.spec.ts` | 8 | Create meeting, notes, task creation |
-| M6: Assets | `ai-assets.spec.ts` | 10 | Create asset, link/unlink, filter, search |
-| M7: Status | `status-reporting.spec.ts` | 11 | Status tab, health, dashboard, metrics |
-| Happy Path | `happy-path.spec.ts` | 2 | End-to-end workflows |
+| Module       | Test File                  | Tests | Key Flows Covered                            |
+| ------------ | -------------------------- | ----- | -------------------------------------------- |
+| M1: Auth     | `auth.spec.ts`             | 6     | Login, logout, session, protected routes     |
+| M2: Clients  | `clients.spec.ts`          | 7     | Create client, contacts, list, details       |
+| M3: Projects | `projects.spec.ts`         | 6     | Create project, tabs, summary, templates     |
+| M4: Tasks    | `tasks-milestones.spec.ts` | 7     | Create task, kanban, milestones, global view |
+| M5: Meetings | `meetings.spec.ts`         | 8     | Create meeting, notes, task creation         |
+| M6: Assets   | `ai-assets.spec.ts`        | 10    | Create asset, link/unlink, filter, search    |
+| M7: Status   | `status-reporting.spec.ts` | 11    | Status tab, health, dashboard, metrics       |
+| Happy Path   | `happy-path.spec.ts`       | 2     | End-to-end workflows                         |
 
 **Total Tests**: ~57 individual test cases
 
@@ -477,6 +478,7 @@ From `pmo/prisma/seed.ts`:
 ### Dynamic Test Data
 
 Tests create unique data using timestamps to avoid conflicts:
+
 - Client names: `E2E Client ${Date.now()}`
 - Project names: `E2E Project ${Date.now()}`
 - Task titles: `E2E Task ${Date.now()}`
@@ -502,6 +504,7 @@ npm run test:e2e
 ### CI/CD
 
 E2E tests run in CI via Playwright's `webServer` configuration, which automatically:
+
 1. Starts the API server on `localhost:4000`
 2. Starts the web server on `localhost:5173`
 3. Waits for health checks to pass
@@ -515,6 +518,7 @@ E2E tests run in CI via Playwright's `webServer` configuration, which automatica
 ### Flexible Element Selection
 
 Tests use multiple strategies to find elements:
+
 - Role-based selectors (preferred): `getByRole('button', { name: /create/i })`
 - Label-based selectors: `getByLabel(/name/i)`
 - Text content: `getByText('Client Name')`
@@ -550,6 +554,7 @@ This allows tests to pass even if UI varies slightly between implementations.
 ### Test Organization
 
 Consider creating:
+
 - Page Object Models (POMs) for common UI patterns
 - Test fixtures for reusable data setup
 - Custom Playwright fixtures for authentication
@@ -569,6 +574,7 @@ Consider creating:
 ### Test Stability
 
 To maintain stable tests:
+
 1. Use data-testid attributes for critical UI elements
 2. Avoid hard-coded waits (use Playwright's auto-waiting)
 3. Make tests independent (no shared state between tests)

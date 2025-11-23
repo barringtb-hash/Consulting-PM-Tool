@@ -10,6 +10,7 @@
 ### Testing Infrastructure
 
 **Unit Tests**:
+
 - ✅ Vitest configured for both API and web apps
 - ✅ API has 9 test files covering routes, middleware, and services:
   - `auth.routes.test.ts`, `auth.middleware.test.ts`
@@ -23,6 +24,7 @@
 - ✅ CI runs unit tests on every PR/push
 
 **E2E Tests**:
+
 - ❌ Playwright NOT installed
 - ❌ No `playwright.config.ts`
 - ❌ No E2E test files
@@ -31,6 +33,7 @@
 ### CI/CD Pipeline
 
 **Current CI** (`.github/workflows/ci.yml`):
+
 - Runs on: push, pull_request
 - Jobs:
   1. Lint (ESLint)
@@ -41,6 +44,7 @@
 - Node.js 20
 
 **Deployment**:
+
 - ❌ No automated deployment from CI
 - ✅ Documentation exists for manual deployment (Render + Vercel)
 - ❌ No staging environment defined
@@ -49,11 +53,13 @@
 ### Environment Configuration
 
 **Current Environments**:
+
 - **dev**: Local only (documented in README)
 - **prod**: Manual deployment to Render (API) + Vercel (web)
 - ❌ No staging environment
 
 **Environment Variables**:
+
 - API: `PORT`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `BCRYPT_SALT_ROUNDS`, `DATABASE_URL`
 - Web: `VITE_API_BASE_URL`
 - `.env.example` files exist in both apps/api and apps/web
@@ -74,15 +80,18 @@
 ### Observability & Reliability
 
 **Logging**:
+
 - ❌ No structured logging library (pino/winston)
 - ❌ No error tracking (Sentry, etc.)
 
 **Monitoring**:
+
 - ❌ No health check endpoint
 - ❌ No uptime monitoring
 - ❌ No metrics collection
 
 **Backups**:
+
 - ❌ No documented backup strategy
 - ❌ No restore procedures
 - Uses PostgreSQL (Render provides backups, but not documented)
@@ -101,6 +110,7 @@ pmo/
 ```
 
 **Key Scripts** (from `/pmo`):
+
 - `npm run dev --workspace pmo-web` - Start frontend dev server
 - `npm run dev --workspace pmo-api` - Start backend dev server
 - `npm run lint` - Lint all workspaces
@@ -114,10 +124,12 @@ pmo/
 ### Phase 1: E2E Testing (M8-T1 through M8-T4)
 
 **T1: Repo & CI Recon** ✅
+
 - Status: COMPLETE
 - This document created
 
 **T2: E2E Scaffolding & Happy-Path**
+
 - Install Playwright in root workspace
 - Create `playwright.config.ts`
 - Add scripts: `e2e`, `e2e:headed`
@@ -125,6 +137,7 @@ pmo/
   - Login → Create Client → Create Project → Add Meeting → Create Task from Notes
 
 **T3: Full E2E Coverage for M0-M7**
+
 - Create comprehensive test suites:
   - `e2e/auth.spec.ts` - M1 Auth flows
   - `e2e/clients.spec.ts` - M2 Clients & Contacts
@@ -136,6 +149,7 @@ pmo/
 - Create `docs/e2e-coverage.md` documenting all covered flows
 
 **T4: E2E CI Integration**
+
 - Update `.github/workflows/ci.yml` to run E2E tests
 - Install Playwright browsers in CI
 - Fix any flaky tests
@@ -190,6 +204,7 @@ pmo/
 ### 2025-11-21: M8-T2 & T3 - E2E Testing Infrastructure ✅
 
 **Accomplished**:
+
 1. ✅ Installed Playwright (`@playwright/test@^1.56.1`)
 2. ✅ Created `playwright.config.ts` with:
    - Auto-start of API and web servers via `webServer` configuration
@@ -221,6 +236,7 @@ pmo/
    - `pmo/playwright-report/` (HTML reports)
 
 **Test Coverage Highlights**:
+
 - All core user journeys from M0-M7 covered
 - Tests use flexible selectors with graceful degradation
 - Dynamic test data using timestamps to avoid conflicts
@@ -232,6 +248,7 @@ pmo/
 **CI Workflow Updates** (`.github/workflows/ci.yml`):
 
 Added new `e2e` job that:
+
 1. ✅ Runs after `lint-test` job passes (using `needs: lint-test`)
 2. ✅ Spins up PostgreSQL 16 service
 3. ✅ Sets environment variables for test database
@@ -243,6 +260,7 @@ Added new `e2e` job that:
 9. ✅ Uploads Playwright HTML report as artifact (30-day retention)
 
 **Environment Configuration**:
+
 ```yaml
 DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pmo_test?schema=public
 JWT_SECRET: test-jwt-secret-for-ci
@@ -252,6 +270,7 @@ NODE_ENV: test
 ```
 
 **CI Job Flow**:
+
 ```
 1. lint-test (runs lint, API tests, web tests, build)
    ↓
@@ -261,6 +280,7 @@ NODE_ENV: test
 ```
 
 **Flakiness Mitigation**:
+
 - Playwright's built-in auto-waiting for elements
 - Proper health checks for API (`/api/healthz`) and web servers
 - Retry logic (2 retries in CI, 0 locally)
@@ -269,6 +289,7 @@ NODE_ENV: test
 - Independent tests (no shared state)
 
 **Known Considerations**:
+
 - E2E tests will only run if `lint-test` job passes
 - Tests run in Chromium only in CI (can expand to Firefox/WebKit)
 - Playwright report available as downloadable artifact
@@ -279,6 +300,7 @@ NODE_ENV: test
 ### 2025-11-21: Initial Assessment
 
 **Key Findings**:
+
 1. Strong unit test coverage already exists for both API and web
 2. CI pipeline is functional but missing E2E and deployment automation
 3. Deployment process is documented but manual
@@ -286,12 +308,14 @@ NODE_ENV: test
 5. Observability and backup systems need to be implemented
 
 **Risks**:
+
 - No E2E tests means core user journeys aren't validated end-to-end
 - Manual deployment increases risk of configuration errors
 - Lack of staging environment means no pre-production validation
 - No automated backups could lead to data loss
 
 **Quick Wins**:
+
 - Playwright setup should be straightforward (monorepo structure is clean)
 - Existing Vitest setup shows team is comfortable with testing
 - Vite gives us good baseline performance
@@ -313,6 +337,7 @@ Based on M0-M7 implementation:
 - **M7**: Status & Reporting (Project health, RAG status, dashboard)
 
 Each module needs E2E coverage validating:
+
 - Happy path works end-to-end
 - Data persistence across page navigation
 - Integration between modules (e.g., meeting → tasks → project)

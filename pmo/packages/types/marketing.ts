@@ -39,7 +39,8 @@ export const ContentChannel = {
   GENERIC: 'GENERIC',
 } as const;
 
-export type ContentChannel = (typeof ContentChannel)[keyof typeof ContentChannel];
+export type ContentChannel =
+  (typeof ContentChannel)[keyof typeof ContentChannel];
 
 export interface MarketingContent {
   id: number;

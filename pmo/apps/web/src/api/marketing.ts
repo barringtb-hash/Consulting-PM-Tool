@@ -403,7 +403,10 @@ export function useGenerateMarketingContent(): UseMutationResult<
 export function useGenerateMarketingContentFromProject(): UseMutationResult<
   GeneratedContent,
   Error,
-  { projectId: number; payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'> },
+  {
+    projectId: number;
+    payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'>;
+  },
   unknown
 > {
   return useMutation({
@@ -418,7 +421,10 @@ export function useGenerateMarketingContentFromProject(): UseMutationResult<
 export function useGenerateMarketingContentFromMeeting(): UseMutationResult<
   GeneratedContent,
   Error,
-  { meetingId: number; payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'> },
+  {
+    meetingId: number;
+    payload: Omit<GenerateContentInput, 'sourceType' | 'sourceId'>;
+  },
   unknown
 > {
   return useMutation({

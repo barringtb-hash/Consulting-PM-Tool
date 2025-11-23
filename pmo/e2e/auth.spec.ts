@@ -12,7 +12,10 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('M1: Authentication & Authorization', () => {
-  test('should login successfully with valid credentials', async ({ page, context }) => {
+  test('should login successfully with valid credentials', async ({
+    page,
+    context,
+  }) => {
     // Clear any existing auth
     await context.clearCookies();
 
@@ -29,10 +32,15 @@ test.describe('M1: Authentication & Authorization', () => {
     await expect(page).toHaveURL('/dashboard');
 
     // Verify dashboard content loads (user is authenticated)
-    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible(
+      { timeout: 10000 },
+    );
   });
 
-  test('should fail to login with invalid credentials', async ({ page, context }) => {
+  test('should fail to login with invalid credentials', async ({
+    page,
+    context,
+  }) => {
     await context.clearCookies();
 
     await page.goto('/login');
@@ -61,7 +69,9 @@ test.describe('M1: Authentication & Authorization', () => {
 
     // Should still be authenticated
     await expect(page).toHaveURL('/dashboard');
-    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /dashboard/i }),
+    ).toBeVisible();
   });
 
   test('should logout successfully', async ({ page }) => {
@@ -82,11 +92,20 @@ test.describe('M1: Authentication & Authorization', () => {
     }
   });
 
-  test('should redirect to login when accessing protected routes while unauthenticated', async ({ page, context }) => {
+  test('should redirect to login when accessing protected routes while unauthenticated', async ({
+    page,
+    context,
+  }) => {
     await context.clearCookies();
 
     // Try to access protected routes
-    const protectedRoutes = ['/dashboard', '/clients', '/projects', '/tasks', '/assets'];
+    const protectedRoutes = [
+      '/dashboard',
+      '/clients',
+      '/projects',
+      '/tasks',
+      '/assets',
+    ];
 
     for (const route of protectedRoutes) {
       await page.goto(route);

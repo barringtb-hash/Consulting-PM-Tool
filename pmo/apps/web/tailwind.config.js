@@ -20,7 +20,7 @@ module.exports = {
         },
         // Neutral grays - Warm grays with subtle brown/beige undertones
         neutral: {
-          50: '#fafaf9',  // Warmer page background
+          50: '#fafaf9', // Warmer page background
           100: '#f5f5f4', // Warmer card backgrounds
           200: '#e7e5e4', // More visible borders
           300: '#d6d3d1', // Warmer mid-tone
@@ -46,7 +46,7 @@ module.exports = {
           900: '#052e16',
         },
         warning: {
-          50: '#fefce8',  // Warmer yellow-beige background
+          50: '#fefce8', // Warmer yellow-beige background
           100: '#fef9c3', // Amber tones
           200: '#fef08a',
           300: '#fde047',
