@@ -62,8 +62,8 @@ import {
   useArchiveMarketingContent,
 } from '../api/marketing';
 import { GenerateFromProjectButton } from '../features/marketing';
-import { MarketingContentFormModal } from '../features/marketing/MarketingContentFormModal';
-import { MarketingContentDetailModal } from '../features/marketing/MarketingContentDetailModal';
+import MarketingContentFormModal from '../features/marketing/MarketingContentFormModal';
+import MarketingContentDetailModal from '../features/marketing/MarketingContentDetailModal';
 import {
   type MarketingContent,
   CONTENT_TYPE_LABELS,
