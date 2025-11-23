@@ -197,6 +197,18 @@ export const createMarketingContent = async (
     }
   }
 
+  // Validate source content access if sourceContentId is provided
+  if (data.sourceContentId) {
+    const sourceContentAccess = await findContentWithAccess(
+      data.sourceContentId,
+      ownerId,
+    );
+
+    if ('error' in sourceContentAccess) {
+      return sourceContentAccess;
+    }
+  }
+
   const content = await prisma.marketingContent.create({
     data: {
       ...data,
@@ -237,6 +249,20 @@ export const updateMarketingContent = async (
 
       if (projectAccess === 'not_found' || projectAccess === 'forbidden') {
         return { error: projectAccess };
+      }
+    }
+  }
+
+  // Validate source content access if changing sourceContentId
+  if (data.sourceContentId !== undefined) {
+    if (data.sourceContentId !== null) {
+      const sourceContentAccess = await findContentWithAccess(
+        data.sourceContentId,
+        ownerId,
+      );
+
+      if ('error' in sourceContentAccess) {
+        return sourceContentAccess;
       }
     }
   }
