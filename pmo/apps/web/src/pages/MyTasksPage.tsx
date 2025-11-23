@@ -22,6 +22,7 @@ import { Select } from '../ui/Select';
 import { useToast } from '../ui/Toast';
 import type { TaskWithProject } from '../api/tasks';
 import { TaskKanbanBoard } from '../components/TaskKanbanBoard';
+import { EMPTY_STATES } from '../utils/typography';
 
 interface Filters {
   projectId: string;
@@ -34,7 +35,7 @@ type ViewMode = 'list' | 'board';
 
 function formatDate(value?: string | null): string {
   if (!value) {
-    return 'No due date';
+    return EMPTY_STATES.noDueDate;
   }
 
   return new Date(value).toLocaleDateString('en-US', {
@@ -442,7 +443,7 @@ function MyTasksPage(): JSX.Element {
                   ) : (
                     <>
                       <p className="text-neutral-900 font-medium">
-                        No tasks yet
+                        {EMPTY_STATES.noTasks}
                       </p>
                       <p className="text-neutral-600 text-sm mt-1">
                         Tasks are created within projects. Visit a project to

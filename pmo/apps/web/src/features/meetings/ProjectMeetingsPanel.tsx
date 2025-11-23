@@ -10,6 +10,7 @@ import {
   type Meeting,
 } from '../../api/meetings';
 import MeetingFormModal, { type MeetingFormValues } from './MeetingFormModal';
+import { EMPTY_STATES } from '../../utils/typography';
 
 interface ProjectMeetingsPanelProps {
   projectId?: number;
@@ -131,7 +132,9 @@ function ProjectMeetingsPanel({
       <header className="section-header">
         <div>
           <h2>Meetings</h2>
-          <p>Track meeting notes, decisions, and risks.</p>
+          <p className="text-sm text-neutral-600">
+            Track meeting notes, decisions, and risks.
+          </p>
         </div>
         <button type="button" onClick={handleOpenCreate}>
           Schedule meeting
@@ -146,7 +149,7 @@ function ProjectMeetingsPanel({
       )}
 
       {!meetingsQuery.isLoading && meetings.length === 0 && (
-        <p>No meetings yet. Create the first one to capture decisions.</p>
+        <p className="text-neutral-600">{EMPTY_STATES.noMeetings}</p>
       )}
 
       <div className="card-grid">
@@ -173,17 +176,17 @@ function ProjectMeetingsPanel({
               <strong>Attendees:</strong>{' '}
               {meeting.attendees.length > 0
                 ? meeting.attendees.join(', ')
-                : 'Not set'}
+                : EMPTY_STATES.notProvided}
             </p>
             <p>
-              <strong>Notes:</strong> {meeting.notes || 'No notes yet'}
+              <strong>Notes:</strong> {meeting.notes || EMPTY_STATES.noNotes}
             </p>
             <p>
               <strong>Decisions:</strong>{' '}
-              {meeting.decisions || 'No decisions yet'}
+              {meeting.decisions || EMPTY_STATES.noDecisions}
             </p>
             <p>
-              <strong>Risks:</strong> {meeting.risks || 'No risks yet'}
+              <strong>Risks:</strong> {meeting.risks || EMPTY_STATES.noRisks}
             </p>
           </article>
         ))}
@@ -191,7 +194,7 @@ function ProjectMeetingsPanel({
 
       <MeetingFormModal
         isOpen={showModal}
-        heading={editingMeeting ? 'Edit meeting' : 'New meeting'}
+        heading={editingMeeting ? 'Edit Meeting' : 'New Meeting'}
         initialValues={modalValues}
         onSubmit={handleSubmit}
         onCancel={() => {
