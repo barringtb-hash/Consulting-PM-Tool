@@ -69,7 +69,7 @@ import {
   CONTENT_TYPE_LABELS,
   CONTENT_STATUS_LABELS,
   getContentTypeIcon,
-} from '../../../packages/types/marketing';
+} from '../../../../packages/types/marketing';
 
 const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
   { value: 'PLANNING', label: 'Planning' },
