@@ -15,6 +15,10 @@ import ClientForm, { ClientFormValues } from '../components/ClientForm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { isApiError } from '../api/http';
 import { EMPTY_STATES } from '../utils/typography';
+import { Card, CardBody, CardHeader, CardTitle } from '../ui/Card';
+import { PageHeader } from '../ui/PageHeader';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 
 function mapClientFormToPayload(values: ClientFormValues) {
   return {
@@ -99,87 +103,117 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
   };
 
   return (
-    <section aria-label="contacts">
-      <header>
-        <h2>Contacts</h2>
+    <Card>
+      <CardHeader>
+        <CardTitle>Contacts</CardTitle>
         <p className="text-sm text-neutral-600">
           Manage points of contact for this client.
         </p>
-      </header>
+      </CardHeader>
+      <CardBody>
+        {contactsQuery.isLoading && (
+          <p className="text-neutral-600">Loading contacts…</p>
+        )}
+        {contactsQuery.error && (
+          <p role="alert" className="text-danger-600">
+            {contactsQuery.error instanceof Error
+              ? contactsQuery.error.message
+              : 'Unable to load contacts'}
+          </p>
+        )}
 
-      {contactsQuery.isLoading && <p>Loading contacts…</p>}
-      {contactsQuery.error && (
-        <p role="alert">
-          {contactsQuery.error instanceof Error
-            ? contactsQuery.error.message
-            : 'Unable to load contacts'}
-        </p>
-      )}
-
-      {!contactsQuery.isLoading && !contactsQuery.error && (
-        <>
-          {contactsQuery.data && contactsQuery.data.length === 0 ? (
-            <p className="text-neutral-600">{EMPTY_STATES.noContacts}</p>
-          ) : (
-            <ul>
-              {contactsQuery.data?.map((contact) => (
-                <li key={contact.id}>
-                  <div>
-                    <strong>{contact.name}</strong>
-                    <div>{contact.email}</div>
-                    {contact.role && <div>{contact.role}</div>}
-                    {contact.phone && <div>{contact.phone}</div>}
-                    {contact.notes && <div>{contact.notes}</div>}
+        {!contactsQuery.isLoading && !contactsQuery.error && (
+          <>
+            {contactsQuery.data && contactsQuery.data.length === 0 ? (
+              <p className="text-neutral-600">{EMPTY_STATES.noContacts}</p>
+            ) : (
+              <div className="space-y-4">
+                {contactsQuery.data?.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className="p-4 bg-neutral-50 rounded-lg border border-neutral-200"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-neutral-900">
+                          {contact.name}
+                        </h4>
+                        <p className="text-sm text-neutral-600">
+                          {contact.email}
+                        </p>
+                        {contact.role && (
+                          <p className="text-sm text-neutral-600 mt-1">
+                            <span className="font-medium">Role:</span>{' '}
+                            {contact.role}
+                          </p>
+                        )}
+                        {contact.phone && (
+                          <p className="text-sm text-neutral-600">
+                            <span className="font-medium">Phone:</span>{' '}
+                            {contact.phone}
+                          </p>
+                        )}
+                        {contact.notes && (
+                          <p className="text-sm text-neutral-600 mt-2">
+                            {contact.notes}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleEdit(contact.id)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(contact.id)}
+                          disabled={
+                            deleteContactMutation.isPending &&
+                            deletingContactId === contact.id
+                          }
+                        >
+                          {deleteContactMutation.isPending &&
+                          deletingContactId === contact.id
+                            ? 'Deleting…'
+                            : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(contact.id)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(contact.id)}
-                      disabled={
-                        deleteContactMutation.isPending &&
-                        deletingContactId === contact.id
-                      }
-                    >
-                      {deleteContactMutation.isPending &&
-                      deletingContactId === contact.id
-                        ? 'Deleting…'
-                        : 'Delete'}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
-      <section aria-label="contact-form-section">
-        <h3>{editingContact ? 'Edit Contact' : 'Add Contact'}</h3>
-        <ContactForm
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          submitLabel={editingContact ? 'Update contact' : 'Create contact'}
-          isSubmitting={
-            createContactMutation.isPending || updateContactMutation.isPending
-          }
-          onCancel={
-            editingContact
-              ? () => {
-                  setEditingContact(null);
-                  setInitialValues(undefined);
-                }
-              : undefined
-          }
-          error={formError}
-        />
-      </section>
-    </section>
+        <div className="mt-6 pt-6 border-t border-neutral-200">
+          <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+            {editingContact ? 'Edit Contact' : 'Add Contact'}
+          </h3>
+          <ContactForm
+            initialValues={initialValues}
+            onSubmit={handleSubmit}
+            submitLabel={editingContact ? 'Update contact' : 'Create contact'}
+            isSubmitting={
+              createContactMutation.isPending || updateContactMutation.isPending
+            }
+            onCancel={
+              editingContact
+                ? () => {
+                    setEditingContact(null);
+                    setInitialValues(undefined);
+                  }
+                : undefined
+            }
+            error={formError}
+          />
+        </div>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -266,90 +300,136 @@ function ClientDetailsPage(): JSX.Element {
   const client = clientQuery.data as Client;
 
   return (
-    <main>
-      <header>
-        <h1>{client.name}</h1>
-        {client.archived && <p>This client is archived.</p>}
-        <p className="text-neutral-600">
-          {client.industry || EMPTY_STATES.notProvided}
-        </p>
-        <Link to="/clients">Back to clients</Link>
-      </header>
-
-      <section aria-label="client-details">
-        <h2>Client Details</h2>
-        <dl>
-          <div>
-            <dt>Company size</dt>
-            <dd>{client.companySize || EMPTY_STATES.notProvided}</dd>
-          </div>
-          <div>
-            <dt>Timezone</dt>
-            <dd>{client.timezone || EMPTY_STATES.notProvided}</dd>
-          </div>
-          <div>
-            <dt>AI maturity</dt>
-            <dd>{client.aiMaturity || EMPTY_STATES.notProvided}</dd>
-          </div>
-          <div>
-            <dt>Notes</dt>
-            <dd>{client.notes || EMPTY_STATES.notProvided}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section aria-label="client-form">
-        <h2>Update Client</h2>
-        <ClientForm
-          initialValues={{
-            name: client.name,
-            industry: client.industry ?? '',
-            companySize: client.companySize ?? '',
-            timezone: client.timezone ?? '',
-            aiMaturity: client.aiMaturity ?? '',
-            notes: client.notes ?? '',
-          }}
-          onSubmit={handleClientSave}
-          submitLabel="Save changes"
-          isSubmitting={updateClientMutation.isPending}
-          error={formError}
-        />
-        {!client.archived && (
-          <button type="button" onClick={handleArchive}>
-            Archive client
-          </button>
+    <div className="min-h-screen bg-neutral-50">
+      <PageHeader
+        title={client.name}
+        description={client.industry || EMPTY_STATES.notProvided}
+        action={
+          <Link to="/clients">
+            <Button variant="secondary">Back to Clients</Button>
+          </Link>
+        }
+      >
+        {client.archived && (
+          <Badge variant="warning" className="mt-2">
+            Archived
+          </Badge>
         )}
-      </section>
+      </PageHeader>
 
-      <ContactList clientId={clientId} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Client Details Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Client Details</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                  Company Size
+                </dt>
+                <dd className="text-sm text-neutral-900">
+                  {client.companySize || EMPTY_STATES.notProvided}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                  Timezone
+                </dt>
+                <dd className="text-sm text-neutral-900">
+                  {client.timezone || EMPTY_STATES.notProvided}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                  AI Maturity
+                </dt>
+                <dd className="text-sm text-neutral-900">
+                  {client.aiMaturity || EMPTY_STATES.notProvided}
+                </dd>
+              </div>
+              <div className="md:col-span-2">
+                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                  Notes
+                </dt>
+                <dd className="text-sm text-neutral-900">
+                  {client.notes || EMPTY_STATES.notProvided}
+                </dd>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
 
-      <section aria-label="projects">
-        <header>
-          <h2>Projects</h2>
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                `/projects/new?clientId=${clientId}&step=details&templateId=custom`,
-              )
-            }
-            aria-label="Create new project"
-          >
-            New Project
-          </button>
-        </header>
-        <p className="text-sm text-neutral-600">
-          Project tracking for this client is coming soon.
-        </p>
-      </section>
+        {/* Update Client Form Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Update Client</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <ClientForm
+              initialValues={{
+                name: client.name,
+                industry: client.industry ?? '',
+                companySize: client.companySize ?? '',
+                timezone: client.timezone ?? '',
+                aiMaturity: client.aiMaturity ?? '',
+                notes: client.notes ?? '',
+              }}
+              onSubmit={handleClientSave}
+              submitLabel="Save changes"
+              isSubmitting={updateClientMutation.isPending}
+              error={formError}
+            />
+            {!client.archived && (
+              <div className="mt-4 pt-4 border-t border-neutral-200">
+                <Button variant="danger" onClick={handleArchive}>
+                  Archive Client
+                </Button>
+              </div>
+            )}
+          </CardBody>
+        </Card>
 
-      <section aria-label="meetings">
-        <h2>Meetings</h2>
-        <p className="text-sm text-neutral-600">
-          Meeting notes and actions will appear here when available.
-        </p>
-      </section>
-    </main>
+        {/* Contacts Card */}
+        <ContactList clientId={clientId} />
+
+        {/* Projects Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Projects</CardTitle>
+              <Button
+                onClick={() =>
+                  navigate(
+                    `/projects/new?clientId=${clientId}&step=details&templateId=custom`,
+                  )
+                }
+              >
+                New Project
+              </Button>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <p className="text-sm text-neutral-600">
+              Project tracking for this client is coming soon.
+            </p>
+          </CardBody>
+        </Card>
+
+        {/* Meetings Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Meetings</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <p className="text-sm text-neutral-600">
+              Meeting notes and actions will appear here when available.
+            </p>
+          </CardBody>
+        </Card>
+      </main>
+    </div>
   );
 }
 
