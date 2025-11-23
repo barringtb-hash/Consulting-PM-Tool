@@ -52,7 +52,10 @@ export class RateLimiter {
 
     // Set rate limit headers
     res.setHeader('X-RateLimit-Limit', this.options.maxRequests.toString());
-    res.setHeader('X-RateLimit-Remaining', Math.max(0, this.options.maxRequests - entry.count).toString());
+    res.setHeader(
+      'X-RateLimit-Remaining',
+      Math.max(0, this.options.maxRequests - entry.count).toString(),
+    );
     res.setHeader('X-RateLimit-Reset', new Date(entry.resetAt).toISOString());
 
     // Check if limit exceeded
@@ -60,7 +63,8 @@ export class RateLimiter {
       const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
       res.setHeader('Retry-After', retryAfter.toString());
       res.status(429).json({
-        error: this.options.message || 'Too many requests, please try again later.',
+        error:
+          this.options.message || 'Too many requests, please try again later.',
         retryAfter,
       });
       return;
@@ -72,7 +76,9 @@ export class RateLimiter {
   private getClientKey(req: Request): string {
     // Try to get real IP from proxy headers
     const forwarded = req.headers['x-forwarded-for'] as string;
-    const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress || 'unknown';
+    const ip = forwarded
+      ? forwarded.split(',')[0].trim()
+      : req.socket.remoteAddress || 'unknown';
     return `rate-limit:${ip}`;
   }
 

@@ -54,7 +54,7 @@ router.post(
         lead: {
           id: lead.id,
           email: lead.email,
-          message: 'Thank you for your interest! We\'ll be in touch soon.',
+          message: "Thank you for your interest! We'll be in touch soon.",
         },
       });
     } catch (error) {
