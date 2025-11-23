@@ -5,6 +5,7 @@ import {
   LeadCreateInput,
   LeadUpdateInput,
   LeadConvertInput,
+  PublicLeadCreateInput,
 } from '../validation/lead.schema';
 
 export interface ListLeadsParams {
@@ -95,6 +96,24 @@ export const createLead = async (data: LeadCreateInput) =>
           email: true,
         },
       },
+    },
+  });
+
+export const createPublicLead = async (data: PublicLeadCreateInput) =>
+  prisma.inboundLead.create({
+    data: {
+      ...data,
+      status: LeadStatus.NEW,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      company: true,
+      serviceInterest: true,
+      source: true,
+      status: true,
+      createdAt: true,
     },
   });
 

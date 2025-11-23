@@ -9,6 +9,7 @@ import contactsRouter from './routes/contacts';
 import documentsRouter from './routes/documents';
 import healthRouter from './routes/health';
 import leadsRouter from './routes/leads';
+import publicLeadsRouter from './routes/public-leads';
 import milestonesRouter from './routes/milestone.routes';
 import meetingRouter from './modules/meetings/meeting.router';
 import projectsRouter from './routes/projects';
@@ -28,6 +29,7 @@ export function createApp(): express.Express {
   app.use(express.json());
   app.use(cookieParser());
   app.use('/api', authRouter);
+  app.use('/api/public', publicLeadsRouter);
   app.use('/api', assetsRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);

@@ -180,6 +180,13 @@ model InboundLead {
   clientId         Int?
   primaryContactId Int?
   firstResponseAt  DateTime?
+  // Tracking fields for website submissions
+  page             String?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmContent       String?
+  utmTerm          String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -189,6 +196,7 @@ model InboundLead {
 
   @@index([status, createdAt(sort: Desc)])
   @@index([ownerUserId, status])
+  @@index([source, createdAt(sort: Desc)])
 }
 
 model Project {
