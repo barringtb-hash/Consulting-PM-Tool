@@ -46,9 +46,18 @@ const findCampaignWithAccess = async (id: number, ownerId: number) => {
     return { error: 'not_found' as const };
   }
 
-  // Check authorization: if campaign has a project, user must own that project
-  if (campaign.project && campaign.project.ownerId !== ownerId) {
-    return { error: 'forbidden' as const };
+  // Check authorization:
+  // 1. If campaign has a project, user must own that project
+  // 2. If campaign has no project, user must have created it
+  if (campaign.project) {
+    if (campaign.project.ownerId !== ownerId) {
+      return { error: 'forbidden' as const };
+    }
+  } else {
+    // No project - check if user created this campaign
+    if (campaign.createdById !== ownerId) {
+      return { error: 'forbidden' as const };
+    }
   }
 
   return { campaign };
