@@ -38,9 +38,9 @@ async function fetchPublishingConnections(
 ): Promise<PublishingConnection[]> {
   const url = buildApiUrl(`/clients/${clientId}/publishing-connections`);
   const response = await fetch(url, buildOptions('GET'));
-  const data = await handleResponse<{ connections: PublishingConnectionResponse[] }>(
-    response,
-  );
+  const data = await handleResponse<{
+    connections: PublishingConnectionResponse[];
+  }>(response);
   return data.connections.map(mapPublishingConnection);
 }
 
@@ -50,11 +50,13 @@ async function fetchPublishingConnections(
 async function createPublishingConnection(
   payload: CreatePublishingConnectionInput,
 ): Promise<PublishingConnection> {
-  const url = buildApiUrl(`/clients/${payload.clientId}/publishing-connections`);
-  const response = await fetch(url, buildOptions('POST', payload));
-  const data = await handleResponse<{ connection: PublishingConnectionResponse }>(
-    response,
+  const url = buildApiUrl(
+    `/clients/${payload.clientId}/publishing-connections`,
   );
+  const response = await fetch(url, buildOptions('POST', payload));
+  const data = await handleResponse<{
+    connection: PublishingConnectionResponse;
+  }>(response);
   return mapPublishingConnection(data.connection);
 }
 
@@ -67,9 +69,9 @@ async function updatePublishingConnection(
 ): Promise<PublishingConnection> {
   const url = buildApiUrl(`/publishing-connections/${id}`);
   const response = await fetch(url, buildOptions('PATCH', payload));
-  const data = await handleResponse<{ connection: PublishingConnectionResponse }>(
-    response,
-  );
+  const data = await handleResponse<{
+    connection: PublishingConnectionResponse;
+  }>(response);
   return mapPublishingConnection(data.connection);
 }
 
@@ -91,7 +93,7 @@ async function publishContent(
     publishingConnectionId?: number;
     scheduledFor?: Date;
   },
-): Promise<any> {
+): Promise<{ content: unknown }> {
   const url = buildApiUrl(`/marketing-contents/${contentId}/publish`);
   const response = await fetch(url, buildOptions('POST', payload));
   return handleResponse(response);
@@ -174,7 +176,7 @@ export function useDeletePublishingConnection(): UseMutationResult<
  * Hook to publish content
  */
 export function usePublishContent(): UseMutationResult<
-  any,
+  { content: unknown },
   Error,
   {
     contentId: number;

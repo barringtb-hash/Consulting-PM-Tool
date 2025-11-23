@@ -11,6 +11,7 @@ import {
  */
 export const getBrandProfileByClientId = async (
   clientId: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _ownerId: number,
 ) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
@@ -105,6 +106,7 @@ export const updateBrandProfile = async (
  */
 export const getBrandAssets = async (
   brandProfileId: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _ownerId: number,
 ) => {
   const brandProfile = await prisma.brandProfile.findUnique({
@@ -170,7 +172,11 @@ export const updateBrandAsset = async (
 /**
  * Archive a brand asset (soft delete)
  */
-export const archiveBrandAsset = async (id: number, _ownerId: number) => {
+export const archiveBrandAsset = async (
+  id: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _ownerId: number,
+) => {
   const existing = await prisma.brandAsset.findUnique({ where: { id } });
   if (!existing) {
     return { error: 'not_found' as const };

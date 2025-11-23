@@ -17,13 +17,15 @@ import {
   type UpdateBrandAssetInput,
 } from '../../../../packages/types/marketing';
 
-interface BrandProfileResponse extends Omit<BrandProfile, 'createdAt' | 'updatedAt'> {
+interface BrandProfileResponse
+  extends Omit<BrandProfile, 'createdAt' | 'updatedAt'> {
   createdAt: string;
   updatedAt: string;
   assets?: BrandAssetResponse[];
 }
 
-interface BrandAssetResponse extends Omit<BrandAsset, 'createdAt' | 'updatedAt'> {
+interface BrandAssetResponse
+  extends Omit<BrandAsset, 'createdAt' | 'updatedAt'> {
   createdAt: string;
   updatedAt: string;
 }
@@ -44,14 +46,23 @@ const mapBrandAsset = (payload: BrandAssetResponse): BrandAsset => ({
 /**
  * Fetch brand profile by client ID
  */
-async function fetchBrandProfile(clientId: number): Promise<BrandProfile | null> {
+async function fetchBrandProfile(
+  clientId: number,
+): Promise<BrandProfile | null> {
   const url = buildApiUrl(`/clients/${clientId}/brand-profile`);
   try {
     const response = await fetch(url, buildOptions('GET'));
-    const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(response);
+    const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
+      response,
+    );
     return mapBrandProfile(data.brandProfile);
-  } catch (error: any) {
-    if (error.status === 404) {
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'status' in error &&
+      error.status === 404
+    ) {
       return null;
     }
     throw error;
@@ -61,10 +72,14 @@ async function fetchBrandProfile(clientId: number): Promise<BrandProfile | null>
 /**
  * Create a brand profile
  */
-async function createBrandProfile(payload: CreateBrandProfileInput): Promise<BrandProfile> {
+async function createBrandProfile(
+  payload: CreateBrandProfileInput,
+): Promise<BrandProfile> {
   const url = buildApiUrl(`/clients/${payload.clientId}/brand-profile`);
   const response = await fetch(url, buildOptions('POST', payload));
-  const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(response);
+  const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
+    response,
+  );
   return mapBrandProfile(data.brandProfile);
 }
 
@@ -77,7 +92,9 @@ async function updateBrandProfile(
 ): Promise<BrandProfile> {
   const url = buildApiUrl(`/brand-profiles/${id}`);
   const response = await fetch(url, buildOptions('PATCH', payload));
-  const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(response);
+  const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
+    response,
+  );
   return mapBrandProfile(data.brandProfile);
 }
 
@@ -94,7 +111,9 @@ async function fetchBrandAssets(brandProfileId: number): Promise<BrandAsset[]> {
 /**
  * Create a brand asset
  */
-async function createBrandAsset(payload: CreateBrandAssetInput): Promise<BrandAsset> {
+async function createBrandAsset(
+  payload: CreateBrandAssetInput,
+): Promise<BrandAsset> {
   const url = buildApiUrl(`/brand-profiles/${payload.brandProfileId}/assets`);
   const response = await fetch(url, buildOptions('POST', payload));
   const data = await handleResponse<{ asset: BrandAssetResponse }>(response);
@@ -126,7 +145,9 @@ async function archiveBrandAsset(id: number): Promise<void> {
 /**
  * Hook to fetch brand profile
  */
-export function useBrandProfile(clientId: number): UseQueryResult<BrandProfile | null, Error> {
+export function useBrandProfile(
+  clientId: number,
+): UseQueryResult<BrandProfile | null, Error> {
   return useQuery({
     queryKey: ['brandProfile', clientId],
     queryFn: () => fetchBrandProfile(clientId),
@@ -147,7 +168,9 @@ export function useCreateBrandProfile(): UseMutationResult<
   return useMutation({
     mutationFn: createBrandProfile,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['brandProfile', data.clientId] });
+      queryClient.invalidateQueries({
+        queryKey: ['brandProfile', data.clientId],
+      });
     },
   });
 }
@@ -165,7 +188,9 @@ export function useUpdateBrandProfile(): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, payload }) => updateBrandProfile(id, payload),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['brandProfile', data.clientId] });
+      queryClient.invalidateQueries({
+        queryKey: ['brandProfile', data.clientId],
+      });
     },
   });
 }
@@ -173,7 +198,9 @@ export function useUpdateBrandProfile(): UseMutationResult<
 /**
  * Hook to fetch brand assets
  */
-export function useBrandAssets(brandProfileId: number): UseQueryResult<BrandAsset[], Error> {
+export function useBrandAssets(
+  brandProfileId: number,
+): UseQueryResult<BrandAsset[], Error> {
   return useQuery({
     queryKey: ['brandAssets', brandProfileId],
     queryFn: () => fetchBrandAssets(brandProfileId),
@@ -194,7 +221,9 @@ export function useCreateBrandAsset(): UseMutationResult<
   return useMutation({
     mutationFn: createBrandAsset,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['brandAssets', variables.brandProfileId] });
+      queryClient.invalidateQueries({
+        queryKey: ['brandAssets', variables.brandProfileId],
+      });
     },
   });
 }
@@ -212,7 +241,9 @@ export function useUpdateBrandAsset(): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, payload }) => updateBrandAsset(id, payload),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['brandAssets', data.brandProfileId] });
+      queryClient.invalidateQueries({
+        queryKey: ['brandAssets', data.brandProfileId],
+      });
     },
   });
 }
@@ -220,12 +251,19 @@ export function useUpdateBrandAsset(): UseMutationResult<
 /**
  * Hook to archive a brand asset
  */
-export function useArchiveBrandAsset(): UseMutationResult<void, Error, { id: number; brandProfileId: number }, unknown> {
+export function useArchiveBrandAsset(): UseMutationResult<
+  void,
+  Error,
+  { id: number; brandProfileId: number },
+  unknown
+> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id }) => archiveBrandAsset(id),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['brandAssets', variables.brandProfileId] });
+      queryClient.invalidateQueries({
+        queryKey: ['brandAssets', variables.brandProfileId],
+      });
     },
   });
 }

@@ -9,6 +9,7 @@ import {
  */
 export const getPublishingConnections = async (
   clientId: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _ownerId: number,
 ) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
@@ -102,6 +103,7 @@ export const updatePublishingConnection = async (
  */
 export const deletePublishingConnection = async (
   id: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _ownerId: number,
 ) => {
   const existing = await prisma.publishingConnection.findUnique({
@@ -229,10 +231,7 @@ export const markAsPublished = async (
 /**
  * Mark content publishing as failed
  */
-export const markPublishFailed = async (
-  contentId: number,
-  error: string,
-) => {
+export const markPublishFailed = async (contentId: number, error: string) => {
   const content = await prisma.marketingContent.update({
     where: { id: contentId },
     data: {

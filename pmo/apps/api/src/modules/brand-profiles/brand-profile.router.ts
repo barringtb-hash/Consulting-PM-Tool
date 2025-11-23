@@ -122,12 +122,10 @@ router.post(
       clientId,
     });
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid brand profile data',
-          details: parsed.error.format(),
-        });
+      res.status(400).json({
+        error: 'Invalid brand profile data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -139,7 +137,9 @@ router.post(
         return;
       }
       if (result.error === 'already_exists') {
-        res.status(409).json({ error: 'Brand profile already exists for this client' });
+        res
+          .status(409)
+          .json({ error: 'Brand profile already exists for this client' });
         return;
       }
     }
@@ -168,12 +168,10 @@ router.patch(
 
     const parsed = brandProfileUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid brand profile data',
-          details: parsed.error.format(),
-        });
+      res.status(400).json({
+        error: 'Invalid brand profile data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -244,9 +242,10 @@ router.post(
       brandProfileId,
     });
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: 'Invalid brand asset data', details: parsed.error.format() });
+      res.status(400).json({
+        error: 'Invalid brand asset data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -283,9 +282,10 @@ router.patch(
 
     const parsed = brandAssetUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: 'Invalid brand asset data', details: parsed.error.format() });
+      res.status(400).json({
+        error: 'Invalid brand asset data',
+        details: parsed.error.format(),
+      });
       return;
     }
 

@@ -8,7 +8,11 @@ import {
 /**
  * Validate that the user has access to the client
  */
-const validateClientAccess = async (clientId: number, _ownerId: number) => {
+const validateClientAccess = async (
+  clientId: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _ownerId: number,
+) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client) {
     return 'not_found' as const;
@@ -101,7 +105,7 @@ export const listCampaigns = async (
   }
 
   if (query.status) {
-    where.status = query.status as any;
+    where.status = query.status as Prisma.EnumCampaignStatusFilter;
   }
 
   const campaigns = await prisma.campaign.findMany({

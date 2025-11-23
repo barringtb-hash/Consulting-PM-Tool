@@ -56,9 +56,10 @@ router.get('/campaigns', async (req: AuthenticatedRequest, res: Response) => {
 
   const parsed = campaignListQuerySchema.safeParse(req.query);
   if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: 'Invalid query parameters', details: parsed.error.format() });
+    res.status(400).json({
+      error: 'Invalid query parameters',
+      details: parsed.error.format(),
+    });
     return;
   }
 
@@ -130,7 +131,9 @@ router.get(
         return;
       }
       if (result.error === 'forbidden') {
-        res.status(403).json({ error: 'You do not have access to this campaign' });
+        res
+          .status(403)
+          .json({ error: 'You do not have access to this campaign' });
         return;
       }
     }
@@ -159,9 +162,10 @@ router.patch(
 
     const parsed = campaignUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: 'Invalid campaign data', details: parsed.error.format() });
+      res.status(400).json({
+        error: 'Invalid campaign data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -173,7 +177,9 @@ router.patch(
         return;
       }
       if (result.error === 'forbidden') {
-        res.status(403).json({ error: 'You do not have access to this campaign' });
+        res
+          .status(403)
+          .json({ error: 'You do not have access to this campaign' });
         return;
       }
       if (result.error === 'project_not_found') {
@@ -218,7 +224,9 @@ router.delete(
         return;
       }
       if (result.error === 'forbidden') {
-        res.status(403).json({ error: 'You do not have access to this campaign' });
+        res
+          .status(403)
+          .json({ error: 'You do not have access to this campaign' });
         return;
       }
     }
@@ -253,7 +261,9 @@ router.get(
         return;
       }
       if (result.error === 'forbidden') {
-        res.status(403).json({ error: 'You do not have access to this campaign' });
+        res
+          .status(403)
+          .json({ error: 'You do not have access to this campaign' });
         return;
       }
     }

@@ -91,12 +91,10 @@ router.post(
       clientId,
     });
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid publishing connection data',
-          details: parsed.error.format(),
-        });
+      res.status(400).json({
+        error: 'Invalid publishing connection data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -108,9 +106,9 @@ router.post(
         return;
       }
       if (result.error === 'already_exists') {
-        res
-          .status(409)
-          .json({ error: 'Publishing connection already exists for this platform' });
+        res.status(409).json({
+          error: 'Publishing connection already exists for this platform',
+        });
         return;
       }
     }
@@ -139,16 +137,18 @@ router.patch(
 
     const parsed = publishingConnectionUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid publishing connection data',
-          details: parsed.error.format(),
-        });
+      res.status(400).json({
+        error: 'Invalid publishing connection data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
-    const result = await updatePublishingConnection(id, req.userId, parsed.data);
+    const result = await updatePublishingConnection(
+      id,
+      req.userId,
+      parsed.data,
+    );
 
     if ('error' in result) {
       if (result.error === 'not_found') {
@@ -215,9 +215,10 @@ router.post(
       contentId,
     });
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: 'Invalid publish data', details: parsed.error.format() });
+      res.status(400).json({
+        error: 'Invalid publish data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -234,7 +235,9 @@ router.post(
         return;
       }
       if (result.error === 'forbidden') {
-        res.status(403).json({ error: 'You do not have access to this content' });
+        res
+          .status(403)
+          .json({ error: 'You do not have access to this content' });
         return;
       }
       if (result.error === 'connection_not_found') {
@@ -242,11 +245,9 @@ router.post(
         return;
       }
       if (result.error === 'connection_mismatch') {
-        res
-          .status(400)
-          .json({
-            error: 'Publishing connection does not belong to the content client',
-          });
+        res.status(400).json({
+          error: 'Publishing connection does not belong to the content client',
+        });
         return;
       }
       if (result.error === 'connection_inactive') {

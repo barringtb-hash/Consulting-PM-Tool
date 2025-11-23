@@ -14,7 +14,8 @@ import {
   type UpdateCampaignInput,
 } from '../../../../packages/types/marketing';
 
-interface CampaignResponse extends Omit<Campaign, 'createdAt' | 'updatedAt' | 'startDate' | 'endDate'> {
+interface CampaignResponse
+  extends Omit<Campaign, 'createdAt' | 'updatedAt' | 'startDate' | 'endDate'> {
   createdAt: string;
   updatedAt: string;
   startDate?: string | null;
@@ -42,11 +43,14 @@ async function fetchCampaigns(query: {
   if (query.clientId) params.append('clientId', query.clientId.toString());
   if (query.projectId) params.append('projectId', query.projectId.toString());
   if (query.status) params.append('status', query.status);
-  if (query.archived !== undefined) params.append('archived', query.archived.toString());
+  if (query.archived !== undefined)
+    params.append('archived', query.archived.toString());
 
   const url = buildApiUrl(`/campaigns?${params.toString()}`);
   const response = await fetch(url, buildOptions('GET'));
-  const data = await handleResponse<{ campaigns: CampaignResponse[] }>(response);
+  const data = await handleResponse<{ campaigns: CampaignResponse[] }>(
+    response,
+  );
   return data.campaigns.map(mapCampaign);
 }
 
@@ -73,7 +77,10 @@ async function createCampaign(payload: CreateCampaignInput): Promise<Campaign> {
 /**
  * Update a campaign
  */
-async function updateCampaign(id: number, payload: UpdateCampaignInput): Promise<Campaign> {
+async function updateCampaign(
+  id: number,
+  payload: UpdateCampaignInput,
+): Promise<Campaign> {
   const url = buildApiUrl(`/campaigns/${id}`);
   const response = await fetch(url, buildOptions('PATCH', payload));
   const data = await handleResponse<{ campaign: CampaignResponse }>(response);
@@ -155,7 +162,12 @@ export function useUpdateCampaign(): UseMutationResult<
 /**
  * Hook to archive a campaign
  */
-export function useArchiveCampaign(): UseMutationResult<void, Error, number, unknown> {
+export function useArchiveCampaign(): UseMutationResult<
+  void,
+  Error,
+  number,
+  unknown
+> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: archiveCampaign,

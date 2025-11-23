@@ -9,6 +9,7 @@ This document tracks the implementation progress for **Phase 2 (Campaign Managem
 **Migration:** `20251123224500_add_campaigns_brand_profiles_publishing`
 
 #### New Models Created:
+
 - ✅ **Campaign** - Group multiple marketing contents into campaigns
   - Fields: name, description, goals (JSON), status, startDate, endDate
   - Relations: client (required), project (optional), createdBy, contents[]
@@ -29,6 +30,7 @@ This document tracks the implementation progress for **Phase 2 (Campaign Managem
   - Relations: client, unique constraint on (clientId, platform, accountName)
 
 #### MarketingContent Updates:
+
 - ✅ Added `campaignId` field (optional, links to Campaign)
 - ✅ Added `publishingConnectionId` field (optional, links to PublishingConnection)
 - ✅ Added `publishedUrl` field (URL to published content)
@@ -40,6 +42,7 @@ This document tracks the implementation progress for **Phase 2 (Campaign Managem
 **File:** `packages/types/marketing.ts`
 
 #### Campaign Types:
+
 - ✅ `Campaign` interface
 - ✅ `CreateCampaignInput` interface
 - ✅ `UpdateCampaignInput` interface
@@ -47,6 +50,7 @@ This document tracks the implementation progress for **Phase 2 (Campaign Managem
 - ✅ `CAMPAIGN_STATUS_LABELS` mapping
 
 #### Brand Profile Types:
+
 - ✅ `BrandProfile` interface
 - ✅ `BrandAsset` interface
 - ✅ `CreateBrandProfileInput` interface
@@ -57,6 +61,7 @@ This document tracks the implementation progress for **Phase 2 (Campaign Managem
 - ✅ `BRAND_ASSET_TYPE_LABELS` mapping
 
 #### Publishing Types:
+
 - ✅ `PublishingConnection` interface
 - ✅ `CreatePublishingConnectionInput` interface
 - ✅ `UpdatePublishingConnectionInput` interface
@@ -67,9 +72,11 @@ This document tracks the implementation progress for **Phase 2 (Campaign Managem
 ### 3. Backend API (Services & Routers) ✅
 
 #### Campaign API
+
 **Location:** `apps/api/src/modules/campaigns/`
 
 Services:
+
 - ✅ `listCampaigns()` - List campaigns with filters (clientId, projectId, status, archived)
 - ✅ `getCampaignById()` - Get single campaign with contents
 - ✅ `createCampaign()` - Create new campaign
@@ -78,6 +85,7 @@ Services:
 - ✅ `getCampaignContents()` - Get all contents for a campaign
 
 Routes:
+
 - ✅ `GET /api/campaigns` - List campaigns
 - ✅ `POST /api/campaigns` - Create campaign
 - ✅ `GET /api/campaigns/:id` - Get campaign
@@ -86,9 +94,11 @@ Routes:
 - ✅ `GET /api/campaigns/:id/contents` - Get campaign contents
 
 #### Brand Profile API
+
 **Location:** `apps/api/src/modules/brand-profiles/`
 
 Services:
+
 - ✅ `getBrandProfileByClientId()` - Get brand profile for client
 - ✅ `createBrandProfile()` - Create brand profile
 - ✅ `updateBrandProfile()` - Update brand profile
@@ -98,6 +108,7 @@ Services:
 - ✅ `archiveBrandAsset()` - Archive brand asset
 
 Routes:
+
 - ✅ `GET /api/clients/:clientId/brand-profile` - Get brand profile
 - ✅ `POST /api/clients/:clientId/brand-profile` - Create profile
 - ✅ `PATCH /api/brand-profiles/:id` - Update profile
@@ -107,9 +118,11 @@ Routes:
 - ✅ `DELETE /api/brand-assets/:id` - Archive asset
 
 #### Publishing API
+
 **Location:** `apps/api/src/modules/publishing/`
 
 Services:
+
 - ✅ `getPublishingConnections()` - Get connections for client
 - ✅ `createPublishingConnection()` - Create connection
 - ✅ `updatePublishingConnection()` - Update connection
@@ -120,6 +133,7 @@ Services:
 - ✅ `markPublishFailed()` - Mark publish attempt as failed
 
 Routes:
+
 - ✅ `GET /api/clients/:clientId/publishing-connections` - Get connections
 - ✅ `POST /api/clients/:clientId/publishing-connections` - Create connection
 - ✅ `PATCH /api/publishing-connections/:id` - Update connection
@@ -127,6 +141,7 @@ Routes:
 - ✅ `POST /api/marketing-contents/:id/publish` - Publish content
 
 #### Integration
+
 - ✅ All routers integrated into `apps/api/src/app.ts`
 - ✅ Authorization checks on all endpoints
 - ✅ Zod validation schemas for all inputs
@@ -136,6 +151,7 @@ Routes:
 **Location:** `apps/web/src/api/`
 
 #### Campaign Hooks (`campaigns.ts`)
+
 - ✅ `useCampaigns(query)` - Fetch campaigns with filters
 - ✅ `useCampaign(id)` - Fetch single campaign
 - ✅ `useCreateCampaign()` - Create campaign
@@ -143,6 +159,7 @@ Routes:
 - ✅ `useArchiveCampaign()` - Archive campaign
 
 #### Brand Profile Hooks (`brand-profiles.ts`)
+
 - ✅ `useBrandProfile(clientId)` - Fetch brand profile
 - ✅ `useCreateBrandProfile()` - Create profile
 - ✅ `useUpdateBrandProfile()` - Update profile
@@ -152,6 +169,7 @@ Routes:
 - ✅ `useArchiveBrandAsset()` - Archive asset
 
 #### Publishing Hooks (`publishing.ts`)
+
 - ✅ `usePublishingConnections(clientId)` - Fetch connections
 - ✅ `useCreatePublishingConnection()` - Create connection
 - ✅ `useUpdatePublishingConnection()` - Update connection
@@ -159,6 +177,7 @@ Routes:
 - ✅ `usePublishContent()` - Publish content
 
 All hooks include:
+
 - React Query integration
 - Automatic cache invalidation
 - Date parsing for timestamp fields
@@ -171,27 +190,34 @@ All hooks include:
 ### 1. Campaign Management UI Components
 
 #### Campaign List Page
+
 **Create:** `apps/web/src/pages/CampaignsPage.tsx`
+
 - Display all campaigns in a filterable list/grid
 - Filter by: client, project, status, archived
 - Show campaign cards with: name, status badge, date range, content count
 - Actions: Create new, Edit, Archive, View details
 
 #### Campaign Detail Page/Modal
+
 **Create:** `apps/web/src/components/campaigns/CampaignDetailModal.tsx`
+
 - Show campaign details (name, description, goals, dates, status)
 - Display all associated marketing contents
 - Show campaign metrics (content count by status)
 - Actions: Edit campaign, Add content, Remove content
 
 #### Campaign Form Modal
+
 **Create:** `apps/web/src/components/campaigns/CampaignFormModal.tsx`
+
 - Form for creating/editing campaigns
 - Fields: name, description, client (dropdown), project (optional dropdown), status, start date, end date
 - Goals editor (JSON or structured form)
 - Validation
 
 #### Integration Points
+
 - ✅ **MarketingContentPage** - Add campaign filter dropdown
 - ✅ **MarketingContentFormModal** - Add campaign assignment dropdown
 - ✅ Add "Campaigns" link to navigation menu
@@ -199,7 +225,9 @@ All hooks include:
 ### 2. Brand Profile UI Components
 
 #### Brand Profile Page
+
 **Create:** `apps/web/src/pages/BrandProfilePage.tsx`
+
 - Accessed from Client detail page
 - Display brand profile information:
   - Logo preview
@@ -213,13 +241,17 @@ All hooks include:
 - Brand Assets section (grid view)
 
 #### Brand Profile Form Modal
+
 **Create:** `apps/web/src/components/brand-profiles/BrandProfileFormModal.tsx`
+
 - Form for creating/editing brand profile
 - Fields: name, description, logo URL (with preview), color pickers, fonts (JSON editor), tone guidelines (textarea), value prop, target audience, key messages (tag input)
 - Save/Cancel actions
 
 #### Brand Assets Component
+
 **Create:** `apps/web/src/components/brand-profiles/BrandAssetLibrary.tsx`
+
 - Grid view of brand assets
 - Filter by type
 - Preview cards with: thumbnail, name, type badge, description, tags
@@ -227,26 +259,33 @@ All hooks include:
 - Upload functionality (if file storage is available)
 
 #### Brand Asset Form Modal
+
 **Create:** `apps/web/src/components/brand-profiles/BrandAssetFormModal.tsx`
+
 - Form for creating/editing brand assets
 - Fields: name, type (dropdown), URL, description, tags
 - File upload option (if available)
 
 #### Integration Points
+
 - ✅ **ClientDetailPage** - Add "Brand Profile" tab
 - ✅ **GenerateMarketingContentModal** - Auto-fill tone/voice from brand profile
 
 ### 3. Publishing Connections UI Components
 
 #### Publishing Connections Page/Section
+
 **Create:** `apps/web/src/components/publishing/PublishingConnectionsSection.tsx`
+
 - Accessed from Client detail page or Marketing settings
 - Display all publishing connections for the client
 - Connection cards showing: platform logo, account name, status (active/inactive), expiry date
 - Actions: Connect new platform, Disconnect, Refresh token
 
 #### Connect Platform Modal
+
 **Create:** `apps/web/src/components/publishing/ConnectPlatformModal.tsx`
+
 - Modal for connecting a new platform
 - Platform selection (LinkedIn, Twitter, Instagram, Facebook)
 - Account name input
@@ -255,8 +294,10 @@ All hooks include:
 - Token expiry date picker
 
 #### Publish Content Button/Modal
+
 **Create:** `apps/web/src/components/publishing/PublishContentButton.tsx`
 **Create:** `apps/web/src/components/publishing/PublishModal.tsx`
+
 - Add "Publish" button to MarketingContentDetailModal
 - Modal for publishing content:
   - Select publishing connection (dropdown filtered by platform)
@@ -266,7 +307,9 @@ All hooks include:
   - Confirm and publish
 
 #### Publishing Status Indicators
+
 **Update:** `MarketingContentDetailModal` and content cards
+
 - Show publishing status:
   - Not published (gray)
   - Scheduled (blue with date)
@@ -276,6 +319,7 @@ All hooks include:
 - Cancel button for scheduled publishes
 
 #### Integration Points
+
 - ✅ **ClientDetailPage** - Add "Publishing Connections" tab
 - ✅ **MarketingContentDetailModal** - Add publish button and status display
 - ✅ **MarketingContentPage** - Add publishing status filter
@@ -285,6 +329,7 @@ All hooks include:
 **Create:** `apps/web/src/components/marketing/MarketingCalendarView.tsx`
 
 Requirements:
+
 - Install calendar library: `npm install react-big-calendar date-fns`
 - Display marketing contents on calendar based on `scheduledFor` date
 - Month/Week/Day view options
@@ -295,6 +340,7 @@ Requirements:
 - Add new content from calendar (click on date)
 
 **Update:** `MarketingContentPage.tsx`
+
 - Add view toggle between List and Calendar views
 - Preserve filters when switching views
 
@@ -303,6 +349,7 @@ Requirements:
 **Create:** `apps/api/src/workers/publishing-worker.ts`
 
 This is a background job/worker that:
+
 1. Runs every minute (use cron job or scheduler like node-cron)
 2. Calls `getScheduledContents()` from publishing service
 3. For each content ready to publish:
@@ -313,6 +360,7 @@ This is a background job/worker that:
 4. Log all publishing attempts
 
 Platform API Integration:
+
 - **LinkedIn:** Use LinkedIn API for posts
 - **Twitter:** Use Twitter API v2
 - **Instagram:** Use Instagram Graph API
@@ -325,6 +373,7 @@ Note: Each platform requires OAuth setup and API credentials.
 **Create:** OAuth routes and handlers for each platform
 
 This is optional but recommended for production:
+
 - Set up OAuth apps on each platform (LinkedIn, Twitter, Instagram, Facebook)
 - Create OAuth callback routes in backend
 - Implement token refresh logic
@@ -429,16 +478,16 @@ apps/web/src/
 
 ## 📊 Progress Summary
 
-| Feature | Database | Backend API | Frontend Hooks | Frontend UI | Status |
-|---------|----------|-------------|----------------|-------------|---------|
-| Campaign Management | ✅ | ✅ | ✅ | 🚧 | 60% |
-| Brand Profiles | ✅ | ✅ | ✅ | 🚧 | 60% |
-| Brand Assets | ✅ | ✅ | ✅ | 🚧 | 60% |
-| Publishing Connections | ✅ | ✅ | ✅ | 🚧 | 60% |
-| Content Publishing | ✅ | ✅ | ✅ | 🚧 | 60% |
-| Calendar View | ✅ | ✅ | ✅ | 🚧 | 40% |
-| Publishing Worker | ✅ | ✅ | N/A | N/A | 40% |
-| OAuth Integration | ✅ | 🚧 | N/A | N/A | 20% |
+| Feature                | Database | Backend API | Frontend Hooks | Frontend UI | Status |
+| ---------------------- | -------- | ----------- | -------------- | ----------- | ------ |
+| Campaign Management    | ✅       | ✅          | ✅             | 🚧          | 60%    |
+| Brand Profiles         | ✅       | ✅          | ✅             | 🚧          | 60%    |
+| Brand Assets           | ✅       | ✅          | ✅             | 🚧          | 60%    |
+| Publishing Connections | ✅       | ✅          | ✅             | 🚧          | 60%    |
+| Content Publishing     | ✅       | ✅          | ✅             | 🚧          | 60%    |
+| Calendar View          | ✅       | ✅          | ✅             | 🚧          | 40%    |
+| Publishing Worker      | ✅       | ✅          | N/A            | N/A         | 40%    |
+| OAuth Integration      | ✅       | 🚧          | N/A            | N/A         | 20%    |
 
 **Overall Progress: ~55% Complete**
 
@@ -449,17 +498,20 @@ apps/web/src/
 To continue development:
 
 1. **Pull the latest changes:**
+
    ```bash
    git pull origin claude/plan-future-phases-017LT5Dbwm3Bh29jp4gfHbAw
    ```
 
 2. **Run database migration** (when database is available):
+
    ```bash
    cd pmo
    npx prisma migrate deploy
    ```
 
 3. **Start the development servers:**
+
    ```bash
    # Terminal 1 - Backend API
    cd pmo/apps/api
