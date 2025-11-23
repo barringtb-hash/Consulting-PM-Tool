@@ -35,10 +35,12 @@ export function Button({
   disabled,
   className,
   children,
+  type = 'button',
   ...props
 }: ButtonProps): JSX.Element {
   return (
     <button
+      type={type}
       className={cn(
         'inline-flex items-center justify-center gap-2',
         'font-medium rounded-lg',
