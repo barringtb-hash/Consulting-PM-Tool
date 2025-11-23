@@ -118,6 +118,27 @@ enum UserRole {
   ADMIN
 }
 
+enum ContentType {
+  BLOG_POST
+  CASE_STUDY
+  LINKEDIN_POST
+  TWITTER_POST
+  EMAIL_TEMPLATE
+  WHITEPAPER
+  SOCIAL_STORY
+  VIDEO_SCRIPT
+  NEWSLETTER
+  OTHER
+}
+
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
@@ -128,11 +149,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  ownedProjects Project[]
-  documents     Document[]
-  tasks         Task[]
-  createdAssets AIAsset[]
-  ownedLeads    InboundLead[]
+  ownedProjects      Project[]
+  documents          Document[]
+  tasks              Task[]
+  createdAssets      AIAsset[]
+  ownedLeads         InboundLead[]
+  createdContents    MarketingContent[]
 }
 
 model Client {
@@ -147,11 +169,12 @@ model Client {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  contacts     Contact[]
-  projects     Project[]
-  documents    Document[]
-  aiAssets     AIAsset[]
-  inboundLeads InboundLead[]
+  contacts          Contact[]
+  projects          Project[]
+  documents         Document[]
+  aiAssets          AIAsset[]
+  inboundLeads      InboundLead[]
+  marketingContents MarketingContent[]
 }
 
 model Contact {
@@ -230,13 +253,14 @@ model Project {
   leadSource         LeadSource?
   lostReason         String?
 
-  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  owner     User       @relation(fields: [ownerId], references: [id])
-  documents Document[]
-  tasks     Task[]
-  meetings  Meeting[]
-  milestones Milestone[]
-  assets    ProjectAIAsset[]
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  owner             User               @relation(fields: [ownerId], references: [id])
+  documents         Document[]
+  tasks             Task[]
+  meetings          Meeting[]
+  milestones        Milestone[]
+  assets            ProjectAIAsset[]
+  marketingContents MarketingContent[]
 
   @@index([status, pipelineStage])
 }
@@ -311,8 +335,9 @@ model Meeting {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sourceTasks   Task[]
+  project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceTasks       Task[]
+  marketingContents MarketingContent[]
 
   @@index([projectId, date(sort: Desc)])
   @@index([category, date(sort: Desc)])
@@ -350,4 +375,37 @@ model ProjectAIAsset {
   asset   AIAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, assetId])
+}
+
+model MarketingContent {
+  id               Int           @id @default(autoincrement())
+  name             String
+  type             ContentType
+  status           ContentStatus @default(DRAFT)
+  content          Json?
+  summary          String?
+  tags             String[]      @default([])
+
+  // Relations
+  clientId         Int
+  projectId        Int?
+  sourceMeetingId  Int?
+  createdById      Int?
+
+  // Publishing metadata
+  publishedAt      DateTime?
+  scheduledFor     DateTime?
+  archived         Boolean       @default(false)
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  client           Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project          Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  sourceMeeting    Meeting?      @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  createdBy        User?         @relation(fields: [createdById], references: [id])
+
+  @@index([clientId, type])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([projectId])
 }

@@ -13,6 +13,7 @@ import { ClientProjectProvider } from './pages/ClientProjectContext';
 import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 import AssetsPage from './pages/AssetsPage';
+import MarketingContentPage from './pages/MarketingContentPage';
 import { AdminCreateUserPage } from './pages/AdminCreateUserPage';
 import { AdminUsersListPage } from './pages/AdminUsersListPage';
 import { AdminUserEditPage } from './pages/AdminUserEditPage';
@@ -41,6 +42,7 @@ function App(): JSX.Element {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<MyTasksPage />} />
             <Route path="/assets" element={<AssetsPage />} />
+            <Route path="/marketing" element={<MarketingContentPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
             <Route path="/client-intake" element={<ClientIntakePage />} />

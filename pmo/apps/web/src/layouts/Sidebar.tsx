@@ -6,6 +6,7 @@ import {
   Users,
   FolderKanban,
   FileText,
+  Megaphone,
   TrendingUp,
   UserCheck,
   UserCog,
@@ -48,6 +49,12 @@ const navItems: NavItem[] = [
     label: 'Assets',
     path: '/assets',
     icon: FileText,
+    group: 'main',
+  },
+  {
+    label: 'Marketing',
+    path: '/marketing',
+    icon: Megaphone,
     group: 'main',
   },
   {
