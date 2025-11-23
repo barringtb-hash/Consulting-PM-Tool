@@ -69,3 +69,14 @@ export async function generateDocument(
   const data = await handleResponse<{ document: Document }>(response);
   return data.document;
 }
+
+export async function deleteDocument(documentId: number): Promise<void> {
+  const response = await fetch(
+    `${DOCUMENTS_BASE_PATH}/${documentId}`,
+    buildOptions({
+      method: 'DELETE',
+    }),
+  );
+
+  await handleResponse(response);
+}

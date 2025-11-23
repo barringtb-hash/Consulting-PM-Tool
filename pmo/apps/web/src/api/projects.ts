@@ -234,3 +234,14 @@ export async function generateStatusSummary(
 
   return handleResponse<StatusSummaryResponse>(response);
 }
+
+export async function deleteProject(projectId: number): Promise<void> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}`,
+    buildOptions({
+      method: 'DELETE',
+    }),
+  );
+
+  await handleResponse(response);
+}

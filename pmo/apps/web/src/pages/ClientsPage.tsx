@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 
 import { AiMaturity, CompanySize } from '../api/clients';
-import { useClients, useCreateClient, useProjects } from '../api/queries';
+import {
+  useClients,
+  useCreateClient,
+  useDeleteClient,
+  useProjects,
+} from '../api/queries';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -52,6 +57,7 @@ function ClientsPage(): JSX.Element {
   });
 
   const createClient = useCreateClient();
+  const deleteClient = useDeleteClient();
 
   const filterParams = useMemo(
     () => ({
@@ -143,6 +149,29 @@ function ClientsPage(): JSX.Element {
       // They can click on it if they want to view details
     } catch {
       showToast('Failed to create client', 'error');
+    }
+  };
+
+  const handleDeleteClient = async (
+    e: React.MouseEvent,
+    clientId: number,
+    clientName: string,
+  ) => {
+    e.stopPropagation(); // Prevent row click navigation
+
+    if (
+      !window.confirm(
+        `Are you sure you want to delete "${clientName}"? This will also delete all associated projects, tasks, and other data. This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteClient.mutateAsync(clientId);
+      showToast('Client deleted successfully', 'success');
+    } catch {
+      showToast('Failed to delete client', 'error');
     }
   };
 
@@ -434,6 +463,9 @@ function ClientsPage(): JSX.Element {
                       <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
                         Last Updated
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-neutral-200">
@@ -487,6 +519,18 @@ function ClientsPage(): JSX.Element {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
                           {formatDate(client.updatedAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={(e) =>
+                              handleDeleteClient(e, client.id, client.name)
+                            }
+                            disabled={deleteClient.isPending}
+                          >
+                            Delete
+                          </Button>
                         </td>
                       </tr>
                     ))}

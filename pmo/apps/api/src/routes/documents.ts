@@ -2,7 +2,12 @@ import { Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
 import prisma from '../prisma/client';
-import { generateDocument, listDocuments } from '../services/document.service';
+import {
+  generateDocument,
+  listDocuments,
+  getDocumentById,
+  deleteDocument,
+} from '../services/document.service';
 import { documentGenerateSchema } from '../validation/document.schema';
 
 const router = Router();
@@ -93,5 +98,40 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
 
   res.status(201).json({ document });
 });
+
+type DocumentParams = { id: string };
+
+router.delete(
+  '/:id',
+  async (req: AuthenticatedRequest<DocumentParams>, res) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const documentId = Number(req.params.id);
+
+    if (Number.isNaN(documentId)) {
+      res.status(400).json({ error: 'Invalid document id' });
+      return;
+    }
+
+    const document = await getDocumentById(documentId);
+
+    if (!document) {
+      res.status(404).json({ error: 'Document not found' });
+      return;
+    }
+
+    if (document.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    await deleteDocument(documentId);
+
+    res.status(204).send();
+  },
+);
 
 export default router;

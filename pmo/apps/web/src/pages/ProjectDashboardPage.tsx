@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   LayoutDashboard,
@@ -9,7 +9,12 @@ import {
   FolderOpen,
   Settings,
 } from 'lucide-react';
-import { useClient, useProject, useUpdateProject } from '../api/queries';
+import {
+  useClient,
+  useDeleteProject,
+  useProject,
+  useUpdateProject,
+} from '../api/queries';
 import { type Project, type ProjectStatus } from '../api/projects';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { useClientProjectContext } from './ClientProjectContext';
@@ -24,9 +29,10 @@ import { ProjectStatusPill } from '../components/ProjectStatusPill';
 import { Card, CardBody, CardHeader, CardTitle } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
+import { useToast } from '../ui/Toast';
 
 // Import task and milestone components
-import { useProjectTasks, useMoveTask } from '../hooks/tasks';
+import { useProjectTasks, useMoveTask, useDeleteTask } from '../hooks/tasks';
 import { TaskKanbanBoard } from '../components/TaskKanbanBoard';
 import {
   useProjectMilestones,
@@ -71,6 +77,8 @@ function formatDate(dateStr?: string | null): string {
 
 function ProjectDashboardPage(): JSX.Element {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const projectId = useMemo(() => Number(id), [id]);
 
   const projectQuery = useProject(
@@ -79,6 +87,7 @@ function ProjectDashboardPage(): JSX.Element {
   const project = projectQuery.data as Project | undefined;
   const clientQuery = useClient(project?.clientId);
   const updateProjectMutation = useUpdateProject(projectId || 0);
+  const deleteProjectMutation = useDeleteProject();
   const { setSelectedClient, setSelectedProject } = useClientProjectContext();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -90,6 +99,7 @@ function ProjectDashboardPage(): JSX.Element {
   // Tasks
   const tasksQuery = useProjectTasks(projectId);
   const moveTaskMutation = useMoveTask(projectId);
+  const deleteTaskMutation = useDeleteTask(projectId);
 
   // Milestones
   const milestonesQuery = useProjectMilestones(projectId);
@@ -122,6 +132,26 @@ function ProjectDashboardPage(): JSX.Element {
   useRedirectOnUnauthorized(projectQuery.error);
   useRedirectOnUnauthorized(clientQuery.error);
 
+  const handleDeleteProject = async () => {
+    if (!project) return;
+
+    if (
+      !window.confirm(
+        `Are you sure you want to delete "${project.name}"? This will also delete all tasks, milestones, meetings, and other associated data. This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteProjectMutation.mutateAsync(projectId);
+      showToast('Project deleted successfully', 'success');
+      navigate('/dashboard');
+    } catch {
+      showToast('Failed to delete project', 'error');
+    }
+  };
+
   useEffect(() => {
     if (project) {
       setSelectedProject(project);
@@ -148,6 +178,16 @@ function ProjectDashboardPage(): JSX.Element {
       });
     } catch (err) {
       console.error('Failed to move task:', err);
+    }
+  };
+
+  const handleTaskDelete = async (taskId: number) => {
+    try {
+      await deleteTaskMutation.mutateAsync(taskId);
+      showToast('Task deleted successfully', 'success');
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      showToast('Failed to delete task', 'error');
     }
   };
 
@@ -340,12 +380,24 @@ function ProjectDashboardPage(): JSX.Element {
           )
         }
         action={
-          <Link to="/dashboard">
-            <Button variant="secondary">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+          <div className="flex gap-2">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleDeleteProject}
+              disabled={deleteProjectMutation.isPending}
+            >
+              {deleteProjectMutation.isPending
+                ? 'Deleting...'
+                : 'Delete Project'}
             </Button>
-          </Link>
+            <Link to="/dashboard">
+              <Button variant="secondary">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -537,7 +589,11 @@ function ProjectDashboardPage(): JSX.Element {
             )}
 
             {!tasksQuery.isLoading && !tasksQuery.error && (
-              <TaskKanbanBoard tasks={tasks} onTaskMove={handleTaskMove} />
+              <TaskKanbanBoard
+                tasks={tasks}
+                onTaskMove={handleTaskMove}
+                onTaskDelete={handleTaskDelete}
+              />
             )}
           </TabsContent>
 

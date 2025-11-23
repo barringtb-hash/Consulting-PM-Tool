@@ -117,3 +117,14 @@ export async function archiveClient(clientId: number): Promise<Client> {
   const data = await handleResponse<{ client: Client }>(response);
   return data.client;
 }
+
+export async function deleteClient(clientId: number): Promise<void> {
+  const response = await fetch(
+    `${CLIENTS_BASE_PATH}/${clientId}`,
+    buildOptions({
+      method: 'DELETE',
+    }),
+  );
+
+  await handleResponse(response);
+}
