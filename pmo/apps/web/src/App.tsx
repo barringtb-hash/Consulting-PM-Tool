@@ -14,6 +14,8 @@ import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 import AssetsPage from './pages/AssetsPage';
 import { AdminCreateUserPage } from './pages/AdminCreateUserPage';
+import LeadsPage from './pages/LeadsPage';
+import PipelinePage from './pages/PipelinePage';
 
 function AuthenticatedLayout(): JSX.Element {
   return (
@@ -43,6 +45,8 @@ function App(): JSX.Element {
             <Route path="/projects/new" element={<ProjectSetupPage />} />
             <Route path="/projects/:id" element={<ProjectDashboardPage />} />
             <Route path="/meetings/:id" element={<MeetingDetailPage />} />
+            <Route path="/sales/leads" element={<LeadsPage />} />
+            <Route path="/sales/pipeline" element={<PipelinePage />} />
             <Route path="/admin/users/new" element={<AdminCreateUserPage />} />
           </Route>
         </Route>

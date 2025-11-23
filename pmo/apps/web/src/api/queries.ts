@@ -61,11 +61,25 @@ import {
   type AssetPayload,
   type ProjectAssetLink,
 } from './assets';
+import {
+  convertLead,
+  createLead,
+  deleteLead,
+  fetchLeadById,
+  fetchLeads,
+  updateLead,
+  type LeadConversionPayload,
+  type LeadFilters,
+  type LeadPayload,
+  type LeadUpdatePayload,
+} from './leads';
 
 export const queryKeys = {
   clients: (filters?: ClientFilters) => ['clients', filters] as const,
   client: (id: number) => ['client', id] as const,
   contacts: (clientId?: number) => ['contacts', clientId] as const,
+  leads: (filters?: LeadFilters) => ['leads', filters] as const,
+  lead: (id: number) => ['lead', id] as const,
   projects: (filters?: ProjectFilters) => ['projects', filters] as const,
   project: (id: number) => ['project', id] as const,
   projectStatus: (id: number, rangeDays?: number) =>
@@ -552,6 +566,81 @@ export function useDeleteContact(clientId: number) {
         (data) =>
           data ? data.filter((contact) => contact.id !== contactId) : data,
       );
+    },
+  });
+}
+
+// Lead hooks
+export function useLeads(filters?: LeadFilters) {
+  return useQuery({
+    queryKey: queryKeys.leads(filters),
+    queryFn: () => fetchLeads(filters),
+  });
+}
+
+export function useLead(leadId?: number) {
+  return useQuery({
+    queryKey: leadId ? queryKeys.lead(leadId) : ['lead'],
+    enabled: Boolean(leadId),
+    queryFn: () => fetchLeadById(leadId as number),
+  });
+}
+
+export function useCreateLead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: LeadPayload) => createLead(payload),
+    onSuccess: (lead) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.setQueryData(queryKeys.lead(lead.id), lead);
+    },
+  });
+}
+
+export function useUpdateLead(leadId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: LeadUpdatePayload) => updateLead(leadId, payload),
+    onSuccess: (lead) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.setQueryData(queryKeys.lead(leadId), lead);
+    },
+  });
+}
+
+export function useConvertLead(leadId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: LeadConversionPayload) =>
+      convertLead(leadId, payload),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      if (result.clientId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.client(result.clientId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.contacts(result.clientId),
+        });
+      }
+      queryClient.setQueryData(queryKeys.lead(leadId), result.lead);
+    },
+  });
+}
+
+export function useDeleteLead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (leadId: number) => deleteLead(leadId),
+    onSuccess: (_, leadId) => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.removeQueries({ queryKey: queryKeys.lead(leadId) });
     },
   });
 }
