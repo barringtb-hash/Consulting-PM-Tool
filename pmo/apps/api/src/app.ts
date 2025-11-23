@@ -20,6 +20,13 @@ import { errorHandler } from './middleware/error.middleware';
 export function createApp(): express.Express {
   const app = express();
 
+  // Trust proxy - enables req.ip to work correctly behind reverse proxies
+  // In production, configure this based on your infrastructure:
+  // - 'loopback' for local proxies only
+  // - number (e.g., 1) for a specific number of proxy hops
+  // - function for custom logic
+  app.set('trust proxy', true);
+
   app.use(
     cors({
       origin: true,
