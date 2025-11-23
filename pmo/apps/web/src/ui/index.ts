@@ -6,6 +6,7 @@ export * from './Select';
 export * from './Checkbox';
 export * from './Badge';
 export * from './Card';
+export * from './Modal';
 export * from './PageHeader';
 export * from './Section';
 export * from './Tabs';

@@ -29,6 +29,7 @@ export const env = {
   jwtSecret: getRequiredEnv('JWT_SECRET'),
   jwtExpiresIn: getRequiredEnv('JWT_EXPIRES_IN'),
   bcryptSaltRounds: getRequiredNumberEnv('BCRYPT_SALT_ROUNDS'),
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
 };
 
 export default env;
