@@ -336,7 +336,8 @@ export function useCreateMarketingContent(): UseMutationResult<
   return useMutation({
     mutationFn: createMarketingContent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: marketingQueryKeys.lists() });
+      // Invalidate all marketing queries to ensure UI updates everywhere
+      queryClient.invalidateQueries({ queryKey: marketingQueryKeys.all });
     },
   });
 }
@@ -378,7 +379,8 @@ export function useArchiveMarketingContent(): UseMutationResult<
   return useMutation({
     mutationFn: archiveMarketingContent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: marketingQueryKeys.lists() });
+      // Invalidate all marketing queries to ensure UI updates everywhere
+      queryClient.invalidateQueries({ queryKey: marketingQueryKeys.all });
     },
   });
 }
