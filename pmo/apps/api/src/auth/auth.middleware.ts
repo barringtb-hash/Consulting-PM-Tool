@@ -1,9 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
+import { PrismaClient } from '@prisma/client';
 
 import { verifyToken } from './jwt';
-import { prisma } from '../db/prisma';
+
+const prisma = new PrismaClient();
 
 export type AuthenticatedRequest<
   Params = ParamsDictionary,
