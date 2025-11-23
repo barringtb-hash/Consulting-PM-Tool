@@ -6,9 +6,9 @@ import {
   Users,
   FolderKanban,
   FileText,
-  UserPlus,
   TrendingUp,
   UserCheck,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
 
@@ -63,9 +63,9 @@ const navItems: NavItem[] = [
     group: 'sales',
   },
   {
-    label: 'Create User',
-    path: '/admin/users/new',
-    icon: UserPlus,
+    label: 'Users',
+    path: '/admin/users',
+    icon: UserCog,
     group: 'admin',
   },
 ];

@@ -1,21 +1,24 @@
 import express, { Response } from 'express';
 
-import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
-import { createUser, getAllUsers } from '../services/user.service';
-import { createUserSchema } from '../validation/user.schema';
+import { AuthenticatedRequest, requireAdmin } from '../auth/auth.middleware';
+import {
+  createUser,
+  deleteUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+} from '../services/user.service';
+import { createUserSchema, updateUserSchema } from '../validation/user.schema';
 
 const router = express.Router();
 
 /**
  * POST /api/users
- * Create a new user
- *
- * TODO: Add admin-only authorization when role system is implemented.
- * For now, any authenticated user can create users.
+ * Create a new user (Admin only)
  */
 router.post(
   '/',
-  requireAuth,
+  requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Validate request body
@@ -29,9 +32,9 @@ router.post(
         return;
       }
 
-      const { name, email, password, timezone } = validation.data;
+      const { name, email, password, timezone, role } = validation.data;
 
-      const user = await createUser({ name, email, password, timezone });
+      const user = await createUser({ name, email, password, timezone, role });
 
       res.status(201).json(user);
     } catch (err: unknown) {
@@ -52,19 +55,133 @@ router.post(
 
 /**
  * GET /api/users
- * Get all users
- *
- * TODO: Add admin-only authorization when role system is implemented.
+ * Get all users (Admin only)
  */
 router.get(
   '/',
-  requireAuth,
+  requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const users = await getAllUsers();
       res.json(users);
     } catch (err: unknown) {
       console.error('Error fetching users:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * GET /api/users/:id
+ * Get a user by ID (Admin only)
+ */
+router.get(
+  '/:id',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid user ID' });
+        return;
+      }
+
+      const user = await getUserById(id);
+
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      res.json(user);
+    } catch (err: unknown) {
+      console.error('Error fetching user:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * PUT /api/users/:id
+ * Update a user (Admin only)
+ */
+router.put(
+  '/:id',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid user ID' });
+        return;
+      }
+
+      // Validate request body
+      const validation = updateUserSchema.safeParse(req.body);
+
+      if (!validation.success) {
+        res.status(400).json({
+          error: 'Validation failed',
+          details: validation.error.format(),
+        });
+        return;
+      }
+
+      const user = await updateUser(id, validation.data);
+
+      res.json(user);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message === 'User not found') {
+          res.status(404).json({ error: err.message });
+          return;
+        }
+        if (err.message === 'Email already in use') {
+          res.status(409).json({ error: err.message });
+          return;
+        }
+        console.error('Error updating user:', err);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+      console.error('Unknown error updating user:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * DELETE /api/users/:id
+ * Delete a user (Admin only)
+ */
+router.delete(
+  '/:id',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid user ID' });
+        return;
+      }
+
+      await deleteUser(id);
+
+      res.status(204).send();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message === 'User not found') {
+          res.status(404).json({ error: err.message });
+          return;
+        }
+        console.error('Error deleting user:', err);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+      console.error('Unknown error deleting user:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
