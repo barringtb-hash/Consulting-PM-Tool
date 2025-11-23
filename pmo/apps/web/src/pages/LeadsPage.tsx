@@ -311,7 +311,7 @@ export function LeadsPage(): JSX.Element {
     }
   };
 
-  const handleConvertLead = async (_leadId: number) => {
+  const handleConvertLead = async () => {
     try {
       const result = await convertLead.mutateAsync({
         createClient: true,

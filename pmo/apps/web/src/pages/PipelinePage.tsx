@@ -221,17 +221,14 @@ export function PipelinePage(): JSX.Element {
       0,
     );
 
-    const weightedValue = pipelineDeals.reduce(
-      (sum, deal) => {
-        const probability =
-          deal.probability ||
-          PIPELINE_STAGES.find((s) => s.value === deal.pipelineStage)
-            ?.probability ||
-          0;
-        return sum + (deal.pipelineValue || 0) * (probability / 100);
-      },
-      0,
-    );
+    const weightedValue = pipelineDeals.reduce((sum, deal) => {
+      const probability =
+        deal.probability ||
+        PIPELINE_STAGES.find((s) => s.value === deal.pipelineStage)
+          ?.probability ||
+        0;
+      return sum + (deal.pipelineValue || 0) * (probability / 100);
+    }, 0);
 
     const avgDealSize =
       pipelineDeals.length > 0 ? totalValue / pipelineDeals.length : 0;
@@ -330,8 +327,8 @@ export function PipelinePage(): JSX.Element {
                 No deals in pipeline yet
               </h3>
               <p className="text-neutral-600 mb-6">
-                Get started by converting leads from your leads page or create a new
-                deal directly.
+                Get started by converting leads from your leads page or create a
+                new deal directly.
               </p>
               <div className="flex gap-3 justify-center">
                 <Button onClick={() => navigate('/sales/leads')}>
