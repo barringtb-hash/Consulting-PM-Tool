@@ -7,12 +7,12 @@ export function buildAuthCookieOptions(): CookieOptions {
 
   return {
     httpOnly: true,
-    // Production: Use 'none' for cross-origin (Vercel frontend + Render API) with HTTPS.
-    // Development: Use 'lax' for same-origin requests via Vite proxy over HTTP.
-    sameSite: isProd ? 'none' : 'lax',
-    // Production: Requires secure=true for HTTPS and sameSite='none'.
-    // Development: Must be false for HTTP; browsers reject Secure cookies over HTTP.
-    secure: isProd,
+    // Use 'none' in both development and production to support cross-origin requests.
+    // This is required when frontend (localhost:3000) makes requests to backend (localhost:4000)
+    // without using the Vite proxy, or in production (Vercel frontend + Render API).
+    sameSite: 'none',
+    // Must be true for sameSite='none'. Modern browsers support this even on localhost.
+    secure: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
   };
