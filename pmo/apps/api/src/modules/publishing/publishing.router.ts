@@ -20,14 +20,14 @@ const publishingConnectionCreateSchema = z.object({
   accountName: z.string().min(1),
   accessToken: z.string().min(1),
   refreshToken: z.string().optional(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
 });
 
 const publishingConnectionUpdateSchema = z.object({
   accountName: z.string().min(1).optional(),
   accessToken: z.string().min(1).optional(),
   refreshToken: z.string().optional(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -87,7 +87,7 @@ router.post(
     }
 
     const parsed = publishingConnectionCreateSchema.safeParse({
-      ...req.body,
+      ...(req.body || {}),
       clientId,
     });
     if (!parsed.success) {
@@ -211,7 +211,7 @@ router.post(
     }
 
     const parsed = publishContentSchema.safeParse({
-      ...req.body,
+      ...(req.body || {}),
       contentId,
     });
     if (!parsed.success) {

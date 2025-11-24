@@ -118,7 +118,7 @@ router.post(
     }
 
     const parsed = brandProfileCreateSchema.safeParse({
-      ...req.body,
+      ...(req.body || {}),
       clientId,
     });
     if (!parsed.success) {
@@ -238,7 +238,7 @@ router.post(
     }
 
     const parsed = brandAssetCreateSchema.safeParse({
-      ...req.body,
+      ...(req.body || {}),
       brandProfileId,
     });
     if (!parsed.success) {

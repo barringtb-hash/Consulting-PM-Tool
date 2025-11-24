@@ -197,6 +197,7 @@ export const createCampaign = async (
     data: {
       ...input,
       createdById: ownerId,
+      goals: input.goals as Prisma.InputJsonValue,
     },
     include: {
       client: {
@@ -240,7 +241,13 @@ export const updateCampaign = async (
 
   const campaign = await prisma.campaign.update({
     where: { id },
-    data: input,
+    data: {
+      ...input,
+      goals:
+        input.goals !== undefined
+          ? (input.goals as Prisma.InputJsonValue)
+          : undefined,
+    },
     include: {
       client: {
         select: { id: true, name: true },

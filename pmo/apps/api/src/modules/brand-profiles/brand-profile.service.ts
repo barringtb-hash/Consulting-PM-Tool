@@ -1,4 +1,5 @@
 import prisma from '../../prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   CreateBrandProfileInput,
   UpdateBrandProfileInput,
@@ -62,7 +63,10 @@ export const createBrandProfile = async (
   }
 
   const brandProfile = await prisma.brandProfile.create({
-    data: input,
+    data: {
+      ...input,
+      fonts: input.fonts as Prisma.InputJsonValue,
+    },
     include: {
       client: {
         select: { id: true, name: true },
@@ -89,7 +93,13 @@ export const updateBrandProfile = async (
 
   const brandProfile = await prisma.brandProfile.update({
     where: { id },
-    data: input,
+    data: {
+      ...input,
+      fonts:
+        input.fonts !== undefined
+          ? (input.fonts as Prisma.InputJsonValue)
+          : undefined,
+    },
     include: {
       client: {
         select: { id: true, name: true },
