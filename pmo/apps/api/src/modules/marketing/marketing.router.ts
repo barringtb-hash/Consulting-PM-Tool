@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { z } from 'zod';
 
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import {
@@ -18,6 +19,7 @@ import {
   generateContent,
   repurposeContent,
 } from './marketing.service';
+import { lintMarketingContent } from '../../services/content-lint.service';
 
 const router = Router();
 
@@ -461,6 +463,40 @@ router.post(
     }
 
     res.json(result);
+  },
+);
+
+/**
+ * POST /api/marketing-contents/lint
+ * Lint content for quality and safety issues
+ */
+const lintContentSchema = z.object({
+  title: z.string().optional(),
+  body: z.string(),
+  summary: z.string().optional(),
+});
+
+router.post(
+  '/marketing-contents/lint',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parsed = lintContentSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid content data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const lintResult = lintMarketingContent(parsed.data);
+
+    res.json({ lintResult });
   },
 );
 
