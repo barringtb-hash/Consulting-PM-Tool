@@ -25,6 +25,7 @@ import { Button } from '../ui/Button';
 import { PageHeader } from '../ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 import { ProjectOverviewTab } from '../features/projects/ProjectOverviewTab';
+import { ProjectTasksTab } from '../features/projects/ProjectTasksTab';
 import { ProjectStatusTab } from '../features/status/ProjectStatusTab';
 import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
 import { Badge } from '../ui/Badge';
@@ -35,9 +36,7 @@ import { Input } from '../ui/Input';
 import { useToast } from '../ui/Toast';
 import { EMPTY_STATES, formatStatus } from '../utils/typography';
 
-// Import task and milestone components
-import { useProjectTasks, useMoveTask, useDeleteTask } from '../hooks/tasks';
-import { TaskKanbanBoard } from '../components/TaskKanbanBoard';
+// Import milestone components
 import {
   useProjectMilestones,
   useCreateMilestone,
@@ -112,11 +111,6 @@ function ProjectDashboardPage(): JSX.Element {
   const [editedStatus, setEditedStatus] = useState<ProjectStatus>('PLANNING');
   const [editedStartDate, setEditedStartDate] = useState('');
   const [editedEndDate, setEditedEndDate] = useState('');
-
-  // Tasks
-  const tasksQuery = useProjectTasks(projectId);
-  const moveTaskMutation = useMoveTask(projectId);
-  const deleteTaskMutation = useDeleteTask(projectId);
 
   // Milestones
   const milestonesQuery = useProjectMilestones(projectId);
@@ -195,30 +189,6 @@ function ProjectDashboardPage(): JSX.Element {
       setSelectedClient(clientQuery.data);
     }
   }, [clientQuery.data, setSelectedClient]);
-
-  const handleTaskMove = async (
-    taskId: number,
-    newStatus: 'BACKLOG' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE',
-  ) => {
-    try {
-      await moveTaskMutation.mutateAsync({
-        taskId,
-        payload: { status: newStatus },
-      });
-    } catch (err) {
-      console.error('Failed to move task:', err);
-    }
-  };
-
-  const handleTaskDelete = async (taskId: number) => {
-    try {
-      await deleteTaskMutation.mutateAsync(taskId);
-      showToast('Task deleted successfully', 'success');
-    } catch (err) {
-      console.error('Failed to delete task:', err);
-      showToast('Failed to delete task', 'error');
-    }
-  };
 
   const handleUpdateProjectStatus = async () => {
     if (!project) return;
@@ -361,8 +331,6 @@ function ProjectDashboardPage(): JSX.Element {
     () => milestonesQuery.data ?? [],
     [milestonesQuery.data],
   );
-
-  const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data]);
 
   const marketingContents = useMemo(
     () => projectMarketingContentsQuery.data ?? [],
@@ -642,29 +610,7 @@ function ProjectDashboardPage(): JSX.Element {
           </TabsContent>
 
           <TabsContent value="tasks">
-            {tasksQuery.isLoading && (
-              <Card>
-                <CardBody>
-                  <p className="text-neutral-600">Loading tasks...</p>
-                </CardBody>
-              </Card>
-            )}
-
-            {tasksQuery.error && (
-              <Card>
-                <CardBody>
-                  <p className="text-danger-600">Unable to load tasks</p>
-                </CardBody>
-              </Card>
-            )}
-
-            {!tasksQuery.isLoading && !tasksQuery.error && (
-              <TaskKanbanBoard
-                tasks={tasks}
-                onTaskMove={handleTaskMove}
-                onTaskDelete={handleTaskDelete}
-              />
-            )}
+            <ProjectTasksTab projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="milestones">
