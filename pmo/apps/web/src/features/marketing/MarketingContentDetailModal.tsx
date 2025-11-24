@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
-import { Edit2, Archive } from 'lucide-react';
+import { Edit2, Archive, RefreshCw } from 'lucide-react';
 import {
   type MarketingContent,
   CONTENT_TYPE_LABELS,
   CONTENT_STATUS_LABELS,
   getContentTypeIcon,
 } from '../../../../../packages/types/marketing';
+import { RepurposeContentModal } from './RepurposeContentModal';
 
 interface MarketingContentDetailModalProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ function MarketingContentDetailModal({
   onEdit,
   onArchive,
 }: MarketingContentDetailModalProps): JSX.Element {
+  const [showRepurposeModal, setShowRepurposeModal] = useState(false);
+
   const formatDate = (date?: Date): string => {
     if (!date) return 'N/A';
     try {
@@ -78,6 +81,14 @@ function MarketingContentDetailModal({
             </div>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowRepurposeModal(true)}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Repurpose
+            </Button>
             <Button
               variant="secondary"
               size="sm"
@@ -243,6 +254,15 @@ function MarketingContentDetailModal({
           </Button>
         </div>
       </div>
+
+      {/* Repurpose Modal */}
+      {showRepurposeModal && (
+        <RepurposeContentModal
+          isOpen={showRepurposeModal}
+          onClose={() => setShowRepurposeModal(false)}
+          sourceContent={content}
+        />
+      )}
     </Modal>
   );
 }

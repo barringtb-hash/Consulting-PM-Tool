@@ -13,6 +13,7 @@ import { TASK_PRIORITIES, TASK_STATUSES } from '../../hooks/tasks';
 import { useProjectMilestones } from '../../hooks/milestones';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import MeetingFormModal, { type MeetingFormValues } from './MeetingFormModal';
+import { GenerateFromMeetingButton } from '../marketing';
 
 interface DetailFormValues {
   notes: string;
@@ -287,6 +288,14 @@ function MeetingDetailPage(): JSX.Element {
           <button type="button" onClick={handleDelete}>
             Delete meeting
           </button>
+          {projectQuery.data && (
+            <GenerateFromMeetingButton
+              meetingId={meeting.id}
+              meetingTitle={meeting.title}
+              projectId={meeting.projectId}
+              clientId={projectQuery.data.clientId}
+            />
+          )}
         </div>
       </header>
 
