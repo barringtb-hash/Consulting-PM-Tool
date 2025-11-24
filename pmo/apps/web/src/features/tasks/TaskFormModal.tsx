@@ -4,7 +4,11 @@ import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
 import { Button } from '../../ui/Button';
-import { TASK_STATUSES, TASK_PRIORITIES, type TaskPayload } from '../../api/tasks';
+import {
+  TASK_STATUSES,
+  TASK_PRIORITIES,
+  type TaskPayload,
+} from '../../api/tasks';
 import type { Milestone } from '../../api/milestones';
 
 export interface TaskFormValues {
@@ -56,10 +60,7 @@ export function TaskFormModal({
     }
   }, [isOpen]);
 
-  const handleChange = (
-    field: keyof TaskFormValues,
-    value: string,
-  ): void => {
+  const handleChange = (field: keyof TaskFormValues, value: string): void => {
     setValues((prev) => ({ ...prev, [field]: value }));
     // Clear validation error for this field when user starts typing
     if (validationErrors[field]) {
@@ -96,7 +97,9 @@ export function TaskFormModal({
       status: values.status as TaskPayload['status'],
       priority: values.priority as TaskPayload['priority'],
       dueDate: values.dueDate || undefined,
-      milestoneId: values.milestoneId ? parseInt(values.milestoneId, 10) : undefined,
+      milestoneId: values.milestoneId
+        ? parseInt(values.milestoneId, 10)
+        : undefined,
     };
 
     await onSubmit(payload);
@@ -107,7 +110,12 @@ export function TaskFormModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title="Create New Task" size="medium">
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      title="Create New Task"
+      size="medium"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="p-4 bg-danger-50 border border-danger-200 rounded-lg">

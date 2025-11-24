@@ -67,11 +67,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold text-neutral-900">Tasks</h2>
-        <Button
-          variant="primary"
-          size="default"
-          onClick={handleOpenModal}
-        >
+        <Button variant="primary" size="default" onClick={handleOpenModal}>
           <Plus className="w-5 h-5" />
           Add Task
         </Button>
