@@ -56,7 +56,7 @@ export const generateMarketingContent = async (
     // Build the user prompt with context
     const userPrompt = buildUserPrompt(type, anonymizedContext);
 
-    // Call OpenAI API
+    // Call OpenAI API using O1 model
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -64,17 +64,12 @@ export const generateMarketingContent = async (
         Authorization: `Bearer ${env.openaiApiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        max_tokens: getMaxTokens(length),
-        temperature: getToneTemperature(tone),
+        model: 'o1-preview',
+        max_completion_tokens: getMaxTokens(length),
         messages: [
           {
-            role: 'system',
-            content: systemPrompt,
-          },
-          {
             role: 'user',
-            content: userPrompt,
+            content: `${systemPrompt}\n\n${userPrompt}`,
           },
         ],
       }),
