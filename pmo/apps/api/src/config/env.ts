@@ -31,6 +31,9 @@ export const env = {
   bcryptSaltRounds: getRequiredNumberEnv('BCRYPT_SALT_ROUNDS'),
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   openaiApiKey: process.env.OPENAI_API_KEY,
+  // CORS_ORIGIN: Frontend URL for cross-origin cookie authentication
+  // When set, enables cross-origin cookie settings (sameSite='none', secure=true)
+  corsOrigin: process.env.CORS_ORIGIN,
 };
 
 export default env;

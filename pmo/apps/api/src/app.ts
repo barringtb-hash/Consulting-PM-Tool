@@ -20,13 +20,17 @@ import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
 import { errorHandler } from './middleware/error.middleware';
+import { env } from './config/env';
 
 export function createApp(): express.Express {
   const app = express();
 
+  // CORS configuration for cross-origin cookie authentication
+  // When CORS_ORIGIN is set, use explicit origin for proper cookie handling
+  const corsOrigin = env.corsOrigin;
   app.use(
     cors({
-      origin: true,
+      origin: corsOrigin || true,
       credentials: true,
     }),
   );
