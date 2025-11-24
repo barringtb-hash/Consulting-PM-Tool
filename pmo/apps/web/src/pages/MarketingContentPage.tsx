@@ -29,9 +29,11 @@ const CONTENT_STATUS_VARIANTS: Record<
   ContentStatus,
   'primary' | 'success' | 'warning' | 'neutral' | 'secondary'
 > = {
+  IDEA: 'neutral',
   DRAFT: 'neutral',
   IN_REVIEW: 'warning',
   APPROVED: 'primary',
+  READY: 'primary',
   PUBLISHED: 'success',
   ARCHIVED: 'secondary',
 };

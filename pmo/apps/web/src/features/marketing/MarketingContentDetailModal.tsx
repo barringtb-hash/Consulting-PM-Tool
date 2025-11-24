@@ -10,6 +10,7 @@ import {
   getContentTypeIcon,
 } from '../../../../../packages/types/marketing';
 import { RepurposeContentModal } from './RepurposeContentModal';
+import { ContentQualityPanel } from './ContentQualityPanel';
 
 interface MarketingContentDetailModalProps {
   isOpen: boolean;
@@ -23,9 +24,11 @@ const CONTENT_STATUS_VARIANTS: Record<
   MarketingContent['status'],
   'primary' | 'success' | 'warning' | 'neutral' | 'secondary'
 > = {
+  IDEA: 'neutral',
   DRAFT: 'neutral',
   IN_REVIEW: 'warning',
   APPROVED: 'primary',
+  READY: 'primary',
   PUBLISHED: 'success',
   ARCHIVED: 'secondary',
 };
@@ -246,6 +249,20 @@ function MarketingContentDetailModal({
             </div>
           </div>
         )}
+
+        {/* Quality Check */}
+        {content.content &&
+          typeof content.content === 'object' &&
+          content.content.body && (
+            <ContentQualityPanel
+              content={{
+                title: content.content.title,
+                body: content.content.body,
+                summary: content.summary,
+              }}
+              autoLint={true}
+            />
+          )}
 
         {/* Actions */}
         <div className="flex justify-end pt-4 border-t border-neutral-200">

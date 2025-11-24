@@ -13,3 +13,4 @@ export { GenerateMarketingContentModal } from './GenerateMarketingContentModal';
 export { RepurposeContentModal } from './RepurposeContentModal';
 export { MarketingContentFormModal } from './MarketingContentFormModal';
 export { MarketingContentDetailModal } from './MarketingContentDetailModal';
+export { ContentQualityPanel } from './ContentQualityPanel';

@@ -15,6 +15,7 @@ interface GenerateContentOptions {
   };
   tone?: 'professional' | 'casual' | 'technical' | 'enthusiastic';
   length?: 'short' | 'medium' | 'long';
+  anonymize?: boolean; // Whether to anonymize client names (default: true)
 }
 
 interface GeneratedContent {
@@ -30,11 +31,22 @@ interface GeneratedContent {
 export const generateMarketingContent = async (
   options: GenerateContentOptions,
 ): Promise<GeneratedContent> => {
-  const { type, context, tone = 'professional', length = 'medium' } = options;
+  const {
+    type,
+    context,
+    tone = 'professional',
+    length = 'medium',
+    anonymize = true,
+  } = options;
+
+  // Anonymize client data by default for privacy
+  const anonymizedContext = anonymize
+    ? anonymizeContext(context)
+    : { ...context };
 
   // If no API key, return placeholder content
   if (!env.anthropicApiKey) {
-    return generatePlaceholderContent(type, context);
+    return generatePlaceholderContent(type, anonymizedContext);
   }
 
   try {
@@ -42,7 +54,7 @@ export const generateMarketingContent = async (
     const systemPrompt = buildSystemPrompt(type, tone, length);
 
     // Build the user prompt with context
-    const userPrompt = buildUserPrompt(type, context);
+    const userPrompt = buildUserPrompt(type, anonymizedContext);
 
     // Call Anthropic API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -69,19 +81,36 @@ export const generateMarketingContent = async (
     if (!response.ok) {
       const error = await response.text();
       console.error('Anthropic API error:', error);
-      return generatePlaceholderContent(type, context);
+      return generatePlaceholderContent(type, anonymizedContext);
     }
 
     const data = await response.json();
     const generatedText = data.content[0].text;
 
     // Parse the generated content based on type
-    return parseGeneratedContent(type, generatedText, context);
+    return parseGeneratedContent(type, generatedText, anonymizedContext);
   } catch (error) {
     console.error('Error generating content:', error);
-    return generatePlaceholderContent(type, context);
+    return generatePlaceholderContent(type, anonymizedContext);
   }
 };
+
+/**
+ * Anonymize sensitive client information
+ */
+function anonymizeContext(
+  context: GenerateContentOptions['context'],
+): GenerateContentOptions['context'] {
+  const anonymized = { ...context };
+
+  // Replace client name with generic placeholder
+  if (anonymized.clientName) {
+    anonymized.clientName = `[Client Company]`;
+  }
+
+  // Keep industry and general project info but anonymize specifics
+  return anonymized;
+}
 
 /**
  * Build system prompt based on content type
@@ -91,18 +120,50 @@ function buildSystemPrompt(
   tone: string,
   length: string,
 ): string {
-  const basePrompt = `You are an expert marketing content writer for AI consulting services. Your task is to create ${tone} content that is ${length} in length.`;
+  // Core safety guidelines that apply to all content types
+  const safetyGuidelines = `
+
+CRITICAL SAFETY GUIDELINES:
+1. NEVER invent client names - use generic placeholders like "our client" or "[Client Company]"
+2. NEVER fabricate performance numbers or metrics - use placeholders like "[X%]", "[specific metric]", or "measurable improvements"
+3. NEVER make guarantees about results - avoid phrases like "guaranteed results", "100% success", "certain outcomes"
+4. NEVER use hyperbolic language - avoid "revolutionary", "game-changing", "unprecedented" unless directly quoted
+5. ALWAYS maintain a professional, honest, and balanced tone
+6. ALWAYS use placeholder text in brackets for specific data points that aren't provided
+7. ALWAYS focus on process, methodology, and approach rather than specific outcomes when data is limited
+
+These are NON-NEGOTIABLE requirements for ethical marketing content.`;
+
+  const basePrompt = `You are an expert marketing content writer for AI consulting services. Your task is to create ${tone} content that is ${length} in length.${safetyGuidelines}`;
 
   const typeSpecificPrompts: Record<ContentType, string> = {
-    BLOG_POST: `${basePrompt} Create engaging blog posts that educate readers about AI consulting projects and methodologies.`,
-    CASE_STUDY: `${basePrompt} Write compelling case studies that highlight client challenges, solutions implemented, and measurable results.`,
-    LINKEDIN_POST: `${basePrompt} Create concise, engaging LinkedIn posts that drive engagement and showcase expertise.`,
-    TWITTER_POST: `${basePrompt} Write punchy, attention-grabbing tweets (max 280 characters) with relevant hashtags.`,
-    EMAIL_TEMPLATE: `${basePrompt} Create persuasive email templates with clear subject lines and strong calls-to-action.`,
-    WHITEPAPER: `${basePrompt} Write authoritative whitepapers that demonstrate thought leadership and deep expertise.`,
-    SOCIAL_STORY: `${basePrompt} Create brief, engaging social media stories that capture attention quickly.`,
-    VIDEO_SCRIPT: `${basePrompt} Write compelling video scripts with strong hooks and clear narratives.`,
-    NEWSLETTER: `${basePrompt} Create informative newsletter content that keeps readers engaged and informed.`,
+    BLOG_POST: `${basePrompt}
+
+Create engaging blog posts that educate readers about AI consulting projects and methodologies. Focus on insights, learnings, and practical approaches.`,
+    CASE_STUDY: `${basePrompt}
+
+Write compelling case studies that highlight client challenges and solutions implemented. For results section, use placeholders like "[X% improvement in Y metric]" if specific numbers aren't provided. Focus on the approach and methodology used.`,
+    LINKEDIN_POST: `${basePrompt}
+
+Create concise, engaging LinkedIn posts that drive engagement and showcase expertise. Keep it authentic and avoid overselling. Share genuine insights and learnings.`,
+    TWITTER_POST: `${basePrompt}
+
+Write punchy, attention-grabbing tweets (max 280 characters) with relevant hashtags. Be genuine and insightful, not salesy.`,
+    EMAIL_TEMPLATE: `${basePrompt}
+
+Create persuasive email templates with clear subject lines and strong calls-to-action. Focus on value proposition without making unrealistic promises.`,
+    WHITEPAPER: `${basePrompt}
+
+Write authoritative whitepapers that demonstrate thought leadership and deep expertise. Focus on frameworks, methodologies, and industry insights rather than specific client data.`,
+    SOCIAL_STORY: `${basePrompt}
+
+Create brief, engaging social media stories that capture attention quickly. Keep it authentic and relatable.`,
+    VIDEO_SCRIPT: `${basePrompt}
+
+Write compelling video scripts with strong hooks and clear narratives. Focus on storytelling and value delivery without exaggeration.`,
+    NEWSLETTER: `${basePrompt}
+
+Create informative newsletter content that keeps readers engaged and informed. Share insights, trends, and valuable perspectives.`,
     OTHER: basePrompt,
   };
 

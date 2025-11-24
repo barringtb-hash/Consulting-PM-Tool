@@ -16,6 +16,8 @@ import {
   type GeneratedContent,
   type MarketingContentListQuery,
   type RepurposeContentInput,
+  type LintContentInput,
+  type ContentLintResult,
 } from '../../../../packages/types/marketing';
 
 interface MarketingContentResponse
@@ -447,5 +449,39 @@ export function useRepurposeMarketingContent(): UseMutationResult<
   return useMutation({
     mutationFn: ({ contentId, payload }) =>
       repurposeMarketingContent(contentId, payload),
+  });
+}
+
+/**
+ * Lint marketing content for quality and safety issues
+ */
+export async function lintMarketingContent(
+  payload: LintContentInput,
+): Promise<ContentLintResult> {
+  const response = await fetch(
+    buildApiUrl('/marketing-contents/lint'),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  const data = await handleResponse<{ lintResult: ContentLintResult }>(
+    response,
+  );
+  return data.lintResult;
+}
+
+/**
+ * Hook to lint marketing content
+ */
+export function useLintMarketingContent(): UseMutationResult<
+  ContentLintResult,
+  Error,
+  LintContentInput,
+  unknown
+> {
+  return useMutation({
+    mutationFn: lintMarketingContent,
   });
 }

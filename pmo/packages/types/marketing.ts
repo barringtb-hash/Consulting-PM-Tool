@@ -517,3 +517,28 @@ export const getDefaultChannelForType = (type: ContentType): ContentChannel => {
   };
   return channelMap[type] || 'GENERIC';
 };
+
+// ========================================
+// Content Linting Types
+// ========================================
+
+export interface ContentLintWarning {
+  type: 'error' | 'warning' | 'info';
+  category: string;
+  message: string;
+  match: string;
+  position?: number;
+}
+
+export interface ContentLintResult {
+  isValid: boolean;
+  warnings: ContentLintWarning[];
+  errors: ContentLintWarning[];
+  score: number; // 0-100, higher is better
+}
+
+export interface LintContentInput {
+  title?: string;
+  body: string;
+  summary?: string;
+}
