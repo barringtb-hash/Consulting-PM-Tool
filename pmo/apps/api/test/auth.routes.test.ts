@@ -138,7 +138,7 @@ describe('auth routes', () => {
     expect(tokenCookie).toBeDefined();
     expect(tokenCookie).toContain('HttpOnly');
     expect(tokenCookie).toContain('Path=/');
-    expect(tokenCookie).toContain('SameSite=Lax');
+    expect(tokenCookie).toContain('SameSite=None');
     expect(tokenCookie).toContain('Max-Age=604800');
     expect(tokenCookie).not.toContain('Secure');
 
