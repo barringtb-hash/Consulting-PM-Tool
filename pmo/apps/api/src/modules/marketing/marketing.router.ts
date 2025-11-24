@@ -460,7 +460,7 @@ router.post(
       }
     }
 
-    res.json({ generated: result.generated });
+    res.json(result);
   },
 );
 

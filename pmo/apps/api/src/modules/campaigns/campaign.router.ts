@@ -20,8 +20,8 @@ const campaignCreateSchema = z.object({
   description: z.string().optional(),
   goals: z.any().optional(),
   status: z.nativeEnum(CampaignStatus).optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z.coerce.date().nullable().optional(),
+  endDate: z.coerce.date().nullable().optional(),
   clientId: z.number(),
   projectId: z.number().optional(),
 });
@@ -31,8 +31,8 @@ const campaignUpdateSchema = z.object({
   description: z.string().optional(),
   goals: z.any().optional(),
   status: z.nativeEnum(CampaignStatus).optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z.coerce.date().nullable().optional(),
+  endDate: z.coerce.date().nullable().optional(),
   projectId: z.number().optional(),
   archived: z.boolean().optional(),
 });

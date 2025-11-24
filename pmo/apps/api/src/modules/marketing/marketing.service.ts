@@ -1,6 +1,5 @@
-import { Prisma } from '@prisma/client';
-
 import prisma from '../../prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   CreateMarketingContentInput,
   UpdateMarketingContentInput,
@@ -214,6 +213,7 @@ export const createMarketingContent = async (
       ...data,
       createdById: ownerId,
       tags: data.tags ?? [],
+      content: data.content as Prisma.InputJsonValue,
     },
     include: {
       client: { select: { id: true, name: true } },
@@ -269,7 +269,13 @@ export const updateMarketingContent = async (
 
   const content = await prisma.marketingContent.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      content:
+        data.content !== undefined
+          ? (data.content as Prisma.InputJsonValue)
+          : undefined,
+    },
     include: {
       client: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },

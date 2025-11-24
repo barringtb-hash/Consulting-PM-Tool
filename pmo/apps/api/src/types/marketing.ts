@@ -148,3 +148,84 @@ export const PublishingPlatform = {
 
 export type PublishingPlatform =
   (typeof PublishingPlatform)[keyof typeof PublishingPlatform];
+
+// Campaign Input Schemas
+export const CreateCampaignSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  goals: z.unknown().optional(),
+  status: z.nativeEnum(CampaignStatus).optional(),
+  startDate: z.coerce.date().nullable().optional(),
+  endDate: z.coerce.date().nullable().optional(),
+  clientId: z.number().int().positive(),
+  projectId: z.number().int().positive().nullable().optional(),
+});
+export type CreateCampaignInput = z.infer<typeof CreateCampaignSchema>;
+
+export const UpdateCampaignSchema = CreateCampaignSchema.partial().extend({
+  archived: z.boolean().optional(),
+});
+export type UpdateCampaignInput = z.infer<typeof UpdateCampaignSchema>;
+
+// Brand Profile Input Schemas
+export const CreateBrandProfileSchema = z.object({
+  clientId: z.number().int().positive(),
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  logoUrl: z.string().optional(),
+  primaryColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  accentColor: z.string().optional(),
+  fonts: z.unknown().optional(),
+  toneVoiceGuidelines: z.string().optional(),
+  valueProposition: z.string().optional(),
+  targetAudience: z.string().optional(),
+  keyMessages: z.array(z.string()).optional(),
+});
+export type CreateBrandProfileInput = z.infer<typeof CreateBrandProfileSchema>;
+
+export const UpdateBrandProfileSchema =
+  CreateBrandProfileSchema.partial().extend({
+    archived: z.boolean().optional(),
+  });
+export type UpdateBrandProfileInput = z.infer<typeof UpdateBrandProfileSchema>;
+
+// Brand Asset Input Schemas
+export const CreateBrandAssetSchema = z.object({
+  brandProfileId: z.number().int().positive(),
+  name: z.string().min(1, 'Name is required'),
+  type: z.nativeEnum(BrandAssetType),
+  url: z.string().min(1, 'URL is required'),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+export type CreateBrandAssetInput = z.infer<typeof CreateBrandAssetSchema>;
+
+export const UpdateBrandAssetSchema = CreateBrandAssetSchema.partial().extend({
+  archived: z.boolean().optional(),
+});
+export type UpdateBrandAssetInput = z.infer<typeof UpdateBrandAssetSchema>;
+
+// Publishing Connection Input Schemas
+export const CreatePublishingConnectionSchema = z.object({
+  clientId: z.number().int().positive(),
+  platform: z.nativeEnum(PublishingPlatform),
+  accountName: z.string().min(1, 'Account name is required'),
+  accessToken: z.string().min(1, 'Access token is required'),
+  refreshToken: z.string().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
+});
+export type CreatePublishingConnectionInput = z.infer<
+  typeof CreatePublishingConnectionSchema
+>;
+
+export const UpdatePublishingConnectionSchema = z.object({
+  accountName: z.string().optional(),
+  accessToken: z.string().optional(),
+  refreshToken: z.string().optional(),
+  expiresAt: z.coerce.date().nullable().optional(),
+  isActive: z.boolean().optional(),
+});
+export type UpdatePublishingConnectionInput = z.infer<
+  typeof UpdatePublishingConnectionSchema
+>;
