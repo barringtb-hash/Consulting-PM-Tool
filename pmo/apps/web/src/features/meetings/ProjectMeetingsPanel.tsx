@@ -11,6 +11,8 @@ import {
 } from '../../api/meetings';
 import MeetingFormModal, { type MeetingFormValues } from './MeetingFormModal';
 import { EMPTY_STATES } from '../../utils/typography';
+import { Card, CardBody, CardHeader, CardTitle } from '../../ui/Card';
+import { Button } from '../../ui/Button';
 
 interface ProjectMeetingsPanelProps {
   projectId?: number;
@@ -128,69 +130,109 @@ function ProjectMeetingsPanel({
   };
 
   return (
-    <section aria-label="project-meetings">
-      <header className="section-header">
-        <div>
-          <h2>Meetings</h2>
-          <p className="text-sm text-neutral-600">
-            Track meeting notes, decisions, and risks.
-          </p>
-        </div>
-        <button type="button" onClick={handleOpenCreate}>
-          Schedule meeting
-        </button>
-      </header>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Meetings</CardTitle>
+              <p className="text-sm text-neutral-600 mt-1">
+                Track meeting notes, decisions, and risks.
+              </p>
+            </div>
+            <Button onClick={handleOpenCreate}>Schedule meeting</Button>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {meetingsQuery.isLoading && (
+            <p className="text-neutral-600">Loading meetings...</p>
+          )}
 
-      {meetingsQuery.isLoading && <p>Loading meetings...</p>}
-      {meetingsQuery.error && (
-        <p role="alert">
-          Unable to load meetings: {meetingsQuery.error.message}
-        </p>
-      )}
+          {meetingsQuery.error && (
+            <p role="alert" className="text-danger-600">
+              Unable to load meetings: {meetingsQuery.error.message}
+            </p>
+          )}
 
-      {!meetingsQuery.isLoading && meetings.length === 0 && (
-        <p className="text-neutral-600">{EMPTY_STATES.noMeetings}</p>
-      )}
+          {!meetingsQuery.isLoading && meetings.length === 0 && (
+            <p className="text-neutral-600">{EMPTY_STATES.noMeetings}</p>
+          )}
 
-      <div className="card-grid">
-        {meetings.map((meeting) => (
-          <article key={meeting.id} className="card">
-            <header className="card__header">
-              <div>
-                <h3>{meeting.title}</h3>
-                <p>
-                  {meeting.date.toLocaleDateString()} at {meeting.time}
-                </p>
-              </div>
-              <div className="card__actions">
-                <Link to={`/meetings/${meeting.id}`}>View</Link>
-                <button type="button" onClick={() => handleOpenEdit(meeting)}>
-                  Edit
-                </button>
-                <button type="button" onClick={() => handleDelete(meeting.id)}>
-                  Delete
-                </button>
-              </div>
-            </header>
-            <p>
-              <strong>Attendees:</strong>{' '}
-              {meeting.attendees.length > 0
-                ? meeting.attendees.join(', ')
-                : EMPTY_STATES.notProvided}
-            </p>
-            <p>
-              <strong>Notes:</strong> {meeting.notes || EMPTY_STATES.noNotes}
-            </p>
-            <p>
-              <strong>Decisions:</strong>{' '}
-              {meeting.decisions || EMPTY_STATES.noDecisions}
-            </p>
-            <p>
-              <strong>Risks:</strong> {meeting.risks || EMPTY_STATES.noRisks}
-            </p>
-          </article>
-        ))}
-      </div>
+          {meetings.length > 0 && (
+            <div className="space-y-4">
+              {meetings.map((meeting) => (
+                <div
+                  key={meeting.id}
+                  className="p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-neutral-900">
+                          {meeting.title}
+                        </h3>
+                        <p className="text-sm text-neutral-600 mt-1">
+                          {meeting.date.toLocaleDateString()} at {meeting.time}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link to={`/meetings/${meeting.id}`}>
+                          <Button variant="secondary" size="sm">
+                            View
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleOpenEdit(meeting)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(meeting.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <strong className="text-neutral-900">Attendees:</strong>{' '}
+                        <span className="text-neutral-700">
+                          {meeting.attendees.length > 0
+                            ? meeting.attendees.join(', ')
+                            : EMPTY_STATES.notProvided}
+                        </span>
+                      </p>
+                      <p>
+                        <strong className="text-neutral-900">Notes:</strong>{' '}
+                        <span className="text-neutral-700">
+                          {meeting.notes || EMPTY_STATES.noNotes}
+                        </span>
+                      </p>
+                      <p>
+                        <strong className="text-neutral-900">Decisions:</strong>{' '}
+                        <span className="text-neutral-700">
+                          {meeting.decisions || EMPTY_STATES.noDecisions}
+                        </span>
+                      </p>
+                      <p>
+                        <strong className="text-neutral-900">Risks:</strong>{' '}
+                        <span className="text-neutral-700">
+                          {meeting.risks || EMPTY_STATES.noRisks}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       <MeetingFormModal
         isOpen={showModal}
@@ -206,7 +248,7 @@ function ProjectMeetingsPanel({
         }
         error={formError}
       />
-    </section>
+    </div>
   );
 }
 
