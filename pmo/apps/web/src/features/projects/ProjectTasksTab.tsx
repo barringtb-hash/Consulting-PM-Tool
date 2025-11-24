@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useProjectTasks, useCreateTask } from '../../hooks/tasks';
+import {
+  useProjectTasks,
+  useCreateTask,
+  useMoveTask,
+  useDeleteTask,
+} from '../../hooks/tasks';
 import { useProjectMilestones } from '../../hooks/milestones';
 import { TaskKanbanBoard } from '../../components/TaskKanbanBoard';
 import { TaskFormModal } from '../tasks/TaskFormModal';
 import { Card, CardBody } from '../../ui/Card';
 import { Button } from '../../ui/Button';
-import type { TaskPayload } from '../../api/tasks';
+import type { TaskPayload, TaskStatus } from '../../api/tasks';
 
 interface ProjectTasksTabProps {
   projectId: number;
@@ -19,6 +24,8 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const tasksQuery = useProjectTasks(projectId);
   const milestonesQuery = useProjectMilestones(projectId);
   const createTaskMutation = useCreateTask();
+  const moveTaskMutation = useMoveTask(projectId);
+  const deleteTaskMutation = useDeleteTask(projectId);
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -37,6 +44,25 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
       setIsModalOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task');
+    }
+  };
+
+  const handleTaskMove = async (taskId: number, newStatus: TaskStatus) => {
+    try {
+      await moveTaskMutation.mutateAsync({
+        taskId,
+        payload: { status: newStatus },
+      });
+    } catch (err) {
+      console.error('Failed to move task:', err);
+    }
+  };
+
+  const handleTaskDelete = async (taskId: number) => {
+    try {
+      await deleteTaskMutation.mutateAsync(taskId);
+    } catch (err) {
+      console.error('Failed to delete task:', err);
     }
   };
 
@@ -73,7 +99,11 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         </Button>
       </div>
 
-      <TaskKanbanBoard projectId={projectId} tasks={tasks} />
+      <TaskKanbanBoard
+        tasks={tasks}
+        onTaskMove={handleTaskMove}
+        onTaskDelete={handleTaskDelete}
+      />
 
       <TaskFormModal
         isOpen={isModalOpen}
