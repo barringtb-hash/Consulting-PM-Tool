@@ -205,7 +205,8 @@ export function lintMarketingContent(content: {
 
   // Calculate score based on findings
   const errorPenalty = errors.length * 20;
-  const warningPenalty = warnings.filter((w) => w.type === 'warning').length * 5;
+  const warningPenalty =
+    warnings.filter((w) => w.type === 'warning').length * 5;
   const score = Math.max(0, 100 - errorPenalty - warningPenalty);
 
   return {

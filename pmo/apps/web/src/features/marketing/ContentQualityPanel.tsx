@@ -147,7 +147,7 @@ export function ContentQualityPanel({
                         {error.message}
                       </p>
                       <p className="text-xs text-red-600 mt-1 font-mono bg-red-100 px-2 py-1 rounded">
-                        Found: "{error.match}"
+                        Found: &quot;{error.match}&quot;
                       </p>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export function ContentQualityPanel({
                           {warning.message}
                         </p>
                         <p className="text-xs text-yellow-600 mt-1 font-mono bg-yellow-100 px-2 py-1 rounded">
-                          Found: "{warning.match}"
+                          Found: &quot;{warning.match}&quot;
                         </p>
                       </div>
                     </div>
@@ -209,7 +209,7 @@ export function ContentQualityPanel({
                           {info.message}
                         </p>
                         <p className="text-xs text-blue-600 mt-1 font-mono bg-blue-100 px-2 py-1 rounded">
-                          Found: "{info.match}"
+                          Found: &quot;{info.match}&quot;
                         </p>
                       </div>
                     </div>
