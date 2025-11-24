@@ -26,7 +26,7 @@ interface GeneratedContent {
 }
 
 /**
- * Generate marketing content using Anthropic Claude API
+ * Generate marketing content using OpenAI API
  */
 export const generateMarketingContent = async (
   options: GenerateContentOptions,
@@ -45,7 +45,7 @@ export const generateMarketingContent = async (
     : { ...context };
 
   // If no API key, return placeholder content
-  if (!env.anthropicApiKey) {
+  if (!env.openaiApiKey) {
     return generatePlaceholderContent(type, anonymizedContext);
   }
 
@@ -56,20 +56,22 @@ export const generateMarketingContent = async (
     // Build the user prompt with context
     const userPrompt = buildUserPrompt(type, anonymizedContext);
 
-    // Call Anthropic API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Call OpenAI API using GPT-5.1 model
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': env.anthropicApiKey,
-        'anthropic-version': '2023-06-01',
+        Authorization: `Bearer ${env.openaiApiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'gpt-5.1',
         max_tokens: getMaxTokens(length),
         temperature: getToneTemperature(tone),
-        system: systemPrompt,
         messages: [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
           {
             role: 'user',
             content: userPrompt,
@@ -80,12 +82,12 @@ export const generateMarketingContent = async (
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Anthropic API error:', error);
+      console.error('OpenAI API error:', error);
       return generatePlaceholderContent(type, anonymizedContext);
     }
 
     const data = await response.json();
-    const generatedText = data.content[0].text;
+    const generatedText = data.choices[0].message.content;
 
     // Parse the generated content based on type
     return parseGeneratedContent(type, generatedText, anonymizedContext);
@@ -290,17 +292,17 @@ function generatePlaceholderContent(
   const placeholders: Record<ContentType, GeneratedContent> = {
     BLOG_POST: {
       title: `${context.projectName || 'AI Consulting Project'}: Key Insights and Learnings`,
-      body: `# ${context.projectName || 'AI Consulting Project'}\n\n## Introduction\n\nThis blog post explores our recent work with ${context.clientName || 'our client'} in the ${context.industry || 'technology'} industry.\n\n## Challenge\n\n${context.projectDescription || 'The client faced challenges in implementing AI solutions.'}\n\n## Our Approach\n\nOur team worked closely with the client to develop a tailored solution.\n\n## Results\n\nThe project delivered significant value and insights.\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
+      body: `# ${context.projectName || 'AI Consulting Project'}\n\n## Introduction\n\nThis blog post explores our recent work with ${context.clientName || 'our client'} in the ${context.industry || 'technology'} industry.\n\n## Challenge\n\n${context.projectDescription || 'The client faced challenges in implementing AI solutions.'}\n\n## Our Approach\n\nOur team worked closely with the client to develop a tailored solution.\n\n## Results\n\nThe project delivered significant value and insights.\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
       summary:
         'Exploring our recent AI consulting project and the key insights gained.',
     },
     CASE_STUDY: {
       title: `${context.clientName || 'Client'} Case Study: ${context.projectName || 'AI Implementation'}`,
-      body: `# ${context.clientName || 'Client'} Success Story\n\n## The Challenge\n\n${context.projectDescription || 'The client needed to implement AI capabilities.'}\n\n## The Solution\n\nWe designed and implemented a comprehensive AI solution.\n\n## The Results\n\nThe client achieved measurable improvements in efficiency and outcomes.\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
+      body: `# ${context.clientName || 'Client'} Success Story\n\n## The Challenge\n\n${context.projectDescription || 'The client needed to implement AI capabilities.'}\n\n## The Solution\n\nWe designed and implemented a comprehensive AI solution.\n\n## The Results\n\nThe client achieved measurable improvements in efficiency and outcomes.\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
       summary: `How we helped ${context.clientName || 'our client'} achieve success with AI.`,
     },
     LINKEDIN_POST: {
-      body: `Excited to share insights from our recent ${context.projectName || 'AI consulting project'} with ${context.clientName || 'our client'}! 🚀\n\nKey takeaways:\n✨ ${context.meetingNotes?.substring(0, 100) || 'Innovative approaches to AI implementation'}\n\nWhat's your experience with AI transformation?\n\n#AI #Consulting #Innovation #DigitalTransformation\n\n[Note: Configure ANTHROPIC_API_KEY for custom content.]`,
+      body: `Excited to share insights from our recent ${context.projectName || 'AI consulting project'} with ${context.clientName || 'our client'}! 🚀\n\nKey takeaways:\n✨ ${context.meetingNotes?.substring(0, 100) || 'Innovative approaches to AI implementation'}\n\nWhat's your experience with AI transformation?\n\n#AI #Consulting #Innovation #DigitalTransformation\n\n[Note: Configure OPENAI_API_KEY for custom content.]`,
       summary: 'LinkedIn post about recent project success',
     },
     TWITTER_POST: {
@@ -309,12 +311,12 @@ function generatePlaceholderContent(
     },
     EMAIL_TEMPLATE: {
       title: `Success Story: ${context.projectName || 'AI Implementation'}`,
-      body: `Hi there,\n\nI wanted to share an exciting update about our recent work with ${context.clientName || 'our client'}.\n\n${context.projectDescription || 'We successfully implemented an AI solution that delivered significant value.'}\n\nInterested in learning more about how we can help your organization?\n\nLet's connect!\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
+      body: `Hi there,\n\nI wanted to share an exciting update about our recent work with ${context.clientName || 'our client'}.\n\n${context.projectDescription || 'We successfully implemented an AI solution that delivered significant value.'}\n\nInterested in learning more about how we can help your organization?\n\nLet's connect!\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
       summary: 'Sharing recent project success and offering to connect',
     },
     WHITEPAPER: {
       title: `AI Consulting Best Practices: Insights from ${context.projectName || 'Recent Projects'}`,
-      body: `# Executive Summary\n\nThis whitepaper explores best practices in AI consulting based on our work with ${context.clientName || 'leading organizations'}.\n\n## Introduction\n\nAI implementation requires careful planning and execution.\n\n## Key Findings\n\n${context.projectDescription || 'Our research reveals critical success factors.'}\n\n## Recommendations\n\nOrganizations should focus on strategic alignment and change management.\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
+      body: `# Executive Summary\n\nThis whitepaper explores best practices in AI consulting based on our work with ${context.clientName || 'leading organizations'}.\n\n## Introduction\n\nAI implementation requires careful planning and execution.\n\n## Key Findings\n\n${context.projectDescription || 'Our research reveals critical success factors.'}\n\n## Recommendations\n\nOrganizations should focus on strategic alignment and change management.\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
       summary: 'Best practices and insights from AI consulting engagements',
     },
     SOCIAL_STORY: {
@@ -323,16 +325,16 @@ function generatePlaceholderContent(
     },
     VIDEO_SCRIPT: {
       title: `${context.projectName || 'AI Project'} Success Story`,
-      body: `[HOOK - 0:00-0:05]\n"What if AI could transform your business in just 90 days?"\n\n[INTRO - 0:05-0:15]\n"Hi, I'm sharing how we helped ${context.clientName || 'our client'} achieve breakthrough results."\n\n[MAIN CONTENT - 0:15-1:30]\n${context.projectDescription || 'We implemented a custom AI solution...'}\n\n[CTA - 1:30-1:45]\n"Ready to transform your business? Link in description."\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
+      body: `[HOOK - 0:00-0:05]\n"What if AI could transform your business in just 90 days?"\n\n[INTRO - 0:05-0:15]\n"Hi, I'm sharing how we helped ${context.clientName || 'our client'} achieve breakthrough results."\n\n[MAIN CONTENT - 0:15-1:30]\n${context.projectDescription || 'We implemented a custom AI solution...'}\n\n[CTA - 1:30-1:45]\n"Ready to transform your business? Link in description."\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
       summary: '90-second video script about project success',
     },
     NEWSLETTER: {
       title: `Newsletter: ${context.projectName || 'Latest AI Insights'}`,
-      body: `# This Month in AI Consulting\n\n## Featured Project\n\n${context.projectName || 'Recent AI Implementation'} with ${context.clientName || 'our client'}\n\n${context.projectDescription || 'We delivered innovative AI solutions.'}\n\n## Industry Insights\n\nThe ${context.industry || 'technology'} sector continues to evolve rapidly.\n\n## What's Next\n\nStay tuned for more updates!\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
+      body: `# This Month in AI Consulting\n\n## Featured Project\n\n${context.projectName || 'Recent AI Implementation'} with ${context.clientName || 'our client'}\n\n${context.projectDescription || 'We delivered innovative AI solutions.'}\n\n## Industry Insights\n\nThe ${context.industry || 'technology'} sector continues to evolve rapidly.\n\n## What's Next\n\nStay tuned for more updates!\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
       summary: 'Monthly newsletter with project updates and insights',
     },
     OTHER: {
-      body: `Marketing content for ${context.projectName || 'project'} with ${context.clientName || 'client'}.\n\n${context.projectDescription || 'Project details and context.'}\n\n[Note: This is placeholder content. Configure ANTHROPIC_API_KEY to generate custom content.]`,
+      body: `Marketing content for ${context.projectName || 'project'} with ${context.clientName || 'client'}.\n\n${context.projectDescription || 'Project details and context.'}\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
       summary: 'General marketing content',
     },
   };
