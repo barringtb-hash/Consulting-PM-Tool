@@ -39,6 +39,9 @@ router.post('/auth/login', async (req, res) => {
     const token = signToken({ userId: user.id });
 
     res.cookie('token', token, cookieOptions);
+    // Include token in response body for Safari ITP fallback
+    // Safari may block cross-origin cookies even with partitioned attribute,
+    // so the frontend can store this in localStorage and send via Authorization header
     res.json({
       user: {
         id: user.id,
@@ -46,6 +49,7 @@ router.post('/auth/login', async (req, res) => {
         email: user.email,
         timezone: user.timezone,
       },
+      token, // For Safari localStorage fallback
     });
   } catch (error) {
     console.error('Login error:', error);

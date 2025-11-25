@@ -15,12 +15,35 @@ export type AuthenticatedRequest<
   userId?: number;
 };
 
+/**
+ * Extract authentication token from request.
+ * Supports two methods for Safari ITP compatibility:
+ * 1. Cookie-based auth (primary, preferred)
+ * 2. Authorization header (fallback for Safari when cookies are blocked)
+ */
+function extractToken(req: Request): string | undefined {
+  // First try cookie (preferred method)
+  const cookieToken = req.cookies?.token;
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  // Fallback: Authorization header for Safari ITP compatibility
+  // Safari's ITP may block cross-origin cookies even with partitioned attribute
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7);
+  }
+
+  return undefined;
+}
+
 export const requireAuth = (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ): void => {
-  const token = req.cookies?.token;
+  const token = extractToken(req);
 
   if (!token) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -41,7 +64,7 @@ export const requireAdmin = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const token = req.cookies?.token;
+  const token = extractToken(req);
 
   if (!token) {
     res.status(401).json({ error: 'Unauthorized' });
