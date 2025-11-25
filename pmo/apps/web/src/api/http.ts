@@ -22,7 +22,7 @@ export function buildOptions(options?: RequestInit): RequestInit {
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options?.headers as Record<string, string> ?? {}),
+    ...((options?.headers as Record<string, string>) ?? {}),
   };
 
   // Add Authorization header for Safari ITP fallback

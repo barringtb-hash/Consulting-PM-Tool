@@ -22,7 +22,9 @@ export async function login(
     }),
   );
 
-  const data = await handleResponse<{ user: AuthUser; token?: string }>(response);
+  const data = await handleResponse<{ user: AuthUser; token?: string }>(
+    response,
+  );
 
   // Store token for Safari ITP fallback
   // Safari may block cookies even with partitioned attribute,
