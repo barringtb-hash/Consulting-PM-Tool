@@ -1,3 +1,5 @@
+import { getStoredToken } from './token-storage';
+
 export interface ApiError extends Error {
   status?: number;
   details?: unknown;
@@ -7,11 +9,27 @@ export function isApiError(error: unknown): error is ApiError {
   return error instanceof Error && 'status' in error;
 }
 
+/**
+ * Build fetch options with authentication support.
+ *
+ * Includes Authorization header with stored token for Safari ITP fallback.
+ * Safari's ITP blocks cross-origin cookies even with partitioned attribute,
+ * so we include the token via Authorization header as a fallback mechanism.
+ * The server accepts both cookies (preferred) and Authorization header.
+ */
 export function buildOptions(options?: RequestInit): RequestInit {
-  const headers = {
+  const storedToken = getStoredToken();
+
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options?.headers ?? {}),
+    ...((options?.headers as Record<string, string>) ?? {}),
   };
+
+  // Add Authorization header for Safari ITP fallback
+  // Server will use cookie if present, otherwise falls back to this header
+  if (storedToken) {
+    headers['Authorization'] = `Bearer ${storedToken}`;
+  }
 
   return {
     credentials: 'include',

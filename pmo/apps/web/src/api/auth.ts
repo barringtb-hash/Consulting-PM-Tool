@@ -1,5 +1,6 @@
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
+import { storeToken, clearStoredToken } from './token-storage';
 
 export interface AuthUser {
   id: string;
@@ -21,7 +22,17 @@ export async function login(
     }),
   );
 
-  const data = await handleResponse<{ user: AuthUser }>(response);
+  const data = await handleResponse<{ user: AuthUser; token?: string }>(
+    response,
+  );
+
+  // Store token for Safari ITP fallback
+  // Safari may block cookies even with partitioned attribute,
+  // so we store the token in localStorage and send via Authorization header
+  if (data.token) {
+    storeToken(data.token);
+  }
+
   return data.user;
 }
 
@@ -44,6 +55,9 @@ export async function logout(): Promise<void> {
       method: 'POST',
     }),
   );
+
+  // Clear stored token for Safari ITP fallback
+  clearStoredToken();
 
   await handleResponse<void>(response);
 }
