@@ -30,7 +30,7 @@ function extractToken(req: Request): string | undefined {
 
   // Fallback: Authorization header for Safari ITP compatibility
   // Safari's ITP may block cross-origin cookies even with partitioned attribute
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers?.authorization;
   if (authHeader?.startsWith('Bearer ')) {
     return authHeader.slice(7);
   }
