@@ -118,11 +118,9 @@ export function useUpdateMarketingContent(): UseMutationResult<
   return useMutation({
     mutationFn: ({ contentId, payload }) =>
       updateMarketingContent(contentId, payload),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.marketing.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.marketing.detail(variables.contentId),
-      });
+    onSuccess: () => {
+      // Invalidate all marketing queries including project-scoped lists
+      queryClient.invalidateQueries({ queryKey: queryKeys.marketing.all });
     },
   });
 }
