@@ -46,7 +46,7 @@ const mapBrandAsset = (payload: BrandAssetResponse): BrandAsset => ({
 /**
  * Fetch brand profile by client ID
  */
-export async function fetchBrandProfile(
+async function fetchBrandProfile(
   clientId: number,
 ): Promise<BrandProfile | null> {
   const url = buildApiUrl(`/clients/${clientId}/brand-profile`);
@@ -72,7 +72,7 @@ export async function fetchBrandProfile(
 /**
  * Create a brand profile
  */
-export async function createBrandProfile(
+async function createBrandProfile(
   payload: CreateBrandProfileInput,
 ): Promise<BrandProfile> {
   const url = buildApiUrl(`/clients/${payload.clientId}/brand-profile`);
@@ -86,7 +86,7 @@ export async function createBrandProfile(
 /**
  * Update a brand profile
  */
-export async function updateBrandProfile(
+async function updateBrandProfile(
   id: number,
   payload: UpdateBrandProfileInput,
 ): Promise<BrandProfile> {
@@ -101,9 +101,7 @@ export async function updateBrandProfile(
 /**
  * Fetch brand assets
  */
-export async function fetchBrandAssets(
-  brandProfileId: number,
-): Promise<BrandAsset[]> {
+async function fetchBrandAssets(brandProfileId: number): Promise<BrandAsset[]> {
   const url = buildApiUrl(`/brand-profiles/${brandProfileId}/assets`);
   const response = await fetch(url, buildOptions('GET'));
   const data = await handleResponse<{ assets: BrandAssetResponse[] }>(response);
@@ -113,7 +111,7 @@ export async function fetchBrandAssets(
 /**
  * Create a brand asset
  */
-export async function createBrandAsset(
+async function createBrandAsset(
   payload: CreateBrandAssetInput,
 ): Promise<BrandAsset> {
   const url = buildApiUrl(`/brand-profiles/${payload.brandProfileId}/assets`);
@@ -125,7 +123,7 @@ export async function createBrandAsset(
 /**
  * Update a brand asset
  */
-export async function updateBrandAsset(
+async function updateBrandAsset(
   id: number,
   payload: UpdateBrandAssetInput,
 ): Promise<BrandAsset> {
@@ -138,7 +136,7 @@ export async function updateBrandAsset(
 /**
  * Archive a brand asset
  */
-export async function archiveBrandAsset(id: number): Promise<void> {
+async function archiveBrandAsset(id: number): Promise<void> {
   const url = buildApiUrl(`/brand-assets/${id}`);
   const response = await fetch(url, buildOptions('DELETE'));
   await handleResponse(response);
