@@ -27,6 +27,10 @@ vi.mock('../api/queries', () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   })),
+  useDeleteClient: vi.fn(() => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  })),
   useCreateContact: vi.fn(() => ({
     mutateAsync: vi.fn(),
     isPending: false,

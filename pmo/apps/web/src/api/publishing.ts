@@ -33,7 +33,7 @@ const mapPublishingConnection = (
 /**
  * Fetch publishing connections for a client
  */
-async function fetchPublishingConnections(
+export async function fetchPublishingConnections(
   clientId: number,
 ): Promise<PublishingConnection[]> {
   const url = buildApiUrl(`/clients/${clientId}/publishing-connections`);
@@ -47,7 +47,7 @@ async function fetchPublishingConnections(
 /**
  * Create a publishing connection
  */
-async function createPublishingConnection(
+export async function createPublishingConnection(
   payload: CreatePublishingConnectionInput,
 ): Promise<PublishingConnection> {
   const url = buildApiUrl(
@@ -63,7 +63,7 @@ async function createPublishingConnection(
 /**
  * Update a publishing connection
  */
-async function updatePublishingConnection(
+export async function updatePublishingConnection(
   id: number,
   payload: UpdatePublishingConnectionInput,
 ): Promise<PublishingConnection> {
@@ -78,7 +78,7 @@ async function updatePublishingConnection(
 /**
  * Delete a publishing connection
  */
-async function deletePublishingConnection(id: number): Promise<void> {
+export async function deletePublishingConnection(id: number): Promise<void> {
   const url = buildApiUrl(`/publishing-connections/${id}`);
   const response = await fetch(url, buildOptions('DELETE'));
   await handleResponse(response);
@@ -87,7 +87,7 @@ async function deletePublishingConnection(id: number): Promise<void> {
 /**
  * Publish or schedule a marketing content
  */
-async function publishContent(
+export async function publishContent(
   contentId: number,
   payload: {
     publishingConnectionId?: number;
