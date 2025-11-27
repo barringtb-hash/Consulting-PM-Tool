@@ -1,25 +1,63 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, Outlet } from 'react-router-dom';
 import ProtectedRoute from './auth/ProtectedRoute';
 import AppLayout from './layouts/AppLayout';
+import { ClientProjectProvider } from './pages/ClientProjectContext';
+import { useModules } from './modules';
+
+// Core pages (always loaded)
+import DashboardPage from './pages/DashboardPage';
 import ClientsPage from './pages/ClientsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import ClientIntakePage from './pages/ClientIntakePage';
-import DashboardPage from './pages/DashboardPage';
 import ProjectSetupPage from './pages/ProjectSetupPage';
 import ProjectDashboardPage from './pages/ProjectDashboardPage';
 import LoginPage from './pages/LoginPage';
-import { ClientProjectProvider } from './pages/ClientProjectContext';
 import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
-import AssetsPage from './pages/AssetsPage';
-import MarketingContentPage from './pages/MarketingContentPage';
-import { AdminCreateUserPage } from './pages/AdminCreateUserPage';
-import { AdminUsersListPage } from './pages/AdminUsersListPage';
-import { AdminUserEditPage } from './pages/AdminUserEditPage';
-import LeadsPage from './pages/LeadsPage';
-import PipelinePage from './pages/PipelinePage';
 
+// Lazy-loaded optional module pages
+const AssetsPage = lazy(() => import('./pages/AssetsPage'));
+const MarketingContentPage = lazy(() => import('./pages/MarketingContentPage'));
+const LeadsPage = lazy(() => import('./pages/LeadsPage'));
+const PipelinePage = lazy(() => import('./pages/PipelinePage'));
+const AdminUsersListPage = lazy(() =>
+  import('./pages/AdminUsersListPage').then((m) => ({
+    default: m.AdminUsersListPage,
+  })),
+);
+const AdminCreateUserPage = lazy(() =>
+  import('./pages/AdminCreateUserPage').then((m) => ({
+    default: m.AdminCreateUserPage,
+  })),
+);
+const AdminUserEditPage = lazy(() =>
+  import('./pages/AdminUserEditPage').then((m) => ({
+    default: m.AdminUserEditPage,
+  })),
+);
+
+/**
+ * Loading fallback for lazy-loaded pages
+ */
+function PageLoader(): JSX.Element {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-pulse text-neutral-500">Loading...</div>
+    </div>
+  );
+}
+
+/**
+ * Wrapper for lazy-loaded pages
+ */
+function LazyPage({ children }: { children: React.ReactNode }): JSX.Element {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
+
+/**
+ * Layout wrapper for authenticated routes
+ */
 function AuthenticatedLayout(): JSX.Element {
   return (
     <AppLayout>
@@ -28,7 +66,12 @@ function AuthenticatedLayout(): JSX.Element {
   );
 }
 
+/**
+ * Main App component with conditional routing based on enabled modules
+ */
 function App(): JSX.Element {
+  const { isModuleEnabled } = useModules();
+
   return (
     <ClientProjectProvider>
       <Routes>
@@ -38,22 +81,94 @@ function App(): JSX.Element {
         {/* Protected routes with layout */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AuthenticatedLayout />}>
+            {/* Core routes (always available) */}
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<MyTasksPage />} />
-            <Route path="/assets" element={<AssetsPage />} />
-            <Route path="/marketing" element={<MarketingContentPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
             <Route path="/client-intake" element={<ClientIntakePage />} />
             <Route path="/projects/new" element={<ProjectSetupPage />} />
             <Route path="/projects/:id" element={<ProjectDashboardPage />} />
             <Route path="/meetings/:id" element={<MeetingDetailPage />} />
-            <Route path="/sales/leads" element={<LeadsPage />} />
-            <Route path="/sales/pipeline" element={<PipelinePage />} />
-            <Route path="/admin/users" element={<AdminUsersListPage />} />
-            <Route path="/admin/users/new" element={<AdminCreateUserPage />} />
-            <Route path="/admin/users/:id" element={<AdminUserEditPage />} />
+
+            {/* Assets module (toggleable) */}
+            {isModuleEnabled('assets') && (
+              <Route
+                path="/assets"
+                element={
+                  <LazyPage>
+                    <AssetsPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Marketing module (toggleable) */}
+            {isModuleEnabled('marketing') && (
+              <Route
+                path="/marketing"
+                element={
+                  <LazyPage>
+                    <MarketingContentPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Sales module - Leads (toggleable) */}
+            {isModuleEnabled('leads') && (
+              <Route
+                path="/sales/leads"
+                element={
+                  <LazyPage>
+                    <LeadsPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Sales module - Pipeline (toggleable) */}
+            {isModuleEnabled('pipeline') && (
+              <Route
+                path="/sales/pipeline"
+                element={
+                  <LazyPage>
+                    <PipelinePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Admin module (toggleable) */}
+            {isModuleEnabled('admin') && (
+              <>
+                <Route
+                  path="/admin/users"
+                  element={
+                    <LazyPage>
+                      <AdminUsersListPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/admin/users/new"
+                  element={
+                    <LazyPage>
+                      <AdminCreateUserPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/admin/users/:id"
+                  element={
+                    <LazyPage>
+                      <AdminUserEditPage />
+                    </LazyPage>
+                  }
+                />
+              </>
+            )}
           </Route>
         </Route>
 
