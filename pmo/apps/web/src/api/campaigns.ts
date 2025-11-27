@@ -33,7 +33,7 @@ const mapCampaign = (payload: CampaignResponse): Campaign => ({
 /**
  * Fetch all campaigns
  */
-async function fetchCampaigns(query: {
+export async function fetchCampaigns(query: {
   clientId?: number;
   projectId?: number;
   status?: string;
@@ -57,7 +57,7 @@ async function fetchCampaigns(query: {
 /**
  * Fetch a single campaign by ID
  */
-async function fetchCampaign(id: number): Promise<Campaign> {
+export async function fetchCampaign(id: number): Promise<Campaign> {
   const url = buildApiUrl(`/campaigns/${id}`);
   const response = await fetch(url, buildOptions('GET'));
   const data = await handleResponse<{ campaign: CampaignResponse }>(response);
@@ -67,7 +67,9 @@ async function fetchCampaign(id: number): Promise<Campaign> {
 /**
  * Create a new campaign
  */
-async function createCampaign(payload: CreateCampaignInput): Promise<Campaign> {
+export async function createCampaign(
+  payload: CreateCampaignInput,
+): Promise<Campaign> {
   const url = buildApiUrl('/campaigns');
   const response = await fetch(url, buildOptions('POST', payload));
   const data = await handleResponse<{ campaign: CampaignResponse }>(response);
@@ -77,7 +79,7 @@ async function createCampaign(payload: CreateCampaignInput): Promise<Campaign> {
 /**
  * Update a campaign
  */
-async function updateCampaign(
+export async function updateCampaign(
   id: number,
   payload: UpdateCampaignInput,
 ): Promise<Campaign> {
@@ -90,7 +92,7 @@ async function updateCampaign(
 /**
  * Archive a campaign
  */
-async function archiveCampaign(id: number): Promise<void> {
+export async function archiveCampaign(id: number): Promise<void> {
   const url = buildApiUrl(`/campaigns/${id}`);
   const response = await fetch(url, buildOptions('DELETE'));
   await handleResponse(response);
