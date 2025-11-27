@@ -10,94 +10,63 @@ import {
   TrendingUp,
   UserCheck,
   UserCog,
+  LucideIcon,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
+import { useModules, type ModuleDefinition } from '../modules';
 
-interface NavItem {
-  label: string;
-  path: string;
-  icon: React.ComponentType<{ className?: string }>;
-  group?: 'overview' | 'clients' | 'projects' | 'marketing' | 'sales' | 'admin';
+/**
+ * Icon map - maps icon names from module definitions to Lucide components
+ */
+const ICON_MAP: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  CheckSquare,
+  Users,
+  FolderKanban,
+  FileText,
+  Megaphone,
+  TrendingUp,
+  UserCheck,
+  UserCog,
+};
+
+/**
+ * Get the icon component for a module
+ */
+function getIcon(iconName: string): LucideIcon {
+  return ICON_MAP[iconName] || FileText;
 }
-
-const navItems: NavItem[] = [
-  {
-    label: 'Dashboard',
-    path: '/dashboard',
-    icon: LayoutDashboard,
-    group: 'overview',
-  },
-  {
-    label: 'My Tasks',
-    path: '/tasks',
-    icon: CheckSquare,
-    group: 'overview',
-  },
-  {
-    label: 'Clients',
-    path: '/clients',
-    icon: Users,
-    group: 'clients',
-  },
-  {
-    label: 'Projects',
-    path: '/projects',
-    icon: FolderKanban,
-    group: 'projects',
-  },
-  {
-    label: 'Assets',
-    path: '/assets',
-    icon: FileText,
-    group: 'projects',
-  },
-  {
-    label: 'Marketing',
-    path: '/marketing',
-    icon: Megaphone,
-    group: 'marketing',
-  },
-  {
-    label: 'Leads',
-    path: '/sales/leads',
-    icon: UserCheck,
-    group: 'sales',
-  },
-  {
-    label: 'Pipeline',
-    path: '/sales/pipeline',
-    icon: TrendingUp,
-    group: 'sales',
-  },
-  {
-    label: 'Users',
-    path: '/admin/users',
-    icon: UserCog,
-    group: 'admin',
-  },
-];
 
 export function Sidebar(): JSX.Element {
   const location = useLocation();
+  const { navigationItems } = useModules();
 
-  const isActive = (path: string): boolean => {
-    if (path === '/dashboard') {
+  const isActive = (module: ModuleDefinition): boolean => {
+    // Check primary path
+    if (module.path === '/dashboard') {
       return location.pathname === '/' || location.pathname === '/dashboard';
     }
-    return location.pathname.startsWith(path);
+
+    if (location.pathname.startsWith(module.path)) {
+      return true;
+    }
+
+    // Check additional paths
+    if (module.additionalPaths) {
+      for (const additionalPath of module.additionalPaths) {
+        const pattern = additionalPath.replace(/:[\w]+/g, '[^/]+');
+        const regex = new RegExp(`^${pattern}`);
+        if (regex.test(location.pathname)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   };
 
-  const overviewNavItems = navItems.filter((item) => item.group === 'overview');
-  const clientsNavItems = navItems.filter((item) => item.group === 'clients');
-  const projectsNavItems = navItems.filter((item) => item.group === 'projects');
-  const marketingNavItems = navItems.filter(
-    (item) => item.group === 'marketing',
-  );
-  const salesNavItems = navItems.filter((item) => item.group === 'sales');
-  const adminNavItems = navItems.filter((item) => item.group === 'admin');
-
   const renderNavSection = (
-    items: NavItem[],
+    items: ModuleDefinition[],
     title?: string,
     isFirst = false,
   ) => {
@@ -112,14 +81,14 @@ export function Sidebar(): JSX.Element {
             </h3>
           </div>
         )}
-        {items.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.path);
+        {items.map((module) => {
+          const Icon = getIcon(module.icon);
+          const active = isActive(module);
 
           return (
             <Link
-              key={item.path}
-              to={item.path}
+              key={module.path}
+              to={module.path}
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-underline',
                 active
@@ -134,7 +103,7 @@ export function Sidebar(): JSX.Element {
                   active ? 'text-primary-600' : 'text-neutral-500',
                 )}
               />
-              <span>{item.label}</span>
+              <span>{module.label}</span>
             </Link>
           );
         })}
@@ -156,14 +125,13 @@ export function Sidebar(): JSX.Element {
         </Link>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - dynamically rendered based on enabled modules */}
       <nav className="flex-1 overflow-y-auto py-4">
-        {renderNavSection(overviewNavItems, undefined, true)}
-        {renderNavSection(clientsNavItems, 'Clients')}
-        {renderNavSection(projectsNavItems, 'Projects')}
-        {renderNavSection(marketingNavItems, 'Marketing')}
-        {renderNavSection(salesNavItems, 'Sales')}
-        {renderNavSection(adminNavItems, 'Admin')}
+        {navigationItems.map((group, index) => (
+          <React.Fragment key={group.group}>
+            {renderNavSection(group.items, group.label, index === 0)}
+          </React.Fragment>
+        ))}
       </nav>
     </div>
   );

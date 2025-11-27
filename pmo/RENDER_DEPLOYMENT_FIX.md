@@ -1,12 +1,15 @@
 # Render Deployment Fix for Failed Migrations
 
 ## Problem
+
 The deployment is failing due to a failed Prisma migration:
+
 ```
 The `20251123211300_add_marketing_content_enhancements` migration started at 2025-11-23 23:01:20.417509 UTC failed
 ```
 
 ## Solution
+
 We've created a smart migration deployment script that automatically handles failed migrations by resolving them before proceeding.
 
 ## How to Fix
@@ -17,11 +20,13 @@ We've created a smart migration deployment script that automatically handles fai
 2. Select your API service
 3. Go to **Settings** → **Build & Deploy**
 4. Update the **Build Command** from:
+
    ```bash
    npm install --ignore-scripts && npx prisma generate && npx prisma migrate deploy && npm run build
    ```
 
    To:
+
    ```bash
    bash pmo/scripts/render-build.sh
    ```
@@ -42,6 +47,7 @@ We've created a smart migration deployment script that automatically handles fai
 ## What the Smart Script Does
 
 The `scripts/render-build.sh` script:
+
 1. Installs dependencies
 2. Generates Prisma client
 3. **Intelligently deploys migrations** using `scripts/deploy-migrations.sh` which:

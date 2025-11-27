@@ -21,6 +21,7 @@ import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
 import { errorHandler } from './middleware/error.middleware';
 import { env } from './config/env';
+import { isModuleEnabled, logEnabledModules } from './modules/module-config';
 
 /**
  * Build CORS origin configuration that supports:
@@ -75,6 +76,9 @@ function buildCorsOrigin(): cors.CorsOptions['origin'] {
 export function createApp(): express.Express {
   const app = express();
 
+  // Log enabled modules at startup
+  logEnabledModules();
+
   // CORS configuration for cross-origin cookie authentication
   // Supports multiple origins and Vercel preview deployments
   app.use(
@@ -85,23 +89,43 @@ export function createApp(): express.Express {
   );
   app.use(express.json());
   app.use(cookieParser());
+
+  // ============ CORE ROUTES (always enabled) ============
   app.use('/api', authRouter);
-  app.use('/api/public', publicLeadsRouter);
-  app.use('/api', assetsRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);
   app.use('/api/documents', documentsRouter);
-  app.use('/api/leads', leadsRouter);
-  app.use('/api', marketingRouter);
-  app.use('/api', campaignRouter);
-  app.use('/api', brandProfileRouter);
-  app.use('/api', publishingRouter);
-  app.use('/api', milestonesRouter);
-  app.use('/api', meetingRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api', tasksRouter);
-  app.use('/api/users', usersRouter);
+  app.use('/api', milestonesRouter);
+  app.use('/api', meetingRouter);
   app.use(healthRouter);
+
+  // ============ TOGGLEABLE MODULE ROUTES ============
+
+  // Assets module
+  if (isModuleEnabled('assets')) {
+    app.use('/api', assetsRouter);
+  }
+
+  // Marketing module (includes marketing content, campaigns, brand profiles, publishing)
+  if (isModuleEnabled('marketing')) {
+    app.use('/api', marketingRouter);
+    app.use('/api', campaignRouter);
+    app.use('/api', brandProfileRouter);
+    app.use('/api', publishingRouter);
+  }
+
+  // Leads module (includes public leads endpoint)
+  if (isModuleEnabled('leads')) {
+    app.use('/api/leads', leadsRouter);
+    app.use('/api/public', publicLeadsRouter);
+  }
+
+  // Admin module (user management)
+  if (isModuleEnabled('admin')) {
+    app.use('/api/users', usersRouter);
+  }
 
   // Error handling middleware must be last
   app.use(errorHandler);
