@@ -8,7 +8,8 @@ The `pmo` directory is an npm workspace with the following structure:
 - `pmo/apps/web`: Vite-powered React + TypeScript SPA frontend
 - `pmo/apps/api`: Express + TypeScript API server
 - `pmo/prisma`: Prisma schema and database assets
-- `pmo/packages`: Shared packages (types, UI, and utilities)
+- `pmo/packages`: Shared packages (types, config, and utilities)
+  - `pmo/packages/config`: Module configuration system for feature toggles
 - `.github/workflows`: Continuous integration definitions
 
 ## Quickstart
@@ -190,3 +191,44 @@ See [Quickstart](#quickstart) section above.
 For fast onboarding tips, see `Docs/ai-coding-notes.md`, which summarizes key entry points, required env vars, and common commands for both apps.
 
 For architecture, data model, and feature scope details, refer to the linked product requirements and implementation codex in the `Docs` directory.
+
+## Modular Architecture
+
+The platform supports modular feature configuration, allowing customers to enable only the features they need.
+
+### Available Modules
+
+| Module | Description |
+|--------|-------------|
+| **core** | Authentication, dashboard (always required) |
+| **tasks** | Personal task management with Kanban board |
+| **clients** | Client CRM with contacts |
+| **projects** | Project management with milestones and meetings |
+| **assets** | AI asset library (prompts, workflows, datasets) |
+| **marketing** | Marketing content, campaigns, publishing |
+| **sales** | Lead management and sales pipeline |
+| **admin** | User administration |
+
+### Configuration
+
+Enable modules via environment variables:
+
+```bash
+# Enable specific modules
+ENABLED_MODULES=core,tasks,clients,projects
+
+# Or use a preset
+MODULE_PRESET=project-management
+```
+
+### Presets
+
+| Preset | Description | Modules |
+|--------|-------------|---------|
+| `full` | All features | core, tasks, clients, projects, assets, marketing, sales, admin |
+| `project-management` | Project delivery focus | core, tasks, clients, projects |
+| `marketing-focus` | Content marketing | core, clients, marketing |
+| `sales-focus` | Business development | core, clients, projects, sales |
+| `minimal` | Simple task tracking | core, tasks |
+
+For implementation details, see [MODULARIZATION_PLAN.md](MODULARIZATION_PLAN.md).

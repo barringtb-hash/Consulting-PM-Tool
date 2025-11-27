@@ -39,6 +39,14 @@ Consulting-PM-Tool/
 │   │       │   └── api/          # HTTP client utilities
 │   │       └── test/             # Component tests
 │   │
+│   ├── packages/
+│   │   └── config/               # Module configuration system
+│   │       └── src/
+│   │           ├── types.ts      # TypeScript types
+│   │           ├── modules.ts    # Module definitions
+│   │           ├── presets.ts    # Configuration presets
+│   │           └── loader.ts     # Config loader utility
+│   │
 │   ├── prisma/
 │   │   ├── schema.prisma         # Database schema
 │   │   └── migrations/           # Database migrations
@@ -47,6 +55,7 @@ Consulting-PM-Tool/
 │   └── docs/                     # Project documentation
 │
 ├── Docs/                         # Additional documentation
+├── MODULARIZATION_PLAN.md        # Multi-session modularization plan
 └── README.md
 ```
 
@@ -170,3 +179,62 @@ GitHub Actions runs on every push:
 - Safari ITP compatibility: includes cookie partitioning and Authorization header fallbacks
 - CORS configured for Vercel preview deployments (`*.vercel.app`)
 - API health check: `GET /api/healthz`
+
+## Modular Architecture
+
+The application is being modularized to allow customers to enable/disable specific features. See `MODULARIZATION_PLAN.md` for the complete implementation plan.
+
+### Feature Modules
+
+| Module | Description | Dependencies |
+|--------|-------------|--------------|
+| **core** | Auth, dashboard (always required) | - |
+| **tasks** | Personal task management | core |
+| **clients** | Client CRM | core |
+| **projects** | Project management | core, clients |
+| **assets** | AI asset library | core |
+| **marketing** | Content, campaigns, publishing | core, clients |
+| **sales** | Leads, pipeline | core, clients |
+| **admin** | User administration | core |
+
+### Configuration Package
+
+The `@pmo/config` package (`pmo/packages/config/`) provides:
+
+- **Module definitions** with routes, dependencies, and sidebar items
+- **Presets** for common configurations (full, project-management, marketing-focus, etc.)
+- **Config loader** that reads from environment variables
+
+```typescript
+import { loadConfig, isModuleEnabled } from '@pmo/config';
+
+// Load config from environment
+const config = loadConfig({
+  env: { ENABLED_MODULES: process.env.ENABLED_MODULES }
+});
+
+// Check if module is enabled
+if (isModuleEnabled(config, 'marketing').enabled) {
+  // Register marketing routes
+}
+```
+
+### Environment Variables
+
+```bash
+# Enable specific modules (comma-separated)
+ENABLED_MODULES=core,tasks,clients,projects
+
+# Or use a preset
+MODULE_PRESET=project-management
+```
+
+### Presets
+
+| Preset | Modules |
+|--------|---------|
+| `full` | All modules |
+| `project-management` | core, tasks, clients, projects |
+| `marketing-focus` | core, clients, marketing |
+| `sales-focus` | core, clients, projects, sales |
+| `minimal` | core, tasks |
