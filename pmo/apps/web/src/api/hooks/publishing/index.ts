@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for publishing connection management.
  * Publishing connections allow content to be published to external platforms.
+ *
+ * @module publishing
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { moduleRegistry } from '../moduleRegistry';
 import {
   createPublishingConnection,
   deletePublishingConnection,
@@ -33,14 +37,18 @@ import type {
 
 /**
  * Fetch publishing connections for a client
+ *
+ * This query is module-aware and will not execute if the publishing module is disabled.
  */
 export function usePublishingConnections(
   clientId: number,
 ): UseQueryResult<PublishingConnection[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('publishing');
+
   return useQuery({
     queryKey: queryKeys.publishing.connections(clientId),
     queryFn: () => fetchPublishingConnections(clientId),
-    enabled: !!clientId,
+    enabled: !!clientId && isModuleEnabled,
   });
 }
 

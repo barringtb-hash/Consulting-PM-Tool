@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
-import { invalidateRelatedModules } from '../moduleRegistry';
+import { invalidateRelatedModules, moduleRegistry } from '../moduleRegistry';
 import {
   archiveMarketingContent,
   createMarketingContent,
@@ -49,39 +49,52 @@ import type {
 
 /**
  * Fetch all marketing contents with optional filters
+ *
+ * This query is module-aware and will not execute if the marketing module is disabled.
  */
 export function useMarketingContents(
   query?: MarketingContentListQuery,
 ): UseQueryResult<MarketingContent[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('marketing');
+
   return useQuery({
     queryKey: queryKeys.marketing.list(query || {}),
     queryFn: () => fetchMarketingContents(query),
+    enabled: isModuleEnabled,
   });
 }
 
 /**
  * Fetch a single marketing content by ID
+ *
+ * This query is module-aware and will not execute if the marketing module is disabled.
  */
 export function useMarketingContent(
   contentId?: number,
 ): UseQueryResult<MarketingContent, Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('marketing');
+
   return useQuery({
     queryKey: queryKeys.marketing.detail(contentId),
     queryFn: () => fetchMarketingContent(contentId!),
-    enabled: !!contentId,
+    enabled: !!contentId && isModuleEnabled,
   });
 }
 
 /**
  * Fetch marketing contents for a specific project
+ *
+ * This query is module-aware and will not execute if the marketing module is disabled.
  */
 export function useProjectMarketingContents(
   projectId?: number,
 ): UseQueryResult<MarketingContent[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('marketing');
+
   return useQuery({
     queryKey: queryKeys.marketing.byProject(projectId),
     queryFn: () => fetchProjectMarketingContents(projectId!),
-    enabled: !!projectId,
+    enabled: !!projectId && isModuleEnabled,
   });
 }
 

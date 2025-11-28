@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
-import { invalidateRelatedModules } from '../moduleRegistry';
+import { invalidateRelatedModules, moduleRegistry } from '../moduleRegistry';
 import {
   archiveCampaign,
   createCampaign,
@@ -48,24 +48,33 @@ export interface CampaignFilters {
 
 /**
  * Fetch all campaigns with optional filters
+ *
+ * This query is module-aware and will not execute if the campaigns module is disabled.
  */
 export function useCampaigns(
   query: CampaignFilters = {},
 ): UseQueryResult<Campaign[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('campaigns');
+
   return useQuery({
     queryKey: queryKeys.campaigns.list(query),
     queryFn: () => fetchCampaigns(query),
+    enabled: isModuleEnabled,
   });
 }
 
 /**
  * Fetch a single campaign by ID
+ *
+ * This query is module-aware and will not execute if the campaigns module is disabled.
  */
 export function useCampaign(id: number): UseQueryResult<Campaign, Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('campaigns');
+
   return useQuery({
     queryKey: queryKeys.campaigns.detail(id),
     queryFn: () => fetchCampaign(id),
-    enabled: !!id,
+    enabled: !!id && isModuleEnabled,
   });
 }
 

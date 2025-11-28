@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for document management.
  * Includes AI-powered document generation.
+ *
+ * @module documents
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import { useMemo } from 'react';
@@ -15,6 +18,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { moduleRegistry } from '../moduleRegistry';
 import {
   deleteDocument,
   fetchDocuments,
@@ -30,10 +34,13 @@ import {
 
 /**
  * Fetch documents with optional filters
+ *
+ * This query is module-aware and will not execute if the documents module is disabled.
  */
 export function useDocuments(
   filters?: DocumentFilters,
 ): UseQueryResult<Document[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('documents');
   const queryFilters = useMemo<DocumentFilters | undefined>(() => {
     if (!filters) {
       return undefined;
@@ -47,7 +54,7 @@ export function useDocuments(
 
   return useQuery({
     queryKey: queryKeys.documents.list(queryFilters),
-    enabled: Boolean(queryFilters),
+    enabled: Boolean(queryFilters) && isModuleEnabled,
     queryFn: () => fetchDocuments(queryFilters),
   });
 }

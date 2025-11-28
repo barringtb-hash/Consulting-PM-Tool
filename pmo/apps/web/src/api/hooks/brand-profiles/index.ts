@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
-import { invalidateRelatedModules } from '../moduleRegistry';
+import { invalidateRelatedModules, moduleRegistry } from '../moduleRegistry';
 import {
   archiveBrandAsset,
   createBrandAsset,
@@ -42,27 +42,35 @@ import type {
 
 /**
  * Fetch brand profile for a client
+ *
+ * This query is module-aware and will not execute if the brandProfiles module is disabled.
  */
 export function useBrandProfile(
   clientId: number,
 ): UseQueryResult<BrandProfile | null, Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('brandProfiles');
+
   return useQuery({
     queryKey: queryKeys.brandProfiles.byClient(clientId),
     queryFn: () => fetchBrandProfile(clientId),
-    enabled: !!clientId,
+    enabled: !!clientId && isModuleEnabled,
   });
 }
 
 /**
  * Fetch brand assets for a brand profile
+ *
+ * This query is module-aware and will not execute if the brandProfiles module is disabled.
  */
 export function useBrandAssets(
   brandProfileId: number,
 ): UseQueryResult<BrandAsset[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('brandProfiles');
+
   return useQuery({
     queryKey: queryKeys.brandProfiles.assets(brandProfileId),
     queryFn: () => fetchBrandAssets(brandProfileId),
-    enabled: !!brandProfileId,
+    enabled: !!brandProfileId && isModuleEnabled,
   });
 }
 

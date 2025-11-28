@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for AI asset management.
  * Assets can be linked to projects for reuse.
+ *
+ * @module assets
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { moduleRegistry } from '../moduleRegistry';
 import {
   archiveAsset,
   createAsset,
@@ -35,25 +39,33 @@ import {
 
 /**
  * Fetch all assets with optional filters
+ *
+ * This query is module-aware and will not execute if the assets module is disabled.
  */
 export function useAssets(
   filters?: AssetFilters,
 ): UseQueryResult<Asset[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('assets');
+
   return useQuery({
     queryKey: queryKeys.assets.list(filters),
     queryFn: () => fetchAssets(filters),
+    enabled: isModuleEnabled,
   });
 }
 
 /**
  * Fetch a single asset by ID
+ *
+ * This query is module-aware and will not execute if the assets module is disabled.
  */
 export function useAsset(assetId?: number): UseQueryResult<Asset, Error> {
   const queryClient = useQueryClient();
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('assets');
 
   return useQuery({
     queryKey: assetId ? queryKeys.assets.detail(assetId) : queryKeys.assets.all,
-    enabled: Boolean(assetId),
+    enabled: Boolean(assetId) && isModuleEnabled,
     queryFn: () => fetchAssetById(assetId as number),
     initialData: () => {
       if (!assetId) {
@@ -94,14 +106,18 @@ export function useAsset(assetId?: number): UseQueryResult<Asset, Error> {
 
 /**
  * Fetch assets linked to a project
+ *
+ * This query is module-aware and will not execute if the assets module is disabled.
  */
 export function useProjectAssets(
   projectId?: number,
   includeArchived?: boolean,
 ): UseQueryResult<ProjectAssetLink[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('assets');
+
   return useQuery({
     queryKey: queryKeys.assets.byProject(projectId ?? 0, includeArchived),
-    enabled: Boolean(projectId),
+    enabled: Boolean(projectId) && isModuleEnabled,
     queryFn: () => fetchProjectAssets(projectId as number, includeArchived),
   });
 }
