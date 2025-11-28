@@ -20,7 +20,7 @@ import {
   ModuleId,
   getEnabledModuleDefinitions,
   getNavigationItems,
-} from '@pmo/modules';
+} from '../../../../../packages/modules/index';
 import {
   // Feature flags
   getAllFeatureFlags,
