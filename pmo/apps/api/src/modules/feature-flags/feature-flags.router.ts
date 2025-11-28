@@ -38,7 +38,6 @@ import {
   bulkSetTenantModuleConfig,
   getAllTenantConfigs,
 } from './feature-flags.service';
-import { getEnabledModules } from '../module-config';
 
 const router = Router();
 
@@ -86,13 +85,23 @@ const bulkModuleConfigSchema = z.object({
 
 /**
  * GET /api/modules
- * Get enabled modules for the current deployment
+ * Get enabled modules for the current deployment or specific tenant
+ *
+ * Query params:
+ * - tenantId (optional): Get configuration for a specific tenant
+ *
  * Returns module definitions, navigation items, and enabled status
  */
-router.get('/modules', async (_req: AuthenticatedRequest, res: Response) => {
+router.get('/modules', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // Get enabled modules from environment/config
-    const enabledModules = getEnabledModules();
+    const tenantId = (req.query.tenantId as string) || 'default';
+
+    // Get tenant-specific configuration from database (falls back to env/defaults)
+    const tenantConfig = await getTenantModuleConfig(tenantId);
+    const enabledModules = tenantConfig.modules
+      .filter((m) => m.enabled)
+      .map((m) => m.moduleId);
+
     const enabledDefinitions = getEnabledModuleDefinitions(enabledModules);
     const navigationItems = getNavigationItems(enabledModules);
 
@@ -110,6 +119,8 @@ router.get('/modules', async (_req: AuthenticatedRequest, res: Response) => {
     }));
 
     res.json({
+      tenantId: tenantConfig.tenantId,
+      source: tenantConfig.source,
       enabledModules,
       modules: allModules,
       enabledDefinitions,
@@ -123,21 +134,28 @@ router.get('/modules', async (_req: AuthenticatedRequest, res: Response) => {
 
 /**
  * GET /api/modules/check/:moduleId
- * Check if a specific module is enabled (public, no auth required)
+ * Check if a specific module is enabled for a tenant
+ *
+ * Query params:
+ * - tenantId (optional): Check for a specific tenant
  */
 router.get('/modules/check/:moduleId', async (req, res: Response) => {
   const moduleId = req.params.moduleId as ModuleId;
+  const tenantId = (req.query.tenantId as string) || 'default';
 
   if (!MODULE_DEFINITIONS[moduleId]) {
     res.status(400).json({ error: 'Invalid module ID' });
     return;
   }
 
-  const enabledModules = getEnabledModules();
-  const enabled = enabledModules.includes(moduleId);
+  const tenantConfig = await getTenantModuleConfig(tenantId);
+  const moduleConfig = tenantConfig.modules.find((m) => m.moduleId === moduleId);
+  const enabled = moduleConfig?.enabled ?? true;
 
   res.json({
     moduleId,
+    tenantId: tenantConfig.tenantId,
+    source: tenantConfig.source,
     enabled,
     isCore: MODULE_DEFINITIONS[moduleId].isCore,
   });

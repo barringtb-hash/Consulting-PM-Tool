@@ -24,6 +24,8 @@ export interface ModuleInfo {
 }
 
 export interface ModulesResponse {
+  tenantId: string;
+  source: 'database' | 'environment' | 'default';
   enabledModules: string[];
   modules: ModuleInfo[];
   enabledDefinitions: Array<{
@@ -82,26 +84,32 @@ export interface TenantModuleConfigResponse {
 // ============================================================================
 
 /**
- * Get enabled modules for the current deployment
+ * Get enabled modules for the current deployment or a specific tenant
+ * @param tenantId - Optional tenant ID for tenant-specific configuration
  */
-export async function getModules(): Promise<ModulesResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/modules`,
-    buildOptions({ method: 'GET' })
-  );
+export async function getModules(tenantId?: string): Promise<ModulesResponse> {
+  const url = tenantId
+    ? `${API_BASE_URL}/modules?tenantId=${encodeURIComponent(tenantId)}`
+    : `${API_BASE_URL}/modules`;
+
+  const response = await fetch(url, buildOptions({ method: 'GET' }));
   return handleResponse<ModulesResponse>(response);
 }
 
 /**
  * Check if a specific module is enabled
+ * @param moduleId - The module ID to check
+ * @param tenantId - Optional tenant ID for tenant-specific check
  */
 export async function checkModuleEnabled(
-  moduleId: string
-): Promise<{ moduleId: string; enabled: boolean; isCore: boolean }> {
-  const response = await fetch(
-    `${API_BASE_URL}/modules/check/${moduleId}`,
-    buildOptions({ method: 'GET' })
-  );
+  moduleId: string,
+  tenantId?: string
+): Promise<{ moduleId: string; tenantId: string; source: string; enabled: boolean; isCore: boolean }> {
+  const url = tenantId
+    ? `${API_BASE_URL}/modules/check/${moduleId}?tenantId=${encodeURIComponent(tenantId)}`
+    : `${API_BASE_URL}/modules/check/${moduleId}`;
+
+  const response = await fetch(url, buildOptions({ method: 'GET' }));
   return handleResponse(response);
 }
 

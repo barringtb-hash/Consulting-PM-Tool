@@ -5,9 +5,7 @@
  * theme preferences, and other user-specific configurations.
  */
 
-import { PrismaClient, User } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../prisma/client';
 
 // ============================================================================
 // Types

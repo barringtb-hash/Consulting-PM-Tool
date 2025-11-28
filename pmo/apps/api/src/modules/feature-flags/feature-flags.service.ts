@@ -5,10 +5,9 @@
  * Provides functions for checking feature flags and managing module access.
  */
 
-import { PrismaClient, FeatureFlag, TenantModuleConfig } from '@prisma/client';
+import { FeatureFlag, TenantModuleConfig } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 import { ModuleId, MODULE_DEFINITIONS, parseEnabledModules } from '../../../../../packages/modules';
-
-const prisma = new PrismaClient();
 
 // ============================================================================
 // Types
