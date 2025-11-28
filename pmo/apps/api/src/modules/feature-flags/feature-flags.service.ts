@@ -11,7 +11,7 @@ import {
   ModuleId,
   MODULE_DEFINITIONS,
   parseEnabledModules,
-} from '@pmo/modules';
+} from '../../../../../packages/modules/index';
 
 // ============================================================================
 // Types

@@ -14,7 +14,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { ModuleId } from '@pmo/modules';
+import { ModuleId } from '../../../../packages/modules/index';
 import { isModuleEnabled } from '../modules/module-config';
 import { isModuleEnabledForTenant } from '../modules/feature-flags/feature-flags.service';
 
