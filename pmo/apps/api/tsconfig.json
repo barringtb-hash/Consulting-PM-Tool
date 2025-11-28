@@ -6,7 +6,7 @@
     "module": "CommonJS",
     "baseUrl": ".",
     "paths": {
-      "@pmo/modules": ["../../packages/modules/index.ts"],
+      "@pmo/modules": ["../../packages/modules"],
       "@pmo/modules/*": ["../../packages/modules/*"]
     }
   },
