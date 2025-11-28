@@ -11,7 +11,7 @@ import {
   ModuleId,
   MODULE_DEFINITIONS,
   parseEnabledModules,
-} from '../../../../../packages/modules';
+} from '@pmo/modules';
 
 // ============================================================================
 // Types
@@ -129,7 +129,9 @@ export async function createFeatureFlag(
       description: input.description,
       enabled: input.enabled ?? false,
       rolloutPercentage: input.rolloutPercentage ?? 100,
-      config: input.config ?? null,
+      config: input.config
+        ? (input.config as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
   });
 }
@@ -153,7 +155,9 @@ export async function updateFeatureFlag(
         ...(input.rolloutPercentage !== undefined && {
           rolloutPercentage: input.rolloutPercentage,
         }),
-        ...(input.config !== undefined && { config: input.config }),
+        ...(input.config !== undefined && {
+          config: input.config as Prisma.InputJsonValue,
+        }),
       },
     });
   } catch {

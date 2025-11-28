@@ -11,7 +11,7 @@ import {
   isModuleEnabled as checkModuleEnabled,
   isApiEndpointAccessible as checkApiEndpoint,
   getEnabledModuleDefinitions as getEnabledModuleDefinitionsFromPackage,
-} from '../../../../packages/modules';
+} from '@pmo/modules';
 
 /**
  * Read enabled modules from environment variable
