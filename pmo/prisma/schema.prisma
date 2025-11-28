@@ -184,6 +184,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // User preferences stored as JSON
+  // Includes dashboard panel preferences, theme settings, notification preferences, etc.
+  // Example: { dashboardPanels: ['active-clients', 'open-tasks'], theme: 'light' }
+  preferences  Json?
+
   ownedProjects      Project[]
   documents          Document[]
   tasks              Task[]
@@ -549,4 +554,67 @@ model PublishingConnection {
 
   @@index([clientId, platform])
   @@unique([clientId, platform, accountName])
+}
+
+// ============================================================================
+// FEATURE FLAGS & MODULE CONFIGURATION
+// ============================================================================
+
+/**
+ * FeatureFlag - Global feature flags for the system
+ * Used for gradual rollouts, A/B testing, and feature toggling
+ */
+model FeatureFlag {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  name        String
+  description String?
+  enabled     Boolean  @default(false)
+
+  // Percentage rollout (0-100) for gradual rollouts
+  rolloutPercentage Int @default(100)
+
+  // JSON for additional configuration
+  // Example: { "allowedUserIds": [1, 2, 3], "allowedRoles": ["ADMIN"] }
+  config      Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key, enabled])
+}
+
+/**
+ * TenantModuleConfig - Per-tenant/deployment module configuration
+ * Allows enabling/disabling modules for specific tenants or deployments
+ *
+ * Tenant identifier can be:
+ * - "default" for system-wide defaults
+ * - A specific tenant/customer identifier
+ * - An environment identifier (e.g., "production", "staging")
+ */
+model TenantModuleConfig {
+  id              Int      @id @default(autoincrement())
+
+  // Tenant identifier - "default" for system defaults, or specific tenant ID
+  tenantId        String   @default("default")
+
+  // Module ID from the ModuleId type (dashboard, tasks, clients, projects, assets, marketing, leads, pipeline, admin)
+  moduleId        String
+
+  // Whether this module is enabled for this tenant
+  enabled         Boolean  @default(true)
+
+  // Optional: override module settings for this tenant
+  // Example: { "maxUsers": 10, "customFeatures": ["featureA"] }
+  settings        Json?
+
+  // Audit fields
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  updatedBy       Int?
+
+  @@unique([tenantId, moduleId])
+  @@index([tenantId])
+  @@index([moduleId, enabled])
 }

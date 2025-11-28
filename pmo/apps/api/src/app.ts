@@ -16,12 +16,15 @@ import meetingRouter from './modules/meetings/meeting.router';
 import campaignRouter from './modules/campaigns/campaign.router';
 import brandProfileRouter from './modules/brand-profiles/brand-profile.router';
 import publishingRouter from './modules/publishing/publishing.router';
+import featureFlagsRouter from './modules/feature-flags/feature-flags.router';
+import userPreferencesRouter from './modules/user-preferences/user-preferences.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
 import { errorHandler } from './middleware/error.middleware';
 import { env } from './config/env';
 import { isModuleEnabled, logEnabledModules } from './modules/module-config';
+import { requireModule } from './middleware/module-guard.middleware';
 
 /**
  * Build CORS origin configuration that supports:
@@ -99,32 +102,37 @@ export function createApp(): express.Express {
   app.use('/api', tasksRouter);
   app.use('/api', milestonesRouter);
   app.use('/api', meetingRouter);
+  app.use('/api', featureFlagsRouter); // Module discovery & feature flags API
+  app.use('/api/user', userPreferencesRouter); // User preferences API
   app.use(healthRouter);
 
   // ============ TOGGLEABLE MODULE ROUTES ============
+  // Routes are conditionally registered AND protected by requireModule middleware
+  // for defense-in-depth security
 
-  // Assets module
+  // Assets module - router defines /assets routes internally
   if (isModuleEnabled('assets')) {
-    app.use('/api', assetsRouter);
+    app.use('/api', requireModule('assets'), assetsRouter);
   }
 
-  // Marketing module (includes marketing content, campaigns, brand profiles, publishing)
+  // Marketing module - includes marketing content, campaigns, brand profiles, publishing
+  // Each router defines its own paths (/marketing-contents, /campaigns, /clients/:id/brand-profile, etc.)
   if (isModuleEnabled('marketing')) {
-    app.use('/api', marketingRouter);
-    app.use('/api', campaignRouter);
-    app.use('/api', brandProfileRouter);
-    app.use('/api', publishingRouter);
+    app.use('/api', requireModule('marketing'), marketingRouter);
+    app.use('/api', requireModule('marketing'), campaignRouter);
+    app.use('/api', requireModule('marketing'), brandProfileRouter);
+    app.use('/api', requireModule('marketing'), publishingRouter);
   }
 
-  // Leads module (includes public leads endpoint)
+  // Leads module - leadsRouter needs /api/leads, publicLeadsRouter needs /api/public
   if (isModuleEnabled('leads')) {
-    app.use('/api/leads', leadsRouter);
-    app.use('/api/public', publicLeadsRouter);
+    app.use('/api/leads', requireModule('leads'), leadsRouter);
+    app.use('/api/public', requireModule('leads'), publicLeadsRouter);
   }
 
   // Admin module (user management)
   if (isModuleEnabled('admin')) {
-    app.use('/api/users', usersRouter);
+    app.use('/api/users', requireModule('admin'), usersRouter);
   }
 
   // Error handling middleware must be last

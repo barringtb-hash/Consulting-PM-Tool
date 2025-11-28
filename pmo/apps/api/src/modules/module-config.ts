@@ -10,7 +10,7 @@ import {
   parseEnabledModules,
   isModuleEnabled as checkModuleEnabled,
   isApiEndpointAccessible as checkApiEndpoint,
-  getEnabledModuleDefinitions,
+  getEnabledModuleDefinitions as getEnabledModuleDefinitionsFromPackage,
 } from '../../../../packages/modules';
 
 /**
@@ -43,8 +43,15 @@ export function isApiEndpointAccessible(endpoint: string): boolean {
 /**
  * Get all enabled module definitions
  */
-export function getEnabledModules() {
-  return getEnabledModuleDefinitions(enabledModules);
+export function getEnabledModuleDefinitions() {
+  return getEnabledModuleDefinitionsFromPackage(enabledModules);
+}
+
+/**
+ * Get the list of enabled module IDs
+ */
+export function getEnabledModules(): ModuleId[] {
+  return enabledModules;
 }
 
 /**
@@ -52,5 +59,5 @@ export function getEnabledModules() {
  */
 export function logEnabledModules(): void {
   const modules = getEnabledModules();
-  console.log('Enabled modules:', modules.map((m) => m.id).join(', '));
+  console.log('Enabled modules:', modules.join(', '));
 }

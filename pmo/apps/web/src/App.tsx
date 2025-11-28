@@ -36,6 +36,11 @@ const AdminUserEditPage = lazy(() =>
     default: m.AdminUserEditPage,
   })),
 );
+const AdminModulesPage = lazy(() =>
+  import('./pages/AdminModulesPage').then((m) => ({
+    default: m.AdminModulesPage,
+  })),
+);
 
 /**
  * Loading fallback for lazy-loaded pages
@@ -164,6 +169,14 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <AdminUserEditPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/admin/modules"
+                  element={
+                    <LazyPage>
+                      <AdminModulesPage />
                     </LazyPage>
                   }
                 />
