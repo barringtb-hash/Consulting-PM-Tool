@@ -57,7 +57,7 @@ const featureFlagCreateSchema = z.object({
   description: z.string().optional(),
   enabled: z.boolean().optional(),
   rolloutPercentage: z.number().min(0).max(100).optional(),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
 });
 
 const featureFlagUpdateSchema = z.object({
@@ -65,19 +65,19 @@ const featureFlagUpdateSchema = z.object({
   description: z.string().optional(),
   enabled: z.boolean().optional(),
   rolloutPercentage: z.number().min(0).max(100).optional(),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
 });
 
 const tenantModuleConfigSchema = z.object({
   tenantId: z.string().min(1),
   moduleId: z.string().min(1),
   enabled: z.boolean(),
-  settings: z.record(z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 });
 
 const tenantModuleUpdateSchema = z.object({
   enabled: z.boolean().optional(),
-  settings: z.record(z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 });
 
 const bulkModuleConfigSchema = z.object({

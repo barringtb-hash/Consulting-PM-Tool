@@ -26,6 +26,8 @@ import {
   toggleDashboardPanel,
   setEnabledDashboardPanels,
   setDashboardPanelOrder,
+  UserPreferences,
+  DashboardPanelPreferences,
 } from './user-preferences.service';
 
 const router = Router();
@@ -39,7 +41,7 @@ router.use(requireAuth);
 
 const dashboardPanelPreferencesSchema = z.object({
   enabledPanels: z.array(z.string()).optional(),
-  panelOrder: z.record(z.number()).optional(),
+  panelOrder: z.record(z.string(), z.number()).optional(),
   collapsedPanels: z.array(z.string()).optional(),
 });
 
@@ -103,7 +105,10 @@ router.patch(
     }
 
     try {
-      const preferences = await updateUserPreferences(req.userId, parsed.data);
+      const preferences = await updateUserPreferences(
+        req.userId,
+        parsed.data as Partial<UserPreferences>,
+      );
       res.json(preferences);
     } catch (error) {
       console.error('Error updating user preferences:', error);
@@ -133,7 +138,10 @@ router.put('/preferences', async (req: AuthenticatedRequest, res: Response) => {
   }
 
   try {
-    const preferences = await setUserPreferences(req.userId, parsed.data);
+    const preferences = await setUserPreferences(
+      req.userId,
+      parsed.data as UserPreferences,
+    );
     res.json(preferences);
   } catch (error) {
     console.error('Error setting user preferences:', error);
@@ -214,7 +222,7 @@ router.patch(
     try {
       const preferences = await updateDashboardPanelPreferences(
         req.userId,
-        parsed.data,
+        parsed.data as Partial<DashboardPanelPreferences>,
       );
       res.json(preferences);
     } catch (error) {
@@ -303,7 +311,7 @@ router.put(
     }
 
     const parsed = z
-      .object({ panelOrder: z.record(z.number()) })
+      .object({ panelOrder: z.record(z.string(), z.number()) })
       .safeParse(req.body);
 
     if (!parsed.success) {
@@ -317,7 +325,7 @@ router.put(
     try {
       const preferences = await setDashboardPanelOrder(
         req.userId,
-        parsed.data.panelOrder,
+        parsed.data.panelOrder as Record<string, number>,
       );
       res.json(preferences);
     } catch (error) {

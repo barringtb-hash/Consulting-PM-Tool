@@ -5,7 +5,7 @@
  * Provides functions for checking feature flags and managing module access.
  */
 
-import { FeatureFlag, TenantModuleConfig } from '@prisma/client';
+import { FeatureFlag, TenantModuleConfig, Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import {
   ModuleId,
@@ -269,12 +269,16 @@ export async function setTenantModuleConfig(
       tenantId: input.tenantId,
       moduleId: input.moduleId,
       enabled: input.enabled,
-      settings: input.settings ?? null,
+      settings: input.settings
+        ? (input.settings as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
       updatedBy,
     },
     update: {
       enabled: input.enabled,
-      settings: input.settings ?? undefined,
+      settings: input.settings
+        ? (input.settings as Prisma.InputJsonValue)
+        : undefined,
       updatedBy,
     },
   });
@@ -302,7 +306,9 @@ export async function updateTenantModuleConfig(
       },
       data: {
         ...(input.enabled !== undefined && { enabled: input.enabled }),
-        ...(input.settings !== undefined && { settings: input.settings }),
+        ...(input.settings !== undefined && {
+          settings: input.settings as Prisma.InputJsonValue,
+        }),
         updatedBy,
       },
     });
