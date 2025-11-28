@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
+import { ModuleProvider } from './modules';
 import App from './App';
 import { queryClient } from './api/queries';
 import { ToastProvider } from './ui/Toast';
@@ -18,11 +19,13 @@ createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </AuthProvider>
+        <ModuleProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </AuthProvider>
+        </ModuleProvider>
       </QueryClientProvider>
     </BrowserRouter>
   </React.StrictMode>,

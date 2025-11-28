@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for meeting management.
  * Meetings belong to projects and can be used to generate tasks.
+ *
+ * @module meetings
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   createMeeting,
   createTaskFromSelection,
@@ -150,6 +154,8 @@ export function useDeleteMeeting(
 
 /**
  * Create a task from selected meeting text
+ *
+ * This mutation uses module-aware invalidation to update tasks module
  */
 export function useCreateTaskFromSelection(): UseMutationResult<
   unknown,
@@ -161,16 +167,26 @@ export function useCreateTaskFromSelection(): UseMutationResult<
   return useMutation({
     mutationFn: (payload) => createTaskFromSelection(payload),
     onSuccess: (task, payload) => {
+      // Invalidate meetings module caches
       queryClient.invalidateQueries({
         queryKey: queryKeys.meetings.byProject(payload.projectId),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.myTasks() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.tasks.byProject(payload.projectId),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.meetings.detail(payload.meetingId),
       });
+
+      // Invalidate tasks module (direct invalidation since this is a specific cross-module action)
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.myTasks() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tasks.byProject(payload.projectId),
+      });
+
+      // Cross-module invalidation via registry for any additional rules
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'meetings',
+        trigger: 'create',
+      });
+
       return task;
     },
   });

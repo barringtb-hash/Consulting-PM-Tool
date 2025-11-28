@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for brand profile management.
  * Brand profiles store client brand guidelines and assets.
+ *
+ * @module brandProfiles
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules, moduleRegistry } from '../moduleRegistry';
 import {
   archiveBrandAsset,
   createBrandAsset,
@@ -38,27 +42,35 @@ import type {
 
 /**
  * Fetch brand profile for a client
+ *
+ * This query is module-aware and will not execute if the brandProfiles module is disabled.
  */
 export function useBrandProfile(
   clientId: number,
 ): UseQueryResult<BrandProfile | null, Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('brandProfiles');
+
   return useQuery({
     queryKey: queryKeys.brandProfiles.byClient(clientId),
     queryFn: () => fetchBrandProfile(clientId),
-    enabled: !!clientId,
+    enabled: !!clientId && isModuleEnabled,
   });
 }
 
 /**
  * Fetch brand assets for a brand profile
+ *
+ * This query is module-aware and will not execute if the brandProfiles module is disabled.
  */
 export function useBrandAssets(
   brandProfileId: number,
 ): UseQueryResult<BrandAsset[], Error> {
+  const isModuleEnabled = moduleRegistry.isModuleEnabled('brandProfiles');
+
   return useQuery({
     queryKey: queryKeys.brandProfiles.assets(brandProfileId),
     queryFn: () => fetchBrandAssets(brandProfileId),
-    enabled: !!brandProfileId,
+    enabled: !!brandProfileId && isModuleEnabled,
   });
 }
 
@@ -88,6 +100,9 @@ export function useCreateBrandProfile(): UseMutationResult<
 
 /**
  * Update an existing brand profile
+ *
+ * This mutation uses module-aware invalidation to update marketing content caches
+ * since brand profile changes may affect content generation.
  */
 export function useUpdateBrandProfile(): UseMutationResult<
   BrandProfile,
@@ -101,6 +116,12 @@ export function useUpdateBrandProfile(): UseMutationResult<
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.brandProfiles.byClient(data.clientId),
+      });
+
+      // Cross-module invalidation: brand profile changes may affect marketing content
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'brandProfiles',
+        trigger: 'update',
       });
     },
   });

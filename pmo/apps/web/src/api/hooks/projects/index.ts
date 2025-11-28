@@ -4,6 +4,9 @@
  * This module provides all React Query hooks for project management.
  * Includes queries for fetching projects and mutations for CRUD operations,
  * as well as project status and health management.
+ *
+ * @module projects
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -15,6 +18,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   createProject,
   deleteProject,
@@ -142,6 +146,9 @@ export function useUpdateProject(
 
 /**
  * Delete a project
+ *
+ * This mutation uses module-aware invalidation to cascade cache invalidation
+ * to all related modules (tasks, milestones, meetings, documents, marketing)
  */
 export function useDeleteProject(): UseMutationResult<void, Error, number> {
   const queryClient = useQueryClient();
@@ -149,19 +156,17 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
   return useMutation({
     mutationFn: (projectId: number) => deleteProject(projectId),
     onSuccess: (_, projectId) => {
+      // Invalidate own module cache
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       queryClient.removeQueries({
         queryKey: queryKeys.projects.detail(projectId),
       });
-      // Also invalidate related queries
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.tasks.byProject(projectId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.milestones.byProject(projectId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.meetings.byProject(projectId),
+
+      // Cross-module invalidation using module registry rules
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'projects',
+        trigger: 'delete',
+        entityId: projectId,
       });
     },
   });

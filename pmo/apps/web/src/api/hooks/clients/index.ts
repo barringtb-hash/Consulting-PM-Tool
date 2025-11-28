@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for client management.
  * Includes queries for fetching clients and mutations for CRUD operations.
+ *
+ * @module clients
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   archiveClient,
   createClient,
@@ -134,6 +138,9 @@ export function useArchiveClient(): UseMutationResult<Client, Error, number> {
 
 /**
  * Delete a client permanently
+ *
+ * This mutation uses module-aware invalidation to cascade cache invalidation
+ * to all related modules (contacts, projects, campaigns, brandProfiles, publishing)
  */
 export function useDeleteClient(): UseMutationResult<void, Error, number> {
   const queryClient = useQueryClient();
@@ -141,10 +148,17 @@ export function useDeleteClient(): UseMutationResult<void, Error, number> {
   return useMutation({
     mutationFn: (clientId: number) => deleteClient(clientId),
     onSuccess: (_, clientId) => {
+      // Invalidate own module cache
       queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       queryClient.removeQueries({
         queryKey: queryKeys.clients.detail(clientId),
+      });
+
+      // Cross-module invalidation using module registry rules
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'clients',
+        trigger: 'delete',
+        entityId: clientId,
       });
     },
   });

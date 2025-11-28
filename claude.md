@@ -25,8 +25,8 @@ Consulting-PM-Tool/
 │   │   │   │   ├── routes/       # Express route handlers
 │   │   │   │   ├── services/     # Business logic layer
 │   │   │   │   ├── validation/   # Zod schemas
-│   │   │   │   ├── middleware/   # Auth, error handling
-│   │   │   │   └── modules/      # Feature modules (marketing, campaigns)
+│   │   │   │   ├── middleware/   # Auth, error handling, module guards
+│   │   │   │   └── modules/      # Feature modules (marketing, campaigns, module-config)
 │   │   │   └── test/             # API unit tests
 │   │   │
 │   │   └── web/                  # React SPA (port 5173)
@@ -35,9 +35,14 @@ Consulting-PM-Tool/
 │   │       │   ├── features/     # Feature modules
 │   │       │   ├── components/   # Reusable components
 │   │       │   ├── hooks/        # Custom React hooks
+│   │       │   ├── modules/      # Module configuration & context
 │   │       │   ├── ui/           # UI primitives (Button, Modal, Toast)
 │   │       │   └── api/          # HTTP client utilities
 │   │       └── test/             # Component tests
+│   │
+│   ├── packages/
+│   │   ├── modules/              # Shared module definitions (toggleable features)
+│   │   └── types/                # Shared TypeScript types
 │   │
 │   ├── prisma/
 │   │   ├── schema.prisma         # Database schema
@@ -163,6 +168,59 @@ GitHub Actions runs on every push:
 1. Modify `pmo/prisma/schema.prisma`
 2. Run `npx prisma migrate dev --name descriptive_name`
 3. Update seed data if needed in `pmo/prisma/seed.ts`
+
+## Modular Architecture
+
+The platform supports **toggleable modules** to customize deployments per customer. Modules can be enabled/disabled via environment variables.
+
+### Available Modules
+
+| Module | Type | Description |
+|--------|------|-------------|
+| `dashboard` | Core | Main dashboard with metrics |
+| `tasks` | Core | Personal task management |
+| `clients` | Core | Client management |
+| `projects` | Core | Project management |
+| `assets` | Toggleable | AI-generated assets library |
+| `marketing` | Toggleable | Marketing content, campaigns, publishing |
+| `leads` | Toggleable | Lead capture and management |
+| `pipeline` | Toggleable | Sales pipeline visualization |
+| `admin` | Toggleable | User administration |
+
+### Configuring Modules
+
+**Frontend** (`pmo/apps/web/.env`):
+```env
+# Comma-separated list of enabled modules
+# Core modules are always enabled regardless of this setting
+VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,assets,leads,pipeline
+```
+
+**Backend** (`pmo/apps/api/.env`):
+```env
+# Same format as frontend
+ENABLED_MODULES=dashboard,tasks,clients,projects,assets,leads,pipeline
+```
+
+### Module Configuration Files
+
+- **Shared definitions**: `pmo/packages/modules/index.ts` - Module metadata, dependencies, routes
+- **Frontend context**: `pmo/apps/web/src/modules/` - React context and hooks
+- **Backend config**: `pmo/apps/api/src/modules/module-config.ts` - Server-side checks
+- **API guards**: `pmo/apps/api/src/middleware/module-guard.middleware.ts` - Route protection
+
+### How It Works
+
+1. **Navigation**: Sidebar dynamically shows only enabled modules
+2. **Routing**: Disabled module routes redirect to dashboard
+3. **API**: Disabled module endpoints return 404
+4. **Lazy Loading**: Optional modules use React.lazy() for code splitting
+
+### Future Enhancements (Planned)
+
+- React Query hooks with module awareness
+- Plugin architecture for project dashboard panels
+- Per-tenant module configuration in database
 
 ## Important Notes
 

@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for lead management.
  * Includes lead CRUD operations and conversion to clients/projects.
+ *
+ * @module leads
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   convertLead,
   createLead,
@@ -92,6 +96,8 @@ export function useUpdateLead(
 
 /**
  * Convert a lead to a client and optionally a project
+ *
+ * This mutation uses module-aware invalidation to update clients and projects modules
  */
 export function useConvertLead(
   leadId: number,
@@ -102,9 +108,14 @@ export function useConvertLead(
     mutationFn: (payload: LeadConversionPayload) =>
       convertLead(leadId, payload),
     onSuccess: (result) => {
+      // Invalidate leads module
       queryClient.invalidateQueries({ queryKey: queryKeys.leads.all });
+      queryClient.setQueryData(queryKeys.leads.detail(leadId), result.lead);
+
+      // Direct invalidation for created entities
       queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+
       if (result.clientId) {
         queryClient.invalidateQueries({
           queryKey: queryKeys.clients.detail(result.clientId),
@@ -113,7 +124,12 @@ export function useConvertLead(
           queryKey: queryKeys.contacts.byClient(result.clientId),
         });
       }
-      queryClient.setQueryData(queryKeys.leads.detail(leadId), result.lead);
+
+      // Cross-module invalidation via registry
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'leads',
+        trigger: 'update', // Conversion is treated as an update operation
+      });
     },
   });
 }
