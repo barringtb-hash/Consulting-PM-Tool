@@ -4,7 +4,7 @@
  * API functions for module discovery and management.
  */
 
-import { API_BASE_URL } from './config';
+import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 
 // ============================================================================
@@ -88,11 +88,11 @@ export interface TenantModuleConfigResponse {
  * @param tenantId - Optional tenant ID for tenant-specific configuration
  */
 export async function getModules(tenantId?: string): Promise<ModulesResponse> {
-  const url = tenantId
-    ? `${API_BASE_URL}/modules?tenantId=${encodeURIComponent(tenantId)}`
-    : `${API_BASE_URL}/modules`;
+  const path = tenantId
+    ? `/modules?tenantId=${encodeURIComponent(tenantId)}`
+    : '/modules';
 
-  const response = await fetch(url, buildOptions({ method: 'GET' }));
+  const response = await fetch(buildApiUrl(path), buildOptions({ method: 'GET' }));
   return handleResponse<ModulesResponse>(response);
 }
 
@@ -105,11 +105,11 @@ export async function checkModuleEnabled(
   moduleId: string,
   tenantId?: string
 ): Promise<{ moduleId: string; tenantId: string; source: string; enabled: boolean; isCore: boolean }> {
-  const url = tenantId
-    ? `${API_BASE_URL}/modules/check/${moduleId}?tenantId=${encodeURIComponent(tenantId)}`
-    : `${API_BASE_URL}/modules/check/${moduleId}`;
+  const path = tenantId
+    ? `/modules/check/${moduleId}?tenantId=${encodeURIComponent(tenantId)}`
+    : `/modules/check/${moduleId}`;
 
-  const response = await fetch(url, buildOptions({ method: 'GET' }));
+  const response = await fetch(buildApiUrl(path), buildOptions({ method: 'GET' }));
   return handleResponse(response);
 }
 
@@ -120,7 +120,7 @@ export async function checkFeatureFlag(
   key: string
 ): Promise<{ key: string; enabled: boolean; config?: Record<string, unknown> }> {
   const response = await fetch(
-    `${API_BASE_URL}/feature-flags/check/${key}`,
+    buildApiUrl(`/feature-flags/check/${key}`),
     buildOptions({ method: 'GET' })
   );
   return handleResponse(response);
@@ -135,7 +135,7 @@ export async function checkFeatureFlag(
  */
 export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/feature-flags`,
+    buildApiUrl('/admin/feature-flags'),
     buildOptions({ method: 'GET' })
   );
   return handleResponse<FeatureFlag[]>(response);
@@ -146,7 +146,7 @@ export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
  */
 export async function getFeatureFlag(key: string): Promise<FeatureFlag> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/feature-flags/${key}`,
+    buildApiUrl(`/admin/feature-flags/${key}`),
     buildOptions({ method: 'GET' })
   );
   return handleResponse<FeatureFlag>(response);
@@ -164,7 +164,7 @@ export async function createFeatureFlag(data: {
   config?: Record<string, unknown>;
 }): Promise<FeatureFlag> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/feature-flags`,
+    buildApiUrl('/admin/feature-flags'),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -187,7 +187,7 @@ export async function updateFeatureFlag(
   }
 ): Promise<FeatureFlag> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/feature-flags/${key}`,
+    buildApiUrl(`/admin/feature-flags/${key}`),
     buildOptions({
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -201,7 +201,7 @@ export async function updateFeatureFlag(
  */
 export async function deleteFeatureFlag(key: string): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/feature-flags/${key}`,
+    buildApiUrl(`/admin/feature-flags/${key}`),
     buildOptions({ method: 'DELETE' })
   );
   await handleResponse<void>(response);
@@ -216,7 +216,7 @@ export async function deleteFeatureFlag(key: string): Promise<void> {
  */
 export async function getAllTenants(): Promise<{ tenants: string[] }> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/modules/tenants`,
+    buildApiUrl('/admin/modules/tenants'),
     buildOptions({ method: 'GET' })
   );
   return handleResponse(response);
@@ -229,7 +229,7 @@ export async function getTenantModuleConfig(
   tenantId: string
 ): Promise<TenantModuleConfigResponse> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/modules/${tenantId}`,
+    buildApiUrl(`/admin/modules/${tenantId}`),
     buildOptions({ method: 'GET' })
   );
   return handleResponse<TenantModuleConfigResponse>(response);
@@ -245,7 +245,7 @@ export async function setTenantModuleConfig(data: {
   settings?: Record<string, unknown>;
 }): Promise<TenantModuleConfig> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/modules`,
+    buildApiUrl('/admin/modules'),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -266,7 +266,7 @@ export async function bulkSetTenantModules(data: {
   enabledModules: string[];
 }> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/modules/bulk`,
+    buildApiUrl('/admin/modules/bulk'),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -287,7 +287,7 @@ export async function updateTenantModuleConfig(
   }
 ): Promise<TenantModuleConfig> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/modules/${tenantId}/${moduleId}`,
+    buildApiUrl(`/admin/modules/${tenantId}/${moduleId}`),
     buildOptions({
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -304,7 +304,7 @@ export async function deleteTenantModuleConfig(
   moduleId: string
 ): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/admin/modules/${tenantId}/${moduleId}`,
+    buildApiUrl(`/admin/modules/${tenantId}/${moduleId}`),
     buildOptions({ method: 'DELETE' })
   );
   await handleResponse<void>(response);
