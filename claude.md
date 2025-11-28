@@ -171,7 +171,9 @@ GitHub Actions runs on every push:
 
 ## Modular Architecture
 
-The platform supports **toggleable modules** to customize deployments per customer. Modules can be enabled/disabled via environment variables.
+The platform supports **toggleable modules** to customize deployments per customer. Modules can be configured via environment variables (deployment-wide) or database (per-tenant).
+
+> **Full documentation**: See `Docs/MODULES.md` for comprehensive guide.
 
 ### Available Modules
 
@@ -185,42 +187,53 @@ The platform supports **toggleable modules** to customize deployments per custom
 | `marketing` | Toggleable | Marketing content, campaigns, publishing |
 | `leads` | Toggleable | Lead capture and management |
 | `pipeline` | Toggleable | Sales pipeline visualization |
-| `admin` | Toggleable | User administration |
+| `admin` | Toggleable | User administration & module management |
 
-### Configuring Modules
+### Quick Configuration
 
-**Frontend** (`pmo/apps/web/.env`):
+**Environment Variables** (deployment-wide default):
 ```env
-# Comma-separated list of enabled modules
-# Core modules are always enabled regardless of this setting
-VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,assets,leads,pipeline
+# Backend: pmo/apps/api/.env
+ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
+
+# Frontend: pmo/apps/web/.env
+VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
 ```
 
-**Backend** (`pmo/apps/api/.env`):
-```env
-# Same format as frontend
-ENABLED_MODULES=dashboard,tasks,clients,projects,assets,leads,pipeline
+**Per-Tenant Configuration** (database-backed):
+```bash
+# Set modules for a specific customer via API
+POST /api/admin/modules/bulk
+{
+  "tenantId": "customer-acme",
+  "enabledModules": ["dashboard", "tasks", "clients", "projects", "leads"]
+}
 ```
 
-### Module Configuration Files
+### Configuration Priority
 
-- **Shared definitions**: `pmo/packages/modules/index.ts` - Module metadata, dependencies, routes
-- **Frontend context**: `pmo/apps/web/src/modules/` - React context and hooks
-- **Backend config**: `pmo/apps/api/src/modules/module-config.ts` - Server-side checks
-- **API guards**: `pmo/apps/api/src/middleware/module-guard.middleware.ts` - Route protection
+1. **Database** (highest) - Per-tenant configs in `TenantModuleConfig` table
+2. **Environment variable** - `ENABLED_MODULES` / `VITE_ENABLED_MODULES`
+3. **Default** (lowest) - All modules enabled
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `packages/modules/index.ts` | Shared module definitions, dependencies, routes |
+| `apps/api/src/modules/module-config.ts` | Static environment-based checks |
+| `apps/api/src/modules/feature-flags/` | Database-backed tenant configuration |
+| `apps/api/src/middleware/module-guard.middleware.ts` | Runtime route protection |
+| `apps/web/src/modules/ModuleContext.tsx` | React context and hooks |
+| `apps/web/src/pages/AdminModulesPage.tsx` | Admin UI for module management |
 
 ### How It Works
 
-1. **Navigation**: Sidebar dynamically shows only enabled modules
-2. **Routing**: Disabled module routes redirect to dashboard
-3. **API**: Disabled module endpoints return 404
-4. **Lazy Loading**: Optional modules use React.lazy() for code splitting
-
-### Future Enhancements (Planned)
-
-- React Query hooks with module awareness
-- Plugin architecture for project dashboard panels
-- Per-tenant module configuration in database
+1. **Route Registration**: At startup, uses `ENABLED_MODULES` env var to decide which routes to load
+2. **Runtime Middleware**: On each request, checks database via `X-Tenant-ID` header
+3. **API Discovery**: `GET /api/modules?tenantId=xxx` returns tenant-specific config
+4. **Navigation**: Sidebar dynamically shows only enabled modules
+5. **Lazy Loading**: Optional modules use `React.lazy()` for code splitting
 
 ## Important Notes
 
