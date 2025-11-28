@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for marketing content management.
  * Includes AI-powered content generation and repurposing.
+ *
+ * @module marketing
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   archiveMarketingContent,
   createMarketingContent,
@@ -87,6 +91,8 @@ export function useProjectMarketingContents(
 
 /**
  * Create a new marketing content
+ *
+ * This mutation uses module-aware invalidation to update campaign summaries
  */
 export function useCreateMarketingContent(): UseMutationResult<
   MarketingContent,
@@ -100,12 +106,20 @@ export function useCreateMarketingContent(): UseMutationResult<
     mutationFn: createMarketingContent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.marketing.all });
+
+      // Cross-module invalidation: marketing content changes may affect campaign metrics
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'marketing',
+        trigger: 'create',
+      });
     },
   });
 }
 
 /**
  * Update an existing marketing content
+ *
+ * This mutation uses module-aware invalidation to update campaign summaries
  */
 export function useUpdateMarketingContent(): UseMutationResult<
   MarketingContent,
@@ -121,12 +135,20 @@ export function useUpdateMarketingContent(): UseMutationResult<
     onSuccess: () => {
       // Invalidate all marketing queries including project-scoped lists
       queryClient.invalidateQueries({ queryKey: queryKeys.marketing.all });
+
+      // Cross-module invalidation: marketing content changes may affect campaign metrics
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'marketing',
+        trigger: 'update',
+      });
     },
   });
 }
 
 /**
  * Archive a marketing content (soft delete)
+ *
+ * This mutation uses module-aware invalidation to update campaign summaries
  */
 export function useArchiveMarketingContent(): UseMutationResult<
   void,
@@ -140,6 +162,12 @@ export function useArchiveMarketingContent(): UseMutationResult<
     mutationFn: archiveMarketingContent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.marketing.all });
+
+      // Cross-module invalidation: marketing content changes may affect campaign metrics
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'marketing',
+        trigger: 'archive',
+      });
     },
   });
 }

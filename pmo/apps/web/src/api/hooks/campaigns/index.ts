@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for campaign management.
  * Campaigns organize marketing content around specific initiatives.
+ *
+ * @module campaigns
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   archiveCampaign,
   createCampaign,
@@ -71,6 +75,8 @@ export function useCampaign(id: number): UseQueryResult<Campaign, Error> {
 
 /**
  * Create a new campaign
+ *
+ * This mutation uses module-aware invalidation to update marketing content lists
  */
 export function useCreateCampaign(): UseMutationResult<
   Campaign,
@@ -83,12 +89,20 @@ export function useCreateCampaign(): UseMutationResult<
     mutationFn: createCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
+
+      // Cross-module invalidation: campaign changes may affect marketing content display
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'campaigns',
+        trigger: 'create',
+      });
     },
   });
 }
 
 /**
  * Update an existing campaign
+ *
+ * This mutation uses module-aware invalidation to update marketing content lists
  */
 export function useUpdateCampaign(): UseMutationResult<
   Campaign,
@@ -104,12 +118,20 @@ export function useUpdateCampaign(): UseMutationResult<
       queryClient.invalidateQueries({
         queryKey: queryKeys.campaigns.detail(variables.id),
       });
+
+      // Cross-module invalidation: campaign changes may affect marketing content display
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'campaigns',
+        trigger: 'update',
+      });
     },
   });
 }
 
 /**
  * Archive a campaign (soft delete)
+ *
+ * This mutation uses module-aware invalidation to update marketing content lists
  */
 export function useArchiveCampaign(): UseMutationResult<
   void,
@@ -122,6 +144,12 @@ export function useArchiveCampaign(): UseMutationResult<
     mutationFn: archiveCampaign,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
+
+      // Cross-module invalidation: campaign changes may affect marketing content display
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'campaigns',
+        trigger: 'archive',
+      });
     },
   });
 }

@@ -3,6 +3,9 @@
  *
  * This module provides all React Query hooks for brand profile management.
  * Brand profiles store client brand guidelines and assets.
+ *
+ * @module brandProfiles
+ * @see moduleRegistry for module dependencies and invalidation rules
  */
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   archiveBrandAsset,
   createBrandAsset,
@@ -88,6 +92,9 @@ export function useCreateBrandProfile(): UseMutationResult<
 
 /**
  * Update an existing brand profile
+ *
+ * This mutation uses module-aware invalidation to update marketing content caches
+ * since brand profile changes may affect content generation.
  */
 export function useUpdateBrandProfile(): UseMutationResult<
   BrandProfile,
@@ -101,6 +108,12 @@ export function useUpdateBrandProfile(): UseMutationResult<
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.brandProfiles.byClient(data.clientId),
+      });
+
+      // Cross-module invalidation: brand profile changes may affect marketing content
+      invalidateRelatedModules(queryClient, {
+        sourceModule: 'brandProfiles',
+        trigger: 'update',
       });
     },
   });

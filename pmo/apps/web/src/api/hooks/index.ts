@@ -9,6 +9,9 @@
  *   import { useClients, useCreateClient } from '@/api/hooks';
  *   // or
  *   import { useClients, useCreateClient } from '@/api/hooks/clients';
+ *
+ * For module awareness features:
+ *   import { moduleRegistry, invalidateRelatedModules } from '@/api/hooks';
  */
 
 // ============================================================================
@@ -17,6 +20,37 @@
 
 export { queryKeys } from './queryKeys';
 export type { QueryKeys } from './queryKeys';
+
+// ============================================================================
+// Module Registry - Module Awareness System
+// ============================================================================
+
+export {
+  // Module registry singleton
+  moduleRegistry,
+  // Module configurations
+  moduleConfigs,
+  // Invalidation rules
+  invalidationRules,
+  // Query key utilities
+  getModuleQueryKey,
+  getEntityScopedQueryKey,
+  // Cross-module invalidation utilities
+  invalidateRelatedModules,
+  createCrossModuleInvalidationHandler,
+  // Validation utilities
+  assertModuleEnabled,
+  validateModuleDependencies,
+} from './moduleRegistry';
+
+export type {
+  ModuleName,
+  ModuleConfig,
+  ModuleDependency,
+  ModuleDependencyType,
+  InvalidationRule,
+  CrossModuleInvalidationOptions,
+} from './moduleRegistry';
 
 // ============================================================================
 // Clients Module
