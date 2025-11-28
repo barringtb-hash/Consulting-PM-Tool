@@ -92,7 +92,10 @@ export async function getModules(tenantId?: string): Promise<ModulesResponse> {
     ? `/modules?tenantId=${encodeURIComponent(tenantId)}`
     : '/modules';
 
-  const response = await fetch(buildApiUrl(path), buildOptions({ method: 'GET' }));
+  const response = await fetch(
+    buildApiUrl(path),
+    buildOptions({ method: 'GET' }),
+  );
   return handleResponse<ModulesResponse>(response);
 }
 
@@ -103,25 +106,36 @@ export async function getModules(tenantId?: string): Promise<ModulesResponse> {
  */
 export async function checkModuleEnabled(
   moduleId: string,
-  tenantId?: string
-): Promise<{ moduleId: string; tenantId: string; source: string; enabled: boolean; isCore: boolean }> {
+  tenantId?: string,
+): Promise<{
+  moduleId: string;
+  tenantId: string;
+  source: string;
+  enabled: boolean;
+  isCore: boolean;
+}> {
   const path = tenantId
     ? `/modules/check/${moduleId}?tenantId=${encodeURIComponent(tenantId)}`
     : `/modules/check/${moduleId}`;
 
-  const response = await fetch(buildApiUrl(path), buildOptions({ method: 'GET' }));
+  const response = await fetch(
+    buildApiUrl(path),
+    buildOptions({ method: 'GET' }),
+  );
   return handleResponse(response);
 }
 
 /**
  * Check if a feature flag is enabled for the current user
  */
-export async function checkFeatureFlag(
-  key: string
-): Promise<{ key: string; enabled: boolean; config?: Record<string, unknown> }> {
+export async function checkFeatureFlag(key: string): Promise<{
+  key: string;
+  enabled: boolean;
+  config?: Record<string, unknown>;
+}> {
   const response = await fetch(
     buildApiUrl(`/feature-flags/check/${key}`),
-    buildOptions({ method: 'GET' })
+    buildOptions({ method: 'GET' }),
   );
   return handleResponse(response);
 }
@@ -136,7 +150,7 @@ export async function checkFeatureFlag(
 export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
   const response = await fetch(
     buildApiUrl('/admin/feature-flags'),
-    buildOptions({ method: 'GET' })
+    buildOptions({ method: 'GET' }),
   );
   return handleResponse<FeatureFlag[]>(response);
 }
@@ -147,7 +161,7 @@ export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
 export async function getFeatureFlag(key: string): Promise<FeatureFlag> {
   const response = await fetch(
     buildApiUrl(`/admin/feature-flags/${key}`),
-    buildOptions({ method: 'GET' })
+    buildOptions({ method: 'GET' }),
   );
   return handleResponse<FeatureFlag>(response);
 }
@@ -168,7 +182,7 @@ export async function createFeatureFlag(data: {
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
-    })
+    }),
   );
   return handleResponse<FeatureFlag>(response);
 }
@@ -184,14 +198,14 @@ export async function updateFeatureFlag(
     enabled?: boolean;
     rolloutPercentage?: number;
     config?: Record<string, unknown>;
-  }
+  },
 ): Promise<FeatureFlag> {
   const response = await fetch(
     buildApiUrl(`/admin/feature-flags/${key}`),
     buildOptions({
       method: 'PATCH',
       body: JSON.stringify(data),
-    })
+    }),
   );
   return handleResponse<FeatureFlag>(response);
 }
@@ -202,7 +216,7 @@ export async function updateFeatureFlag(
 export async function deleteFeatureFlag(key: string): Promise<void> {
   const response = await fetch(
     buildApiUrl(`/admin/feature-flags/${key}`),
-    buildOptions({ method: 'DELETE' })
+    buildOptions({ method: 'DELETE' }),
   );
   await handleResponse<void>(response);
 }
@@ -217,7 +231,7 @@ export async function deleteFeatureFlag(key: string): Promise<void> {
 export async function getAllTenants(): Promise<{ tenants: string[] }> {
   const response = await fetch(
     buildApiUrl('/admin/modules/tenants'),
-    buildOptions({ method: 'GET' })
+    buildOptions({ method: 'GET' }),
   );
   return handleResponse(response);
 }
@@ -226,11 +240,11 @@ export async function getAllTenants(): Promise<{ tenants: string[] }> {
  * Get module configuration for a tenant (admin only)
  */
 export async function getTenantModuleConfig(
-  tenantId: string
+  tenantId: string,
 ): Promise<TenantModuleConfigResponse> {
   const response = await fetch(
     buildApiUrl(`/admin/modules/${tenantId}`),
-    buildOptions({ method: 'GET' })
+    buildOptions({ method: 'GET' }),
   );
   return handleResponse<TenantModuleConfigResponse>(response);
 }
@@ -249,7 +263,7 @@ export async function setTenantModuleConfig(data: {
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
-    })
+    }),
   );
   return handleResponse<TenantModuleConfig>(response);
 }
@@ -270,7 +284,7 @@ export async function bulkSetTenantModules(data: {
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
-    })
+    }),
   );
   return handleResponse(response);
 }
@@ -284,14 +298,14 @@ export async function updateTenantModuleConfig(
   data: {
     enabled?: boolean;
     settings?: Record<string, unknown>;
-  }
+  },
 ): Promise<TenantModuleConfig> {
   const response = await fetch(
     buildApiUrl(`/admin/modules/${tenantId}/${moduleId}`),
     buildOptions({
       method: 'PATCH',
       body: JSON.stringify(data),
-    })
+    }),
   );
   return handleResponse<TenantModuleConfig>(response);
 }
@@ -301,11 +315,11 @@ export async function updateTenantModuleConfig(
  */
 export async function deleteTenantModuleConfig(
   tenantId: string,
-  moduleId: string
+  moduleId: string,
 ): Promise<void> {
   const response = await fetch(
     buildApiUrl(`/admin/modules/${tenantId}/${moduleId}`),
-    buildOptions({ method: 'DELETE' })
+    buildOptions({ method: 'DELETE' }),
   );
   await handleResponse<void>(response);
 }

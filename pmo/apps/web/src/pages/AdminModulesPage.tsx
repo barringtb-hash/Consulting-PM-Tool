@@ -11,11 +11,9 @@ import {
   Check,
   X,
   Plus,
-  Trash2,
   RefreshCw,
   AlertCircle,
   Lock,
-  Unlock,
 } from 'lucide-react';
 import {
   Button,
@@ -46,7 +44,9 @@ interface TenantConfig {
 export function AdminModulesPage() {
   const [modules, setModules] = useState<ModuleInfo[]>([]);
   const [tenants, setTenants] = useState<string[]>([]);
-  const [tenantConfigs, setTenantConfigs] = useState<Record<string, TenantConfig>>({});
+  const [tenantConfigs, setTenantConfigs] = useState<
+    Record<string, TenantConfig>
+  >({});
   const [selectedTenant, setSelectedTenant] = useState<string>('default');
   const [newTenantId, setNewTenantId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -222,7 +222,7 @@ export function AdminModulesPage() {
       acc[group].push(module);
       return acc;
     },
-    {} as Record<string, ModuleInfo[]>
+    {} as Record<string, ModuleInfo[]>,
   );
 
   const getModuleEnabled = (moduleId: string): boolean => {
@@ -320,11 +320,15 @@ export function AdminModulesPage() {
             <Card className="lg:col-span-3">
               <CardHeader>
                 <CardTitle>
-                  Modules for: {selectedTenant === 'default' ? 'Default Configuration' : selectedTenant}
+                  Modules for:{' '}
+                  {selectedTenant === 'default'
+                    ? 'Default Configuration'
+                    : selectedTenant}
                 </CardTitle>
                 {currentConfig && (
                   <p className="text-sm text-neutral-500 mt-1">
-                    Configuration source: <span className="font-medium">{currentConfig.source}</span>
+                    Configuration source:{' '}
+                    <span className="font-medium">{currentConfig.source}</span>
                   </p>
                 )}
               </CardHeader>
@@ -339,76 +343,81 @@ export function AdminModulesPage() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {Object.entries(groupedModules).map(([group, groupModules]) => (
-                      <div key={group}>
-                        <h3 className="text-sm font-semibold text-neutral-500 uppercase tracking-wider mb-3">
-                          {group || 'Overview'}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {groupModules.map((module) => {
-                            const isEnabled = getModuleEnabled(module.id);
-                            const isCore = isModuleCore(module.id);
+                    {Object.entries(groupedModules).map(
+                      ([group, groupModules]) => (
+                        <div key={group}>
+                          <h3 className="text-sm font-semibold text-neutral-500 uppercase tracking-wider mb-3">
+                            {group || 'Overview'}
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {groupModules.map((module) => {
+                              const isEnabled = getModuleEnabled(module.id);
+                              const isCore = isModuleCore(module.id);
 
-                            return (
-                              <div
-                                key={module.id}
-                                className={`flex items-center justify-between p-4 rounded-lg border ${
-                                  isEnabled
-                                    ? 'bg-success-50 border-success-200'
-                                    : 'bg-neutral-50 border-neutral-200'
-                                }`}
-                              >
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium text-neutral-800">
-                                      {module.label}
-                                    </span>
-                                    {isCore && (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-neutral-200 text-neutral-600 rounded">
-                                        <Lock className="w-3 h-3" />
-                                        Core
+                              return (
+                                <div
+                                  key={module.id}
+                                  className={`flex items-center justify-between p-4 rounded-lg border ${
+                                    isEnabled
+                                      ? 'bg-success-50 border-success-200'
+                                      : 'bg-neutral-50 border-neutral-200'
+                                  }`}
+                                >
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-neutral-800">
+                                        {module.label}
                                       </span>
+                                      {isCore && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-neutral-200 text-neutral-600 rounded">
+                                          <Lock className="w-3 h-3" />
+                                          Core
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-neutral-500 mt-0.5">
+                                      {module.description}
+                                    </p>
+                                    {module.dependencies.length > 0 && (
+                                      <p className="text-xs text-neutral-400 mt-1">
+                                        Requires:{' '}
+                                        {module.dependencies.join(', ')}
+                                      </p>
                                     )}
                                   </div>
-                                  <p className="text-sm text-neutral-500 mt-0.5">
-                                    {module.description}
-                                  </p>
-                                  {module.dependencies.length > 0 && (
-                                    <p className="text-xs text-neutral-400 mt-1">
-                                      Requires: {module.dependencies.join(', ')}
-                                    </p>
-                                  )}
+                                  <button
+                                    onClick={() =>
+                                      handleToggleModule(module.id)
+                                    }
+                                    disabled={isCore || saving}
+                                    className={`ml-4 p-2 rounded-lg transition-colors ${
+                                      isCore
+                                        ? 'text-neutral-400 cursor-not-allowed'
+                                        : isEnabled
+                                          ? 'bg-success-600 text-white hover:bg-success-700'
+                                          : 'bg-neutral-300 text-neutral-600 hover:bg-neutral-400'
+                                    }`}
+                                    title={
+                                      isCore
+                                        ? 'Core modules cannot be disabled'
+                                        : isEnabled
+                                          ? 'Click to disable'
+                                          : 'Click to enable'
+                                    }
+                                  >
+                                    {isEnabled ? (
+                                      <Check className="w-5 h-5" />
+                                    ) : (
+                                      <X className="w-5 h-5" />
+                                    )}
+                                  </button>
                                 </div>
-                                <button
-                                  onClick={() => handleToggleModule(module.id)}
-                                  disabled={isCore || saving}
-                                  className={`ml-4 p-2 rounded-lg transition-colors ${
-                                    isCore
-                                      ? 'text-neutral-400 cursor-not-allowed'
-                                      : isEnabled
-                                        ? 'bg-success-600 text-white hover:bg-success-700'
-                                        : 'bg-neutral-300 text-neutral-600 hover:bg-neutral-400'
-                                  }`}
-                                  title={
-                                    isCore
-                                      ? 'Core modules cannot be disabled'
-                                      : isEnabled
-                                        ? 'Click to disable'
-                                        : 'Click to enable'
-                                  }
-                                >
-                                  {isEnabled ? (
-                                    <Check className="w-5 h-5" />
-                                  ) : (
-                                    <X className="w-5 h-5" />
-                                  )}
-                                </button>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 )}
               </CardBody>
@@ -424,20 +433,24 @@ export function AdminModulesPage() {
               <div className="prose prose-sm max-w-none">
                 <ul className="space-y-2 text-neutral-600">
                   <li>
-                    <strong>Default Configuration:</strong> Used when no tenant-specific configuration exists.
-                    Set via <code>ENABLED_MODULES</code> environment variable.
+                    <strong>Default Configuration:</strong> Used when no
+                    tenant-specific configuration exists. Set via{' '}
+                    <code>ENABLED_MODULES</code> environment variable.
                   </li>
                   <li>
-                    <strong>Tenant-Specific:</strong> Override modules for specific customers/deployments.
-                    Changes are saved to the database and take effect immediately.
+                    <strong>Tenant-Specific:</strong> Override modules for
+                    specific customers/deployments. Changes are saved to the
+                    database and take effect immediately.
                   </li>
                   <li>
-                    <strong>Core Modules:</strong> Dashboard, Tasks, Clients, and Projects cannot be disabled.
-                    They are required for the platform to function.
+                    <strong>Core Modules:</strong> Dashboard, Tasks, Clients,
+                    and Projects cannot be disabled. They are required for the
+                    platform to function.
                   </li>
                   <li>
-                    <strong>Dependencies:</strong> Some modules require others. When you enable a module,
-                    its dependencies are automatically enabled.
+                    <strong>Dependencies:</strong> Some modules require others.
+                    When you enable a module, its dependencies are automatically
+                    enabled.
                   </li>
                 </ul>
               </div>

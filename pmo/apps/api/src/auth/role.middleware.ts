@@ -24,7 +24,7 @@ export function requireRole(role: UserRole) {
   return async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized: Authentication required' });
@@ -78,7 +78,7 @@ export function requireAnyRole(roles: UserRole[]) {
   return async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized: Authentication required' });

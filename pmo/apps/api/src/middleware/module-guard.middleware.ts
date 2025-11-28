@@ -41,7 +41,11 @@ function getTenantId(req: Request): string {
  * app.use('/api/marketing-contents', requireModule('marketing'), marketingRouter);
  */
 export function requireModule(moduleId: ModuleId) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const tenantId = getTenantId(req);
       const enabled = await isModuleEnabledForTenant(moduleId, tenantId);
@@ -56,7 +60,10 @@ export function requireModule(moduleId: ModuleId) {
       next();
     } catch (error) {
       // If database check fails, fall back to static config for resilience
-      console.error('Module guard database check failed, using static config:', error);
+      console.error(
+        'Module guard database check failed, using static config:',
+        error,
+      );
       if (!isModuleEnabled(moduleId)) {
         res.status(404).json({
           error: 'Not Found',

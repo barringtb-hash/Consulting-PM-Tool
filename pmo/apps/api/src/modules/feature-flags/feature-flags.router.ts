@@ -46,7 +46,13 @@ const router = Router();
 // ============================================================================
 
 const featureFlagCreateSchema = z.object({
-  key: z.string().min(1).regex(/^[a-z][a-z0-9_-]*$/i, 'Key must start with a letter and contain only alphanumeric characters, underscores, and hyphens'),
+  key: z
+    .string()
+    .min(1)
+    .regex(
+      /^[a-z][a-z0-9_-]*$/i,
+      'Key must start with a letter and contain only alphanumeric characters, underscores, and hyphens',
+    ),
   name: z.string().min(1),
   description: z.string().optional(),
   enabled: z.boolean().optional(),
@@ -149,7 +155,9 @@ router.get('/modules/check/:moduleId', async (req, res: Response) => {
   }
 
   const tenantConfig = await getTenantModuleConfig(tenantId);
-  const moduleConfig = tenantConfig.modules.find((m) => m.moduleId === moduleId);
+  const moduleConfig = tenantConfig.modules.find(
+    (m) => m.moduleId === moduleId,
+  );
   const enabled = moduleConfig?.enabled ?? true;
 
   res.json({
@@ -175,7 +183,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const result = await isFeatureFlagEnabled(req.params.key, req.userId);
     res.json(result);
-  }
+  },
 );
 
 // ============================================================================
@@ -195,7 +203,7 @@ router.get(
   async (_req: AuthenticatedRequest, res: Response) => {
     const flags = await getAllFeatureFlags();
     res.json(flags);
-  }
+  },
 );
 
 /**
@@ -215,7 +223,7 @@ router.get(
     }
 
     res.json(flag);
-  }
+  },
 );
 
 /**
@@ -242,12 +250,14 @@ router.post(
       res.status(201).json(flag);
     } catch (error) {
       if ((error as Error).message.includes('Unique constraint')) {
-        res.status(409).json({ error: 'Feature flag with this key already exists' });
+        res
+          .status(409)
+          .json({ error: 'Feature flag with this key already exists' });
         return;
       }
       throw error;
     }
-  }
+  },
 );
 
 /**
@@ -277,7 +287,7 @@ router.patch(
     }
 
     res.json(flag);
-  }
+  },
 );
 
 /**
@@ -297,7 +307,7 @@ router.delete(
     }
 
     res.status(204).send();
-  }
+  },
 );
 
 // Tenant Module Configuration Management
@@ -313,7 +323,7 @@ router.get(
   async (_req: AuthenticatedRequest, res: Response) => {
     const tenants = await getAllTenantConfigs();
     res.json({ tenants });
-  }
+  },
 );
 
 /**
@@ -327,7 +337,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const config = await getTenantModuleConfig(req.params.tenantId);
     res.json(config);
-  }
+  },
 );
 
 /**
@@ -355,7 +365,7 @@ router.post(
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
-  }
+  },
 );
 
 /**
@@ -381,10 +391,12 @@ router.post(
       const configs = await bulkSetTenantModuleConfig(
         parsed.data.tenantId,
         parsed.data.enabledModules,
-        req.userId
+        req.userId,
       );
 
-      const enabledModules = await getEnabledModulesForTenant(parsed.data.tenantId);
+      const enabledModules = await getEnabledModulesForTenant(
+        parsed.data.tenantId,
+      );
 
       res.json({
         tenantId: parsed.data.tenantId,
@@ -394,7 +406,7 @@ router.post(
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
-  }
+  },
 );
 
 /**
@@ -421,7 +433,7 @@ router.patch(
         req.params.tenantId,
         req.params.moduleId,
         parsed.data,
-        req.userId
+        req.userId,
       );
 
       if (!config) {
@@ -433,7 +445,7 @@ router.patch(
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
-  }
+  },
 );
 
 /**
@@ -447,7 +459,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     const deleted = await deleteTenantModuleConfig(
       req.params.tenantId,
-      req.params.moduleId
+      req.params.moduleId,
     );
 
     if (!deleted) {
@@ -456,7 +468,7 @@ router.delete(
     }
 
     res.status(204).send();
-  }
+  },
 );
 
 export default router;

@@ -48,7 +48,7 @@ export type UpdateUserPreferencesInput = Partial<UserPreferences>;
  * Get user preferences
  */
 export async function getUserPreferences(
-  userId: number
+  userId: number,
 ): Promise<UserPreferences> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -67,7 +67,7 @@ export async function getUserPreferences(
  */
 export async function updateUserPreferences(
   userId: number,
-  preferences: UpdateUserPreferencesInput
+  preferences: UpdateUserPreferencesInput,
 ): Promise<UserPreferences> {
   const currentPrefs = await getUserPreferences(userId);
 
@@ -88,7 +88,7 @@ export async function updateUserPreferences(
  */
 export async function setUserPreferences(
   userId: number,
-  preferences: UserPreferences
+  preferences: UserPreferences,
 ): Promise<UserPreferences> {
   const updatedUser = await prisma.user.update({
     where: { id: userId },
@@ -117,7 +117,7 @@ export async function deleteUserPreferences(userId: number): Promise<void> {
  * Get dashboard panel preferences
  */
 export async function getDashboardPanelPreferences(
-  userId: number
+  userId: number,
 ): Promise<DashboardPanelPreferences | null> {
   const prefs = await getUserPreferences(userId);
   return prefs.dashboardPanels || null;
@@ -128,7 +128,7 @@ export async function getDashboardPanelPreferences(
  */
 export async function updateDashboardPanelPreferences(
   userId: number,
-  dashboardPanels: Partial<DashboardPanelPreferences>
+  dashboardPanels: Partial<DashboardPanelPreferences>,
 ): Promise<DashboardPanelPreferences> {
   const currentPrefs = await getUserPreferences(userId);
   const currentDashboardPrefs = currentPrefs.dashboardPanels || {
@@ -152,7 +152,7 @@ export async function updateDashboardPanelPreferences(
  */
 export async function setEnabledDashboardPanels(
   userId: number,
-  enabledPanels: string[]
+  enabledPanels: string[],
 ): Promise<DashboardPanelPreferences> {
   return updateDashboardPanelPreferences(userId, { enabledPanels });
 }
@@ -162,7 +162,7 @@ export async function setEnabledDashboardPanels(
  */
 export async function toggleDashboardPanel(
   userId: number,
-  panelId: string
+  panelId: string,
 ): Promise<DashboardPanelPreferences> {
   const currentPrefs = await getDashboardPanelPreferences(userId);
   const enabledPanels = currentPrefs?.enabledPanels || [];
@@ -182,7 +182,7 @@ export async function toggleDashboardPanel(
  */
 export async function setDashboardPanelOrder(
   userId: number,
-  panelOrder: Record<string, number>
+  panelOrder: Record<string, number>,
 ): Promise<DashboardPanelPreferences> {
   return updateDashboardPanelPreferences(userId, { panelOrder });
 }
@@ -196,7 +196,7 @@ export async function setDashboardPanelOrder(
  */
 function deepMerge<T extends Record<string, unknown>>(
   target: T,
-  source: Partial<T>
+  source: Partial<T>,
 ): T {
   const output = { ...target };
 
@@ -212,7 +212,7 @@ function deepMerge<T extends Record<string, unknown>>(
       ) {
         output[key] = deepMerge(
           targetValue as Record<string, unknown>,
-          sourceValue as Record<string, unknown>
+          sourceValue as Record<string, unknown>,
         ) as T[Extract<keyof T, string>];
       } else {
         output[key] = sourceValue as T[Extract<keyof T, string>];

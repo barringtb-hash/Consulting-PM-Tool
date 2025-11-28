@@ -7,7 +7,11 @@
 
 import { FeatureFlag, TenantModuleConfig } from '@prisma/client';
 import { prisma } from '../../prisma/client';
-import { ModuleId, MODULE_DEFINITIONS, parseEnabledModules } from '../../../../../packages/modules';
+import {
+  ModuleId,
+  MODULE_DEFINITIONS,
+  parseEnabledModules,
+} from '../../../../../packages/modules';
 
 // ============================================================================
 // Types
@@ -41,7 +45,9 @@ export type CreateFeatureFlagInput = {
   config?: Record<string, unknown>;
 };
 
-export type UpdateFeatureFlagInput = Partial<Omit<CreateFeatureFlagInput, 'key'>>;
+export type UpdateFeatureFlagInput = Partial<
+  Omit<CreateFeatureFlagInput, 'key'>
+>;
 
 export type CreateTenantModuleConfigInput = {
   tenantId: string;
@@ -83,7 +89,7 @@ export async function getFeatureFlag(key: string): Promise<FeatureFlag | null> {
  */
 export async function isFeatureFlagEnabled(
   key: string,
-  userId?: number
+  userId?: number,
 ): Promise<FeatureFlagResult> {
   const flag = await getFeatureFlag(key);
 
@@ -93,7 +99,11 @@ export async function isFeatureFlagEnabled(
 
   // Check if globally disabled
   if (!flag.enabled) {
-    return { key, enabled: false, config: flag.config as Record<string, unknown> };
+    return {
+      key,
+      enabled: false,
+      config: flag.config as Record<string, unknown>,
+    };
   }
 
   // Check percentage rollout if user ID provided
@@ -110,7 +120,7 @@ export async function isFeatureFlagEnabled(
  * Create a new feature flag
  */
 export async function createFeatureFlag(
-  input: CreateFeatureFlagInput
+  input: CreateFeatureFlagInput,
 ): Promise<FeatureFlag> {
   return prisma.featureFlag.create({
     data: {
@@ -129,16 +139,20 @@ export async function createFeatureFlag(
  */
 export async function updateFeatureFlag(
   key: string,
-  input: UpdateFeatureFlagInput
+  input: UpdateFeatureFlagInput,
 ): Promise<FeatureFlag | null> {
   try {
     return await prisma.featureFlag.update({
       where: { key },
       data: {
         ...(input.name !== undefined && { name: input.name }),
-        ...(input.description !== undefined && { description: input.description }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
         ...(input.enabled !== undefined && { enabled: input.enabled }),
-        ...(input.rolloutPercentage !== undefined && { rolloutPercentage: input.rolloutPercentage }),
+        ...(input.rolloutPercentage !== undefined && {
+          rolloutPercentage: input.rolloutPercentage,
+        }),
         ...(input.config !== undefined && { config: input.config }),
       },
     });
@@ -170,7 +184,7 @@ export async function deleteFeatureFlag(key: string): Promise<boolean> {
  * Falls back to "default" tenant, then environment variable, then system defaults
  */
 export async function getTenantModuleConfig(
-  tenantId: string = 'default'
+  tenantId: string = 'default',
 ): Promise<ModuleConfigResult> {
   // Try to get tenant-specific config
   let configs = await prisma.tenantModuleConfig.findMany({
@@ -209,12 +223,10 @@ export async function getTenantModuleConfig(
  * Get enabled modules for a tenant (just the module IDs)
  */
 export async function getEnabledModulesForTenant(
-  tenantId: string = 'default'
+  tenantId: string = 'default',
 ): Promise<ModuleId[]> {
   const config = await getTenantModuleConfig(tenantId);
-  return config.modules
-    .filter((m) => m.enabled)
-    .map((m) => m.moduleId);
+  return config.modules.filter((m) => m.enabled).map((m) => m.moduleId);
 }
 
 /**
@@ -222,7 +234,7 @@ export async function getEnabledModulesForTenant(
  */
 export async function isModuleEnabledForTenant(
   moduleId: ModuleId,
-  tenantId: string = 'default'
+  tenantId: string = 'default',
 ): Promise<boolean> {
   const enabledModules = await getEnabledModulesForTenant(tenantId);
   return enabledModules.includes(moduleId);
@@ -233,7 +245,7 @@ export async function isModuleEnabledForTenant(
  */
 export async function setTenantModuleConfig(
   input: CreateTenantModuleConfigInput,
-  updatedBy?: number
+  updatedBy?: number,
 ): Promise<TenantModuleConfig> {
   // Validate module ID
   if (!MODULE_DEFINITIONS[input.moduleId as ModuleId]) {
@@ -275,7 +287,7 @@ export async function updateTenantModuleConfig(
   tenantId: string,
   moduleId: string,
   input: UpdateTenantModuleConfigInput,
-  updatedBy?: number
+  updatedBy?: number,
 ): Promise<TenantModuleConfig | null> {
   // Check if it's a core module being disabled
   const moduleDef = MODULE_DEFINITIONS[moduleId as ModuleId];
@@ -304,7 +316,7 @@ export async function updateTenantModuleConfig(
  */
 export async function deleteTenantModuleConfig(
   tenantId: string,
-  moduleId: string
+  moduleId: string,
 ): Promise<boolean> {
   try {
     await prisma.tenantModuleConfig.delete({
@@ -324,7 +336,7 @@ export async function deleteTenantModuleConfig(
 export async function bulkSetTenantModuleConfig(
   tenantId: string,
   moduleIds: string[],
-  updatedBy?: number
+  updatedBy?: number,
 ): Promise<TenantModuleConfig[]> {
   // Validate all module IDs
   for (const moduleId of moduleIds) {
@@ -382,7 +394,7 @@ export async function getAllTenantConfigs(): Promise<string[]> {
 // ============================================================================
 
 function buildModuleResultsFromConfigs(
-  configs: TenantModuleConfig[]
+  configs: TenantModuleConfig[],
 ): TenantModuleResult[] {
   const configMap = new Map(configs.map((c) => [c.moduleId, c]));
 
@@ -397,7 +409,9 @@ function buildModuleResultsFromConfigs(
   });
 }
 
-function buildModuleResultsFromIds(moduleIds: ModuleId[]): TenantModuleResult[] {
+function buildModuleResultsFromIds(
+  moduleIds: ModuleId[],
+): TenantModuleResult[] {
   const enabledSet = new Set(moduleIds);
 
   return Object.values(MODULE_DEFINITIONS).map((def) => ({

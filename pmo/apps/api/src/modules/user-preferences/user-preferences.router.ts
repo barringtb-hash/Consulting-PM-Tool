@@ -109,40 +109,37 @@ router.patch(
       console.error('Error updating user preferences:', error);
       res.status(500).json({ error: 'Failed to update preferences' });
     }
-  }
+  },
 );
 
 /**
  * PUT /api/user/preferences
  * Replace user preferences entirely
  */
-router.put(
-  '/preferences',
-  async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    const parsed = userPreferencesSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: 'Invalid request body',
-        details: parsed.error.format(),
-      });
-      return;
-    }
-
-    try {
-      const preferences = await setUserPreferences(req.userId, parsed.data);
-      res.json(preferences);
-    } catch (error) {
-      console.error('Error setting user preferences:', error);
-      res.status(500).json({ error: 'Failed to set preferences' });
-    }
+router.put('/preferences', async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
   }
-);
+
+  const parsed = userPreferencesSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    res.status(400).json({
+      error: 'Invalid request body',
+      details: parsed.error.format(),
+    });
+    return;
+  }
+
+  try {
+    const preferences = await setUserPreferences(req.userId, parsed.data);
+    res.json(preferences);
+  } catch (error) {
+    console.error('Error setting user preferences:', error);
+    res.status(500).json({ error: 'Failed to set preferences' });
+  }
+});
 
 /**
  * DELETE /api/user/preferences
@@ -163,7 +160,7 @@ router.delete(
       console.error('Error deleting user preferences:', error);
       res.status(500).json({ error: 'Failed to reset preferences' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -189,7 +186,7 @@ router.get(
       console.error('Error fetching dashboard preferences:', error);
       res.status(500).json({ error: 'Failed to fetch dashboard preferences' });
     }
-  }
+  },
 );
 
 /**
@@ -217,14 +214,14 @@ router.patch(
     try {
       const preferences = await updateDashboardPanelPreferences(
         req.userId,
-        parsed.data
+        parsed.data,
       );
       res.json(preferences);
     } catch (error) {
       console.error('Error updating dashboard preferences:', error);
       res.status(500).json({ error: 'Failed to update dashboard preferences' });
     }
-  }
+  },
 );
 
 /**
@@ -239,7 +236,9 @@ router.put(
       return;
     }
 
-    const parsed = z.object({ enabledPanels: z.array(z.string()) }).safeParse(req.body);
+    const parsed = z
+      .object({ enabledPanels: z.array(z.string()) })
+      .safeParse(req.body);
 
     if (!parsed.success) {
       res.status(400).json({
@@ -252,14 +251,14 @@ router.put(
     try {
       const preferences = await setEnabledDashboardPanels(
         req.userId,
-        parsed.data.enabledPanels
+        parsed.data.enabledPanels,
       );
       res.json(preferences);
     } catch (error) {
       console.error('Error setting dashboard panels:', error);
       res.status(500).json({ error: 'Failed to set dashboard panels' });
     }
-  }
+  },
 );
 
 /**
@@ -288,7 +287,7 @@ router.post(
       console.error('Error toggling dashboard panel:', error);
       res.status(500).json({ error: 'Failed to toggle dashboard panel' });
     }
-  }
+  },
 );
 
 /**
@@ -303,7 +302,9 @@ router.put(
       return;
     }
 
-    const parsed = z.object({ panelOrder: z.record(z.number()) }).safeParse(req.body);
+    const parsed = z
+      .object({ panelOrder: z.record(z.number()) })
+      .safeParse(req.body);
 
     if (!parsed.success) {
       res.status(400).json({
@@ -316,14 +317,14 @@ router.put(
     try {
       const preferences = await setDashboardPanelOrder(
         req.userId,
-        parsed.data.panelOrder
+        parsed.data.panelOrder,
       );
       res.json(preferences);
     } catch (error) {
       console.error('Error setting panel order:', error);
       res.status(500).json({ error: 'Failed to set panel order' });
     }
-  }
+  },
 );
 
 export default router;
