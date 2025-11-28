@@ -3,6 +3,9 @@
  *
  * Provides shared data and functionality to all dashboard plugins through
  * React Context. Handles data fetching, caching, and error states.
+ *
+ * Note: Plugin enabled state is tracked locally in this context, not by
+ * mutating the global registry. This prevents state leakage across sessions.
  */
 
 import {
@@ -184,25 +187,54 @@ export function DashboardPluginProvider({
     [clientsData, projectsData, tasksData],
   );
 
-  // Apply preferences if provided
-  useMemo(() => {
+  // Compute enabled plugin IDs locally based on preferences
+  // This avoids mutating the global registry singleton
+  const enabledPluginIds = useMemo(() => {
     if (preferences?.enabledPlugins) {
-      dashboardPluginRegistry.applyPreferences(preferences.enabledPlugins);
+      return new Set(preferences.enabledPlugins);
     }
+    // Default: use each plugin's defaultEnabled setting
+    return new Set(
+      dashboardPluginRegistry
+        .getAll()
+        .filter((entry) => entry.plugin.config.defaultEnabled !== false)
+        .map((entry) => entry.plugin.config.id),
+    );
   }, [preferences?.enabledPlugins]);
 
-  // Get plugins by position
+  // Get plugins by position, filtering by local enabled state
   const getPluginsByPosition = useCallback(
     (position: DashboardPanelPosition) => {
-      return dashboardPluginRegistry.getByPosition(position, true);
+      return dashboardPluginRegistry
+        .getByPosition(position, false) // Get all, ignore registry enabled state
+        .filter((entry) => enabledPluginIds.has(entry.plugin.config.id))
+        .sort((a, b) => a.order - b.order);
     },
-    [],
+    [enabledPluginIds],
   );
 
-  // Get all plugins grouped by position
+  // Get all plugins grouped by position, filtering by local enabled state
   const getPluginsGrouped = useCallback(() => {
-    return dashboardPluginRegistry.getGroupedByPosition();
-  }, []);
+    const grouped: Record<DashboardPanelPosition, RegisteredPlugin[]> = {
+      'summary-cards': [],
+      'main-left': [],
+      'main-right': [],
+      'full-width': [],
+    };
+
+    for (const entry of dashboardPluginRegistry.getAll()) {
+      if (enabledPluginIds.has(entry.plugin.config.id)) {
+        grouped[entry.plugin.config.position].push(entry);
+      }
+    }
+
+    // Sort each group by priority
+    for (const position of Object.keys(grouped) as DashboardPanelPosition[]) {
+      grouped[position].sort((a, b) => a.order - b.order);
+    }
+
+    return grouped;
+  }, [enabledPluginIds]);
 
   // Refetch all data
   const refetchAll = useCallback(() => {
