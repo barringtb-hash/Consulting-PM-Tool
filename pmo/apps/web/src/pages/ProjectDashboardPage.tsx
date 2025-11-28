@@ -35,6 +35,7 @@ import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import { useToast } from '../ui/Toast';
 import { EMPTY_STATES, formatStatus } from '../utils/typography';
+import { useFeatures } from '../features';
 
 // Import milestone components
 import {
@@ -97,6 +98,12 @@ function ProjectDashboardPage(): JSX.Element {
   const { showToast } = useToast();
   const projectId = useMemo(() => Number(id), [id]);
 
+  // Feature flags - determine which tabs/features to show
+  const { isFeatureEnabled } = useFeatures();
+  const showMeetings = isFeatureEnabled('meetings');
+  const showAssets = isFeatureEnabled('aiAssets');
+  const showMarketing = isFeatureEnabled('marketing');
+
   const projectQuery = useProject(
     Number.isNaN(projectId) ? undefined : projectId,
   );
@@ -127,12 +134,15 @@ function ProjectDashboardPage(): JSX.Element {
     null,
   );
 
-  // Assets
-  const projectAssetsQuery = useProjectAssets(projectId, false);
+  // Assets - only fetch if feature is enabled
+  const projectAssetsQuery = useProjectAssets(
+    showAssets ? projectId : undefined,
+    false,
+  );
   const linkAssetMutation = useLinkAssetToProject(projectId || 0);
   const unlinkAssetMutation = useUnlinkAssetFromProject(projectId || 0);
   const availableAssetsQuery = useAssets(
-    project ? { clientId: project.clientId } : undefined,
+    showAssets && project ? { clientId: project.clientId } : undefined,
   );
   const createAssetMutation = useCreateAsset();
   const [selectedAssetId, setSelectedAssetId] = useState('');
@@ -140,8 +150,10 @@ function ProjectDashboardPage(): JSX.Element {
   const [showAssetForm, setShowAssetForm] = useState(false);
   const [assetError, setAssetError] = useState<string | null>(null);
 
-  // Marketing
-  const projectMarketingContentsQuery = useProjectMarketingContents(projectId);
+  // Marketing - only fetch if feature is enabled
+  const projectMarketingContentsQuery = useProjectMarketingContents(
+    showMarketing ? projectId : undefined,
+  );
   const archiveMarketingContentMutation = useArchiveMarketingContent();
   const [selectedMarketingContent, setSelectedMarketingContent] =
     useState<MarketingContent | null>(null);
@@ -587,18 +599,24 @@ function ProjectDashboardPage(): JSX.Element {
               <Target className="w-4 h-4" />
               Milestones
             </TabsTrigger>
-            <TabsTrigger value="meetings">
-              <Users className="w-4 h-4" />
-              Meetings
-            </TabsTrigger>
-            <TabsTrigger value="assets">
-              <FolderOpen className="w-4 h-4" />
-              Assets
-            </TabsTrigger>
-            <TabsTrigger value="marketing">
-              <Megaphone className="w-4 h-4" />
-              Marketing
-            </TabsTrigger>
+            {showMeetings && (
+              <TabsTrigger value="meetings">
+                <Users className="w-4 h-4" />
+                Meetings
+              </TabsTrigger>
+            )}
+            {showAssets && (
+              <TabsTrigger value="assets">
+                <FolderOpen className="w-4 h-4" />
+                Assets
+              </TabsTrigger>
+            )}
+            {showMarketing && (
+              <TabsTrigger value="marketing">
+                <Megaphone className="w-4 h-4" />
+                Marketing
+              </TabsTrigger>
+            )}
             <TabsTrigger value="status">
               <Settings className="w-4 h-4" />
               Status & Reporting
@@ -821,264 +839,270 @@ function ProjectDashboardPage(): JSX.Element {
             </div>
           </TabsContent>
 
-          <TabsContent value="meetings">
-            <ProjectMeetingsPanel projectId={projectId} />
-          </TabsContent>
+          {showMeetings && (
+            <TabsContent value="meetings">
+              <ProjectMeetingsPanel projectId={projectId} />
+            </TabsContent>
+          )}
 
-          <TabsContent value="assets">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Linked Assets</CardTitle>
-                </CardHeader>
-                <CardBody>
-                  {projectAssetsQuery.isLoading && (
-                    <p className="text-neutral-600">Loading assets...</p>
-                  )}
-
-                  {projectAssets.length === 0 &&
-                    !projectAssetsQuery.isLoading && (
-                      <p className="text-neutral-600">
-                        {EMPTY_STATES.noLinkedAssets}
-                      </p>
+          {showAssets && (
+            <TabsContent value="assets">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Linked Assets</CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    {projectAssetsQuery.isLoading && (
+                      <p className="text-neutral-600">Loading assets...</p>
                     )}
 
-                  {projectAssets.length > 0 && (
-                    <div className="space-y-3">
-                      {projectAssets.map((entry) => (
-                        <div
-                          key={entry.id}
-                          className="p-4 bg-neutral-50 rounded-lg"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="font-semibold text-neutral-900">
-                                {entry.asset.name}
-                              </h4>
-                              <p className="text-sm text-neutral-600 mt-1">
-                                {entry.asset.description}
-                              </p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge>{entry.asset.type}</Badge>
-                                {entry.asset.isTemplate && (
-                                  <Badge variant="secondary">Template</Badge>
-                                )}
+                    {projectAssets.length === 0 &&
+                      !projectAssetsQuery.isLoading && (
+                        <p className="text-neutral-600">
+                          {EMPTY_STATES.noLinkedAssets}
+                        </p>
+                      )}
+
+                    {projectAssets.length > 0 && (
+                      <div className="space-y-3">
+                        {projectAssets.map((entry) => (
+                          <div
+                            key={entry.id}
+                            className="p-4 bg-neutral-50 rounded-lg"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-semibold text-neutral-900">
+                                  {entry.asset.name}
+                                </h4>
+                                <p className="text-sm text-neutral-600 mt-1">
+                                  {entry.asset.description}
+                                </p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge>{entry.asset.type}</Badge>
+                                  {entry.asset.isTemplate && (
+                                    <Badge variant="secondary">Template</Badge>
+                                  )}
+                                </div>
                               </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleUnlinkAsset(entry.assetId)}
+                              >
+                                Unlink
+                              </Button>
                             </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleUnlinkAsset(entry.assetId)}
-                            >
-                              Unlink
-                            </Button>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Link Existing Asset</CardTitle>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="asset-select"
+                        className="block text-sm font-medium text-neutral-900 mb-1"
+                      >
+                        Select Asset
+                      </label>
+                      <Select
+                        id="asset-select"
+                        value={selectedAssetId}
+                        onChange={(e) => setSelectedAssetId(e.target.value)}
+                      >
+                        <option value="">Choose an asset...</option>
+                        {availableAssets.map((asset) => (
+                          <option key={asset.id} value={asset.id}>
+                            {asset.name} ({asset.type})
+                          </option>
+                        ))}
+                      </Select>
                     </div>
-                  )}
-                </CardBody>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Link Existing Asset</CardTitle>
-                </CardHeader>
-                <CardBody className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="asset-select"
-                      className="block text-sm font-medium text-neutral-900 mb-1"
+                    <div>
+                      <label
+                        htmlFor="asset-notes"
+                        className="block text-sm font-medium text-neutral-900 mb-1"
+                      >
+                        Notes (optional)
+                      </label>
+                      <Input
+                        id="asset-notes"
+                        value={assetNotes}
+                        onChange={(e) => setAssetNotes(e.target.value)}
+                        placeholder="Context for this project"
+                      />
+                    </div>
+
+                    {assetError && (
+                      <p className="text-danger-600 text-sm">{assetError}</p>
+                    )}
+
+                    <Button
+                      onClick={handleLinkAsset}
+                      isLoading={linkAssetMutation.isPending}
                     >
-                      Select Asset
-                    </label>
-                    <Select
-                      id="asset-select"
-                      value={selectedAssetId}
-                      onChange={(e) => setSelectedAssetId(e.target.value)}
-                    >
-                      <option value="">Choose an asset...</option>
-                      {availableAssets.map((asset) => (
-                        <option key={asset.id} value={asset.id}>
-                          {asset.name} ({asset.type})
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="asset-notes"
-                      className="block text-sm font-medium text-neutral-900 mb-1"
-                    >
-                      Notes (optional)
-                    </label>
-                    <Input
-                      id="asset-notes"
-                      value={assetNotes}
-                      onChange={(e) => setAssetNotes(e.target.value)}
-                      placeholder="Context for this project"
-                    />
-                  </div>
-
-                  {assetError && (
-                    <p className="text-danger-600 text-sm">{assetError}</p>
-                  )}
-
-                  <Button
-                    onClick={handleLinkAsset}
-                    isLoading={linkAssetMutation.isPending}
-                  >
-                    Link Asset
-                  </Button>
-                </CardBody>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Asset</CardTitle>
-                </CardHeader>
-                <CardBody>
-                  {!showAssetForm ? (
-                    <Button onClick={() => setShowAssetForm(true)}>
-                      New Asset
+                      Link Asset
                     </Button>
-                  ) : (
-                    <AssetForm
-                      initialValues={{
-                        name: '',
-                        type: '',
-                        description: '',
-                        clientId: project ? String(project.clientId) : '',
-                        tags: '',
-                        isTemplate: false,
-                      }}
-                      onSubmit={handleCreateAsset}
-                      submitLabel="Create and Link"
-                      isSubmitting={
-                        createAssetMutation.isPending ||
-                        linkAssetMutation.isPending
-                      }
-                      onCancel={() => setShowAssetForm(false)}
-                      clients={clientQuery.data ? [clientQuery.data] : []}
-                      disableClientSelection
-                    />
-                  )}
-                </CardBody>
-              </Card>
-            </div>
-          </TabsContent>
+                  </CardBody>
+                </Card>
 
-          <TabsContent value="marketing">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Marketing Content</CardTitle>
-                    {project && (
-                      <GenerateFromProjectButton
-                        projectId={project.id}
-                        projectName={project.name}
-                        clientId={project.clientId}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create New Asset</CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    {!showAssetForm ? (
+                      <Button onClick={() => setShowAssetForm(true)}>
+                        New Asset
+                      </Button>
+                    ) : (
+                      <AssetForm
+                        initialValues={{
+                          name: '',
+                          type: '',
+                          description: '',
+                          clientId: project ? String(project.clientId) : '',
+                          tags: '',
+                          isTemplate: false,
+                        }}
+                        onSubmit={handleCreateAsset}
+                        submitLabel="Create and Link"
+                        isSubmitting={
+                          createAssetMutation.isPending ||
+                          linkAssetMutation.isPending
+                        }
+                        onCancel={() => setShowAssetForm(false)}
+                        clients={clientQuery.data ? [clientQuery.data] : []}
+                        disableClientSelection
                       />
                     )}
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  {projectMarketingContentsQuery.isLoading && (
-                    <p className="text-neutral-600">
-                      Loading marketing content...
-                    </p>
-                  )}
+                  </CardBody>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
 
-                  {marketingContents.length === 0 &&
-                    !projectMarketingContentsQuery.isLoading && (
+          {showMarketing && (
+            <TabsContent value="marketing">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Marketing Content</CardTitle>
+                      {project && (
+                        <GenerateFromProjectButton
+                          projectId={project.id}
+                          projectName={project.name}
+                          clientId={project.clientId}
+                        />
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardBody>
+                    {projectMarketingContentsQuery.isLoading && (
                       <p className="text-neutral-600">
-                        No marketing content for this project yet. Click
-                        &ldquo;Generate Marketing Content&rdquo; to create
-                        content from this project.
+                        Loading marketing content...
                       </p>
                     )}
 
-                  {marketingContents.length > 0 && (
-                    <div className="space-y-4">
-                      {marketingContents.map((content) => (
-                        <div
-                          key={content.id}
-                          className="p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <span className="text-2xl">
-                                  {getContentTypeIcon(content.type)}
-                                </span>
-                                <div>
-                                  <h4
-                                    className="font-semibold text-neutral-900 cursor-pointer hover:text-primary-600"
-                                    onClick={() =>
-                                      handleViewMarketingContent(content)
-                                    }
-                                  >
-                                    {content.name}
-                                  </h4>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Badge variant="neutral">
-                                      {CONTENT_TYPE_LABELS[content.type]}
-                                    </Badge>
-                                    <Badge variant="secondary">
-                                      {CONTENT_STATUS_LABELS[content.status]}
-                                    </Badge>
+                    {marketingContents.length === 0 &&
+                      !projectMarketingContentsQuery.isLoading && (
+                        <p className="text-neutral-600">
+                          No marketing content for this project yet. Click
+                          &ldquo;Generate Marketing Content&rdquo; to create
+                          content from this project.
+                        </p>
+                      )}
+
+                    {marketingContents.length > 0 && (
+                      <div className="space-y-4">
+                        {marketingContents.map((content) => (
+                          <div
+                            key={content.id}
+                            className="p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="text-2xl">
+                                    {getContentTypeIcon(content.type)}
+                                  </span>
+                                  <div>
+                                    <h4
+                                      className="font-semibold text-neutral-900 cursor-pointer hover:text-primary-600"
+                                      onClick={() =>
+                                        handleViewMarketingContent(content)
+                                      }
+                                    >
+                                      {content.name}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant="neutral">
+                                        {CONTENT_TYPE_LABELS[content.type]}
+                                      </Badge>
+                                      <Badge variant="secondary">
+                                        {CONTENT_STATUS_LABELS[content.status]}
+                                      </Badge>
+                                    </div>
                                   </div>
                                 </div>
+                                {content.summary && (
+                                  <p className="text-sm text-neutral-600 mt-2 line-clamp-2">
+                                    {content.summary}
+                                  </p>
+                                )}
+                                {content.tags && content.tags.length > 0 && (
+                                  <div className="flex gap-2 mt-2 flex-wrap">
+                                    {content.tags.map((tag) => (
+                                      <span
+                                        key={tag}
+                                        className="px-2 py-1 text-xs bg-neutral-200 text-neutral-700 rounded"
+                                      >
+                                        #{tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              {content.summary && (
-                                <p className="text-sm text-neutral-600 mt-2 line-clamp-2">
-                                  {content.summary}
-                                </p>
-                              )}
-                              {content.tags && content.tags.length > 0 && (
-                                <div className="flex gap-2 mt-2 flex-wrap">
-                                  {content.tags.map((tag) => (
-                                    <span
-                                      key={tag}
-                                      className="px-2 py-1 text-xs bg-neutral-200 text-neutral-700 rounded"
-                                    >
-                                      #{tag}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() =>
-                                  handleEditMarketingContent(content)
-                                }
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() =>
-                                  handleArchiveMarketingContent(content.id)
-                                }
-                              >
-                                <Archive className="w-4 h-4" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleEditMarketingContent(content)
+                                  }
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleArchiveMarketingContent(content.id)
+                                  }
+                                >
+                                  <Archive className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardBody>
-              </Card>
-            </div>
-          </TabsContent>
+                        ))}
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
 
           <TabsContent value="status">
             <ProjectStatusTab projectId={projectId} />
@@ -1086,8 +1110,8 @@ function ProjectDashboardPage(): JSX.Element {
         </Tabs>
       </main>
 
-      {/* Marketing Content Modals */}
-      {showMarketingContentForm && (
+      {/* Marketing Content Modals - only render if marketing feature is enabled */}
+      {showMarketing && showMarketingContentForm && (
         <MarketingContentFormModal
           isOpen={showMarketingContentForm}
           onClose={() => {
@@ -1099,18 +1123,20 @@ function ProjectDashboardPage(): JSX.Element {
         />
       )}
 
-      {showMarketingContentDetail && selectedMarketingContent && (
-        <MarketingContentDetailModal
-          isOpen={showMarketingContentDetail}
-          onClose={() => {
-            setShowMarketingContentDetail(false);
-            setSelectedMarketingContent(null);
-          }}
-          content={selectedMarketingContent}
-          onEdit={handleEditMarketingContent}
-          onArchive={handleArchiveMarketingContent}
-        />
-      )}
+      {showMarketing &&
+        showMarketingContentDetail &&
+        selectedMarketingContent && (
+          <MarketingContentDetailModal
+            isOpen={showMarketingContentDetail}
+            onClose={() => {
+              setShowMarketingContentDetail(false);
+              setSelectedMarketingContent(null);
+            }}
+            content={selectedMarketingContent}
+            onEdit={handleEditMarketingContent}
+            onArchive={handleArchiveMarketingContent}
+          />
+        )}
     </div>
   );
 }
