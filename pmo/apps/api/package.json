@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js",
+    "start": "node dist/apps/api/src/index.js",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run",
     "create-user": "ts-node scripts/create-user.ts",
