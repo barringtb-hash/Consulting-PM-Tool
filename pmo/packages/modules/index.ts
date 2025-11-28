@@ -165,14 +165,14 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
   },
   admin: {
     id: 'admin',
-    label: 'Users',
+    label: 'Admin',
     navGroup: 'admin',
     path: '/admin/users',
-    additionalPaths: ['/admin/users/new', '/admin/users/:id'],
+    additionalPaths: ['/admin/users/new', '/admin/users/:id', '/admin/modules'],
     icon: 'UserCog',
     isCore: false,
-    apiPrefixes: ['/api/users'],
-    description: 'User administration and access control',
+    apiPrefixes: ['/api/users', '/api/admin'],
+    description: 'User administration, module configuration, and access control',
   },
 };
 
