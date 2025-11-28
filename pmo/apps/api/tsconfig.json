@@ -1,10 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
     "outDir": "dist",
     "noEmit": false,
-    "module": "CommonJS"
+    "module": "CommonJS",
+    "baseUrl": ".",
+    "paths": {
+      "@pmo/modules": ["../../packages/modules/index.ts"],
+      "@pmo/modules/*": ["../../packages/modules/*"]
+    }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]
 }

@@ -5,13 +5,13 @@
  * Provides functions for checking feature flags and managing module access.
  */
 
-import { FeatureFlag, TenantModuleConfig } from '@prisma/client';
+import { FeatureFlag, TenantModuleConfig, Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import {
   ModuleId,
   MODULE_DEFINITIONS,
   parseEnabledModules,
-} from '../../../../../packages/modules';
+} from '@pmo/modules';
 
 // ============================================================================
 // Types
@@ -129,7 +129,9 @@ export async function createFeatureFlag(
       description: input.description,
       enabled: input.enabled ?? false,
       rolloutPercentage: input.rolloutPercentage ?? 100,
-      config: input.config ?? null,
+      config: input.config
+        ? (input.config as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
   });
 }
@@ -153,7 +155,9 @@ export async function updateFeatureFlag(
         ...(input.rolloutPercentage !== undefined && {
           rolloutPercentage: input.rolloutPercentage,
         }),
-        ...(input.config !== undefined && { config: input.config }),
+        ...(input.config !== undefined && {
+          config: input.config as Prisma.InputJsonValue,
+        }),
       },
     });
   } catch {
@@ -269,12 +273,16 @@ export async function setTenantModuleConfig(
       tenantId: input.tenantId,
       moduleId: input.moduleId,
       enabled: input.enabled,
-      settings: input.settings ?? null,
+      settings: input.settings
+        ? (input.settings as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
       updatedBy,
     },
     update: {
       enabled: input.enabled,
-      settings: input.settings ?? undefined,
+      settings: input.settings
+        ? (input.settings as Prisma.InputJsonValue)
+        : undefined,
       updatedBy,
     },
   });
@@ -302,7 +310,9 @@ export async function updateTenantModuleConfig(
       },
       data: {
         ...(input.enabled !== undefined && { enabled: input.enabled }),
-        ...(input.settings !== undefined && { settings: input.settings }),
+        ...(input.settings !== undefined && {
+          settings: input.settings as Prisma.InputJsonValue,
+        }),
         updatedBy,
       },
     });

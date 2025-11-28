@@ -5,6 +5,7 @@
  * theme preferences, and other user-specific configurations.
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 
 // ============================================================================
@@ -76,7 +77,7 @@ export async function updateUserPreferences(
 
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: { preferences: mergedPrefs },
+    data: { preferences: mergedPrefs as Prisma.InputJsonValue },
     select: { preferences: true },
   });
 
@@ -92,7 +93,7 @@ export async function setUserPreferences(
 ): Promise<UserPreferences> {
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: { preferences },
+    data: { preferences: preferences as Prisma.InputJsonValue },
     select: { preferences: true },
   });
 
@@ -105,7 +106,7 @@ export async function setUserPreferences(
 export async function deleteUserPreferences(userId: number): Promise<void> {
   await prisma.user.update({
     where: { id: userId },
-    data: { preferences: null },
+    data: { preferences: Prisma.JsonNull },
   });
 }
 
