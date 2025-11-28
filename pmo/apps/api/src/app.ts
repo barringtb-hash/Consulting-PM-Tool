@@ -7,6 +7,7 @@ import assetsRouter from './routes/assets';
 import clientsRouter from './routes/clients';
 import contactsRouter from './routes/contacts';
 import documentsRouter from './routes/documents';
+import featuresRouter from './routes/features';
 import healthRouter from './routes/health';
 import leadsRouter from './routes/leads';
 import publicLeadsRouter from './routes/public-leads';
@@ -20,6 +21,7 @@ import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
 import { errorHandler } from './middleware/error.middleware';
+import { requireFeature } from './middleware/feature.middleware';
 import { env } from './config/env';
 
 /**
@@ -85,23 +87,42 @@ export function createApp(): express.Express {
   );
   app.use(express.json());
   app.use(cookieParser());
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Core routes (always enabled)
+  // ─────────────────────────────────────────────────────────────────────────────
   app.use('/api', authRouter);
-  app.use('/api/public', publicLeadsRouter);
-  app.use('/api', assetsRouter);
+  app.use('/api', featuresRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/contacts', contactsRouter);
   app.use('/api/documents', documentsRouter);
-  app.use('/api/leads', leadsRouter);
-  app.use('/api', marketingRouter);
-  app.use('/api', campaignRouter);
-  app.use('/api', brandProfileRouter);
-  app.use('/api', publishingRouter);
-  app.use('/api', milestonesRouter);
-  app.use('/api', meetingRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api', tasksRouter);
-  app.use('/api/users', usersRouter);
+  app.use('/api', milestonesRouter);
   app.use(healthRouter);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Feature-gated routes
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Marketing module: content generation, campaigns, brand profiles, publishing
+  app.use('/api', requireFeature('marketing'), marketingRouter);
+  app.use('/api', requireFeature('marketing'), campaignRouter);
+  app.use('/api', requireFeature('marketing'), brandProfileRouter);
+  app.use('/api', requireFeature('marketing'), publishingRouter);
+
+  // Sales module: leads management and public lead intake
+  app.use('/api/leads', requireFeature('sales'), leadsRouter);
+  app.use('/api/public', requireFeature('sales'), publicLeadsRouter);
+
+  // AI Assets module: prompt templates, workflows, datasets
+  app.use('/api', requireFeature('aiAssets'), assetsRouter);
+
+  // Meetings module: meeting notes, decisions, task creation
+  app.use('/api', requireFeature('meetings'), meetingRouter);
+
+  // Admin module: user management
+  app.use('/api/users', requireFeature('admin'), usersRouter);
 
   // Error handling middleware must be last
   app.use(errorHandler);

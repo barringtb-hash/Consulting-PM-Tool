@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,15 +12,23 @@ import {
   UserCog,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
+import { useFeatures, type FeatureFlags } from '../features';
 
 interface NavItem {
   label: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   group?: 'overview' | 'clients' | 'projects' | 'marketing' | 'sales' | 'admin';
+  /** Feature flag that must be enabled for this item to show */
+  feature?: keyof FeatureFlags;
 }
 
-const navItems: NavItem[] = [
+/**
+ * All navigation items with their feature flag requirements.
+ * Items without a 'feature' property are always shown (core features).
+ */
+const allNavItems: NavItem[] = [
+  // Core features (always enabled)
   {
     label: 'Dashboard',
     path: '/dashboard',
@@ -45,40 +53,58 @@ const navItems: NavItem[] = [
     icon: FolderKanban,
     group: 'projects',
   },
+
+  // Feature-gated items
   {
     label: 'Assets',
     path: '/assets',
     icon: FileText,
     group: 'projects',
+    feature: 'aiAssets',
   },
   {
     label: 'Marketing',
     path: '/marketing',
     icon: Megaphone,
     group: 'marketing',
+    feature: 'marketing',
   },
   {
     label: 'Leads',
     path: '/sales/leads',
     icon: UserCheck,
     group: 'sales',
+    feature: 'sales',
   },
   {
     label: 'Pipeline',
     path: '/sales/pipeline',
     icon: TrendingUp,
     group: 'sales',
+    feature: 'sales',
   },
   {
     label: 'Users',
     path: '/admin/users',
     icon: UserCog,
     group: 'admin',
+    feature: 'admin',
   },
 ];
 
 export function Sidebar(): JSX.Element {
   const location = useLocation();
+  const { isFeatureEnabled } = useFeatures();
+
+  // Filter nav items based on enabled features
+  const navItems = useMemo(() => {
+    return allNavItems.filter((item) => {
+      // Items without a feature requirement are always shown
+      if (!item.feature) return true;
+      // Check if the required feature is enabled
+      return isFeatureEnabled(item.feature);
+    });
+  }, [isFeatureEnabled]);
 
   const isActive = (path: string): boolean => {
     if (path === '/dashboard') {

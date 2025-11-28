@@ -1,6 +1,6 @@
 # AI Consulting PMO Platform
 
-The AI Consulting PMO Platform is a monorepo for a React + TypeScript frontend and a Node.js + TypeScript API that together deliver a lightweight PMO tailored to solo AI consultants. Dive into the product requirements and technical plan in [Docs/ai-consulting-pmo-product-requirements.md](Docs/ai-consulting-pmo-product-requirements.md) and [Docs/AI_Consulting_PMO_Implementation_Codex.md](Docs/AI_Consulting_PMO_Implementation_Codex.md).
+The AI Consulting PMO Platform is a monorepo for a React + TypeScript frontend and a Node.js + TypeScript API that together deliver a lightweight PMO tailored to solo AI consultants. The platform features a **modular architecture with feature flags** for customizable deployments. Dive into the product requirements and technical plan in [Docs/ai-consulting-pmo-product-requirements.md](Docs/ai-consulting-pmo-product-requirements.md) and [Docs/AI_Consulting_PMO_Implementation_Codex.md](Docs/AI_Consulting_PMO_Implementation_Codex.md).
 
 ## Monorepo layout
 The `pmo` directory is an npm workspace with the following structure:
@@ -48,6 +48,55 @@ Running `npx prisma migrate dev --name init` (or `npx prisma db seed`) from `/pm
 - **Consultant accounts** — `avery.chen@pmo.test`, `priya.desai@pmo.test`, `marco.silva@pmo.test` all use `PmoDemo123!`
 
 Use these credentials when signing into the web app or exercising `/auth/login` directly.
+
+## Feature Flags
+
+The platform supports **modular feature activation** through environment-based feature flags. This allows you to customize which features are available to your customers.
+
+### Available Features
+
+| Feature | Environment Variable | Description |
+|---------|---------------------|-------------|
+| **Marketing** | `FEATURE_MARKETING` | AI content generation, campaigns, brand profiles, social publishing |
+| **Sales** | `FEATURE_SALES` | Lead management, sales pipeline tracking, lead conversion |
+| **AI Assets** | `FEATURE_AI_ASSETS` | Prompt templates, workflows, datasets, evaluations, guardrails |
+| **Meetings** | `FEATURE_MEETINGS` | Meeting notes, decisions tracking, task creation from meetings |
+| **Admin** | `FEATURE_ADMIN` | User management (create, edit, delete users) |
+
+### Configuration
+
+All features are **enabled by default**. To disable a feature, set its environment variable to `false` in your API `.env` file:
+
+```bash
+# Disable marketing features (content generation, campaigns, etc.)
+FEATURE_MARKETING=false
+
+# Disable sales features (leads, pipeline)
+FEATURE_SALES=false
+
+# Disable AI assets library
+FEATURE_AI_ASSETS=false
+
+# Disable meetings module
+FEATURE_MEETINGS=false
+
+# Disable admin user management
+FEATURE_ADMIN=false
+```
+
+### How It Works
+
+1. **Backend**: Feature middleware (`requireFeature`) gates API routes, returning 403 if disabled
+2. **Frontend**: `FeatureProvider` fetches flags from `/api/features` and provides context
+3. **Navigation**: Sidebar automatically hides menu items for disabled features
+4. **Routes**: Feature-gated routes redirect to dashboard if feature is disabled
+5. **Code Splitting**: Feature pages are lazy-loaded for optimized bundle size
+
+### Example Use Cases
+
+- **Basic Tier**: Core features only (clients, projects, tasks)
+- **Professional Tier**: Core + Meetings + AI Assets
+- **Enterprise Tier**: All features enabled
 
 ## Shared tooling
 - TypeScript is configured via the base `tsconfig.base.json` applied across workspaces.
