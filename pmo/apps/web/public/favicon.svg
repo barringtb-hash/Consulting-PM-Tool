@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sun rays -->
+  <g stroke="#FCD34D" stroke-width="24" stroke-linecap="round">
+    <!-- Top ray -->
+    <line x1="256" y1="80" x2="256" y2="140"/>
+    <!-- Top-left ray -->
+    <line x1="140" y1="170" x2="180" y2="210"/>
+    <!-- Top-right ray -->
+    <line x1="372" y1="170" x2="332" y2="210"/>
+  </g>
+
+  <!-- Sun (half circle) -->
+  <path d="M 96 320 A 160 160 0 0 1 416 320 L 96 320" fill="url(#sunGradient)"/>
+
+  <!-- Base line -->
+  <rect x="64" y="320" width="384" height="32" rx="16" fill="#9F1239"/>
+</svg>
