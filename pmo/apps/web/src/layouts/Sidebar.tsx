@@ -113,15 +113,26 @@ export function Sidebar(): JSX.Element {
 
   return (
     <div className="flex flex-col w-60 bg-white border-r border-neutral-200 h-full">
-      {/* Logo/Brand */}
-      <div className="flex items-center h-16 px-6 border-b border-neutral-200">
+      {/* Logo/Brand - Launchpad Consulting Partners */}
+      <div className="flex items-center h-16 px-4 border-b border-neutral-200">
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
-          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">AI</span>
+          {/* Sunrise Icon */}
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-b from-brand-red via-brand-orange to-brand-amber relative overflow-hidden">
+            {/* Sun rays */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-4 h-4 bg-brand-yellow rounded-full opacity-90" />
+            </div>
+            {/* Horizon line */}
+            <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-brand-rose rounded" />
           </div>
-          <span className="font-semibold text-neutral-900 text-sm">
-            Consulting PMO
-          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-brand-rose text-sm leading-tight tracking-tight">
+              LAUNCHPAD
+            </span>
+            <span className="text-[10px] text-neutral-500 tracking-widest">
+              CONSULTING
+            </span>
+          </div>
         </Link>
       </div>
 

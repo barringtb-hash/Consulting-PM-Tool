@@ -54,15 +54,26 @@ export function TopBar({ onMenuClick }: TopBarProps): JSX.Element {
         <Menu className="w-6 h-6" />
       </button>
 
-      {/* Mobile logo */}
+      {/* Mobile logo - Launchpad Consulting Partners */}
       <div className="lg:hidden flex-1 flex items-center justify-center">
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
-          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">AI</span>
+          {/* Sunrise Icon */}
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-b from-brand-red via-brand-orange to-brand-amber relative overflow-hidden">
+            {/* Sun rays */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-3.5 h-3.5 bg-brand-yellow rounded-full opacity-90" />
+            </div>
+            {/* Horizon line */}
+            <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-brand-rose rounded" />
           </div>
-          <span className="font-semibold text-neutral-900 text-sm">
-            Consulting PMO
-          </span>
+          <div className="flex flex-col">
+            <span className="font-bold text-brand-rose text-sm leading-tight tracking-tight">
+              LAUNCHPAD
+            </span>
+            <span className="text-[9px] text-neutral-500 tracking-widest">
+              CONSULTING
+            </span>
+          </div>
         </Link>
       </div>
 
