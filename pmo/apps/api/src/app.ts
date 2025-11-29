@@ -22,6 +22,11 @@ import chatbotRouter from './modules/chatbot/chatbot.router';
 import productDescriptionRouter from './modules/product-descriptions/product-description.router';
 import schedulingRouter from './modules/scheduling/scheduling.router';
 import intakeRouter from './modules/intake/intake.router';
+// Phase 2 AI Tools
+import documentAnalyzerRouter from './modules/document-analyzer/document-analyzer.router';
+import contentGeneratorRouter from './modules/content-generator/content-generator.router';
+import leadScoringRouter from './modules/lead-scoring/lead-scoring.router';
+import priorAuthRouter from './modules/prior-auth/prior-auth.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -163,6 +168,28 @@ export function createApp(): express.Express {
   // Client Intake Automator module (Tool 1.4)
   if (isModuleEnabled('intake')) {
     app.use('/api', requireModule('intake'), intakeRouter);
+  }
+
+  // ============ PHASE 2 AI TOOL MODULES ============
+
+  // Smart Document Analyzer module (Tool 2.1)
+  if (isModuleEnabled('documentAnalyzer')) {
+    app.use('/api', requireModule('documentAnalyzer'), documentAnalyzerRouter);
+  }
+
+  // Content Generation Suite module (Tool 2.2)
+  if (isModuleEnabled('contentGenerator')) {
+    app.use('/api', requireModule('contentGenerator'), contentGeneratorRouter);
+  }
+
+  // Lead Scoring & CRM Assistant module (Tool 2.3)
+  if (isModuleEnabled('leadScoring')) {
+    app.use('/api', requireModule('leadScoring'), leadScoringRouter);
+  }
+
+  // Prior Authorization Bot module (Tool 2.4)
+  if (isModuleEnabled('priorAuth')) {
+    app.use('/api', requireModule('priorAuth'), priorAuthRouter);
   }
 
   // Error handling middleware must be last
