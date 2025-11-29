@@ -215,7 +215,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
               <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-brand-rose rounded" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-brand-rose text-sm leading-tight tracking-tight">
+              <span className="font-bold text-primary-600 text-sm leading-tight tracking-tight">
                 LAUNCHPAD
               </span>
               <span className="text-[9px] text-neutral-500 tracking-widest">
