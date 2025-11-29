@@ -11,7 +11,7 @@
 
 import { prisma } from '../../prisma/client';
 import { env } from '../../config/env';
-import { Marketplace, GenerationJobStatus } from '@prisma/client';
+import { Marketplace, GenerationJobStatus, Prisma } from '@prisma/client';
 
 // ============================================================================
 // TYPES
@@ -20,7 +20,7 @@ import { Marketplace, GenerationJobStatus } from '@prisma/client';
 interface ProductDescriptionConfigInput {
   defaultTone?: string;
   defaultLength?: string;
-  brandVoiceProfile?: Record<string, unknown>;
+  brandVoiceProfile?: Prisma.InputJsonValue;
   enableSEO?: boolean;
   targetKeywords?: string[];
 }
@@ -30,7 +30,7 @@ interface ProductInput {
   sku?: string;
   category?: string;
   subcategory?: string;
-  attributes?: Record<string, unknown>;
+  attributes?: Prisma.InputJsonValue;
   imageUrls?: string[];
   sourceDescription?: string;
 }
@@ -570,7 +570,7 @@ export async function createBulkJob(
       status: 'PENDING',
       totalItems,
       marketplace,
-      settings: settings as Record<string, unknown>,
+      settings: settings as Prisma.InputJsonValue,
     },
   });
 

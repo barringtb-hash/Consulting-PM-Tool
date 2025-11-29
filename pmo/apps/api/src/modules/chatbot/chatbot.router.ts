@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import { Prisma, ConversationStatus } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as chatbotService from './chatbot.service';
 
@@ -23,8 +24,8 @@ const chatbotConfigSchema = z.object({
   enableReturns: z.boolean().optional(),
   enableFAQ: z.boolean().optional(),
   enableHumanHandoff: z.boolean().optional(),
-  channelSettings: z.record(z.unknown()).optional(),
-  businessHours: z.record(z.unknown()).optional(),
+  channelSettings: z.record(z.string(), z.unknown()).optional(),
+  businessHours: z.record(z.string(), z.unknown()).optional(),
 });
 
 const conversationCreateSchema = z.object({
@@ -143,10 +144,11 @@ router.post(
     }
 
     try {
-      const config = await chatbotService.createChatbotConfig(
-        clientId,
-        parsed.data,
-      );
+      const config = await chatbotService.createChatbotConfig(clientId, {
+        ...parsed.data,
+        channelSettings: parsed.data.channelSettings as Prisma.InputJsonValue,
+        businessHours: parsed.data.businessHours as Prisma.InputJsonValue,
+      });
       res.status(201).json({ config });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
@@ -187,10 +189,11 @@ router.patch(
       return;
     }
 
-    const config = await chatbotService.updateChatbotConfig(
-      clientId,
-      parsed.data,
-    );
+    const config = await chatbotService.updateChatbotConfig(clientId, {
+      ...parsed.data,
+      channelSettings: parsed.data.channelSettings as Prisma.InputJsonValue,
+      businessHours: parsed.data.businessHours as Prisma.InputJsonValue,
+    });
     res.json({ config });
   },
 );
@@ -335,7 +338,11 @@ router.patch(
     }
 
     const { sessionId } = req.params;
-    const { status, satisfactionRating, satisfactionFeedback } = req.body;
+    const { status, satisfactionRating, satisfactionFeedback } = req.body as {
+      status: string;
+      satisfactionRating?: number;
+      satisfactionFeedback?: string;
+    };
 
     const validStatuses = [
       'ACTIVE',
@@ -352,7 +359,7 @@ router.patch(
 
     const conversation = await chatbotService.updateConversationStatus(
       sessionId,
-      status,
+      status as ConversationStatus,
       {
         escalatedToAgentId: status === 'ESCALATED' ? req.userId : undefined,
         satisfactionRating,

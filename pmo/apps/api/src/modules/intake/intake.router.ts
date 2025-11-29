@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as intakeService from './intake.service';
 
@@ -64,7 +65,7 @@ const fieldSchema = z.object({
   placeholder: z.string().max(200).optional(),
   helpText: z.string().max(500).optional(),
   isRequired: z.boolean().optional(),
-  validationRules: z.record(z.unknown()).optional(),
+  validationRules: z.record(z.string(), z.unknown()).optional(),
   options: z
     .array(
       z.object({
@@ -73,7 +74,7 @@ const fieldSchema = z.object({
       }),
     )
     .optional(),
-  conditionalLogic: z.record(z.unknown()).optional(),
+  conditionalLogic: z.record(z.string(), z.unknown()).optional(),
   pageNumber: z.number().int().min(1).optional(),
   sortOrder: z.number().int().min(0).optional(),
   width: z.enum(['full', 'half', 'third']).optional(),
@@ -126,7 +127,7 @@ const workflowSchema = z.object({
       id: z.string(),
       name: z.string(),
       type: z.string(),
-      config: z.record(z.unknown()).optional(),
+      config: z.record(z.string(), z.unknown()).optional(),
       order: z.number().int(),
     }),
   ),
@@ -465,7 +466,11 @@ router.post(
       return;
     }
 
-    const field = await intakeService.addFormField(formId, parsed.data);
+    const field = await intakeService.addFormField(formId, {
+      ...parsed.data,
+      validationRules: parsed.data.validationRules as Prisma.InputJsonValue,
+      conditionalLogic: parsed.data.conditionalLogic as Prisma.InputJsonValue,
+    });
     res.status(201).json({ field });
   },
 );
@@ -496,7 +501,11 @@ router.patch(
       return;
     }
 
-    const field = await intakeService.updateFormField(id, parsed.data);
+    const field = await intakeService.updateFormField(id, {
+      ...parsed.data,
+      validationRules: parsed.data.validationRules as Prisma.InputJsonValue,
+      conditionalLogic: parsed.data.conditionalLogic as Prisma.InputJsonValue,
+    });
     res.json({ field });
   },
 );
@@ -783,7 +792,10 @@ router.patch(
       return;
     }
 
-    const { formData, submit } = req.body;
+    const { formData, submit } = req.body as {
+      formData?: Record<string, unknown>;
+      submit?: boolean;
+    };
 
     if (formData) {
       await intakeService.updateSubmissionData(
