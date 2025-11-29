@@ -1,0 +1,539 @@
+/**
+ * Tool 1.1: Customer Service Chatbot Router
+ *
+ * API endpoints for chatbot configuration, conversations, and analytics
+ */
+
+import { Router, Response } from 'express';
+import { z } from 'zod';
+import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import * as chatbotService from './chatbot.service';
+
+const router = Router();
+
+// ============================================================================
+// VALIDATION SCHEMAS
+// ============================================================================
+
+const chatbotConfigSchema = z.object({
+  name: z.string().min(1).max(100),
+  welcomeMessage: z.string().max(500).optional(),
+  fallbackMessage: z.string().max(500).optional(),
+  enableOrderTracking: z.boolean().optional(),
+  enableReturns: z.boolean().optional(),
+  enableFAQ: z.boolean().optional(),
+  enableHumanHandoff: z.boolean().optional(),
+  channelSettings: z.record(z.unknown()).optional(),
+  businessHours: z.record(z.unknown()).optional(),
+});
+
+const conversationCreateSchema = z.object({
+  customerEmail: z.string().email().optional(),
+  customerName: z.string().max(100).optional(),
+  customerPhone: z.string().max(20).optional(),
+  channel: z
+    .enum([
+      'WEB',
+      'SMS',
+      'FACEBOOK_MESSENGER',
+      'WHATSAPP',
+      'INSTAGRAM_DM',
+      'EMAIL',
+    ])
+    .optional(),
+});
+
+const messageSchema = z.object({
+  content: z.string().min(1).max(5000),
+  customerEmail: z.string().email().optional(),
+  customerName: z.string().max(100).optional(),
+});
+
+const knowledgeBaseItemSchema = z.object({
+  question: z.string().min(1).max(500),
+  answer: z.string().min(1).max(5000),
+  keywords: z.array(z.string()).optional(),
+  category: z.string().max(100).optional(),
+  priority: z.number().int().min(0).max(100).optional(),
+});
+
+const feedbackSchema = z.object({
+  helpful: z.boolean(),
+});
+
+// ============================================================================
+// CHATBOT CONFIG ROUTES
+// ============================================================================
+
+/**
+ * GET /api/clients/:clientId/chatbot
+ * Get chatbot configuration for a client
+ */
+router.get(
+  '/clients/:clientId/chatbot',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const clientId = Number(req.params.clientId);
+    if (Number.isNaN(clientId)) {
+      res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    const config = await chatbotService.getChatbotConfig(clientId);
+    res.json({ config });
+  },
+);
+
+/**
+ * POST /api/clients/:clientId/chatbot
+ * Create chatbot configuration for a client
+ */
+router.post(
+  '/clients/:clientId/chatbot',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const clientId = Number(req.params.clientId);
+    if (Number.isNaN(clientId)) {
+      res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    const parsed = chatbotConfigSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const config = await chatbotService.createChatbotConfig(
+        clientId,
+        parsed.data,
+      );
+      res.status(201).json({ config });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        res
+          .status(409)
+          .json({ error: 'Chatbot config already exists for this client' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * PATCH /api/clients/:clientId/chatbot
+ * Update chatbot configuration
+ */
+router.patch(
+  '/clients/:clientId/chatbot',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const clientId = Number(req.params.clientId);
+    if (Number.isNaN(clientId)) {
+      res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    const parsed = chatbotConfigSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const config = await chatbotService.updateChatbotConfig(
+      clientId,
+      parsed.data,
+    );
+    res.json({ config });
+  },
+);
+
+// ============================================================================
+// CONVERSATION ROUTES
+// ============================================================================
+
+/**
+ * POST /api/chatbot/:configId/conversations
+ * Start a new conversation
+ */
+router.post(
+  '/chatbot/:configId/conversations',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const parsed = conversationCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const conversation = await chatbotService.createConversation(
+      configId,
+      parsed.data,
+    );
+    res.status(201).json({ conversation });
+  },
+);
+
+/**
+ * GET /api/chatbot/conversations/:sessionId
+ * Get conversation by session ID
+ */
+router.get(
+  '/chatbot/conversations/:sessionId',
+  async (req: AuthenticatedRequest<{ sessionId: string }>, res: Response) => {
+    const { sessionId } = req.params;
+
+    const conversation = await chatbotService.getConversation(sessionId);
+    if (!conversation) {
+      res.status(404).json({ error: 'Conversation not found' });
+      return;
+    }
+
+    res.json({ conversation });
+  },
+);
+
+/**
+ * GET /api/chatbot/:configId/conversations
+ * List conversations for a chatbot config (admin view)
+ */
+router.get(
+  '/chatbot/:configId/conversations',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const status = req.query.status as string | undefined;
+    const limit = Number(req.query.limit) || 50;
+    const offset = Number(req.query.offset) || 0;
+
+    const conversations = await chatbotService.getConversationsByConfig(
+      configId,
+      {
+        status: status as
+          | 'ACTIVE'
+          | 'ESCALATED'
+          | 'RESOLVED'
+          | 'CLOSED'
+          | undefined,
+        limit,
+        offset,
+      },
+    );
+
+    res.json({ conversations });
+  },
+);
+
+/**
+ * POST /api/chatbot/conversations/:sessionId/messages
+ * Send a message in a conversation
+ */
+router.post(
+  '/chatbot/conversations/:sessionId/messages',
+  async (req: AuthenticatedRequest<{ sessionId: string }>, res: Response) => {
+    const { sessionId } = req.params;
+
+    const parsed = messageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await chatbotService.processCustomerMessage(
+        sessionId,
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      if ((error as Error).message === 'Conversation not found') {
+        res.status(404).json({ error: 'Conversation not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * PATCH /api/chatbot/conversations/:sessionId/status
+ * Update conversation status (for agents)
+ */
+router.patch(
+  '/chatbot/conversations/:sessionId/status',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sessionId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { sessionId } = req.params;
+    const { status, satisfactionRating, satisfactionFeedback } = req.body;
+
+    const validStatuses = [
+      'ACTIVE',
+      'WAITING_CUSTOMER',
+      'WAITING_AGENT',
+      'ESCALATED',
+      'RESOLVED',
+      'CLOSED',
+    ];
+    if (!validStatuses.includes(status)) {
+      res.status(400).json({ error: 'Invalid status' });
+      return;
+    }
+
+    const conversation = await chatbotService.updateConversationStatus(
+      sessionId,
+      status,
+      {
+        escalatedToAgentId: status === 'ESCALATED' ? req.userId : undefined,
+        satisfactionRating,
+        satisfactionFeedback,
+      },
+    );
+
+    res.json({ conversation });
+  },
+);
+
+// ============================================================================
+// KNOWLEDGE BASE ROUTES
+// ============================================================================
+
+/**
+ * GET /api/chatbot/:configId/knowledge-base
+ * List knowledge base items
+ */
+router.get(
+  '/chatbot/:configId/knowledge-base',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const category = req.query.category as string | undefined;
+    const search = req.query.search as string | undefined;
+    const isPublished =
+      req.query.published === 'true'
+        ? true
+        : req.query.published === 'false'
+          ? false
+          : undefined;
+
+    const items = await chatbotService.getKnowledgeBaseItems(configId, {
+      category,
+      search,
+      isPublished,
+    });
+
+    res.json({ items });
+  },
+);
+
+/**
+ * POST /api/chatbot/:configId/knowledge-base
+ * Create a knowledge base item
+ */
+router.post(
+  '/chatbot/:configId/knowledge-base',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const parsed = knowledgeBaseItemSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const item = await chatbotService.createKnowledgeBaseItem(
+      configId,
+      parsed.data,
+    );
+    res.status(201).json({ item });
+  },
+);
+
+/**
+ * PATCH /api/chatbot/knowledge-base/:id
+ * Update a knowledge base item
+ */
+router.patch(
+  '/chatbot/knowledge-base/:id',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid ID' });
+      return;
+    }
+
+    const parsed = knowledgeBaseItemSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const item = await chatbotService.updateKnowledgeBaseItem(id, parsed.data);
+    res.json({ item });
+  },
+);
+
+/**
+ * DELETE /api/chatbot/knowledge-base/:id
+ * Delete a knowledge base item
+ */
+router.delete(
+  '/chatbot/knowledge-base/:id',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid ID' });
+      return;
+    }
+
+    await chatbotService.deleteKnowledgeBaseItem(id);
+    res.status(204).send();
+  },
+);
+
+/**
+ * POST /api/chatbot/knowledge-base/:id/feedback
+ * Record feedback for a knowledge base item
+ */
+router.post(
+  '/chatbot/knowledge-base/:id/feedback',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid ID' });
+      return;
+    }
+
+    const parsed = feedbackSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    await chatbotService.recordKnowledgeBaseFeedback(id, parsed.data.helpful);
+    res.json({ success: true });
+  },
+);
+
+// ============================================================================
+// ANALYTICS ROUTES
+// ============================================================================
+
+/**
+ * GET /api/chatbot/:configId/analytics
+ * Get chatbot analytics
+ */
+router.get(
+  '/chatbot/:configId/analytics',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const startDate = req.query.start
+      ? new Date(req.query.start as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = req.query.end
+      ? new Date(req.query.end as string)
+      : new Date();
+
+    const analytics = await chatbotService.getChatAnalytics(configId, {
+      start: startDate,
+      end: endDate,
+    });
+
+    res.json(analytics);
+  },
+);
+
+export default router;
