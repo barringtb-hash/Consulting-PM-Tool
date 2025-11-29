@@ -11,12 +11,7 @@
  */
 
 import { prisma } from '../../prisma/client';
-import { env } from '../../config/env';
-import {
-  LeadScoreLevel,
-  NurtureSequenceStatus,
-  Prisma,
-} from '@prisma/client';
+import { LeadScoreLevel, Prisma } from '@prisma/client';
 
 // ============================================================================
 // TYPES
@@ -151,12 +146,14 @@ export async function createLead(configId: number, input: LeadInput) {
       scoreLevel: scoreResult.level,
       scoredAt: new Date(),
       scoreBreakdown: scoreResult.breakdown as Prisma.InputJsonValue,
-      scoreHistory: [{
-        score: scoreResult.score,
-        level: scoreResult.level,
-        scoredAt: new Date().toISOString(),
-        reason: 'Initial scoring',
-      }] as Prisma.InputJsonValue,
+      scoreHistory: [
+        {
+          score: scoreResult.score,
+          level: scoreResult.level,
+          scoredAt: new Date().toISOString(),
+          reason: 'Initial scoring',
+        },
+      ] as Prisma.InputJsonValue,
     },
   });
 }
@@ -232,7 +229,8 @@ export async function getLeads(
       ...(minScore !== undefined && { score: { gte: minScore } }),
       ...(maxScore !== undefined && { score: { lte: maxScore } }),
       ...(tags && tags.length > 0 && { tags: { hasSome: tags } }),
-      ...(segments && segments.length > 0 && { segments: { hasSome: segments } }),
+      ...(segments &&
+        segments.length > 0 && { segments: { hasSome: segments } }),
       ...(pipelineStage && { pipelineStage }),
     },
     orderBy,
@@ -300,8 +298,8 @@ async function calculateLeadScore(
   };
 
   let demographicScore = 0;
-  let behavioralScore = 0;
-  let engagementScore = 0;
+  const behavioralScore = 0;
+  const engagementScore = 0;
 
   // Demographic scoring
   if (lead.company) {
@@ -314,7 +312,10 @@ async function calculateLeadScore(
   // For new leads, behavioral and engagement start low
   // These will increase as activities are tracked
 
-  const totalScore = Math.min(100, demographicScore + behavioralScore + engagementScore);
+  const totalScore = Math.min(
+    100,
+    demographicScore + behavioralScore + engagementScore,
+  );
 
   // Determine score level based on thresholds
   let level: LeadScoreLevel;
@@ -381,15 +382,22 @@ export async function rescoreLead(leadId: number): Promise<ScoreResult> {
       (activityCounts[activity.activityType] || 0) + 1;
   }
 
-  behavioralScore += (activityCounts['email_open'] || 0) * (weights.behavioral?.emailOpen || 5);
-  behavioralScore += (activityCounts['email_click'] || 0) * (weights.behavioral?.emailClick || 10);
-  behavioralScore += (activityCounts['page_view'] || 0) * (weights.behavioral?.pageView || 3);
-  behavioralScore += (activityCounts['form_submit'] || 0) * (weights.behavioral?.formSubmit || 15);
+  behavioralScore +=
+    (activityCounts['email_open'] || 0) * (weights.behavioral?.emailOpen || 5);
+  behavioralScore +=
+    (activityCounts['email_click'] || 0) *
+    (weights.behavioral?.emailClick || 10);
+  behavioralScore +=
+    (activityCounts['page_view'] || 0) * (weights.behavioral?.pageView || 3);
+  behavioralScore +=
+    (activityCounts['form_submit'] || 0) *
+    (weights.behavioral?.formSubmit || 15);
 
   // Engagement scoring
   const now = new Date();
   const recentActivities = lead.activities.filter(
-    (a) => now.getTime() - new Date(a.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000,
+    (a) =>
+      now.getTime() - new Date(a.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000,
   );
 
   if (recentActivities.length > 0) {
@@ -399,7 +407,10 @@ export async function rescoreLead(leadId: number): Promise<ScoreResult> {
     engagementScore += weights.engagement?.highFrequency || 15;
   }
 
-  const totalScore = Math.min(100, demographicScore + behavioralScore + engagementScore);
+  const totalScore = Math.min(
+    100,
+    demographicScore + behavioralScore + engagementScore,
+  );
 
   let level: LeadScoreLevel;
   if (totalScore >= lead.config.hotThreshold) {
@@ -490,7 +501,8 @@ export async function predictConversion(leadId: number): Promise<{
   // Adjust based on engagement recency
   if (lead.lastEngagementAt) {
     const daysSinceEngagement =
-      (Date.now() - new Date(lead.lastEngagementAt).getTime()) / (1000 * 60 * 60 * 24);
+      (Date.now() - new Date(lead.lastEngagementAt).getTime()) /
+      (1000 * 60 * 60 * 24);
     if (daysSinceEngagement < 7) probability *= 1.2;
     else if (daysSinceEngagement > 30) probability *= 0.7;
   }
@@ -503,7 +515,7 @@ export async function predictConversion(leadId: number): Promise<{
     : 5000 * probability;
 
   // Predict close date based on score (higher score = sooner close)
-  const daysToClose = Math.round(90 - (lead.score * 0.6));
+  const daysToClose = Math.round(90 - lead.score * 0.6);
   const predictedCloseDate = new Date();
   predictedCloseDate.setDate(predictedCloseDate.getDate() + daysToClose);
 
@@ -540,7 +552,12 @@ export async function trackActivity(
   const weights = (config.scoringWeights as {
     behavioral?: Record<string, number>;
   }) || {
-    behavioral: { email_open: 5, email_click: 10, page_view: 3, form_submit: 15 },
+    behavioral: {
+      email_open: 5,
+      email_click: 10,
+      page_view: 3,
+      form_submit: 15,
+    },
   };
 
   const scoreImpact = weights.behavioral?.[input.activityType] || 0;
@@ -608,7 +625,14 @@ export async function getActivities(
     offset?: number;
   } = {},
 ) {
-  const { leadId, activityType, startDate, endDate, limit = 100, offset = 0 } = options;
+  const {
+    leadId,
+    activityType,
+    startDate,
+    endDate,
+    limit = 100,
+    offset = 0,
+  } = options;
 
   return prisma.leadActivity.findMany({
     where: {
@@ -713,8 +737,7 @@ export async function enrollLeadInSequence(
   if (existingEnrollment) {
     if (
       existingEnrollment.status === 'ACTIVE' ||
-      (!sequence.allowReEnrollment &&
-        existingEnrollment.status === 'COMPLETED')
+      (!sequence.allowReEnrollment && existingEnrollment.status === 'COMPLETED')
     ) {
       throw new Error('Lead is already enrolled or completed this sequence');
     }

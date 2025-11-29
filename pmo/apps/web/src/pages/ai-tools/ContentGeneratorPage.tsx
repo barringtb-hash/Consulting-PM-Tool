@@ -24,8 +24,6 @@ import {
   RefreshCw,
   Sparkles,
   CheckCircle,
-  Clock,
-  Send,
 } from 'lucide-react';
 
 // Types
@@ -78,8 +76,12 @@ const CONTENT_TYPES = [
 ];
 
 // API functions
-async function fetchContentGeneratorConfigs(): Promise<ContentGeneratorConfig[]> {
-  const res = await fetch('/api/content-generator/configs', { credentials: 'include' });
+async function fetchContentGeneratorConfigs(): Promise<
+  ContentGeneratorConfig[]
+> {
+  const res = await fetch('/api/content-generator/configs', {
+    credentials: 'include',
+  });
   if (!res.ok) throw new Error('Failed to fetch content generator configs');
   const data = await res.json();
   return data.configs || [];
@@ -93,9 +95,12 @@ async function fetchContents(
   const params = new URLSearchParams();
   if (type) params.append('type', type);
   if (status) params.append('status', status);
-  const res = await fetch(`/api/content-generator/${configId}/contents?${params}`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/content-generator/${configId}/contents?${params}`,
+    {
+      credentials: 'include',
+    },
+  );
   if (!res.ok) throw new Error('Failed to fetch contents');
   const data = await res.json();
   return data.contents || [];
@@ -118,7 +123,13 @@ async function createContentGeneratorConfig(
 
 async function generateContent(
   configId: number,
-  data: { title: string; type: string; prompt?: string; tone?: string; targetLength?: string },
+  data: {
+    title: string;
+    type: string;
+    prompt?: string;
+    tone?: string;
+    targetLength?: string;
+  },
 ): Promise<{ contents: GeneratedContent[] }> {
   const res = await fetch(`/api/content-generator/${configId}/generate`, {
     method: 'POST',
@@ -137,7 +148,9 @@ function ContentGeneratorPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'contents' | 'templates' | 'workflows'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'contents' | 'templates' | 'workflows'
+  >('overview');
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -155,19 +168,36 @@ function ContentGeneratorPage(): JSX.Element {
   }, [selectedConfigId, configsQuery.data]);
 
   const contentsQuery = useQuery({
-    queryKey: ['generated-contents', selectedConfigId, typeFilter, statusFilter],
-    queryFn: () => fetchContents(selectedConfigId!, typeFilter || undefined, statusFilter || undefined),
+    queryKey: [
+      'generated-contents',
+      selectedConfigId,
+      typeFilter,
+      statusFilter,
+    ],
+    queryFn: () =>
+      fetchContents(
+        selectedConfigId!,
+        typeFilter || undefined,
+        statusFilter || undefined,
+      ),
     enabled: !!selectedConfigId && activeTab === 'contents',
   });
 
   // Mutations
   const createConfigMutation = useMutation({
-    mutationFn: (data: { clientId: number; config: Partial<ContentGeneratorConfig> }) =>
-      createContentGeneratorConfig(data.clientId, data.config),
+    mutationFn: (data: {
+      clientId: number;
+      config: Partial<ContentGeneratorConfig>;
+    }) => createContentGeneratorConfig(data.clientId, data.config),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['content-generator-configs'] });
+      queryClient.invalidateQueries({
+        queryKey: ['content-generator-configs'],
+      });
       setShowCreateModal(false);
-      showToast({ message: 'Content Generator configuration created', variant: 'success' });
+      showToast({
+        message: 'Content Generator configuration created',
+        variant: 'success',
+      });
     },
     onError: (error: Error) => {
       showToast({ message: error.message, variant: 'error' });
@@ -175,12 +205,20 @@ function ContentGeneratorPage(): JSX.Element {
   });
 
   const generateMutation = useMutation({
-    mutationFn: (data: { title: string; type: string; prompt?: string; tone?: string; targetLength?: string }) =>
-      generateContent(selectedConfigId!, data),
+    mutationFn: (data: {
+      title: string;
+      type: string;
+      prompt?: string;
+      tone?: string;
+      targetLength?: string;
+    }) => generateContent(selectedConfigId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['generated-contents'] });
       setShowGenerateModal(false);
-      showToast({ message: 'Content generated successfully', variant: 'success' });
+      showToast({
+        message: 'Content generated successfully',
+        variant: 'success',
+      });
     },
     onError: (error: Error) => {
       showToast({ message: error.message, variant: 'error' });
@@ -197,11 +235,12 @@ function ContentGeneratorPage(): JSX.Element {
     createConfigMutation.mutate({
       clientId,
       config: {
-        brandVoiceDescription: formData.get('brandVoiceDescription') as string || null,
+        brandVoiceDescription:
+          (formData.get('brandVoiceDescription') as string) || null,
         enableSEO: formData.get('enableSEO') === 'on',
         enablePlagiarismCheck: formData.get('enablePlagiarismCheck') === 'on',
-        defaultTone: formData.get('defaultTone') as string || null,
-        defaultLength: formData.get('defaultLength') as string || null,
+        defaultTone: (formData.get('defaultTone') as string) || null,
+        defaultLength: (formData.get('defaultLength') as string) || null,
       },
     });
   };
@@ -213,9 +252,9 @@ function ContentGeneratorPage(): JSX.Element {
     generateMutation.mutate({
       title: formData.get('title') as string,
       type: formData.get('type') as string,
-      prompt: formData.get('prompt') as string || undefined,
-      tone: formData.get('tone') as string || undefined,
-      targetLength: formData.get('targetLength') as string || undefined,
+      prompt: (formData.get('prompt') as string) || undefined,
+      tone: (formData.get('tone') as string) || undefined,
+      targetLength: (formData.get('targetLength') as string) || undefined,
     });
   };
 
@@ -233,7 +272,10 @@ function ContentGeneratorPage(): JSX.Element {
                 Generate Content
               </Button>
             )}
-            <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Plus className="mr-2 h-4 w-4" />
               New Configuration
             </Button>
@@ -248,7 +290,11 @@ function ContentGeneratorPage(): JSX.Element {
             <Select
               label="Select Configuration"
               value={selectedConfigId?.toString() || ''}
-              onChange={(e) => setSelectedConfigId(e.target.value ? parseInt(e.target.value, 10) : null)}
+              onChange={(e) =>
+                setSelectedConfigId(
+                  e.target.value ? parseInt(e.target.value, 10) : null,
+                )
+              }
             >
               <option value="">Select a configuration...</option>
               {configsQuery.data?.map((config) => (
@@ -267,7 +313,9 @@ function ContentGeneratorPage(): JSX.Element {
                 >
                   <option value="">All Types</option>
                   {CONTENT_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
                   ))}
                 </Select>
 
@@ -337,7 +385,9 @@ function ContentGeneratorPage(): JSX.Element {
                 <div>
                   <p className="text-sm text-gray-500">Plagiarism Check</p>
                   <p className="text-lg font-semibold">
-                    {selectedConfig.enablePlagiarismCheck ? 'Enabled' : 'Disabled'}
+                    {selectedConfig.enablePlagiarismCheck
+                      ? 'Enabled'
+                      : 'Disabled'}
                   </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-500" />
@@ -381,7 +431,11 @@ function ContentGeneratorPage(): JSX.Element {
               <h3 className="text-lg font-semibold">Generated Content</h3>
               <Button
                 variant="secondary"
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['generated-contents'] })}
+                onClick={() =>
+                  queryClient.invalidateQueries({
+                    queryKey: ['generated-contents'],
+                  })
+                }
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -389,7 +443,9 @@ function ContentGeneratorPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {contentsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading content...</div>
+              <div className="text-center py-8 text-gray-500">
+                Loading content...
+              </div>
             ) : contentsQuery.data?.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No content found. Generate your first piece of content!
@@ -402,8 +458,15 @@ function ContentGeneratorPage(): JSX.Element {
                       <div>
                         <h4 className="font-medium">{content.title}</h4>
                         <div className="flex gap-2 mt-1">
-                          <Badge variant="neutral">{content.type.replace('_', ' ')}</Badge>
-                          <Badge variant={STATUS_VARIANTS[content.approvalStatus] || 'neutral'}>
+                          <Badge variant="neutral">
+                            {content.type.replace('_', ' ')}
+                          </Badge>
+                          <Badge
+                            variant={
+                              STATUS_VARIANTS[content.approvalStatus] ||
+                              'neutral'
+                            }
+                          >
                             {content.approvalStatus.replace('_', ' ')}
                           </Badge>
                         </div>
@@ -413,7 +476,10 @@ function ContentGeneratorPage(): JSX.Element {
                           <div>SEO: {content.seoScore}%</div>
                         )}
                         {content.voiceConsistencyScore !== null && (
-                          <div>Voice: {Math.round(content.voiceConsistencyScore * 100)}%</div>
+                          <div>
+                            Voice:{' '}
+                            {Math.round(content.voiceConsistencyScore * 100)}%
+                          </div>
                         )}
                       </div>
                     </div>
@@ -432,7 +498,9 @@ function ContentGeneratorPage(): JSX.Element {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Create Content Generator Configuration</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              Create Content Generator Configuration
+            </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
               <Select
                 label="Client"
@@ -482,13 +550,21 @@ function ContentGeneratorPage(): JSX.Element {
                   <span className="text-sm">Enable SEO Optimization</span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="enablePlagiarismCheck" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="enablePlagiarismCheck"
+                    defaultChecked
+                  />
                   <span className="text-sm">Enable Plagiarism Checking</span>
                 </label>
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createConfigMutation.isPending}>
@@ -516,7 +592,9 @@ function ContentGeneratorPage(): JSX.Element {
               <Select label="Content Type" name="type" required>
                 <option value="">Select type...</option>
                 {CONTENT_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
                 ))}
               </Select>
 
@@ -550,7 +628,11 @@ function ContentGeneratorPage(): JSX.Element {
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="secondary" onClick={() => setShowGenerateModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowGenerateModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={generateMutation.isPending}>

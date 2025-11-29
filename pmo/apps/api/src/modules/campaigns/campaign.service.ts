@@ -10,7 +10,7 @@ import {
  */
 const validateClientAccess = async (
   clientId: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _ownerId: number,
 ) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });

@@ -256,7 +256,7 @@ function getContentTypeInstructions(type: ContentType): string {
 function parseGeneratedContent(
   _type: ContentType,
   generatedText: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _context: GenerateContentOptions['context'],
 ): GeneratedContent {
   try {

@@ -74,7 +74,9 @@ export async function getContentGeneratorConfig(clientId: number) {
   });
 }
 
-export async function listContentGeneratorConfigs(filters?: { clientId?: number }) {
+export async function listContentGeneratorConfigs(filters?: {
+  clientId?: number;
+}) {
   return prisma.contentGeneratorConfig.findMany({
     where: filters?.clientId ? { clientId: filters.clientId } : undefined,
     include: {
@@ -235,7 +237,8 @@ async function generateContentWithAI(
   }
 
   // Build the system prompt
-  let systemPrompt = template?.systemPrompt || getDefaultSystemPrompt(input.type);
+  let systemPrompt =
+    template?.systemPrompt || getDefaultSystemPrompt(input.type);
 
   if (config.brandVoiceDescription) {
     systemPrompt += `\n\nBrand Voice: ${config.brandVoiceDescription}`;
@@ -250,13 +253,18 @@ async function generateContentWithAI(
   }
 
   // Build the user prompt
-  let userPrompt = input.prompt || `Generate ${input.type.toLowerCase().replace('_', ' ')} content about: ${input.title}`;
+  let userPrompt =
+    input.prompt ||
+    `Generate ${input.type.toLowerCase().replace('_', ' ')} content about: ${input.title}`;
 
   if (template) {
     let templatedContent = template.template;
     if (input.placeholderValues) {
       for (const [key, value] of Object.entries(input.placeholderValues)) {
-        templatedContent = templatedContent.replace(new RegExp(`{{${key}}}`, 'g'), value);
+        templatedContent = templatedContent.replace(
+          new RegExp(`{{${key}}}`, 'g'),
+          value,
+        );
       }
     }
     userPrompt = `Use this template as a base:\n${templatedContent}\n\nOriginal request: ${userPrompt}`;
@@ -273,7 +281,8 @@ async function generateContentWithAI(
   }
 
   if (!isControl) {
-    userPrompt += '\n\nGenerate a creative variation that conveys the same message but with different wording and structure.';
+    userPrompt +=
+      '\n\nGenerate a creative variation that conveys the same message but with different wording and structure.';
   }
 
   try {
@@ -316,18 +325,30 @@ async function generateContentWithAI(
 
 function getDefaultSystemPrompt(type: ContentGenerationType): string {
   const prompts: Record<ContentGenerationType, string> = {
-    SOCIAL_POST: 'You are an expert social media content creator. Create engaging, shareable posts optimized for social media platforms. Keep content concise and impactful.',
-    EMAIL: 'You are an expert email copywriter. Create compelling email content with clear calls-to-action and engaging subject lines.',
-    BLOG_POST: 'You are an expert blog writer. Create informative, well-structured blog posts that provide value to readers and are optimized for SEO.',
-    AD_COPY: 'You are an expert advertising copywriter. Create persuasive ad copy that drives conversions with compelling headlines and clear value propositions.',
-    LANDING_PAGE: 'You are an expert landing page copywriter. Create conversion-optimized landing page content with clear headlines, benefits, and calls-to-action.',
-    NEWSLETTER: 'You are an expert newsletter writer. Create engaging newsletter content that keeps subscribers informed and interested.',
-    PRESS_RELEASE: 'You are an expert PR writer. Create professional press releases following journalistic standards with newsworthy angles.',
-    PRODUCT_COPY: 'You are an expert product copywriter. Create compelling product descriptions that highlight benefits and drive purchases.',
-    VIDEO_SCRIPT: 'You are an expert video scriptwriter. Create engaging video scripts with clear narratives and visual cues.',
+    SOCIAL_POST:
+      'You are an expert social media content creator. Create engaging, shareable posts optimized for social media platforms. Keep content concise and impactful.',
+    EMAIL:
+      'You are an expert email copywriter. Create compelling email content with clear calls-to-action and engaging subject lines.',
+    BLOG_POST:
+      'You are an expert blog writer. Create informative, well-structured blog posts that provide value to readers and are optimized for SEO.',
+    AD_COPY:
+      'You are an expert advertising copywriter. Create persuasive ad copy that drives conversions with compelling headlines and clear value propositions.',
+    LANDING_PAGE:
+      'You are an expert landing page copywriter. Create conversion-optimized landing page content with clear headlines, benefits, and calls-to-action.',
+    NEWSLETTER:
+      'You are an expert newsletter writer. Create engaging newsletter content that keeps subscribers informed and interested.',
+    PRESS_RELEASE:
+      'You are an expert PR writer. Create professional press releases following journalistic standards with newsworthy angles.',
+    PRODUCT_COPY:
+      'You are an expert product copywriter. Create compelling product descriptions that highlight benefits and drive purchases.',
+    VIDEO_SCRIPT:
+      'You are an expert video scriptwriter. Create engaging video scripts with clear narratives and visual cues.',
   };
 
-  return prompts[type] || 'You are an expert content writer. Create high-quality content tailored to the request.';
+  return (
+    prompts[type] ||
+    'You are an expert content writer. Create high-quality content tailored to the request.'
+  );
 }
 
 function getLengthTokens(length: string): number {
@@ -341,9 +362,9 @@ function getLengthTokens(length: string): number {
   }
 }
 
-function convertToHtml(content: string, type: ContentGenerationType): string {
+function convertToHtml(content: string, _type: ContentGenerationType): string {
   // Simple markdown-to-HTML conversion
-  let html = content
+  const html = content
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^# (.*$)/gim, '<h1>$1</h1>')
@@ -383,28 +404,32 @@ async function analyzeSEO(
 
   if (env.openaiApiKey) {
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${env.openaiApiKey}`,
+      const response = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${env.openaiApiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            max_tokens: 200,
+            temperature: 0.3,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'Generate SEO-optimized meta title (max 60 chars) and meta description (max 160 chars). Respond with JSON: {"metaTitle": "...", "metaDescription": "..."}',
+              },
+              {
+                role: 'user',
+                content: `Content:\n${content.substring(0, 1000)}\n\nTarget keywords: ${targetKeywords.join(', ')}`,
+              },
+            ],
+          }),
         },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          max_tokens: 200,
-          temperature: 0.3,
-          messages: [
-            {
-              role: 'system',
-              content: 'Generate SEO-optimized meta title (max 60 chars) and meta description (max 160 chars). Respond with JSON: {"metaTitle": "...", "metaDescription": "..."}',
-            },
-            {
-              role: 'user',
-              content: `Content:\n${content.substring(0, 1000)}\n\nTarget keywords: ${targetKeywords.join(', ')}`,
-            },
-          ],
-        }),
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -417,7 +442,11 @@ async function analyzeSEO(
     }
   }
 
-  return { score: Math.min(100, Math.round(score)), metaTitle, metaDescription };
+  return {
+    score: Math.min(100, Math.round(score)),
+    metaTitle,
+    metaDescription,
+  };
 }
 
 async function analyzeVoiceConsistency(
@@ -483,7 +512,7 @@ async function analyzeVoiceConsistency(
 }
 
 async function checkPlagiarism(
-  content: string,
+  _content: string,
 ): Promise<{ originalityScore: number; sources: unknown[] }> {
   // Simplified plagiarism check - in production would integrate with Copyscape/similar
   // For now, return high originality for AI-generated content
@@ -671,10 +700,7 @@ export async function getApprovalWorkflows(configId: number) {
   });
 }
 
-export async function submitForApproval(
-  contentId: number,
-  workflowId: number,
-) {
+export async function submitForApproval(contentId: number, workflowId: number) {
   const workflow = await prisma.contentApprovalWorkflow.findUnique({
     where: { id: workflowId },
   });
@@ -692,10 +718,7 @@ export async function submitForApproval(
   });
 }
 
-export async function approveContent(
-  contentId: number,
-  approverId: number,
-) {
+export async function approveContent(contentId: number, approverId: number) {
   return prisma.generatedContent.update({
     where: { id: contentId },
     data: {

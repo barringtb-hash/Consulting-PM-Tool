@@ -12,7 +12,7 @@ import {
  */
 export const getBrandProfileByClientId = async (
   clientId: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _ownerId: number,
 ) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
@@ -116,7 +116,7 @@ export const updateBrandProfile = async (
  */
 export const getBrandAssets = async (
   brandProfileId: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _ownerId: number,
 ) => {
   const brandProfile = await prisma.brandProfile.findUnique({
@@ -184,7 +184,7 @@ export const updateBrandAsset = async (
  */
 export const archiveBrandAsset = async (
   id: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _ownerId: number,
 ) => {
   const existing = await prisma.brandAsset.findUnique({ where: { id } });

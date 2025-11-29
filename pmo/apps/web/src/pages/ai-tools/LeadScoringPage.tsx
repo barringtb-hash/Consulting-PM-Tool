@@ -24,7 +24,6 @@ import {
   RefreshCw,
   TrendingUp,
   Mail,
-  Activity,
   Flame,
   Thermometer,
   Snowflake,
@@ -87,7 +86,9 @@ const SCORE_LEVEL_ICONS: Record<string, JSX.Element> = {
 
 // API functions
 async function fetchLeadScoringConfigs(): Promise<LeadScoringConfig[]> {
-  const res = await fetch('/api/lead-scoring/configs', { credentials: 'include' });
+  const res = await fetch('/api/lead-scoring/configs', {
+    credentials: 'include',
+  });
   if (!res.ok) throw new Error('Failed to fetch lead scoring configs');
   const data = await res.json();
   return data.configs || [];
@@ -171,7 +172,9 @@ function LeadScoringPage(): JSX.Element {
   const [scoreLevelFilter, setScoreLevelFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'sequences' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'leads' | 'sequences' | 'analytics'
+  >('overview');
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -208,12 +211,17 @@ function LeadScoringPage(): JSX.Element {
 
   // Mutations
   const createConfigMutation = useMutation({
-    mutationFn: (data: { clientId: number; config: Partial<LeadScoringConfig> }) =>
-      createLeadScoringConfig(data.clientId, data.config),
+    mutationFn: (data: {
+      clientId: number;
+      config: Partial<LeadScoringConfig>;
+    }) => createLeadScoringConfig(data.clientId, data.config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-scoring-configs'] });
       setShowCreateModal(false);
-      showToast({ message: 'Lead Scoring configuration created', variant: 'success' });
+      showToast({
+        message: 'Lead Scoring configuration created',
+        variant: 'success',
+      });
     },
     onError: (error: Error) => {
       showToast({ message: error.message, variant: 'error' });
@@ -254,9 +262,12 @@ function LeadScoringPage(): JSX.Element {
     createConfigMutation.mutate({
       clientId,
       config: {
-        hotThreshold: parseInt(formData.get('hotThreshold') as string, 10) || 80,
-        warmThreshold: parseInt(formData.get('warmThreshold') as string, 10) || 50,
-        coldThreshold: parseInt(formData.get('coldThreshold') as string, 10) || 20,
+        hotThreshold:
+          parseInt(formData.get('hotThreshold') as string, 10) || 80,
+        warmThreshold:
+          parseInt(formData.get('warmThreshold') as string, 10) || 50,
+        coldThreshold:
+          parseInt(formData.get('coldThreshold') as string, 10) || 20,
         trackEmailOpens: formData.get('trackEmailOpens') === 'on',
         trackEmailClicks: formData.get('trackEmailClicks') === 'on',
         trackWebsiteVisits: formData.get('trackWebsiteVisits') === 'on',
@@ -270,8 +281,8 @@ function LeadScoringPage(): JSX.Element {
 
     createLeadMutation.mutate({
       email: formData.get('email') as string,
-      name: formData.get('name') as string || undefined,
-      company: formData.get('company') as string || undefined,
+      name: (formData.get('name') as string) || undefined,
+      company: (formData.get('company') as string) || undefined,
     });
   };
 
@@ -289,7 +300,10 @@ function LeadScoringPage(): JSX.Element {
                 Add Lead
               </Button>
             )}
-            <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Settings className="mr-2 h-4 w-4" />
               New Configuration
             </Button>
@@ -304,7 +318,11 @@ function LeadScoringPage(): JSX.Element {
             <Select
               label="Select Configuration"
               value={selectedConfigId?.toString() || ''}
-              onChange={(e) => setSelectedConfigId(e.target.value ? parseInt(e.target.value, 10) : null)}
+              onChange={(e) =>
+                setSelectedConfigId(
+                  e.target.value ? parseInt(e.target.value, 10) : null,
+                )
+              }
             >
               <option value="">Select a configuration...</option>
               {configsQuery.data?.map((config) => (
@@ -366,7 +384,9 @@ function LeadScoringPage(): JSX.Element {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Hot Threshold</p>
-                  <p className="text-2xl font-bold text-red-500">{selectedConfig.hotThreshold}+</p>
+                  <p className="text-2xl font-bold text-red-500">
+                    {selectedConfig.hotThreshold}+
+                  </p>
                 </div>
                 <Flame className="h-8 w-8 text-red-500" />
               </div>
@@ -377,7 +397,9 @@ function LeadScoringPage(): JSX.Element {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Warm Threshold</p>
-                  <p className="text-2xl font-bold text-orange-500">{selectedConfig.warmThreshold}+</p>
+                  <p className="text-2xl font-bold text-orange-500">
+                    {selectedConfig.warmThreshold}+
+                  </p>
                 </div>
                 <Thermometer className="h-8 w-8 text-orange-500" />
               </div>
@@ -388,7 +410,9 @@ function LeadScoringPage(): JSX.Element {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Cold Threshold</p>
-                  <p className="text-2xl font-bold text-blue-500">{selectedConfig.coldThreshold}+</p>
+                  <p className="text-2xl font-bold text-blue-500">
+                    {selectedConfig.coldThreshold}+
+                  </p>
                 </div>
                 <Snowflake className="h-8 w-8 text-blue-500" />
               </div>
@@ -400,7 +424,9 @@ function LeadScoringPage(): JSX.Element {
                 <div>
                   <p className="text-sm text-gray-500">CRM Sync</p>
                   <p className="text-lg font-semibold">
-                    {selectedConfig.crmSyncEnabled ? selectedConfig.crmType || 'Enabled' : 'Disabled'}
+                    {selectedConfig.crmSyncEnabled
+                      ? selectedConfig.crmType || 'Enabled'
+                      : 'Disabled'}
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-500" />
@@ -418,7 +444,9 @@ function LeadScoringPage(): JSX.Element {
               <h3 className="text-lg font-semibold">Scored Leads</h3>
               <Button
                 variant="secondary"
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['scored-leads'] })}
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ['scored-leads'] })
+                }
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -426,7 +454,9 @@ function LeadScoringPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {leadsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading leads...</div>
+              <div className="text-center py-8 text-gray-500">
+                Loading leads...
+              </div>
             ) : leadsQuery.data?.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No leads found. Add your first lead to get started.
@@ -460,8 +490,12 @@ function LeadScoringPage(): JSX.Element {
                     {leadsQuery.data?.map((lead) => (
                       <tr key={lead.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{lead.name || '-'}</div>
-                          <div className="text-sm text-gray-500">{lead.email}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {lead.name || '-'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {lead.email}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {lead.company || '-'}
@@ -471,20 +505,31 @@ function LeadScoringPage(): JSX.Element {
                             <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
                               <div
                                 className={`h-2 rounded-full ${
-                                  lead.score >= 80 ? 'bg-red-500' :
-                                  lead.score >= 50 ? 'bg-orange-500' :
-                                  lead.score >= 20 ? 'bg-blue-500' : 'bg-gray-400'
+                                  lead.score >= 80
+                                    ? 'bg-red-500'
+                                    : lead.score >= 50
+                                      ? 'bg-orange-500'
+                                      : lead.score >= 20
+                                        ? 'bg-blue-500'
+                                        : 'bg-gray-400'
                                 }`}
                                 style={{ width: `${lead.score}%` }}
                               />
                             </div>
-                            <span className="text-sm font-medium">{lead.score}</span>
+                            <span className="text-sm font-medium">
+                              {lead.score}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-1">
                             {SCORE_LEVEL_ICONS[lead.scoreLevel]}
-                            <Badge variant={SCORE_LEVEL_VARIANTS[lead.scoreLevel] || 'neutral'}>
+                            <Badge
+                              variant={
+                                SCORE_LEVEL_VARIANTS[lead.scoreLevel] ||
+                                'neutral'
+                              }
+                            >
                               {lead.scoreLevel}
                             </Badge>
                           </div>
@@ -529,7 +574,9 @@ function LeadScoringPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {sequencesQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading sequences...</div>
+              <div className="text-center py-8 text-gray-500">
+                Loading sequences...
+              </div>
             ) : sequencesQuery.data?.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No sequences found. Create your first nurture sequence.
@@ -541,21 +588,29 @@ function LeadScoringPage(): JSX.Element {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{sequence.name}</h4>
-                        <Badge variant={sequence.isActive ? 'success' : 'neutral'}>
+                        <Badge
+                          variant={sequence.isActive ? 'success' : 'neutral'}
+                        >
                           {sequence.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                       <div className="flex gap-4 text-sm">
                         <div className="text-center">
-                          <div className="text-lg font-semibold">{sequence.totalEnrollments}</div>
+                          <div className="text-lg font-semibold">
+                            {sequence.totalEnrollments}
+                          </div>
                           <div className="text-gray-500">Enrolled</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-semibold">{sequence.totalCompletions}</div>
+                          <div className="text-lg font-semibold">
+                            {sequence.totalCompletions}
+                          </div>
                           <div className="text-gray-500">Completed</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-semibold text-green-600">{sequence.totalConversions}</div>
+                          <div className="text-lg font-semibold text-green-600">
+                            {sequence.totalConversions}
+                          </div>
                           <div className="text-gray-500">Conversions</div>
                         </div>
                       </div>
@@ -586,16 +641,22 @@ function LeadScoringPage(): JSX.Element {
                     <div className="flex-1 bg-gray-200 rounded-full h-4">
                       <div
                         className={`h-4 rounded-full ${
-                          item.level === 'HOT' ? 'bg-red-500' :
-                          item.level === 'WARM' ? 'bg-orange-500' :
-                          item.level === 'COLD' ? 'bg-blue-500' : 'bg-gray-400'
+                          item.level === 'HOT'
+                            ? 'bg-red-500'
+                            : item.level === 'WARM'
+                              ? 'bg-orange-500'
+                              : item.level === 'COLD'
+                                ? 'bg-blue-500'
+                                : 'bg-gray-400'
                         }`}
                         style={{
                           width: `${(item.count / analyticsQuery.data.summary.totalLeads) * 100}%`,
                         }}
                       />
                     </div>
-                    <span className="w-12 text-right text-sm font-medium">{item.count}</span>
+                    <span className="w-12 text-right text-sm font-medium">
+                      {item.count}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -609,11 +670,15 @@ function LeadScoringPage(): JSX.Element {
             <CardBody>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <div className="text-3xl font-bold">{analyticsQuery.data.summary.totalLeads}</div>
+                  <div className="text-3xl font-bold">
+                    {analyticsQuery.data.summary.totalLeads}
+                  </div>
                   <div className="text-sm text-gray-500">Total Leads</div>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-3xl font-bold text-red-600">{analyticsQuery.data.summary.hotLeads}</div>
+                  <div className="text-3xl font-bold text-red-600">
+                    {analyticsQuery.data.summary.hotLeads}
+                  </div>
                   <div className="text-sm text-gray-500">Hot Leads</div>
                 </div>
                 <div className="col-span-2 text-center p-4 bg-green-50 rounded-lg">
@@ -632,7 +697,9 @@ function LeadScoringPage(): JSX.Element {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Create Lead Scoring Configuration</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              Create Lead Scoring Configuration
+            </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
               <Select
                 label="Client"
@@ -650,28 +717,65 @@ function LeadScoringPage(): JSX.Element {
               </Select>
 
               <div className="grid grid-cols-3 gap-2">
-                <Input label="Hot Threshold" name="hotThreshold" type="number" defaultValue={80} min={0} max={100} />
-                <Input label="Warm Threshold" name="warmThreshold" type="number" defaultValue={50} min={0} max={100} />
-                <Input label="Cold Threshold" name="coldThreshold" type="number" defaultValue={20} min={0} max={100} />
+                <Input
+                  label="Hot Threshold"
+                  name="hotThreshold"
+                  type="number"
+                  defaultValue={80}
+                  min={0}
+                  max={100}
+                />
+                <Input
+                  label="Warm Threshold"
+                  name="warmThreshold"
+                  type="number"
+                  defaultValue={50}
+                  min={0}
+                  max={100}
+                />
+                <Input
+                  label="Cold Threshold"
+                  name="coldThreshold"
+                  type="number"
+                  defaultValue={20}
+                  min={0}
+                  max={100}
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="trackEmailOpens" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="trackEmailOpens"
+                    defaultChecked
+                  />
                   <span className="text-sm">Track Email Opens</span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="trackEmailClicks" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="trackEmailClicks"
+                    defaultChecked
+                  />
                   <span className="text-sm">Track Email Clicks</span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="trackWebsiteVisits" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="trackWebsiteVisits"
+                    defaultChecked
+                  />
                   <span className="text-sm">Track Website Visits</span>
                 </label>
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createConfigMutation.isPending}>
@@ -689,12 +793,22 @@ function LeadScoringPage(): JSX.Element {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-4">Add New Lead</h2>
             <form onSubmit={handleAddLead} className="space-y-4">
-              <Input label="Email" name="email" type="email" required placeholder="lead@company.com" />
+              <Input
+                label="Email"
+                name="email"
+                type="email"
+                required
+                placeholder="lead@company.com"
+              />
               <Input label="Name" name="name" placeholder="John Doe" />
               <Input label="Company" name="company" placeholder="Acme Inc." />
 
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="secondary" onClick={() => setShowAddLeadModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowAddLeadModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createLeadMutation.isPending}>

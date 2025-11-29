@@ -91,7 +91,9 @@ const URGENCY_VARIANTS: Record<string, 'neutral' | 'warning' | 'secondary'> = {
 
 // API functions
 async function fetchPriorAuthConfigs(): Promise<PriorAuthConfig[]> {
-  const res = await fetch('/api/prior-auth/configs', { credentials: 'include' });
+  const res = await fetch('/api/prior-auth/configs', {
+    credentials: 'include',
+  });
   if (!res.ok) throw new Error('Failed to fetch prior auth configs');
   const data = await res.json();
   return data.configs || [];
@@ -152,11 +154,16 @@ async function submitPARequest(requestId: number): Promise<void> {
   if (!res.ok) throw new Error('Failed to submit PA request');
 }
 
-async function checkPAStatus(requestId: number): Promise<{ statusChanged: boolean; currentStatus: string }> {
-  const res = await fetch(`/api/prior-auth/requests/${requestId}/check-status`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+async function checkPAStatus(
+  requestId: number,
+): Promise<{ statusChanged: boolean; currentStatus: string }> {
+  const res = await fetch(
+    `/api/prior-auth/requests/${requestId}/check-status`,
+    {
+      method: 'POST',
+      credentials: 'include',
+    },
+  );
   if (!res.ok) throw new Error('Failed to check PA status');
   return res.json();
 }
@@ -166,8 +173,10 @@ function PriorAuthPage(): JSX.Element {
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'appeals' | 'analytics'>('overview');
+  const [_showNewRequestModal, setShowNewRequestModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'requests' | 'appeals' | 'analytics'
+  >('overview');
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -186,7 +195,8 @@ function PriorAuthPage(): JSX.Element {
 
   const requestsQuery = useQuery({
     queryKey: ['pa-requests', selectedConfigId, statusFilter],
-    queryFn: () => fetchPARequests(selectedConfigId!, statusFilter || undefined),
+    queryFn: () =>
+      fetchPARequests(selectedConfigId!, statusFilter || undefined),
     enabled: !!selectedConfigId && activeTab === 'requests',
   });
 
@@ -198,12 +208,17 @@ function PriorAuthPage(): JSX.Element {
 
   // Mutations
   const createConfigMutation = useMutation({
-    mutationFn: (data: { clientId: number; config: Partial<PriorAuthConfig> }) =>
-      createPriorAuthConfig(data.clientId, data.config),
+    mutationFn: (data: {
+      clientId: number;
+      config: Partial<PriorAuthConfig>;
+    }) => createPriorAuthConfig(data.clientId, data.config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prior-auth-configs'] });
       setShowCreateModal(false);
-      showToast({ message: 'Prior Auth configuration created', variant: 'success' });
+      showToast({
+        message: 'Prior Auth configuration created',
+        variant: 'success',
+      });
     },
     onError: (error: Error) => {
       showToast({ message: error.message, variant: 'error' });
@@ -226,7 +241,10 @@ function PriorAuthPage(): JSX.Element {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['pa-requests'] });
       if (data.statusChanged) {
-        showToast({ message: `Status updated to ${data.currentStatus}`, variant: 'success' });
+        showToast({
+          message: `Status updated to ${data.currentStatus}`,
+          variant: 'success',
+        });
       } else {
         showToast({ message: 'No status change', variant: 'neutral' });
       }
@@ -246,9 +264,9 @@ function PriorAuthPage(): JSX.Element {
     createConfigMutation.mutate({
       clientId,
       config: {
-        practiceName: formData.get('practiceName') as string || null,
-        practiceNPI: formData.get('practiceNPI') as string || null,
-        ehrSystem: formData.get('ehrSystem') as string || null,
+        practiceName: (formData.get('practiceName') as string) || null,
+        practiceNPI: (formData.get('practiceNPI') as string) || null,
+        ehrSystem: (formData.get('ehrSystem') as string) || null,
         isHipaaEnabled: formData.get('isHipaaEnabled') === 'on',
         notifyOnSubmission: formData.get('notifyOnSubmission') === 'on',
         notifyOnStatusChange: formData.get('notifyOnStatusChange') === 'on',
@@ -270,7 +288,10 @@ function PriorAuthPage(): JSX.Element {
                 New PA Request
               </Button>
             )}
-            <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Settings className="mr-2 h-4 w-4" />
               New Configuration
             </Button>
@@ -285,12 +306,18 @@ function PriorAuthPage(): JSX.Element {
             <Select
               label="Select Configuration"
               value={selectedConfigId?.toString() || ''}
-              onChange={(e) => setSelectedConfigId(e.target.value ? parseInt(e.target.value, 10) : null)}
+              onChange={(e) =>
+                setSelectedConfigId(
+                  e.target.value ? parseInt(e.target.value, 10) : null,
+                )
+              }
             >
               <option value="">Select a configuration...</option>
               {configsQuery.data?.map((config) => (
                 <option key={config.id} value={config.id}>
-                  {config.client?.name || config.practiceName || `Config ${config.id}`}
+                  {config.client?.name ||
+                    config.practiceName ||
+                    `Config ${config.id}`}
                 </option>
               ))}
             </Select>
@@ -406,7 +433,9 @@ function PriorAuthPage(): JSX.Element {
               <h3 className="text-lg font-semibold">PA Requests</h3>
               <Button
                 variant="secondary"
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['pa-requests'] })}
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ['pa-requests'] })
+                }
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -414,7 +443,9 @@ function PriorAuthPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {requestsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading requests...</div>
+              <div className="text-center py-8 text-gray-500">
+                Loading requests...
+              </div>
             ) : requestsQuery.data?.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No PA requests found. Create your first request to get started.
@@ -463,14 +494,22 @@ function PriorAuthPage(): JSX.Element {
                           {request.serviceType}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={URGENCY_VARIANTS[request.urgency] || 'neutral'}>
+                          <Badge
+                            variant={
+                              URGENCY_VARIANTS[request.urgency] || 'neutral'
+                            }
+                          >
                             {request.urgency}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-1">
                             {STATUS_ICONS[request.status]}
-                            <Badge variant={STATUS_VARIANTS[request.status] || 'neutral'}>
+                            <Badge
+                              variant={
+                                STATUS_VARIANTS[request.status] || 'neutral'
+                              }
+                            >
                               {request.status.replace('_', ' ')}
                             </Badge>
                           </div>
@@ -480,30 +519,37 @@ function PriorAuthPage(): JSX.Element {
                             {request.status === 'DRAFT' && (
                               <Button
                                 size="sm"
-                                onClick={() => submitMutation.mutate(request.id)}
+                                onClick={() =>
+                                  submitMutation.mutate(request.id)
+                                }
                                 disabled={submitMutation.isPending}
                               >
                                 <Send className="h-3 w-3 mr-1" />
                                 Submit
                               </Button>
                             )}
-                            {['SUBMITTED', 'PENDING'].includes(request.status) && (
+                            {['SUBMITTED', 'PENDING'].includes(
+                              request.status,
+                            ) && (
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => checkStatusMutation.mutate(request.id)}
+                                onClick={() =>
+                                  checkStatusMutation.mutate(request.id)
+                                }
                                 disabled={checkStatusMutation.isPending}
                               >
                                 <RefreshCw className="h-3 w-3 mr-1" />
                                 Check
                               </Button>
                             )}
-                            {request.status === 'DENIED' && request.appealStatus === 'NOT_APPEALED' && (
-                              <Button size="sm" variant="secondary">
-                                <Scale className="h-3 w-3 mr-1" />
-                                Appeal
-                              </Button>
-                            )}
+                            {request.status === 'DENIED' &&
+                              request.appealStatus === 'NOT_APPEALED' && (
+                                <Button size="sm" variant="secondary">
+                                  <Scale className="h-3 w-3 mr-1" />
+                                  Appeal
+                                </Button>
+                              )}
                           </div>
                         </td>
                       </tr>
@@ -526,24 +572,34 @@ function PriorAuthPage(): JSX.Element {
             <CardBody>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <div className="text-3xl font-bold">{analyticsQuery.data.summary.totalRequests}</div>
+                  <div className="text-3xl font-bold">
+                    {analyticsQuery.data.summary.totalRequests}
+                  </div>
                   <div className="text-sm text-gray-500">Total Requests</div>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600">{analyticsQuery.data.summary.approvedRequests}</div>
+                  <div className="text-3xl font-bold text-green-600">
+                    {analyticsQuery.data.summary.approvedRequests}
+                  </div>
                   <div className="text-sm text-gray-500">Approved</div>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-3xl font-bold text-red-600">{analyticsQuery.data.summary.deniedRequests}</div>
+                  <div className="text-3xl font-bold text-red-600">
+                    {analyticsQuery.data.summary.deniedRequests}
+                  </div>
                   <div className="text-sm text-gray-500">Denied</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-3xl font-bold text-yellow-600">{analyticsQuery.data.summary.pendingRequests}</div>
+                  <div className="text-3xl font-bold text-yellow-600">
+                    {analyticsQuery.data.summary.pendingRequests}
+                  </div>
                   <div className="text-sm text-gray-500">Pending</div>
                 </div>
               </div>
               <div className="mt-4 p-4 bg-blue-50 rounded-lg text-center">
-                <div className="text-4xl font-bold text-blue-600">{analyticsQuery.data.summary.approvalRate}%</div>
+                <div className="text-4xl font-bold text-blue-600">
+                  {analyticsQuery.data.summary.approvalRate}%
+                </div>
                 <div className="text-sm text-gray-500">Approval Rate</div>
               </div>
               {analyticsQuery.data.summary.avgTurnaround !== null && (
@@ -568,12 +624,19 @@ function PriorAuthPage(): JSX.Element {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Object.entries(analyticsQuery.data.denialReasons).map(([reason, count]) => (
-                    <div key={reason} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm">{reason.replace(/_/g, ' ')}</span>
-                      <span className="text-lg font-semibold">{count}</span>
-                    </div>
-                  ))}
+                  {Object.entries(analyticsQuery.data.denialReasons).map(
+                    ([reason, count]) => (
+                      <div
+                        key={reason}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <span className="text-sm">
+                          {reason.replace(/_/g, ' ')}
+                        </span>
+                        <span className="text-lg font-semibold">{count}</span>
+                      </div>
+                    ),
+                  )}
                 </div>
               )}
             </CardBody>
@@ -585,7 +648,9 @@ function PriorAuthPage(): JSX.Element {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Create Prior Auth Configuration</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              Create Prior Auth Configuration
+            </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
               <Select
                 label="Client"
@@ -602,8 +667,17 @@ function PriorAuthPage(): JSX.Element {
                 ))}
               </Select>
 
-              <Input label="Practice Name" name="practiceName" placeholder="Healthcare Practice LLC" />
-              <Input label="Practice NPI" name="practiceNPI" placeholder="1234567890" maxLength={10} />
+              <Input
+                label="Practice Name"
+                name="practiceName"
+                placeholder="Healthcare Practice LLC"
+              />
+              <Input
+                label="Practice NPI"
+                name="practiceNPI"
+                placeholder="1234567890"
+                maxLength={10}
+              />
 
               <Select label="EHR System" name="ehrSystem">
                 <option value="">Select EHR...</option>
@@ -620,17 +694,29 @@ function PriorAuthPage(): JSX.Element {
                   <span className="text-sm">Enable HIPAA Compliance</span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="notifyOnSubmission" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="notifyOnSubmission"
+                    defaultChecked
+                  />
                   <span className="text-sm">Notify on Submission</span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="notifyOnStatusChange" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="notifyOnStatusChange"
+                    defaultChecked
+                  />
                   <span className="text-sm">Notify on Status Change</span>
                 </label>
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createConfigMutation.isPending}>

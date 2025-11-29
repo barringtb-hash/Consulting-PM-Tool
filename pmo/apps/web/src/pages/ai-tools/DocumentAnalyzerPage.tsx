@@ -19,7 +19,6 @@ import {
   Plus,
   FileSearch,
   Settings,
-  BarChart3,
   Upload,
   RefreshCw,
   FileText,
@@ -71,8 +70,12 @@ const COMPLIANCE_ICONS: Record<string, JSX.Element> = {
 };
 
 // API functions
-async function fetchDocumentAnalyzerConfigs(): Promise<DocumentAnalyzerConfig[]> {
-  const res = await fetch('/api/document-analyzer/configs', { credentials: 'include' });
+async function fetchDocumentAnalyzerConfigs(): Promise<
+  DocumentAnalyzerConfig[]
+> {
+  const res = await fetch('/api/document-analyzer/configs', {
+    credentials: 'include',
+  });
   if (!res.ok) throw new Error('Failed to fetch document analyzer configs');
   const data = await res.json();
   return data.configs || [];
@@ -84,9 +87,12 @@ async function fetchDocuments(
 ): Promise<AnalyzedDocument[]> {
   const params = new URLSearchParams();
   if (status) params.append('status', status);
-  const res = await fetch(`/api/document-analyzer/${configId}/documents?${params}`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/document-analyzer/${configId}/documents?${params}`,
+    {
+      credentials: 'include',
+    },
+  );
   if (!res.ok) throw new Error('Failed to fetch documents');
   const data = await res.json();
   return data.documents || [];
@@ -107,9 +113,15 @@ async function createDocumentAnalyzerConfig(
   return result.config;
 }
 
-async function uploadDocument(
+async function _uploadDocument(
   configId: number,
-  data: { filename: string; originalUrl: string; mimeType: string; sizeBytes: number; format: string },
+  data: {
+    filename: string;
+    originalUrl: string;
+    mimeType: string;
+    sizeBytes: number;
+    format: string;
+  },
 ): Promise<AnalyzedDocument> {
   const res = await fetch(`/api/document-analyzer/${configId}/documents`, {
     method: 'POST',
@@ -123,10 +135,13 @@ async function uploadDocument(
 }
 
 async function analyzeDocument(documentId: number): Promise<void> {
-  const res = await fetch(`/api/document-analyzer/documents/${documentId}/analyze`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/document-analyzer/documents/${documentId}/analyze`,
+    {
+      method: 'POST',
+      credentials: 'include',
+    },
+  );
   if (!res.ok) throw new Error('Failed to analyze document');
 }
 
@@ -135,7 +150,9 @@ function DocumentAnalyzerPage(): JSX.Element {
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'templates' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'documents' | 'templates' | 'settings'
+  >('overview');
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -160,12 +177,19 @@ function DocumentAnalyzerPage(): JSX.Element {
 
   // Mutations
   const createConfigMutation = useMutation({
-    mutationFn: (data: { clientId: number; config: Partial<DocumentAnalyzerConfig> }) =>
-      createDocumentAnalyzerConfig(data.clientId, data.config),
+    mutationFn: (data: {
+      clientId: number;
+      config: Partial<DocumentAnalyzerConfig>;
+    }) => createDocumentAnalyzerConfig(data.clientId, data.config),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['document-analyzer-configs'] });
+      queryClient.invalidateQueries({
+        queryKey: ['document-analyzer-configs'],
+      });
       setShowCreateModal(false);
-      showToast({ message: 'Document Analyzer configuration created', variant: 'success' });
+      showToast({
+        message: 'Document Analyzer configuration created',
+        variant: 'success',
+      });
     },
     onError: (error: Error) => {
       showToast({ message: error.message, variant: 'error' });
@@ -197,7 +221,8 @@ function DocumentAnalyzerPage(): JSX.Element {
         enableNER: formData.get('enableNER') === 'on',
         enableCompliance: formData.get('enableCompliance') === 'on',
         enableVersionCompare: formData.get('enableVersionCompare') === 'on',
-        retentionDays: parseInt(formData.get('retentionDays') as string, 10) || 365,
+        retentionDays:
+          parseInt(formData.get('retentionDays') as string, 10) || 365,
       },
     });
   };
@@ -223,7 +248,11 @@ function DocumentAnalyzerPage(): JSX.Element {
             <Select
               label="Select Configuration"
               value={selectedConfigId?.toString() || ''}
-              onChange={(e) => setSelectedConfigId(e.target.value ? parseInt(e.target.value, 10) : null)}
+              onChange={(e) =>
+                setSelectedConfigId(
+                  e.target.value ? parseInt(e.target.value, 10) : null,
+                )
+              }
             >
               <option value="">Select a configuration...</option>
               {configsQuery.data?.map((config) => (
@@ -325,7 +354,9 @@ function DocumentAnalyzerPage(): JSX.Element {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Retention</p>
-                  <p className="text-lg font-semibold">{selectedConfig.retentionDays} days</p>
+                  <p className="text-lg font-semibold">
+                    {selectedConfig.retentionDays} days
+                  </p>
                 </div>
                 <Clock className="h-8 w-8 text-purple-500" />
               </div>
@@ -342,7 +373,11 @@ function DocumentAnalyzerPage(): JSX.Element {
               <div className="flex gap-2">
                 <Button
                   variant="secondary"
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ['analyzed-documents'] })}
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['analyzed-documents'],
+                    })
+                  }
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -355,7 +390,9 @@ function DocumentAnalyzerPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {documentsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading documents...</div>
+              <div className="text-center py-8 text-gray-500">
+                Loading documents...
+              </div>
             ) : documentsQuery.data?.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No documents found. Upload a document to get started.
@@ -398,12 +435,15 @@ function DocumentAnalyzerPage(): JSX.Element {
                           {doc.documentType || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={STATUS_VARIANTS[doc.status] || 'neutral'}>
+                          <Badge
+                            variant={STATUS_VARIANTS[doc.status] || 'neutral'}
+                          >
                             {doc.status}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {doc.complianceStatus && COMPLIANCE_ICONS[doc.complianceStatus]}
+                          {doc.complianceStatus &&
+                            COMPLIANCE_ICONS[doc.complianceStatus]}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {doc.status === 'PENDING' && (
@@ -431,7 +471,9 @@ function DocumentAnalyzerPage(): JSX.Element {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Create Document Analyzer Configuration</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              Create Document Analyzer Configuration
+            </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
               <Select
                 label="Client"
@@ -451,14 +493,22 @@ function DocumentAnalyzerPage(): JSX.Element {
               <div className="space-y-2">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" name="enableOCR" defaultChecked />
-                  <span className="text-sm">Enable OCR for scanned documents</span>
+                  <span className="text-sm">
+                    Enable OCR for scanned documents
+                  </span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input type="checkbox" name="enableNER" defaultChecked />
-                  <span className="text-sm">Enable Named Entity Recognition</span>
+                  <span className="text-sm">
+                    Enable Named Entity Recognition
+                  </span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="enableCompliance" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="enableCompliance"
+                    defaultChecked
+                  />
                   <span className="text-sm">Enable Compliance Checking</span>
                 </label>
                 <label className="flex items-center gap-2">
@@ -477,7 +527,11 @@ function DocumentAnalyzerPage(): JSX.Element {
               />
 
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createConfigMutation.isPending}>

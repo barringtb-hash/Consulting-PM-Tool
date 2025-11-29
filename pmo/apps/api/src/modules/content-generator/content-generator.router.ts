@@ -14,7 +14,6 @@ import {
   getClientIdFromContentGeneratorConfig,
   getClientIdFromGeneratedContent,
   getClientIdFromContentTemplate,
-  getClientIdFromContentApprovalWorkflow,
 } from '../../auth/client-auth.helper';
 
 const router = Router();
@@ -27,11 +26,15 @@ const contentGeneratorConfigSchema = z.object({
   brandVoiceDescription: z.string().max(2000).optional(),
   toneKeywords: z.array(z.string()).optional(),
   avoidKeywords: z.array(z.string()).optional(),
-  voiceSamples: z.array(z.object({
-    text: z.string(),
-    type: z.string(),
-    source: z.string().optional(),
-  })).optional(),
+  voiceSamples: z
+    .array(
+      z.object({
+        text: z.string(),
+        type: z.string(),
+        source: z.string().optional(),
+      }),
+    )
+    .optional(),
   enableSEO: z.boolean().optional(),
   targetKeywords: z.array(z.string()).optional(),
   enablePlagiarismCheck: z.boolean().optional(),
@@ -45,8 +48,15 @@ const contentGeneratorConfigSchema = z.object({
 const contentGenerationSchema = z.object({
   title: z.string().min(1).max(500),
   type: z.enum([
-    'SOCIAL_POST', 'EMAIL', 'BLOG_POST', 'AD_COPY', 'LANDING_PAGE',
-    'NEWSLETTER', 'PRESS_RELEASE', 'PRODUCT_COPY', 'VIDEO_SCRIPT',
+    'SOCIAL_POST',
+    'EMAIL',
+    'BLOG_POST',
+    'AD_COPY',
+    'LANDING_PAGE',
+    'NEWSLETTER',
+    'PRESS_RELEASE',
+    'PRODUCT_COPY',
+    'VIDEO_SCRIPT',
   ]),
   prompt: z.string().max(5000).optional(),
   templateId: z.number().int().optional(),
@@ -61,20 +71,35 @@ const contentTemplateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   type: z.enum([
-    'SOCIAL_POST', 'EMAIL', 'BLOG_POST', 'AD_COPY', 'LANDING_PAGE',
-    'NEWSLETTER', 'PRESS_RELEASE', 'PRODUCT_COPY', 'VIDEO_SCRIPT',
+    'SOCIAL_POST',
+    'EMAIL',
+    'BLOG_POST',
+    'AD_COPY',
+    'LANDING_PAGE',
+    'NEWSLETTER',
+    'PRESS_RELEASE',
+    'PRODUCT_COPY',
+    'VIDEO_SCRIPT',
   ]),
   template: z.string().min(1).max(10000),
-  placeholders: z.array(z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    required: z.boolean().optional(),
-  })).optional(),
+  placeholders: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        required: z.boolean().optional(),
+      }),
+    )
+    .optional(),
   systemPrompt: z.string().max(2000).optional(),
-  exampleOutputs: z.array(z.object({
-    input: z.string(),
-    output: z.string(),
-  })).optional(),
+  exampleOutputs: z
+    .array(
+      z.object({
+        input: z.string(),
+        output: z.string(),
+      }),
+    )
+    .optional(),
   category: z.string().max(100).optional(),
   tags: z.array(z.string()).optional(),
 });
@@ -82,13 +107,15 @@ const contentTemplateSchema = z.object({
 const approvalWorkflowSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
-  steps: z.array(z.object({
-    stepId: z.string(),
-    name: z.string(),
-    type: z.enum(['CREATE', 'REVIEW', 'REVISE', 'APPROVE', 'PUBLISH']),
-    approverIds: z.array(z.number()).optional(),
-    required: z.boolean().optional(),
-  })),
+  steps: z.array(
+    z.object({
+      stepId: z.string(),
+      name: z.string(),
+      type: z.enum(['CREATE', 'REVIEW', 'REVISE', 'APPROVE', 'PUBLISH']),
+      approverIds: z.array(z.number()).optional(),
+      required: z.boolean().optional(),
+    }),
+  ),
   autoAssign: z.boolean().optional(),
   assignmentRules: z.record(z.string(), z.array(z.number())).optional(),
 });
@@ -122,12 +149,16 @@ router.get(
     if (clientId) {
       const canAccess = await hasClientAccess(req.userId, clientId);
       if (!canAccess) {
-        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        res
+          .status(403)
+          .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
     }
 
-    const configs = await contentGeneratorService.listContentGeneratorConfigs({ clientId });
+    const configs = await contentGeneratorService.listContentGeneratorConfigs({
+      clientId,
+    });
     res.json({ configs });
   },
 );
@@ -154,11 +185,14 @@ router.get(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const config = await contentGeneratorService.getContentGeneratorConfig(clientId);
+    const config =
+      await contentGeneratorService.getContentGeneratorConfig(clientId);
     res.json({ config });
   },
 );
@@ -185,28 +219,39 @@ router.post(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = contentGeneratorConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     try {
-      const config = await contentGeneratorService.createContentGeneratorConfig(clientId, {
-        ...parsed.data,
-        voiceSamples: parsed.data.voiceSamples as Prisma.InputJsonValue,
-        cmsIntegrations: parsed.data.cmsIntegrations as Prisma.InputJsonValue,
-        socialIntegrations: parsed.data.socialIntegrations as Prisma.InputJsonValue,
-        emailIntegrations: parsed.data.emailIntegrations as Prisma.InputJsonValue,
-      });
+      const config = await contentGeneratorService.createContentGeneratorConfig(
+        clientId,
+        {
+          ...parsed.data,
+          voiceSamples: parsed.data.voiceSamples as Prisma.InputJsonValue,
+          cmsIntegrations: parsed.data.cmsIntegrations as Prisma.InputJsonValue,
+          socialIntegrations: parsed.data
+            .socialIntegrations as Prisma.InputJsonValue,
+          emailIntegrations: parsed.data
+            .emailIntegrations as Prisma.InputJsonValue,
+        },
+      );
       res.status(201).json({ config });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
-        res.status(409).json({ error: 'Config already exists for this client' });
+        res
+          .status(409)
+          .json({ error: 'Config already exists for this client' });
         return;
       }
       throw error;
@@ -236,23 +281,32 @@ router.patch(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = contentGeneratorConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const config = await contentGeneratorService.updateContentGeneratorConfig(clientId, {
-      ...parsed.data,
-      voiceSamples: parsed.data.voiceSamples as Prisma.InputJsonValue,
-      cmsIntegrations: parsed.data.cmsIntegrations as Prisma.InputJsonValue,
-      socialIntegrations: parsed.data.socialIntegrations as Prisma.InputJsonValue,
-      emailIntegrations: parsed.data.emailIntegrations as Prisma.InputJsonValue,
-    });
+    const config = await contentGeneratorService.updateContentGeneratorConfig(
+      clientId,
+      {
+        ...parsed.data,
+        voiceSamples: parsed.data.voiceSamples as Prisma.InputJsonValue,
+        cmsIntegrations: parsed.data.cmsIntegrations as Prisma.InputJsonValue,
+        socialIntegrations: parsed.data
+          .socialIntegrations as Prisma.InputJsonValue,
+        emailIntegrations: parsed.data
+          .emailIntegrations as Prisma.InputJsonValue,
+      },
+    );
     res.json({ config });
   },
 );
@@ -288,18 +342,25 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = contentGenerationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     try {
-      const result = await contentGeneratorService.generateContent(configId, parsed.data);
+      const result = await contentGeneratorService.generateContent(
+        configId,
+        parsed.data,
+      );
       res.status(201).json(result);
     } catch (error) {
       if ((error as Error).message === 'Config not found') {
@@ -338,7 +399,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -348,8 +411,25 @@ router.get(
     const offset = Number(req.query.offset) || 0;
 
     const contents = await contentGeneratorService.getContents(configId, {
-      type: type as 'SOCIAL_POST' | 'EMAIL' | 'BLOG_POST' | 'AD_COPY' | 'LANDING_PAGE' | 'NEWSLETTER' | 'PRESS_RELEASE' | 'PRODUCT_COPY' | 'VIDEO_SCRIPT' | undefined,
-      approvalStatus: approvalStatus as 'DRAFT' | 'PENDING_REVIEW' | 'REVISION_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | undefined,
+      type: type as
+        | 'SOCIAL_POST'
+        | 'EMAIL'
+        | 'BLOG_POST'
+        | 'AD_COPY'
+        | 'LANDING_PAGE'
+        | 'NEWSLETTER'
+        | 'PRESS_RELEASE'
+        | 'PRODUCT_COPY'
+        | 'VIDEO_SCRIPT'
+        | undefined,
+      approvalStatus: approvalStatus as
+        | 'DRAFT'
+        | 'PENDING_REVIEW'
+        | 'REVISION_REQUESTED'
+        | 'APPROVED'
+        | 'REJECTED'
+        | 'PUBLISHED'
+        | undefined,
       limit,
       offset,
     });
@@ -385,7 +465,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -426,17 +508,26 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const { title, content, contentHtml, approvalStatus, revisionNotes } = req.body as {
-      title?: string;
-      content?: string;
-      contentHtml?: string;
-      approvalStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'REVISION_REQUESTED' | 'APPROVED' | 'REJECTED' | 'PUBLISHED';
-      revisionNotes?: string;
-    };
+    const { title, content, contentHtml, approvalStatus, revisionNotes } =
+      req.body as {
+        title?: string;
+        content?: string;
+        contentHtml?: string;
+        approvalStatus?:
+          | 'DRAFT'
+          | 'PENDING_REVIEW'
+          | 'REVISION_REQUESTED'
+          | 'APPROVED'
+          | 'REJECTED'
+          | 'PUBLISHED';
+        revisionNotes?: string;
+      };
 
     try {
       const updated = await contentGeneratorService.updateContent(id, {
@@ -484,7 +575,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -524,7 +617,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -535,7 +630,10 @@ router.post(
     }
 
     try {
-      const content = await contentGeneratorService.submitForApproval(id, workflowId);
+      const content = await contentGeneratorService.submitForApproval(
+        id,
+        workflowId,
+      );
       res.json({ content });
     } catch (error) {
       if ((error as Error).message === 'Workflow not found') {
@@ -574,11 +672,16 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const content = await contentGeneratorService.approveContent(id, req.userId);
+    const content = await contentGeneratorService.approveContent(
+      id,
+      req.userId,
+    );
     res.json({ content });
   },
 );
@@ -610,7 +713,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -620,7 +725,11 @@ router.post(
       return;
     }
 
-    const content = await contentGeneratorService.rejectContent(id, req.userId, revisionNotes);
+    const content = await contentGeneratorService.rejectContent(
+      id,
+      req.userId,
+      revisionNotes,
+    );
     res.json({ content });
   },
 );
@@ -656,19 +765,39 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const type = req.query.type as string | undefined;
     const category = req.query.category as string | undefined;
-    const isActive = req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined;
+    const isActive =
+      req.query.active === 'true'
+        ? true
+        : req.query.active === 'false'
+          ? false
+          : undefined;
 
-    const templates = await contentGeneratorService.getContentTemplates(configId, {
-      type: type as 'SOCIAL_POST' | 'EMAIL' | 'BLOG_POST' | 'AD_COPY' | 'LANDING_PAGE' | 'NEWSLETTER' | 'PRESS_RELEASE' | 'PRODUCT_COPY' | 'VIDEO_SCRIPT' | undefined,
-      category,
-      isActive,
-    });
+    const templates = await contentGeneratorService.getContentTemplates(
+      configId,
+      {
+        type: type as
+          | 'SOCIAL_POST'
+          | 'EMAIL'
+          | 'BLOG_POST'
+          | 'AD_COPY'
+          | 'LANDING_PAGE'
+          | 'NEWSLETTER'
+          | 'PRESS_RELEASE'
+          | 'PRODUCT_COPY'
+          | 'VIDEO_SCRIPT'
+          | undefined,
+        category,
+        isActive,
+      },
+    );
 
     res.json({ templates });
   },
@@ -701,21 +830,28 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = contentTemplateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const template = await contentGeneratorService.createContentTemplate(configId, {
-      ...parsed.data,
-      placeholders: parsed.data.placeholders as Prisma.InputJsonValue,
-      exampleOutputs: parsed.data.exampleOutputs as Prisma.InputJsonValue,
-    });
+    const template = await contentGeneratorService.createContentTemplate(
+      configId,
+      {
+        ...parsed.data,
+        placeholders: parsed.data.placeholders as Prisma.InputJsonValue,
+        exampleOutputs: parsed.data.exampleOutputs as Prisma.InputJsonValue,
+      },
+    );
     res.status(201).json({ template });
   },
 );
@@ -747,13 +883,17 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = contentTemplateSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -793,7 +933,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -833,11 +975,14 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const workflows = await contentGeneratorService.getApprovalWorkflows(configId);
+    const workflows =
+      await contentGeneratorService.getApprovalWorkflows(configId);
     res.json({ workflows });
   },
 );
@@ -869,21 +1014,28 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = approvalWorkflowSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const workflow = await contentGeneratorService.createApprovalWorkflow(configId, {
-      ...parsed.data,
-      steps: parsed.data.steps as Prisma.InputJsonValue,
-      assignmentRules: parsed.data.assignmentRules as Prisma.InputJsonValue,
-    });
+    const workflow = await contentGeneratorService.createApprovalWorkflow(
+      configId,
+      {
+        ...parsed.data,
+        steps: parsed.data.steps as Prisma.InputJsonValue,
+        assignmentRules: parsed.data.assignmentRules as Prisma.InputJsonValue,
+      },
+    );
     res.status(201).json({ workflow });
   },
 );
@@ -919,7 +1071,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -932,7 +1086,10 @@ router.post(
       return;
     }
 
-    const config = await contentGeneratorService.trainBrandVoice(configId, samples);
+    const config = await contentGeneratorService.trainBrandVoice(
+      configId,
+      samples,
+    );
     res.json({ config });
   },
 );

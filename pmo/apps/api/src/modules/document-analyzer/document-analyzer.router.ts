@@ -28,18 +28,26 @@ const documentAnalyzerConfigSchema = z.object({
   enableNER: z.boolean().optional(),
   enableCompliance: z.boolean().optional(),
   enableVersionCompare: z.boolean().optional(),
-  defaultExtractionFields: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    required: z.boolean().optional(),
-  })).optional(),
-  complianceRules: z.array(z.object({
-    ruleId: z.string(),
-    name: z.string(),
-    pattern: z.string().optional(),
-    requiredField: z.string().optional(),
-    severity: z.enum(['PASS', 'WARNING', 'FAIL']),
-  })).optional(),
+  defaultExtractionFields: z
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.string(),
+        required: z.boolean().optional(),
+      }),
+    )
+    .optional(),
+  complianceRules: z
+    .array(
+      z.object({
+        ruleId: z.string(),
+        name: z.string(),
+        pattern: z.string().optional(),
+        requiredField: z.string().optional(),
+        severity: z.enum(['PASS', 'WARNING', 'FAIL']),
+      }),
+    )
+    .optional(),
   retentionDays: z.number().int().min(1).max(3650).optional(),
 });
 
@@ -55,13 +63,15 @@ const extractionTemplateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   documentType: z.string().max(100).optional(),
-  extractionRules: z.array(z.object({
-    fieldName: z.string(),
-    type: z.string(),
-    pattern: z.string().optional(),
-    location: z.string().optional(),
-    required: z.boolean().optional(),
-  })),
+  extractionRules: z.array(
+    z.object({
+      fieldName: z.string(),
+      type: z.string(),
+      pattern: z.string().optional(),
+      location: z.string().optional(),
+      required: z.boolean().optional(),
+    }),
+  ),
   useMLExtraction: z.boolean().optional(),
 });
 
@@ -100,12 +110,16 @@ router.get(
     if (clientId) {
       const canAccess = await hasClientAccess(req.userId, clientId);
       if (!canAccess) {
-        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        res
+          .status(403)
+          .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
     }
 
-    const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs({ clientId });
+    const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs({
+      clientId,
+    });
     res.json({ configs });
   },
 );
@@ -132,11 +146,14 @@ router.get(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const config = await documentAnalyzerService.getDocumentAnalyzerConfig(clientId);
+    const config =
+      await documentAnalyzerService.getDocumentAnalyzerConfig(clientId);
     res.json({ config });
   },
 );
@@ -163,26 +180,36 @@ router.post(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = documentAnalyzerConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     try {
-      const config = await documentAnalyzerService.createDocumentAnalyzerConfig(clientId, {
-        ...parsed.data,
-        defaultExtractionFields: parsed.data.defaultExtractionFields as Prisma.InputJsonValue,
-        complianceRules: parsed.data.complianceRules as Prisma.InputJsonValue,
-      });
+      const config = await documentAnalyzerService.createDocumentAnalyzerConfig(
+        clientId,
+        {
+          ...parsed.data,
+          defaultExtractionFields: parsed.data
+            .defaultExtractionFields as Prisma.InputJsonValue,
+          complianceRules: parsed.data.complianceRules as Prisma.InputJsonValue,
+        },
+      );
       res.status(201).json({ config });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
-        res.status(409).json({ error: 'Config already exists for this client' });
+        res
+          .status(409)
+          .json({ error: 'Config already exists for this client' });
         return;
       }
       throw error;
@@ -212,21 +239,29 @@ router.patch(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = documentAnalyzerConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const config = await documentAnalyzerService.updateDocumentAnalyzerConfig(clientId, {
-      ...parsed.data,
-      defaultExtractionFields: parsed.data.defaultExtractionFields as Prisma.InputJsonValue,
-      complianceRules: parsed.data.complianceRules as Prisma.InputJsonValue,
-    });
+    const config = await documentAnalyzerService.updateDocumentAnalyzerConfig(
+      clientId,
+      {
+        ...parsed.data,
+        defaultExtractionFields: parsed.data
+          .defaultExtractionFields as Prisma.InputJsonValue,
+        complianceRules: parsed.data.complianceRules as Prisma.InputJsonValue,
+      },
+    );
     res.json({ config });
   },
 );
@@ -262,17 +297,24 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = documentUploadSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const document = await documentAnalyzerService.uploadDocument(configId, parsed.data);
+    const document = await documentAnalyzerService.uploadDocument(
+      configId,
+      parsed.data,
+    );
     res.status(201).json({ document });
   },
 );
@@ -304,7 +346,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -314,7 +358,13 @@ router.get(
     const offset = Number(req.query.offset) || 0;
 
     const documents = await documentAnalyzerService.getDocuments(configId, {
-      status: status as 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'NEEDS_REVIEW' | undefined,
+      status: status as
+        | 'PENDING'
+        | 'PROCESSING'
+        | 'COMPLETED'
+        | 'FAILED'
+        | 'NEEDS_REVIEW'
+        | undefined,
       documentType,
       limit,
       offset,
@@ -351,7 +401,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -392,7 +444,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -444,7 +498,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -472,7 +528,9 @@ router.post(
     };
 
     if (!currentDocId || !previousDocId) {
-      res.status(400).json({ error: 'Both currentDocId and previousDocId are required' });
+      res
+        .status(400)
+        .json({ error: 'Both currentDocId and previousDocId are required' });
       return;
     }
 
@@ -489,7 +547,9 @@ router.post(
     const canAccess2 = await hasClientAccess(req.userId, clientId2);
 
     if (!canAccess1 || !canAccess2) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to one or both documents' });
+      res.status(403).json({
+        error: 'Forbidden: You do not have access to one or both documents',
+      });
       return;
     }
 
@@ -540,17 +600,27 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const documentType = req.query.documentType as string | undefined;
-    const isActive = req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined;
+    const isActive =
+      req.query.active === 'true'
+        ? true
+        : req.query.active === 'false'
+          ? false
+          : undefined;
 
-    const templates = await documentAnalyzerService.getExtractionTemplates(configId, {
-      documentType,
-      isActive,
-    });
+    const templates = await documentAnalyzerService.getExtractionTemplates(
+      configId,
+      {
+        documentType,
+        isActive,
+      },
+    );
 
     res.json({ templates });
   },
@@ -583,20 +653,27 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = extractionTemplateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const template = await documentAnalyzerService.createExtractionTemplate(configId, {
-      ...parsed.data,
-      extractionRules: parsed.data.extractionRules as Prisma.InputJsonValue,
-    });
+    const template = await documentAnalyzerService.createExtractionTemplate(
+      configId,
+      {
+        ...parsed.data,
+        extractionRules: parsed.data.extractionRules as Prisma.InputJsonValue,
+      },
+    );
     res.status(201).json({ template });
   },
 );
@@ -628,20 +705,27 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = extractionTemplateSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const template = await documentAnalyzerService.updateExtractionTemplate(id, {
-      ...parsed.data,
-      extractionRules: parsed.data.extractionRules as Prisma.InputJsonValue,
-    });
+    const template = await documentAnalyzerService.updateExtractionTemplate(
+      id,
+      {
+        ...parsed.data,
+        extractionRules: parsed.data.extractionRules as Prisma.InputJsonValue,
+      },
+    );
     res.json({ template });
   },
 );
@@ -673,7 +757,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -713,13 +799,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = batchJobSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -758,7 +848,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -767,7 +859,13 @@ router.get(
     const offset = Number(req.query.offset) || 0;
 
     const jobs = await documentAnalyzerService.getBatchJobs(configId, {
-      status: status as 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'NEEDS_REVIEW' | undefined,
+      status: status as
+        | 'PENDING'
+        | 'PROCESSING'
+        | 'COMPLETED'
+        | 'FAILED'
+        | 'NEEDS_REVIEW'
+        | undefined,
       limit,
       offset,
     });
@@ -803,7 +901,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 

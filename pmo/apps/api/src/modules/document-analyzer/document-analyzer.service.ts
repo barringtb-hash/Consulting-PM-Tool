@@ -43,8 +43,14 @@ interface DocumentUploadInput {
 }
 
 interface ExtractionResult {
-  fields: Record<string, { value: string; confidence: number; location?: string }>;
-  entities: Record<string, Array<{ value: string; confidence: number; location?: string }>>;
+  fields: Record<
+    string,
+    { value: string; confidence: number; location?: string }
+  >;
+  entities: Record<
+    string,
+    Array<{ value: string; confidence: number; location?: string }>
+  >;
   documentType?: string;
   documentTypeConfidence?: number;
 }
@@ -72,7 +78,9 @@ export async function getDocumentAnalyzerConfig(clientId: number) {
   });
 }
 
-export async function listDocumentAnalyzerConfigs(filters?: { clientId?: number }) {
+export async function listDocumentAnalyzerConfigs(filters?: {
+  clientId?: number;
+}) {
   return prisma.documentAnalyzerConfig.findMany({
     where: filters?.clientId ? { clientId: filters.clientId } : undefined,
     include: {
@@ -595,7 +603,8 @@ async function processBatchJob(jobId: number, documentIds: number[]) {
     data: {
       status: failedCount > 0 && successCount === 0 ? 'FAILED' : 'COMPLETED',
       completedAt: new Date(),
-      errorLog: errorLog.length > 0 ? (errorLog as Prisma.InputJsonValue) : undefined,
+      errorLog:
+        errorLog.length > 0 ? (errorLog as Prisma.InputJsonValue) : undefined,
     },
   });
 }
@@ -655,12 +664,15 @@ export async function compareDocumentVersions(
     throw new Error('One or both documents not found');
   }
 
-  const currentFields = (current.extractedFields as Record<string, { value: string }>) || {};
-  const previousFields = (previous.extractedFields as Record<string, { value: string }>) || {};
+  const currentFields =
+    (current.extractedFields as Record<string, { value: string }>) || {};
+  const previousFields =
+    (previous.extractedFields as Record<string, { value: string }>) || {};
 
   const added: string[] = [];
   const removed: string[] = [];
-  const changed: Array<{ field: string; oldValue: string; newValue: string }> = [];
+  const changed: Array<{ field: string; oldValue: string; newValue: string }> =
+    [];
 
   // Find added and changed fields
   for (const [key, value] of Object.entries(currentFields)) {

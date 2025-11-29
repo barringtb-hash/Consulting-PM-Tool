@@ -23,11 +23,13 @@ const router = Router();
 // ============================================================================
 
 const leadScoringConfigSchema = z.object({
-  scoringWeights: z.object({
-    demographic: z.record(z.string(), z.number()).optional(),
-    behavioral: z.record(z.string(), z.number()).optional(),
-    engagement: z.record(z.string(), z.number()).optional(),
-  }).optional(),
+  scoringWeights: z
+    .object({
+      demographic: z.record(z.string(), z.number()).optional(),
+      behavioral: z.record(z.string(), z.number()).optional(),
+      engagement: z.record(z.string(), z.number()).optional(),
+    })
+    .optional(),
   hotThreshold: z.number().int().min(0).max(100).optional(),
   warmThreshold: z.number().int().min(0).max(100).optional(),
   coldThreshold: z.number().int().min(0).max(100).optional(),
@@ -68,18 +70,29 @@ const activitySchema = z.object({
 const nurtureSequenceSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
-  triggerConditions: z.object({
-    scoreLevel: z.enum(['HOT', 'WARM', 'COLD', 'DEAD']).optional(),
-    tags: z.array(z.string()).optional(),
-    segments: z.array(z.string()).optional(),
-  }).optional(),
-  steps: z.array(z.object({
-    stepId: z.string(),
-    type: z.enum(['EMAIL', 'SMS', 'WAIT', 'CONDITION', 'TASK', 'NOTIFICATION']),
-    config: z.record(z.string(), z.unknown()).optional(),
-    delayDays: z.number().int().min(0).optional(),
-    delayHours: z.number().int().min(0).max(23).optional(),
-  })),
+  triggerConditions: z
+    .object({
+      scoreLevel: z.enum(['HOT', 'WARM', 'COLD', 'DEAD']).optional(),
+      tags: z.array(z.string()).optional(),
+      segments: z.array(z.string()).optional(),
+    })
+    .optional(),
+  steps: z.array(
+    z.object({
+      stepId: z.string(),
+      type: z.enum([
+        'EMAIL',
+        'SMS',
+        'WAIT',
+        'CONDITION',
+        'TASK',
+        'NOTIFICATION',
+      ]),
+      config: z.record(z.string(), z.unknown()).optional(),
+      delayDays: z.number().int().min(0).optional(),
+      delayHours: z.number().int().min(0).max(23).optional(),
+    }),
+  ),
   allowReEnrollment: z.boolean().optional(),
   reEnrollmentDays: z.number().int().min(1).optional(),
   exitOnConversion: z.boolean().optional(),
@@ -115,12 +128,16 @@ router.get(
     if (clientId) {
       const canAccess = await hasClientAccess(req.userId, clientId);
       if (!canAccess) {
-        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        res
+          .status(403)
+          .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
     }
 
-    const configs = await leadScoringService.listLeadScoringConfigs({ clientId });
+    const configs = await leadScoringService.listLeadScoringConfigs({
+      clientId,
+    });
     res.json({ configs });
   },
 );
@@ -147,7 +164,9 @@ router.get(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -178,27 +197,37 @@ router.post(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = leadScoringConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     try {
-      const config = await leadScoringService.createLeadScoringConfig(clientId, {
-        ...parsed.data,
-        scoringWeights: parsed.data.scoringWeights as Prisma.InputJsonValue,
-        crmCredentials: parsed.data.crmCredentials as Prisma.InputJsonValue,
-        emailCredentials: parsed.data.emailCredentials as Prisma.InputJsonValue,
-      });
+      const config = await leadScoringService.createLeadScoringConfig(
+        clientId,
+        {
+          ...parsed.data,
+          scoringWeights: parsed.data.scoringWeights as Prisma.InputJsonValue,
+          crmCredentials: parsed.data.crmCredentials as Prisma.InputJsonValue,
+          emailCredentials: parsed.data
+            .emailCredentials as Prisma.InputJsonValue,
+        },
+      );
       res.status(201).json({ config });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
-        res.status(409).json({ error: 'Config already exists for this client' });
+        res
+          .status(409)
+          .json({ error: 'Config already exists for this client' });
         return;
       }
       throw error;
@@ -228,13 +257,17 @@ router.patch(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = leadScoringConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -279,13 +312,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = leadSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -333,19 +370,30 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const scoreLevel = req.query.scoreLevel as string | undefined;
-    const minScore = req.query.minScore ? Number(req.query.minScore) : undefined;
-    const maxScore = req.query.maxScore ? Number(req.query.maxScore) : undefined;
-    const tags = req.query.tags ? (req.query.tags as string).split(',') : undefined;
-    const segments = req.query.segments ? (req.query.segments as string).split(',') : undefined;
+    const minScore = req.query.minScore
+      ? Number(req.query.minScore)
+      : undefined;
+    const maxScore = req.query.maxScore
+      ? Number(req.query.maxScore)
+      : undefined;
+    const tags = req.query.tags
+      ? (req.query.tags as string).split(',')
+      : undefined;
+    const segments = req.query.segments
+      ? (req.query.segments as string).split(',')
+      : undefined;
     const pipelineStage = req.query.pipelineStage as string | undefined;
     const limit = Number(req.query.limit) || 50;
     const offset = Number(req.query.offset) || 0;
-    const sortBy = (req.query.sortBy as 'score' | 'lastEngagement' | 'created') || 'score';
+    const sortBy =
+      (req.query.sortBy as 'score' | 'lastEngagement' | 'created') || 'score';
     const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
 
     const leads = await leadScoringService.getLeads(configId, {
@@ -392,7 +440,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -433,16 +483,23 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const parsed = leadSchema.partial().extend({
-      assignedTo: z.number().int().optional(),
-    }).safeParse(req.body);
+    const parsed = leadSchema
+      .partial()
+      .extend({
+        assignedTo: z.number().int().optional(),
+      })
+      .safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -478,7 +535,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -514,7 +573,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -558,7 +619,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -596,14 +659,19 @@ router.post(
 
     const parsed = activitySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     // If email is provided but not leadId, try to find the lead
     let leadId = parsed.data.leadId;
     if (!leadId && parsed.data.email) {
-      const lead = await leadScoringService.getLeadByEmail(configId, parsed.data.email);
+      const lead = await leadScoringService.getLeadByEmail(
+        configId,
+        parsed.data.email,
+      );
       leadId = lead?.id;
     }
 
@@ -653,14 +721,20 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const leadId = req.query.leadId ? Number(req.query.leadId) : undefined;
     const activityType = req.query.type as string | undefined;
-    const startDate = req.query.start ? new Date(req.query.start as string) : undefined;
-    const endDate = req.query.end ? new Date(req.query.end as string) : undefined;
+    const startDate = req.query.start
+      ? new Date(req.query.start as string)
+      : undefined;
+    const endDate = req.query.end
+      ? new Date(req.query.end as string)
+      : undefined;
     const limit = Number(req.query.limit) || 100;
     const offset = Number(req.query.offset) || 0;
 
@@ -708,13 +782,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = nurtureSequenceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -754,13 +832,22 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const isActive = req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined;
+    const isActive =
+      req.query.active === 'true'
+        ? true
+        : req.query.active === 'false'
+          ? false
+          : undefined;
 
-    const sequences = await leadScoringService.getNurtureSequences(configId, { isActive });
+    const sequences = await leadScoringService.getNurtureSequences(configId, {
+      isActive,
+    });
     res.json({ sequences });
   },
 );
@@ -792,7 +879,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -833,16 +922,23 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const parsed = nurtureSequenceSchema.partial().extend({
-      isActive: z.boolean().optional(),
-    }).safeParse(req.body);
+    const parsed = nurtureSequenceSchema
+      .partial()
+      .extend({
+        isActive: z.boolean().optional(),
+      })
+      .safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -882,7 +978,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -898,7 +996,10 @@ router.delete(
 router.post(
   '/lead-scoring/sequences/:id/enroll/:leadId',
   requireAuth,
-  async (req: AuthenticatedRequest<{ id: string; leadId: string }>, res: Response) => {
+  async (
+    req: AuthenticatedRequest<{ id: string; leadId: string }>,
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -920,12 +1021,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     try {
-      const result = await leadScoringService.enrollLeadInSequence(sequenceId, leadId);
+      const result = await leadScoringService.enrollLeadInSequence(
+        sequenceId,
+        leadId,
+      );
       res.status(201).json(result);
     } catch (error) {
       if ((error as Error).message === 'Sequence not found') {
@@ -948,7 +1054,10 @@ router.post(
 router.post(
   '/lead-scoring/sequences/:id/unenroll/:leadId',
   requireAuth,
-  async (req: AuthenticatedRequest<{ id: string; leadId: string }>, res: Response) => {
+  async (
+    req: AuthenticatedRequest<{ id: string; leadId: string }>,
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -970,7 +1079,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -1016,7 +1127,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -1063,7 +1176,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 

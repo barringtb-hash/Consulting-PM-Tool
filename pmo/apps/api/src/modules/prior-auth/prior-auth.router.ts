@@ -27,12 +27,14 @@ const router = Router();
 const priorAuthConfigSchema = z.object({
   practiceName: z.string().max(200).optional(),
   practiceNPI: z.string().max(20).optional(),
-  practiceAddress: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zip: z.string().optional(),
-  }).optional(),
+  practiceAddress: z
+    .object({
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      zip: z.string().optional(),
+    })
+    .optional(),
   payerConfigurations: z.record(z.string(), z.unknown()).optional(),
   ehrSystem: z.string().optional(),
   ehrCredentials: z.record(z.string(), z.unknown()).optional(),
@@ -66,25 +68,39 @@ const paRequestSchema = z.object({
   diagnosisCodes: z.array(z.string()).optional(),
   description: z.string().max(5000).optional(),
   clinicalNotes: z.string().max(10000).optional(),
-  serviceStartDate: z.string().transform((s) => new Date(s)).optional(),
-  serviceEndDate: z.string().transform((s) => new Date(s)).optional(),
+  serviceStartDate: z
+    .string()
+    .transform((s) => new Date(s))
+    .optional(),
+  serviceEndDate: z
+    .string()
+    .transform((s) => new Date(s))
+    .optional(),
   urgency: z.enum(['ROUTINE', 'URGENT', 'EMERGENT']).optional(),
-  supportingDocuments: z.array(z.object({
-    type: z.string(),
-    url: z.string(),
-    uploadedAt: z.string().optional(),
-  })).optional(),
+  supportingDocuments: z
+    .array(
+      z.object({
+        type: z.string(),
+        url: z.string(),
+        uploadedAt: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 const appealSchema = z.object({
   appealLevel: z.number().int().min(1).max(5).optional(),
   appealType: z.string().optional(),
   appealRationale: z.string().min(1).max(10000),
-  supportingEvidence: z.array(z.object({
-    type: z.string(),
-    description: z.string(),
-    url: z.string().optional(),
-  })).optional(),
+  supportingEvidence: z
+    .array(
+      z.object({
+        type: z.string(),
+        description: z.string(),
+        url: z.string().optional(),
+      }),
+    )
+    .optional(),
   peerToPeerNotes: z.string().max(5000).optional(),
 });
 
@@ -105,10 +121,14 @@ const payerRuleSchema = z.object({
   faxNumber: z.string().optional(),
   standardTurnaround: z.number().int().optional(),
   urgentTurnaround: z.number().int().optional(),
-  successTips: z.array(z.object({
-    tip: z.string(),
-    importance: z.enum(['high', 'medium', 'low']).optional(),
-  })).optional(),
+  successTips: z
+    .array(
+      z.object({
+        tip: z.string(),
+        importance: z.enum(['high', 'medium', 'low']).optional(),
+      }),
+    )
+    .optional(),
 });
 
 const paTemplateSchema = z.object({
@@ -118,15 +138,23 @@ const paTemplateSchema = z.object({
   procedureCodes: z.array(z.string()).optional(),
   clinicalTemplate: z.string().max(10000).optional(),
   rationaleTemplate: z.string().max(5000).optional(),
-  requiredDocs: z.array(z.object({
-    docType: z.string(),
-    description: z.string(),
-    required: z.boolean().optional(),
-  })).optional(),
-  commonDiagnoses: z.array(z.object({
-    code: z.string(),
-    description: z.string(),
-  })).optional(),
+  requiredDocs: z
+    .array(
+      z.object({
+        docType: z.string(),
+        description: z.string(),
+        required: z.boolean().optional(),
+      }),
+    )
+    .optional(),
+  commonDiagnoses: z
+    .array(
+      z.object({
+        code: z.string(),
+        description: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 // ============================================================================
@@ -158,7 +186,9 @@ router.get(
     if (clientId) {
       const canAccess = await hasClientAccess(req.userId, clientId);
       if (!canAccess) {
-        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        res
+          .status(403)
+          .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
     }
@@ -190,7 +220,9 @@ router.get(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -221,13 +253,17 @@ router.post(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = priorAuthConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -235,16 +271,21 @@ router.post(
       const config = await priorAuthService.createPriorAuthConfig(clientId, {
         ...parsed.data,
         practiceAddress: parsed.data.practiceAddress as Prisma.InputJsonValue,
-        payerConfigurations: parsed.data.payerConfigurations as Prisma.InputJsonValue,
+        payerConfigurations: parsed.data
+          .payerConfigurations as Prisma.InputJsonValue,
         ehrCredentials: parsed.data.ehrCredentials as Prisma.InputJsonValue,
-        availityCredentials: parsed.data.availityCredentials as Prisma.InputJsonValue,
-        changeHealthCredentials: parsed.data.changeHealthCredentials as Prisma.InputJsonValue,
+        availityCredentials: parsed.data
+          .availityCredentials as Prisma.InputJsonValue,
+        changeHealthCredentials: parsed.data
+          .changeHealthCredentials as Prisma.InputJsonValue,
         faxCredentials: parsed.data.faxCredentials as Prisma.InputJsonValue,
       });
       res.status(201).json({ config });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
-        res.status(409).json({ error: 'Config already exists for this client' });
+        res
+          .status(409)
+          .json({ error: 'Config already exists for this client' });
         return;
       }
       throw error;
@@ -274,23 +315,30 @@ router.patch(
     // Authorization check
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = priorAuthConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     const config = await priorAuthService.updatePriorAuthConfig(clientId, {
       ...parsed.data,
       practiceAddress: parsed.data.practiceAddress as Prisma.InputJsonValue,
-      payerConfigurations: parsed.data.payerConfigurations as Prisma.InputJsonValue,
+      payerConfigurations: parsed.data
+        .payerConfigurations as Prisma.InputJsonValue,
       ehrCredentials: parsed.data.ehrCredentials as Prisma.InputJsonValue,
-      availityCredentials: parsed.data.availityCredentials as Prisma.InputJsonValue,
-      changeHealthCredentials: parsed.data.changeHealthCredentials as Prisma.InputJsonValue,
+      availityCredentials: parsed.data
+        .availityCredentials as Prisma.InputJsonValue,
+      changeHealthCredentials: parsed.data
+        .changeHealthCredentials as Prisma.InputJsonValue,
       faxCredentials: parsed.data.faxCredentials as Prisma.InputJsonValue,
     });
     res.json({ config });
@@ -328,13 +376,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = paRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -343,7 +395,8 @@ router.post(
         configId,
         {
           ...parsed.data,
-          supportingDocuments: parsed.data.supportingDocuments as Prisma.InputJsonValue,
+          supportingDocuments: parsed.data
+            .supportingDocuments as Prisma.InputJsonValue,
         },
         req.userId,
       );
@@ -385,21 +438,38 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const status = req.query.status as string | undefined;
     const payerId = req.query.payerId as string | undefined;
     const urgency = req.query.urgency as string | undefined;
-    const assignedTo = req.query.assignedTo ? Number(req.query.assignedTo) : undefined;
-    const startDate = req.query.start ? new Date(req.query.start as string) : undefined;
-    const endDate = req.query.end ? new Date(req.query.end as string) : undefined;
+    const assignedTo = req.query.assignedTo
+      ? Number(req.query.assignedTo)
+      : undefined;
+    const startDate = req.query.start
+      ? new Date(req.query.start as string)
+      : undefined;
+    const endDate = req.query.end
+      ? new Date(req.query.end as string)
+      : undefined;
     const limit = Number(req.query.limit) || 50;
     const offset = Number(req.query.offset) || 0;
 
     const requests = await priorAuthService.getPARequests(configId, {
-      status: status as 'DRAFT' | 'SUBMITTED' | 'PENDING' | 'APPROVED' | 'DENIED' | 'PARTIAL_APPROVAL' | 'WITHDRAWN' | 'EXPIRED' | undefined,
+      status: status as
+        | 'DRAFT'
+        | 'SUBMITTED'
+        | 'PENDING'
+        | 'APPROVED'
+        | 'DENIED'
+        | 'PARTIAL_APPROVAL'
+        | 'WITHDRAWN'
+        | 'EXPIRED'
+        | undefined,
       payerId,
       urgency: urgency as 'ROUTINE' | 'URGENT' | 'EMERGENT' | undefined,
       assignedTo,
@@ -440,7 +510,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -481,17 +553,24 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const parsed = paRequestSchema.partial().extend({
-      status: z.enum(['DRAFT', 'WITHDRAWN']).optional(),
-      assignedTo: z.number().int().optional(),
-    }).safeParse(req.body);
+    const parsed = paRequestSchema
+      .partial()
+      .extend({
+        status: z.enum(['DRAFT', 'WITHDRAWN']).optional(),
+        assignedTo: z.number().int().optional(),
+      })
+      .safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -500,7 +579,8 @@ router.patch(
         id,
         {
           ...parsed.data,
-          supportingDocuments: parsed.data.supportingDocuments as Prisma.InputJsonValue,
+          supportingDocuments: parsed.data
+            .supportingDocuments as Prisma.InputJsonValue,
         },
         req.userId,
       );
@@ -542,7 +622,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -578,7 +660,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -626,7 +710,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -674,13 +760,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = appealSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -689,7 +779,8 @@ router.post(
         requestId,
         {
           ...parsed.data,
-          supportingEvidence: parsed.data.supportingEvidence as Prisma.InputJsonValue,
+          supportingEvidence: parsed.data
+            .supportingEvidence as Prisma.InputJsonValue,
         },
         req.userId,
       );
@@ -735,7 +826,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -746,7 +839,11 @@ router.post(
     }
 
     try {
-      const appeal = await priorAuthService.submitAppeal(appealId, submissionMethod, req.userId);
+      const appeal = await priorAuthService.submitAppeal(
+        appealId,
+        submissionMethod,
+        req.userId,
+      );
       res.json({ appeal });
     } catch (error) {
       if ((error as Error).message === 'Appeal not found') {
@@ -785,7 +882,9 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -831,7 +930,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -879,14 +980,20 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const payerId = req.query.payerId as string | undefined;
     const serviceType = req.query.serviceType as string | undefined;
 
-    const rules = await priorAuthService.getPayerRules(configId, payerId, serviceType);
+    const rules = await priorAuthService.getPayerRules(
+      configId,
+      payerId,
+      serviceType,
+    );
     res.json({ rules: Array.isArray(rules) ? rules : [rules].filter(Boolean) });
   },
 );
@@ -918,13 +1025,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = payerRuleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -964,16 +1075,23 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const parsed = payerRuleSchema.partial().extend({
-      isActive: z.boolean().optional(),
-    }).safeParse(req.body);
+    const parsed = payerRuleSchema
+      .partial()
+      .extend({
+        isActive: z.boolean().optional(),
+      })
+      .safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -1017,13 +1135,18 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const serviceType = req.query.serviceType as string | undefined;
 
-    const templates = await priorAuthService.getPATemplates(configId, serviceType);
+    const templates = await priorAuthService.getPATemplates(
+      configId,
+      serviceType,
+    );
     res.json({ templates });
   },
 );
@@ -1055,13 +1178,17 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
     const parsed = paTemplateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -1101,16 +1228,23 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
-    const parsed = paTemplateSchema.partial().extend({
-      isActive: z.boolean().optional(),
-    }).safeParse(req.body);
+    const parsed = paTemplateSchema
+      .partial()
+      .extend({
+        isActive: z.boolean().optional(),
+      })
+      .safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -1154,7 +1288,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 

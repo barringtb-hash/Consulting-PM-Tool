@@ -9,7 +9,7 @@ import {
  */
 export const getPublishingConnections = async (
   clientId: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _ownerId: number,
 ) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
@@ -103,7 +103,7 @@ export const updatePublishingConnection = async (
  */
 export const deletePublishingConnection = async (
   id: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _ownerId: number,
 ) => {
   const existing = await prisma.publishingConnection.findUnique({

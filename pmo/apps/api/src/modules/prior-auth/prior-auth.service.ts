@@ -372,7 +372,10 @@ export async function submitPARequest(
           action: 'submitted',
           userId,
           timestamp: new Date().toISOString(),
-          details: { externalRef, method: payerRules?.preferredMethod || 'portal' },
+          details: {
+            externalRef,
+            method: payerRules?.preferredMethod || 'portal',
+          },
         },
       ] as Prisma.InputJsonValue,
       lastUpdatedBy: userId,
@@ -380,7 +383,13 @@ export async function submitPARequest(
   });
 
   // Record status change
-  await recordStatusChange(id, 'DRAFT', 'SUBMITTED', userId, 'Initial submission');
+  await recordStatusChange(
+    id,
+    'DRAFT',
+    'SUBMITTED',
+    userId,
+    'Initial submission',
+  );
 
   // Send notification if enabled
   if (request.config.notifyOnSubmission) {
@@ -502,12 +511,16 @@ export async function checkPAStatus(
 
     // Send notification if enabled
     if (request.config.notifyOnStatusChange) {
-      await sendNotification(request.config, `PA Status: ${statusResponse.status}`, {
-        requestNumber: request.requestNumber,
-        patientName: request.patientName,
-        previousStatus,
-        newStatus: statusResponse.status,
-      });
+      await sendNotification(
+        request.config,
+        `PA Status: ${statusResponse.status}`,
+        {
+          requestNumber: request.requestNumber,
+          patientName: request.patientName,
+          previousStatus,
+          newStatus: statusResponse.status,
+        },
+      );
     }
   }
 
@@ -612,7 +625,7 @@ export async function createAppeal(
   }
 
   // Determine appeal level
-  const appealLevel = input.appealLevel || (request.appeals.length + 1);
+  const appealLevel = input.appealLevel || request.appeals.length + 1;
 
   const appeal = await prisma.pAAppeal.create({
     data: {
@@ -651,7 +664,7 @@ export async function createAppeal(
 export async function submitAppeal(
   appealId: number,
   submissionMethod: string,
-  userId?: number,
+  _userId?: number,
 ) {
   const appeal = await prisma.pAAppeal.findUnique({
     where: { id: appealId },
@@ -676,7 +689,7 @@ export async function updateAppealStatus(
   appealId: number,
   status: AppealStatus,
   decisionNotes?: string,
-  userId?: number,
+  _userId?: number,
 ) {
   const appeal = await prisma.pAAppeal.update({
     where: { id: appealId },
@@ -962,7 +975,9 @@ export async function getPAAnalytics(
 
   // Calculate metrics
   const totalRequests = requests.length;
-  const approvedRequests = requests.filter((r) => r.status === 'APPROVED').length;
+  const approvedRequests = requests.filter(
+    (r) => r.status === 'APPROVED',
+  ).length;
   const deniedRequests = requests.filter((r) => r.status === 'DENIED').length;
   const pendingRequests = requests.filter(
     (r) => r.status === 'PENDING' || r.status === 'SUBMITTED',
@@ -970,7 +985,10 @@ export async function getPAAnalytics(
 
   const approvalRate =
     totalRequests > 0
-      ? ((approvedRequests / (approvedRequests + deniedRequests)) * 100).toFixed(1)
+      ? (
+          (approvedRequests / (approvedRequests + deniedRequests)) *
+          100
+        ).toFixed(1)
       : 0;
 
   // Average turnaround for decided requests
@@ -984,7 +1002,8 @@ export async function getPAAnalytics(
   // Denial reason breakdown
   const denialReasons: Record<string, number> = {};
   for (const req of requests.filter((r) => r.denialReason)) {
-    denialReasons[req.denialReason!] = (denialReasons[req.denialReason!] || 0) + 1;
+    denialReasons[req.denialReason!] =
+      (denialReasons[req.denialReason!] || 0) + 1;
   }
 
   // Payer breakdown
