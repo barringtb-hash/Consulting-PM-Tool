@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 
 import {
   AiMaturity,
+  BrandAssetType,
   CompanySize,
   AssetType,
   MilestoneStatus,
@@ -109,6 +110,15 @@ const clients = [
         notes: 'Security and access point; schedules integration reviews.',
       },
     ],
+  },
+  {
+    name: 'Launchpad Consulting Partners',
+    industry: 'Consulting',
+    companySize: CompanySize.SMALL,
+    timezone: 'America/New_York',
+    aiMaturity: AiMaturity.HIGH,
+    notes: 'AI consulting firm specializing in strategy and implementation.',
+    contacts: [],
   },
 ];
 
@@ -361,6 +371,124 @@ const aiAssetSeeds = [
     },
     tags: ['evaluation', 'routing', 'healthcare'],
     createdByEmail: 'marco.silva@pmo.test',
+  },
+];
+
+const brandProfileSeeds = [
+  {
+    clientName: 'Launchpad Consulting Partners',
+    name: 'Launchpad Consulting Partners',
+    description:
+      'A rising sun/sunrise icon with radiating rays above a horizon line, paired with "LAUNCHPAD" in bold text and "CONSULTING PARTNERS" as a subtitle with letter spacing.',
+    primaryColor: '#9F1239', // Rose - used for main headings and "LAUNCHPAD" text
+    secondaryColor: '#F97316', // Orange - central color in the sunrise gradient
+    accentColor: '#FCD34D', // Yellow - sun rays/accents
+    fonts: {
+      primary: {
+        name: 'Primary Font',
+        usage: 'LAUNCHPAD heading text - bold weight',
+      },
+      secondary: {
+        name: 'Secondary Font',
+        usage: 'CONSULTING PARTNERS subtitle - letter spacing applied',
+      },
+    },
+    toneVoiceGuidelines:
+      'Professional, innovative, and approachable. Emphasizes partnership and launching successful initiatives.',
+    valueProposition:
+      'Expert consulting partners helping organizations launch and scale their strategic initiatives.',
+    targetAudience:
+      'Organizations seeking strategic consulting for digital transformation and business growth.',
+    keyMessages: [
+      'Launching success together',
+      'Strategic partnerships for growth',
+      'From vision to reality',
+    ],
+    brandColors: {
+      gradient: {
+        top: { name: 'Red', hex: '#EF4444', usage: 'Gradient top (sunrise)' },
+        middle: {
+          name: 'Orange',
+          hex: '#F97316',
+          usage: 'Gradient middle (sunrise)',
+        },
+        bottom: {
+          name: 'Amber',
+          hex: '#F59E0B',
+          usage: 'Gradient bottom (sunrise)',
+        },
+      },
+      accents: {
+        yellow: { name: 'Yellow', hex: '#FCD34D', usage: 'Sun rays/accents' },
+      },
+      text: {
+        primary: {
+          name: 'Rose',
+          hex: '#9F1239',
+          usage: 'Primary text & horizon line (light backgrounds)',
+        },
+        primaryDark: {
+          name: 'Pink',
+          hex: '#FDA4AF',
+          usage: 'Horizon line (dark backgrounds)',
+        },
+        secondary: {
+          name: 'Slate',
+          hex: '#64748B',
+          usage: 'Subtitle/secondary text (light backgrounds)',
+        },
+        secondaryDark: {
+          name: 'Light Slate',
+          hex: '#CBD5E1',
+          usage: 'Subtitle/secondary text (dark backgrounds)',
+        },
+      },
+    },
+    assets: [
+      {
+        name: 'Primary Logo (Light Background)',
+        type: BrandAssetType.LOGO,
+        description:
+          'Primary horizontal logo for light backgrounds - full color sunrise with LAUNCHPAD text',
+        tags: ['primary', 'horizontal', 'light-bg'],
+      },
+      {
+        name: 'Primary Logo (Dark Background)',
+        type: BrandAssetType.LOGO,
+        description:
+          'Primary horizontal logo for dark backgrounds - adapted colors for dark mode',
+        tags: ['primary', 'horizontal', 'dark-bg'],
+      },
+      {
+        name: 'Stacked/Vertical Logo',
+        type: BrandAssetType.LOGO,
+        description:
+          'Stacked/vertical version of the logo for square format usage',
+        tags: ['stacked', 'vertical', 'square'],
+      },
+      {
+        name: 'Icon Only (Light Background)',
+        type: BrandAssetType.LOGO,
+        description:
+          'Sunrise icon only for light backgrounds - no text, suitable for favicons and app icons',
+        tags: ['icon', 'light-bg', 'favicon'],
+      },
+      {
+        name: 'Icon Only (Dark Background)',
+        type: BrandAssetType.LOGO,
+        description:
+          'Sunrise icon only for dark backgrounds - adapted colors for dark mode',
+        tags: ['icon', 'dark-bg', 'favicon'],
+      },
+      {
+        name: 'Favicon Pack',
+        type: BrandAssetType.IMAGE,
+        description:
+          'Complete favicon pack with sizes: 16px, 32px, 48px, 64px, 128px, 256px, 512px',
+        tags: ['favicon', 'icon', 'web', 'multiple-sizes'],
+      },
+    ],
+    fileFormats: ['SVG', 'PNG', 'PDF'],
   },
 ];
 
@@ -744,6 +872,94 @@ async function main() {
           notes: assetSeed.projectNotes,
         },
       });
+    }
+  }
+
+  // Seed brand profiles and assets
+  for (const brandProfileSeed of brandProfileSeeds) {
+    const clientId = clientMap.get(brandProfileSeed.clientName);
+    if (!clientId) {
+      throw new Error(
+        `Client ${brandProfileSeed.clientName} not found for brand profile seeding.`,
+      );
+    }
+
+    // Store the extended brand colors in the fonts JSON field as additional metadata
+    const extendedFonts = {
+      ...brandProfileSeed.fonts,
+      brandColors: brandProfileSeed.brandColors,
+      fileFormats: brandProfileSeed.fileFormats,
+    };
+
+    // Upsert brand profile
+    const existingBrandProfile = await prisma.brandProfile.findUnique({
+      where: { clientId },
+    });
+
+    const brandProfile = existingBrandProfile
+      ? await prisma.brandProfile.update({
+          where: { id: existingBrandProfile.id },
+          data: {
+            name: brandProfileSeed.name,
+            description: brandProfileSeed.description,
+            primaryColor: brandProfileSeed.primaryColor,
+            secondaryColor: brandProfileSeed.secondaryColor,
+            accentColor: brandProfileSeed.accentColor,
+            fonts: extendedFonts,
+            toneVoiceGuidelines: brandProfileSeed.toneVoiceGuidelines,
+            valueProposition: brandProfileSeed.valueProposition,
+            targetAudience: brandProfileSeed.targetAudience,
+            keyMessages: brandProfileSeed.keyMessages,
+            archived: false,
+          },
+        })
+      : await prisma.brandProfile.create({
+          data: {
+            clientId,
+            name: brandProfileSeed.name,
+            description: brandProfileSeed.description,
+            primaryColor: brandProfileSeed.primaryColor,
+            secondaryColor: brandProfileSeed.secondaryColor,
+            accentColor: brandProfileSeed.accentColor,
+            fonts: extendedFonts,
+            toneVoiceGuidelines: brandProfileSeed.toneVoiceGuidelines,
+            valueProposition: brandProfileSeed.valueProposition,
+            targetAudience: brandProfileSeed.targetAudience,
+            keyMessages: brandProfileSeed.keyMessages,
+          },
+        });
+
+    // Seed brand assets
+    for (const assetSeed of brandProfileSeed.assets) {
+      const existingAsset = await prisma.brandAsset.findFirst({
+        where: {
+          brandProfileId: brandProfile.id,
+          name: assetSeed.name,
+        },
+      });
+
+      if (existingAsset) {
+        await prisma.brandAsset.update({
+          where: { id: existingAsset.id },
+          data: {
+            type: assetSeed.type,
+            description: assetSeed.description,
+            tags: assetSeed.tags,
+            archived: false,
+          },
+        });
+      } else {
+        await prisma.brandAsset.create({
+          data: {
+            brandProfileId: brandProfile.id,
+            name: assetSeed.name,
+            type: assetSeed.type,
+            url: '', // Placeholder - URL to be added when assets are uploaded
+            description: assetSeed.description,
+            tags: assetSeed.tags,
+          },
+        });
+      }
     }
   }
 }
