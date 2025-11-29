@@ -42,6 +42,14 @@ const AdminModulesPage = lazy(() =>
   })),
 );
 
+// Phase 1 AI Tools pages
+const ChatbotPage = lazy(() => import('./pages/ai-tools/ChatbotPage'));
+const ProductDescriptionsPage = lazy(
+  () => import('./pages/ai-tools/ProductDescriptionsPage'),
+);
+const SchedulingPage = lazy(() => import('./pages/ai-tools/SchedulingPage'));
+const IntakePage = lazy(() => import('./pages/ai-tools/IntakePage'));
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -181,6 +189,54 @@ function App(): JSX.Element {
                   }
                 />
               </>
+            )}
+
+            {/* AI Chatbot module (Tool 1.1) */}
+            {isModuleEnabled('chatbot') && (
+              <Route
+                path="/ai-tools/chatbot"
+                element={
+                  <LazyPage>
+                    <ChatbotPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Product Descriptions module (Tool 1.2) */}
+            {isModuleEnabled('productDescriptions') && (
+              <Route
+                path="/ai-tools/product-descriptions"
+                element={
+                  <LazyPage>
+                    <ProductDescriptionsPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* AI Scheduling module (Tool 1.3) */}
+            {isModuleEnabled('scheduling') && (
+              <Route
+                path="/ai-tools/scheduling"
+                element={
+                  <LazyPage>
+                    <SchedulingPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Client Intake module (Tool 1.4) */}
+            {isModuleEnabled('intake') && (
+              <Route
+                path="/ai-tools/intake"
+                element={
+                  <LazyPage>
+                    <IntakePage />
+                  </LazyPage>
+                }
+              />
             )}
           </Route>
         </Route>

@@ -23,7 +23,12 @@ export type ModuleId =
   | 'marketing'
   | 'leads'
   | 'pipeline'
-  | 'admin';
+  | 'admin'
+  // Phase 1 AI Tool modules
+  | 'chatbot'
+  | 'productDescriptions'
+  | 'scheduling'
+  | 'intake';
 
 /**
  * Navigation group identifiers
@@ -34,6 +39,7 @@ export type NavGroup =
   | 'projects'
   | 'marketing'
   | 'sales'
+  | 'aiTools'
   | 'admin';
 
 /**
@@ -172,7 +178,78 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'UserCog',
     isCore: false,
     apiPrefixes: ['/api/users', '/api/admin'],
-    description: 'User administration, module configuration, and access control',
+    description:
+      'User administration, module configuration, and access control',
+  },
+
+  // ============ PHASE 1 AI TOOL MODULES ============
+  chatbot: {
+    id: 'chatbot',
+    label: 'AI Chatbot',
+    navGroup: 'aiTools',
+    path: '/ai-tools/chatbot',
+    additionalPaths: [
+      '/ai-tools/chatbot/:configId',
+      '/ai-tools/chatbot/:configId/conversations',
+    ],
+    icon: 'MessageCircle',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/chatbot', '/api/chatbot'],
+    description:
+      'AI-powered customer service chatbot with knowledge base and analytics',
+  },
+  productDescriptions: {
+    id: 'productDescriptions',
+    label: 'Product Descriptions',
+    navGroup: 'aiTools',
+    path: '/ai-tools/product-descriptions',
+    additionalPaths: [
+      '/ai-tools/product-descriptions/:configId',
+      '/ai-tools/product-descriptions/:configId/products',
+    ],
+    icon: 'FileText',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: [
+      '/api/clients/:clientId/product-descriptions',
+      '/api/product-descriptions',
+    ],
+    description:
+      'AI-powered product description generator for multiple marketplaces',
+  },
+  scheduling: {
+    id: 'scheduling',
+    label: 'AI Scheduling',
+    navGroup: 'aiTools',
+    path: '/ai-tools/scheduling',
+    additionalPaths: [
+      '/ai-tools/scheduling/:configId',
+      '/ai-tools/scheduling/:configId/appointments',
+    ],
+    icon: 'Calendar',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/scheduling', '/api/scheduling'],
+    description:
+      'AI scheduling assistant with no-show prediction and automated reminders',
+  },
+  intake: {
+    id: 'intake',
+    label: 'Client Intake',
+    navGroup: 'aiTools',
+    path: '/ai-tools/intake',
+    additionalPaths: [
+      '/ai-tools/intake/:configId',
+      '/ai-tools/intake/:configId/forms',
+      '/intake/:formId',
+    ],
+    icon: 'ClipboardList',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/intake', '/api/intake'],
+    description:
+      'Automated client intake with smart forms, document collection, and compliance',
   },
 };
 
@@ -188,7 +265,8 @@ export const NAV_GROUP_CONFIG: Record<
   projects: { label: 'Projects', order: 3 },
   marketing: { label: 'Marketing', order: 4 },
   sales: { label: 'Sales', order: 5 },
-  admin: { label: 'Admin', order: 6 },
+  aiTools: { label: 'AI Tools', order: 6 },
+  admin: { label: 'Admin', order: 7 },
 };
 
 /**
@@ -204,6 +282,11 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'leads',
   'pipeline',
   'admin',
+  // Phase 1 AI Tools
+  'chatbot',
+  'productDescriptions',
+  'scheduling',
+  'intake',
 ];
 
 /**

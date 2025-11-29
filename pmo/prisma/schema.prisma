@@ -219,6 +219,12 @@ model Client {
   campaigns          Campaign[]
   brandProfile       BrandProfile?
   publishingConnections PublishingConnection[]
+
+  // Phase 1 AI Tools
+  chatbotConfig            ChatbotConfig?
+  productDescriptionConfig ProductDescriptionConfig?
+  schedulingConfig         SchedulingConfig?
+  intakeConfig             IntakeConfig?
 }
 
 model Contact {
@@ -617,4 +623,1142 @@ model TenantModuleConfig {
   @@unique([tenantId, moduleId])
   @@index([tenantId])
   @@index([moduleId, enabled])
+}
+
+// ============================================================================
+// PHASE 1 AI TOOLS - TOOL 1.1: CUSTOMER SERVICE CHATBOT
+// ============================================================================
+
+enum ChatChannel {
+  WEB
+  SMS
+  FACEBOOK_MESSENGER
+  WHATSAPP
+  INSTAGRAM_DM
+  EMAIL
+}
+
+enum ConversationStatus {
+  ACTIVE
+  WAITING_CUSTOMER
+  WAITING_AGENT
+  ESCALATED
+  RESOLVED
+  CLOSED
+}
+
+enum MessageSender {
+  CUSTOMER
+  BOT
+  AGENT
+}
+
+enum IntentType {
+  ORDER_STATUS
+  RETURN_REQUEST
+  PRODUCT_INQUIRY
+  FAQ
+  COMPLAINT
+  GENERAL
+  ESCALATION
+  UNKNOWN
+}
+
+/**
+ * ChatbotConfig - Configuration for a client's customer service chatbot
+ */
+model ChatbotConfig {
+  id                  Int       @id @default(autoincrement())
+  clientId            Int       @unique
+  name                String
+  welcomeMessage      String?
+  fallbackMessage     String?
+
+  // Feature toggles
+  enableOrderTracking Boolean   @default(true)
+  enableReturns       Boolean   @default(true)
+  enableFAQ           Boolean   @default(true)
+  enableHumanHandoff  Boolean   @default(true)
+
+  // Channel settings (JSON: { channel: { enabled: boolean, config: {...} } })
+  channelSettings     Json?
+
+  // Business hours (JSON: { timezone: string, hours: { day: { open: string, close: string } } })
+  businessHours       Json?
+
+  // Integration credentials (encrypted)
+  shopifyApiKey       String?
+  woocommerceApiKey   String?
+  zendeskApiKey       String?
+  freshdeskApiKey     String?
+
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  client              Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  conversations       ChatConversation[]
+  knowledgeBase       KnowledgeBaseItem[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * ChatConversation - A conversation session with a customer
+ */
+model ChatConversation {
+  id                Int                 @id @default(autoincrement())
+  chatbotConfigId   Int
+  channel           ChatChannel         @default(WEB)
+  status            ConversationStatus  @default(ACTIVE)
+
+  // Customer info
+  customerEmail     String?
+  customerName      String?
+  customerPhone     String?
+  externalCustomerId String?
+
+  // Session metadata
+  sessionId         String              @unique
+  startedAt         DateTime            @default(now())
+  endedAt           DateTime?
+
+  // Escalation info
+  escalatedAt       DateTime?
+  escalatedToAgentId Int?
+  escalationReason  String?
+
+  // Satisfaction (1-5 stars)
+  satisfactionRating Int?
+  satisfactionFeedback String?
+
+  // Order context
+  orderNumber       String?
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  chatbotConfig     ChatbotConfig       @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
+  messages          ChatMessage[]
+
+  @@index([chatbotConfigId, status])
+  @@index([customerEmail])
+  @@index([sessionId])
+  @@index([createdAt(sort: Desc)])
+}
+
+/**
+ * ChatMessage - Individual message in a conversation
+ */
+model ChatMessage {
+  id              Int             @id @default(autoincrement())
+  conversationId  Int
+  sender          MessageSender
+  content         String
+
+  // AI analysis
+  detectedIntent  IntentType?
+  intentConfidence Float?
+  sentiment       Float?          // -1 to 1 scale
+
+  // For bot messages
+  suggestedActions Json?          // Array of action buttons
+
+  // Metadata
+  metadata        Json?
+
+  createdAt       DateTime        @default(now())
+
+  conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+/**
+ * KnowledgeBaseItem - FAQ and knowledge base entries for the chatbot
+ */
+model KnowledgeBaseItem {
+  id              Int           @id @default(autoincrement())
+  chatbotConfigId Int
+
+  // Content
+  question        String
+  answer          String
+  keywords        String[]      @default([])
+  category        String?
+
+  // For ordering and display
+  priority        Int           @default(0)
+  isPublished     Boolean       @default(true)
+
+  // Analytics
+  viewCount       Int           @default(0)
+  helpfulCount    Int           @default(0)
+  notHelpfulCount Int           @default(0)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  chatbotConfig   ChatbotConfig @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotConfigId, category])
+  @@index([chatbotConfigId, isPublished])
+}
+
+/**
+ * ChatAnalytics - Daily aggregated analytics for chatbot performance
+ */
+model ChatAnalytics {
+  id                    Int       @id @default(autoincrement())
+  chatbotConfigId       Int
+  date                  DateTime  @db.Date
+
+  // Volume metrics
+  totalConversations    Int       @default(0)
+  totalMessages         Int       @default(0)
+  uniqueCustomers       Int       @default(0)
+
+  // Performance metrics
+  avgResponseTimeMs     Int?
+  avgConversationLength Int?
+
+  // Resolution metrics
+  resolvedByBot         Int       @default(0)
+  escalatedToAgent      Int       @default(0)
+  abandonedByCustomer   Int       @default(0)
+
+  // Satisfaction metrics
+  avgSatisfactionRating Float?
+  totalRatings          Int       @default(0)
+
+  // Intent breakdown (JSON: { intent: count })
+  intentBreakdown       Json?
+
+  // Channel breakdown (JSON: { channel: count })
+  channelBreakdown      Json?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([chatbotConfigId, date])
+  @@index([chatbotConfigId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 1 AI TOOLS - TOOL 1.2: PRODUCT DESCRIPTION GENERATOR
+// ============================================================================
+
+enum Marketplace {
+  GENERIC
+  AMAZON
+  EBAY
+  SHOPIFY
+  ETSY
+  WALMART
+  WOOCOMMERCE
+}
+
+enum GenerationJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+/**
+ * ProductDescriptionConfig - Configuration for product description generation
+ */
+model ProductDescriptionConfig {
+  id                Int         @id @default(autoincrement())
+  clientId          Int         @unique
+
+  // Default settings
+  defaultTone       String?     // professional, casual, luxurious, etc.
+  defaultLength     String?     // short, medium, long
+
+  // Brand voice settings (trained from examples)
+  brandVoiceProfile Json?
+
+  // SEO settings
+  enableSEO         Boolean     @default(true)
+  targetKeywords    String[]    @default([])
+
+  // Integration credentials
+  shopifyApiKey     String?
+  amazonMwsCredentials Json?
+
+  isActive          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  client            Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  products          Product[]
+  templates         DescriptionTemplate[]
+  bulkJobs          BulkGenerationJob[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * Product - Product data for description generation
+ */
+model Product {
+  id                  Int                     @id @default(autoincrement())
+  configId            Int
+
+  // Basic info
+  name                String
+  sku                 String?
+  category            String?
+  subcategory         String?
+
+  // Product attributes
+  attributes          Json?                   // { color, size, material, etc. }
+
+  // Images
+  imageUrls           String[]                @default([])
+
+  // Original/source description
+  sourceDescription   String?
+
+  // External IDs
+  shopifyProductId    String?
+  amazonAsin          String?
+
+  isActive            Boolean                 @default(true)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  config              ProductDescriptionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  descriptions        ProductDescription[]
+
+  @@index([configId, isActive])
+  @@index([sku])
+}
+
+/**
+ * ProductDescription - Generated product descriptions
+ */
+model ProductDescription {
+  id                Int           @id @default(autoincrement())
+  productId         Int
+
+  // Generated content
+  title             String?
+  shortDescription  String?
+  longDescription   String?
+  bulletPoints      String[]      @default([])
+
+  // SEO content
+  metaTitle         String?
+  metaDescription   String?
+  keywords          String[]      @default([])
+
+  // Marketplace-specific
+  marketplace       Marketplace   @default(GENERIC)
+
+  // A/B testing
+  variant           String?       // A, B, C, etc.
+  isControl         Boolean       @default(false)
+
+  // Performance tracking
+  impressions       Int           @default(0)
+  clicks            Int           @default(0)
+  conversions       Int           @default(0)
+
+  // Status
+  isPublished       Boolean       @default(false)
+  publishedAt       DateTime?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  product           Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, marketplace])
+  @@index([productId, variant])
+}
+
+/**
+ * DescriptionTemplate - Templates for generating descriptions
+ */
+model DescriptionTemplate {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+
+  // Template content with placeholders
+  titleTemplate     String?
+  shortDescTemplate String?
+  longDescTemplate  String?
+  bulletTemplate    String?
+
+  // Target marketplace
+  marketplace       Marketplace             @default(GENERIC)
+
+  // Category-specific template
+  category          String?
+
+  isDefault         Boolean                 @default(false)
+  isActive          Boolean                 @default(true)
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ProductDescriptionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, marketplace])
+  @@index([configId, category])
+}
+
+/**
+ * BulkGenerationJob - Batch processing for bulk description generation
+ */
+model BulkGenerationJob {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  status            GenerationJobStatus     @default(PENDING)
+
+  // Job details
+  totalItems        Int                     @default(0)
+  processedItems    Int                     @default(0)
+  successfulItems   Int                     @default(0)
+  failedItems       Int                     @default(0)
+
+  // Settings for this job
+  marketplace       Marketplace             @default(GENERIC)
+  templateId        Int?
+  settings          Json?
+
+  // Input file
+  inputFileUrl      String?
+
+  // Output file
+  outputFileUrl     String?
+
+  // Error log
+  errorLog          Json?
+
+  // Timing
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ProductDescriptionConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 1 AI TOOLS - TOOL 1.3: AI SCHEDULING ASSISTANT
+// ============================================================================
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+enum ReminderChannel {
+  SMS
+  EMAIL
+  PUSH
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+/**
+ * SchedulingConfig - Configuration for scheduling assistant per client
+ */
+model SchedulingConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  // Practice/Business info
+  practiceName          String?
+  timezone              String    @default("America/New_York")
+
+  // Booking settings
+  minAdvanceBookingHours Int      @default(24)
+  maxAdvanceBookingDays  Int      @default(90)
+  defaultSlotDurationMin Int      @default(30)
+  bufferBetweenSlotsMin  Int      @default(0)
+
+  // Reminder settings
+  enableReminders       Boolean   @default(true)
+  reminderHoursBefore   Int[]     @default([24, 2])
+
+  // No-show prediction settings
+  enableNoShowPrediction Boolean  @default(true)
+  noShowThreshold       Float     @default(0.7)
+  enableOverbooking     Boolean   @default(false)
+
+  // Waitlist settings
+  enableWaitlist        Boolean   @default(true)
+
+  // HIPAA compliance
+  isHipaaEnabled        Boolean   @default(false)
+
+  // Integration credentials (encrypted)
+  twilioAccountSid      String?
+  twilioAuthToken       String?
+  sendgridApiKey        String?
+  googleCalendarCreds   Json?
+  outlookCalendarCreds  Json?
+
+  // EHR integration
+  ehrSystem             String?   // epic, cerner, drchrono, etc.
+  ehrCredentials        Json?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  providers             Provider[]
+  appointmentTypes      AppointmentType[]
+  appointments          Appointment[]
+  waitlistEntries       WaitlistEntry[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * Provider - Service providers (doctors, therapists, etc.)
+ */
+model Provider {
+  id                Int              @id @default(autoincrement())
+  configId          Int
+
+  // Basic info
+  name              String
+  email             String?
+  phone             String?
+  title             String?          // Dr., NP, etc.
+  specialty         String?
+
+  // External IDs
+  externalProviderId String?
+  npiNumber         String?
+
+  // Availability settings (JSON: { dayOfWeek: [{ start, end }] })
+  availabilitySchedule Json?
+
+  // Override dates (JSON: { date: [{ start, end }] or "blocked" })
+  availabilityOverrides Json?
+
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  config            SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  appointments      Appointment[]
+
+  @@index([configId, isActive])
+}
+
+/**
+ * AppointmentType - Types of appointments offered
+ */
+model AppointmentType {
+  id                Int              @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  durationMinutes   Int              @default(30)
+
+  // Pricing (optional)
+  price             Decimal?         @db.Decimal(10, 2)
+  currency          String?          @default("USD")
+
+  // Booking rules
+  requiresDeposit   Boolean          @default(false)
+  depositAmount     Decimal?         @db.Decimal(10, 2)
+
+  // Display
+  color             String?
+  isActive          Boolean          @default(true)
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  config            SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  appointments      Appointment[]
+
+  @@index([configId, isActive])
+}
+
+/**
+ * Appointment - Scheduled appointments
+ */
+model Appointment {
+  id                  Int               @id @default(autoincrement())
+  configId            Int
+  providerId          Int?
+  appointmentTypeId   Int?
+
+  // Patient/Client info
+  patientName         String
+  patientEmail        String?
+  patientPhone        String?
+  externalPatientId   String?
+
+  // Scheduling
+  scheduledAt         DateTime
+  durationMinutes     Int               @default(30)
+  status              AppointmentStatus @default(SCHEDULED)
+
+  // Confirmation
+  confirmedAt         DateTime?
+  confirmationMethod  String?
+
+  // Check-in
+  checkedInAt         DateTime?
+
+  // Completion
+  completedAt         DateTime?
+  notes               String?
+
+  // Cancellation
+  cancelledAt         DateTime?
+  cancellationReason  String?
+  cancelledBy         String?           // patient, provider, system
+
+  // Rescheduling
+  rescheduledFrom     Int?
+  rescheduledTo       Int?
+
+  // No-show prediction
+  noShowRiskScore     Float?
+  noShowPredictedAt   DateTime?
+
+  // External sync
+  googleEventId       String?
+  outlookEventId      String?
+  ehrAppointmentId    String?
+
+  // HIPAA compliance - encrypted notes
+  encryptedNotes      String?
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  config              SchedulingConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+  provider            Provider?         @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  appointmentType     AppointmentType?  @relation(fields: [appointmentTypeId], references: [id], onDelete: SetNull)
+  reminders           AppointmentReminder[]
+
+  @@index([configId, scheduledAt])
+  @@index([configId, status])
+  @@index([providerId, scheduledAt])
+  @@index([patientEmail])
+}
+
+/**
+ * AppointmentReminder - Reminders sent for appointments
+ */
+model AppointmentReminder {
+  id              Int             @id @default(autoincrement())
+  appointmentId   Int
+
+  channel         ReminderChannel
+  status          ReminderStatus  @default(PENDING)
+
+  // Scheduling
+  scheduledFor    DateTime
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+
+  // Content
+  message         String?
+
+  // Response
+  responseReceived Boolean        @default(false)
+  responseContent String?
+  responseAction  String?         // confirmed, cancelled, rescheduled
+
+  // Error tracking
+  errorMessage    String?
+  retryCount      Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  appointment     Appointment     @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId, status])
+  @@index([status, scheduledFor])
+}
+
+/**
+ * WaitlistEntry - Waitlist for cancelled/available slots
+ */
+model WaitlistEntry {
+  id              Int              @id @default(autoincrement())
+  configId        Int
+
+  // Patient info
+  patientName     String
+  patientEmail    String?
+  patientPhone    String?
+
+  // Preferences
+  preferredProviderId Int?
+  preferredDays   String[]         @default([])
+  preferredTimeStart String?       // HH:MM format
+  preferredTimeEnd String?
+
+  // Priority (lower = higher priority)
+  priority        Int              @default(100)
+
+  // Status
+  isActive        Boolean          @default(true)
+  notifiedAt      DateTime?
+  bookedAt        DateTime?
+  bookedAppointmentId Int?
+
+  expiresAt       DateTime?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  config          SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, isActive])
+  @@index([configId, priority])
+}
+
+/**
+ * NoShowPredictionModel - ML model performance tracking
+ */
+model NoShowPredictionLog {
+  id              Int       @id @default(autoincrement())
+  configId        Int
+  appointmentId   Int
+
+  // Prediction details
+  predictedScore  Float
+  predictedAt     DateTime
+
+  // Actual outcome
+  actualOutcome   Boolean?  // true = no-show, false = showed up
+  outcomeRecordedAt DateTime?
+
+  // Features used (for model improvement)
+  features        Json?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([configId, predictedAt(sort: Desc)])
+  @@index([appointmentId])
+}
+
+// ============================================================================
+// PHASE 1 AI TOOLS - TOOL 1.4: CLIENT INTAKE AUTOMATOR
+// ============================================================================
+
+enum IntakeFormStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  EMAIL
+  PHONE
+  NUMBER
+  DATE
+  TIME
+  DATETIME
+  SELECT
+  MULTISELECT
+  CHECKBOX
+  RADIO
+  FILE_UPLOAD
+  SIGNATURE
+  ADDRESS
+  SSN_LAST4
+  INSURANCE_INFO
+}
+
+enum SubmissionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_RESUBMISSION
+}
+
+enum DocumentVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  NEEDS_REVIEW
+}
+
+enum WorkflowStepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  BLOCKED
+}
+
+/**
+ * IntakeConfig - Configuration for client intake automation
+ */
+model IntakeConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  // Portal branding
+  portalName            String?
+  logoUrl               String?
+  primaryColor          String?
+  customDomain          String?
+
+  // Compliance settings
+  requireIdentityVerification Boolean @default(false)
+  requireDocumentVerification Boolean @default(false)
+  retentionDays         Int       @default(365)
+
+  // E-signature settings
+  docusignAccountId     String?
+  docusignApiKey        String?
+  hellosignApiKey       String?
+
+  // Notification settings
+  notifyOnSubmission    Boolean   @default(true)
+  notifyOnCompletion    Boolean   @default(true)
+  notificationEmails    String[]  @default([])
+
+  // Storage integration
+  storageProvider       String?   // s3, gcs, sharepoint, gdrive, dropbox
+  storageCredentials    Json?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  forms                 IntakeForm[]
+  submissions           IntakeSubmission[]
+  workflows             IntakeWorkflow[]
+  complianceTemplates   ComplianceTemplate[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * IntakeForm - Form definitions for client intake
+ */
+model IntakeForm {
+  id                Int              @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  slug              String?
+
+  // Form settings
+  status            IntakeFormStatus @default(DRAFT)
+  version           Int              @default(1)
+
+  // Multi-page support
+  isMultiPage       Boolean          @default(false)
+
+  // Submission settings
+  allowSaveProgress Boolean          @default(true)
+  requireSignature  Boolean          @default(false)
+
+  // Expiration
+  expiresAfterDays  Int?
+
+  // Display order
+  sortOrder         Int              @default(0)
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  config            IntakeConfig     @relation(fields: [configId], references: [id], onDelete: Cascade)
+  fields            IntakeFormField[]
+  submissions       IntakeSubmission[]
+
+  @@unique([configId, slug])
+  @@index([configId, status])
+}
+
+/**
+ * IntakeFormField - Individual fields in an intake form
+ */
+model IntakeFormField {
+  id              Int         @id @default(autoincrement())
+  formId          Int
+
+  // Field definition
+  name            String
+  label           String
+  type            FieldType
+  placeholder     String?
+  helpText        String?
+
+  // Validation
+  isRequired      Boolean     @default(false)
+  validationRules Json?       // { minLength, maxLength, pattern, etc. }
+
+  // Options for select/radio/checkbox
+  options         Json?       // [{ value, label }]
+
+  // Conditional display
+  conditionalLogic Json?      // { fieldId, operator, value }
+
+  // Layout
+  pageNumber      Int         @default(1)
+  sortOrder       Int         @default(0)
+  width           String?     // full, half, third
+
+  // Prefill from source
+  prefillSource   String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  form            IntakeForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, pageNumber, sortOrder])
+}
+
+/**
+ * IntakeSubmission - Completed form submissions
+ */
+model IntakeSubmission {
+  id                  Int               @id @default(autoincrement())
+  configId            Int
+  formId              Int
+
+  // Submitter info
+  submitterEmail      String
+  submitterName       String?
+  submitterPhone      String?
+
+  // Unique access token for client portal
+  accessToken         String            @unique
+
+  // Status tracking
+  status              SubmissionStatus  @default(IN_PROGRESS)
+
+  // Form data (encrypted for sensitive info)
+  formData            Json?
+  encryptedData       String?
+
+  // Completion tracking
+  startedAt           DateTime          @default(now())
+  lastSavedAt         DateTime?
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  reviewedBy          Int?
+
+  // E-signature
+  signatureUrl        String?
+  signedAt            DateTime?
+  docusignEnvelopeId  String?
+  hellosignRequestId  String?
+
+  // Expiration
+  expiresAt           DateTime?
+
+  // Notes from reviewers
+  reviewNotes         String?
+  rejectionReason     String?
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  config              IntakeConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
+  form                IntakeForm        @relation(fields: [formId], references: [id], onDelete: Cascade)
+  documents           IntakeDocument[]
+  complianceChecks    ComplianceCheck[]
+  workflowProgress    WorkflowProgress[]
+
+  @@index([configId, status])
+  @@index([formId, status])
+  @@index([submitterEmail])
+  @@index([accessToken])
+}
+
+/**
+ * IntakeDocument - Documents uploaded during intake
+ */
+model IntakeDocument {
+  id                  Int                         @id @default(autoincrement())
+  submissionId        Int
+
+  // Document info
+  filename            String
+  mimeType            String
+  sizeBytes           Int
+  storageUrl          String
+
+  // Document type
+  documentType        String                      // id, insurance_front, insurance_back, etc.
+
+  // Verification
+  verificationStatus  DocumentVerificationStatus  @default(PENDING)
+  verifiedAt          DateTime?
+  verifiedBy          Int?
+  verificationNotes   String?
+
+  // AI extraction results
+  extractedData       Json?
+  extractionConfidence Float?
+
+  // Encryption
+  isEncrypted         Boolean                     @default(false)
+  encryptionKeyId     String?
+
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  submission          IntakeSubmission            @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, documentType])
+}
+
+/**
+ * ComplianceTemplate - Compliance checklist templates
+ */
+model ComplianceTemplate {
+  id              Int            @id @default(autoincrement())
+  configId        Int
+
+  name            String
+  description     String?
+
+  // Industry/use case
+  industry        String?
+  useCase         String?
+
+  // Requirements as JSON array
+  requirements    Json           // [{ id, name, description, isRequired, documentTypes }]
+
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  config          IntakeConfig   @relation(fields: [configId], references: [id], onDelete: Cascade)
+  checks          ComplianceCheck[]
+
+  @@index([configId, isActive])
+}
+
+/**
+ * ComplianceCheck - Compliance status for a submission
+ */
+model ComplianceCheck {
+  id              Int                @id @default(autoincrement())
+  submissionId    Int
+  templateId      Int
+
+  // Status per requirement (JSON: { requirementId: status })
+  requirementStatus Json?
+
+  // Overall status
+  isComplete      Boolean            @default(false)
+  completedAt     DateTime?
+
+  // Notes
+  notes           String?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  submission      IntakeSubmission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  template        ComplianceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, templateId])
+  @@index([submissionId])
+}
+
+/**
+ * IntakeWorkflow - Workflow definitions for intake process
+ */
+model IntakeWorkflow {
+  id              Int              @id @default(autoincrement())
+  configId        Int
+
+  name            String
+  description     String?
+
+  // Workflow steps as JSON
+  steps           Json             // [{ id, name, type, config, order }]
+
+  // Trigger conditions
+  triggerFormIds  Int[]            @default([])
+  autoStart       Boolean          @default(true)
+
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  config          IntakeConfig     @relation(fields: [configId], references: [id], onDelete: Cascade)
+  progress        WorkflowProgress[]
+
+  @@index([configId, isActive])
+}
+
+/**
+ * WorkflowProgress - Progress tracking for submissions in workflows
+ */
+model WorkflowProgress {
+  id              Int                 @id @default(autoincrement())
+  submissionId    Int
+  workflowId      Int
+
+  // Current step
+  currentStepId   String?
+
+  // Step statuses (JSON: { stepId: { status, completedAt, data } })
+  stepStatuses    Json?
+
+  // Overall status
+  isComplete      Boolean             @default(false)
+  completedAt     DateTime?
+
+  // Assigned staff
+  assignedTo      Int?
+
+  // SLA tracking
+  dueAt           DateTime?
+  isOverdue       Boolean             @default(false)
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  submission      IntakeSubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  workflow        IntakeWorkflow      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, workflowId])
+  @@index([workflowId, isComplete])
+  @@index([assignedTo, isComplete])
 }

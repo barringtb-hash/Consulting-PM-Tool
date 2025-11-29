@@ -18,6 +18,10 @@ import brandProfileRouter from './modules/brand-profiles/brand-profile.router';
 import publishingRouter from './modules/publishing/publishing.router';
 import featureFlagsRouter from './modules/feature-flags/feature-flags.router';
 import userPreferencesRouter from './modules/user-preferences/user-preferences.router';
+import chatbotRouter from './modules/chatbot/chatbot.router';
+import productDescriptionRouter from './modules/product-descriptions/product-description.router';
+import schedulingRouter from './modules/scheduling/scheduling.router';
+import intakeRouter from './modules/intake/intake.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -133,6 +137,32 @@ export function createApp(): express.Express {
   // Admin module (user management)
   if (isModuleEnabled('admin')) {
     app.use('/api/users', requireModule('admin'), usersRouter);
+  }
+
+  // ============ PHASE 1 AI TOOL MODULES ============
+
+  // AI Chatbot module (Tool 1.1) - customer service chatbot
+  if (isModuleEnabled('chatbot')) {
+    app.use('/api', requireModule('chatbot'), chatbotRouter);
+  }
+
+  // Product Description Generator module (Tool 1.2)
+  if (isModuleEnabled('productDescriptions')) {
+    app.use(
+      '/api',
+      requireModule('productDescriptions'),
+      productDescriptionRouter,
+    );
+  }
+
+  // AI Scheduling Assistant module (Tool 1.3)
+  if (isModuleEnabled('scheduling')) {
+    app.use('/api', requireModule('scheduling'), schedulingRouter);
+  }
+
+  // Client Intake Automator module (Tool 1.4)
+  if (isModuleEnabled('intake')) {
+    app.use('/api', requireModule('intake'), intakeRouter);
   }
 
   // Error handling middleware must be last
