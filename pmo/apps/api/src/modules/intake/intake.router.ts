@@ -141,6 +141,31 @@ const workflowSchema = z.object({
 router.use(requireAuth);
 
 /**
+ * GET /api/intake/configs
+ * List all intake configurations (with optional filtering)
+ */
+router.get(
+  '/intake/configs',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const clientId = req.query.clientId
+      ? Number(req.query.clientId)
+      : undefined;
+    if (req.query.clientId && Number.isNaN(clientId)) {
+      res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    const configs = await intakeService.listIntakeConfigs({ clientId });
+    res.json({ configs });
+  },
+);
+
+/**
  * GET /api/clients/:clientId/intake
  * Get intake config for a client
  */

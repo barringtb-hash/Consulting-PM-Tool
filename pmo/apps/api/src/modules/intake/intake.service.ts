@@ -100,6 +100,17 @@ export async function getIntakeConfig(clientId: number) {
   });
 }
 
+export async function listIntakeConfigs(filters?: { clientId?: number }) {
+  return prisma.intakeConfig.findMany({
+    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    include: {
+      client: { select: { id: true, name: true, industry: true } },
+      _count: { select: { forms: true, submissions: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export async function createIntakeConfig(
   clientId: number,
   data: IntakeConfigInput,

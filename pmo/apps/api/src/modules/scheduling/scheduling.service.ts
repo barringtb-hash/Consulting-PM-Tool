@@ -90,6 +90,17 @@ export async function getSchedulingConfig(clientId: number) {
   });
 }
 
+export async function listSchedulingConfigs(filters?: { clientId?: number }) {
+  return prisma.schedulingConfig.findMany({
+    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    include: {
+      client: { select: { id: true, name: true, industry: true } },
+      _count: { select: { providers: true, appointments: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export async function createSchedulingConfig(
   clientId: number,
   data: SchedulingConfigInput,

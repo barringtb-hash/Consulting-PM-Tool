@@ -103,6 +103,33 @@ const performanceSchema = z.object({
 router.use(requireAuth);
 
 /**
+ * GET /api/product-descriptions/configs
+ * List all product description configurations (with optional filtering)
+ */
+router.get(
+  '/product-descriptions/configs',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const clientId = req.query.clientId
+      ? Number(req.query.clientId)
+      : undefined;
+    if (req.query.clientId && Number.isNaN(clientId)) {
+      res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    const configs = await productDescService.listProductDescriptionConfigs({
+      clientId,
+    });
+    res.json({ configs });
+  },
+);
+
+/**
  * GET /api/clients/:clientId/product-descriptions
  * Get product description config for a client
  */

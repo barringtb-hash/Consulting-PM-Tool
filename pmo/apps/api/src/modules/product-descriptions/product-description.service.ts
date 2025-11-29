@@ -72,6 +72,19 @@ export async function getProductDescriptionConfig(clientId: number) {
   });
 }
 
+export async function listProductDescriptionConfigs(filters?: {
+  clientId?: number;
+}) {
+  return prisma.productDescriptionConfig.findMany({
+    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    include: {
+      client: { select: { id: true, name: true, industry: true } },
+      _count: { select: { products: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export async function createProductDescriptionConfig(
   clientId: number,
   data: ProductDescriptionConfigInput,

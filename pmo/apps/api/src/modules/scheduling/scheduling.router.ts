@@ -118,6 +118,31 @@ const waitlistSchema = z.object({
 router.use(requireAuth);
 
 /**
+ * GET /api/scheduling/configs
+ * List all scheduling configurations (with optional filtering)
+ */
+router.get(
+  '/scheduling/configs',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const clientId = req.query.clientId
+      ? Number(req.query.clientId)
+      : undefined;
+    if (req.query.clientId && Number.isNaN(clientId)) {
+      res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    const configs = await schedulingService.listSchedulingConfigs({ clientId });
+    res.json({ configs });
+  },
+);
+
+/**
  * GET /api/clients/:clientId/scheduling
  * Get scheduling config for a client
  */

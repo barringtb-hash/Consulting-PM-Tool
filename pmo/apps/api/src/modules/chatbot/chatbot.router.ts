@@ -66,6 +66,32 @@ const feedbackSchema = z.object({
 // ============================================================================
 
 /**
+ * GET /api/chatbot/configs
+ * List all chatbot configurations (with optional filtering)
+ */
+router.get(
+  '/chatbot/configs',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const clientId = req.query.clientId
+      ? Number(req.query.clientId)
+      : undefined;
+    if (req.query.clientId && Number.isNaN(clientId)) {
+      res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    const configs = await chatbotService.listChatbotConfigs({ clientId });
+    res.json({ configs });
+  },
+);
+
+/**
  * GET /api/clients/:clientId/chatbot
  * Get chatbot configuration for a client
  */

@@ -68,6 +68,16 @@ export async function getChatbotConfig(clientId: number) {
   });
 }
 
+export async function listChatbotConfigs(filters?: { clientId?: number }) {
+  return prisma.chatbotConfig.findMany({
+    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    include: {
+      client: { select: { id: true, name: true, industry: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export async function createChatbotConfig(
   clientId: number,
   data: ChatbotConfigInput,
