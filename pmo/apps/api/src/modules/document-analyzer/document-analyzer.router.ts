@@ -9,6 +9,13 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as documentAnalyzerService from './document-analyzer.service';
+import {
+  hasClientAccess,
+  getClientIdFromDocumentAnalyzerConfig,
+  getClientIdFromAnalyzedDocument,
+  getClientIdFromExtractionTemplate,
+  getClientIdFromBatchJob,
+} from '../../auth/client-auth.helper';
 
 const router = Router();
 
@@ -70,7 +77,7 @@ const batchJobSchema = z.object({
 
 /**
  * GET /api/document-analyzer/configs
- * List all document analyzer configurations
+ * List all document analyzer configurations (filtered by user access)
  */
 router.get(
   '/document-analyzer/configs',
@@ -87,6 +94,15 @@ router.get(
     if (req.query.clientId && Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
+    }
+
+    // If specific clientId requested, verify access
+    if (clientId) {
+      const canAccess = await hasClientAccess(req.userId, clientId);
+      if (!canAccess) {
+        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        return;
+      }
     }
 
     const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs({ clientId });
@@ -113,6 +129,13 @@ router.get(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const config = await documentAnalyzerService.getDocumentAnalyzerConfig(clientId);
     res.json({ config });
   },
@@ -134,6 +157,13 @@ router.post(
     const clientId = Number(req.params.clientId);
     if (Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -179,6 +209,13 @@ router.patch(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = documentAnalyzerConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -217,6 +254,18 @@ router.post(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = documentUploadSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -244,6 +293,18 @@ router.get(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -282,6 +343,18 @@ router.get(
       return;
     }
 
+    // Authorization check via document
+    const clientId = await getClientIdFromAnalyzedDocument(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Document not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const document = await documentAnalyzerService.getDocument(id);
     if (!document) {
       res.status(404).json({ error: 'Document not found' });
@@ -308,6 +381,18 @@ router.post(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
+      return;
+    }
+
+    // Authorization check via document
+    const clientId = await getClientIdFromAnalyzedDocument(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Document not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -351,6 +436,18 @@ router.delete(
       return;
     }
 
+    // Authorization check via document
+    const clientId = await getClientIdFromAnalyzedDocument(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Document not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     await documentAnalyzerService.deleteDocument(id);
     res.status(204).send();
   },
@@ -376,6 +473,23 @@ router.post(
 
     if (!currentDocId || !previousDocId) {
       res.status(400).json({ error: 'Both currentDocId and previousDocId are required' });
+      return;
+    }
+
+    // Authorization check for both documents
+    const clientId1 = await getClientIdFromAnalyzedDocument(currentDocId);
+    const clientId2 = await getClientIdFromAnalyzedDocument(previousDocId);
+
+    if (!clientId1 || !clientId2) {
+      res.status(404).json({ error: 'One or both documents not found' });
+      return;
+    }
+
+    const canAccess1 = await hasClientAccess(req.userId, clientId1);
+    const canAccess2 = await hasClientAccess(req.userId, clientId2);
+
+    if (!canAccess1 || !canAccess2) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to one or both documents' });
       return;
     }
 
@@ -418,6 +532,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const documentType = req.query.documentType as string | undefined;
     const isActive = req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined;
 
@@ -446,6 +572,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -482,6 +620,18 @@ router.patch(
       return;
     }
 
+    // Authorization check via template
+    const clientId = await getClientIdFromExtractionTemplate(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = extractionTemplateSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -515,6 +665,18 @@ router.delete(
       return;
     }
 
+    // Authorization check via template
+    const clientId = await getClientIdFromExtractionTemplate(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     await documentAnalyzerService.deleteExtractionTemplate(id);
     res.status(204).send();
   },
@@ -540,6 +702,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -576,6 +750,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const status = req.query.status as string | undefined;
     const limit = Number(req.query.limit) || 50;
     const offset = Number(req.query.offset) || 0;
@@ -606,6 +792,18 @@ router.get(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid job ID' });
+      return;
+    }
+
+    // Authorization check via batch job
+    const clientId = await getClientIdFromBatchJob(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Batch job not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 

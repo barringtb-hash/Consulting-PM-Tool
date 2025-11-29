@@ -9,6 +9,14 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as priorAuthService from './prior-auth.service';
+import {
+  hasClientAccess,
+  getClientIdFromPriorAuthConfig,
+  getClientIdFromPARequest,
+  getClientIdFromPAAppeal,
+  getClientIdFromPayerRule,
+  getClientIdFromPATemplate,
+} from '../../auth/client-auth.helper';
 
 const router = Router();
 
@@ -127,7 +135,7 @@ const paTemplateSchema = z.object({
 
 /**
  * GET /api/prior-auth/configs
- * List all prior auth configurations
+ * List all prior auth configurations (filtered by user access)
  */
 router.get(
   '/prior-auth/configs',
@@ -144,6 +152,15 @@ router.get(
     if (req.query.clientId && Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
+    }
+
+    // If specific clientId requested, verify access
+    if (clientId) {
+      const canAccess = await hasClientAccess(req.userId, clientId);
+      if (!canAccess) {
+        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        return;
+      }
     }
 
     const configs = await priorAuthService.listPriorAuthConfigs({ clientId });
@@ -170,6 +187,13 @@ router.get(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const config = await priorAuthService.getPriorAuthConfig(clientId);
     res.json({ config });
   },
@@ -191,6 +215,13 @@ router.post(
     const clientId = Number(req.params.clientId);
     if (Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -240,6 +271,13 @@ router.patch(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = priorAuthConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -279,6 +317,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromPriorAuthConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -327,6 +377,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromPriorAuthConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const status = req.query.status as string | undefined;
     const payerId = req.query.payerId as string | undefined;
     const urgency = req.query.urgency as string | undefined;
@@ -370,6 +432,18 @@ router.get(
       return;
     }
 
+    // Authorization check via request
+    const clientId = await getClientIdFromPARequest(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const request = await priorAuthService.getPARequest(id);
     if (!request) {
       res.status(404).json({ error: 'Request not found' });
@@ -396,6 +470,18 @@ router.patch(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid request ID' });
+      return;
+    }
+
+    // Authorization check via request
+    const clientId = await getClientIdFromPARequest(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -448,6 +534,18 @@ router.delete(
       return;
     }
 
+    // Authorization check via request
+    const clientId = await getClientIdFromPARequest(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     await priorAuthService.deletePARequest(id);
     res.status(204).send();
   },
@@ -469,6 +567,18 @@ router.post(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid request ID' });
+      return;
+    }
+
+    // Authorization check via request
+    const clientId = await getClientIdFromPARequest(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -508,6 +618,18 @@ router.post(
       return;
     }
 
+    // Authorization check via request
+    const clientId = await getClientIdFromPARequest(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     try {
       const result = await priorAuthService.checkPAStatus(id, req.userId);
       res.json(result);
@@ -541,6 +663,18 @@ router.post(
     const requestId = Number(req.params.id);
     if (Number.isNaN(requestId)) {
       res.status(400).json({ error: 'Invalid request ID' });
+      return;
+    }
+
+    // Authorization check via request
+    const clientId = await getClientIdFromPARequest(requestId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -593,6 +727,18 @@ router.post(
       return;
     }
 
+    // Authorization check via appeal
+    const clientId = await getClientIdFromPAAppeal(appealId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Appeal not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const { submissionMethod } = req.body as { submissionMethod: string };
     if (!submissionMethod) {
       res.status(400).json({ error: 'submissionMethod is required' });
@@ -631,6 +777,18 @@ router.patch(
       return;
     }
 
+    // Authorization check via appeal
+    const clientId = await getClientIdFromPAAppeal(appealId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Appeal not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const { status, decisionNotes } = req.body as {
       status: 'APPEAL_APPROVED' | 'APPEAL_DENIED' | 'EXTERNAL_REVIEW';
       decisionNotes?: string;
@@ -662,6 +820,18 @@ router.get(
     const requestId = Number(req.params.id);
     if (Number.isNaN(requestId)) {
       res.status(400).json({ error: 'Invalid request ID' });
+      return;
+    }
+
+    // Authorization check via request
+    const clientId = await getClientIdFromPARequest(requestId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -701,6 +871,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromPriorAuthConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const payerId = req.query.payerId as string | undefined;
     const serviceType = req.query.serviceType as string | undefined;
 
@@ -725,6 +907,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromPriorAuthConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -759,6 +953,18 @@ router.patch(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid rule ID' });
+      return;
+    }
+
+    // Authorization check via payer rule
+    const clientId = await getClientIdFromPayerRule(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Rule not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -803,6 +1009,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromPriorAuthConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const serviceType = req.query.serviceType as string | undefined;
 
     const templates = await priorAuthService.getPATemplates(configId, serviceType);
@@ -826,6 +1044,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromPriorAuthConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -860,6 +1090,18 @@ router.patch(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid template ID' });
+      return;
+    }
+
+    // Authorization check via template
+    const clientId = await getClientIdFromPATemplate(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -901,6 +1143,18 @@ router.get(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromPriorAuthConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 

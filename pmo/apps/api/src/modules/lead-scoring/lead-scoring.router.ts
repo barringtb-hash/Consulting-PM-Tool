@@ -9,6 +9,12 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as leadScoringService from './lead-scoring.service';
+import {
+  hasClientAccess,
+  getClientIdFromLeadScoringConfig,
+  getClientIdFromScoredLead,
+  getClientIdFromNurtureSequence,
+} from '../../auth/client-auth.helper';
 
 const router = Router();
 
@@ -86,7 +92,7 @@ const nurtureSequenceSchema = z.object({
 
 /**
  * GET /api/lead-scoring/configs
- * List all lead scoring configurations
+ * List all lead scoring configurations (filtered by user access)
  */
 router.get(
   '/lead-scoring/configs',
@@ -103,6 +109,15 @@ router.get(
     if (req.query.clientId && Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
+    }
+
+    // If specific clientId requested, verify access
+    if (clientId) {
+      const canAccess = await hasClientAccess(req.userId, clientId);
+      if (!canAccess) {
+        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        return;
+      }
     }
 
     const configs = await leadScoringService.listLeadScoringConfigs({ clientId });
@@ -129,6 +144,13 @@ router.get(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const config = await leadScoringService.getLeadScoringConfig(clientId);
     res.json({ config });
   },
@@ -150,6 +172,13 @@ router.post(
     const clientId = Number(req.params.clientId);
     if (Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -196,6 +225,13 @@ router.patch(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = leadScoringConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -232,6 +268,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -274,6 +322,18 @@ router.get(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -324,6 +384,18 @@ router.get(
       return;
     }
 
+    // Authorization check via lead
+    const clientId = await getClientIdFromScoredLead(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Lead not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const lead = await leadScoringService.getLead(id);
     if (!lead) {
       res.status(404).json({ error: 'Lead not found' });
@@ -350,6 +422,18 @@ router.patch(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid lead ID' });
+      return;
+    }
+
+    // Authorization check via lead
+    const clientId = await getClientIdFromScoredLead(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Lead not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -386,6 +470,18 @@ router.delete(
       return;
     }
 
+    // Authorization check via lead
+    const clientId = await getClientIdFromScoredLead(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Lead not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     await leadScoringService.deleteLead(id);
     res.status(204).send();
   },
@@ -407,6 +503,18 @@ router.post(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid lead ID' });
+      return;
+    }
+
+    // Authorization check via lead
+    const clientId = await getClientIdFromScoredLead(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Lead not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -442,6 +550,18 @@ router.post(
       return;
     }
 
+    // Authorization check via lead
+    const clientId = await getClientIdFromScoredLead(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Lead not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     try {
       const prediction = await leadScoringService.predictConversion(id);
       res.json({ prediction });
@@ -462,11 +582,12 @@ router.post(
 /**
  * POST /api/lead-scoring/:configId/activities
  * Track an activity
+ * Note: Activities can be tracked without auth (e.g., from tracking pixels)
+ * but the configId must be valid. Consider adding API key validation for production.
  */
 router.post(
   '/lead-scoring/:configId/activities',
   async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
-    // Note: Activities can be tracked without auth (e.g., from tracking pixels)
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
@@ -524,6 +645,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const leadId = req.query.leadId ? Number(req.query.leadId) : undefined;
     const activityType = req.query.type as string | undefined;
     const startDate = req.query.start ? new Date(req.query.start as string) : undefined;
@@ -567,6 +700,18 @@ router.post(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = nurtureSequenceSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -601,6 +746,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const isActive = req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined;
 
     const sequences = await leadScoringService.getNurtureSequences(configId, { isActive });
@@ -624,6 +781,18 @@ router.get(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    // Authorization check via sequence
+    const clientId = await getClientIdFromNurtureSequence(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -653,6 +822,18 @@ router.patch(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    // Authorization check via sequence
+    const clientId = await getClientIdFromNurtureSequence(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -693,6 +874,18 @@ router.delete(
       return;
     }
 
+    // Authorization check via sequence
+    const clientId = await getClientIdFromNurtureSequence(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     await leadScoringService.deleteNurtureSequence(id);
     res.status(204).send();
   },
@@ -716,6 +909,18 @@ router.post(
 
     if (Number.isNaN(sequenceId) || Number.isNaN(leadId)) {
       res.status(400).json({ error: 'Invalid sequence or lead ID' });
+      return;
+    }
+
+    // Authorization check via sequence
+    const clientId = await getClientIdFromNurtureSequence(sequenceId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -757,6 +962,18 @@ router.post(
       return;
     }
 
+    // Authorization check via sequence
+    const clientId = await getClientIdFromNurtureSequence(sequenceId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const { reason } = req.body as { reason?: string };
 
     const enrollment = await leadScoringService.unenrollLeadFromSequence(
@@ -788,6 +1005,18 @@ router.get(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -823,6 +1052,18 @@ router.get(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 

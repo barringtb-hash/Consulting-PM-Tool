@@ -9,6 +9,13 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as contentGeneratorService from './content-generator.service';
+import {
+  hasClientAccess,
+  getClientIdFromContentGeneratorConfig,
+  getClientIdFromGeneratedContent,
+  getClientIdFromContentTemplate,
+  getClientIdFromContentApprovalWorkflow,
+} from '../../auth/client-auth.helper';
 
 const router = Router();
 
@@ -92,7 +99,7 @@ const approvalWorkflowSchema = z.object({
 
 /**
  * GET /api/content-generator/configs
- * List all content generator configurations
+ * List all content generator configurations (filtered by user access)
  */
 router.get(
   '/content-generator/configs',
@@ -109,6 +116,15 @@ router.get(
     if (req.query.clientId && Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
+    }
+
+    // If specific clientId requested, verify access
+    if (clientId) {
+      const canAccess = await hasClientAccess(req.userId, clientId);
+      if (!canAccess) {
+        res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+        return;
+      }
     }
 
     const configs = await contentGeneratorService.listContentGeneratorConfigs({ clientId });
@@ -135,6 +151,13 @@ router.get(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const config = await contentGeneratorService.getContentGeneratorConfig(clientId);
     res.json({ config });
   },
@@ -156,6 +179,13 @@ router.post(
     const clientId = Number(req.params.clientId);
     if (Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -203,6 +233,13 @@ router.patch(
       return;
     }
 
+    // Authorization check
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = contentGeneratorConfigSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -240,6 +277,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -281,6 +330,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const type = req.query.type as string | undefined;
     const approvalStatus = req.query.status as string | undefined;
     const limit = Number(req.query.limit) || 50;
@@ -316,6 +377,18 @@ router.get(
       return;
     }
 
+    // Authorization check via content
+    const clientId = await getClientIdFromGeneratedContent(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const content = await contentGeneratorService.getContent(id);
     if (!content) {
       res.status(404).json({ error: 'Content not found' });
@@ -342,6 +415,18 @@ router.patch(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Authorization check via content
+    const clientId = await getClientIdFromGeneratedContent(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -391,6 +476,18 @@ router.delete(
       return;
     }
 
+    // Authorization check via content
+    const clientId = await getClientIdFromGeneratedContent(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     await contentGeneratorService.deleteContent(id);
     res.status(204).send();
   },
@@ -416,6 +513,18 @@ router.post(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Authorization check via content
+    const clientId = await getClientIdFromGeneratedContent(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -457,6 +566,18 @@ router.post(
       return;
     }
 
+    // Authorization check via content
+    const clientId = await getClientIdFromGeneratedContent(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const content = await contentGeneratorService.approveContent(id, req.userId);
     res.json({ content });
   },
@@ -478,6 +599,18 @@ router.post(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Authorization check via content
+    const clientId = await getClientIdFromGeneratedContent(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -515,6 +648,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const type = req.query.type as string | undefined;
     const category = req.query.category as string | undefined;
     const isActive = req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined;
@@ -545,6 +690,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -582,6 +739,18 @@ router.patch(
       return;
     }
 
+    // Authorization check via template
+    const clientId = await getClientIdFromContentTemplate(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const parsed = contentTemplateSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
@@ -616,6 +785,18 @@ router.delete(
       return;
     }
 
+    // Authorization check via template
+    const clientId = await getClientIdFromContentTemplate(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     await contentGeneratorService.deleteContentTemplate(id);
     res.status(204).send();
   },
@@ -644,6 +825,18 @@ router.get(
       return;
     }
 
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
     const workflows = await contentGeneratorService.getApprovalWorkflows(configId);
     res.json({ workflows });
   },
@@ -665,6 +858,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
@@ -703,6 +908,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 
