@@ -12,7 +12,12 @@
 
 import { prisma } from '../../prisma/client';
 import { env } from '../../config/env';
-import { ChatChannel, ConversationStatus, IntentType } from '@prisma/client';
+import {
+  ChatChannel,
+  ConversationStatus,
+  IntentType,
+  Prisma,
+} from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
 // ============================================================================
@@ -27,8 +32,8 @@ interface ChatbotConfigInput {
   enableReturns?: boolean;
   enableFAQ?: boolean;
   enableHumanHandoff?: boolean;
-  channelSettings?: Record<string, unknown>;
-  businessHours?: Record<string, unknown>;
+  channelSettings?: Prisma.InputJsonValue;
+  businessHours?: Prisma.InputJsonValue;
 }
 
 interface MessageInput {
@@ -257,10 +262,7 @@ export async function processCustomerMessage(
       conversationId: conversation.id,
       sender: 'BOT',
       content: botResponse.content,
-      suggestedActions: botResponse.suggestedActions as unknown as Record<
-        string,
-        unknown
-      >,
+      suggestedActions: botResponse.suggestedActions as Prisma.InputJsonValue,
     },
   });
 

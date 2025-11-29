@@ -17,6 +17,7 @@ import {
   FieldType,
   SubmissionStatus,
   DocumentVerificationStatus,
+  Prisma,
 } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -55,9 +56,9 @@ interface FieldInput {
   placeholder?: string;
   helpText?: string;
   isRequired?: boolean;
-  validationRules?: Record<string, unknown>;
+  validationRules?: Prisma.InputJsonValue;
   options?: Array<{ value: string; label: string }>;
-  conditionalLogic?: Record<string, unknown>;
+  conditionalLogic?: Prisma.InputJsonValue;
   pageNumber?: number;
   sortOrder?: number;
   width?: string;
@@ -437,7 +438,7 @@ export async function updateSubmissionData(
   return prisma.intakeSubmission.update({
     where: { id },
     data: {
-      formData,
+      formData: formData as Prisma.InputJsonValue,
       lastSavedAt: saveProgress ? new Date() : undefined,
     },
   });
@@ -598,7 +599,7 @@ export async function extractDocumentData(
   await prisma.intakeDocument.update({
     where: { id },
     data: {
-      extractedData,
+      extractedData: extractedData as Prisma.InputJsonValue,
       extractionConfidence: confidence,
     },
   });
@@ -646,7 +647,7 @@ export async function updateComplianceTemplate(
   data: Partial<{
     name: string;
     description: string;
-    requirements: unknown;
+    requirements: Prisma.InputJsonValue;
     isActive: boolean;
   }>,
 ) {
@@ -758,7 +759,11 @@ export async function createWorkflow(
   return prisma.intakeWorkflow.create({
     data: {
       configId,
-      ...data,
+      name: data.name,
+      description: data.description,
+      steps: data.steps as Prisma.InputJsonValue,
+      triggerFormIds: data.triggerFormIds,
+      autoStart: data.autoStart,
     },
   });
 }
@@ -848,7 +853,7 @@ export async function updateWorkflowStep(
   return prisma.workflowProgress.update({
     where: { id: progressId },
     data: {
-      stepStatuses,
+      stepStatuses: stepStatuses as Prisma.InputJsonValue,
       currentStepId: nextStepId || progress.currentStepId,
       isComplete: allComplete,
       completedAt: allComplete ? new Date() : null,

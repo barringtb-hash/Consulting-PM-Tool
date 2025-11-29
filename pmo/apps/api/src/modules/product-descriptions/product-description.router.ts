@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as productDescService from './product-description.service';
 
@@ -18,7 +19,7 @@ const router = Router();
 const configSchema = z.object({
   defaultTone: z.string().max(50).optional(),
   defaultLength: z.enum(['short', 'medium', 'long']).optional(),
-  brandVoiceProfile: z.record(z.unknown()).optional(),
+  brandVoiceProfile: z.record(z.string(), z.unknown()).optional(),
   enableSEO: z.boolean().optional(),
   targetKeywords: z.array(z.string()).optional(),
 });
@@ -28,7 +29,7 @@ const productSchema = z.object({
   sku: z.string().max(50).optional(),
   category: z.string().max(100).optional(),
   subcategory: z.string().max(100).optional(),
-  attributes: z.record(z.unknown()).optional(),
+  attributes: z.record(z.string(), z.unknown()).optional(),
   imageUrls: z.array(z.string().url()).optional(),
   sourceDescription: z.string().max(5000).optional(),
 });
@@ -65,7 +66,7 @@ const bulkJobSchema = z.object({
       'WOOCOMMERCE',
     ])
     .optional(),
-  settings: z.record(z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 });
 
 const templateSchema = z.object({
@@ -182,7 +183,11 @@ router.post(
     try {
       const config = await productDescService.createProductDescriptionConfig(
         clientId,
-        parsed.data,
+        {
+          ...parsed.data,
+          brandVoiceProfile: parsed.data
+            .brandVoiceProfile as Prisma.InputJsonValue,
+        },
       );
       res.status(201).json({ config });
     } catch (error) {
@@ -225,7 +230,11 @@ router.patch(
 
     const config = await productDescService.updateProductDescriptionConfig(
       clientId,
-      parsed.data,
+      {
+        ...parsed.data,
+        brandVoiceProfile: parsed.data
+          .brandVoiceProfile as Prisma.InputJsonValue,
+      },
     );
     res.json({ config });
   },
@@ -295,10 +304,10 @@ router.post(
       return;
     }
 
-    const product = await productDescService.createProduct(
-      configId,
-      parsed.data,
-    );
+    const product = await productDescService.createProduct(configId, {
+      ...parsed.data,
+      attributes: parsed.data.attributes as Prisma.InputJsonValue,
+    });
     res.status(201).json({ product });
   },
 );
@@ -357,7 +366,10 @@ router.patch(
       return;
     }
 
-    const product = await productDescService.updateProduct(id, parsed.data);
+    const product = await productDescService.updateProduct(id, {
+      ...parsed.data,
+      attributes: parsed.data.attributes as Prisma.InputJsonValue,
+    });
     res.json({ product });
   },
 );

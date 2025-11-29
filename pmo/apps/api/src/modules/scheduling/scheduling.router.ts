@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as schedulingService from './scheduling.service';
 
@@ -41,6 +42,7 @@ const providerSchema = z.object({
   npiNumber: z.string().max(20).optional(),
   availabilitySchedule: z
     .record(
+      z.string(),
       z.array(
         z.object({
           start: z.string().regex(/^\d{2}:\d{2}$/),
@@ -49,7 +51,7 @@ const providerSchema = z.object({
       ),
     )
     .optional(),
-  availabilityOverrides: z.record(z.unknown()).optional(),
+  availabilityOverrides: z.record(z.string(), z.unknown()).optional(),
 });
 
 const appointmentTypeSchema = z.object({
@@ -296,10 +298,13 @@ router.post(
       return;
     }
 
-    const provider = await schedulingService.createProvider(
-      configId,
-      parsed.data,
-    );
+    const provider = await schedulingService.createProvider(configId, {
+      ...parsed.data,
+      availabilitySchedule: parsed.data
+        .availabilitySchedule as Prisma.InputJsonValue,
+      availabilityOverrides: parsed.data
+        .availabilityOverrides as Prisma.InputJsonValue,
+    });
     res.status(201).json({ provider });
   },
 );
@@ -358,7 +363,13 @@ router.patch(
       return;
     }
 
-    const provider = await schedulingService.updateProvider(id, parsed.data);
+    const provider = await schedulingService.updateProvider(id, {
+      ...parsed.data,
+      availabilitySchedule: parsed.data
+        .availabilitySchedule as Prisma.InputJsonValue,
+      availabilityOverrides: parsed.data
+        .availabilityOverrides as Prisma.InputJsonValue,
+    });
     res.json({ provider });
   },
 );

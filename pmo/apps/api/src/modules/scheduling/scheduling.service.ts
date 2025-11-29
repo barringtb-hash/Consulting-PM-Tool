@@ -11,7 +11,7 @@
  */
 
 import { prisma } from '../../prisma/client';
-import { AppointmentStatus } from '@prisma/client';
+import { AppointmentStatus, Prisma } from '@prisma/client';
 
 // ============================================================================
 // TYPES
@@ -41,8 +41,8 @@ interface ProviderInput {
   specialty?: string;
   externalProviderId?: string;
   npiNumber?: string;
-  availabilitySchedule?: Record<string, Array<{ start: string; end: string }>>;
-  availabilityOverrides?: Record<string, unknown>;
+  availabilitySchedule?: Prisma.InputJsonValue;
+  availabilityOverrides?: Prisma.InputJsonValue;
 }
 
 interface AppointmentTypeInput {
