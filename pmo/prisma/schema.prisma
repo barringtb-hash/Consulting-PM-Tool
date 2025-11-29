@@ -514,6 +514,7 @@ model BrandProfile {
   secondaryColor        String?
   accentColor           String?
   fonts                 Json?
+  metadata              Json?    // Extended brand data: full color palette, file formats, etc.
   toneVoiceGuidelines   String?
   valueProposition      String?
   targetAudience        String?

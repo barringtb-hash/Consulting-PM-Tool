@@ -66,6 +66,7 @@ export const createBrandProfile = async (
     data: {
       ...input,
       fonts: input.fonts as Prisma.InputJsonValue,
+      metadata: input.metadata as Prisma.InputJsonValue,
     },
     include: {
       client: {
@@ -98,6 +99,10 @@ export const updateBrandProfile = async (
       fonts:
         input.fonts !== undefined
           ? (input.fonts as Prisma.InputJsonValue)
+          : undefined,
+      metadata:
+        input.metadata !== undefined
+          ? (input.metadata as Prisma.InputJsonValue)
           : undefined,
     },
     include: {

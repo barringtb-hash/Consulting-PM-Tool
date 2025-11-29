@@ -325,6 +325,7 @@ export interface BrandProfile {
   secondaryColor?: string;
   accentColor?: string;
   fonts?: any;
+  metadata?: any; // Extended brand data: full color palette, file formats, etc.
   toneVoiceGuidelines?: string;
   valueProposition?: string;
   targetAudience?: string;
@@ -367,6 +368,7 @@ export interface CreateBrandProfileInput {
   secondaryColor?: string;
   accentColor?: string;
   fonts?: any;
+  metadata?: any;
   toneVoiceGuidelines?: string;
   valueProposition?: string;
   targetAudience?: string;
@@ -381,6 +383,7 @@ export interface UpdateBrandProfileInput {
   secondaryColor?: string;
   accentColor?: string;
   fonts?: any;
+  metadata?: any;
   toneVoiceGuidelines?: string;
   valueProposition?: string;
   targetAudience?: string;

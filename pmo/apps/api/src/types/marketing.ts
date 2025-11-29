@@ -177,6 +177,7 @@ export const CreateBrandProfileSchema = z.object({
   secondaryColor: z.string().optional(),
   accentColor: z.string().optional(),
   fonts: z.unknown().optional(),
+  metadata: z.unknown().optional(), // Extended brand data: full color palette, file formats, etc.
   toneVoiceGuidelines: z.string().optional(),
   valueProposition: z.string().optional(),
   targetAudience: z.string().optional(),

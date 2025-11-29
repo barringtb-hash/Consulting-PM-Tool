@@ -884,9 +884,8 @@ async function main() {
       );
     }
 
-    // Store the extended brand colors in the fonts JSON field as additional metadata
-    const extendedFonts = {
-      ...brandProfileSeed.fonts,
+    // Prepare metadata with extended brand colors and file formats
+    const metadata = {
       brandColors: brandProfileSeed.brandColors,
       fileFormats: brandProfileSeed.fileFormats,
     };
@@ -905,7 +904,8 @@ async function main() {
             primaryColor: brandProfileSeed.primaryColor,
             secondaryColor: brandProfileSeed.secondaryColor,
             accentColor: brandProfileSeed.accentColor,
-            fonts: extendedFonts,
+            fonts: brandProfileSeed.fonts,
+            metadata,
             toneVoiceGuidelines: brandProfileSeed.toneVoiceGuidelines,
             valueProposition: brandProfileSeed.valueProposition,
             targetAudience: brandProfileSeed.targetAudience,
@@ -921,7 +921,8 @@ async function main() {
             primaryColor: brandProfileSeed.primaryColor,
             secondaryColor: brandProfileSeed.secondaryColor,
             accentColor: brandProfileSeed.accentColor,
-            fonts: extendedFonts,
+            fonts: brandProfileSeed.fonts,
+            metadata,
             toneVoiceGuidelines: brandProfileSeed.toneVoiceGuidelines,
             valueProposition: brandProfileSeed.valueProposition,
             targetAudience: brandProfileSeed.targetAudience,
