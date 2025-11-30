@@ -13,9 +13,14 @@ import {
   WorkOrderPriority,
   AlertSeverity,
 } from '@prisma/client';
-// Auth middleware available if needed: import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { AuthenticatedRequest } from '../../auth/auth.middleware';
 import * as maintenanceService from './predictive-maintenance.service';
 import { hasClientAccess } from '../../auth/client-auth.helper';
+
+// Helper to get userId from request
+function getUserId(req: AuthenticatedRequest): number | null {
+  return req.userId ?? null;
+}
 
 const router = Router();
 
@@ -189,7 +194,8 @@ router.get('/config/:clientId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid client ID' });
     }
 
-    if (!hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -205,7 +211,8 @@ router.post('/config', async (req, res) => {
   try {
     const data = createConfigSchema.parse(req.body);
 
-    if (!hasClientAccess(req, data.clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!userId || !(await hasClientAccess(userId, data.clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -232,7 +239,8 @@ router.patch('/config/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -264,7 +272,8 @@ router.get('/equipment/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -289,7 +298,8 @@ router.get('/equipment/detail/:equipmentId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromEquipment(equipmentId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -308,13 +318,16 @@ router.post('/equipment', async (req, res) => {
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const equipment = await maintenanceService.createEquipment({
       ...data,
-      installDate: data.installDate ? new Date(data.installDate) : undefined,
+      installationDate: data.installationDate
+        ? new Date(data.installationDate)
+        : undefined,
       warrantyExpiry: data.warrantyExpiry
         ? new Date(data.warrantyExpiry)
         : undefined,
@@ -341,7 +354,8 @@ router.patch('/equipment/:equipmentId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromEquipment(equipmentId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -375,7 +389,8 @@ router.delete('/equipment/:equipmentId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromEquipment(equipmentId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -399,7 +414,8 @@ router.get('/sensors/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -423,7 +439,8 @@ router.post('/sensors', async (req, res) => {
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -449,7 +466,8 @@ router.patch('/sensors/:sensorId', async (req, res) => {
     const data = updateSensorSchema.parse(req.body);
 
     const clientId = await maintenanceService.getClientIdFromSensor(sensorId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -475,11 +493,15 @@ router.post('/readings', async (req, res) => {
     const clientId = await maintenanceService.getClientIdFromSensor(
       data.sensorId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const reading = await maintenanceService.recordSensorReading(data);
+    const reading = await maintenanceService.recordSensorReading({
+      ...data,
+      timestamp: data.timestamp ? new Date(data.timestamp) : undefined,
+    });
     res.status(201).json(reading);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -501,7 +523,8 @@ router.get('/readings/:sensorId', async (req, res) => {
     const { startDate, endDate, limit } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromSensor(sensorId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -529,7 +552,8 @@ router.get('/anomalies/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -562,7 +586,8 @@ router.get('/predictions/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -594,7 +619,8 @@ router.post('/predictions/:configId/generate', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -623,7 +649,8 @@ router.get('/work-orders/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -648,7 +675,8 @@ router.post('/work-orders', async (req, res) => {
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -681,7 +709,8 @@ router.patch('/work-orders/:workOrderId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromWorkOrder(workOrderId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -690,6 +719,7 @@ router.patch('/work-orders/:workOrderId', async (req, res) => {
       scheduledDate: data.scheduledDate
         ? new Date(data.scheduledDate)
         : undefined,
+      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       startedAt: data.startedAt ? new Date(data.startedAt) : undefined,
       completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
     });
@@ -717,7 +747,8 @@ router.get('/spare-parts/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -739,7 +770,8 @@ router.post('/spare-parts', async (req, res) => {
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -790,7 +822,8 @@ router.get('/downtime/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -816,7 +849,8 @@ router.post('/downtime', async (req, res) => {
     const clientId = await maintenanceService.getClientIdFromEquipment(
       data.equipmentId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -849,7 +883,8 @@ router.get('/analytics/:configId', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -876,7 +911,8 @@ router.post('/analytics/:configId/record', async (req, res) => {
 
     const clientId =
       await maintenanceService.getClientIdFromMaintenanceConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    const userId = getUserId(req as AuthenticatedRequest);
+    if (!clientId || !userId || !(await hasClientAccess(userId, clientId))) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
