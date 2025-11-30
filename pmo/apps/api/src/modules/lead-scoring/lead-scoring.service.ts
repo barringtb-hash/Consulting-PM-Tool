@@ -81,9 +81,20 @@ export async function getLeadScoringConfig(clientId: number) {
   });
 }
 
-export async function listLeadScoringConfigs(filters?: { clientId?: number }) {
+export async function listLeadScoringConfigs(filters?: {
+  clientId?: number;
+  clientIds?: number[];
+}) {
+  const whereClause: Prisma.LeadScoringConfigWhereInput = {};
+
+  if (filters?.clientId) {
+    whereClause.clientId = filters.clientId;
+  } else if (filters?.clientIds && filters.clientIds.length > 0) {
+    whereClause.clientId = { in: filters.clientIds };
+  }
+
   return prisma.leadScoringConfig.findMany({
-    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
     include: {
       client: { select: { id: true, name: true, industry: true } },
     },

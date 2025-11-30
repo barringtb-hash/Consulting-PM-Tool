@@ -11,6 +11,7 @@ import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as leadScoringService from './lead-scoring.service';
 import {
   hasClientAccess,
+  getAccessibleClientIds,
   getClientIdFromLeadScoringConfig,
   getClientIdFromScoredLead,
   getClientIdFromNurtureSequence,
@@ -133,10 +134,26 @@ router.get(
           .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
+      const configs = await leadScoringService.listLeadScoringConfigs({
+        clientId,
+      });
+      res.json({ configs });
+      return;
     }
 
+    // No specific clientId - filter by accessible clients
+    const accessibleClientIds = await getAccessibleClientIds(req.userId);
+
+    // If null, user is admin and can see all
+    if (accessibleClientIds === null) {
+      const configs = await leadScoringService.listLeadScoringConfigs({});
+      res.json({ configs });
+      return;
+    }
+
+    // Filter to only accessible clients
     const configs = await leadScoringService.listLeadScoringConfigs({
-      clientId,
+      clientIds: accessibleClientIds,
     });
     res.json({ configs });
   },
@@ -645,15 +662,36 @@ router.post(
 /**
  * POST /api/lead-scoring/:configId/activities
  * Track an activity
- * Note: Activities can be tracked without auth (e.g., from tracking pixels)
- * but the configId must be valid. Consider adding API key validation for production.
+ * Note: Requires authentication to prevent unauthorized access to client data.
+ * For external tracking (e.g., tracking pixels), implement a separate public
+ * endpoint with API key validation or signed tokens.
  */
 router.post(
   '/lead-scoring/:configId/activities',
+  requireAuth,
   async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromLeadScoringConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
       return;
     }
 

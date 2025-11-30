@@ -41,6 +41,35 @@ export async function hasClientAccess(
 }
 
 /**
+ * Get all client IDs a user has access to
+ * @param userId - The authenticated user's ID
+ * @returns Array of client IDs the user can access, or null if user is admin (meaning all)
+ */
+export async function getAccessibleClientIds(
+  userId: number,
+): Promise<number[] | null> {
+  // First check if user is an admin - they have access to all clients
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (user?.role === 'ADMIN') {
+    // Return null to indicate "all clients" - caller should not filter
+    return null;
+  }
+
+  // Get all unique client IDs from projects owned by this user
+  const projects = await prisma.project.findMany({
+    where: { ownerId: userId },
+    select: { clientId: true },
+    distinct: ['clientId'],
+  });
+
+  return projects.map((p) => p.clientId);
+}
+
+/**
  * Get the client ID from a document analyzer config
  */
 export async function getClientIdFromDocumentAnalyzerConfig(

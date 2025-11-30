@@ -229,15 +229,42 @@ export async function createAppointment(
     throw new Error('Scheduling config not found');
   }
 
-  // Get duration from appointment type if not specified
+  // Validate providerId belongs to this config
+  if (data.providerId) {
+    const provider = await prisma.provider.findUnique({
+      where: { id: data.providerId },
+      select: { configId: true, isActive: true },
+    });
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
+    if (provider.configId !== configId) {
+      throw new Error('Provider does not belong to this scheduling config');
+    }
+    if (!provider.isActive) {
+      throw new Error('Provider is not active');
+    }
+  }
+
+  // Validate appointmentTypeId belongs to this config
   let duration = data.durationMinutes || config.defaultSlotDurationMin;
   if (data.appointmentTypeId) {
     const appointmentType = await prisma.appointmentType.findUnique({
       where: { id: data.appointmentTypeId },
+      select: { configId: true, isActive: true, durationMinutes: true },
     });
-    if (appointmentType) {
-      duration = appointmentType.durationMinutes;
+    if (!appointmentType) {
+      throw new Error('Appointment type not found');
     }
+    if (appointmentType.configId !== configId) {
+      throw new Error(
+        'Appointment type does not belong to this scheduling config',
+      );
+    }
+    if (!appointmentType.isActive) {
+      throw new Error('Appointment type is not active');
+    }
+    duration = appointmentType.durationMinutes;
   }
 
   // Create appointment
@@ -410,6 +437,23 @@ export async function rescheduleAppointment(
 
   if (!oldAppointment) {
     throw new Error('Appointment not found');
+  }
+
+  // Validate newProviderId belongs to the same config
+  if (newProviderId) {
+    const provider = await prisma.provider.findUnique({
+      where: { id: newProviderId },
+      select: { configId: true, isActive: true },
+    });
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
+    if (provider.configId !== oldAppointment.configId) {
+      throw new Error('Provider does not belong to this scheduling config');
+    }
+    if (!provider.isActive) {
+      throw new Error('Provider is not active');
+    }
   }
 
   // Update old appointment
@@ -806,6 +850,23 @@ export async function addToWaitlist(
     preferredTimeEnd?: string;
   },
 ) {
+  // Validate preferredProviderId belongs to this config
+  if (data.preferredProviderId) {
+    const provider = await prisma.provider.findUnique({
+      where: { id: data.preferredProviderId },
+      select: { configId: true, isActive: true },
+    });
+    if (!provider) {
+      throw new Error('Provider not found');
+    }
+    if (provider.configId !== configId) {
+      throw new Error('Provider does not belong to this scheduling config');
+    }
+    if (!provider.isActive) {
+      throw new Error('Provider is not active');
+    }
+  }
+
   return prisma.waitlistEntry.create({
     data: {
       configId,
