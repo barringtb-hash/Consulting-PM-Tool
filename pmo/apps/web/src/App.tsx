@@ -50,6 +50,16 @@ const ProductDescriptionsPage = lazy(
 const SchedulingPage = lazy(() => import('./pages/ai-tools/SchedulingPage'));
 const IntakePage = lazy(() => import('./pages/ai-tools/IntakePage'));
 
+// Phase 2 AI Tools pages
+const DocumentAnalyzerPage = lazy(
+  () => import('./pages/ai-tools/DocumentAnalyzerPage'),
+);
+const ContentGeneratorPage = lazy(
+  () => import('./pages/ai-tools/ContentGeneratorPage'),
+);
+const LeadScoringPage = lazy(() => import('./pages/ai-tools/LeadScoringPage'));
+const PriorAuthPage = lazy(() => import('./pages/ai-tools/PriorAuthPage'));
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -234,6 +244,54 @@ function App(): JSX.Element {
                 element={
                   <LazyPage>
                     <IntakePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Document Analyzer module (Tool 2.1) */}
+            {isModuleEnabled('documentAnalyzer') && (
+              <Route
+                path="/ai-tools/document-analyzer"
+                element={
+                  <LazyPage>
+                    <DocumentAnalyzerPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Content Generator module (Tool 2.2) */}
+            {isModuleEnabled('contentGenerator') && (
+              <Route
+                path="/ai-tools/content-generator"
+                element={
+                  <LazyPage>
+                    <ContentGeneratorPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Lead Scoring module (Tool 2.3) */}
+            {isModuleEnabled('leadScoring') && (
+              <Route
+                path="/ai-tools/lead-scoring"
+                element={
+                  <LazyPage>
+                    <LeadScoringPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Prior Authorization module (Tool 2.4) */}
+            {isModuleEnabled('priorAuth') && (
+              <Route
+                path="/ai-tools/prior-auth"
+                element={
+                  <LazyPage>
+                    <PriorAuthPage />
                   </LazyPage>
                 }
               />
