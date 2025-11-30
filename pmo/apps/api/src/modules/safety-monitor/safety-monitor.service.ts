@@ -62,7 +62,8 @@ export async function createSafetyConfig(data: {
       safetyManagerEmail: data.safetyManagerEmail,
       emergencyContacts: data.emergencyContacts ?? Prisma.JsonNull,
       oshaEstablishmentName: data.oshaEstablishmentName,
-      oshaEstablishmentAddress: data.oshaEstablishmentAddress ?? Prisma.JsonNull,
+      oshaEstablishmentAddress:
+        data.oshaEstablishmentAddress ?? Prisma.JsonNull,
       oshaReportingThreshold: data.oshaReportingThreshold ?? 10,
     },
   });

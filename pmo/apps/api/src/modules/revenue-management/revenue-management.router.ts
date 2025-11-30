@@ -521,7 +521,7 @@ router.get('/recommendations/:configId', async (req, res) => {
     if (Number.isNaN(configId)) {
       return res.status(400).json({ error: 'Invalid config ID' });
     }
-    const { startDate, endDate, rateCategoryId, status } = req.query;
+    const { startDate, endDate, categoryId, status } = req.query;
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
@@ -534,7 +534,7 @@ router.get('/recommendations/:configId', async (req, res) => {
       {
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
-        rateCategoryId: rateCategoryId as string,
+        categoryId: categoryId ? Number(categoryId as string) : undefined,
         status: status as string,
       },
     );

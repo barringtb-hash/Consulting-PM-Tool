@@ -15,8 +15,8 @@ interface ConfigWithRelations {
   demandWeight: number;
   competitorWeight: number;
   pricingStrategy: PricingStrategy;
-  minPrice: number | null;
-  maxPrice: number | null;
+  minPriceFloor: number | null;
+  maxPriceCeiling: number | null;
   targetOccupancy: number | null;
   rateCategories: RateCategory[];
   demandForecasts?: DemandForecastData[];
@@ -470,7 +470,7 @@ async function generateDailyForecast(
 
   // Calculate occupancy and revenue
   const occupancy = Math.round(demand * 0.9); // Slight conversion loss
-  const avgRate = config.targetRevPAR || 150;
+  const avgRate = config.minPriceFloor || 150; // Use min price floor as baseline
   const revenue = Math.round(occupancy * avgRate);
 
   // Confidence based on data availability
@@ -492,15 +492,15 @@ export async function getPriceRecommendations(
   filters?: {
     startDate?: Date;
     endDate?: Date;
-    rateCategoryId?: number;
+    categoryId?: number;
     status?: string;
   },
 ) {
   return prisma.priceRecommendation.findMany({
     where: {
       configId,
-      ...(filters?.rateCategoryId && {
-        rateCategoryId: filters.rateCategoryId,
+      ...(filters?.categoryId && {
+        categoryId: filters.categoryId,
       }),
       ...(filters?.status && { status: filters.status }),
       ...(filters?.startDate &&
@@ -512,7 +512,7 @@ export async function getPriceRecommendations(
         }),
     },
     include: {
-      rateCategory: true,
+      category: true,
     },
     orderBy: { date: 'asc' },
   });
@@ -567,35 +567,29 @@ export async function generatePriceRecommendations(
 
       const savedRecommendation = await prisma.priceRecommendation.upsert({
         where: {
-          configId_rateCategoryId_date: {
+          configId_categoryId_date: {
             configId,
-            rateCategoryId: category.id,
+            categoryId: category.id,
             date: recommendationDate,
           },
         },
         update: {
           currentRate: recommendation.currentRate,
           recommendedRate: recommendation.recommendedRate,
-          minRate: recommendation.minRate,
-          maxRate: recommendation.maxRate,
           confidence: recommendation.confidence,
-          factors: recommendation.factors,
-          expectedRevenue: recommendation.expectedRevenue,
-          expectedOccupancy: recommendation.expectedOccupancy,
           status: 'pending',
         },
         create: {
           configId,
-          rateCategoryId: category.id,
+          categoryId: category.id,
           date: recommendationDate,
           currentRate: recommendation.currentRate,
           recommendedRate: recommendation.recommendedRate,
-          minRate: recommendation.minRate,
-          maxRate: recommendation.maxRate,
+          changePercent:
+            ((recommendation.recommendedRate - recommendation.currentRate) /
+              recommendation.currentRate) *
+            100,
           confidence: recommendation.confidence,
-          factors: recommendation.factors,
-          expectedRevenue: recommendation.expectedRevenue,
-          expectedOccupancy: recommendation.expectedOccupancy,
           status: 'pending',
         },
       });
@@ -622,7 +616,8 @@ async function generateRecommendation(
   expectedOccupancy: number;
 }> {
   const factors: Record<string, unknown> = {};
-  let recommendedRate = category.baseRate;
+  const baseRateNum = Number(category.baseRate);
+  let recommendedRate = baseRateNum;
 
   // Get demand forecast for this date
   const forecast = config.demandForecasts?.find((f: DemandForecastData) => {
@@ -634,7 +629,7 @@ async function generateRecommendation(
     // Adjust based on demand
     const demandMultiplier = forecast.predictedDemand / 50; // 50 is baseline
     const demandAdjustment =
-      (demandMultiplier - 1) * config.demandWeight * category.baseRate;
+      (demandMultiplier - 1) * config.demandWeight * baseRateNum;
     recommendedRate += demandAdjustment;
     factors.demand = {
       predictedDemand: forecast.predictedDemand,
@@ -660,7 +655,7 @@ async function generateRecommendation(
       competitorRates.reduce((sum: number, r: RateData) => sum + r.rate, 0) /
       competitorRates.length;
     const competitorAdjustment =
-      (avgCompetitorRate - category.baseRate) * config.competitorWeight;
+      (avgCompetitorRate - baseRateNum) * config.competitorWeight;
     recommendedRate += competitorAdjustment;
     factors.competitors = {
       avgRate: Math.round(avgCompetitorRate),
@@ -671,17 +666,24 @@ async function generateRecommendation(
 
   // Apply pricing strategy adjustments
   switch (config.pricingStrategy) {
-    case PricingStrategy.AGGRESSIVE:
+    case PricingStrategy.COMPETITIVE:
       recommendedRate *= 1.1;
-      factors.strategy = { type: 'aggressive', adjustment: '+10%' };
+      factors.strategy = { type: 'competitive', adjustment: '+10%' };
       break;
-    case PricingStrategy.CONSERVATIVE:
+    case PricingStrategy.STATIC:
       recommendedRate *= 0.95;
-      factors.strategy = { type: 'conservative', adjustment: '-5%' };
+      factors.strategy = { type: 'static', adjustment: '-5%' };
       break;
     case PricingStrategy.DYNAMIC:
       // Already dynamic through demand adjustment
       factors.strategy = { type: 'dynamic', adjustment: 'demand-based' };
+      break;
+    case PricingStrategy.DEMAND_BASED:
+      // Demand-based pricing already applied through forecast
+      factors.strategy = { type: 'demand-based', adjustment: 'forecast-driven' };
+      break;
+    case PricingStrategy.TIME_BASED:
+      factors.strategy = { type: 'time-based', adjustment: 'schedule-driven' };
       break;
     default:
       factors.strategy = { type: 'balanced', adjustment: '0%' };
@@ -689,16 +691,16 @@ async function generateRecommendation(
 
   // Apply min/max constraints
   const minRate =
-    category.minRate || config.minPrice || category.baseRate * 0.7;
+    Number(category.minRate) || config.minPriceFloor || baseRateNum * 0.7;
   const maxRate =
-    category.maxRate || config.maxPrice || category.baseRate * 1.5;
+    Number(category.maxRate) || config.maxPriceCeiling || baseRateNum * 1.5;
   recommendedRate = Math.min(maxRate, Math.max(minRate, recommendedRate));
 
   // Round to nearest 5
   recommendedRate = Math.round(recommendedRate / 5) * 5;
 
   // Calculate expected metrics
-  const expectedOccupancy = forecast?.predictedOccupancy || 70;
+  const expectedOccupancy = forecast?.predictedDemand || 70;
   const expectedRevenue = recommendedRate * (expectedOccupancy / 100) * 100; // Assuming 100 units
 
   // Confidence based on data quality
@@ -708,7 +710,7 @@ async function generateRecommendation(
   );
 
   return {
-    currentRate: category.baseRate,
+    currentRate: baseRateNum,
     recommendedRate,
     minRate,
     maxRate,
@@ -721,11 +723,11 @@ async function generateRecommendation(
 
 export async function applyRecommendation(
   recommendationId: number,
-  appliedBy: string,
+  _appliedBy: string,
 ) {
   const recommendation = await prisma.priceRecommendation.findUnique({
     where: { id: recommendationId },
-    include: { rateCategory: true },
+    include: { category: true },
   });
 
   if (!recommendation) {
@@ -734,7 +736,7 @@ export async function applyRecommendation(
 
   // Update the rate category's base rate
   await prisma.rateCategory.update({
-    where: { id: recommendation.rateCategoryId },
+    where: { id: recommendation.categoryId },
     data: { baseRate: recommendation.recommendedRate },
   });
 
@@ -744,7 +746,6 @@ export async function applyRecommendation(
     data: {
       status: 'applied',
       appliedAt: new Date(),
-      appliedBy,
     },
   });
 }
@@ -780,11 +781,9 @@ export async function createPromotion(data: {
   discountValue: number;
   startDate: Date;
   endDate: Date;
-  applicableRateCategories?: string[];
-  conditions?: Record<string, unknown>;
-  bookingWindow?: Record<string, unknown>;
-  usageLimit?: number;
-  promoCode?: string;
+  applicableCategories?: string[];
+  maxUsage?: number;
+  code?: string;
 }) {
   return prisma.revenuePromotion.create({
     data: {
@@ -795,12 +794,10 @@ export async function createPromotion(data: {
       discountValue: data.discountValue,
       startDate: data.startDate,
       endDate: data.endDate,
-      applicableRateCategories: data.applicableRateCategories ?? [],
-      conditions: data.conditions ?? {},
-      bookingWindow: data.bookingWindow ?? {},
-      usageLimit: data.usageLimit,
+      applicableCategories: data.applicableCategories ?? [],
+      maxUsage: data.maxUsage,
       usageCount: 0,
-      promoCode: data.promoCode,
+      code: data.code,
       isActive: true,
     },
   });
@@ -815,9 +812,8 @@ export async function updatePromotion(
     discountValue?: number;
     startDate?: Date;
     endDate?: Date;
-    applicableRateCategories?: string[];
-    conditions?: Record<string, unknown>;
-    usageLimit?: number;
+    applicableCategories?: string[];
+    maxUsage?: number;
     isActive?: boolean;
   },
 ) {
@@ -831,34 +827,30 @@ export async function updatePromotion(
 
 export async function recordBooking(data: {
   configId: number;
-  bookingReference: string;
   bookingDate: Date;
   stayDate: Date;
-  checkoutDate: Date;
-  rateCategory?: string;
-  roomNights: number;
-  revenue: number;
+  checkoutDate?: Date;
+  categoryId?: number;
+  rate: number;
+  nights?: number;
+  totalRevenue: number;
   channel?: string;
-  segment?: string;
-  leadTime?: number;
-  guestCount?: number;
-  promotionUsed?: string;
+  leadTimeDays?: number;
+  promotionCode?: string;
 }) {
   return prisma.bookingData.create({
     data: {
       configId: data.configId,
-      bookingReference: data.bookingReference,
       bookingDate: data.bookingDate,
       stayDate: data.stayDate,
       checkoutDate: data.checkoutDate,
-      rateCategory: data.rateCategory,
-      roomNights: data.roomNights,
-      revenue: data.revenue,
+      categoryId: data.categoryId,
+      rate: data.rate,
+      nights: data.nights ?? 1,
+      totalRevenue: data.totalRevenue,
       channel: data.channel,
-      segment: data.segment,
-      leadTime: data.leadTime,
-      guestCount: data.guestCount,
-      promotionUsed: data.promotionUsed,
+      leadTimeDays: data.leadTimeDays,
+      promotionCode: data.promotionCode,
     },
   });
 }
@@ -922,7 +914,7 @@ export async function getRevenueAnalytics(
         endDate: { gte: startDate },
       },
     }),
-    prisma.revenueAnalytics.findMany({
+    prisma.revenueManagementAnalytics.findMany({
       where: {
         configId,
         date: { gte: startDate, lte: endDate },
@@ -932,8 +924,11 @@ export async function getRevenueAnalytics(
   ]);
 
   // Calculate key metrics
-  const totalRevenue = bookings.reduce((sum, b) => sum + b.revenue, 0);
-  const totalRoomNights = bookings.reduce((sum, b) => sum + b.roomNights, 0);
+  const totalRevenue = bookings.reduce(
+    (sum, b) => sum + Number(b.totalRevenue),
+    0,
+  );
+  const totalRoomNights = bookings.reduce((sum, b) => sum + b.nights, 0);
   const avgDailyRate = totalRoomNights > 0 ? totalRevenue / totalRoomNights : 0;
 
   // Calculate RevPAR (assuming 100 available rooms)
@@ -951,15 +946,15 @@ export async function getRevenueAnalytics(
   for (const booking of bookings) {
     const channel = booking.channel || 'direct';
     revenueByChannel[channel] =
-      (revenueByChannel[channel] || 0) + booking.revenue;
+      (revenueByChannel[channel] || 0) + Number(booking.totalRevenue);
   }
 
-  // Revenue by segment
-  const revenueBySegment: Record<string, number> = {};
+  // Revenue by rate type (instead of segment which doesn't exist)
+  const revenueByRateType: Record<string, number> = {};
   for (const booking of bookings) {
-    const segment = booking.segment || 'leisure';
-    revenueBySegment[segment] =
-      (revenueBySegment[segment] || 0) + booking.revenue;
+    const rateType = booking.rateType || 'STANDARD';
+    revenueByRateType[rateType] =
+      (revenueByRateType[rateType] || 0) + Number(booking.totalRevenue);
   }
 
   // Recommendation performance
@@ -971,7 +966,7 @@ export async function getRevenueAnalytics(
   );
   const avgConfidence =
     recommendations.length > 0
-      ? recommendations.reduce((sum, r) => sum + r.confidence, 0) /
+      ? recommendations.reduce((sum, r) => sum + (r.confidence ?? 0), 0) /
         recommendations.length
       : 0;
 
@@ -990,7 +985,7 @@ export async function getRevenueAnalytics(
       avgRecommendationConfidence: Math.round(avgConfidence * 100) / 100,
     },
     revenueByChannel,
-    revenueBySegment,
+    revenueByRateType,
     promotionPerformance: promotions.map((p) => ({
       name: p.name,
       usageCount: p.usageCount,
@@ -1012,16 +1007,19 @@ export async function recordDailyAnalytics(configId: number) {
     },
   });
 
-  const totalRevenue = bookings.reduce((sum, b) => sum + b.revenue, 0);
-  const totalRoomNights = bookings.reduce((sum, b) => sum + b.roomNights, 0);
+  const totalRevenue = bookings.reduce(
+    (sum, b) => sum + Number(b.totalRevenue),
+    0,
+  );
+  const totalRoomNights = bookings.reduce((sum, b) => sum + b.nights, 0);
   const avgRate = totalRoomNights > 0 ? totalRevenue / totalRoomNights : 0;
 
   // Assuming 100 available rooms
   const availableRooms = 100;
-  const occupancy = (totalRoomNights / availableRooms) * 100;
-  const revPAR = totalRevenue / availableRooms;
+  const occupancyRate = (totalRoomNights / availableRooms) * 100;
+  const revPar = totalRevenue / availableRooms;
 
-  return prisma.revenueAnalytics.upsert({
+  return prisma.revenueManagementAnalytics.upsert({
     where: {
       configId_date: {
         configId,
@@ -1030,21 +1028,19 @@ export async function recordDailyAnalytics(configId: number) {
     },
     update: {
       totalRevenue,
-      roomNightsSold: totalRoomNights,
-      averageRate: avgRate,
-      occupancy,
-      revPAR,
-      bookingsCount: bookings.length,
+      soldInventory: totalRoomNights,
+      adr: avgRate,
+      occupancyRate,
+      revPar,
     },
     create: {
       configId,
       date: today,
       totalRevenue,
-      roomNightsSold: totalRoomNights,
-      averageRate: avgRate,
-      occupancy,
-      revPAR,
-      bookingsCount: bookings.length,
+      soldInventory: totalRoomNights,
+      adr: avgRate,
+      occupancyRate,
+      revPar,
     },
   });
 }
