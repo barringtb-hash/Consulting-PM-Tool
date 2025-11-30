@@ -202,27 +202,47 @@ export function createApp(): express.Express {
 
   // Inventory Forecasting Engine module (Tool 3.1)
   if (isModuleEnabled('inventoryForecasting')) {
-    app.use('/api/inventory-forecasting', requireModule('inventoryForecasting'), inventoryForecastingRouter);
+    app.use(
+      '/api/inventory-forecasting',
+      requireModule('inventoryForecasting'),
+      inventoryForecastingRouter,
+    );
   }
 
   // Compliance Monitoring System module (Tool 3.2)
   if (isModuleEnabled('complianceMonitor')) {
-    app.use('/api/compliance-monitor', requireModule('complianceMonitor'), complianceMonitorRouter);
+    app.use(
+      '/api/compliance-monitor',
+      requireModule('complianceMonitor'),
+      complianceMonitorRouter,
+    );
   }
 
   // Predictive Maintenance Platform module (Tool 3.3)
   if (isModuleEnabled('predictiveMaintenance')) {
-    app.use('/api/predictive-maintenance', requireModule('predictiveMaintenance'), predictiveMaintenanceRouter);
+    app.use(
+      '/api/predictive-maintenance',
+      requireModule('predictiveMaintenance'),
+      predictiveMaintenanceRouter,
+    );
   }
 
   // Revenue Management AI module (Tool 3.4)
   if (isModuleEnabled('revenueManagement')) {
-    app.use('/api/revenue-management', requireModule('revenueManagement'), revenueManagementRouter);
+    app.use(
+      '/api/revenue-management',
+      requireModule('revenueManagement'),
+      revenueManagementRouter,
+    );
   }
 
   // Safety & Compliance Monitor module (Tool 3.5)
   if (isModuleEnabled('safetyMonitor')) {
-    app.use('/api/safety-monitor', requireModule('safetyMonitor'), safetyMonitorRouter);
+    app.use(
+      '/api/safety-monitor',
+      requireModule('safetyMonitor'),
+      safetyMonitorRouter,
+    );
   }
 
   // Error handling middleware must be last

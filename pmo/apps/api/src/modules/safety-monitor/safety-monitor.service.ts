@@ -1,5 +1,21 @@
-import { IncidentSeverity, IncidentStatus, ChecklistStatus, TrainingStatus } from '@prisma/client';
+import {
+  IncidentSeverity,
+  IncidentStatus,
+  ChecklistStatus,
+  TrainingStatus,
+  SafetyIncident,
+  HazardReport,
+  TrainingRecord,
+} from '@prisma/client';
 import { prisma } from '../../prisma/client';
+
+// ============ Internal Types ============
+
+interface TrainingWithRequirement {
+  requirement?: {
+    category?: string;
+  };
+}
 
 // ============ Configuration Management ============
 
@@ -32,8 +48,8 @@ export async function createSafetyConfig(data: {
   workAreas: string[];
   hazardCategories?: string[];
   regulatoryRequirements?: string[];
-  emergencyContacts?: Record<string, any>;
-  reportingThresholds?: Record<string, any>;
+  emergencyContacts?: Record<string, unknown>;
+  reportingThresholds?: Record<string, unknown>;
 }) {
   return prisma.safetyMonitorConfig.create({
     data: {
@@ -59,9 +75,9 @@ export async function updateSafetyConfig(
     workAreas?: string[];
     hazardCategories?: string[];
     regulatoryRequirements?: string[];
-    emergencyContacts?: Record<string, any>;
-    reportingThresholds?: Record<string, any>;
-  }
+    emergencyContacts?: Record<string, unknown>;
+    reportingThresholds?: Record<string, unknown>;
+  },
 ) {
   return prisma.safetyMonitorConfig.update({
     where: { id: configId },
@@ -71,11 +87,14 @@ export async function updateSafetyConfig(
 
 // ============ Safety Checklists ============
 
-export async function getChecklists(configId: number, filters?: {
-  workArea?: string;
-  frequency?: string;
-  isActive?: boolean;
-}) {
+export async function getChecklists(
+  configId: number,
+  filters?: {
+    workArea?: string;
+    frequency?: string;
+    isActive?: boolean;
+  },
+) {
   return prisma.safetyChecklist.findMany({
     where: {
       configId,
@@ -98,7 +117,7 @@ export async function createChecklist(data: {
   description?: string;
   workArea: string;
   frequency: string;
-  items: Record<string, any>[];
+  items: Record<string, unknown>[];
   requiredPPE?: string[];
   estimatedDuration?: number;
 }) {
@@ -124,11 +143,11 @@ export async function updateChecklist(
     description?: string;
     workArea?: string;
     frequency?: string;
-    items?: Record<string, any>[];
+    items?: Record<string, unknown>[];
     requiredPPE?: string[];
     estimatedDuration?: number;
     isActive?: boolean;
-  }
+  },
 ) {
   return prisma.safetyChecklist.update({
     where: { id: checklistId },
@@ -144,21 +163,25 @@ export async function deleteChecklist(checklistId: number) {
 
 // ============ Checklist Completions ============
 
-export async function getChecklistCompletions(checklistId: number, filters?: {
-  status?: ChecklistStatus;
-  startDate?: Date;
-  endDate?: Date;
-}) {
+export async function getChecklistCompletions(
+  checklistId: number,
+  filters?: {
+    status?: ChecklistStatus;
+    startDate?: Date;
+    endDate?: Date;
+  },
+) {
   return prisma.checklistCompletion.findMany({
     where: {
       checklistId,
       ...(filters?.status && { status: filters.status }),
-      ...(filters?.startDate && filters?.endDate && {
-        completedAt: {
-          gte: filters.startDate,
-          lte: filters.endDate,
-        },
-      }),
+      ...(filters?.startDate &&
+        filters?.endDate && {
+          completedAt: {
+            gte: filters.startDate,
+            lte: filters.endDate,
+          },
+        }),
     },
     include: {
       checklist: true,
@@ -171,7 +194,7 @@ export async function createChecklistCompletion(data: {
   checklistId: number;
   completedBy: string;
   completedAt: Date;
-  responses: Record<string, any>;
+  responses: Record<string, unknown>;
   notes?: string;
   issues?: string[];
   photos?: string[];
@@ -207,25 +230,31 @@ export async function createChecklistCompletion(data: {
 
 // ============ Safety Incidents ============
 
-export async function getIncidents(configId: number, filters?: {
-  status?: IncidentStatus;
-  severity?: IncidentSeverity;
-  workArea?: string;
-  startDate?: Date;
-  endDate?: Date;
-}) {
+export async function getIncidents(
+  configId: number,
+  filters?: {
+    status?: IncidentStatus;
+    severity?: IncidentSeverity;
+    workArea?: string;
+    startDate?: Date;
+    endDate?: Date;
+  },
+) {
   return prisma.safetyIncident.findMany({
     where: {
       configId,
       ...(filters?.status && { status: filters.status }),
       ...(filters?.severity && { severity: filters.severity }),
-      ...(filters?.workArea && { location: { contains: filters.workArea, mode: 'insensitive' } }),
-      ...(filters?.startDate && filters?.endDate && {
-        incidentDate: {
-          gte: filters.startDate,
-          lte: filters.endDate,
-        },
+      ...(filters?.workArea && {
+        location: { contains: filters.workArea, mode: 'insensitive' },
       }),
+      ...(filters?.startDate &&
+        filters?.endDate && {
+          incidentDate: {
+            gte: filters.startDate,
+            lte: filters.endDate,
+          },
+        }),
     },
     orderBy: { incidentDate: 'desc' },
   });
@@ -242,8 +271,8 @@ export async function createIncident(data: {
   location: string;
   involvedPersons?: string[];
   witnesses?: string[];
-  injuries?: Record<string, any>[];
-  propertyDamage?: Record<string, any>;
+  injuries?: Record<string, unknown>[];
+  propertyDamage?: Record<string, unknown>;
   immediateActions?: string[];
   rootCause?: string;
   reportedBy: string;
@@ -285,9 +314,9 @@ export async function updateIncident(
     investigatedBy?: string;
     closedAt?: Date;
     closedBy?: string;
-  }
+  },
 ) {
-  const updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
 
   if (data.status === IncidentStatus.INVESTIGATING) {
     updateData.investigatedAt = new Date();
@@ -305,19 +334,24 @@ export async function updateIncident(
 
 // ============ Hazard Reports ============
 
-export async function getHazards(configId: number, filters?: {
-  category?: string;
-  riskLevel?: string;
-  status?: string;
-  location?: string;
-}) {
+export async function getHazards(
+  configId: number,
+  filters?: {
+    category?: string;
+    riskLevel?: string;
+    status?: string;
+    location?: string;
+  },
+) {
   return prisma.hazardReport.findMany({
     where: {
       configId,
       ...(filters?.category && { category: filters.category }),
       ...(filters?.riskLevel && { riskLevel: filters.riskLevel }),
       ...(filters?.status && { status: filters.status }),
-      ...(filters?.location && { location: { contains: filters.location, mode: 'insensitive' } }),
+      ...(filters?.location && {
+        location: { contains: filters.location, mode: 'insensitive' },
+      }),
     },
     orderBy: { reportedAt: 'desc' },
   });
@@ -363,7 +397,7 @@ export async function updateHazard(
     resolvedAt?: Date;
     resolvedBy?: string;
     verificationNotes?: string;
-  }
+  },
 ) {
   return prisma.hazardReport.update({
     where: { id: hazardId },
@@ -373,10 +407,13 @@ export async function updateHazard(
 
 // ============ Training Management ============
 
-export async function getTrainingRequirements(configId: number, filters?: {
-  category?: string;
-  isActive?: boolean;
-}) {
+export async function getTrainingRequirements(
+  configId: number,
+  filters?: {
+    category?: string;
+    isActive?: boolean;
+  },
+) {
   return prisma.trainingRequirement.findMany({
     where: {
       configId,
@@ -437,7 +474,7 @@ export async function updateTrainingRequirement(
     assessmentRequired?: boolean;
     passingScore?: number;
     isActive?: boolean;
-  }
+  },
 ) {
   return prisma.trainingRequirement.update({
     where: { id: requirementId },
@@ -447,11 +484,14 @@ export async function updateTrainingRequirement(
 
 // ============ Training Records ============
 
-export async function getTrainingRecords(configId: number, filters?: {
-  requirementId?: number;
-  employeeId?: string;
-  status?: TrainingStatus;
-}) {
+export async function getTrainingRecords(
+  configId: number,
+  filters?: {
+    requirementId?: number;
+    employeeId?: string;
+    status?: TrainingStatus;
+  },
+) {
   return prisma.trainingRecord.findMany({
     where: {
       configId,
@@ -485,9 +525,10 @@ export async function createTrainingRecord(data: {
   let status = TrainingStatus.SCHEDULED;
   if (data.completedAt) {
     if (requirement?.assessmentRequired && data.score !== undefined) {
-      status = data.score >= (requirement.passingScore || 70)
-        ? TrainingStatus.COMPLETED
-        : TrainingStatus.FAILED;
+      status =
+        data.score >= (requirement.passingScore || 70)
+          ? TrainingStatus.COMPLETED
+          : TrainingStatus.FAILED;
     } else {
       status = TrainingStatus.COMPLETED;
     }
@@ -530,7 +571,7 @@ export async function updateTrainingRecord(
     certificateUrl?: string;
     notes?: string;
     status?: TrainingStatus;
-  }
+  },
 ) {
   return prisma.trainingRecord.update({
     where: { id: recordId },
@@ -543,10 +584,13 @@ export async function updateTrainingRecord(
 
 // ============ OSHA Logs ============
 
-export async function getOshaLogs(configId: number, filters?: {
-  year?: number;
-  logType?: string;
-}) {
+export async function getOshaLogs(
+  configId: number,
+  filters?: {
+    year?: number;
+    logType?: string;
+  },
+) {
   return prisma.oshaLog.findMany({
     where: {
       configId,
@@ -561,7 +605,7 @@ export async function createOshaLog(data: {
   configId: number;
   year: number;
   logType: string;
-  entries: Record<string, any>[];
+  entries: Record<string, unknown>[];
   totalCases?: number;
   daysAwayFromWork?: number;
   daysRestricted?: number;
@@ -584,12 +628,12 @@ export async function createOshaLog(data: {
 export async function updateOshaLog(
   logId: number,
   data: {
-    entries?: Record<string, any>[];
+    entries?: Record<string, unknown>[];
     totalCases?: number;
     daysAwayFromWork?: number;
     daysRestricted?: number;
     otherRecordable?: number;
-  }
+  },
 ) {
   return prisma.oshaLog.update({
     where: { id: logId },
@@ -599,15 +643,20 @@ export async function updateOshaLog(
 
 // ============ Safety Inspections ============
 
-export async function getInspections(configId: number, filters?: {
-  inspectionType?: string;
-  status?: string;
-  area?: string;
-}) {
+export async function getInspections(
+  configId: number,
+  filters?: {
+    inspectionType?: string;
+    status?: string;
+    area?: string;
+  },
+) {
   return prisma.safetyInspection.findMany({
     where: {
       configId,
-      ...(filters?.inspectionType && { inspectionType: filters.inspectionType }),
+      ...(filters?.inspectionType && {
+        inspectionType: filters.inspectionType,
+      }),
       ...(filters?.status && { status: filters.status }),
       ...(filters?.area && { area: filters.area }),
     },
@@ -623,7 +672,7 @@ export async function createInspection(data: {
   area: string;
   scheduledDate: Date;
   inspector?: string;
-  checklistItems?: Record<string, any>[];
+  checklistItems?: Record<string, unknown>[];
 }) {
   return prisma.safetyInspection.create({
     data: {
@@ -646,12 +695,12 @@ export async function updateInspection(
     status?: string;
     completedAt?: Date;
     inspector?: string;
-    findings?: Record<string, any>[];
+    findings?: Record<string, unknown>[];
     overallRating?: string;
     correctiveActions?: string[];
     nextInspectionDate?: Date;
     notes?: string;
-  }
+  },
 ) {
   return prisma.safetyInspection.update({
     where: { id: inspectionId },
@@ -661,85 +710,107 @@ export async function updateInspection(
 
 // ============ Analytics ============
 
-export async function getSafetyAnalytics(configId: number, filters?: {
-  startDate?: Date;
-  endDate?: Date;
-}) {
-  const startDate = filters?.startDate || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+export async function getSafetyAnalytics(
+  configId: number,
+  filters?: {
+    startDate?: Date;
+    endDate?: Date;
+  },
+) {
+  const startDate =
+    filters?.startDate || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
   const endDate = filters?.endDate || new Date();
 
-  const [incidents, hazards, trainings, inspections, analytics] = await Promise.all([
-    prisma.safetyIncident.findMany({
-      where: {
-        configId,
-        incidentDate: { gte: startDate, lte: endDate },
-      },
-    }),
-    prisma.hazardReport.findMany({
-      where: {
-        configId,
-        reportedAt: { gte: startDate, lte: endDate },
-      },
-    }),
-    prisma.trainingRecord.findMany({
-      where: {
-        configId,
-        completedAt: { gte: startDate, lte: endDate },
-      },
-    }),
-    prisma.safetyInspection.findMany({
-      where: {
-        configId,
-        scheduledDate: { gte: startDate, lte: endDate },
-      },
-    }),
-    prisma.safetyAnalytics.findMany({
-      where: {
-        configId,
-        date: { gte: startDate, lte: endDate },
-      },
-      orderBy: { date: 'asc' },
-    }),
-  ]);
+  const [incidents, hazards, trainings, inspections, analytics] =
+    await Promise.all([
+      prisma.safetyIncident.findMany({
+        where: {
+          configId,
+          incidentDate: { gte: startDate, lte: endDate },
+        },
+      }),
+      prisma.hazardReport.findMany({
+        where: {
+          configId,
+          reportedAt: { gte: startDate, lte: endDate },
+        },
+      }),
+      prisma.trainingRecord.findMany({
+        where: {
+          configId,
+          completedAt: { gte: startDate, lte: endDate },
+        },
+      }),
+      prisma.safetyInspection.findMany({
+        where: {
+          configId,
+          scheduledDate: { gte: startDate, lte: endDate },
+        },
+      }),
+      prisma.safetyAnalytics.findMany({
+        where: {
+          configId,
+          date: { gte: startDate, lte: endDate },
+        },
+        orderBy: { date: 'asc' },
+      }),
+    ]);
 
   // Calculate key safety metrics
   const totalIncidents = incidents.length;
-  const openIncidents = incidents.filter(i => i.status !== IncidentStatus.CLOSED).length;
-  const criticalIncidents = incidents.filter(i => i.severity === IncidentSeverity.CRITICAL).length;
-
-  const openHazards = hazards.filter(h => h.status === 'open').length;
-  const resolvedHazards = hazards.filter(h => h.status === 'resolved').length;
-
-  const completedTrainings = trainings.filter(t => t.status === TrainingStatus.COMPLETED).length;
-  const overdueTrainings = trainings.filter(t =>
-    t.expiresAt && new Date(t.expiresAt) < new Date()
+  const openIncidents = incidents.filter(
+    (i) => i.status !== IncidentStatus.CLOSED,
+  ).length;
+  const criticalIncidents = incidents.filter(
+    (i) => i.severity === IncidentSeverity.CRITICAL,
   ).length;
 
-  const completedInspections = inspections.filter(i => i.status === 'completed').length;
-  const passedInspections = inspections.filter(i =>
-    i.status === 'completed' && i.overallRating !== 'fail'
+  const openHazards = hazards.filter((h) => h.status === 'open').length;
+  const resolvedHazards = hazards.filter((h) => h.status === 'resolved').length;
+
+  const _completedTrainings = trainings.filter(
+    (t) => t.status === TrainingStatus.COMPLETED,
+  ).length;
+  const _overdueTrainings = trainings.filter(
+    (t) => t.expiresAt && new Date(t.expiresAt) < new Date(),
+  ).length;
+
+  const completedInspections = inspections.filter(
+    (i) => i.status === 'completed',
+  ).length;
+  const passedInspections = inspections.filter(
+    (i) => i.status === 'completed' && i.overallRating !== 'fail',
   ).length;
 
   // Calculate days without incident
-  const lastIncident = incidents.sort((a, b) =>
-    new Date(b.incidentDate).getTime() - new Date(a.incidentDate).getTime()
+  const lastIncident = incidents.sort(
+    (a, b) =>
+      new Date(b.incidentDate).getTime() - new Date(a.incidentDate).getTime(),
   )[0];
   const daysWithoutIncident = lastIncident
-    ? Math.floor((Date.now() - new Date(lastIncident.incidentDate).getTime()) / (24 * 60 * 60 * 1000))
+    ? Math.floor(
+        (Date.now() - new Date(lastIncident.incidentDate).getTime()) /
+          (24 * 60 * 60 * 1000),
+      )
     : 365;
 
   // Incidents by type
   const incidentsByType: Record<string, number> = {};
   for (const incident of incidents) {
-    incidentsByType[incident.incidentType] = (incidentsByType[incident.incidentType] || 0) + 1;
+    incidentsByType[incident.incidentType] =
+      (incidentsByType[incident.incidentType] || 0) + 1;
   }
 
   // Incidents by severity
   const incidentsBySeverity = {
-    minor: incidents.filter(i => i.severity === IncidentSeverity.MINOR).length,
-    moderate: incidents.filter(i => i.severity === IncidentSeverity.MODERATE).length,
-    major: incidents.filter(i => i.severity === IncidentSeverity.MAJOR).length,
-    critical: incidents.filter(i => i.severity === IncidentSeverity.CRITICAL).length,
+    minor: incidents.filter((i) => i.severity === IncidentSeverity.MINOR)
+      .length,
+    moderate: incidents.filter((i) => i.severity === IncidentSeverity.MODERATE)
+      .length,
+    major: incidents.filter((i) => i.severity === IncidentSeverity.MAJOR)
+      .length,
+    critical: incidents.filter((i) => i.severity === IncidentSeverity.CRITICAL)
+      .length,
   };
 
   return {
@@ -751,30 +822,43 @@ export async function getSafetyAnalytics(configId: number, filters?: {
       daysWithoutIncident,
       openHazards,
       resolvedHazards,
-      hazardResolutionRate: hazards.length > 0
-        ? Math.round((resolvedHazards / hazards.length) * 100)
-        : 100,
+      hazardResolutionRate:
+        hazards.length > 0
+          ? Math.round((resolvedHazards / hazards.length) * 100)
+          : 100,
       completedTrainings,
       overdueTrainings,
-      trainingComplianceRate: trainings.length > 0
-        ? Math.round((completedTrainings / trainings.length) * 100)
-        : 100,
+      trainingComplianceRate:
+        trainings.length > 0
+          ? Math.round((completedTrainings / trainings.length) * 100)
+          : 100,
       completedInspections,
-      inspectionPassRate: completedInspections > 0
-        ? Math.round((passedInspections / completedInspections) * 100)
-        : 100,
+      inspectionPassRate:
+        completedInspections > 0
+          ? Math.round((passedInspections / completedInspections) * 100)
+          : 100,
     },
     incidentsByType,
     incidentsBySeverity,
     hazardsByCategory: groupBy(hazards, 'category'),
-    trainingsByCategory: groupBy(trainings, (t: any) => t.requirement?.category || 'uncategorized'),
+    trainingsByCategory: groupBy(
+      trainings,
+      (t: TrainingWithRequirement) =>
+        t.requirement?.category || 'uncategorized',
+    ),
   };
 }
 
-function groupBy<T>(items: T[], key: string | ((item: T) => string)): Record<string, number> {
+function groupBy<T>(
+  items: T[],
+  key: string | ((item: T) => string),
+): Record<string, number> {
   const result: Record<string, number> = {};
   for (const item of items) {
-    const groupKey = typeof key === 'function' ? key(item) : (item as any)[key];
+    const groupKey =
+      typeof key === 'function'
+        ? key(item)
+        : (item as Record<string, unknown>)[key as string];
     result[groupKey] = (result[groupKey] || 0) + 1;
   }
   return result;
@@ -791,19 +875,29 @@ export async function recordDailyAnalytics(configId: number) {
     prisma.safetyInspection.findMany({ where: { configId } }),
   ]);
 
-  const openIncidents = incidents.filter(i => i.status !== IncidentStatus.CLOSED).length;
-  const openHazards = hazards.filter(h => h.status === 'open').length;
-  const completedTrainings = trainings.filter(t => t.status === TrainingStatus.COMPLETED).length;
-  const overdueTrainings = trainings.filter(t =>
-    t.expiresAt && new Date(t.expiresAt) < new Date()
+  const openIncidents = incidents.filter(
+    (i) => i.status !== IncidentStatus.CLOSED,
+  ).length;
+  const openHazards = hazards.filter((h) => h.status === 'open').length;
+  const _completedTrainings = trainings.filter(
+    (t) => t.status === TrainingStatus.COMPLETED,
+  ).length;
+  const _overdueTrainings = trainings.filter(
+    (t) => t.expiresAt && new Date(t.expiresAt) < new Date(),
   ).length;
 
   // Calculate days since last incident
   const lastIncident = incidents
-    .filter(i => i.severity !== IncidentSeverity.MINOR)
-    .sort((a, b) => new Date(b.incidentDate).getTime() - new Date(a.incidentDate).getTime())[0];
+    .filter((i) => i.severity !== IncidentSeverity.MINOR)
+    .sort(
+      (a, b) =>
+        new Date(b.incidentDate).getTime() - new Date(a.incidentDate).getTime(),
+    )[0];
   const daysSinceLastIncident = lastIncident
-    ? Math.floor((Date.now() - new Date(lastIncident.incidentDate).getTime()) / (24 * 60 * 60 * 1000))
+    ? Math.floor(
+        (Date.now() - new Date(lastIncident.incidentDate).getTime()) /
+          (24 * 60 * 60 * 1000),
+      )
     : 365;
 
   return prisma.safetyAnalytics.upsert({
@@ -814,19 +908,23 @@ export async function recordDailyAnalytics(configId: number) {
       },
     },
     update: {
-      incidentsReported: incidents.filter(i =>
-        new Date(i.reportedAt).toDateString() === today.toDateString()
+      incidentsReported: incidents.filter(
+        (i) => new Date(i.reportedAt).toDateString() === today.toDateString(),
       ).length,
       incidentsOpen: openIncidents,
-      hazardsIdentified: hazards.filter(h =>
-        new Date(h.reportedAt).toDateString() === today.toDateString()
+      hazardsIdentified: hazards.filter(
+        (h) => new Date(h.reportedAt).toDateString() === today.toDateString(),
       ).length,
       hazardsOpen: openHazards,
-      inspectionsCompleted: inspections.filter(i =>
-        i.completedAt && new Date(i.completedAt).toDateString() === today.toDateString()
+      inspectionsCompleted: inspections.filter(
+        (i) =>
+          i.completedAt &&
+          new Date(i.completedAt).toDateString() === today.toDateString(),
       ).length,
-      trainingsCompleted: trainings.filter(t =>
-        t.completedAt && new Date(t.completedAt).toDateString() === today.toDateString()
+      trainingsCompleted: trainings.filter(
+        (t) =>
+          t.completedAt &&
+          new Date(t.completedAt).toDateString() === today.toDateString(),
       ).length,
       daysSinceLastIncident,
       complianceScore: calculateComplianceScore(incidents, hazards, trainings),
@@ -834,19 +932,23 @@ export async function recordDailyAnalytics(configId: number) {
     create: {
       configId,
       date: today,
-      incidentsReported: incidents.filter(i =>
-        new Date(i.reportedAt).toDateString() === today.toDateString()
+      incidentsReported: incidents.filter(
+        (i) => new Date(i.reportedAt).toDateString() === today.toDateString(),
       ).length,
       incidentsOpen: openIncidents,
-      hazardsIdentified: hazards.filter(h =>
-        new Date(h.reportedAt).toDateString() === today.toDateString()
+      hazardsIdentified: hazards.filter(
+        (h) => new Date(h.reportedAt).toDateString() === today.toDateString(),
       ).length,
       hazardsOpen: openHazards,
-      inspectionsCompleted: inspections.filter(i =>
-        i.completedAt && new Date(i.completedAt).toDateString() === today.toDateString()
+      inspectionsCompleted: inspections.filter(
+        (i) =>
+          i.completedAt &&
+          new Date(i.completedAt).toDateString() === today.toDateString(),
       ).length,
-      trainingsCompleted: trainings.filter(t =>
-        t.completedAt && new Date(t.completedAt).toDateString() === today.toDateString()
+      trainingsCompleted: trainings.filter(
+        (t) =>
+          t.completedAt &&
+          new Date(t.completedAt).toDateString() === today.toDateString(),
       ).length,
       daysSinceLastIncident,
       complianceScore: calculateComplianceScore(incidents, hazards, trainings),
@@ -854,24 +956,32 @@ export async function recordDailyAnalytics(configId: number) {
   });
 }
 
-function calculateComplianceScore(incidents: any[], hazards: any[], trainings: any[]): number {
+function calculateComplianceScore(
+  incidents: SafetyIncident[],
+  hazards: HazardReport[],
+  trainings: TrainingRecord[],
+): number {
   let score = 100;
 
   // Deduct for open incidents
-  const openIncidents = incidents.filter(i => i.status !== IncidentStatus.CLOSED).length;
+  const openIncidents = incidents.filter(
+    (i) => i.status !== IncidentStatus.CLOSED,
+  ).length;
   score -= openIncidents * 5;
 
   // Deduct for critical incidents
-  const criticalIncidents = incidents.filter(i => i.severity === IncidentSeverity.CRITICAL).length;
+  const criticalIncidents = incidents.filter(
+    (i) => i.severity === IncidentSeverity.CRITICAL,
+  ).length;
   score -= criticalIncidents * 10;
 
   // Deduct for open hazards
-  const openHazards = hazards.filter(h => h.status === 'open').length;
+  const openHazards = hazards.filter((h) => h.status === 'open').length;
   score -= openHazards * 3;
 
   // Deduct for overdue trainings
-  const overdueTrainings = trainings.filter(t =>
-    t.expiresAt && new Date(t.expiresAt) < new Date()
+  const overdueTrainings = trainings.filter(
+    (t) => t.expiresAt && new Date(t.expiresAt) < new Date(),
   ).length;
   score -= overdueTrainings * 2;
 
@@ -880,7 +990,9 @@ function calculateComplianceScore(incidents: any[], hazards: any[], trainings: a
 
 // ============ Authorization Helpers ============
 
-export async function getClientIdFromSafetyConfig(configId: number): Promise<number | null> {
+export async function getClientIdFromSafetyConfig(
+  configId: number,
+): Promise<number | null> {
   const config = await prisma.safetyMonitorConfig.findUnique({
     where: { id: configId },
     select: { clientId: true },
@@ -888,7 +1000,9 @@ export async function getClientIdFromSafetyConfig(configId: number): Promise<num
   return config?.clientId ?? null;
 }
 
-export async function getClientIdFromChecklist(checklistId: number): Promise<number | null> {
+export async function getClientIdFromChecklist(
+  checklistId: number,
+): Promise<number | null> {
   const checklist = await prisma.safetyChecklist.findUnique({
     where: { id: checklistId },
     include: { config: { select: { clientId: true } } },
@@ -896,7 +1010,9 @@ export async function getClientIdFromChecklist(checklistId: number): Promise<num
   return checklist?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromIncident(incidentId: number): Promise<number | null> {
+export async function getClientIdFromIncident(
+  incidentId: number,
+): Promise<number | null> {
   const incident = await prisma.safetyIncident.findUnique({
     where: { id: incidentId },
     include: { config: { select: { clientId: true } } },
@@ -904,7 +1020,9 @@ export async function getClientIdFromIncident(incidentId: number): Promise<numbe
   return incident?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromHazard(hazardId: number): Promise<number | null> {
+export async function getClientIdFromHazard(
+  hazardId: number,
+): Promise<number | null> {
   const hazard = await prisma.hazardReport.findUnique({
     where: { id: hazardId },
     include: { config: { select: { clientId: true } } },
@@ -912,7 +1030,9 @@ export async function getClientIdFromHazard(hazardId: number): Promise<number | 
   return hazard?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromTrainingRequirement(requirementId: number): Promise<number | null> {
+export async function getClientIdFromTrainingRequirement(
+  requirementId: number,
+): Promise<number | null> {
   const requirement = await prisma.trainingRequirement.findUnique({
     where: { id: requirementId },
     include: { config: { select: { clientId: true } } },
@@ -920,7 +1040,9 @@ export async function getClientIdFromTrainingRequirement(requirementId: number):
   return requirement?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromInspection(inspectionId: number): Promise<number | null> {
+export async function getClientIdFromInspection(
+  inspectionId: number,
+): Promise<number | null> {
   const inspection = await prisma.safetyInspection.findUnique({
     where: { id: inspectionId },
     include: { config: { select: { clientId: true } } },

@@ -10,7 +10,12 @@
  */
 
 import { prisma } from '../../prisma/client';
-import { ForecastStatus, AlertSeverity, AlertStatus, Prisma } from '@prisma/client';
+import {
+  ForecastStatus,
+  AlertSeverity,
+  AlertStatus,
+  Prisma,
+} from '@prisma/client';
 
 // ============================================================================
 // TYPES
@@ -89,7 +94,12 @@ export async function getInventoryForecastConfig(clientId: number) {
     include: {
       client: { select: { id: true, name: true, industry: true } },
       _count: {
-        select: { locations: true, products: true, forecasts: true, alerts: true },
+        select: {
+          locations: true,
+          products: true,
+          forecasts: true,
+          alerts: true,
+        },
       },
     },
   });
@@ -112,7 +122,12 @@ export async function listInventoryForecastConfigs(filters?: {
     include: {
       client: { select: { id: true, name: true, industry: true } },
       _count: {
-        select: { locations: true, products: true, forecasts: true, alerts: true },
+        select: {
+          locations: true,
+          products: true,
+          forecasts: true,
+          alerts: true,
+        },
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -154,7 +169,10 @@ export async function createLocation(configId: number, input: LocationInput) {
   });
 }
 
-export async function getLocations(configId: number, options: { isActive?: boolean } = {}) {
+export async function getLocations(
+  configId: number,
+  options: { isActive?: boolean } = {},
+) {
   return prisma.inventoryLocation.findMany({
     where: {
       configId,
@@ -178,7 +196,10 @@ export async function getLocation(id: number) {
   });
 }
 
-export async function updateLocation(id: number, data: Partial<LocationInput> & { isActive?: boolean }) {
+export async function updateLocation(
+  id: number,
+  data: Partial<LocationInput> & { isActive?: boolean },
+) {
   return prisma.inventoryLocation.update({
     where: { id },
     data,
@@ -265,7 +286,10 @@ export async function getProduct(id: number) {
   });
 }
 
-export async function updateProduct(id: number, data: Partial<ProductInput> & { isActive?: boolean }) {
+export async function updateProduct(
+  id: number,
+  data: Partial<ProductInput> & { isActive?: boolean },
+) {
   return prisma.inventoryProduct.update({
     where: { id },
     data,
@@ -331,7 +355,10 @@ export async function getStockLevels(
   // Filter for low stock if requested
   if (options.lowStock) {
     return products.filter((p) => {
-      const totalOnHand = p.stockLevels.reduce((sum, sl) => sum + sl.quantityOnHand, 0);
+      const totalOnHand = p.stockLevels.reduce(
+        (sum, sl) => sum + sl.quantityOnHand,
+        0,
+      );
       return p.reorderPoint && totalOnHand <= p.reorderPoint;
     });
   }
@@ -343,7 +370,10 @@ export async function getStockLevels(
 // SALES HISTORY
 // ============================================================================
 
-export async function addSalesHistory(productId: number, entries: SalesHistoryInput[]) {
+export async function addSalesHistory(
+  productId: number,
+  entries: SalesHistoryInput[],
+) {
   return prisma.salesHistory.createMany({
     data: entries.map((e) => ({
       productId,
@@ -422,9 +452,17 @@ export async function generateForecast(
   // In production, this would trigger an async ML job
   // For now, we'll generate a simple forecast synchronously
   try {
-    const predictions = generateSimpleForecast(product.salesHistory, startDate, endDate, config);
+    const predictions = generateSimpleForecast(
+      product.salesHistory,
+      startDate,
+      endDate,
+      config,
+    );
 
-    const totalPredictedDemand = predictions.reduce((sum, p) => sum + p.predicted, 0);
+    const totalPredictedDemand = predictions.reduce(
+      (sum, p) => sum + p.predicted,
+      0,
+    );
     const peakDay = predictions.reduce(
       (max, p) => (p.predicted > max.predicted ? p : max),
       predictions[0],
@@ -446,9 +484,12 @@ export async function generateForecast(
     const leadTime = product.supplierLeadTimeDays || 7;
     const safetyStockDays = 14;
     const suggestedReorderDate = new Date(
-      Date.now() + (daysOfStock - leadTime - safetyStockDays) * 24 * 60 * 60 * 1000,
+      Date.now() +
+        (daysOfStock - leadTime - safetyStockDays) * 24 * 60 * 60 * 1000,
     );
-    const suggestedReorderQty = Math.ceil(avgDailyDemand * (leadTime + safetyStockDays * 2));
+    const suggestedReorderQty = Math.ceil(
+      avgDailyDemand * (leadTime + safetyStockDays * 2),
+    );
 
     await prisma.inventoryForecast.update({
       where: { id: forecast.id },
@@ -463,7 +504,8 @@ export async function generateForecast(
         rmse: avgDailyDemand * 0.2,
         confidence: config.confidenceLevel,
         stockoutRiskScore,
-        suggestedReorderDate: suggestedReorderDate > new Date() ? suggestedReorderDate : null,
+        suggestedReorderDate:
+          suggestedReorderDate > new Date() ? suggestedReorderDate : null,
         suggestedReorderQty,
       },
     });
@@ -496,11 +538,17 @@ function generateSimpleForecast(
   startDate: Date,
   endDate: Date,
   config: { enableSeasonality: boolean; confidenceLevel: number },
-): Array<{ date: string; predicted: number; lowerBound: number; upperBound: number }> {
+): Array<{
+  date: string;
+  predicted: number;
+  lowerBound: number;
+  upperBound: number;
+}> {
   // Simple moving average forecast
   const avgSales =
     salesHistory.length > 0
-      ? salesHistory.reduce((sum, h) => sum + h.quantitySold, 0) / salesHistory.length
+      ? salesHistory.reduce((sum, h) => sum + h.quantitySold, 0) /
+        salesHistory.length
       : 10;
 
   const predictions: Array<{
@@ -510,7 +558,7 @@ function generateSimpleForecast(
     upperBound: number;
   }> = [];
 
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
   while (currentDate <= endDate) {
     let predicted = avgSales;
 
@@ -729,10 +777,14 @@ export async function runScenario(scenarioId: number): Promise<{
   const costImpact =
     totalInventoryValue * scenario.priceChange * 0.01 +
     projectedDemandChange * 0.1;
-  const revenueImpact = projectedDemandChange * (1 + scenario.promotionImpact * 0.01);
+  const revenueImpact =
+    projectedDemandChange * (1 + scenario.promotionImpact * 0.01);
   const stockoutRisk = Math.min(
     1,
-    Math.max(0, (scenario.demandMultiplier - 1) * 0.5 + scenario.leadTimeChange * 0.02),
+    Math.max(
+      0,
+      (scenario.demandMultiplier - 1) * 0.5 + scenario.leadTimeChange * 0.02,
+    ),
   );
 
   // Save results

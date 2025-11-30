@@ -6,7 +6,12 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { Prisma, ForecastStatus, AlertSeverity, AlertStatus } from '@prisma/client';
+import {
+  Prisma,
+  ForecastStatus,
+  AlertSeverity,
+  AlertStatus,
+} from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as inventoryService from './inventory-forecasting.service';
 import {
@@ -65,14 +70,6 @@ const productSchema = z.object({
   abcClass: z.enum(['A', 'B', 'C']).optional(),
 });
 
-const stockLevelSchema = z.object({
-  quantityOnHand: z.number().int().min(0).optional(),
-  quantityReserved: z.number().int().min(0).optional(),
-  quantityOnOrder: z.number().int().min(0).optional(),
-  lastCountDate: z.string().datetime().optional(),
-  lastReceivedDate: z.string().datetime().optional(),
-});
-
 const scenarioSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
@@ -95,7 +92,9 @@ router.get(
       return;
     }
 
-    const clientId = req.query.clientId ? Number(req.query.clientId) : undefined;
+    const clientId = req.query.clientId
+      ? Number(req.query.clientId)
+      : undefined;
     if (req.query.clientId && Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
@@ -107,7 +106,9 @@ router.get(
         res.status(403).json({ error: 'Forbidden' });
         return;
       }
-      const configs = await inventoryService.listInventoryForecastConfigs({ clientId });
+      const configs = await inventoryService.listInventoryForecastConfigs({
+        clientId,
+      });
       res.json({ configs });
       return;
     }
@@ -175,20 +176,27 @@ router.post(
 
     const parsed = configSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     try {
-      const config = await inventoryService.createInventoryForecastConfig(clientId, {
-        ...parsed.data,
-        erpCredentials: parsed.data.erpCredentials as Prisma.InputJsonValue,
-        posCredentials: parsed.data.posCredentials as Prisma.InputJsonValue,
-      });
+      const config = await inventoryService.createInventoryForecastConfig(
+        clientId,
+        {
+          ...parsed.data,
+          erpCredentials: parsed.data.erpCredentials as Prisma.InputJsonValue,
+          posCredentials: parsed.data.posCredentials as Prisma.InputJsonValue,
+        },
+      );
       res.status(201).json({ config });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
-        res.status(409).json({ error: 'Config already exists for this client' });
+        res
+          .status(409)
+          .json({ error: 'Config already exists for this client' });
         return;
       }
       throw error;
@@ -219,15 +227,20 @@ router.patch(
 
     const parsed = configSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const config = await inventoryService.updateInventoryForecastConfig(clientId, {
-      ...parsed.data,
-      erpCredentials: parsed.data.erpCredentials as Prisma.InputJsonValue,
-      posCredentials: parsed.data.posCredentials as Prisma.InputJsonValue,
-    });
+    const config = await inventoryService.updateInventoryForecastConfig(
+      clientId,
+      {
+        ...parsed.data,
+        erpCredentials: parsed.data.erpCredentials as Prisma.InputJsonValue,
+        posCredentials: parsed.data.posCredentials as Prisma.InputJsonValue,
+      },
+    );
     res.json({ config });
   },
 );
@@ -264,7 +277,9 @@ router.post(
 
     const parsed = locationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -302,8 +317,15 @@ router.get(
       return;
     }
 
-    const isActive = req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined;
-    const locations = await inventoryService.getLocations(configId, { isActive });
+    const isActive =
+      req.query.active === 'true'
+        ? true
+        : req.query.active === 'false'
+          ? false
+          : undefined;
+    const locations = await inventoryService.getLocations(configId, {
+      isActive,
+    });
     res.json({ locations });
   },
 );
@@ -340,12 +362,17 @@ router.post(
 
     const parsed = productSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     try {
-      const product = await inventoryService.createProduct(configId, parsed.data);
+      const product = await inventoryService.createProduct(
+        configId,
+        parsed.data,
+      );
       res.status(201).json({ product });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
@@ -386,7 +413,12 @@ router.get(
     const products = await inventoryService.getProducts(configId, {
       category: req.query.category as string | undefined,
       abcClass: req.query.abcClass as string | undefined,
-      isActive: req.query.active === 'true' ? true : req.query.active === 'false' ? false : undefined,
+      isActive:
+        req.query.active === 'true'
+          ? true
+          : req.query.active === 'false'
+            ? false
+            : undefined,
       limit: Number(req.query.limit) || 100,
       offset: Number(req.query.offset) || 0,
     });
@@ -456,11 +488,15 @@ router.post(
     }
 
     try {
-      const result = await inventoryService.generateForecast(configId, Number(productId), {
-        locationId: locationId ? Number(locationId) : undefined,
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-      });
+      const result = await inventoryService.generateForecast(
+        configId,
+        Number(productId),
+        {
+          locationId: locationId ? Number(locationId) : undefined,
+          startDate: startDate ? new Date(startDate) : undefined,
+          endDate: endDate ? new Date(endDate) : undefined,
+        },
+      );
       res.status(201).json(result);
     } catch (error) {
       if ((error as Error).message === 'Product not found') {
@@ -500,7 +536,9 @@ router.get(
 
     const forecasts = await inventoryService.getForecasts(configId, {
       productId: req.query.productId ? Number(req.query.productId) : undefined,
-      locationId: req.query.locationId ? Number(req.query.locationId) : undefined,
+      locationId: req.query.locationId
+        ? Number(req.query.locationId)
+        : undefined,
       status: req.query.status as ForecastStatus | undefined,
       limit: Number(req.query.limit) || 50,
     });
@@ -620,11 +658,16 @@ router.post(
 
     const parsed = scenarioSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const scenario = await inventoryService.createScenario(configId, parsed.data);
+    const scenario = await inventoryService.createScenario(
+      configId,
+      parsed.data,
+    );
     res.status(201).json({ scenario });
   },
 );
@@ -721,7 +764,9 @@ router.get(
     const startDate = req.query.start
       ? new Date(req.query.start as string)
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = req.query.end ? new Date(req.query.end as string) : new Date();
+    const endDate = req.query.end
+      ? new Date(req.query.end as string)
+      : new Date();
 
     const analytics = await inventoryService.getInventoryAnalytics(configId, {
       start: startDate,

@@ -185,7 +185,9 @@ router.post(
 
     const parsed = createConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -226,11 +228,16 @@ router.patch(
 
     const parsed = updateConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
-    const config = await complianceService.updateComplianceConfig(configId, parsed.data);
+    const config = await complianceService.updateComplianceConfig(
+      configId,
+      parsed.data,
+    );
     res.json({ config });
   },
 );
@@ -268,7 +275,8 @@ router.get(
     const rules = await complianceService.getRules(configId, {
       framework: framework as string,
       category: category as string,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
     });
     res.json({ rules });
   },
@@ -303,7 +311,9 @@ router.post(
 
     const parsed = createRuleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -344,7 +354,9 @@ router.patch(
 
     const parsed = updateRuleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -455,7 +467,9 @@ router.post(
 
     const parsed = createViolationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -483,7 +497,8 @@ router.patch(
       return;
     }
 
-    const clientId = await complianceService.getClientIdFromViolation(violationId);
+    const clientId =
+      await complianceService.getClientIdFromViolation(violationId);
     if (!clientId) {
       res.status(404).json({ error: 'Violation not found' });
       return;
@@ -497,14 +512,18 @@ router.patch(
 
     const parsed = updateViolationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     const violation = await complianceService.updateViolation(violationId, {
       ...parsed.data,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
-      resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : undefined,
+      resolvedAt: parsed.data.resolvedAt
+        ? new Date(parsed.data.resolvedAt)
+        : undefined,
     });
     res.json({ violation });
   },
@@ -577,7 +596,9 @@ router.post(
 
     const parsed = createAuditSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
@@ -619,14 +640,20 @@ router.patch(
 
     const parsed = updateAuditSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     const audit = await complianceService.updateAudit(auditId, {
       ...parsed.data,
-      completedDate: parsed.data.completedDate ? new Date(parsed.data.completedDate) : undefined,
-      nextAuditDate: parsed.data.nextAuditDate ? new Date(parsed.data.nextAuditDate) : undefined,
+      completedDate: parsed.data.completedDate
+        ? new Date(parsed.data.completedDate)
+        : undefined,
+      nextAuditDate: parsed.data.nextAuditDate
+        ? new Date(parsed.data.nextAuditDate)
+        : undefined,
     });
     res.json({ audit });
   },
@@ -700,14 +727,18 @@ router.post(
 
     const parsed = createRiskAssessmentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     const risk = await complianceService.createRiskAssessment({
       configId,
       ...parsed.data,
-      reviewDate: parsed.data.reviewDate ? new Date(parsed.data.reviewDate) : undefined,
+      reviewDate: parsed.data.reviewDate
+        ? new Date(parsed.data.reviewDate)
+        : undefined,
     });
     res.status(201).json({ risk });
   },
@@ -716,7 +747,10 @@ router.post(
 router.patch(
   '/compliance-monitor/risks/:assessmentId',
   requireAuth,
-  async (req: AuthenticatedRequest<{ assessmentId: string }>, res: Response) => {
+  async (
+    req: AuthenticatedRequest<{ assessmentId: string }>,
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -728,7 +762,8 @@ router.patch(
       return;
     }
 
-    const clientId = await complianceService.getClientIdFromRiskAssessment(assessmentId);
+    const clientId =
+      await complianceService.getClientIdFromRiskAssessment(assessmentId);
     if (!clientId) {
       res.status(404).json({ error: 'Risk assessment not found' });
       return;
@@ -742,13 +777,17 @@ router.patch(
 
     const parsed = updateRiskAssessmentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 
     const risk = await complianceService.updateRiskAssessment(assessmentId, {
       ...parsed.data,
-      reviewDate: parsed.data.reviewDate ? new Date(parsed.data.reviewDate) : undefined,
+      reviewDate: parsed.data.reviewDate
+        ? new Date(parsed.data.reviewDate)
+        : undefined,
     });
     res.json({ risk });
   },
@@ -856,7 +895,9 @@ router.post(
 
     const parsed = generateReportSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
       return;
     }
 

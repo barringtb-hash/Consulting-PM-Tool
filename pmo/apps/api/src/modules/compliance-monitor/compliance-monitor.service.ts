@@ -1,5 +1,26 @@
-import { ViolationStatus, AuditStatus, RiskLevel } from '@prisma/client';
+import {
+  ViolationStatus,
+  AuditStatus,
+  RiskLevel,
+  ComplianceRule,
+  ComplianceViolation,
+  ComplianceAnalytics,
+} from '@prisma/client';
 import { prisma } from '../../prisma/client';
+
+// ============ Internal Types ============
+
+interface ScanResult {
+  ruleId: number;
+  ruleName: string;
+  status: 'compliant' | 'violation';
+  details?: string;
+}
+
+interface ViolationWithDates {
+  resolvedAt: Date | null;
+  detectedAt: Date;
+}
 
 // ============ Configuration Management ============
 
@@ -26,8 +47,8 @@ export async function createComplianceConfig(data: {
   regulatoryFrameworks: string[];
   autoScanEnabled?: boolean;
   scanFrequency?: string;
-  alertThresholds?: Record<string, any>;
-  reportingSchedule?: Record<string, any>;
+  alertThresholds?: Record<string, unknown>;
+  reportingSchedule?: Record<string, unknown>;
 }) {
   return prisma.complianceMonitorConfig.create({
     data: {
@@ -51,9 +72,9 @@ export async function updateComplianceConfig(
     regulatoryFrameworks?: string[];
     autoScanEnabled?: boolean;
     scanFrequency?: string;
-    alertThresholds?: Record<string, any>;
-    reportingSchedule?: Record<string, any>;
-  }
+    alertThresholds?: Record<string, unknown>;
+    reportingSchedule?: Record<string, unknown>;
+  },
 ) {
   return prisma.complianceMonitorConfig.update({
     where: { id: configId },
@@ -63,11 +84,14 @@ export async function updateComplianceConfig(
 
 // ============ Compliance Rules Management ============
 
-export async function getRules(configId: number, filters?: {
-  framework?: string;
-  category?: string;
-  isActive?: boolean;
-}) {
+export async function getRules(
+  configId: number,
+  filters?: {
+    framework?: string;
+    category?: string;
+    isActive?: boolean;
+  },
+) {
   return prisma.complianceRule.findMany({
     where: {
       configId,
@@ -120,7 +144,7 @@ export async function updateRule(
     automatedCheck?: boolean;
     checkQuery?: string;
     isActive?: boolean;
-  }
+  },
 ) {
   return prisma.complianceRule.update({
     where: { id: ruleId },
@@ -136,25 +160,29 @@ export async function deleteRule(ruleId: number) {
 
 // ============ Violations Management ============
 
-export async function getViolations(configId: number, filters?: {
-  status?: ViolationStatus;
-  ruleId?: number;
-  severity?: string;
-  startDate?: Date;
-  endDate?: Date;
-}) {
+export async function getViolations(
+  configId: number,
+  filters?: {
+    status?: ViolationStatus;
+    ruleId?: number;
+    severity?: string;
+    startDate?: Date;
+    endDate?: Date;
+  },
+) {
   return prisma.complianceViolation.findMany({
     where: {
       configId,
       ...(filters?.status && { status: filters.status }),
       ...(filters?.ruleId && { ruleId: filters.ruleId }),
       ...(filters?.severity && { severity: filters.severity }),
-      ...(filters?.startDate && filters?.endDate && {
-        detectedAt: {
-          gte: filters.startDate,
-          lte: filters.endDate,
-        },
-      }),
+      ...(filters?.startDate &&
+        filters?.endDate && {
+          detectedAt: {
+            gte: filters.startDate,
+            lte: filters.endDate,
+          },
+        }),
     },
     include: {
       rule: true,
@@ -168,7 +196,7 @@ export async function createViolation(data: {
   ruleId: number;
   description: string;
   severity: string;
-  evidence?: Record<string, any>;
+  evidence?: Record<string, unknown>;
   affectedAreas: string[];
   remediationSteps?: string[];
   dueDate?: Date;
@@ -204,9 +232,9 @@ export async function updateViolation(
     dueDate?: Date;
     resolvedAt?: Date;
     resolvedBy?: string;
-  }
+  },
 ) {
-  const updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
 
   if (data.status === ViolationStatus.RESOLVED && !data.resolvedAt) {
     updateData.resolvedAt = new Date();
@@ -223,10 +251,13 @@ export async function updateViolation(
 
 // ============ Audits Management ============
 
-export async function getAudits(configId: number, filters?: {
-  status?: AuditStatus;
-  auditType?: string;
-}) {
+export async function getAudits(
+  configId: number,
+  filters?: {
+    status?: AuditStatus;
+    auditType?: string;
+  },
+) {
   return prisma.complianceAudit.findMany({
     where: {
       configId,
@@ -271,13 +302,13 @@ export async function updateAudit(
   auditId: number,
   data: {
     status?: AuditStatus;
-    findings?: Record<string, any>;
+    findings?: Record<string, unknown>;
     recommendations?: string[];
     completedDate?: Date;
     nextAuditDate?: Date;
     auditorName?: string;
     auditorEmail?: string;
-  }
+  },
 ) {
   return prisma.complianceAudit.update({
     where: { id: auditId },
@@ -330,11 +361,14 @@ export async function deleteEvidence(evidenceId: number) {
 
 // ============ Risk Assessments ============
 
-export async function getRiskAssessments(configId: number, filters?: {
-  riskLevel?: RiskLevel;
-  category?: string;
-  status?: string;
-}) {
+export async function getRiskAssessments(
+  configId: number,
+  filters?: {
+    riskLevel?: RiskLevel;
+    category?: string;
+    status?: string;
+  },
+) {
   return prisma.riskAssessment.findMany({
     where: {
       configId,
@@ -401,10 +435,10 @@ export async function updateRiskAssessment(
     controlsInPlace?: string[];
     status?: string;
     reviewDate?: Date;
-  }
+  },
 ) {
   // Recalculate risk if likelihood or impact changed
-  let updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
 
   if (data.likelihood !== undefined || data.impact !== undefined) {
     const existing = await prisma.riskAssessment.findUnique({
@@ -440,19 +474,23 @@ export async function updateRiskAssessment(
 
 // ============ Compliance Reports ============
 
-export async function getReports(configId: number, filters?: {
-  reportType?: string;
-  startDate?: Date;
-  endDate?: Date;
-}) {
+export async function getReports(
+  configId: number,
+  filters?: {
+    reportType?: string;
+    startDate?: Date;
+    endDate?: Date;
+  },
+) {
   return prisma.complianceReport.findMany({
     where: {
       configId,
       ...(filters?.reportType && { reportType: filters.reportType }),
-      ...(filters?.startDate && filters?.endDate && {
-        periodStart: { gte: filters.startDate },
-        periodEnd: { lte: filters.endDate },
-      }),
+      ...(filters?.startDate &&
+        filters?.endDate && {
+          periodStart: { gte: filters.startDate },
+          periodEnd: { lte: filters.endDate },
+        }),
     },
     orderBy: { generatedAt: 'desc' },
   });
@@ -496,9 +534,10 @@ export async function generateComplianceReport(data: {
 
   // Calculate compliance score
   const totalRules = rules.length;
-  const violatedRuleIds = new Set(violations.map(v => v.ruleId));
+  const violatedRuleIds = new Set(violations.map((v) => v.ruleId));
   const compliantRules = totalRules - violatedRuleIds.size;
-  const complianceScore = totalRules > 0 ? (compliantRules / totalRules) * 100 : 100;
+  const complianceScore =
+    totalRules > 0 ? (compliantRules / totalRules) * 100 : 100;
 
   // Build summary
   const summary = {
@@ -507,11 +546,18 @@ export async function generateComplianceReport(data: {
     violatedRules: violatedRuleIds.size,
     complianceScore: Math.round(complianceScore * 100) / 100,
     totalViolations: violations.length,
-    openViolations: violations.filter(v => v.status === ViolationStatus.OPEN).length,
-    resolvedViolations: violations.filter(v => v.status === ViolationStatus.RESOLVED).length,
+    openViolations: violations.filter((v) => v.status === ViolationStatus.OPEN)
+      .length,
+    resolvedViolations: violations.filter(
+      (v) => v.status === ViolationStatus.RESOLVED,
+    ).length,
     totalAudits: audits.length,
-    completedAudits: audits.filter(a => a.status === AuditStatus.COMPLETED).length,
-    highRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.HIGH || r.riskLevel === RiskLevel.CRITICAL).length,
+    completedAudits: audits.filter((a) => a.status === AuditStatus.COMPLETED)
+      .length,
+    highRisks: riskAssessments.filter(
+      (r) =>
+        r.riskLevel === RiskLevel.HIGH || r.riskLevel === RiskLevel.CRITICAL,
+    ).length,
   };
 
   // Build metrics by category
@@ -524,15 +570,22 @@ export async function generateComplianceReport(data: {
   const metrics = {
     violationsBySeverity: violationsByCategory,
     risksByLevel: {
-      low: riskAssessments.filter(r => r.riskLevel === RiskLevel.LOW).length,
-      medium: riskAssessments.filter(r => r.riskLevel === RiskLevel.MEDIUM).length,
-      high: riskAssessments.filter(r => r.riskLevel === RiskLevel.HIGH).length,
-      critical: riskAssessments.filter(r => r.riskLevel === RiskLevel.CRITICAL).length,
+      low: riskAssessments.filter((r) => r.riskLevel === RiskLevel.LOW).length,
+      medium: riskAssessments.filter((r) => r.riskLevel === RiskLevel.MEDIUM)
+        .length,
+      high: riskAssessments.filter((r) => r.riskLevel === RiskLevel.HIGH)
+        .length,
+      critical: riskAssessments.filter(
+        (r) => r.riskLevel === RiskLevel.CRITICAL,
+      ).length,
     },
     auditsByStatus: {
-      scheduled: audits.filter(a => a.status === AuditStatus.SCHEDULED).length,
-      inProgress: audits.filter(a => a.status === AuditStatus.IN_PROGRESS).length,
-      completed: audits.filter(a => a.status === AuditStatus.COMPLETED).length,
+      scheduled: audits.filter((a) => a.status === AuditStatus.SCHEDULED)
+        .length,
+      inProgress: audits.filter((a) => a.status === AuditStatus.IN_PROGRESS)
+        .length,
+      completed: audits.filter((a) => a.status === AuditStatus.COMPLETED)
+        .length,
     },
   };
 
@@ -568,8 +621,8 @@ export async function runComplianceScan(configId: number) {
     throw new Error('Compliance configuration not found');
   }
 
-  const scanResults: any[] = [];
-  const newViolations: any[] = [];
+  const scanResults: ScanResult[] = [];
+  const newViolations: ComplianceViolation[] = [];
 
   // Simulate automated compliance checks
   for (const rule of config.rules) {
@@ -586,7 +639,9 @@ export async function runComplianceScan(configId: number) {
       const violation = await createViolation({
         configId: config.id,
         ruleId: rule.id,
-        description: checkResult.details || `Automated check failed for rule: ${rule.name}`,
+        description:
+          checkResult.details ||
+          `Automated check failed for rule: ${rule.name}`,
         severity: rule.severity,
         affectedAreas: checkResult.affectedAreas || [],
         remediationSteps: rule.requirements,
@@ -604,14 +659,14 @@ export async function runComplianceScan(configId: number) {
   return {
     scanTime: new Date(),
     rulesChecked: config.rules.length,
-    compliant: scanResults.filter(r => r.status === 'compliant').length,
-    violations: scanResults.filter(r => r.status === 'violation').length,
+    compliant: scanResults.filter((r) => r.status === 'compliant').length,
+    violations: scanResults.filter((r) => r.status === 'violation').length,
     results: scanResults,
     newViolations,
   };
 }
 
-async function performAutomatedCheck(rule: any): Promise<{
+async function performAutomatedCheck(rule: ComplianceRule): Promise<{
   compliant: boolean;
   details?: string;
   affectedAreas?: string[];
@@ -634,11 +689,15 @@ async function performAutomatedCheck(rule: any): Promise<{
 
 // ============ Analytics ============
 
-export async function getComplianceAnalytics(configId: number, filters?: {
-  startDate?: Date;
-  endDate?: Date;
-}) {
-  const startDate = filters?.startDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+export async function getComplianceAnalytics(
+  configId: number,
+  filters?: {
+    startDate?: Date;
+    endDate?: Date;
+  },
+) {
+  const startDate =
+    filters?.startDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   const endDate = filters?.endDate || new Date();
 
   // Get historical analytics data
@@ -668,27 +727,43 @@ export async function getComplianceAnalytics(configId: number, filters?: {
 
   // Calculate current metrics
   const totalRules = rules.length;
-  const violatedRuleIds = new Set(violations.filter(v => v.status === ViolationStatus.OPEN).map(v => v.ruleId));
-  const currentComplianceScore = totalRules > 0
-    ? ((totalRules - violatedRuleIds.size) / totalRules) * 100
-    : 100;
+  const violatedRuleIds = new Set(
+    violations
+      .filter((v) => v.status === ViolationStatus.OPEN)
+      .map((v) => v.ruleId),
+  );
+  const currentComplianceScore =
+    totalRules > 0
+      ? ((totalRules - violatedRuleIds.size) / totalRules) * 100
+      : 100;
 
   return {
     historicalData: analytics,
     currentMetrics: {
       complianceScore: Math.round(currentComplianceScore * 100) / 100,
       totalRules,
-      activeViolations: violations.filter(v => v.status === ViolationStatus.OPEN).length,
-      resolvedViolations: violations.filter(v => v.status === ViolationStatus.RESOLVED).length,
-      highRiskCount: riskAssessments.filter(r => r.riskLevel === RiskLevel.HIGH || r.riskLevel === RiskLevel.CRITICAL).length,
+      activeViolations: violations.filter(
+        (v) => v.status === ViolationStatus.OPEN,
+      ).length,
+      resolvedViolations: violations.filter(
+        (v) => v.status === ViolationStatus.RESOLVED,
+      ).length,
+      highRiskCount: riskAssessments.filter(
+        (r) =>
+          r.riskLevel === RiskLevel.HIGH || r.riskLevel === RiskLevel.CRITICAL,
+      ).length,
       averageResolutionTime: calculateAverageResolutionTime(violations),
     },
     trends: calculateTrends(analytics),
   };
 }
 
-function calculateAverageResolutionTime(violations: any[]): number | null {
-  const resolvedViolations = violations.filter(v => v.resolvedAt && v.detectedAt);
+function calculateAverageResolutionTime(
+  violations: ViolationWithDates[],
+): number | null {
+  const resolvedViolations = violations.filter(
+    (v) => v.resolvedAt && v.detectedAt,
+  );
 
   if (resolvedViolations.length === 0) return null;
 
@@ -702,7 +777,9 @@ function calculateAverageResolutionTime(violations: any[]): number | null {
   return Math.round(totalTime / resolvedViolations.length / (1000 * 60 * 60));
 }
 
-function calculateTrends(analytics: any[]): Record<string, any> {
+function calculateTrends(
+  analytics: ComplianceAnalytics[],
+): Record<string, unknown> {
   if (analytics.length < 2) {
     return { complianceScore: 'stable', violations: 'stable', risks: 'stable' };
   }
@@ -714,15 +791,33 @@ function calculateTrends(analytics: any[]): Record<string, any> {
     return { complianceScore: 'stable', violations: 'stable', risks: 'stable' };
   }
 
-  const recentAvgScore = recent.reduce((sum, a) => sum + (a.complianceScore || 0), 0) / recent.length;
-  const previousAvgScore = previous.reduce((sum, a) => sum + (a.complianceScore || 0), 0) / previous.length;
+  const recentAvgScore =
+    recent.reduce((sum, a) => sum + (a.complianceScore || 0), 0) /
+    recent.length;
+  const previousAvgScore =
+    previous.reduce((sum, a) => sum + (a.complianceScore || 0), 0) /
+    previous.length;
 
-  const recentAvgViolations = recent.reduce((sum, a) => sum + (a.activeViolations || 0), 0) / recent.length;
-  const previousAvgViolations = previous.reduce((sum, a) => sum + (a.activeViolations || 0), 0) / previous.length;
+  const recentAvgViolations =
+    recent.reduce((sum, a) => sum + (a.activeViolations || 0), 0) /
+    recent.length;
+  const previousAvgViolations =
+    previous.reduce((sum, a) => sum + (a.activeViolations || 0), 0) /
+    previous.length;
 
   return {
-    complianceScore: recentAvgScore > previousAvgScore ? 'improving' : recentAvgScore < previousAvgScore ? 'declining' : 'stable',
-    violations: recentAvgViolations < previousAvgViolations ? 'improving' : recentAvgViolations > previousAvgViolations ? 'worsening' : 'stable',
+    complianceScore:
+      recentAvgScore > previousAvgScore
+        ? 'improving'
+        : recentAvgScore < previousAvgScore
+          ? 'declining'
+          : 'stable',
+    violations:
+      recentAvgViolations < previousAvgViolations
+        ? 'improving'
+        : recentAvgViolations > previousAvgViolations
+          ? 'worsening'
+          : 'stable',
   };
 }
 
@@ -740,11 +835,14 @@ export async function recordDailyAnalytics(configId: number) {
   ]);
 
   const totalRules = rules.length;
-  const activeViolations = violations.filter(v => v.status === ViolationStatus.OPEN);
-  const violatedRuleIds = new Set(activeViolations.map(v => v.ruleId));
-  const complianceScore = totalRules > 0
-    ? ((totalRules - violatedRuleIds.size) / totalRules) * 100
-    : 100;
+  const activeViolations = violations.filter(
+    (v) => v.status === ViolationStatus.OPEN,
+  );
+  const violatedRuleIds = new Set(activeViolations.map((v) => v.ruleId));
+  const complianceScore =
+    totalRules > 0
+      ? ((totalRules - violatedRuleIds.size) / totalRules) * 100
+      : 100;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -759,11 +857,19 @@ export async function recordDailyAnalytics(configId: number) {
     update: {
       complianceScore,
       activeViolations: activeViolations.length,
-      resolvedViolations: violations.filter(v => v.status === ViolationStatus.RESOLVED).length,
-      criticalRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.CRITICAL).length,
-      highRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.HIGH).length,
-      mediumRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.MEDIUM).length,
-      lowRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.LOW).length,
+      resolvedViolations: violations.filter(
+        (v) => v.status === ViolationStatus.RESOLVED,
+      ).length,
+      criticalRisks: riskAssessments.filter(
+        (r) => r.riskLevel === RiskLevel.CRITICAL,
+      ).length,
+      highRisks: riskAssessments.filter((r) => r.riskLevel === RiskLevel.HIGH)
+        .length,
+      mediumRisks: riskAssessments.filter(
+        (r) => r.riskLevel === RiskLevel.MEDIUM,
+      ).length,
+      lowRisks: riskAssessments.filter((r) => r.riskLevel === RiskLevel.LOW)
+        .length,
       rulesChecked: totalRules,
     },
     create: {
@@ -771,11 +877,19 @@ export async function recordDailyAnalytics(configId: number) {
       date: today,
       complianceScore,
       activeViolations: activeViolations.length,
-      resolvedViolations: violations.filter(v => v.status === ViolationStatus.RESOLVED).length,
-      criticalRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.CRITICAL).length,
-      highRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.HIGH).length,
-      mediumRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.MEDIUM).length,
-      lowRisks: riskAssessments.filter(r => r.riskLevel === RiskLevel.LOW).length,
+      resolvedViolations: violations.filter(
+        (v) => v.status === ViolationStatus.RESOLVED,
+      ).length,
+      criticalRisks: riskAssessments.filter(
+        (r) => r.riskLevel === RiskLevel.CRITICAL,
+      ).length,
+      highRisks: riskAssessments.filter((r) => r.riskLevel === RiskLevel.HIGH)
+        .length,
+      mediumRisks: riskAssessments.filter(
+        (r) => r.riskLevel === RiskLevel.MEDIUM,
+      ).length,
+      lowRisks: riskAssessments.filter((r) => r.riskLevel === RiskLevel.LOW)
+        .length,
       rulesChecked: totalRules,
     },
   });
@@ -783,7 +897,9 @@ export async function recordDailyAnalytics(configId: number) {
 
 // ============ Authorization Helpers ============
 
-export async function getClientIdFromComplianceConfig(configId: number): Promise<number | null> {
+export async function getClientIdFromComplianceConfig(
+  configId: number,
+): Promise<number | null> {
   const config = await prisma.complianceMonitorConfig.findUnique({
     where: { id: configId },
     select: { clientId: true },
@@ -791,7 +907,9 @@ export async function getClientIdFromComplianceConfig(configId: number): Promise
   return config?.clientId ?? null;
 }
 
-export async function getClientIdFromRule(ruleId: number): Promise<number | null> {
+export async function getClientIdFromRule(
+  ruleId: number,
+): Promise<number | null> {
   const rule = await prisma.complianceRule.findUnique({
     where: { id: ruleId },
     include: { config: { select: { clientId: true } } },
@@ -799,7 +917,9 @@ export async function getClientIdFromRule(ruleId: number): Promise<number | null
   return rule?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromViolation(violationId: number): Promise<number | null> {
+export async function getClientIdFromViolation(
+  violationId: number,
+): Promise<number | null> {
   const violation = await prisma.complianceViolation.findUnique({
     where: { id: violationId },
     include: { config: { select: { clientId: true } } },
@@ -807,7 +927,9 @@ export async function getClientIdFromViolation(violationId: number): Promise<num
   return violation?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromAudit(auditId: number): Promise<number | null> {
+export async function getClientIdFromAudit(
+  auditId: number,
+): Promise<number | null> {
   const audit = await prisma.complianceAudit.findUnique({
     where: { id: auditId },
     include: { config: { select: { clientId: true } } },
@@ -815,7 +937,9 @@ export async function getClientIdFromAudit(auditId: number): Promise<number | nu
   return audit?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromRiskAssessment(assessmentId: number): Promise<number | null> {
+export async function getClientIdFromRiskAssessment(
+  assessmentId: number,
+): Promise<number | null> {
   const assessment = await prisma.riskAssessment.findUnique({
     where: { id: assessmentId },
     include: { config: { select: { clientId: true } } },

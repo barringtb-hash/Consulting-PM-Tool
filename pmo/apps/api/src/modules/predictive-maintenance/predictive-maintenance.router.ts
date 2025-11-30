@@ -4,15 +4,17 @@
  * API endpoints for predictive maintenance, equipment monitoring, and work orders
  */
 
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
-import { EquipmentStatus, MaintenanceType, WorkOrderStatus, WorkOrderPriority } from '@prisma/client';
-import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
-import * as maintenanceService from './predictive-maintenance.service';
 import {
-  hasClientAccess,
-  getClientIdFromPredictiveMaintenanceConfig,
-} from '../../auth/client-auth.helper';
+  EquipmentStatus,
+  MaintenanceType,
+  WorkOrderStatus,
+  WorkOrderPriority,
+} from '@prisma/client';
+// Auth middleware available if needed: import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import * as maintenanceService from './predictive-maintenance.service';
+import { hasClientAccess } from '../../auth/client-auth.helper';
 
 const router = Router();
 
@@ -193,7 +195,9 @@ router.post('/config', async (req, res) => {
     res.status(201).json(config);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating maintenance config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -208,16 +212,22 @@ router.patch('/config/:configId', async (req, res) => {
     }
     const data = updateConfigSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const config = await maintenanceService.updateMaintenanceConfig(configId, data);
+    const config = await maintenanceService.updateMaintenanceConfig(
+      configId,
+      data,
+    );
     res.json(config);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating maintenance config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -234,7 +244,8 @@ router.get('/equipment/:configId', async (req, res) => {
     }
     const { category, status, location } = req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -258,7 +269,8 @@ router.get('/equipment/detail/:equipmentId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid equipment ID' });
     }
 
-    const clientId = await maintenanceService.getClientIdFromEquipment(equipmentId);
+    const clientId =
+      await maintenanceService.getClientIdFromEquipment(equipmentId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -275,7 +287,9 @@ router.post('/equipment', async (req, res) => {
   try {
     const data = createEquipmentSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(data.configId);
+    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -283,12 +297,16 @@ router.post('/equipment', async (req, res) => {
     const equipment = await maintenanceService.createEquipment({
       ...data,
       installDate: data.installDate ? new Date(data.installDate) : undefined,
-      warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : undefined,
+      warrantyExpiry: data.warrantyExpiry
+        ? new Date(data.warrantyExpiry)
+        : undefined,
     });
     res.status(201).json(equipment);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating equipment:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -303,20 +321,27 @@ router.patch('/equipment/:equipmentId', async (req, res) => {
     }
     const data = updateEquipmentSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromEquipment(equipmentId);
+    const clientId =
+      await maintenanceService.getClientIdFromEquipment(equipmentId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const equipment = await maintenanceService.updateEquipment(equipmentId, {
       ...data,
-      lastMaintenanceDate: data.lastMaintenanceDate ? new Date(data.lastMaintenanceDate) : undefined,
-      nextMaintenanceDate: data.nextMaintenanceDate ? new Date(data.nextMaintenanceDate) : undefined,
+      lastMaintenanceDate: data.lastMaintenanceDate
+        ? new Date(data.lastMaintenanceDate)
+        : undefined,
+      nextMaintenanceDate: data.nextMaintenanceDate
+        ? new Date(data.nextMaintenanceDate)
+        : undefined,
     });
     res.json(equipment);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating equipment:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -330,7 +355,8 @@ router.delete('/equipment/:equipmentId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid equipment ID' });
     }
 
-    const clientId = await maintenanceService.getClientIdFromEquipment(equipmentId);
+    const clientId =
+      await maintenanceService.getClientIdFromEquipment(equipmentId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -353,7 +379,8 @@ router.get('/sensors/:configId', async (req, res) => {
     }
     const { equipmentId, sensorType, isActive } = req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -361,7 +388,8 @@ router.get('/sensors/:configId', async (req, res) => {
     const sensors = await maintenanceService.getSensors(configId, {
       equipmentId: equipmentId as string,
       sensorType: sensorType as string,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
     });
     res.json(sensors);
   } catch (error) {
@@ -374,7 +402,9 @@ router.post('/sensors', async (req, res) => {
   try {
     const data = createSensorSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(data.configId);
+    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -383,7 +413,9 @@ router.post('/sensors', async (req, res) => {
     res.status(201).json(sensor);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating sensor:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -407,7 +439,9 @@ router.patch('/sensors/:sensorId', async (req, res) => {
     res.json(sensor);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating sensor:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -420,7 +454,9 @@ router.post('/readings', async (req, res) => {
   try {
     const data = recordReadingSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromSensor(data.sensorId);
+    const clientId = await maintenanceService.getClientIdFromSensor(
+      data.sensorId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -429,7 +465,9 @@ router.post('/readings', async (req, res) => {
     res.status(201).json(reading);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error recording sensor reading:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -471,7 +509,8 @@ router.get('/anomalies/:configId', async (req, res) => {
     }
     const { sensorId, severity, isResolved } = req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -479,7 +518,12 @@ router.get('/anomalies/:configId', async (req, res) => {
     const anomalies = await maintenanceService.getAnomalies(configId, {
       sensorId: sensorId as string,
       severity: severity as string,
-      isResolved: isResolved === 'true' ? true : isResolved === 'false' ? false : undefined,
+      isResolved:
+        isResolved === 'true'
+          ? true
+          : isResolved === 'false'
+            ? false
+            : undefined,
     });
     res.json(anomalies);
   } catch (error) {
@@ -498,17 +542,24 @@ router.get('/predictions/:configId', async (req, res) => {
     }
     const { equipmentId, failureType, isActive, minProbability } = req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const predictions = await maintenanceService.getFailurePredictions(configId, {
-      equipmentId: equipmentId as string,
-      failureType: failureType as string,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-      minProbability: minProbability ? parseFloat(minProbability as string) : undefined,
-    });
+    const predictions = await maintenanceService.getFailurePredictions(
+      configId,
+      {
+        equipmentId: equipmentId as string,
+        failureType: failureType as string,
+        isActive:
+          isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+        minProbability: minProbability
+          ? parseFloat(minProbability as string)
+          : undefined,
+      },
+    );
     res.json(predictions);
   } catch (error) {
     console.error('Error fetching predictions:', error);
@@ -523,12 +574,14 @@ router.post('/predictions/:configId/generate', async (req, res) => {
       return res.status(400).json({ error: 'Invalid config ID' });
     }
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const predictions = await maintenanceService.generateFailurePredictions(configId);
+    const predictions =
+      await maintenanceService.generateFailurePredictions(configId);
     res.json({
       generated: predictions.length,
       predictions,
@@ -547,9 +600,11 @@ router.get('/work-orders/:configId', async (req, res) => {
     if (Number.isNaN(configId)) {
       return res.status(400).json({ error: 'Invalid config ID' });
     }
-    const { equipmentId, status, priority, maintenanceType, assignedTo } = req.query;
+    const { equipmentId, status, priority, maintenanceType, assignedTo } =
+      req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -572,7 +627,9 @@ router.post('/work-orders', async (req, res) => {
   try {
     const data = createWorkOrderSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(data.configId);
+    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -584,7 +641,9 @@ router.post('/work-orders', async (req, res) => {
     res.status(201).json(workOrder);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating work order:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -599,21 +658,26 @@ router.patch('/work-orders/:workOrderId', async (req, res) => {
     }
     const data = updateWorkOrderSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromWorkOrder(workOrderId);
+    const clientId =
+      await maintenanceService.getClientIdFromWorkOrder(workOrderId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const workOrder = await maintenanceService.updateWorkOrder(workOrderId, {
       ...data,
-      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
+      scheduledDate: data.scheduledDate
+        ? new Date(data.scheduledDate)
+        : undefined,
       startedAt: data.startedAt ? new Date(data.startedAt) : undefined,
       completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
     });
     res.json(workOrder);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating work order:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -630,7 +694,8 @@ router.get('/spare-parts/:configId', async (req, res) => {
     }
     const { category, lowStock } = req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -650,7 +715,9 @@ router.post('/spare-parts', async (req, res) => {
   try {
     const data = createSparePartSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(data.configId);
+    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -659,7 +726,9 @@ router.post('/spare-parts', async (req, res) => {
     res.status(201).json(part);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating spare part:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -679,7 +748,9 @@ router.patch('/spare-parts/:partId', async (req, res) => {
     res.json(part);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating spare part:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -696,14 +767,16 @@ router.get('/downtime/:configId', async (req, res) => {
     }
     const { equipmentId, isPlanned, startDate, endDate } = req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const events = await maintenanceService.getDowntimeEvents(configId, {
       equipmentId: equipmentId as string,
-      isPlanned: isPlanned === 'true' ? true : isPlanned === 'false' ? false : undefined,
+      isPlanned:
+        isPlanned === 'true' ? true : isPlanned === 'false' ? false : undefined,
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
     });
@@ -718,7 +791,9 @@ router.post('/downtime', async (req, res) => {
   try {
     const data = recordDowntimeSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(data.configId);
+    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -731,7 +806,9 @@ router.post('/downtime', async (req, res) => {
     res.status(201).json(event);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error recording downtime event:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -748,15 +825,19 @@ router.get('/analytics/:configId', async (req, res) => {
     }
     const { startDate, endDate } = req.query;
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const analytics = await maintenanceService.getMaintenanceAnalytics(configId, {
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-    });
+    const analytics = await maintenanceService.getMaintenanceAnalytics(
+      configId,
+      {
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+      },
+    );
     res.json(analytics);
   } catch (error) {
     console.error('Error fetching analytics:', error);
@@ -771,7 +852,8 @@ router.post('/analytics/:configId/record', async (req, res) => {
       return res.status(400).json({ error: 'Invalid config ID' });
     }
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
+    const clientId =
+      await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }

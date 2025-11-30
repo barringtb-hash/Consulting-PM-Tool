@@ -4,15 +4,17 @@
  * API endpoints for safety monitoring, incidents, hazards, training, and inspections
  */
 
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
-import { IncidentSeverity, IncidentStatus, ChecklistStatus, TrainingStatus } from '@prisma/client';
-import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
-import * as safetyService from './safety-monitor.service';
 import {
-  hasClientAccess,
-  getClientIdFromSafetyMonitorConfig,
-} from '../../auth/client-auth.helper';
+  IncidentSeverity,
+  IncidentStatus,
+  ChecklistStatus,
+  TrainingStatus,
+} from '@prisma/client';
+// Auth middleware available if needed: import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import * as safetyService from './safety-monitor.service';
+import { hasClientAccess } from '../../auth/client-auth.helper';
 
 const router = Router();
 
@@ -243,7 +245,9 @@ router.post('/config', async (req, res) => {
     res.status(201).json(config);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating safety config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -267,7 +271,9 @@ router.patch('/config/:configId', async (req, res) => {
     res.json(config);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating safety config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -292,7 +298,8 @@ router.get('/checklists/:configId', async (req, res) => {
     const checklists = await safetyService.getChecklists(configId, {
       workArea: workArea as string,
       frequency: frequency as string,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
     });
     res.json(checklists);
   } catch (error) {
@@ -305,7 +312,9 @@ router.post('/checklists', async (req, res) => {
   try {
     const data = createChecklistSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromSafetyConfig(data.configId);
+    const clientId = await safetyService.getClientIdFromSafetyConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -314,7 +323,9 @@ router.post('/checklists', async (req, res) => {
     res.status(201).json(checklist);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating checklist:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -338,7 +349,9 @@ router.patch('/checklists/:checklistId', async (req, res) => {
     res.json(checklist);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating checklist:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -380,11 +393,14 @@ router.get('/completions/:checklistId', async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const completions = await safetyService.getChecklistCompletions(checklistId, {
-      status: status as ChecklistStatus,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-    });
+    const completions = await safetyService.getChecklistCompletions(
+      checklistId,
+      {
+        status: status as ChecklistStatus,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+      },
+    );
     res.json(completions);
   } catch (error) {
     console.error('Error fetching completions:', error);
@@ -396,7 +412,9 @@ router.post('/completions', async (req, res) => {
   try {
     const data = createCompletionSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromChecklist(data.checklistId);
+    const clientId = await safetyService.getClientIdFromChecklist(
+      data.checklistId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -408,7 +426,9 @@ router.post('/completions', async (req, res) => {
     res.status(201).json(completion);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating completion:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -448,7 +468,9 @@ router.post('/incidents', async (req, res) => {
   try {
     const data = createIncidentSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromSafetyConfig(data.configId);
+    const clientId = await safetyService.getClientIdFromSafetyConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -460,7 +482,9 @@ router.post('/incidents', async (req, res) => {
     res.status(201).json(incident);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating incident:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -487,7 +511,9 @@ router.patch('/incidents/:incidentId', async (req, res) => {
     res.json(incident);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating incident:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -526,7 +552,9 @@ router.post('/hazards', async (req, res) => {
   try {
     const data = createHazardSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromSafetyConfig(data.configId);
+    const clientId = await safetyService.getClientIdFromSafetyConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -535,7 +563,9 @@ router.post('/hazards', async (req, res) => {
     res.status(201).json(hazard);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating hazard:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -562,7 +592,9 @@ router.patch('/hazards/:hazardId', async (req, res) => {
     res.json(hazard);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating hazard:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -586,7 +618,8 @@ router.get('/training-requirements/:configId', async (req, res) => {
 
     const requirements = await safetyService.getTrainingRequirements(configId, {
       category: category as string,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
     });
     res.json(requirements);
   } catch (error) {
@@ -599,7 +632,9 @@ router.post('/training-requirements', async (req, res) => {
   try {
     const data = createTrainingRequirementSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromSafetyConfig(data.configId);
+    const clientId = await safetyService.getClientIdFromSafetyConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -608,7 +643,9 @@ router.post('/training-requirements', async (req, res) => {
     res.status(201).json(requirement);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating training requirement:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -623,16 +660,22 @@ router.patch('/training-requirements/:requirementId', async (req, res) => {
     }
     const data = updateTrainingRequirementSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromTrainingRequirement(requirementId);
+    const clientId =
+      await safetyService.getClientIdFromTrainingRequirement(requirementId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const requirement = await safetyService.updateTrainingRequirement(requirementId, data);
+    const requirement = await safetyService.updateTrainingRequirement(
+      requirementId,
+      data,
+    );
     res.json(requirement);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating training requirement:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -670,20 +713,26 @@ router.post('/training-records', async (req, res) => {
   try {
     const data = createTrainingRecordSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromSafetyConfig(data.configId);
+    const clientId = await safetyService.getClientIdFromSafetyConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const record = await safetyService.createTrainingRecord({
       ...data,
-      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
+      scheduledDate: data.scheduledDate
+        ? new Date(data.scheduledDate)
+        : undefined,
       completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
     });
     res.status(201).json(record);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating training record:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -706,7 +755,9 @@ router.patch('/training-records/:recordId', async (req, res) => {
     res.json(record);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating training record:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -743,7 +794,9 @@ router.post('/osha-logs', async (req, res) => {
   try {
     const data = createOshaLogSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromSafetyConfig(data.configId);
+    const clientId = await safetyService.getClientIdFromSafetyConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -752,7 +805,9 @@ router.post('/osha-logs', async (req, res) => {
     res.status(201).json(log);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating OSHA log:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -790,7 +845,9 @@ router.post('/inspections', async (req, res) => {
   try {
     const data = createInspectionSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromSafetyConfig(data.configId);
+    const clientId = await safetyService.getClientIdFromSafetyConfig(
+      data.configId,
+    );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -802,7 +859,9 @@ router.post('/inspections', async (req, res) => {
     res.status(201).json(inspection);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error creating inspection:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -817,7 +876,8 @@ router.patch('/inspections/:inspectionId', async (req, res) => {
     }
     const data = updateInspectionSchema.parse(req.body);
 
-    const clientId = await safetyService.getClientIdFromInspection(inspectionId);
+    const clientId =
+      await safetyService.getClientIdFromInspection(inspectionId);
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -825,12 +885,16 @@ router.patch('/inspections/:inspectionId', async (req, res) => {
     const inspection = await safetyService.updateInspection(inspectionId, {
       ...data,
       completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
-      nextInspectionDate: data.nextInspectionDate ? new Date(data.nextInspectionDate) : undefined,
+      nextInspectionDate: data.nextInspectionDate
+        ? new Date(data.nextInspectionDate)
+        : undefined,
     });
     res.json(inspection);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      return res
+        .status(400)
+        .json({ error: 'Validation error', details: error.errors });
     }
     console.error('Error updating inspection:', error);
     res.status(500).json({ error: 'Internal server error' });
