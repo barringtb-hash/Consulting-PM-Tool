@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
     <linearGradient id="sunGradient" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#F97316"/>
@@ -7,18 +7,18 @@
   </defs>
 
   <!-- Sun rays -->
-  <g stroke="#FCD34D" stroke-width="24" stroke-linecap="round">
+  <g stroke="#FCD34D" stroke-width="6" stroke-linecap="round">
     <!-- Top ray -->
-    <line x1="256" y1="80" x2="256" y2="140"/>
+    <line x1="50" y1="8" x2="50" y2="22"/>
     <!-- Top-left ray -->
-    <line x1="140" y1="170" x2="180" y2="210"/>
+    <line x1="22" y1="28" x2="32" y2="38"/>
     <!-- Top-right ray -->
-    <line x1="372" y1="170" x2="332" y2="210"/>
+    <line x1="78" y1="28" x2="68" y2="38"/>
   </g>
 
   <!-- Sun (half circle) -->
-  <path d="M 96 320 A 160 160 0 0 1 416 320 L 96 320" fill="url(#sunGradient)"/>
+  <path d="M 12 62 A 38 38 0 0 1 88 62 L 12 62" fill="url(#sunGradient)"/>
 
   <!-- Base line -->
-  <rect x="64" y="320" width="384" height="32" rx="16" fill="#9F1239"/>
+  <rect x="6" y="62" width="88" height="10" rx="5" fill="#9F1239"/>
 </svg>

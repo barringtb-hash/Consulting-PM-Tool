@@ -114,12 +114,9 @@ export function Sidebar(): JSX.Element {
   return (
     <div className="flex flex-col w-60 bg-white border-r border-neutral-200 h-full">
       {/* Logo/Brand */}
-      <div className="flex items-center h-16 px-6 border-b border-neutral-200">
-        <Link to="/dashboard" className="flex items-center gap-2 no-underline">
-          <img src="/favicon.svg" alt="Launchpad" className="w-8 h-8" />
-          <span className="font-semibold text-neutral-900 text-sm">
-            Launchpad PMO
-          </span>
+      <div className="flex items-center justify-center py-4 px-4 border-b border-neutral-200">
+        <Link to="/dashboard" className="no-underline">
+          <img src="/logo.svg" alt="Launchpad Consulting Partners" className="h-16 w-auto" />
         </Link>
       </div>
 
