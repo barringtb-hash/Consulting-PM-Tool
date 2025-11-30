@@ -701,7 +701,7 @@ async function generateRecommendation(
 
   if (competitorRates.length > 0) {
     const avgCompetitorRate =
-      competitorRates.reduce((sum: number, r: RateData) => sum + r.rate, 0) /
+      competitorRates.reduce((sum: number, r: RateData) => sum + Number(r.rate), 0) /
       competitorRates.length;
     const competitorWeight = 0.3; // Default competitor weight
     const competitorAdjustment =

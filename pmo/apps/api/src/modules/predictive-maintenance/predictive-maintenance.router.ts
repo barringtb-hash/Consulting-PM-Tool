@@ -11,6 +11,7 @@ import {
   MaintenanceType,
   WorkOrderStatus,
   WorkOrderPriority,
+  AlertSeverity,
 } from '@prisma/client';
 // Auth middleware available if needed: import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as maintenanceService from './predictive-maintenance.service';
@@ -21,144 +22,161 @@ const router = Router();
 // ============ Validation Schemas ============
 
 const createConfigSchema = z.object({
-  clientId: z.string().uuid(),
-  facilityName: z.string().min(1),
-  facilityType: z.string().min(1),
-  equipmentCategories: z.array(z.string()),
-  maintenanceSchedule: z.record(z.any()).optional(),
-  alertThresholds: z.record(z.any()).optional(),
+  clientId: z.number().int().positive(),
+  facilityName: z.string().min(1).optional(),
+  timezone: z.string().optional(),
   predictionHorizonDays: z.number().positive().optional(),
-  dataRetentionDays: z.number().positive().optional(),
+  alertThreshold: z.number().positive().optional(),
+  modelUpdateFrequency: z.string().optional(),
+  sensorDataRetentionDays: z.number().positive().optional(),
+  anomalyDetectionEnabled: z.boolean().optional(),
+  realTimeMonitoring: z.boolean().optional(),
 });
 
 const updateConfigSchema = z.object({
   facilityName: z.string().optional(),
-  facilityType: z.string().optional(),
-  equipmentCategories: z.array(z.string()).optional(),
-  maintenanceSchedule: z.record(z.any()).optional(),
-  alertThresholds: z.record(z.any()).optional(),
+  timezone: z.string().optional(),
   predictionHorizonDays: z.number().positive().optional(),
-  dataRetentionDays: z.number().positive().optional(),
+  alertThreshold: z.number().positive().optional(),
+  modelUpdateFrequency: z.string().optional(),
+  sensorDataRetentionDays: z.number().positive().optional(),
+  anomalyDetectionEnabled: z.boolean().optional(),
+  realTimeMonitoring: z.boolean().optional(),
 });
 
 const createEquipmentSchema = z.object({
-  configId: z.string().uuid(),
-  assetId: z.string().min(1),
+  configId: z.number().int().positive(),
+  assetTag: z.string().min(1),
   name: z.string().min(1),
-  category: z.string().min(1),
+  description: z.string().optional(),
+  category: z.string().optional(),
   manufacturer: z.string().optional(),
   model: z.string().optional(),
   serialNumber: z.string().optional(),
   location: z.string().optional(),
-  installDate: z.string().datetime().optional(),
-  warrantyExpiry: z.string().datetime().optional(),
-  specifications: z.record(z.any()).optional(),
-  maintenanceInterval: z.number().positive().optional(),
+  department: z.string().optional(),
   criticality: z.string().optional(),
+  installationDate: z.string().datetime().optional(),
+  warrantyExpiry: z.string().datetime().optional(),
+  expectedLifeYears: z.number().positive().optional(),
+  maintenanceSchedule: z.record(z.string(), z.any()).optional(),
 });
 
 const updateEquipmentSchema = z.object({
   name: z.string().optional(),
+  description: z.string().optional(),
   category: z.string().optional(),
   status: z.nativeEnum(EquipmentStatus).optional(),
   location: z.string().optional(),
-  specifications: z.record(z.any()).optional(),
-  maintenanceInterval: z.number().positive().optional(),
+  department: z.string().optional(),
   criticality: z.string().optional(),
+  healthScore: z.number().optional(),
+  maintenanceSchedule: z.record(z.string(), z.any()).optional(),
   lastMaintenanceDate: z.string().datetime().optional(),
   nextMaintenanceDate: z.string().datetime().optional(),
 });
 
 const createSensorSchema = z.object({
-  configId: z.string().uuid(),
-  equipmentId: z.string().uuid(),
+  configId: z.number().int().positive(),
+  equipmentId: z.number().int().positive(),
   sensorId: z.string().min(1),
   name: z.string().min(1),
   sensorType: z.string().min(1),
-  unit: z.string().min(1),
+  unit: z.string().optional(),
   minThreshold: z.number().optional(),
   maxThreshold: z.number().optional(),
-  readingInterval: z.number().positive().optional(),
+  normalRangeMin: z.number().optional(),
+  normalRangeMax: z.number().optional(),
+  alertEnabled: z.boolean().optional(),
+  alertThreshold: z.number().optional(),
 });
 
 const updateSensorSchema = z.object({
   name: z.string().optional(),
   minThreshold: z.number().optional(),
   maxThreshold: z.number().optional(),
-  readingInterval: z.number().positive().optional(),
-  isActive: z.boolean().optional(),
+  normalRangeMin: z.number().optional(),
+  normalRangeMax: z.number().optional(),
+  alertEnabled: z.boolean().optional(),
+  alertThreshold: z.number().optional(),
+  isOnline: z.boolean().optional(),
 });
 
 const recordReadingSchema = z.object({
-  sensorId: z.string().uuid(),
+  sensorId: z.number().int().positive(),
   value: z.number(),
   quality: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  timestamp: z.string().datetime().optional(),
 });
 
 const createWorkOrderSchema = z.object({
-  configId: z.string().uuid(),
-  equipmentId: z.string().uuid(),
+  configId: z.number().int().positive(),
+  equipmentId: z.number().int().positive(),
   workOrderNumber: z.string().min(1),
   title: z.string().min(1),
   description: z.string().optional(),
-  maintenanceType: z.nativeEnum(MaintenanceType),
+  type: z.nativeEnum(MaintenanceType),
   priority: z.nativeEnum(WorkOrderPriority).optional(),
-  scheduledDate: z.string().datetime(),
-  estimatedDuration: z.number().positive().optional(),
+  scheduledDate: z.string().datetime().optional(),
+  dueDate: z.string().datetime().optional(),
   assignedTo: z.string().optional(),
-  estimatedCost: z.number().optional(),
-  predictionId: z.string().uuid().optional(),
+  assignedTeam: z.string().optional(),
 });
 
 const updateWorkOrderSchema = z.object({
   status: z.nativeEnum(WorkOrderStatus).optional(),
   priority: z.nativeEnum(WorkOrderPriority).optional(),
   scheduledDate: z.string().datetime().optional(),
+  dueDate: z.string().datetime().optional(),
   startedAt: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
-  actualDuration: z.number().optional(),
-  actualCost: z.number().optional(),
   assignedTo: z.string().optional(),
+  assignedTeam: z.string().optional(),
+  laborHours: z.number().optional(),
   notes: z.string().optional(),
-  partsUsed: z.record(z.any()).optional(),
+  findings: z.string().optional(),
+  partsUsed: z.record(z.string(), z.any()).optional(),
 });
 
 const createSparePartSchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
   partNumber: z.string().min(1),
   name: z.string().min(1),
-  category: z.string().min(1),
   description: z.string().optional(),
-  manufacturer: z.string().optional(),
-  unitCost: z.number().optional(),
-  currentStock: z.number().optional(),
-  reorderLevel: z.number().optional(),
-  reorderQuantity: z.number().optional(),
-  leadTimeDays: z.number().optional(),
+  category: z.string().optional(),
+  quantityOnHand: z.number().int().optional(),
+  reorderPoint: z.number().int().optional(),
+  reorderQuantity: z.number().int().optional(),
   location: z.string().optional(),
+  unitCost: z.number().optional(),
+  supplier: z.string().optional(),
+  leadTimeDays: z.number().int().optional(),
+  compatibleEquipment: z.array(z.string()).optional(),
 });
 
 const updateSparePartSchema = z.object({
   name: z.string().optional(),
-  currentStock: z.number().optional(),
-  reorderLevel: z.number().optional(),
-  reorderQuantity: z.number().optional(),
-  unitCost: z.number().optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  quantityOnHand: z.number().int().optional(),
+  reorderPoint: z.number().int().optional(),
+  reorderQuantity: z.number().int().optional(),
   location: z.string().optional(),
+  unitCost: z.number().optional(),
+  supplier: z.string().optional(),
+  leadTimeDays: z.number().int().optional(),
 });
 
 const recordDowntimeSchema = z.object({
-  configId: z.string().uuid(),
-  equipmentId: z.string().uuid(),
+  equipmentId: z.number().int().positive(),
   reason: z.string().min(1),
+  description: z.string().optional(),
   startTime: z.string().datetime(),
   endTime: z.string().datetime().optional(),
-  isPlanned: z.boolean(),
-  category: z.string().optional(),
+  durationMinutes: z.number().int().optional(),
   rootCause: z.string().optional(),
-  correctiveActions: z.array(z.string()).optional(),
-  impactDescription: z.string().optional(),
+  wasPlanned: z.boolean().optional(),
+  wasPredicted: z.boolean().optional(),
   productionLoss: z.number().optional(),
 });
 
@@ -197,7 +215,7 @@ router.post('/config', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating maintenance config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -227,7 +245,7 @@ router.patch('/config/:configId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating maintenance config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -306,7 +324,7 @@ router.post('/equipment', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating equipment:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -341,7 +359,7 @@ router.patch('/equipment/:equipmentId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating equipment:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -386,9 +404,9 @@ router.get('/sensors/:configId', async (req, res) => {
     }
 
     const sensors = await maintenanceService.getSensors(configId, {
-      equipmentId: equipmentId as string,
+      equipmentId: equipmentId ? Number(equipmentId) : undefined,
       sensorType: sensorType as string,
-      isActive:
+      isOnline:
         isActive === 'true' ? true : isActive === 'false' ? false : undefined,
     });
     res.json(sensors);
@@ -415,7 +433,7 @@ router.post('/sensors', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating sensor:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -441,7 +459,7 @@ router.patch('/sensors/:sensorId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating sensor:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -467,7 +485,7 @@ router.post('/readings', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error recording sensor reading:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -516,8 +534,8 @@ router.get('/anomalies/:configId', async (req, res) => {
     }
 
     const anomalies = await maintenanceService.getAnomalies(configId, {
-      sensorId: sensorId as string,
-      severity: severity as string,
+      sensorId: sensorId ? Number(sensorId) : undefined,
+      severity: severity ? (severity as AlertSeverity) : undefined,
       isResolved:
         isResolved === 'true'
           ? true
@@ -551,7 +569,7 @@ router.get('/predictions/:configId', async (req, res) => {
     const predictions = await maintenanceService.getFailurePredictions(
       configId,
       {
-        equipmentId: equipmentId as string,
+        equipmentId: equipmentId ? Number(equipmentId) : undefined,
         failureType: failureType as string,
         isActive:
           isActive === 'true' ? true : isActive === 'false' ? false : undefined,
@@ -610,10 +628,10 @@ router.get('/work-orders/:configId', async (req, res) => {
     }
 
     const workOrders = await maintenanceService.getWorkOrders(configId, {
-      equipmentId: equipmentId as string,
-      status: status as WorkOrderStatus,
-      priority: priority as WorkOrderPriority,
-      maintenanceType: maintenanceType as MaintenanceType,
+      equipmentId: equipmentId ? Number(equipmentId) : undefined,
+      status: status ? (status as WorkOrderStatus) : undefined,
+      priority: priority ? (priority as WorkOrderPriority) : undefined,
+      type: maintenanceType ? (maintenanceType as MaintenanceType) : undefined,
       assignedTo: assignedTo as string,
     });
     res.json(workOrders);
@@ -636,14 +654,15 @@ router.post('/work-orders', async (req, res) => {
 
     const workOrder = await maintenanceService.createWorkOrder({
       ...data,
-      scheduledDate: new Date(data.scheduledDate),
+      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
+      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
     });
     res.status(201).json(workOrder);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating work order:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -677,7 +696,7 @@ router.patch('/work-orders/:workOrderId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating work order:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -728,7 +747,7 @@ router.post('/spare-parts', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating spare part:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -750,7 +769,7 @@ router.patch('/spare-parts/:partId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating spare part:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -774,8 +793,8 @@ router.get('/downtime/:configId', async (req, res) => {
     }
 
     const events = await maintenanceService.getDowntimeEvents(configId, {
-      equipmentId: equipmentId as string,
-      isPlanned:
+      equipmentId: equipmentId as string | undefined,
+      wasPlanned:
         isPlanned === 'true' ? true : isPlanned === 'false' ? false : undefined,
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
@@ -791,8 +810,9 @@ router.post('/downtime', async (req, res) => {
   try {
     const data = recordDowntimeSchema.parse(req.body);
 
-    const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(
-      data.configId,
+    // Get client ID from equipment
+    const clientId = await maintenanceService.getClientIdFromEquipment(
+      data.equipmentId,
     );
     if (!clientId || !hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
@@ -808,7 +828,7 @@ router.post('/downtime', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error recording downtime event:', error);
     res.status(500).json({ error: 'Internal server error' });

@@ -3,7 +3,9 @@ import {
   MaintenanceType,
   WorkOrderStatus,
   WorkOrderPriority,
+  AlertSeverity,
   FailurePrediction,
+  Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 
@@ -13,23 +15,25 @@ interface EquipmentWithSensors {
   id: number;
   status: EquipmentStatus;
   lastMaintenanceDate: Date | null;
-  maintenanceInterval: number | null;
+  nextMaintenanceDate: Date | null;
+  installationDate: Date | null;
+  criticality: string | null;
   sensors: SensorWithData[];
   downtimeEvents: DowntimeEventData[];
 }
 
 interface SensorWithData {
   name: string;
-  readings: SensorReading[];
+  readings: SensorReadingData[];
   anomalies: AnomalyData[];
 }
 
-interface SensorReading {
+interface SensorReadingData {
   value: number;
 }
 
 interface AnomalyData {
-  length: number;
+  id: number;
 }
 
 interface DowntimeEventData {
@@ -51,7 +55,7 @@ export async function getMaintenanceConfig(clientId: number) {
           equipment: true,
           sensors: true,
           workOrders: true,
-          failurePredictions: true,
+          predictions: true,
         },
       },
     },
@@ -60,24 +64,26 @@ export async function getMaintenanceConfig(clientId: number) {
 
 export async function createMaintenanceConfig(data: {
   clientId: number;
-  facilityName: string;
-  facilityType: string;
-  equipmentCategories: string[];
-  maintenanceSchedule?: Record<string, unknown>;
-  alertThresholds?: Record<string, unknown>;
+  facilityName?: string;
+  timezone?: string;
   predictionHorizonDays?: number;
-  dataRetentionDays?: number;
+  alertThreshold?: number;
+  modelUpdateFrequency?: string;
+  sensorDataRetentionDays?: number;
+  anomalyDetectionEnabled?: boolean;
+  realTimeMonitoring?: boolean;
 }) {
   return prisma.predictiveMaintenanceConfig.create({
     data: {
       clientId: data.clientId,
       facilityName: data.facilityName,
-      facilityType: data.facilityType,
-      equipmentCategories: data.equipmentCategories,
-      maintenanceSchedule: data.maintenanceSchedule ?? {},
-      alertThresholds: data.alertThresholds ?? {},
+      timezone: data.timezone ?? 'America/New_York',
       predictionHorizonDays: data.predictionHorizonDays ?? 30,
-      dataRetentionDays: data.dataRetentionDays ?? 365,
+      alertThreshold: data.alertThreshold ?? 0.7,
+      modelUpdateFrequency: data.modelUpdateFrequency ?? 'weekly',
+      sensorDataRetentionDays: data.sensorDataRetentionDays ?? 90,
+      anomalyDetectionEnabled: data.anomalyDetectionEnabled ?? true,
+      realTimeMonitoring: data.realTimeMonitoring ?? true,
     },
   });
 }
@@ -86,12 +92,13 @@ export async function updateMaintenanceConfig(
   configId: number,
   data: {
     facilityName?: string;
-    facilityType?: string;
-    equipmentCategories?: string[];
-    maintenanceSchedule?: Record<string, unknown>;
-    alertThresholds?: Record<string, unknown>;
+    timezone?: string;
     predictionHorizonDays?: number;
-    dataRetentionDays?: number;
+    alertThreshold?: number;
+    modelUpdateFrequency?: string;
+    sensorDataRetentionDays?: number;
+    anomalyDetectionEnabled?: boolean;
+    realTimeMonitoring?: boolean;
   },
 ) {
   return prisma.predictiveMaintenanceConfig.update({
@@ -116,7 +123,7 @@ export async function getEquipment(
       ...(filters?.category && { category: filters.category }),
       ...(filters?.status && { status: filters.status }),
       ...(filters?.location && {
-        location: { contains: filters.location, mode: 'insensitive' },
+        location: { contains: filters.location, mode: 'insensitive' as const },
       }),
     },
     include: {
@@ -124,7 +131,7 @@ export async function getEquipment(
       _count: {
         select: {
           workOrders: true,
-          failurePredictions: true,
+          predictions: true,
           downtimeEvents: true,
         },
       },
@@ -142,7 +149,7 @@ export async function getEquipmentById(equipmentId: number) {
         take: 10,
         orderBy: { createdAt: 'desc' },
       },
-      failurePredictions: {
+      predictions: {
         where: { isActive: true },
         orderBy: { predictedDate: 'asc' },
       },
@@ -156,34 +163,38 @@ export async function getEquipmentById(equipmentId: number) {
 
 export async function createEquipment(data: {
   configId: number;
-  assetId: string;
+  assetTag: string;
   name: string;
-  category: string;
+  description?: string;
+  category?: string;
   manufacturer?: string;
   model?: string;
   serialNumber?: string;
   location?: string;
-  installDate?: Date;
-  warrantyExpiry?: Date;
-  specifications?: Record<string, unknown>;
-  maintenanceInterval?: number;
+  department?: string;
   criticality?: string;
+  installationDate?: Date;
+  warrantyExpiry?: Date;
+  expectedLifeYears?: number;
+  maintenanceSchedule?: Record<string, unknown>;
 }) {
   return prisma.equipment.create({
     data: {
       configId: data.configId,
-      assetId: data.assetId,
+      assetTag: data.assetTag,
       name: data.name,
+      description: data.description,
       category: data.category,
       manufacturer: data.manufacturer,
       model: data.model,
       serialNumber: data.serialNumber,
       location: data.location,
-      installDate: data.installDate,
-      warrantyExpiry: data.warrantyExpiry,
-      specifications: data.specifications ?? {},
-      maintenanceInterval: data.maintenanceInterval,
+      department: data.department,
       criticality: data.criticality ?? 'medium',
+      installationDate: data.installationDate,
+      warrantyExpiry: data.warrantyExpiry,
+      expectedLifeYears: data.expectedLifeYears,
+      maintenanceSchedule: data.maintenanceSchedule as Prisma.InputJsonValue,
       status: EquipmentStatus.OPERATIONAL,
     },
   });
@@ -193,19 +204,25 @@ export async function updateEquipment(
   equipmentId: number,
   data: {
     name?: string;
+    description?: string;
     category?: string;
     status?: EquipmentStatus;
     location?: string;
-    specifications?: Record<string, unknown>;
-    maintenanceInterval?: number;
+    department?: string;
     criticality?: string;
+    healthScore?: number;
+    maintenanceSchedule?: Record<string, unknown>;
     lastMaintenanceDate?: Date;
     nextMaintenanceDate?: Date;
   },
 ) {
+  const updateData: Prisma.EquipmentUpdateInput = {
+    ...data,
+    maintenanceSchedule: data.maintenanceSchedule as Prisma.InputJsonValue,
+  };
   return prisma.equipment.update({
     where: { id: equipmentId },
-    data,
+    data: updateData,
   });
 }
 
@@ -222,7 +239,7 @@ export async function getSensors(
   filters?: {
     equipmentId?: number;
     sensorType?: string;
-    isActive?: boolean;
+    isOnline?: boolean;
   },
 ) {
   return prisma.sensor.findMany({
@@ -230,7 +247,7 @@ export async function getSensors(
       configId,
       ...(filters?.equipmentId && { equipmentId: filters.equipmentId }),
       ...(filters?.sensorType && { sensorType: filters.sensorType }),
-      ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
+      ...(filters?.isOnline !== undefined && { isOnline: filters.isOnline }),
     },
     include: {
       equipment: true,
@@ -245,10 +262,13 @@ export async function createSensor(data: {
   sensorId: string;
   name: string;
   sensorType: string;
-  unit: string;
+  unit?: string;
   minThreshold?: number;
   maxThreshold?: number;
-  readingInterval?: number;
+  normalRangeMin?: number;
+  normalRangeMax?: number;
+  alertEnabled?: boolean;
+  alertThreshold?: number;
 }) {
   return prisma.sensor.create({
     data: {
@@ -260,8 +280,11 @@ export async function createSensor(data: {
       unit: data.unit,
       minThreshold: data.minThreshold,
       maxThreshold: data.maxThreshold,
-      readingInterval: data.readingInterval ?? 60,
-      isActive: true,
+      normalRangeMin: data.normalRangeMin,
+      normalRangeMax: data.normalRangeMax,
+      alertEnabled: data.alertEnabled ?? true,
+      alertThreshold: data.alertThreshold,
+      isOnline: true,
     },
   });
 }
@@ -272,8 +295,11 @@ export async function updateSensor(
     name?: string;
     minThreshold?: number;
     maxThreshold?: number;
-    readingInterval?: number;
-    isActive?: boolean;
+    normalRangeMin?: number;
+    normalRangeMax?: number;
+    alertEnabled?: boolean;
+    alertThreshold?: number;
+    isOnline?: boolean;
     lastReading?: number;
     lastReadingAt?: Date;
   },
@@ -290,7 +316,7 @@ export async function recordSensorReading(data: {
   sensorId: number;
   value: number;
   quality?: string;
-  metadata?: Record<string, unknown>;
+  timestamp?: Date;
 }) {
   const sensor = await prisma.sensor.findUnique({
     where: { id: data.sensorId },
@@ -318,9 +344,7 @@ export async function recordSensorReading(data: {
       sensorId: data.sensorId,
       value: data.value,
       quality: data.quality ?? 'good',
-      isAnomaly,
-      metadata: data.metadata ?? {},
-      recordedAt: new Date(),
+      timestamp: data.timestamp ?? new Date(),
     },
   });
 
@@ -335,13 +359,17 @@ export async function recordSensorReading(data: {
 
   // Create anomaly record if detected
   if (isAnomaly && anomalyType) {
+    const expectedValue =
+      sensor.minThreshold !== null && data.value < sensor.minThreshold
+        ? sensor.minThreshold
+        : sensor.maxThreshold;
+
     await prisma.sensorAnomaly.create({
       data: {
         sensorId: data.sensorId,
         anomalyType,
-        value: data.value,
-        expectedMin: sensor.minThreshold,
-        expectedMax: sensor.maxThreshold,
+        actualValue: data.value,
+        expectedValue,
         severity: calculateAnomalySeverity(
           data.value,
           sensor.minThreshold,
@@ -360,22 +388,22 @@ function calculateAnomalySeverity(
   value: number,
   min: number | null,
   max: number | null,
-): string {
+): AlertSeverity {
   if (min !== null && value < min) {
     const deviation = (min - value) / min;
-    if (deviation > 0.5) return 'critical';
-    if (deviation > 0.25) return 'high';
-    if (deviation > 0.1) return 'medium';
-    return 'low';
+    if (deviation > 0.5) return AlertSeverity.CRITICAL;
+    if (deviation > 0.25) return AlertSeverity.HIGH;
+    if (deviation > 0.1) return AlertSeverity.MEDIUM;
+    return AlertSeverity.LOW;
   }
   if (max !== null && value > max) {
     const deviation = (value - max) / max;
-    if (deviation > 0.5) return 'critical';
-    if (deviation > 0.25) return 'high';
-    if (deviation > 0.1) return 'medium';
-    return 'low';
+    if (deviation > 0.5) return AlertSeverity.CRITICAL;
+    if (deviation > 0.25) return AlertSeverity.HIGH;
+    if (deviation > 0.1) return AlertSeverity.MEDIUM;
+    return AlertSeverity.LOW;
   }
-  return 'low';
+  return AlertSeverity.LOW;
 }
 
 export async function getSensorReadings(
@@ -391,13 +419,13 @@ export async function getSensorReadings(
       sensorId,
       ...(filters?.startDate &&
         filters?.endDate && {
-          recordedAt: {
+          timestamp: {
             gte: filters.startDate,
             lte: filters.endDate,
           },
         }),
     },
-    orderBy: { recordedAt: 'desc' },
+    orderBy: { timestamp: 'desc' },
     take: filters?.limit ?? 100,
   });
 }
@@ -406,7 +434,7 @@ export async function getAnomalies(
   configId: number,
   filters?: {
     sensorId?: number;
-    severity?: string;
+    severity?: AlertSeverity;
     isResolved?: boolean;
   },
 ) {
@@ -457,15 +485,15 @@ export async function getFailurePredictions(
 }
 
 export async function generateFailurePredictions(configId: number) {
-  // Get all equipment with sensor data
+  // Get all equipment with sensor data (exclude OFFLINE as a reasonable filter)
   const equipment = await prisma.equipment.findMany({
-    where: { configId, status: { not: EquipmentStatus.DECOMMISSIONED } },
+    where: { configId, isActive: true },
     include: {
       sensors: {
         include: {
           readings: {
             take: 100,
-            orderBy: { recordedAt: 'desc' },
+            orderBy: { timestamp: 'desc' },
           },
           anomalies: {
             where: { isResolved: false },
@@ -483,7 +511,23 @@ export async function generateFailurePredictions(configId: number) {
 
   for (const equip of equipment) {
     // Simple ML-inspired prediction logic
-    const prediction = await predictEquipmentFailure(equip);
+    const equipWithSensors: EquipmentWithSensors = {
+      id: equip.id,
+      status: equip.status,
+      lastMaintenanceDate: equip.lastMaintenanceDate,
+      nextMaintenanceDate: equip.nextMaintenanceDate,
+      installationDate: equip.installationDate,
+      criticality: equip.criticality,
+      sensors: equip.sensors.map((s) => ({
+        name: s.name,
+        readings: s.readings.map((r) => ({ value: r.value })),
+        anomalies: s.anomalies.map((a) => ({ id: a.id })),
+      })),
+      downtimeEvents: equip.downtimeEvents.map((d) => ({
+        startTime: d.startTime,
+      })),
+    };
+    const prediction = predictEquipmentFailure(equipWithSensors);
 
     if (prediction.probability > 0.3) {
       // Deactivate old predictions for this equipment
@@ -501,9 +545,9 @@ export async function generateFailurePredictions(configId: number) {
           probability: prediction.probability,
           predictedDate: prediction.predictedDate,
           confidenceLevel: prediction.confidenceLevel,
-          contributingFactors: prediction.factors,
-          recommendedActions: prediction.recommendations,
-          estimatedImpact: prediction.impact,
+          features: prediction.factors as Prisma.InputJsonValue,
+          recommendedAction: prediction.recommendations.join('; '),
+          impactEstimate: prediction.impact as Prisma.InputJsonValue,
           isActive: true,
         },
         include: { equipment: true },
@@ -515,9 +559,7 @@ export async function generateFailurePredictions(configId: number) {
   return predictions;
 }
 
-async function predictEquipmentFailure(
-  equipment: EquipmentWithSensors,
-): Promise<{
+function predictEquipmentFailure(equipment: EquipmentWithSensors): {
   failureType: string;
   probability: number;
   predictedDate: Date;
@@ -525,7 +567,7 @@ async function predictEquipmentFailure(
   factors: string[];
   recommendations: string[];
   impact: Record<string, unknown>;
-}> {
+} {
   const factors: string[] = [];
   let riskScore = 0;
 
@@ -545,9 +587,9 @@ async function predictEquipmentFailure(
   }
 
   // Factor 2: Equipment age
-  if (equipment.installDate) {
+  if (equipment.installationDate) {
     const ageYears =
-      (Date.now() - new Date(equipment.installDate).getTime()) /
+      (Date.now() - new Date(equipment.installationDate).getTime()) /
       (365.25 * 24 * 60 * 60 * 1000);
     if (ageYears > 10) {
       riskScore += 0.25;
@@ -590,11 +632,15 @@ async function predictEquipmentFailure(
       const olderReadings = sensor.readings.slice(5, 10);
 
       const recentAvg =
-        recentReadings.reduce((s: number, r: SensorReading) => s + r.value, 0) /
-        recentReadings.length;
+        recentReadings.reduce(
+          (s: number, r: SensorReadingData) => s + r.value,
+          0,
+        ) / recentReadings.length;
       const olderAvg =
-        olderReadings.reduce((s: number, r: SensorReading) => s + r.value, 0) /
-        olderReadings.length;
+        olderReadings.reduce(
+          (s: number, r: SensorReadingData) => s + r.value,
+          0,
+        ) / olderReadings.length;
 
       const changePercent = Math.abs((recentAvg - olderAvg) / olderAvg);
       if (changePercent > 0.2) {
@@ -660,7 +706,7 @@ export async function getWorkOrders(
     equipmentId?: number;
     status?: WorkOrderStatus;
     priority?: WorkOrderPriority;
-    maintenanceType?: MaintenanceType;
+    type?: MaintenanceType;
     assignedTo?: string;
   },
 ) {
@@ -670,14 +716,11 @@ export async function getWorkOrders(
       ...(filters?.equipmentId && { equipmentId: filters.equipmentId }),
       ...(filters?.status && { status: filters.status }),
       ...(filters?.priority && { priority: filters.priority }),
-      ...(filters?.maintenanceType && {
-        maintenanceType: filters.maintenanceType,
-      }),
+      ...(filters?.type && { type: filters.type }),
       ...(filters?.assignedTo && { assignedTo: filters.assignedTo }),
     },
     include: {
       equipment: true,
-      spareParts: true,
     },
     orderBy: [{ priority: 'desc' }, { scheduledDate: 'asc' }],
   });
@@ -689,13 +732,12 @@ export async function createWorkOrder(data: {
   workOrderNumber: string;
   title: string;
   description?: string;
-  maintenanceType: MaintenanceType;
+  type: MaintenanceType;
   priority?: WorkOrderPriority;
-  scheduledDate: Date;
-  estimatedDuration?: number;
+  scheduledDate?: Date;
+  dueDate?: Date;
   assignedTo?: string;
-  estimatedCost?: number;
-  predictionId?: number;
+  assignedTeam?: string;
 }) {
   return prisma.maintenanceWorkOrder.create({
     data: {
@@ -704,14 +746,13 @@ export async function createWorkOrder(data: {
       workOrderNumber: data.workOrderNumber,
       title: data.title,
       description: data.description,
-      maintenanceType: data.maintenanceType,
+      type: data.type,
       priority: data.priority ?? WorkOrderPriority.MEDIUM,
-      status: WorkOrderStatus.PENDING,
+      status: WorkOrderStatus.DRAFT,
       scheduledDate: data.scheduledDate,
-      estimatedDuration: data.estimatedDuration,
+      dueDate: data.dueDate,
       assignedTo: data.assignedTo,
-      estimatedCost: data.estimatedCost,
-      predictionId: data.predictionId,
+      assignedTeam: data.assignedTeam,
     },
     include: { equipment: true },
   });
@@ -723,21 +764,26 @@ export async function updateWorkOrder(
     status?: WorkOrderStatus;
     priority?: WorkOrderPriority;
     scheduledDate?: Date;
+    dueDate?: Date;
     startedAt?: Date;
     completedAt?: Date;
-    actualDuration?: number;
-    actualCost?: number;
     assignedTo?: string;
+    assignedTeam?: string;
+    laborHours?: number;
     notes?: string;
+    findings?: string;
     partsUsed?: Record<string, unknown>;
   },
 ) {
+  const updateData: Prisma.MaintenanceWorkOrderUpdateInput = {
+    ...data,
+    partsUsed: data.partsUsed as Prisma.InputJsonValue,
+  };
   return prisma.maintenanceWorkOrder.update({
     where: { id: workOrderId },
-    data,
+    data: updateData,
     include: {
       equipment: true,
-      spareParts: true,
     },
   });
 }
@@ -760,7 +806,9 @@ export async function getSpareParts(
   });
 
   if (filters?.lowStock) {
-    return parts.filter((p) => p.currentStock <= p.reorderLevel);
+    return parts.filter(
+      (p) => p.reorderPoint !== null && p.quantityOnHand <= p.reorderPoint,
+    );
   }
 
   return parts;
@@ -770,30 +818,32 @@ export async function createSparePart(data: {
   configId: number;
   partNumber: string;
   name: string;
-  category: string;
   description?: string;
-  manufacturer?: string;
-  unitCost?: number;
-  currentStock?: number;
-  reorderLevel?: number;
+  category?: string;
+  quantityOnHand?: number;
+  reorderPoint?: number;
   reorderQuantity?: number;
-  leadTimeDays?: number;
   location?: string;
+  unitCost?: number;
+  supplier?: string;
+  leadTimeDays?: number;
+  compatibleEquipment?: string[];
 }) {
   return prisma.sparePart.create({
     data: {
       configId: data.configId,
       partNumber: data.partNumber,
       name: data.name,
-      category: data.category,
       description: data.description,
-      manufacturer: data.manufacturer,
-      unitCost: data.unitCost,
-      currentStock: data.currentStock ?? 0,
-      reorderLevel: data.reorderLevel ?? 5,
+      category: data.category,
+      quantityOnHand: data.quantityOnHand ?? 0,
+      reorderPoint: data.reorderPoint ?? 5,
       reorderQuantity: data.reorderQuantity ?? 10,
-      leadTimeDays: data.leadTimeDays ?? 7,
       location: data.location,
+      unitCost: data.unitCost,
+      supplier: data.supplier,
+      leadTimeDays: data.leadTimeDays ?? 7,
+      compatibleEquipment: data.compatibleEquipment ?? [],
     },
   });
 }
@@ -802,11 +852,15 @@ export async function updateSparePart(
   partId: number,
   data: {
     name?: string;
-    currentStock?: number;
-    reorderLevel?: number;
+    description?: string;
+    category?: string;
+    quantityOnHand?: number;
+    reorderPoint?: number;
     reorderQuantity?: number;
-    unitCost?: number;
     location?: string;
+    unitCost?: number;
+    supplier?: string;
+    leadTimeDays?: number;
   },
 ) {
   return prisma.sparePart.update({
@@ -818,30 +872,28 @@ export async function updateSparePart(
 // ============ Downtime Events ============
 
 export async function recordDowntimeEvent(data: {
-  configId: number;
   equipmentId: number;
   reason: string;
+  description?: string;
   startTime: Date;
   endTime?: Date;
-  isPlanned: boolean;
-  category?: string;
+  durationMinutes?: number;
   rootCause?: string;
-  correctiveActions?: string[];
-  impactDescription?: string;
+  wasPlanned?: boolean;
+  wasPredicted?: boolean;
   productionLoss?: number;
 }) {
   const event = await prisma.downtimeEvent.create({
     data: {
-      configId: data.configId,
       equipmentId: data.equipmentId,
       reason: data.reason,
+      description: data.description,
       startTime: data.startTime,
       endTime: data.endTime,
-      isPlanned: data.isPlanned,
-      category: data.category,
+      durationMinutes: data.durationMinutes,
       rootCause: data.rootCause,
-      correctiveActions: data.correctiveActions ?? [],
-      impactDescription: data.impactDescription,
+      wasPlanned: data.wasPlanned ?? false,
+      wasPredicted: data.wasPredicted ?? false,
       productionLoss: data.productionLoss,
     },
   });
@@ -850,7 +902,9 @@ export async function recordDowntimeEvent(data: {
   await prisma.equipment.update({
     where: { id: data.equipmentId },
     data: {
-      status: data.endTime ? EquipmentStatus.OPERATIONAL : EquipmentStatus.DOWN,
+      status: data.endTime
+        ? EquipmentStatus.OPERATIONAL
+        : EquipmentStatus.OFFLINE,
     },
   });
 
@@ -860,17 +914,21 @@ export async function recordDowntimeEvent(data: {
 export async function getDowntimeEvents(
   configId: number,
   filters?: {
-    equipmentId?: number;
-    isPlanned?: boolean;
+    equipmentId?: string;
+    wasPlanned?: boolean;
     startDate?: Date;
     endDate?: Date;
   },
 ) {
   return prisma.downtimeEvent.findMany({
     where: {
-      configId,
-      ...(filters?.equipmentId && { equipmentId: filters.equipmentId }),
-      ...(filters?.isPlanned !== undefined && { isPlanned: filters.isPlanned }),
+      equipment: { configId },
+      ...(filters?.equipmentId && {
+        equipmentId: parseInt(filters.equipmentId, 10),
+      }),
+      ...(filters?.wasPlanned !== undefined && {
+        wasPlanned: filters.wasPlanned,
+      }),
       ...(filters?.startDate &&
         filters?.endDate && {
           startTime: {
@@ -912,14 +970,14 @@ export async function getMaintenanceAnalytics(
       }),
       prisma.downtimeEvent.findMany({
         where: {
-          configId,
+          equipment: { configId },
           startTime: { gte: startDate, lte: endDate },
         },
       }),
       prisma.failurePrediction.findMany({
         where: { configId, isActive: true },
       }),
-      prisma.maintenanceAnalytics.findMany({
+      prisma.predictiveMaintenanceAnalytics.findMany({
         where: {
           configId,
           date: { gte: startDate, lte: endDate },
@@ -932,33 +990,44 @@ export async function getMaintenanceAnalytics(
   const totalOperationalHours =
     equipment.length *
     ((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
-  const failureCount = downtimeEvents.filter((d) => !d.isPlanned).length;
+  const failureCount = downtimeEvents.filter(
+    (d) => !d.wasPlanned,
+  ).length;
   const mtbf =
     failureCount > 0
       ? totalOperationalHours / failureCount
       : totalOperationalHours;
 
   // Calculate MTTR (Mean Time To Repair)
-  const completedDowntimes = downtimeEvents.filter((d) => d.endTime);
-  const totalRepairTime = completedDowntimes.reduce((sum, d) => {
-    return (
-      sum +
-      (new Date(d.endTime!).getTime() - new Date(d.startTime).getTime()) /
-        (1000 * 60 * 60)
-    );
-  }, 0);
+  const completedDowntimes = downtimeEvents.filter(
+    (d) => d.endTime,
+  );
+  const totalRepairTime = completedDowntimes.reduce(
+    (sum: number, d) => {
+      return (
+        sum +
+        (new Date(d.endTime!).getTime() - new Date(d.startTime).getTime()) /
+          (1000 * 60 * 60)
+      );
+    },
+    0,
+  );
   const mttr =
     completedDowntimes.length > 0
       ? totalRepairTime / completedDowntimes.length
       : 0;
 
   // Calculate availability
-  const totalDowntimeHours = downtimeEvents.reduce((sum, d) => {
-    const end = d.endTime ? new Date(d.endTime) : new Date();
-    return (
-      sum + (end.getTime() - new Date(d.startTime).getTime()) / (1000 * 60 * 60)
-    );
-  }, 0);
+  const totalDowntimeHours = downtimeEvents.reduce(
+    (sum: number, d) => {
+      const end = d.endTime ? new Date(d.endTime) : new Date();
+      return (
+        sum +
+        (end.getTime() - new Date(d.startTime).getTime()) / (1000 * 60 * 60)
+      );
+    },
+    0,
+  );
   const availability =
     totalOperationalHours > 0
       ? ((totalOperationalHours - totalDowntimeHours) / totalOperationalHours) *
@@ -968,7 +1037,10 @@ export async function getMaintenanceAnalytics(
   // Calculate maintenance costs
   const totalMaintenanceCost = workOrders
     .filter((wo) => wo.status === WorkOrderStatus.COMPLETED)
-    .reduce((sum, wo) => sum + (wo.actualCost || wo.estimatedCost || 0), 0);
+    .reduce(
+      (sum: number, wo) => sum + Number(wo.totalCost || 0),
+      0,
+    );
 
   return {
     historicalData: analytics,
@@ -980,8 +1052,8 @@ export async function getMaintenanceAnalytics(
       mtbf: Math.round(mtbf * 100) / 100,
       mttr: Math.round(mttr * 100) / 100,
       availability: Math.round(availability * 100) / 100,
-      pendingWorkOrders: workOrders.filter(
-        (wo) => wo.status === WorkOrderStatus.PENDING,
+      scheduledWorkOrders: workOrders.filter(
+        (wo) => wo.status === WorkOrderStatus.SCHEDULED,
       ).length,
       inProgressWorkOrders: workOrders.filter(
         (wo) => wo.status === WorkOrderStatus.IN_PROGRESS,
@@ -996,8 +1068,8 @@ export async function getMaintenanceAnalytics(
       unplannedDowntimeHours:
         Math.round(
           downtimeEvents
-            .filter((d) => !d.isPlanned)
-            .reduce((sum, d) => {
+            .filter((d) => !d.wasPlanned)
+            .reduce((sum: number, d) => {
               const end = d.endTime ? new Date(d.endTime) : new Date();
               return (
                 sum +
@@ -1015,24 +1087,23 @@ export async function getMaintenanceAnalytics(
       maintenance: equipment.filter(
         (e) => e.status === EquipmentStatus.MAINTENANCE,
       ).length,
-      down: equipment.filter((e) => e.status === EquipmentStatus.DOWN).length,
-      decommissioned: equipment.filter(
-        (e) => e.status === EquipmentStatus.DECOMMISSIONED,
-      ).length,
+      offline: equipment.filter((e) => e.status === EquipmentStatus.OFFLINE)
+        .length,
+      critical: equipment.filter((e) => e.status === EquipmentStatus.CRITICAL)
+        .length,
     },
     workOrdersByType: {
       preventive: workOrders.filter(
-        (wo) => wo.maintenanceType === MaintenanceType.PREVENTIVE,
+        (wo) => wo.type === MaintenanceType.PREVENTIVE,
       ).length,
       corrective: workOrders.filter(
-        (wo) => wo.maintenanceType === MaintenanceType.CORRECTIVE,
+        (wo) => wo.type === MaintenanceType.CORRECTIVE,
       ).length,
       predictive: workOrders.filter(
-        (wo) => wo.maintenanceType === MaintenanceType.PREDICTIVE,
+        (wo) => wo.type === MaintenanceType.PREDICTIVE,
       ).length,
-      emergency: workOrders.filter(
-        (wo) => wo.maintenanceType === MaintenanceType.EMERGENCY,
-      ).length,
+      emergency: workOrders.filter((wo) => wo.type === MaintenanceType.EMERGENCY)
+        .length,
     },
   };
 }
@@ -1056,6 +1127,22 @@ export async function recordDailyAnalytics(configId: number) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const equipmentInMaintenance = equipment.filter(
+    (e) => e.status === EquipmentStatus.MAINTENANCE,
+  ).length;
+  const criticalEquipment = equipment.filter(
+    (e) => e.status === EquipmentStatus.CRITICAL,
+  ).length;
+  const workOrdersCreated = workOrders.filter(
+    (wo) => wo.status === WorkOrderStatus.DRAFT,
+  ).length;
+  const workOrdersCompleted = workOrders.filter(
+    (wo) => wo.status === WorkOrderStatus.COMPLETED,
+  ).length;
+  const highRiskPredictions = predictions.filter(
+    (p) => p.probability >= 0.7,
+  ).length;
+
   return prisma.predictiveMaintenanceAnalytics.upsert({
     where: {
       configId_date: {
@@ -1066,40 +1153,26 @@ export async function recordDailyAnalytics(configId: number) {
     update: {
       totalEquipment,
       operationalEquipment,
-      equipmentInMaintenance: equipment.filter(
-        (e) => e.status === EquipmentStatus.MAINTENANCE,
-      ).length,
-      equipmentDown: equipment.filter(
-        (e) => e.status === EquipmentStatus.OFFLINE,
-      ).length,
+      equipmentInMaintenance,
+      criticalEquipment,
       availability,
-      pendingWorkOrders: workOrders.filter(
-        (wo) => wo.status === WorkOrderStatus.SCHEDULED,
-      ).length,
-      completedWorkOrders: workOrders.filter(
-        (wo) => wo.status === WorkOrderStatus.COMPLETED,
-      ).length,
-      activeAlerts: predictions.filter((p) => p.probability >= 0.5).length,
+      predictionsGenerated: predictions.length,
+      highRiskPredictions,
+      workOrdersCreated,
+      workOrdersCompleted,
     },
     create: {
       configId,
       date: today,
       totalEquipment,
       operationalEquipment,
-      equipmentInMaintenance: equipment.filter(
-        (e) => e.status === EquipmentStatus.MAINTENANCE,
-      ).length,
-      equipmentDown: equipment.filter(
-        (e) => e.status === EquipmentStatus.OFFLINE,
-      ).length,
+      equipmentInMaintenance,
+      criticalEquipment,
       availability,
-      pendingWorkOrders: workOrders.filter(
-        (wo) => wo.status === WorkOrderStatus.SCHEDULED,
-      ).length,
-      completedWorkOrders: workOrders.filter(
-        (wo) => wo.status === WorkOrderStatus.COMPLETED,
-      ).length,
-      activeAlerts: predictions.filter((p) => p.probability >= 0.5).length,
+      predictionsGenerated: predictions.length,
+      highRiskPredictions,
+      workOrdersCreated,
+      workOrdersCompleted,
     },
   });
 }
