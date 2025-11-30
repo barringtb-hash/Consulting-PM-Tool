@@ -114,9 +114,9 @@ export function Sidebar(): JSX.Element {
   return (
     <div className="flex flex-col w-60 bg-white border-r border-neutral-200 h-full">
       {/* Logo/Brand */}
-      <div className="flex items-center justify-center py-4 px-4 border-b border-neutral-200">
+      <div className="flex items-center justify-center py-6 px-4 border-b border-neutral-200">
         <Link to="/dashboard" className="no-underline">
-          <img src="/logo.svg" alt="Launchpad Consulting Partners" className="h-16 w-auto" />
+          <img src="/logo.svg" alt="Launchpad Consulting Partners" className="h-24 w-auto" />
         </Link>
       </div>
 
