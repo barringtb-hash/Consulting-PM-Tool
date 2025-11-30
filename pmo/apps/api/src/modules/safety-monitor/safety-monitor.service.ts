@@ -612,14 +612,12 @@ export async function getOshaLogs(
   configId: number,
   filters?: {
     year?: number;
-    logType?: string;
   },
 ) {
   return prisma.oshaLog.findMany({
     where: {
       configId,
       ...(filters?.year && { year: filters.year }),
-      ...(filters?.logType && { logType: filters.logType }),
     },
     orderBy: [{ year: 'desc' }, { createdAt: 'desc' }],
   });
