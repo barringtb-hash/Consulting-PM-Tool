@@ -22,76 +22,95 @@ const router = Router();
 // ============ Validation Schemas ============
 
 const createConfigSchema = z.object({
-  clientId: z.string().uuid(),
-  facilityName: z.string().min(1),
-  facilityType: z.string().min(1),
-  employeeCount: z.number().positive(),
-  workAreas: z.array(z.string()),
-  hazardCategories: z.array(z.string()).optional(),
-  regulatoryRequirements: z.array(z.string()).optional(),
-  emergencyContacts: z.record(z.any()).optional(),
-  reportingThresholds: z.record(z.any()).optional(),
+  clientId: z.number().int().positive(),
+  organizationName: z.string().optional(),
+  industry: z.string().optional(),
+  timezone: z.string().optional(),
+  oshaEnabled: z.boolean().optional(),
+  stateRegulations: z.array(z.string()).optional(),
+  industryStandards: z.array(z.string()).optional(),
+  incidentAlertEmails: z.array(z.string()).optional(),
+  safetyManagerEmail: z.string().email().optional(),
+  emergencyContacts: z.any().optional(),
+  oshaEstablishmentName: z.string().optional(),
+  oshaEstablishmentAddress: z.any().optional(),
+  oshaReportingThreshold: z.number().int().optional(),
 });
 
 const updateConfigSchema = z.object({
-  facilityName: z.string().optional(),
-  facilityType: z.string().optional(),
-  employeeCount: z.number().positive().optional(),
-  workAreas: z.array(z.string()).optional(),
-  hazardCategories: z.array(z.string()).optional(),
-  regulatoryRequirements: z.array(z.string()).optional(),
-  emergencyContacts: z.record(z.any()).optional(),
-  reportingThresholds: z.record(z.any()).optional(),
+  organizationName: z.string().optional(),
+  industry: z.string().optional(),
+  timezone: z.string().optional(),
+  oshaEnabled: z.boolean().optional(),
+  stateRegulations: z.array(z.string()).optional(),
+  industryStandards: z.array(z.string()).optional(),
+  incidentAlertEmails: z.array(z.string()).optional(),
+  safetyManagerEmail: z.string().email().optional(),
+  emergencyContacts: z.any().optional(),
+  oshaEstablishmentName: z.string().optional(),
+  oshaEstablishmentAddress: z.any().optional(),
+  oshaReportingThreshold: z.number().int().optional(),
 });
 
 const createChecklistSchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
   name: z.string().min(1),
   description: z.string().optional(),
-  workArea: z.string().min(1),
-  frequency: z.string().min(1),
-  items: z.array(z.record(z.any())),
-  requiredPPE: z.array(z.string()).optional(),
-  estimatedDuration: z.number().positive().optional(),
+  category: z.string().optional(),
+  department: z.string().optional(),
+  location: z.string().optional(),
+  frequency: z.string().optional(),
+  dueTime: z.string().optional(),
+  items: z.any(),
+  regulatoryReference: z.string().optional(),
+  complianceCategory: z.string().optional(),
+  isTemplate: z.boolean().optional(),
 });
 
 const updateChecklistSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
-  workArea: z.string().optional(),
+  category: z.string().optional(),
+  department: z.string().optional(),
+  location: z.string().optional(),
   frequency: z.string().optional(),
-  items: z.array(z.record(z.any())).optional(),
-  requiredPPE: z.array(z.string()).optional(),
-  estimatedDuration: z.number().positive().optional(),
+  dueTime: z.string().optional(),
+  items: z.any().optional(),
+  regulatoryReference: z.string().optional(),
+  complianceCategory: z.string().optional(),
+  isTemplate: z.boolean().optional(),
   isActive: z.boolean().optional(),
 });
 
 const createCompletionSchema = z.object({
-  checklistId: z.string().uuid(),
-  completedBy: z.string().min(1),
-  completedAt: z.string().datetime(),
-  responses: z.record(z.any()),
-  notes: z.string().optional(),
-  issues: z.array(z.string()).optional(),
-  photos: z.array(z.string()).optional(),
+  configId: z.number().int().positive(),
+  checklistId: z.number().int().positive(),
+  assignedTo: z.number().int().optional(),
+  assignedToName: z.string().optional(),
+  location: z.string().optional(),
+  department: z.string().optional(),
+  dueDate: z.string().datetime().optional(),
+  completedAt: z.string().datetime().optional(),
+  responses: z.any().optional(),
+  deficienciesFound: z.number().int().optional(),
+  correctiveActions: z.any().optional(),
+  signatureUrl: z.string().optional(),
 });
 
 const createIncidentSchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
   incidentNumber: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1),
   incidentType: z.string().min(1),
   severity: z.nativeEnum(IncidentSeverity),
-  incidentDate: z.string().datetime(),
-  location: z.string().min(1),
-  involvedPersons: z.array(z.string()).optional(),
-  witnesses: z.array(z.string()).optional(),
-  injuries: z.array(z.record(z.any())).optional(),
-  propertyDamage: z.record(z.any()).optional(),
-  immediateActions: z.array(z.string()).optional(),
+  occurredAt: z.string().datetime(),
+  location: z.string().optional(),
+  department: z.string().optional(),
+  affectedPersons: z.any().optional(),
+  witnesses: z.any().optional(),
   rootCause: z.string().optional(),
-  reportedBy: z.string().min(1),
+  reportedBy: z.string().optional(),
 });
 
 const updateIncidentSchema = z.object({
@@ -109,108 +128,126 @@ const updateIncidentSchema = z.object({
 });
 
 const createHazardSchema = z.object({
-  configId: z.number(),
+  configId: z.number().int().positive(),
   title: z.string().min(1),
   description: z.string().min(1),
   hazardType: z.string().min(1),
   location: z.string().optional(),
   department: z.string().optional(),
   riskLevel: z.nativeEnum(RiskLevel),
-  likelihood: z.number().optional(),
-  consequence: z.number().optional(),
-  controlMeasures: z.record(z.any()).optional(),
+  likelihood: z.number().int().optional(),
+  consequence: z.number().int().optional(),
+  controlMeasures: z.any().optional(),
   reportedBy: z.string().optional(),
 });
 
 const updateHazardSchema = z.object({
   riskLevel: z.nativeEnum(RiskLevel).optional(),
   mitigationStatus: z.string().optional(),
-  controlMeasures: z.record(z.any()).optional(),
+  controlMeasures: z.any().optional(),
   resolvedAt: z.string().datetime().optional(),
-  resolvedBy: z.number().optional(),
-  residualRisk: z.number().optional(),
+  resolvedBy: z.number().int().optional(),
+  residualRisk: z.number().int().optional(),
 });
 
 const createTrainingRequirementSchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
   name: z.string().min(1),
   description: z.string().optional(),
-  category: z.string().min(1),
-  requiredFor: z.array(z.string()),
-  validityPeriod: z.number().positive().optional(),
-  provider: z.string().optional(),
-  estimatedDuration: z.number().positive().optional(),
-  materials: z.array(z.string()).optional(),
-  assessmentRequired: z.boolean().optional(),
-  passingScore: z.number().min(0).max(100).optional(),
+  category: z.string().optional(),
+  applicableRoles: z.array(z.string()).optional(),
+  applicableDepartments: z.array(z.string()).optional(),
+  validityPeriodDays: z.number().int().positive().optional(),
+  frequency: z.string().optional(),
+  durationMinutes: z.number().int().positive().optional(),
+  contentUrl: z.string().optional(),
+  passingScore: z.number().int().min(0).max(100).optional(),
+  isRequired: z.boolean().optional(),
+  regulatoryReference: z.string().optional(),
+  complianceCategory: z.string().optional(),
 });
 
 const updateTrainingRequirementSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
-  requiredFor: z.array(z.string()).optional(),
-  validityPeriod: z.number().positive().optional(),
-  provider: z.string().optional(),
-  estimatedDuration: z.number().positive().optional(),
-  materials: z.array(z.string()).optional(),
-  assessmentRequired: z.boolean().optional(),
-  passingScore: z.number().min(0).max(100).optional(),
+  category: z.string().optional(),
+  applicableRoles: z.array(z.string()).optional(),
+  applicableDepartments: z.array(z.string()).optional(),
+  validityPeriodDays: z.number().int().positive().optional(),
+  frequency: z.string().optional(),
+  durationMinutes: z.number().int().positive().optional(),
+  contentUrl: z.string().optional(),
+  passingScore: z.number().int().min(0).max(100).optional(),
+  isRequired: z.boolean().optional(),
   isActive: z.boolean().optional(),
 });
 
 const createTrainingRecordSchema = z.object({
-  configId: z.string().uuid(),
-  requirementId: z.string().uuid(),
+  configId: z.number().int().positive(),
+  requirementId: z.number().int().positive(),
   employeeId: z.string().min(1),
   employeeName: z.string().min(1),
-  scheduledDate: z.string().datetime().optional(),
+  department: z.string().optional(),
+  role: z.string().optional(),
+  assignedAt: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
-  trainer: z.string().optional(),
-  score: z.number().min(0).max(100).optional(),
+  score: z.number().int().min(0).max(100).optional(),
   certificateUrl: z.string().url().optional(),
-  notes: z.string().optional(),
+  certificateNumber: z.string().optional(),
 });
 
 const updateTrainingRecordSchema = z.object({
-  completedAt: z.string().datetime().optional(),
-  trainer: z.string().optional(),
-  score: z.number().min(0).max(100).optional(),
-  certificateUrl: z.string().url().optional(),
-  notes: z.string().optional(),
   status: z.nativeEnum(TrainingStatus).optional(),
+  startedAt: z.string().datetime().optional(),
+  completedAt: z.string().datetime().optional(),
+  expiresAt: z.string().datetime().optional(),
+  score: z.number().int().min(0).max(100).optional(),
+  passed: z.boolean().optional(),
+  certificateUrl: z.string().url().optional(),
+  certificateNumber: z.string().optional(),
 });
 
 const createOshaLogSchema = z.object({
-  configId: z.string().uuid(),
-  year: z.number().min(2000).max(2100),
-  logType: z.string().min(1),
-  entries: z.array(z.record(z.any())),
-  totalCases: z.number().optional(),
-  daysAwayFromWork: z.number().optional(),
-  daysRestricted: z.number().optional(),
-  otherRecordable: z.number().optional(),
+  configId: z.number().int().positive(),
+  year: z.number().int().min(2000).max(2100),
+  caseNumber: z.string().min(1),
+  employeeName: z.string().min(1),
+  jobTitle: z.string().min(1),
+  department: z.string().optional(),
+  dateOfInjury: z.string().datetime(),
+  locationOfEvent: z.string().optional(),
+  description: z.string().min(1),
+  injuryType: z.string().min(1),
+  bodyPartAffected: z.string().optional(),
+  resultedInDeath: z.boolean().optional(),
+  daysAwayFromWork: z.number().int().optional(),
+  daysJobTransfer: z.number().int().optional(),
+  daysRestriction: z.number().int().optional(),
+  otherRecordable: z.boolean().optional(),
+  incidentId: z.number().int().optional(),
 });
 
 const createInspectionSchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
   inspectionType: z.string().min(1),
-  title: z.string().min(1),
-  description: z.string().optional(),
-  area: z.string().min(1),
+  name: z.string().min(1),
+  areasInspected: z.array(z.string()).optional(),
   scheduledDate: z.string().datetime(),
   inspector: z.string().optional(),
-  checklistItems: z.array(z.record(z.any())).optional(),
+  location: z.string().optional(),
+  department: z.string().optional(),
 });
 
 const updateInspectionSchema = z.object({
   status: z.string().optional(),
   completedAt: z.string().datetime().optional(),
   inspector: z.string().optional(),
-  findings: z.array(z.record(z.any())).optional(),
-  overallRating: z.string().optional(),
-  correctiveActions: z.array(z.string()).optional(),
-  nextInspectionDate: z.string().datetime().optional(),
-  notes: z.string().optional(),
+  findings: z.any().optional(),
+  overallScore: z.number().int().optional(),
+  correctiveActions: z.any().optional(),
+  followUpDate: z.string().datetime().optional(),
+  deficiencies: z.number().int().optional(),
+  criticalFindings: z.number().int().optional(),
 });
 
 // ============ Configuration Routes ============
@@ -446,7 +483,8 @@ router.post('/completions', async (req, res) => {
 
     const completion = await safetyService.createChecklistCompletion({
       ...data,
-      completedAt: new Date(data.completedAt),
+      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
     });
     res.status(201).json(completion);
   } catch (error) {
@@ -508,7 +546,7 @@ router.post('/incidents', async (req, res) => {
 
     const incident = await safetyService.createIncident({
       ...data,
-      incidentDate: new Date(data.incidentDate),
+      occurredAt: new Date(data.occurredAt),
     });
     res.status(201).json(incident);
   } catch (error) {
@@ -780,9 +818,7 @@ router.post('/training-records', async (req, res) => {
 
     const record = await safetyService.createTrainingRecord({
       ...data,
-      scheduledDate: data.scheduledDate
-        ? new Date(data.scheduledDate)
-        : undefined,
+      assignedAt: data.assignedAt ? new Date(data.assignedAt) : undefined,
       completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
     });
     res.status(201).json(record);
@@ -808,7 +844,9 @@ router.patch('/training-records/:recordId', async (req, res) => {
     // Note: For simplicity, we assume proper authorization check here
     const record = await safetyService.updateTrainingRecord(recordId, {
       ...data,
+      startedAt: data.startedAt ? new Date(data.startedAt) : undefined,
       completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+      expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
     });
     res.json(record);
   } catch (error) {
@@ -830,7 +868,7 @@ router.get('/osha-logs/:configId', async (req, res) => {
     if (Number.isNaN(configId)) {
       return res.status(400).json({ error: 'Invalid config ID' });
     }
-    const { year, logType } = req.query;
+    const { year } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
@@ -842,7 +880,6 @@ router.get('/osha-logs/:configId', async (req, res) => {
 
     const logs = await safetyService.getOshaLogs(configId, {
       year: year ? parseInt(year as string) : undefined,
-      logType: logType as string,
     });
     res.json(logs);
   } catch (error) {
@@ -865,7 +902,10 @@ router.post('/osha-logs', async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const log = await safetyService.createOshaLog(data);
+    const log = await safetyService.createOshaLog({
+      ...data,
+      dateOfInjury: new Date(data.dateOfInjury),
+    });
     res.status(201).json(log);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -960,13 +1000,11 @@ router.patch('/inspections/:inspectionId', async (req, res) => {
       completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       inspector: data.inspector,
       findings: data.findings,
-      overallScore: data.overallRating
-        ? parseInt(data.overallRating, 10)
-        : undefined,
+      overallScore: data.overallScore,
       correctiveActions: data.correctiveActions,
-      followUpDate: data.nextInspectionDate
-        ? new Date(data.nextInspectionDate)
-        : undefined,
+      followUpDate: data.followUpDate ? new Date(data.followUpDate) : undefined,
+      deficiencies: data.deficiencies,
+      criticalFindings: data.criticalFindings,
     });
     res.json(inspection);
   } catch (error) {

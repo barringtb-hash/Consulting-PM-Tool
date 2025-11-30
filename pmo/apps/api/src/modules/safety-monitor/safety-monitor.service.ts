@@ -36,26 +36,34 @@ export async function getSafetyConfig(clientId: number) {
 
 export async function createSafetyConfig(data: {
   clientId: number;
-  facilityName: string;
-  facilityType: string;
-  employeeCount: number;
-  workAreas: string[];
-  hazardCategories?: string[];
-  regulatoryRequirements?: string[];
+  organizationName?: string;
+  industry?: string;
+  timezone?: string;
+  oshaEnabled?: boolean;
+  stateRegulations?: string[];
+  industryStandards?: string[];
+  incidentAlertEmails?: string[];
+  safetyManagerEmail?: string;
   emergencyContacts?: Prisma.InputJsonValue;
-  reportingThresholds?: Prisma.InputJsonValue;
+  oshaEstablishmentName?: string;
+  oshaEstablishmentAddress?: Prisma.InputJsonValue;
+  oshaReportingThreshold?: number;
 }) {
   return prisma.safetyMonitorConfig.create({
     data: {
       clientId: data.clientId,
-      facilityName: data.facilityName,
-      facilityType: data.facilityType,
-      employeeCount: data.employeeCount,
-      workAreas: data.workAreas,
-      hazardCategories: data.hazardCategories ?? [],
-      regulatoryRequirements: data.regulatoryRequirements ?? [],
+      organizationName: data.organizationName,
+      industry: data.industry,
+      timezone: data.timezone ?? 'America/New_York',
+      oshaEnabled: data.oshaEnabled ?? true,
+      stateRegulations: data.stateRegulations ?? [],
+      industryStandards: data.industryStandards ?? [],
+      incidentAlertEmails: data.incidentAlertEmails ?? [],
+      safetyManagerEmail: data.safetyManagerEmail,
       emergencyContacts: data.emergencyContacts ?? Prisma.JsonNull,
-      reportingThresholds: data.reportingThresholds ?? Prisma.JsonNull,
+      oshaEstablishmentName: data.oshaEstablishmentName,
+      oshaEstablishmentAddress: data.oshaEstablishmentAddress ?? Prisma.JsonNull,
+      oshaReportingThreshold: data.oshaReportingThreshold ?? 10,
     },
   });
 }
@@ -63,14 +71,18 @@ export async function createSafetyConfig(data: {
 export async function updateSafetyConfig(
   configId: number,
   data: {
-    facilityName?: string;
-    facilityType?: string;
-    employeeCount?: number;
-    workAreas?: string[];
-    hazardCategories?: string[];
-    regulatoryRequirements?: string[];
+    organizationName?: string;
+    industry?: string;
+    timezone?: string;
+    oshaEnabled?: boolean;
+    stateRegulations?: string[];
+    industryStandards?: string[];
+    incidentAlertEmails?: string[];
+    safetyManagerEmail?: string;
     emergencyContacts?: Prisma.InputJsonValue;
-    reportingThresholds?: Prisma.InputJsonValue;
+    oshaEstablishmentName?: string;
+    oshaEstablishmentAddress?: Prisma.InputJsonValue;
+    oshaReportingThreshold?: number;
   },
 ) {
   return prisma.safetyMonitorConfig.update({
