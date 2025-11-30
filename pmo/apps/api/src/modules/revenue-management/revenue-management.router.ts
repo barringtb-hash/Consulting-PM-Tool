@@ -6,8 +6,8 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
-import { PricingStrategy, RateType } from '@prisma/client';
-// Auth middleware available if needed: import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { PricingStrategy } from '@prisma/client';
+import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as revenueService from './revenue-management.service';
 import { hasClientAccess } from '../../auth/client-auth.helper';
 
@@ -16,46 +16,46 @@ const router = Router();
 // ============ Validation Schemas ============
 
 const createConfigSchema = z.object({
-  clientId: z.string().uuid(),
-  businessType: z.string().min(1),
-  currency: z.string().min(3).max(3),
-  pricingStrategy: z.nativeEnum(PricingStrategy),
-  minPrice: z.number().positive().optional(),
-  maxPrice: z.number().positive().optional(),
-  targetOccupancy: z.number().min(0).max(100).optional(),
-  targetRevPAR: z.number().positive().optional(),
-  seasonalFactors: z.record(z.any()).optional(),
-  competitorWeight: z.number().min(0).max(1).optional(),
-  demandWeight: z.number().min(0).max(1).optional(),
-  autoAdjustEnabled: z.boolean().optional(),
-  adjustmentFrequency: z.string().optional(),
+  clientId: z.number().int().positive(),
+  businessName: z.string().optional(),
+  businessType: z.string().optional(),
+  currency: z.string().min(3).max(3).optional(),
+  pricingStrategy: z.nativeEnum(PricingStrategy).optional(),
+  minPriceFloor: z.number().positive().optional(),
+  maxPriceCeiling: z.number().positive().optional(),
+  priceChangeFrequency: z.string().optional(),
+  forecastHorizonDays: z.number().int().positive().optional(),
+  competitorMonitoring: z.boolean().optional(),
+  autoApproveChanges: z.boolean().optional(),
+  maxAutoChangePercent: z.number().positive().optional(),
 });
 
 const updateConfigSchema = z.object({
+  businessName: z.string().optional(),
   businessType: z.string().optional(),
   pricingStrategy: z.nativeEnum(PricingStrategy).optional(),
-  minPrice: z.number().positive().optional(),
-  maxPrice: z.number().positive().optional(),
-  targetOccupancy: z.number().min(0).max(100).optional(),
-  targetRevPAR: z.number().positive().optional(),
-  seasonalFactors: z.record(z.any()).optional(),
-  competitorWeight: z.number().min(0).max(1).optional(),
-  demandWeight: z.number().min(0).max(1).optional(),
-  autoAdjustEnabled: z.boolean().optional(),
-  adjustmentFrequency: z.string().optional(),
+  minPriceFloor: z.number().positive().optional(),
+  maxPriceCeiling: z.number().positive().optional(),
+  priceChangeFrequency: z.string().optional(),
+  forecastHorizonDays: z.number().int().positive().optional(),
+  competitorMonitoring: z.boolean().optional(),
+  autoApproveChanges: z.boolean().optional(),
+  maxAutoChangePercent: z.number().positive().optional(),
 });
 
 const createRateCategorySchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
+  code: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
-  rateType: z.nativeEnum(RateType),
+  categoryType: z.string().min(1),
   baseRate: z.number().positive(),
   minRate: z.number().positive().optional(),
   maxRate: z.number().positive().optional(),
-  restrictions: z.record(z.any()).optional(),
-  amenities: z.array(z.string()).optional(),
-  cancellationPolicy: z.string().optional(),
+  totalInventory: z.number().int().positive().optional(),
+  maxOccupancy: z.number().int().positive().optional(),
+  pricingEnabled: z.boolean().optional(),
+  demandMultiplier: z.number().positive().optional(),
 });
 
 const updateRateCategorySchema = z.object({
@@ -64,21 +64,23 @@ const updateRateCategorySchema = z.object({
   baseRate: z.number().positive().optional(),
   minRate: z.number().positive().optional(),
   maxRate: z.number().positive().optional(),
-  restrictions: z.record(z.any()).optional(),
-  amenities: z.array(z.string()).optional(),
-  cancellationPolicy: z.string().optional(),
+  totalInventory: z.number().int().positive().optional(),
+  maxOccupancy: z.number().int().positive().optional(),
+  pricingEnabled: z.boolean().optional(),
+  demandMultiplier: z.number().positive().optional(),
   isActive: z.boolean().optional(),
 });
 
 const createCompetitorSchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
   name: z.string().min(1),
   website: z.string().url().optional(),
   starRating: z.number().min(1).max(5).optional(),
   location: z.string().optional(),
-  amenities: z.array(z.string()).optional(),
-  targetSegments: z.array(z.string()).optional(),
-  notes: z.string().optional(),
+  trackingEnabled: z.boolean().optional(),
+  scrapeUrl: z.string().url().optional(),
+  apiEndpoint: z.string().url().optional(),
+  categoryMapping: z.record(z.any()).optional(),
 });
 
 const updateCompetitorSchema = z.object({
@@ -86,35 +88,33 @@ const updateCompetitorSchema = z.object({
   website: z.string().url().optional(),
   starRating: z.number().min(1).max(5).optional(),
   location: z.string().optional(),
-  amenities: z.array(z.string()).optional(),
-  targetSegments: z.array(z.string()).optional(),
-  notes: z.string().optional(),
+  trackingEnabled: z.boolean().optional(),
+  scrapeUrl: z.string().url().optional(),
+  apiEndpoint: z.string().url().optional(),
+  categoryMapping: z.record(z.any()).optional(),
   isActive: z.boolean().optional(),
 });
 
 const recordCompetitorRateSchema = z.object({
-  competitorId: z.string().uuid(),
-  rateType: z.string().min(1),
-  rate: z.number().positive(),
-  roomType: z.string().optional(),
+  competitorId: z.number().int().positive(),
   date: z.string().datetime(),
-  source: z.string().optional(),
-  notes: z.string().optional(),
+  categoryCode: z.string().optional(),
+  rate: z.number().positive(),
+  availability: z.boolean().optional(),
+  restrictions: z.record(z.any()).optional(),
 });
 
 const createPromotionSchema = z.object({
-  configId: z.string().uuid(),
+  configId: z.number().int().positive(),
   name: z.string().min(1),
   description: z.string().optional(),
   discountType: z.string().min(1),
   discountValue: z.number().positive(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
-  applicableRateCategories: z.array(z.string()).optional(),
-  conditions: z.record(z.any()).optional(),
-  bookingWindow: z.record(z.any()).optional(),
-  usageLimit: z.number().positive().optional(),
-  promoCode: z.string().optional(),
+  applicableCategories: z.array(z.string()).optional(),
+  maxUsage: z.number().positive().optional(),
+  code: z.string().optional(),
 });
 
 const updatePromotionSchema = z.object({
@@ -124,26 +124,23 @@ const updatePromotionSchema = z.object({
   discountValue: z.number().positive().optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  applicableRateCategories: z.array(z.string()).optional(),
-  conditions: z.record(z.any()).optional(),
-  usageLimit: z.number().positive().optional(),
+  applicableCategories: z.array(z.string()).optional(),
+  maxUsage: z.number().positive().optional(),
   isActive: z.boolean().optional(),
 });
 
 const recordBookingSchema = z.object({
-  configId: z.string().uuid(),
-  bookingReference: z.string().min(1),
+  configId: z.number().int().positive(),
   bookingDate: z.string().datetime(),
   stayDate: z.string().datetime(),
-  checkoutDate: z.string().datetime(),
-  rateCategory: z.string().optional(),
-  roomNights: z.number().positive(),
-  revenue: z.number().positive(),
+  checkoutDate: z.string().datetime().optional(),
+  categoryId: z.number().int().positive().optional(),
+  rate: z.number().positive(),
+  nights: z.number().positive().optional(),
+  totalRevenue: z.number().positive(),
   channel: z.string().optional(),
-  segment: z.string().optional(),
-  leadTime: z.number().optional(),
-  guestCount: z.number().positive().optional(),
-  promotionUsed: z.string().optional(),
+  leadTimeDays: z.number().optional(),
+  promotionCode: z.string().optional(),
 });
 
 const generateForecastsSchema = z.object({
@@ -165,7 +162,9 @@ router.get('/config/:clientId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid client ID' });
     }
 
-    if (!hasClientAccess(req, clientId)) {
+    if (
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -181,7 +180,12 @@ router.post('/config', async (req, res) => {
   try {
     const data = createConfigSchema.parse(req.body);
 
-    if (!hasClientAccess(req, data.clientId)) {
+    if (
+      !(await hasClientAccess(
+        (req as AuthenticatedRequest).userId!,
+        data.clientId,
+      ))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -191,7 +195,7 @@ router.post('/config', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating revenue config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -208,7 +212,10 @@ router.patch('/config/:configId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -218,7 +225,7 @@ router.patch('/config/:configId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating revenue config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -236,7 +243,10 @@ router.get('/rate-categories/:configId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -255,7 +265,10 @@ router.post('/rate-categories', async (req, res) => {
     const clientId = await revenueService.getClientIdFromRevenueConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -265,7 +278,7 @@ router.post('/rate-categories', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating rate category:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -282,7 +295,10 @@ router.patch('/rate-categories/:categoryId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRateCategory(categoryId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -292,7 +308,7 @@ router.patch('/rate-categories/:categoryId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating rate category:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -308,7 +324,10 @@ router.delete('/rate-categories/:categoryId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRateCategory(categoryId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -331,7 +350,10 @@ router.get('/competitors/:configId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -350,7 +372,10 @@ router.post('/competitors', async (req, res) => {
     const clientId = await revenueService.getClientIdFromRevenueConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -360,7 +385,7 @@ router.post('/competitors', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating competitor:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -377,7 +402,10 @@ router.patch('/competitors/:competitorId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromCompetitor(competitorId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -390,7 +418,7 @@ router.patch('/competitors/:competitorId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating competitor:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -406,7 +434,10 @@ router.post('/competitor-rates', async (req, res) => {
     const clientId = await revenueService.getClientIdFromCompetitor(
       data.competitorId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -419,7 +450,7 @@ router.post('/competitor-rates', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error recording competitor rate:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -432,18 +463,21 @@ router.get('/competitor-rates/:competitorId', async (req, res) => {
     if (Number.isNaN(competitorId)) {
       return res.status(400).json({ error: 'Invalid competitor ID' });
     }
-    const { startDate, endDate, rateType } = req.query;
+    const { startDate, endDate, categoryCode } = req.query;
 
     const clientId =
       await revenueService.getClientIdFromCompetitor(competitorId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const rates = await revenueService.getCompetitorRates(competitorId, {
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
-      rateType: rateType as string,
+      categoryCode: categoryCode as string,
     });
     res.json(rates);
   } catch (error) {
@@ -460,18 +494,21 @@ router.get('/forecasts/:configId', async (req, res) => {
     if (Number.isNaN(configId)) {
       return res.status(400).json({ error: 'Invalid config ID' });
     }
-    const { startDate, endDate, segment } = req.query;
+    const { startDate, endDate, categoryId } = req.query;
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
     const forecasts = await revenueService.getDemandForecasts(configId, {
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
-      segment: segment as string,
+      categoryId: categoryId ? Number(categoryId as string) : undefined,
     });
     res.json(forecasts);
   } catch (error) {
@@ -490,7 +527,10 @@ router.post('/forecasts/:configId/generate', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -506,7 +546,7 @@ router.post('/forecasts/:configId/generate', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error generating forecasts:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -525,7 +565,10 @@ router.get('/recommendations/:configId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -555,7 +598,10 @@ router.post('/recommendations/:configId/generate', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -574,7 +620,7 @@ router.post('/recommendations/:configId/generate', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error generating recommendations:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -591,7 +637,10 @@ router.post('/recommendations/:recommendationId/apply', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRecommendation(recommendationId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -618,7 +667,10 @@ router.get('/promotions/:configId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -642,7 +694,10 @@ router.post('/promotions', async (req, res) => {
     const clientId = await revenueService.getClientIdFromRevenueConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -656,7 +711,7 @@ router.post('/promotions', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error creating promotion:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -672,7 +727,10 @@ router.patch('/promotions/:promotionId', async (req, res) => {
     const data = updatePromotionSchema.parse(req.body);
 
     const clientId = await revenueService.getClientIdFromPromotion(promotionId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -686,7 +744,7 @@ router.patch('/promotions/:promotionId', async (req, res) => {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error updating promotion:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -701,11 +759,14 @@ router.get('/bookings/:configId', async (req, res) => {
     if (Number.isNaN(configId)) {
       return res.status(400).json({ error: 'Invalid config ID' });
     }
-    const { startDate, endDate, channel, segment } = req.query;
+    const { startDate, endDate, channel } = req.query;
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -713,7 +774,6 @@ router.get('/bookings/:configId', async (req, res) => {
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
       channel: channel as string,
-      segment: segment as string,
     });
     res.json(bookings);
   } catch (error) {
@@ -729,7 +789,10 @@ router.post('/bookings', async (req, res) => {
     const clientId = await revenueService.getClientIdFromRevenueConfig(
       data.configId,
     );
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -737,14 +800,14 @@ router.post('/bookings', async (req, res) => {
       ...data,
       bookingDate: new Date(data.bookingDate),
       stayDate: new Date(data.stayDate),
-      checkoutDate: new Date(data.checkoutDate),
+      checkoutDate: data.checkoutDate ? new Date(data.checkoutDate) : undefined,
     });
     res.status(201).json(booking);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: 'Validation error', details: error.errors });
+        .json({ error: 'Validation error', details: error.issues });
     }
     console.error('Error recording booking:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -763,7 +826,10 @@ router.get('/analytics/:configId', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -787,7 +853,10 @@ router.post('/analytics/:configId/record', async (req, res) => {
 
     const clientId =
       await revenueService.getClientIdFromRevenueConfig(configId);
-    if (!clientId || !hasClientAccess(req, clientId)) {
+    if (
+      !clientId ||
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
