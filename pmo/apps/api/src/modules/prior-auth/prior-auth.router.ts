@@ -11,6 +11,7 @@ import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as priorAuthService from './prior-auth.service';
 import {
   hasClientAccess,
+  getAccessibleClientIds,
   getClientIdFromPriorAuthConfig,
   getClientIdFromPARequest,
   getClientIdFromPAAppeal,
@@ -191,9 +192,25 @@ router.get(
           .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
+      const configs = await priorAuthService.listPriorAuthConfigs({ clientId });
+      res.json({ configs });
+      return;
     }
 
-    const configs = await priorAuthService.listPriorAuthConfigs({ clientId });
+    // No specific clientId - filter by accessible clients
+    const accessibleClientIds = await getAccessibleClientIds(req.userId);
+
+    // If null, user is admin and can see all
+    if (accessibleClientIds === null) {
+      const configs = await priorAuthService.listPriorAuthConfigs({});
+      res.json({ configs });
+      return;
+    }
+
+    // Filter to only accessible clients
+    const configs = await priorAuthService.listPriorAuthConfigs({
+      clientIds: accessibleClientIds,
+    });
     res.json({ configs });
   },
 );

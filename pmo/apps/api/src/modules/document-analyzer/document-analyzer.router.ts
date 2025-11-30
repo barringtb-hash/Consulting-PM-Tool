@@ -11,6 +11,7 @@ import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as documentAnalyzerService from './document-analyzer.service';
 import {
   hasClientAccess,
+  getAccessibleClientIds,
   getClientIdFromDocumentAnalyzerConfig,
   getClientIdFromAnalyzedDocument,
   getClientIdFromExtractionTemplate,
@@ -115,10 +116,30 @@ router.get(
           .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
+      const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs(
+        {
+          clientId,
+        },
+      );
+      res.json({ configs });
+      return;
     }
 
+    // No specific clientId - filter by accessible clients
+    const accessibleClientIds = await getAccessibleClientIds(req.userId);
+
+    // If null, user is admin and can see all
+    if (accessibleClientIds === null) {
+      const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs(
+        {},
+      );
+      res.json({ configs });
+      return;
+    }
+
+    // Filter to only accessible clients
     const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs({
-      clientId,
+      clientIds: accessibleClientIds,
     });
     res.json({ configs });
   },
