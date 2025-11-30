@@ -55,6 +55,28 @@ These modules can be enabled/disabled per customer:
 | `pipeline` | Pipeline | leads | Sales pipeline visualization | `/sales/pipeline` |
 | `admin` | Admin | None | User & module administration | `/admin/users`, `/admin/modules` |
 
+### Phase 1 AI Tool Modules (Complete ✅)
+
+Production-ready AI tools for customer service, content generation, scheduling, and intake automation:
+
+| Module ID | Label | Dependencies | Description | Routes | Status |
+|-----------|-------|--------------|-------------|--------|--------|
+| `chatbot` | AI Chatbot | clients | GPT-powered customer service chatbot with knowledge base, intent recognition, human handoff | `/ai-tools/chatbot` | ✅ Complete |
+| `productDescriptions` | Product Descriptions | clients | AI product description generator with SEO, multi-marketplace, bulk processing | `/ai-tools/product-descriptions` | ✅ Complete |
+| `scheduling` | AI Scheduling | clients | ML no-show prediction, automated reminders, waitlist management, HIPAA-compliant | `/ai-tools/scheduling` | ✅ Complete |
+| `intake` | Client Intake | clients | Digital form builder, document verification, e-signatures, compliance automation | `/ai-tools/intake` | ✅ Complete |
+
+### Phase 2 AI Tool Modules (Complete ✅)
+
+Advanced AI tools for document analysis, content generation, lead scoring, and healthcare automation:
+
+| Module ID | Label | Dependencies | Description | Routes | Status |
+|-----------|-------|--------------|-------------|--------|--------|
+| `documentAnalyzer` | Document Analyzer | clients | OCR, NER, multi-format support, compliance flagging, batch processing | `/ai-tools/document-analyzer` | ✅ Complete |
+| `contentGenerator` | Content Generator | clients | Multi-format content (social, email, blog), brand voice training, approval workflows | `/ai-tools/content-generator` | ✅ Complete |
+| `leadScoring` | Lead Scoring | clients | ML-based predictive scoring, nurture sequences, pipeline analytics | `/ai-tools/lead-scoring` | ✅ Complete |
+| `priorAuth` | Prior Authorization | clients | HIPAA-compliant PA automation, status tracking, denial management | `/ai-tools/prior-auth` | ✅ Complete |
+
 ### Module Dependencies
 
 When you enable a module, its dependencies are automatically enabled:
@@ -550,3 +572,75 @@ cd pmo
 npx prisma migrate dev --name add_feature_flags
 npx prisma generate
 ```
+
+---
+
+## AI Tools Architecture
+
+### Phase 1 & Phase 2 Implementation Details
+
+All AI tools follow a consistent architecture pattern:
+
+#### Backend Structure
+```
+pmo/apps/api/src/modules/{tool-name}/
+├── {tool-name}.service.ts    # Business logic, AI integration
+└── {tool-name}.router.ts     # Express routes with Zod validation
+```
+
+#### Frontend Structure
+```
+pmo/apps/web/src/pages/ai-tools/
+└── {ToolName}Page.tsx        # React component with TanStack Query
+```
+
+#### Database Models (Prisma)
+Each tool has dedicated Prisma models in `pmo/prisma/schema.prisma`:
+- Tool configuration (per-client)
+- Core data models
+- Analytics/metrics tables
+
+### AI/ML Integration
+
+All AI tools integrate with OpenAI GPT-4o-mini for:
+- **Natural Language Processing** - Intent recognition, sentiment analysis
+- **Content Generation** - Product descriptions, chatbot responses, marketing content
+- **Document Analysis** - OCR text extraction, named entity recognition
+
+Configuration requires `OPENAI_API_KEY` environment variable. Tools gracefully fallback to rule-based logic when API is unavailable.
+
+### Phase 1 Tools Summary
+
+| Tool | Key Features | AI Capabilities |
+|------|--------------|-----------------|
+| **Chatbot** | Multi-channel support, knowledge base, human handoff | GPT conversation, intent classification, sentiment |
+| **Product Descriptions** | Bulk generation, A/B testing, marketplace formatting | GPT content generation, SEO optimization |
+| **Scheduling** | Provider management, reminders, waitlist | ML no-show prediction (risk scoring) |
+| **Intake** | Form builder, document upload, compliance workflows | Document AI, OCR extraction |
+
+### Phase 2 Tools Summary
+
+| Tool | Key Features | AI Capabilities |
+|------|--------------|-----------------|
+| **Document Analyzer** | Multi-format, batch processing, version comparison | OCR, NER, document classification |
+| **Content Generator** | Multi-format output, brand voice, approval workflows | GPT generation, plagiarism detection |
+| **Lead Scoring** | Predictive scoring, nurture sequences, CRM sync | ML scoring models, behavior analysis |
+| **Prior Authorization** | PA submission, status tracking, appeals | Document generation, rule-based automation |
+
+### Enabling AI Tools
+
+Add the AI tool module IDs to your `ENABLED_MODULES` configuration:
+
+```env
+# Phase 1 AI Tools
+ENABLED_MODULES=...,chatbot,productDescriptions,scheduling,intake
+
+# Phase 2 AI Tools
+ENABLED_MODULES=...,documentAnalyzer,contentGenerator,leadScoring,priorAuth
+```
+
+All AI tools require the `clients` module as a dependency.
+
+---
+
+*Last Updated: November 30, 2025 - Phase 1 & Phase 2 Complete*
