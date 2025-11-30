@@ -60,6 +60,23 @@ const ContentGeneratorPage = lazy(
 const LeadScoringPage = lazy(() => import('./pages/ai-tools/LeadScoringPage'));
 const PriorAuthPage = lazy(() => import('./pages/ai-tools/PriorAuthPage'));
 
+// Phase 3 AI Tools pages
+const InventoryForecastingPage = lazy(
+  () => import('./pages/ai-tools/InventoryForecastingPage'),
+);
+const ComplianceMonitorPage = lazy(
+  () => import('./pages/ai-tools/ComplianceMonitorPage'),
+);
+const PredictiveMaintenancePage = lazy(
+  () => import('./pages/ai-tools/PredictiveMaintenancePage'),
+);
+const RevenueManagementPage = lazy(
+  () => import('./pages/ai-tools/RevenueManagementPage'),
+);
+const SafetyMonitorPage = lazy(
+  () => import('./pages/ai-tools/SafetyMonitorPage'),
+);
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -292,6 +309,66 @@ function App(): JSX.Element {
                 element={
                   <LazyPage>
                     <PriorAuthPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Inventory Forecasting module (Tool 3.1) */}
+            {isModuleEnabled('inventoryForecasting') && (
+              <Route
+                path="/ai-tools/inventory-forecasting"
+                element={
+                  <LazyPage>
+                    <InventoryForecastingPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Compliance Monitor module (Tool 3.2) */}
+            {isModuleEnabled('complianceMonitor') && (
+              <Route
+                path="/ai-tools/compliance-monitor"
+                element={
+                  <LazyPage>
+                    <ComplianceMonitorPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Predictive Maintenance module (Tool 3.3) */}
+            {isModuleEnabled('predictiveMaintenance') && (
+              <Route
+                path="/ai-tools/predictive-maintenance"
+                element={
+                  <LazyPage>
+                    <PredictiveMaintenancePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Revenue Management module (Tool 3.4) */}
+            {isModuleEnabled('revenueManagement') && (
+              <Route
+                path="/ai-tools/revenue-management"
+                element={
+                  <LazyPage>
+                    <RevenueManagementPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Safety Monitor module (Tool 3.5) */}
+            {isModuleEnabled('safetyMonitor') && (
+              <Route
+                path="/ai-tools/safety-monitor"
+                element={
+                  <LazyPage>
+                    <SafetyMonitorPage />
                   </LazyPage>
                 }
               />
