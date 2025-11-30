@@ -565,7 +565,11 @@ function InventoryForecastingPage(): JSX.Element {
                 <option value="90">90 days</option>
               </Select>
 
-              <Select label="Alert Threshold" name="alertThreshold" defaultValue="20">
+              <Select
+                label="Alert Threshold"
+                name="alertThreshold"
+                defaultValue="20"
+              >
                 <option value="10">10% below reorder point</option>
                 <option value="20">20% below reorder point</option>
                 <option value="30">30% below reorder point</option>
@@ -586,7 +590,9 @@ function InventoryForecastingPage(): JSX.Element {
                     name="autoReorderEnabled"
                     defaultChecked
                   />
-                  <span className="text-sm">Enable Auto Reorder Suggestions</span>
+                  <span className="text-sm">
+                    Enable Auto Reorder Suggestions
+                  </span>
                 </label>
               </div>
 

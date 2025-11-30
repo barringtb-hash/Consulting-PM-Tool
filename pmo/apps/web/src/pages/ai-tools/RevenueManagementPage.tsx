@@ -171,10 +171,8 @@ function RevenueManagementPage(): JSX.Element {
 
   // Mutations
   const createConfigMutation = useMutation({
-    mutationFn: (data: {
-      clientId: number;
-      config: Partial<RevenueConfig>;
-    }) => createRevenueConfig(data.clientId, data.config),
+    mutationFn: (data: { clientId: number; config: Partial<RevenueConfig> }) =>
+      createRevenueConfig(data.clientId, data.config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['revenue-configs'] });
       setShowCreateModal(false);

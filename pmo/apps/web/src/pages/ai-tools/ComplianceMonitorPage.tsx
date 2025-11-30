@@ -484,9 +484,7 @@ function ComplianceMonitorPage(): JSX.Element {
                         </p>
                       </div>
                       <Badge
-                        variant={
-                          STATUS_VARIANTS[violation.status] || 'neutral'
-                        }
+                        variant={STATUS_VARIANTS[violation.status] || 'neutral'}
                       >
                         {violation.status}
                       </Badge>
@@ -643,7 +641,11 @@ function ComplianceMonitorPage(): JSX.Element {
                 <option value="168">Weekly</option>
               </Select>
 
-              <Select label="Risk Threshold" name="riskThreshold" defaultValue="70">
+              <Select
+                label="Risk Threshold"
+                name="riskThreshold"
+                defaultValue="70"
+              >
                 <option value="50">50 (Low sensitivity)</option>
                 <option value="70">70 (Medium sensitivity)</option>
                 <option value="90">90 (High sensitivity)</option>
@@ -651,7 +653,11 @@ function ComplianceMonitorPage(): JSX.Element {
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" name="autoScanEnabled" defaultChecked />
+                  <input
+                    type="checkbox"
+                    name="autoScanEnabled"
+                    defaultChecked
+                  />
                   <span className="text-sm">Enable Automated Scanning</span>
                 </label>
               </div>

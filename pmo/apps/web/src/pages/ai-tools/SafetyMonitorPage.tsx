@@ -198,10 +198,8 @@ function SafetyMonitorPage(): JSX.Element {
 
   // Mutations
   const createConfigMutation = useMutation({
-    mutationFn: (data: {
-      clientId: number;
-      config: Partial<SafetyConfig>;
-    }) => createSafetyConfig(data.clientId, data.config),
+    mutationFn: (data: { clientId: number; config: Partial<SafetyConfig> }) =>
+      createSafetyConfig(data.clientId, data.config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['safety-configs'] });
       setShowCreateModal(false);
@@ -645,7 +643,9 @@ function SafetyMonitorPage(): JSX.Element {
                     name="oshaLoggingEnabled"
                     defaultChecked
                   />
-                  <span className="text-sm">Enable OSHA 300 Log Management</span>
+                  <span className="text-sm">
+                    Enable OSHA 300 Log Management
+                  </span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -663,7 +663,9 @@ function SafetyMonitorPage(): JSX.Element {
                     name="trainingTrackingEnabled"
                     defaultChecked
                   />
-                  <span className="text-sm">Enable Training Compliance Tracking</span>
+                  <span className="text-sm">
+                    Enable Training Compliance Tracking
+                  </span>
                 </label>
               </div>
 

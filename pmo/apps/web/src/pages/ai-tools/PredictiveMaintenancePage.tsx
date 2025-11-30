@@ -118,10 +118,9 @@ async function fetchMaintenanceConfigs(): Promise<MaintenanceConfig[]> {
 }
 
 async function fetchEquipment(configId: number): Promise<Equipment[]> {
-  const res = await fetch(
-    `/api/predictive-maintenance/${configId}/equipment`,
-    { credentials: 'include' },
-  );
+  const res = await fetch(`/api/predictive-maintenance/${configId}/equipment`, {
+    credentials: 'include',
+  });
   if (!res.ok) throw new Error('Failed to fetch equipment');
   const data = await res.json();
   return data.equipment || [];
@@ -441,14 +440,14 @@ function PredictiveMaintenancePage(): JSX.Element {
                                 style={{ width: `${equip.healthScore}%` }}
                               />
                             </div>
-                            <span className="text-sm">{equip.healthScore}%</span>
+                            <span className="text-sm">
+                              {equip.healthScore}%
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge
-                            variant={
-                              STATUS_VARIANTS[equip.status] || 'neutral'
-                            }
+                            variant={STATUS_VARIANTS[equip.status] || 'neutral'}
                           >
                             {equip.status}
                           </Badge>
