@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { PricingStrategy } from '@prisma/client';
-import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { AuthenticatedRequest } from '../../auth/auth.middleware';
 import * as revenueService from './revenue-management.service';
 import { hasClientAccess } from '../../auth/client-auth.helper';
 

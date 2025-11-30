@@ -1,6 +1,5 @@
 import {
   PricingStrategy,
-  RateType,
   DemandForecast,
   PriceRecommendation,
   RateCategory,
