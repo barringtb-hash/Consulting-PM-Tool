@@ -15,4 +15,9 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
+// Graceful shutdown handler to close database connections
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
+
 export default prisma;

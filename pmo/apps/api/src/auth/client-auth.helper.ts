@@ -194,9 +194,9 @@ export async function getClientIdFromContentApprovalWorkflow(
 ): Promise<number | null> {
   const workflow = await prisma.contentApprovalWorkflow.findUnique({
     where: { id: workflowId },
-    select: { content: { select: { config: { select: { clientId: true } } } } },
+    select: { config: { select: { clientId: true } } },
   });
-  return workflow?.content?.config?.clientId ?? null;
+  return workflow?.config?.clientId ?? null;
 }
 
 /**

@@ -1006,12 +1006,17 @@ router.get(
     const payerId = req.query.payerId as string | undefined;
     const serviceType = req.query.serviceType as string | undefined;
 
-    const rules = await priorAuthService.getPayerRules(
-      configId,
-      payerId,
-      serviceType,
-    );
-    res.json({ rules: Array.isArray(rules) ? rules : [rules].filter(Boolean) });
+    if (payerId) {
+      const rule = await priorAuthService.getPayerRules(
+        configId,
+        payerId,
+        serviceType,
+      );
+      res.json({ rules: rule ? [rule] : [] });
+    } else {
+      const rules = await priorAuthService.getAllPayerRules(configId);
+      res.json({ rules });
+    }
   },
 );
 

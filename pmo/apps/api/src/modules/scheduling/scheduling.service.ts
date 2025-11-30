@@ -439,6 +439,15 @@ export async function rescheduleAppointment(
     throw new Error('Appointment not found');
   }
 
+  // Get the scheduling config for automation settings
+  const config = await prisma.schedulingConfig.findUnique({
+    where: { id: oldAppointment.configId },
+  });
+
+  if (!config) {
+    throw new Error('Scheduling config not found');
+  }
+
   // Validate newProviderId belongs to the same config
   if (newProviderId) {
     const provider = await prisma.provider.findUnique({
@@ -479,6 +488,10 @@ export async function rescheduleAppointment(
       status: 'SCHEDULED',
       rescheduledFrom: id,
     },
+    include: {
+      provider: true,
+      appointmentType: true,
+    },
   });
 
   // Update old appointment with reference to new one
@@ -486,6 +499,40 @@ export async function rescheduleAppointment(
     where: { id },
     data: { rescheduledTo: newAppointment.id },
   });
+
+  // Calculate no-show risk for the rescheduled appointment
+  if (config.enableNoShowPrediction) {
+    const riskScore = await calculateNoShowRisk(newAppointment);
+    await prisma.appointment.update({
+      where: { id: newAppointment.id },
+      data: {
+        noShowRiskScore: riskScore,
+        noShowPredictedAt: new Date(),
+      },
+    });
+
+    // Log prediction
+    await prisma.noShowPredictionLog.create({
+      data: {
+        configId: oldAppointment.configId,
+        appointmentId: newAppointment.id,
+        predictedScore: riskScore,
+        predictedAt: new Date(),
+        features: {
+          patientEmail: !!newAppointment.patientEmail,
+          patientPhone: !!newAppointment.patientPhone,
+          dayOfWeek: newScheduledAt.getDay(),
+          hourOfDay: newScheduledAt.getHours(),
+          isRescheduled: true,
+        },
+      },
+    });
+  }
+
+  // Schedule reminders for the rescheduled appointment
+  if (config.enableReminders) {
+    await scheduleReminders(newAppointment.id, config.reminderHoursBefore);
+  }
 
   return newAppointment;
 }
