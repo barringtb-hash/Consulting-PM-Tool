@@ -14,10 +14,6 @@ import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
 import {
   DollarSign,
-  Shield,
-  FileCheck,
-  Lock,
-  AlertTriangle,
   CheckCircle2,
   Clock,
   Settings,
@@ -27,7 +23,6 @@ import {
   Eye,
   Scale,
   Archive,
-  TrendingUp,
 } from 'lucide-react';
 
 // Types

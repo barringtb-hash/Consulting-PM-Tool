@@ -16,7 +16,6 @@ import {
   Brain,
   Cpu,
   MessageSquare,
-  Database,
   Zap,
   BarChart3,
   Settings,

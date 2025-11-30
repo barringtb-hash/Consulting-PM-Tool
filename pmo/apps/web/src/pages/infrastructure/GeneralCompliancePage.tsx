@@ -14,8 +14,6 @@ import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
 import {
   Globe,
-  Shield,
-  FileCheck,
   UserX,
   CheckCircle2,
   Clock,
@@ -26,7 +24,6 @@ import {
   Trash2,
   Bell,
   FileText,
-  Lock,
   MapPin,
 } from 'lucide-react';
 

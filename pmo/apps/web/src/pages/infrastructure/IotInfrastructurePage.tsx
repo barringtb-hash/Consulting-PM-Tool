@@ -26,7 +26,6 @@ import {
   Zap,
   Thermometer,
   Gauge,
-  Signal,
   Server,
 } from 'lucide-react';
 
