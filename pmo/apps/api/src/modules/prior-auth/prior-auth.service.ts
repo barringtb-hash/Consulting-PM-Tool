@@ -424,7 +424,7 @@ async function simulatePASubmission(
     payerId: string;
     urgency: PAUrgency;
   },
-  payerRules: { preferredMethod?: string } | null,
+  payerRules: { preferredMethod?: string | null } | null,
 ): Promise<string> {
   // Simulate submission delay
   await new Promise((resolve) => setTimeout(resolve, 500));
@@ -867,16 +867,9 @@ export async function createPayerRule(
 
 export async function getPayerRules(
   configId: number,
-  payerId?: string,
+  payerId: string,
   serviceType?: string,
 ) {
-  if (!payerId) {
-    return prisma.payerRule.findMany({
-      where: { configId, isActive: true },
-      orderBy: [{ payerName: 'asc' }, { serviceTy: 'asc' }],
-    });
-  }
-
   return prisma.payerRule.findFirst({
     where: {
       configId,
@@ -884,6 +877,13 @@ export async function getPayerRules(
       isActive: true,
       ...(serviceType && { serviceType }),
     },
+  });
+}
+
+export async function getAllPayerRules(configId: number) {
+  return prisma.payerRule.findMany({
+    where: { configId, isActive: true },
+    orderBy: [{ payerName: 'asc' }, { serviceType: 'asc' }],
   });
 }
 

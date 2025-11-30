@@ -40,6 +40,28 @@ export const errorHandler = (
     return;
   }
 
+  // Handle Prisma connection/initialization errors
+  if (
+    err.name === 'PrismaClientInitializationError' ||
+    err.name === 'PrismaClientRustPanicError'
+  ) {
+    console.error('Database connection error:', err.message);
+    res.status(503).json({
+      error: 'Database connection unavailable',
+      details: 'Please try again later',
+    });
+    return;
+  }
+
+  // Handle Prisma validation errors
+  if (err.name === 'PrismaClientValidationError') {
+    res.status(400).json({
+      error: 'Invalid database query',
+      details: err.message,
+    });
+    return;
+  }
+
   // Default to 500 server error
   res.status(500).json({
     error: 'Internal server error',
