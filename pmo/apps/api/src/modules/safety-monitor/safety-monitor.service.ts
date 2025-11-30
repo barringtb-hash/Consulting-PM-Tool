@@ -42,8 +42,8 @@ export async function createSafetyConfig(data: {
   workAreas: string[];
   hazardCategories?: string[];
   regulatoryRequirements?: string[];
-  emergencyContacts?: Record<string, unknown>;
-  reportingThresholds?: Record<string, unknown>;
+  emergencyContacts?: Prisma.InputJsonValue;
+  reportingThresholds?: Prisma.InputJsonValue;
 }) {
   return prisma.safetyMonitorConfig.create({
     data: {
@@ -54,8 +54,8 @@ export async function createSafetyConfig(data: {
       workAreas: data.workAreas,
       hazardCategories: data.hazardCategories ?? [],
       regulatoryRequirements: data.regulatoryRequirements ?? [],
-      emergencyContacts: data.emergencyContacts ?? {},
-      reportingThresholds: data.reportingThresholds ?? {},
+      emergencyContacts: data.emergencyContacts ?? Prisma.JsonNull,
+      reportingThresholds: data.reportingThresholds ?? Prisma.JsonNull,
     },
   });
 }
@@ -69,8 +69,8 @@ export async function updateSafetyConfig(
     workAreas?: string[];
     hazardCategories?: string[];
     regulatoryRequirements?: string[];
-    emergencyContacts?: Record<string, unknown>;
-    reportingThresholds?: Record<string, unknown>;
+    emergencyContacts?: Prisma.InputJsonValue;
+    reportingThresholds?: Prisma.InputJsonValue;
   },
 ) {
   return prisma.safetyMonitorConfig.update({
@@ -116,7 +116,7 @@ export async function createChecklist(data: {
   location?: string;
   frequency?: string;
   dueTime?: string;
-  items: Record<string, unknown>[];
+  items: Prisma.InputJsonValue;
   regulatoryReference?: string;
   complianceCategory?: string;
   isTemplate?: boolean;
@@ -150,7 +150,7 @@ export async function updateChecklist(
     location?: string;
     frequency?: string;
     dueTime?: string;
-    items?: Record<string, unknown>[];
+    items?: Prisma.InputJsonValue;
     regulatoryReference?: string;
     complianceCategory?: string;
     isTemplate?: boolean;
@@ -207,9 +207,9 @@ export async function createChecklistCompletion(data: {
   department?: string;
   dueDate?: Date;
   completedAt?: Date;
-  responses?: Record<string, unknown>;
+  responses?: Prisma.InputJsonValue;
   deficienciesFound?: number;
-  correctiveActions?: Record<string, unknown>;
+  correctiveActions?: Prisma.InputJsonValue;
   signatureUrl?: string;
 }) {
   // Determine status based on completion
@@ -282,8 +282,8 @@ export async function createIncident(data: {
   occurredAt: Date;
   location?: string;
   department?: string;
-  affectedPersons?: Record<string, unknown>;
-  witnesses?: Record<string, unknown>;
+  affectedPersons?: Prisma.InputJsonValue;
+  witnesses?: Prisma.InputJsonValue;
   rootCause?: string;
   reportedBy?: string;
 }) {
@@ -346,7 +346,7 @@ export async function getHazards(
   configId: number,
   filters?: {
     hazardType?: string;
-    riskLevel?: string;
+    riskLevel?: RiskLevel;
     mitigationStatus?: string;
     location?: string;
   },
