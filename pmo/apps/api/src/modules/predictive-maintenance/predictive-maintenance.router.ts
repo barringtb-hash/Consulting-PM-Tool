@@ -654,7 +654,9 @@ router.post('/work-orders', async (req, res) => {
 
     const workOrder = await maintenanceService.createWorkOrder({
       ...data,
-      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
+      scheduledDate: data.scheduledDate
+        ? new Date(data.scheduledDate)
+        : undefined,
       dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
     });
     res.status(201).json(workOrder);

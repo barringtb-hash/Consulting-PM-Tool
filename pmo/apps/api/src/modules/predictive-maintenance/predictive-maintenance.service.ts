@@ -990,44 +990,33 @@ export async function getMaintenanceAnalytics(
   const totalOperationalHours =
     equipment.length *
     ((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60));
-  const failureCount = downtimeEvents.filter(
-    (d) => !d.wasPlanned,
-  ).length;
+  const failureCount = downtimeEvents.filter((d) => !d.wasPlanned).length;
   const mtbf =
     failureCount > 0
       ? totalOperationalHours / failureCount
       : totalOperationalHours;
 
   // Calculate MTTR (Mean Time To Repair)
-  const completedDowntimes = downtimeEvents.filter(
-    (d) => d.endTime,
-  );
-  const totalRepairTime = completedDowntimes.reduce(
-    (sum: number, d) => {
-      return (
-        sum +
-        (new Date(d.endTime!).getTime() - new Date(d.startTime).getTime()) /
-          (1000 * 60 * 60)
-      );
-    },
-    0,
-  );
+  const completedDowntimes = downtimeEvents.filter((d) => d.endTime);
+  const totalRepairTime = completedDowntimes.reduce((sum: number, d) => {
+    return (
+      sum +
+      (new Date(d.endTime!).getTime() - new Date(d.startTime).getTime()) /
+        (1000 * 60 * 60)
+    );
+  }, 0);
   const mttr =
     completedDowntimes.length > 0
       ? totalRepairTime / completedDowntimes.length
       : 0;
 
   // Calculate availability
-  const totalDowntimeHours = downtimeEvents.reduce(
-    (sum: number, d) => {
-      const end = d.endTime ? new Date(d.endTime) : new Date();
-      return (
-        sum +
-        (end.getTime() - new Date(d.startTime).getTime()) / (1000 * 60 * 60)
-      );
-    },
-    0,
-  );
+  const totalDowntimeHours = downtimeEvents.reduce((sum: number, d) => {
+    const end = d.endTime ? new Date(d.endTime) : new Date();
+    return (
+      sum + (end.getTime() - new Date(d.startTime).getTime()) / (1000 * 60 * 60)
+    );
+  }, 0);
   const availability =
     totalOperationalHours > 0
       ? ((totalOperationalHours - totalDowntimeHours) / totalOperationalHours) *
@@ -1037,10 +1026,7 @@ export async function getMaintenanceAnalytics(
   // Calculate maintenance costs
   const totalMaintenanceCost = workOrders
     .filter((wo) => wo.status === WorkOrderStatus.COMPLETED)
-    .reduce(
-      (sum: number, wo) => sum + Number(wo.totalCost || 0),
-      0,
-    );
+    .reduce((sum: number, wo) => sum + Number(wo.totalCost || 0), 0);
 
   return {
     historicalData: analytics,
@@ -1102,8 +1088,9 @@ export async function getMaintenanceAnalytics(
       predictive: workOrders.filter(
         (wo) => wo.type === MaintenanceType.PREDICTIVE,
       ).length,
-      emergency: workOrders.filter((wo) => wo.type === MaintenanceType.EMERGENCY)
-        .length,
+      emergency: workOrders.filter(
+        (wo) => wo.type === MaintenanceType.EMERGENCY,
+      ).length,
     },
   };
 }
