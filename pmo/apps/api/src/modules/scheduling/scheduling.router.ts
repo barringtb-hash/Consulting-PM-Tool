@@ -600,8 +600,26 @@ router.post(
       });
       res.status(201).json({ appointment });
     } catch (error) {
-      if ((error as Error).message === 'Scheduling config not found') {
+      const errorMessage = (error as Error).message;
+      if (errorMessage === 'Scheduling config not found') {
         res.status(404).json({ error: 'Scheduling config not found' });
+        return;
+      }
+      if (
+        errorMessage === 'Provider not found' ||
+        errorMessage === 'Appointment type not found'
+      ) {
+        res.status(404).json({ error: errorMessage });
+        return;
+      }
+      if (
+        errorMessage === 'Provider does not belong to this scheduling config' ||
+        errorMessage ===
+          'Appointment type does not belong to this scheduling config' ||
+        errorMessage === 'Provider is not active' ||
+        errorMessage === 'Appointment type is not active'
+      ) {
+        res.status(400).json({ error: errorMessage });
         return;
       }
       throw error;
@@ -706,8 +724,19 @@ router.post(
       );
       res.json({ appointment });
     } catch (error) {
-      if ((error as Error).message === 'Appointment not found') {
-        res.status(404).json({ error: 'Appointment not found' });
+      const errorMessage = (error as Error).message;
+      if (
+        errorMessage === 'Appointment not found' ||
+        errorMessage === 'Provider not found'
+      ) {
+        res.status(404).json({ error: errorMessage });
+        return;
+      }
+      if (
+        errorMessage === 'Provider does not belong to this scheduling config' ||
+        errorMessage === 'Provider is not active'
+      ) {
+        res.status(400).json({ error: errorMessage });
         return;
       }
       throw error;
@@ -825,8 +854,27 @@ router.post(
       return;
     }
 
-    const entry = await schedulingService.addToWaitlist(configId, parsed.data);
-    res.status(201).json({ entry });
+    try {
+      const entry = await schedulingService.addToWaitlist(
+        configId,
+        parsed.data,
+      );
+      res.status(201).json({ entry });
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      if (errorMessage === 'Provider not found') {
+        res.status(404).json({ error: errorMessage });
+        return;
+      }
+      if (
+        errorMessage === 'Provider does not belong to this scheduling config' ||
+        errorMessage === 'Provider is not active'
+      ) {
+        res.status(400).json({ error: errorMessage });
+        return;
+      }
+      throw error;
+    }
   },
 );
 
