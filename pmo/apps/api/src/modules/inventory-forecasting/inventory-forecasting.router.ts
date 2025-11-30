@@ -40,15 +40,15 @@ const configSchema = z.object({
   lowStockThreshold: z.number().min(0).max(1).optional(),
   overstockThreshold: z.number().min(1).max(10).optional(),
   erpSystem: z.string().optional(),
-  erpCredentials: z.record(z.unknown()).optional(),
+  erpCredentials: z.record(z.string(), z.unknown()).optional(),
   posSystem: z.string().optional(),
-  posCredentials: z.record(z.unknown()).optional(),
+  posCredentials: z.record(z.string(), z.unknown()).optional(),
 });
 
 const locationSchema = z.object({
   name: z.string().min(1).max(200),
   code: z.string().max(50).optional(),
-  address: z.record(z.unknown()).optional(),
+  address: z.record(z.string(), z.unknown()).optional(),
   timezone: z.string().optional(),
   leadTimeDays: z.number().int().min(0).optional(),
   safetyStockDays: z.number().int().min(0).optional(),
@@ -481,7 +481,13 @@ router.post(
       return;
     }
 
-    const { productId, locationId, startDate, endDate } = req.body;
+    const body = req.body as {
+      productId?: number | string;
+      locationId?: number | string;
+      startDate?: string;
+      endDate?: string;
+    };
+    const { productId, locationId, startDate, endDate } = body;
     if (!productId) {
       res.status(400).json({ error: 'productId is required' });
       return;

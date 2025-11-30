@@ -1,9 +1,9 @@
 import {
   PricingStrategy,
-  RateType,
   DemandForecast,
   PriceRecommendation,
   RateCategory,
+  Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 
@@ -11,21 +11,18 @@ import { prisma } from '../../prisma/client';
 
 interface ConfigWithRelations {
   id: number;
-  seasonalFactors: Record<string, unknown> | null;
-  demandWeight: number;
-  competitorWeight: number;
   pricingStrategy: PricingStrategy;
-  minPrice: number | null;
-  maxPrice: number | null;
-  targetOccupancy: number | null;
-  rateCategories: RateCategory[];
+  minPriceFloor: number | null;
+  maxPriceCeiling: number | null;
+  seasonalFactors?: Prisma.JsonValue;
+  rateCategories?: RateCategory[];
   demandForecasts?: DemandForecastData[];
   competitors?: CompetitorWithRates[];
   bookings?: BookingData[];
 }
 
 interface DemandForecastData {
-  date: Date;
+  forecastDate: Date;
   predictedDemand: number;
 }
 
@@ -35,12 +32,19 @@ interface CompetitorWithRates {
 
 interface RateData {
   date: Date;
-  rate: number;
+  rate: number | Prisma.Decimal;
 }
 
 interface BookingData {
   stayDate: Date;
   occupancy?: number;
+}
+
+interface DemandFactors {
+  dayOfWeek?: { impact: string; reason: string };
+  seasonal?: { impact: string; multiplier: number };
+  historical?: { impact: string; basedOn: number };
+  [key: string]: unknown;
 }
 
 // ============ Configuration Management ============
@@ -64,34 +68,32 @@ export async function getRevenueConfig(clientId: number) {
 
 export async function createRevenueConfig(data: {
   clientId: number;
-  businessType: string;
-  currency: string;
-  pricingStrategy: PricingStrategy;
-  minPrice?: number;
-  maxPrice?: number;
-  targetOccupancy?: number;
-  targetRevPAR?: number;
-  seasonalFactors?: Record<string, unknown>;
-  competitorWeight?: number;
-  demandWeight?: number;
-  autoAdjustEnabled?: boolean;
-  adjustmentFrequency?: string;
+  businessName?: string;
+  businessType?: string;
+  currency?: string;
+  pricingStrategy?: PricingStrategy;
+  minPriceFloor?: number;
+  maxPriceCeiling?: number;
+  priceChangeFrequency?: string;
+  forecastHorizonDays?: number;
+  competitorMonitoring?: boolean;
+  autoApproveChanges?: boolean;
+  maxAutoChangePercent?: number;
 }) {
   return prisma.revenueManagementConfig.create({
     data: {
       clientId: data.clientId,
+      businessName: data.businessName,
       businessType: data.businessType,
-      currency: data.currency,
-      pricingStrategy: data.pricingStrategy,
-      minPrice: data.minPrice,
-      maxPrice: data.maxPrice,
-      targetOccupancy: data.targetOccupancy,
-      targetRevPAR: data.targetRevPAR,
-      seasonalFactors: data.seasonalFactors ?? {},
-      competitorWeight: data.competitorWeight ?? 0.3,
-      demandWeight: data.demandWeight ?? 0.5,
-      autoAdjustEnabled: data.autoAdjustEnabled ?? false,
-      adjustmentFrequency: data.adjustmentFrequency ?? 'daily',
+      currency: data.currency ?? 'USD',
+      pricingStrategy: data.pricingStrategy ?? PricingStrategy.DYNAMIC,
+      minPriceFloor: data.minPriceFloor,
+      maxPriceCeiling: data.maxPriceCeiling,
+      priceChangeFrequency: data.priceChangeFrequency ?? 'daily',
+      forecastHorizonDays: data.forecastHorizonDays ?? 90,
+      competitorMonitoring: data.competitorMonitoring ?? true,
+      autoApproveChanges: data.autoApproveChanges ?? false,
+      maxAutoChangePercent: data.maxAutoChangePercent ?? 10,
     },
   });
 }
@@ -99,17 +101,16 @@ export async function createRevenueConfig(data: {
 export async function updateRevenueConfig(
   configId: number,
   data: {
+    businessName?: string;
     businessType?: string;
     pricingStrategy?: PricingStrategy;
-    minPrice?: number;
-    maxPrice?: number;
-    targetOccupancy?: number;
-    targetRevPAR?: number;
-    seasonalFactors?: Record<string, unknown>;
-    competitorWeight?: number;
-    demandWeight?: number;
-    autoAdjustEnabled?: boolean;
-    adjustmentFrequency?: string;
+    minPriceFloor?: number;
+    maxPriceCeiling?: number;
+    priceChangeFrequency?: string;
+    forecastHorizonDays?: number;
+    competitorMonitoring?: boolean;
+    autoApproveChanges?: boolean;
+    maxAutoChangePercent?: number;
   },
 ) {
   return prisma.revenueManagementConfig.update({
@@ -129,28 +130,32 @@ export async function getRateCategories(configId: number) {
 
 export async function createRateCategory(data: {
   configId: number;
+  code: string;
   name: string;
   description?: string;
-  rateType: RateType;
+  categoryType: string;
   baseRate: number;
   minRate?: number;
   maxRate?: number;
-  restrictions?: Record<string, unknown>;
-  amenities?: string[];
-  cancellationPolicy?: string;
+  totalInventory?: number;
+  maxOccupancy?: number;
+  pricingEnabled?: boolean;
+  demandMultiplier?: number;
 }) {
   return prisma.rateCategory.create({
     data: {
       configId: data.configId,
+      code: data.code,
       name: data.name,
       description: data.description,
-      rateType: data.rateType,
+      categoryType: data.categoryType,
       baseRate: data.baseRate,
       minRate: data.minRate,
       maxRate: data.maxRate,
-      restrictions: data.restrictions ?? {},
-      amenities: data.amenities ?? [],
-      cancellationPolicy: data.cancellationPolicy,
+      totalInventory: data.totalInventory,
+      maxOccupancy: data.maxOccupancy,
+      pricingEnabled: data.pricingEnabled ?? true,
+      demandMultiplier: data.demandMultiplier ?? 1.0,
       isActive: true,
     },
   });
@@ -164,9 +169,10 @@ export async function updateRateCategory(
     baseRate?: number;
     minRate?: number;
     maxRate?: number;
-    restrictions?: Record<string, unknown>;
-    amenities?: string[];
-    cancellationPolicy?: string;
+    totalInventory?: number;
+    maxOccupancy?: number;
+    pricingEnabled?: boolean;
+    demandMultiplier?: number;
     isActive?: boolean;
   },
 ) {
@@ -190,7 +196,7 @@ export async function getCompetitors(configId: number) {
     include: {
       rates: {
         take: 10,
-        orderBy: { capturedAt: 'desc' },
+        orderBy: { scrapedAt: 'desc' },
       },
     },
     orderBy: { name: 'asc' },
@@ -203,9 +209,10 @@ export async function createCompetitor(data: {
   website?: string;
   starRating?: number;
   location?: string;
-  amenities?: string[];
-  targetSegments?: string[];
-  notes?: string;
+  trackingEnabled?: boolean;
+  scrapeUrl?: string;
+  apiEndpoint?: string;
+  categoryMapping?: Record<string, unknown>;
 }) {
   return prisma.competitor.create({
     data: {
@@ -214,9 +221,10 @@ export async function createCompetitor(data: {
       website: data.website,
       starRating: data.starRating,
       location: data.location,
-      amenities: data.amenities ?? [],
-      targetSegments: data.targetSegments ?? [],
-      notes: data.notes,
+      trackingEnabled: data.trackingEnabled ?? true,
+      scrapeUrl: data.scrapeUrl,
+      apiEndpoint: data.apiEndpoint,
+      categoryMapping: data.categoryMapping as Prisma.InputJsonValue,
       isActive: true,
     },
   });
@@ -229,45 +237,47 @@ export async function updateCompetitor(
     website?: string;
     starRating?: number;
     location?: string;
-    amenities?: string[];
-    targetSegments?: string[];
-    notes?: string;
+    trackingEnabled?: boolean;
+    scrapeUrl?: string;
+    apiEndpoint?: string;
+    categoryMapping?: Record<string, unknown>;
     isActive?: boolean;
   },
 ) {
   return prisma.competitor.update({
     where: { id: competitorId },
-    data,
+    data: {
+      ...data,
+      categoryMapping: data.categoryMapping as Prisma.InputJsonValue,
+    },
   });
 }
 
 export async function recordCompetitorRate(data: {
   competitorId: number;
-  rateType: string;
-  rate: number;
-  roomType?: string;
   date: Date;
-  source?: string;
-  notes?: string;
+  categoryCode?: string;
+  rate: number;
+  availability?: boolean;
+  restrictions?: Record<string, unknown>;
 }) {
   const rate = await prisma.competitorRate.create({
     data: {
       competitorId: data.competitorId,
-      rateType: data.rateType,
-      rate: data.rate,
-      roomType: data.roomType,
       date: data.date,
-      source: data.source,
-      notes: data.notes,
-      capturedAt: new Date(),
+      categoryCode: data.categoryCode,
+      rate: data.rate,
+      availability: data.availability ?? true,
+      restrictions: data.restrictions as Prisma.InputJsonValue,
+      scrapedAt: new Date(),
     },
   });
 
-  // Update competitor's last rate info
+  // Update competitor's last scraped timestamp
   await prisma.competitor.update({
     where: { id: data.competitorId },
     data: {
-      lastRateCheck: new Date(),
+      lastScrapedAt: new Date(),
     },
   });
 
@@ -279,13 +289,13 @@ export async function getCompetitorRates(
   filters?: {
     startDate?: Date;
     endDate?: Date;
-    rateType?: string;
+    categoryCode?: string;
   },
 ) {
   return prisma.competitorRate.findMany({
     where: {
       competitorId,
-      ...(filters?.rateType && { rateType: filters.rateType }),
+      ...(filters?.categoryCode && { categoryCode: filters.categoryCode }),
       ...(filters?.startDate &&
         filters?.endDate && {
           date: {
@@ -305,22 +315,22 @@ export async function getDemandForecasts(
   filters?: {
     startDate?: Date;
     endDate?: Date;
-    segment?: string;
+    categoryId?: number;
   },
 ) {
   return prisma.demandForecast.findMany({
     where: {
       configId,
-      ...(filters?.segment && { segment: filters.segment }),
+      ...(filters?.categoryId && { categoryId: filters.categoryId }),
       ...(filters?.startDate &&
         filters?.endDate && {
-          date: {
+          forecastDate: {
             gte: filters.startDate,
             lte: filters.endDate,
           },
         }),
     },
-    orderBy: { date: 'asc' },
+    orderBy: { forecastDate: 'asc' },
   });
 }
 
@@ -334,6 +344,7 @@ export async function generateDemandForecasts(
   const config = await prisma.revenueManagementConfig.findUnique({
     where: { id: configId },
     include: {
+      rateCategories: true,
       bookings: {
         orderBy: { bookingDate: 'desc' },
         take: 365,
@@ -354,32 +365,36 @@ export async function generateDemandForecasts(
     forecastDate.setDate(forecastDate.getDate() + i);
     forecastDate.setHours(0, 0, 0, 0);
 
-    const forecast = await generateDailyForecast(config, forecastDate);
+    const forecast = await generateDailyForecast(
+      config as unknown as ConfigWithRelations,
+      forecastDate,
+    );
+    const factors = forecast.factors as DemandFactors;
+    const isWeekend = factors.dayOfWeek?.reason === 'Weekend';
 
     const savedForecast = await prisma.demandForecast.upsert({
       where: {
-        configId_date_segment: {
+        configId_categoryId_forecastDate: {
           configId,
-          date: forecastDate,
-          segment: 'all',
+          categoryId: null as unknown as number,
+          forecastDate: forecastDate,
         },
       },
       update: {
         predictedDemand: forecast.demand,
-        predictedOccupancy: forecast.occupancy,
-        predictedRevenue: forecast.revenue,
-        confidence: forecast.confidence,
-        factors: forecast.factors,
+        predictedBookings: Math.round(forecast.demand),
+        confidenceLevel: forecast.confidence,
+        demandDrivers: forecast.factors as Prisma.InputJsonValue,
+        isWeekend,
       },
       create: {
         configId,
-        date: forecastDate,
-        segment: 'all',
+        forecastDate: forecastDate,
         predictedDemand: forecast.demand,
-        predictedOccupancy: forecast.occupancy,
-        predictedRevenue: forecast.revenue,
-        confidence: forecast.confidence,
-        factors: forecast.factors,
+        predictedBookings: Math.round(forecast.demand),
+        confidenceLevel: forecast.confidence,
+        demandDrivers: forecast.factors as Prisma.InputJsonValue,
+        isWeekend,
       },
     });
 
@@ -470,7 +485,7 @@ async function generateDailyForecast(
 
   // Calculate occupancy and revenue
   const occupancy = Math.round(demand * 0.9); // Slight conversion loss
-  const avgRate = config.targetRevPAR || 150;
+  const avgRate = config.minPriceFloor || 150; // Use min price floor as baseline
   const revenue = Math.round(occupancy * avgRate);
 
   // Confidence based on data availability
@@ -492,15 +507,15 @@ export async function getPriceRecommendations(
   filters?: {
     startDate?: Date;
     endDate?: Date;
-    rateCategoryId?: number;
+    categoryId?: number;
     status?: string;
   },
 ) {
   return prisma.priceRecommendation.findMany({
     where: {
       configId,
-      ...(filters?.rateCategoryId && {
-        rateCategoryId: filters.rateCategoryId,
+      ...(filters?.categoryId && {
+        categoryId: filters.categoryId,
       }),
       ...(filters?.status && { status: filters.status }),
       ...(filters?.startDate &&
@@ -512,7 +527,7 @@ export async function getPriceRecommendations(
         }),
     },
     include: {
-      rateCategory: true,
+      category: true,
     },
     orderBy: { date: 'asc' },
   });
@@ -534,12 +549,12 @@ export async function generatePriceRecommendations(
         include: {
           rates: {
             take: 30,
-            orderBy: { capturedAt: 'desc' },
+            orderBy: { scrapedAt: 'desc' },
           },
         },
       },
       demandForecasts: {
-        orderBy: { date: 'asc' },
+        orderBy: { forecastDate: 'asc' },
         take: 90,
       },
     },
@@ -549,56 +564,83 @@ export async function generatePriceRecommendations(
     throw new Error('Revenue configuration not found');
   }
 
+  // Transform config to match ConfigWithRelations interface
+  const configWithRelations: ConfigWithRelations = {
+    id: config.id,
+    pricingStrategy: config.pricingStrategy,
+    minPriceFloor: config.minPriceFloor,
+    maxPriceCeiling: config.maxPriceCeiling,
+    seasonalFactors: config.pmsCredentials,
+    rateCategories: config.rateCategories,
+    demandForecasts: config.demandForecasts.map((f) => ({
+      forecastDate: f.forecastDate,
+      predictedDemand: f.predictedDemand,
+    })),
+    competitors: config.competitors.map((c) => ({
+      rates: c.rates.map((r) => ({
+        date: r.date,
+        rate: Number(r.rate),
+      })),
+    })),
+  };
+
   const startDate = options?.startDate || new Date();
   const daysAhead = options?.daysAhead || 30;
   const recommendations: PriceRecommendation[] = [];
 
-  for (const category of config.rateCategories) {
+  const rateCategories = config.rateCategories || [];
+  for (const category of rateCategories) {
     for (let i = 0; i < daysAhead; i++) {
       const recommendationDate = new Date(startDate);
       recommendationDate.setDate(recommendationDate.getDate() + i);
       recommendationDate.setHours(0, 0, 0, 0);
 
       const recommendation = await generateRecommendation(
-        config,
+        configWithRelations,
         category,
         recommendationDate,
       );
 
-      const savedRecommendation = await prisma.priceRecommendation.upsert({
+      // Check if recommendation exists for this config, category, and date
+      const existing = await prisma.priceRecommendation.findFirst({
         where: {
-          configId_rateCategoryId_date: {
-            configId,
-            rateCategoryId: category.id,
-            date: recommendationDate,
-          },
-        },
-        update: {
-          currentRate: recommendation.currentRate,
-          recommendedRate: recommendation.recommendedRate,
-          minRate: recommendation.minRate,
-          maxRate: recommendation.maxRate,
-          confidence: recommendation.confidence,
-          factors: recommendation.factors,
-          expectedRevenue: recommendation.expectedRevenue,
-          expectedOccupancy: recommendation.expectedOccupancy,
-          status: 'pending',
-        },
-        create: {
           configId,
-          rateCategoryId: category.id,
+          categoryId: category.id,
           date: recommendationDate,
-          currentRate: recommendation.currentRate,
-          recommendedRate: recommendation.recommendedRate,
-          minRate: recommendation.minRate,
-          maxRate: recommendation.maxRate,
-          confidence: recommendation.confidence,
-          factors: recommendation.factors,
-          expectedRevenue: recommendation.expectedRevenue,
-          expectedOccupancy: recommendation.expectedOccupancy,
-          status: 'pending',
         },
       });
+
+      const changePercent =
+        ((recommendation.recommendedRate - recommendation.currentRate) /
+          recommendation.currentRate) *
+        100;
+
+      let savedRecommendation: PriceRecommendation;
+      if (existing) {
+        savedRecommendation = await prisma.priceRecommendation.update({
+          where: { id: existing.id },
+          data: {
+            currentRate: recommendation.currentRate,
+            recommendedRate: recommendation.recommendedRate,
+            changePercent,
+            confidence: recommendation.confidence,
+            status: 'pending',
+          },
+        });
+      } else {
+        savedRecommendation = await prisma.priceRecommendation.create({
+          data: {
+            configId,
+            categoryId: category.id,
+            date: recommendationDate,
+            currentRate: recommendation.currentRate,
+            recommendedRate: recommendation.recommendedRate,
+            changePercent,
+            confidence: recommendation.confidence,
+            status: 'pending',
+          },
+        });
+      }
 
       recommendations.push(savedRecommendation);
     }
@@ -622,19 +664,21 @@ async function generateRecommendation(
   expectedOccupancy: number;
 }> {
   const factors: Record<string, unknown> = {};
-  let recommendedRate = category.baseRate;
+  const baseRateNum = Number(category.baseRate);
+  let recommendedRate = baseRateNum;
 
   // Get demand forecast for this date
   const forecast = config.demandForecasts?.find((f: DemandForecastData) => {
-    const fDate = new Date(f.date);
+    const fDate = new Date(f.forecastDate);
     return fDate.toDateString() === date.toDateString();
   });
 
   if (forecast) {
     // Adjust based on demand
     const demandMultiplier = forecast.predictedDemand / 50; // 50 is baseline
+    const demandWeight = 0.5; // Default demand weight
     const demandAdjustment =
-      (demandMultiplier - 1) * config.demandWeight * category.baseRate;
+      (demandMultiplier - 1) * demandWeight * baseRateNum;
     recommendedRate += demandAdjustment;
     factors.demand = {
       predictedDemand: forecast.predictedDemand,
@@ -657,10 +701,13 @@ async function generateRecommendation(
 
   if (competitorRates.length > 0) {
     const avgCompetitorRate =
-      competitorRates.reduce((sum: number, r: RateData) => sum + r.rate, 0) /
-      competitorRates.length;
+      competitorRates.reduce(
+        (sum: number, r: RateData) => sum + Number(r.rate),
+        0,
+      ) / competitorRates.length;
+    const competitorWeight = 0.3; // Default competitor weight
     const competitorAdjustment =
-      (avgCompetitorRate - category.baseRate) * config.competitorWeight;
+      (avgCompetitorRate - baseRateNum) * competitorWeight;
     recommendedRate += competitorAdjustment;
     factors.competitors = {
       avgRate: Math.round(avgCompetitorRate),
@@ -671,17 +718,27 @@ async function generateRecommendation(
 
   // Apply pricing strategy adjustments
   switch (config.pricingStrategy) {
-    case PricingStrategy.AGGRESSIVE:
+    case PricingStrategy.COMPETITIVE:
       recommendedRate *= 1.1;
-      factors.strategy = { type: 'aggressive', adjustment: '+10%' };
+      factors.strategy = { type: 'competitive', adjustment: '+10%' };
       break;
-    case PricingStrategy.CONSERVATIVE:
+    case PricingStrategy.STATIC:
       recommendedRate *= 0.95;
-      factors.strategy = { type: 'conservative', adjustment: '-5%' };
+      factors.strategy = { type: 'static', adjustment: '-5%' };
       break;
     case PricingStrategy.DYNAMIC:
       // Already dynamic through demand adjustment
       factors.strategy = { type: 'dynamic', adjustment: 'demand-based' };
+      break;
+    case PricingStrategy.DEMAND_BASED:
+      // Demand-based pricing already applied through forecast
+      factors.strategy = {
+        type: 'demand-based',
+        adjustment: 'forecast-driven',
+      };
+      break;
+    case PricingStrategy.TIME_BASED:
+      factors.strategy = { type: 'time-based', adjustment: 'schedule-driven' };
       break;
     default:
       factors.strategy = { type: 'balanced', adjustment: '0%' };
@@ -689,16 +746,16 @@ async function generateRecommendation(
 
   // Apply min/max constraints
   const minRate =
-    category.minRate || config.minPrice || category.baseRate * 0.7;
+    Number(category.minRate) || config.minPriceFloor || baseRateNum * 0.7;
   const maxRate =
-    category.maxRate || config.maxPrice || category.baseRate * 1.5;
+    Number(category.maxRate) || config.maxPriceCeiling || baseRateNum * 1.5;
   recommendedRate = Math.min(maxRate, Math.max(minRate, recommendedRate));
 
   // Round to nearest 5
   recommendedRate = Math.round(recommendedRate / 5) * 5;
 
   // Calculate expected metrics
-  const expectedOccupancy = forecast?.predictedOccupancy || 70;
+  const expectedOccupancy = forecast?.predictedDemand || 70;
   const expectedRevenue = recommendedRate * (expectedOccupancy / 100) * 100; // Assuming 100 units
 
   // Confidence based on data quality
@@ -708,7 +765,7 @@ async function generateRecommendation(
   );
 
   return {
-    currentRate: category.baseRate,
+    currentRate: baseRateNum,
     recommendedRate,
     minRate,
     maxRate,
@@ -721,11 +778,11 @@ async function generateRecommendation(
 
 export async function applyRecommendation(
   recommendationId: number,
-  appliedBy: string,
+  _appliedBy: string,
 ) {
   const recommendation = await prisma.priceRecommendation.findUnique({
     where: { id: recommendationId },
-    include: { rateCategory: true },
+    include: { category: true },
   });
 
   if (!recommendation) {
@@ -734,7 +791,7 @@ export async function applyRecommendation(
 
   // Update the rate category's base rate
   await prisma.rateCategory.update({
-    where: { id: recommendation.rateCategoryId },
+    where: { id: recommendation.categoryId },
     data: { baseRate: recommendation.recommendedRate },
   });
 
@@ -744,7 +801,6 @@ export async function applyRecommendation(
     data: {
       status: 'applied',
       appliedAt: new Date(),
-      appliedBy,
     },
   });
 }
@@ -780,11 +836,9 @@ export async function createPromotion(data: {
   discountValue: number;
   startDate: Date;
   endDate: Date;
-  applicableRateCategories?: string[];
-  conditions?: Record<string, unknown>;
-  bookingWindow?: Record<string, unknown>;
-  usageLimit?: number;
-  promoCode?: string;
+  applicableCategories?: string[];
+  maxUsage?: number;
+  code?: string;
 }) {
   return prisma.revenuePromotion.create({
     data: {
@@ -795,12 +849,10 @@ export async function createPromotion(data: {
       discountValue: data.discountValue,
       startDate: data.startDate,
       endDate: data.endDate,
-      applicableRateCategories: data.applicableRateCategories ?? [],
-      conditions: data.conditions ?? {},
-      bookingWindow: data.bookingWindow ?? {},
-      usageLimit: data.usageLimit,
+      applicableCategories: data.applicableCategories ?? [],
+      maxUsage: data.maxUsage,
       usageCount: 0,
-      promoCode: data.promoCode,
+      code: data.code,
       isActive: true,
     },
   });
@@ -815,9 +867,8 @@ export async function updatePromotion(
     discountValue?: number;
     startDate?: Date;
     endDate?: Date;
-    applicableRateCategories?: string[];
-    conditions?: Record<string, unknown>;
-    usageLimit?: number;
+    applicableCategories?: string[];
+    maxUsage?: number;
     isActive?: boolean;
   },
 ) {
@@ -831,34 +882,30 @@ export async function updatePromotion(
 
 export async function recordBooking(data: {
   configId: number;
-  bookingReference: string;
   bookingDate: Date;
   stayDate: Date;
-  checkoutDate: Date;
-  rateCategory?: string;
-  roomNights: number;
-  revenue: number;
+  checkoutDate?: Date;
+  categoryId?: number;
+  rate: number;
+  nights?: number;
+  totalRevenue: number;
   channel?: string;
-  segment?: string;
-  leadTime?: number;
-  guestCount?: number;
-  promotionUsed?: string;
+  leadTimeDays?: number;
+  promotionCode?: string;
 }) {
   return prisma.bookingData.create({
     data: {
       configId: data.configId,
-      bookingReference: data.bookingReference,
       bookingDate: data.bookingDate,
       stayDate: data.stayDate,
       checkoutDate: data.checkoutDate,
-      rateCategory: data.rateCategory,
-      roomNights: data.roomNights,
-      revenue: data.revenue,
+      categoryId: data.categoryId,
+      rate: data.rate,
+      nights: data.nights ?? 1,
+      totalRevenue: data.totalRevenue,
       channel: data.channel,
-      segment: data.segment,
-      leadTime: data.leadTime,
-      guestCount: data.guestCount,
-      promotionUsed: data.promotionUsed,
+      leadTimeDays: data.leadTimeDays,
+      promotionCode: data.promotionCode,
     },
   });
 }
@@ -869,14 +916,12 @@ export async function getBookings(
     startDate?: Date;
     endDate?: Date;
     channel?: string;
-    segment?: string;
   },
 ) {
   return prisma.bookingData.findMany({
     where: {
       configId,
       ...(filters?.channel && { channel: filters.channel }),
-      ...(filters?.segment && { segment: filters.segment }),
       ...(filters?.startDate &&
         filters?.endDate && {
           stayDate: {
@@ -922,7 +967,7 @@ export async function getRevenueAnalytics(
         endDate: { gte: startDate },
       },
     }),
-    prisma.revenueAnalytics.findMany({
+    prisma.revenueManagementAnalytics.findMany({
       where: {
         configId,
         date: { gte: startDate, lte: endDate },
@@ -932,8 +977,11 @@ export async function getRevenueAnalytics(
   ]);
 
   // Calculate key metrics
-  const totalRevenue = bookings.reduce((sum, b) => sum + b.revenue, 0);
-  const totalRoomNights = bookings.reduce((sum, b) => sum + b.roomNights, 0);
+  const totalRevenue = bookings.reduce(
+    (sum, b) => sum + Number(b.totalRevenue),
+    0,
+  );
+  const totalRoomNights = bookings.reduce((sum, b) => sum + b.nights, 0);
   const avgDailyRate = totalRoomNights > 0 ? totalRevenue / totalRoomNights : 0;
 
   // Calculate RevPAR (assuming 100 available rooms)
@@ -951,15 +999,15 @@ export async function getRevenueAnalytics(
   for (const booking of bookings) {
     const channel = booking.channel || 'direct';
     revenueByChannel[channel] =
-      (revenueByChannel[channel] || 0) + booking.revenue;
+      (revenueByChannel[channel] || 0) + Number(booking.totalRevenue);
   }
 
-  // Revenue by segment
-  const revenueBySegment: Record<string, number> = {};
+  // Revenue by rate type (instead of segment which doesn't exist)
+  const revenueByRateType: Record<string, number> = {};
   for (const booking of bookings) {
-    const segment = booking.segment || 'leisure';
-    revenueBySegment[segment] =
-      (revenueBySegment[segment] || 0) + booking.revenue;
+    const rateType = booking.rateType || 'STANDARD';
+    revenueByRateType[rateType] =
+      (revenueByRateType[rateType] || 0) + Number(booking.totalRevenue);
   }
 
   // Recommendation performance
@@ -971,7 +1019,7 @@ export async function getRevenueAnalytics(
   );
   const avgConfidence =
     recommendations.length > 0
-      ? recommendations.reduce((sum, r) => sum + r.confidence, 0) /
+      ? recommendations.reduce((sum, r) => sum + (r.confidence ?? 0), 0) /
         recommendations.length
       : 0;
 
@@ -990,7 +1038,7 @@ export async function getRevenueAnalytics(
       avgRecommendationConfidence: Math.round(avgConfidence * 100) / 100,
     },
     revenueByChannel,
-    revenueBySegment,
+    revenueByRateType,
     promotionPerformance: promotions.map((p) => ({
       name: p.name,
       usageCount: p.usageCount,
@@ -1012,16 +1060,19 @@ export async function recordDailyAnalytics(configId: number) {
     },
   });
 
-  const totalRevenue = bookings.reduce((sum, b) => sum + b.revenue, 0);
-  const totalRoomNights = bookings.reduce((sum, b) => sum + b.roomNights, 0);
+  const totalRevenue = bookings.reduce(
+    (sum, b) => sum + Number(b.totalRevenue),
+    0,
+  );
+  const totalRoomNights = bookings.reduce((sum, b) => sum + b.nights, 0);
   const avgRate = totalRoomNights > 0 ? totalRevenue / totalRoomNights : 0;
 
   // Assuming 100 available rooms
   const availableRooms = 100;
-  const occupancy = (totalRoomNights / availableRooms) * 100;
-  const revPAR = totalRevenue / availableRooms;
+  const occupancyRate = (totalRoomNights / availableRooms) * 100;
+  const revPar = totalRevenue / availableRooms;
 
-  return prisma.revenueAnalytics.upsert({
+  return prisma.revenueManagementAnalytics.upsert({
     where: {
       configId_date: {
         configId,
@@ -1030,21 +1081,19 @@ export async function recordDailyAnalytics(configId: number) {
     },
     update: {
       totalRevenue,
-      roomNightsSold: totalRoomNights,
-      averageRate: avgRate,
-      occupancy,
-      revPAR,
-      bookingsCount: bookings.length,
+      soldInventory: totalRoomNights,
+      adr: avgRate,
+      occupancyRate,
+      revPar,
     },
     create: {
       configId,
       date: today,
       totalRevenue,
-      roomNightsSold: totalRoomNights,
-      averageRate: avgRate,
-      occupancy,
-      revPAR,
-      bookingsCount: bookings.length,
+      soldInventory: totalRoomNights,
+      adr: avgRate,
+      occupancyRate,
+      revPar,
     },
   });
 }
