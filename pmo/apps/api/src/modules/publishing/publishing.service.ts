@@ -170,12 +170,14 @@ export const publishContent = async (
   }
 
   // Update content with publishing info
+  // Always set status to READY so the scheduled worker can pick it up
+  // For immediate publishing (no scheduledFor), set scheduledFor to now
   const updatedContent = await prisma.marketingContent.update({
     where: { id: contentId },
     data: {
       publishingConnectionId: options.publishingConnectionId,
-      scheduledFor: options.scheduledFor,
-      status: options.scheduledFor ? 'READY' : content.status,
+      scheduledFor: options.scheduledFor || new Date(),
+      status: 'READY',
     },
   });
 
