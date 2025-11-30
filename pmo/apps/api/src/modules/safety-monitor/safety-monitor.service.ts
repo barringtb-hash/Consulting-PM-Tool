@@ -90,7 +90,8 @@ export async function updateSafetyConfig(
 export async function getChecklists(
   configId: number,
   filters?: {
-    workArea?: string;
+    category?: string;
+    department?: string;
     frequency?: string;
     isActive?: boolean;
   },
@@ -98,7 +99,8 @@ export async function getChecklists(
   return prisma.safetyChecklist.findMany({
     where: {
       configId,
-      ...(filters?.workArea && { workArea: filters.workArea }),
+      ...(filters?.category && { category: filters.category }),
+      ...(filters?.department && { department: filters.department }),
       ...(filters?.frequency && { frequency: filters.frequency }),
       ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
     },
@@ -115,22 +117,30 @@ export async function createChecklist(data: {
   configId: number;
   name: string;
   description?: string;
-  workArea: string;
-  frequency: string;
+  category?: string;
+  department?: string;
+  location?: string;
+  frequency?: string;
+  dueTime?: string;
   items: Record<string, unknown>[];
-  requiredPPE?: string[];
-  estimatedDuration?: number;
+  regulatoryReference?: string;
+  complianceCategory?: string;
+  isTemplate?: boolean;
 }) {
   return prisma.safetyChecklist.create({
     data: {
       configId: data.configId,
       name: data.name,
       description: data.description,
-      workArea: data.workArea,
+      category: data.category,
+      department: data.department,
+      location: data.location,
       frequency: data.frequency,
+      dueTime: data.dueTime,
       items: data.items,
-      requiredPPE: data.requiredPPE ?? [],
-      estimatedDuration: data.estimatedDuration,
+      regulatoryReference: data.regulatoryReference,
+      complianceCategory: data.complianceCategory,
+      isTemplate: data.isTemplate ?? true,
       isActive: true,
     },
   });
@@ -141,11 +151,15 @@ export async function updateChecklist(
   data: {
     name?: string;
     description?: string;
-    workArea?: string;
+    category?: string;
+    department?: string;
+    location?: string;
     frequency?: string;
+    dueTime?: string;
     items?: Record<string, unknown>[];
-    requiredPPE?: string[];
-    estimatedDuration?: number;
+    regulatoryReference?: string;
+    complianceCategory?: string;
+    isTemplate?: boolean;
     isActive?: boolean;
   },
 ) {
@@ -191,41 +205,45 @@ export async function getChecklistCompletions(
 }
 
 export async function createChecklistCompletion(data: {
+  configId: number;
   checklistId: number;
-  completedBy: string;
-  completedAt: Date;
-  responses: Record<string, unknown>;
-  notes?: string;
-  issues?: string[];
-  photos?: string[];
+  assignedTo?: number;
+  assignedToName?: string;
+  location?: string;
+  department?: string;
+  dueDate?: Date;
+  completedAt?: Date;
+  responses?: Record<string, unknown>;
+  deficienciesFound?: number;
+  correctiveActions?: Record<string, unknown>;
+  signatureUrl?: string;
 }) {
-  // Determine status based on responses
-  const hasIssues = data.issues && data.issues.length > 0;
-  const status = hasIssues ? ChecklistStatus.FAILED : ChecklistStatus.PASSED;
+  // Determine status based on completion
+  const status = data.completedAt
+    ? ChecklistStatus.COMPLETED
+    : ChecklistStatus.NOT_STARTED;
 
-  const completion = await prisma.checklistCompletion.create({
+  return prisma.checklistCompletion.create({
     data: {
+      configId: data.configId,
       checklistId: data.checklistId,
-      completedBy: data.completedBy,
+      assignedTo: data.assignedTo,
+      assignedToName: data.assignedToName,
+      location: data.location,
+      department: data.department,
+      dueDate: data.dueDate,
       completedAt: data.completedAt,
+      signedAt: data.completedAt,
       responses: data.responses,
-      notes: data.notes,
-      issues: data.issues ?? [],
-      photos: data.photos ?? [],
+      deficienciesFound: data.deficienciesFound ?? 0,
+      correctiveActions: data.correctiveActions,
+      signatureUrl: data.signatureUrl,
       status,
     },
     include: {
       checklist: true,
     },
   });
-
-  // Update checklist's last completion date
-  await prisma.safetyChecklist.update({
-    where: { id: data.checklistId },
-    data: { lastCompletedAt: data.completedAt },
-  });
-
-  return completion;
 }
 
 // ============ Safety Incidents ============
@@ -250,13 +268,13 @@ export async function getIncidents(
       }),
       ...(filters?.startDate &&
         filters?.endDate && {
-          incidentDate: {
+          occurredAt: {
             gte: filters.startDate,
             lte: filters.endDate,
           },
         }),
     },
-    orderBy: { incidentDate: 'desc' },
+    orderBy: { occurredAt: 'desc' },
   });
 }
 
@@ -267,15 +285,13 @@ export async function createIncident(data: {
   description: string;
   incidentType: string;
   severity: IncidentSeverity;
-  incidentDate: Date;
-  location: string;
-  involvedPersons?: string[];
-  witnesses?: string[];
-  injuries?: Record<string, unknown>[];
-  propertyDamage?: Record<string, unknown>;
-  immediateActions?: string[];
+  occurredAt: Date;
+  location?: string;
+  department?: string;
+  affectedPersons?: Record<string, unknown>;
+  witnesses?: Record<string, unknown>;
   rootCause?: string;
-  reportedBy: string;
+  reportedBy?: string;
 }) {
   return prisma.safetyIncident.create({
     data: {
@@ -285,13 +301,11 @@ export async function createIncident(data: {
       description: data.description,
       incidentType: data.incidentType,
       severity: data.severity,
-      incidentDate: data.incidentDate,
+      occurredAt: data.occurredAt,
       location: data.location,
-      involvedPersons: data.involvedPersons ?? [],
-      witnesses: data.witnesses ?? [],
-      injuries: data.injuries ?? [],
-      propertyDamage: data.propertyDamage ?? {},
-      immediateActions: data.immediateActions ?? [],
+      department: data.department,
+      affectedPersons: data.affectedPersons,
+      witnesses: data.witnesses,
       rootCause: data.rootCause,
       reportedBy: data.reportedBy,
       reportedAt: new Date(),
@@ -318,7 +332,7 @@ export async function updateIncident(
 ) {
   const updateData: Record<string, unknown> = { ...data };
 
-  if (data.status === IncidentStatus.INVESTIGATING) {
+  if (data.status === IncidentStatus.UNDER_INVESTIGATION) {
     updateData.investigatedAt = new Date();
   }
 
@@ -337,18 +351,20 @@ export async function updateIncident(
 export async function getHazards(
   configId: number,
   filters?: {
-    category?: string;
+    hazardType?: string;
     riskLevel?: string;
-    status?: string;
+    mitigationStatus?: string;
     location?: string;
   },
 ) {
   return prisma.hazardReport.findMany({
     where: {
       configId,
-      ...(filters?.category && { category: filters.category }),
+      ...(filters?.hazardType && { hazardType: filters.hazardType }),
       ...(filters?.riskLevel && { riskLevel: filters.riskLevel }),
-      ...(filters?.status && { status: filters.status }),
+      ...(filters?.mitigationStatus && {
+        mitigationStatus: filters.mitigationStatus,
+      }),
       ...(filters?.location && {
         location: { contains: filters.location, mode: 'insensitive' },
       }),
@@ -361,28 +377,30 @@ export async function createHazard(data: {
   configId: number;
   title: string;
   description: string;
-  category: string;
-  location: string;
+  hazardType: string;
+  location?: string;
+  department?: string;
   riskLevel: string;
-  potentialConsequences?: string[];
-  immediateControls?: string[];
-  photos?: string[];
-  reportedBy: string;
+  likelihood?: number;
+  consequence?: number;
+  controlMeasures?: Record<string, unknown>;
+  reportedBy?: string;
 }) {
   return prisma.hazardReport.create({
     data: {
       configId: data.configId,
       title: data.title,
       description: data.description,
-      category: data.category,
+      hazardType: data.hazardType,
       location: data.location,
+      department: data.department,
       riskLevel: data.riskLevel,
-      potentialConsequences: data.potentialConsequences ?? [],
-      immediateControls: data.immediateControls ?? [],
-      photos: data.photos ?? [],
+      likelihood: data.likelihood,
+      consequence: data.consequence,
+      controlMeasures: data.controlMeasures,
       reportedBy: data.reportedBy,
       reportedAt: new Date(),
-      status: 'open',
+      mitigationStatus: 'open',
     },
   });
 }
@@ -391,12 +409,11 @@ export async function updateHazard(
   hazardId: number,
   data: {
     riskLevel?: string;
-    status?: string;
-    permanentControls?: string[];
-    assignedTo?: string;
+    mitigationStatus?: string;
+    controlMeasures?: Record<string, unknown>;
     resolvedAt?: Date;
-    resolvedBy?: string;
-    verificationNotes?: string;
+    resolvedBy?: number;
+    residualRisk?: number;
   },
 ) {
   return prisma.hazardReport.update({
@@ -434,14 +451,17 @@ export async function createTrainingRequirement(data: {
   configId: number;
   name: string;
   description?: string;
-  category: string;
-  requiredFor: string[];
-  validityPeriod?: number;
-  provider?: string;
-  estimatedDuration?: number;
-  materials?: string[];
-  assessmentRequired?: boolean;
+  category?: string;
+  applicableRoles?: string[];
+  applicableDepartments?: string[];
+  validityPeriodDays?: number;
+  frequency?: string;
+  durationMinutes?: number;
+  contentUrl?: string;
   passingScore?: number;
+  isRequired?: boolean;
+  regulatoryReference?: string;
+  complianceCategory?: string;
 }) {
   return prisma.trainingRequirement.create({
     data: {
@@ -449,13 +469,16 @@ export async function createTrainingRequirement(data: {
       name: data.name,
       description: data.description,
       category: data.category,
-      requiredFor: data.requiredFor,
-      validityPeriod: data.validityPeriod,
-      provider: data.provider,
-      estimatedDuration: data.estimatedDuration,
-      materials: data.materials ?? [],
-      assessmentRequired: data.assessmentRequired ?? false,
+      applicableRoles: data.applicableRoles ?? [],
+      applicableDepartments: data.applicableDepartments ?? [],
+      validityPeriodDays: data.validityPeriodDays,
+      frequency: data.frequency,
+      durationMinutes: data.durationMinutes,
+      contentUrl: data.contentUrl,
       passingScore: data.passingScore,
+      isRequired: data.isRequired ?? true,
+      regulatoryReference: data.regulatoryReference,
+      complianceCategory: data.complianceCategory,
       isActive: true,
     },
   });
@@ -466,13 +489,15 @@ export async function updateTrainingRequirement(
   data: {
     name?: string;
     description?: string;
-    requiredFor?: string[];
-    validityPeriod?: number;
-    provider?: string;
-    estimatedDuration?: number;
-    materials?: string[];
-    assessmentRequired?: boolean;
+    category?: string;
+    applicableRoles?: string[];
+    applicableDepartments?: string[];
+    validityPeriodDays?: number;
+    frequency?: string;
+    durationMinutes?: number;
+    contentUrl?: string;
     passingScore?: number;
+    isRequired?: boolean;
     isActive?: boolean;
   },
 ) {
@@ -511,34 +536,35 @@ export async function createTrainingRecord(data: {
   requirementId: number;
   employeeId: string;
   employeeName: string;
-  scheduledDate?: Date;
+  department?: string;
+  role?: string;
+  assignedAt?: Date;
   completedAt?: Date;
-  trainer?: string;
   score?: number;
   certificateUrl?: string;
-  notes?: string;
+  certificateNumber?: string;
 }) {
   const requirement = await prisma.trainingRequirement.findUnique({
     where: { id: data.requirementId },
   });
 
-  let status = TrainingStatus.SCHEDULED;
+  let status = TrainingStatus.ASSIGNED;
+  let passed: boolean | undefined;
   if (data.completedAt) {
-    if (requirement?.assessmentRequired && data.score !== undefined) {
-      status =
-        data.score >= (requirement.passingScore || 70)
-          ? TrainingStatus.COMPLETED
-          : TrainingStatus.FAILED;
+    if (requirement?.passingScore && data.score !== undefined) {
+      passed = data.score >= requirement.passingScore;
+      status = passed ? TrainingStatus.COMPLETED : TrainingStatus.FAILED;
     } else {
       status = TrainingStatus.COMPLETED;
+      passed = true;
     }
   }
 
-  // Calculate expiry date
+  // Calculate expiry date based on validity period in days
   let expiresAt: Date | undefined;
-  if (data.completedAt && requirement?.validityPeriod) {
+  if (data.completedAt && requirement?.validityPeriodDays) {
     expiresAt = new Date(data.completedAt);
-    expiresAt.setMonth(expiresAt.getMonth() + requirement.validityPeriod);
+    expiresAt.setDate(expiresAt.getDate() + requirement.validityPeriodDays);
   }
 
   return prisma.trainingRecord.create({
@@ -547,13 +573,15 @@ export async function createTrainingRecord(data: {
       requirementId: data.requirementId,
       employeeId: data.employeeId,
       employeeName: data.employeeName,
-      scheduledDate: data.scheduledDate,
+      department: data.department,
+      role: data.role,
+      assignedAt: data.assignedAt ?? new Date(),
       completedAt: data.completedAt,
       expiresAt,
-      trainer: data.trainer,
       score: data.score,
+      passed,
       certificateUrl: data.certificateUrl,
-      notes: data.notes,
+      certificateNumber: data.certificateNumber,
       status,
     },
     include: {
@@ -565,12 +593,14 @@ export async function createTrainingRecord(data: {
 export async function updateTrainingRecord(
   recordId: number,
   data: {
-    completedAt?: Date;
-    trainer?: string;
-    score?: number;
-    certificateUrl?: string;
-    notes?: string;
     status?: TrainingStatus;
+    startedAt?: Date;
+    completedAt?: Date;
+    expiresAt?: Date;
+    score?: number;
+    passed?: boolean;
+    certificateUrl?: string;
+    certificateNumber?: string;
   },
 ) {
   return prisma.trainingRecord.update({
@@ -658,7 +688,7 @@ export async function getInspections(
         inspectionType: filters.inspectionType,
       }),
       ...(filters?.status && { status: filters.status }),
-      ...(filters?.area && { area: filters.area }),
+      ...(filters?.area && { areasInspected: { has: filters.area } }),
     },
     orderBy: { scheduledDate: 'desc' },
   });
@@ -667,23 +697,23 @@ export async function getInspections(
 export async function createInspection(data: {
   configId: number;
   inspectionType: string;
-  title: string;
-  description?: string;
-  area: string;
+  name: string;
+  areasInspected?: string[];
   scheduledDate: Date;
   inspector?: string;
-  checklistItems?: Record<string, unknown>[];
+  location?: string;
+  department?: string;
 }) {
   return prisma.safetyInspection.create({
     data: {
       configId: data.configId,
       inspectionType: data.inspectionType,
-      title: data.title,
-      description: data.description,
-      area: data.area,
+      name: data.name,
+      areasInspected: data.areasInspected ?? [],
       scheduledDate: data.scheduledDate,
       inspector: data.inspector,
-      checklistItems: data.checklistItems ?? [],
+      location: data.location,
+      department: data.department,
       status: 'scheduled',
     },
   });
@@ -695,11 +725,12 @@ export async function updateInspection(
     status?: string;
     completedAt?: Date;
     inspector?: string;
-    findings?: Record<string, unknown>[];
-    overallRating?: string;
-    correctiveActions?: string[];
-    nextInspectionDate?: Date;
-    notes?: string;
+    findings?: Record<string, unknown>;
+    overallScore?: number;
+    correctiveActions?: Record<string, unknown>;
+    followUpDate?: Date;
+    deficiencies?: number;
+    criticalFindings?: number;
   },
 ) {
   return prisma.safetyInspection.update({
@@ -726,7 +757,7 @@ export async function getSafetyAnalytics(
       prisma.safetyIncident.findMany({
         where: {
           configId,
-          incidentDate: { gte: startDate, lte: endDate },
+          occurredAt: { gte: startDate, lte: endDate },
         },
       }),
       prisma.hazardReport.findMany({
@@ -747,7 +778,7 @@ export async function getSafetyAnalytics(
           scheduledDate: { gte: startDate, lte: endDate },
         },
       }),
-      prisma.safetyAnalytics.findMany({
+      prisma.safetyMonitorAnalytics.findMany({
         where: {
           configId,
           date: { gte: startDate, lte: endDate },
@@ -761,12 +792,18 @@ export async function getSafetyAnalytics(
   const openIncidents = incidents.filter(
     (i) => i.status !== IncidentStatus.CLOSED,
   ).length;
-  const criticalIncidents = incidents.filter(
-    (i) => i.severity === IncidentSeverity.CRITICAL,
+  const severeIncidents = incidents.filter(
+    (i) =>
+      i.severity === IncidentSeverity.SEVERE ||
+      i.severity === IncidentSeverity.FATAL,
   ).length;
 
-  const openHazards = hazards.filter((h) => h.status === 'open').length;
-  const resolvedHazards = hazards.filter((h) => h.status === 'resolved').length;
+  const openHazards = hazards.filter(
+    (h) => h.mitigationStatus === 'open',
+  ).length;
+  const resolvedHazards = hazards.filter(
+    (h) => h.mitigationStatus === 'resolved',
+  ).length;
 
   const _completedTrainings = trainings.filter(
     (t) => t.status === TrainingStatus.COMPLETED,
@@ -779,17 +816,19 @@ export async function getSafetyAnalytics(
     (i) => i.status === 'completed',
   ).length;
   const passedInspections = inspections.filter(
-    (i) => i.status === 'completed' && i.overallRating !== 'fail',
+    (i) =>
+      i.status === 'completed' &&
+      (i.overallScore === null || i.overallScore >= 70),
   ).length;
 
   // Calculate days without incident
   const lastIncident = incidents.sort(
     (a, b) =>
-      new Date(b.incidentDate).getTime() - new Date(a.incidentDate).getTime(),
+      new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
   )[0];
   const daysWithoutIncident = lastIncident
     ? Math.floor(
-        (Date.now() - new Date(lastIncident.incidentDate).getTime()) /
+        (Date.now() - new Date(lastIncident.occurredAt).getTime()) /
           (24 * 60 * 60 * 1000),
       )
     : 365;
@@ -803,13 +842,17 @@ export async function getSafetyAnalytics(
 
   // Incidents by severity
   const incidentsBySeverity = {
+    nearMiss: incidents.filter((i) => i.severity === IncidentSeverity.NEAR_MISS)
+      .length,
     minor: incidents.filter((i) => i.severity === IncidentSeverity.MINOR)
       .length,
     moderate: incidents.filter((i) => i.severity === IncidentSeverity.MODERATE)
       .length,
-    major: incidents.filter((i) => i.severity === IncidentSeverity.MAJOR)
+    serious: incidents.filter((i) => i.severity === IncidentSeverity.SERIOUS)
       .length,
-    critical: incidents.filter((i) => i.severity === IncidentSeverity.CRITICAL)
+    severe: incidents.filter((i) => i.severity === IncidentSeverity.SEVERE)
+      .length,
+    fatal: incidents.filter((i) => i.severity === IncidentSeverity.FATAL)
       .length,
   };
 
@@ -818,7 +861,7 @@ export async function getSafetyAnalytics(
     currentMetrics: {
       totalIncidents,
       openIncidents,
-      criticalIncidents,
+      severeIncidents,
       daysWithoutIncident,
       openHazards,
       resolvedHazards,
@@ -826,11 +869,11 @@ export async function getSafetyAnalytics(
         hazards.length > 0
           ? Math.round((resolvedHazards / hazards.length) * 100)
           : 100,
-      completedTrainings,
-      overdueTrainings,
+      completedTrainings: _completedTrainings,
+      overdueTrainings: _overdueTrainings,
       trainingComplianceRate:
         trainings.length > 0
-          ? Math.round((completedTrainings / trainings.length) * 100)
+          ? Math.round((_completedTrainings / trainings.length) * 100)
           : 100,
       completedInspections,
       inspectionPassRate:
@@ -840,7 +883,7 @@ export async function getSafetyAnalytics(
     },
     incidentsByType,
     incidentsBySeverity,
-    hazardsByCategory: groupBy(hazards, 'category'),
+    hazardsByCategory: groupBy(hazards, 'hazardType'),
     trainingsByCategory: groupBy(
       trainings,
       (t: TrainingWithRequirement) =>
@@ -868,39 +911,78 @@ export async function recordDailyAnalytics(configId: number) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [incidents, hazards, trainings, inspections] = await Promise.all([
+  const [incidents, hazards, trainings, checklists] = await Promise.all([
     prisma.safetyIncident.findMany({ where: { configId } }),
     prisma.hazardReport.findMany({ where: { configId } }),
     prisma.trainingRecord.findMany({ where: { configId } }),
-    prisma.safetyInspection.findMany({ where: { configId } }),
+    prisma.checklistCompletion.findMany({
+      where: {
+        checklist: { configId },
+      },
+    }),
   ]);
 
-  const openIncidents = incidents.filter(
-    (i) => i.status !== IncidentStatus.CLOSED,
+  const openHazards = hazards.filter(
+    (h) => h.mitigationStatus === 'open',
   ).length;
-  const openHazards = hazards.filter((h) => h.status === 'open').length;
-  const _completedTrainings = trainings.filter(
+  const completedTrainings = trainings.filter(
     (t) => t.status === TrainingStatus.COMPLETED,
   ).length;
-  const _overdueTrainings = trainings.filter(
+  const overdueTrainings = trainings.filter(
     (t) => t.expiresAt && new Date(t.expiresAt) < new Date(),
   ).length;
 
-  // Calculate days since last incident
+  // Calculate days since last incident (excluding near misses and minor)
   const lastIncident = incidents
-    .filter((i) => i.severity !== IncidentSeverity.MINOR)
+    .filter(
+      (i) =>
+        i.severity !== IncidentSeverity.MINOR &&
+        i.severity !== IncidentSeverity.NEAR_MISS,
+    )
     .sort(
       (a, b) =>
-        new Date(b.incidentDate).getTime() - new Date(a.incidentDate).getTime(),
+        new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
     )[0];
-  const daysSinceLastIncident = lastIncident
+  const daysWithoutIncident = lastIncident
     ? Math.floor(
-        (Date.now() - new Date(lastIncident.incidentDate).getTime()) /
+        (Date.now() - new Date(lastIncident.occurredAt).getTime()) /
           (24 * 60 * 60 * 1000),
       )
     : 365;
 
-  return prisma.safetyAnalytics.upsert({
+  // Count incidents by severity
+  const nearMisses = incidents.filter(
+    (i) => i.severity === IncidentSeverity.NEAR_MISS,
+  ).length;
+  const minorIncidents = incidents.filter(
+    (i) => i.severity === IncidentSeverity.MINOR,
+  ).length;
+  const seriousIncidents = incidents.filter(
+    (i) => i.severity === IncidentSeverity.SERIOUS,
+  ).length;
+  const severeIncidents = incidents.filter(
+    (i) =>
+      i.severity === IncidentSeverity.SEVERE ||
+      i.severity === IncidentSeverity.FATAL,
+  ).length;
+
+  // OSHA recordables (serious, severe, fatal)
+  const oshaRecordables = incidents.filter((i) => i.isOshaRecordable).length;
+
+  // Checklists completed today
+  const checklistsCompletedToday = checklists.filter(
+    (c) => new Date(c.completedAt).toDateString() === today.toDateString(),
+  ).length;
+
+  // Hazards reported and mitigated
+  const hazardsReported = hazards.filter(
+    (h) => new Date(h.reportedAt).toDateString() === today.toDateString(),
+  ).length;
+  const hazardsMitigated = hazards.filter(
+    (h) => h.mitigationStatus === 'resolved',
+  ).length;
+
+  return prisma.safetyMonitorAnalytics.upsert({
     where: {
       configId_date: {
         configId,
@@ -908,55 +990,41 @@ export async function recordDailyAnalytics(configId: number) {
       },
     },
     update: {
-      incidentsReported: incidents.filter(
-        (i) => new Date(i.reportedAt).toDateString() === today.toDateString(),
-      ).length,
-      incidentsOpen: openIncidents,
-      hazardsIdentified: hazards.filter(
-        (h) => new Date(h.reportedAt).toDateString() === today.toDateString(),
-      ).length,
-      hazardsOpen: openHazards,
-      inspectionsCompleted: inspections.filter(
-        (i) =>
-          i.completedAt &&
-          new Date(i.completedAt).toDateString() === today.toDateString(),
-      ).length,
-      trainingsCompleted: trainings.filter(
-        (t) =>
-          t.completedAt &&
-          new Date(t.completedAt).toDateString() === today.toDateString(),
-      ).length,
-      daysSinceLastIncident,
-      complianceScore: calculateComplianceScore(incidents, hazards, trainings),
+      totalIncidents: incidents.length,
+      oshaRecordables,
+      nearMisses,
+      daysWithoutIncident,
+      minorIncidents,
+      seriousIncidents,
+      severeIncidents,
+      checklistsCompleted: checklistsCompletedToday,
+      hazardsReported,
+      hazardsMitigated,
+      openHazards,
+      trainingsCompleted: completedTrainings,
+      trainingsOverdue: overdueTrainings,
     },
     create: {
       configId,
       date: today,
-      incidentsReported: incidents.filter(
-        (i) => new Date(i.reportedAt).toDateString() === today.toDateString(),
-      ).length,
-      incidentsOpen: openIncidents,
-      hazardsIdentified: hazards.filter(
-        (h) => new Date(h.reportedAt).toDateString() === today.toDateString(),
-      ).length,
-      hazardsOpen: openHazards,
-      inspectionsCompleted: inspections.filter(
-        (i) =>
-          i.completedAt &&
-          new Date(i.completedAt).toDateString() === today.toDateString(),
-      ).length,
-      trainingsCompleted: trainings.filter(
-        (t) =>
-          t.completedAt &&
-          new Date(t.completedAt).toDateString() === today.toDateString(),
-      ).length,
-      daysSinceLastIncident,
-      complianceScore: calculateComplianceScore(incidents, hazards, trainings),
+      totalIncidents: incidents.length,
+      oshaRecordables,
+      nearMisses,
+      daysWithoutIncident,
+      minorIncidents,
+      seriousIncidents,
+      severeIncidents,
+      checklistsCompleted: checklistsCompletedToday,
+      hazardsReported,
+      hazardsMitigated,
+      openHazards,
+      trainingsCompleted: completedTrainings,
+      trainingsOverdue: overdueTrainings,
     },
   });
 }
 
-function calculateComplianceScore(
+function _calculateComplianceScore(
   incidents: SafetyIncident[],
   hazards: HazardReport[],
   trainings: TrainingRecord[],
@@ -969,14 +1037,18 @@ function calculateComplianceScore(
   ).length;
   score -= openIncidents * 5;
 
-  // Deduct for critical incidents
-  const criticalIncidents = incidents.filter(
-    (i) => i.severity === IncidentSeverity.CRITICAL,
+  // Deduct for severe incidents
+  const severeIncidents = incidents.filter(
+    (i) =>
+      i.severity === IncidentSeverity.SEVERE ||
+      i.severity === IncidentSeverity.FATAL,
   ).length;
-  score -= criticalIncidents * 10;
+  score -= severeIncidents * 10;
 
   // Deduct for open hazards
-  const openHazards = hazards.filter((h) => h.status === 'open').length;
+  const openHazards = hazards.filter(
+    (h) => h.mitigationStatus === 'open',
+  ).length;
   score -= openHazards * 3;
 
   // Deduct for overdue trainings
