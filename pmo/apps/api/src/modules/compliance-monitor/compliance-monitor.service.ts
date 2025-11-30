@@ -679,7 +679,7 @@ export async function generateComplianceReport(data: {
   title: string;
   periodStart: Date;
   periodEnd: Date;
-  generatedBy: string;
+  generatedBy: number;
 }) {
   const analytics = await getComplianceAnalytics(data.configId, {
     startDate: data.periodStart,
@@ -691,11 +691,9 @@ export async function generateComplianceReport(data: {
       configId: data.configId,
       name: data.title,
       reportType: data.reportType,
-      periodStart: data.periodStart,
-      periodEnd: data.periodEnd,
+      period: `${data.periodStart.toISOString()} - ${data.periodEnd.toISOString()}`,
       generatedBy: data.generatedBy,
-      content: analytics as unknown as Prisma.InputJsonValue,
-      status: 'COMPLETED',
+      reportData: analytics as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -706,16 +704,22 @@ export async function getReports(
   configId: number,
   filters?: {
     reportType?: string;
-    status?: string;
   },
 ) {
   return prisma.complianceReport.findMany({
     where: {
       configId,
       ...(filters?.reportType && { reportType: filters.reportType }),
-      ...(filters?.status && { status: filters.status }),
     },
     orderBy: { createdAt: 'desc' },
+  });
+}
+
+// ============ Rule Deletion ============
+
+export async function deleteRule(ruleId: number) {
+  return prisma.complianceRule.delete({
+    where: { id: ruleId },
   });
 }
 
@@ -729,4 +733,90 @@ export async function getClientIdFromConfig(
     select: { clientId: true },
   });
   return config?.clientId ?? null;
+}
+
+export async function getClientIdFromRule(
+  ruleId: number,
+): Promise<number | null> {
+  const rule = await prisma.complianceRule.findUnique({
+    where: { id: ruleId },
+    include: { config: { select: { clientId: true } } },
+  });
+  return rule?.config?.clientId ?? null;
+}
+
+export async function getClientIdFromViolation(
+  violationId: number,
+): Promise<number | null> {
+  const violation = await prisma.complianceViolation.findUnique({
+    where: { id: violationId },
+    include: { config: { select: { clientId: true } } },
+  });
+  return violation?.config?.clientId ?? null;
+}
+
+export async function getClientIdFromAudit(
+  auditId: number,
+): Promise<number | null> {
+  const audit = await prisma.complianceAudit.findUnique({
+    where: { id: auditId },
+    include: { config: { select: { clientId: true } } },
+  });
+  return audit?.config?.clientId ?? null;
+}
+
+export async function getClientIdFromRiskAssessment(
+  assessmentId: number,
+): Promise<number | null> {
+  const assessment = await prisma.riskAssessment.findUnique({
+    where: { id: assessmentId },
+    include: { config: { select: { clientId: true } } },
+  });
+  return assessment?.config?.clientId ?? null;
+}
+
+// ============ Daily Analytics Recording ============
+
+export async function recordDailyAnalytics(configId: number) {
+  const [violations, rules, audits] = await Promise.all([
+    prisma.complianceViolation.findMany({
+      where: { configId },
+    }),
+    prisma.complianceRule.findMany({
+      where: { configId, isActive: true },
+    }),
+    prisma.complianceAudit.findMany({
+      where: { configId },
+    }),
+  ]);
+
+  const openViolations = violations.filter(
+    (v) => v.status === ViolationStatus.OPEN,
+  ).length;
+  const criticalViolations = violations.filter(
+    (v) =>
+      v.severity === RiskLevel.CRITICAL && v.status === ViolationStatus.OPEN,
+  ).length;
+  const completedAudits = audits.filter(
+    (a) => a.status === AuditStatus.COMPLETED,
+  ).length;
+
+  // Calculate compliance score
+  const score = calculateComplianceScore(
+    violations,
+    rules.length,
+    completedAudits > 0 ? 80 : 50,
+  );
+
+  return {
+    date: new Date(),
+    configId,
+    totalRules: rules.length,
+    activeRules: rules.filter((r) => r.isActive).length,
+    openViolations,
+    criticalViolations,
+    totalAudits: audits.length,
+    completedAudits,
+    complianceScore: score,
+  };
 }

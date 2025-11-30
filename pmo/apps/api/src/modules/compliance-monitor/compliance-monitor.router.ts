@@ -156,7 +156,7 @@ const generateReportSchema = z.object({
   title: z.string().min(1),
   periodStart: z.string().datetime(),
   periodEnd: z.string().datetime(),
-  generatedBy: z.string().min(1),
+  generatedBy: z.number().int().positive(),
 });
 
 // ============ Configuration Routes ============
@@ -544,9 +544,11 @@ router.patch(
 
     const violation = await complianceService.updateViolation(violationId, {
       ...parsed.data,
-      dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
-      resolvedAt: parsed.data.resolvedAt
-        ? new Date(parsed.data.resolvedAt)
+      remediatedAt: parsed.data.remediatedAt
+        ? new Date(parsed.data.remediatedAt)
+        : undefined,
+      acknowledgedAt: parsed.data.acknowledgedAt
+        ? new Date(parsed.data.acknowledgedAt)
         : undefined,
     });
     res.json({ violation });
@@ -582,10 +584,10 @@ router.get(
       return;
     }
 
-    const { status, auditType } = req.query;
+    const { status, framework } = req.query;
     const audits = await complianceService.getAudits(configId, {
       status: status as AuditStatus,
-      auditType: auditType as string,
+      framework: framework as string,
     });
     res.json({ audits });
   },
@@ -630,6 +632,7 @@ router.post(
       configId,
       ...parsed.data,
       scheduledDate: new Date(parsed.data.scheduledDate),
+      dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
     });
     res.status(201).json({ audit });
   },
@@ -672,11 +675,11 @@ router.patch(
 
     const audit = await complianceService.updateAudit(auditId, {
       ...parsed.data,
-      completedDate: parsed.data.completedDate
-        ? new Date(parsed.data.completedDate)
+      completedAt: parsed.data.completedAt
+        ? new Date(parsed.data.completedAt)
         : undefined,
-      nextAuditDate: parsed.data.nextAuditDate
-        ? new Date(parsed.data.nextAuditDate)
+      startedAt: parsed.data.startedAt
+        ? new Date(parsed.data.startedAt)
         : undefined,
     });
     res.json({ audit });
@@ -712,11 +715,10 @@ router.get(
       return;
     }
 
-    const { riskLevel, category, status } = req.query;
+    const { riskLevel, entityType } = req.query;
     const risks = await complianceService.getRiskAssessments(configId, {
       riskLevel: riskLevel as RiskLevel,
-      category: category as string,
-      status: status as string,
+      entityType: entityType as string,
     });
     res.json({ risks });
   },
@@ -760,8 +762,8 @@ router.post(
     const risk = await complianceService.createRiskAssessment({
       configId,
       ...parsed.data,
-      reviewDate: parsed.data.reviewDate
-        ? new Date(parsed.data.reviewDate)
+      nextAssessmentAt: parsed.data.nextAssessmentAt
+        ? new Date(parsed.data.nextAssessmentAt)
         : undefined,
     });
     res.status(201).json({ risk });
@@ -809,8 +811,8 @@ router.patch(
 
     const risk = await complianceService.updateRiskAssessment(assessmentId, {
       ...parsed.data,
-      reviewDate: parsed.data.reviewDate
-        ? new Date(parsed.data.reviewDate)
+      nextAssessmentAt: parsed.data.nextAssessmentAt
+        ? new Date(parsed.data.nextAssessmentAt)
         : undefined,
     });
     res.json({ risk });
@@ -880,11 +882,9 @@ router.get(
       return;
     }
 
-    const { reportType, startDate, endDate } = req.query;
+    const { reportType } = req.query;
     const reports = await complianceService.getReports(configId, {
       reportType: reportType as string,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
     });
     res.json({ reports });
   },
