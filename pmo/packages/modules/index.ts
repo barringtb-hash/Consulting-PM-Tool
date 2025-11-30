@@ -39,7 +39,15 @@ export type ModuleId =
   | 'complianceMonitor'
   | 'predictiveMaintenance'
   | 'revenueManagement'
-  | 'safetyMonitor';
+  | 'safetyMonitor'
+  // Infrastructure modules (INF.1, INF.2, INF.3)
+  | 'coreInfrastructure'
+  | 'aiMlInfrastructure'
+  | 'iotInfrastructure'
+  // Compliance modules (COMP.1, COMP.2, COMP.3)
+  | 'healthcareCompliance'
+  | 'financialCompliance'
+  | 'generalCompliance';
 
 /**
  * Navigation group identifiers
@@ -51,6 +59,8 @@ export type NavGroup =
   | 'marketing'
   | 'sales'
   | 'aiTools'
+  | 'infrastructure'
+  | 'compliance'
   | 'admin';
 
 /**
@@ -276,7 +286,10 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'FileSearch',
     isCore: false,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/clients/:clientId/document-analyzer', '/api/document-analyzer'],
+    apiPrefixes: [
+      '/api/clients/:clientId/document-analyzer',
+      '/api/document-analyzer',
+    ],
     description:
       'Smart document analysis with OCR, NER, custom field extraction, and compliance flagging',
   },
@@ -292,7 +305,10 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'PenTool',
     isCore: false,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/clients/:clientId/content-generator', '/api/content-generator'],
+    apiPrefixes: [
+      '/api/clients/:clientId/content-generator',
+      '/api/content-generator',
+    ],
     description:
       'AI-powered content generation suite with brand voice training, templates, and approval workflows',
   },
@@ -346,7 +362,10 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'Package',
     isCore: false,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/clients/:clientId/inventory-forecasting', '/api/inventory-forecasting'],
+    apiPrefixes: [
+      '/api/clients/:clientId/inventory-forecasting',
+      '/api/inventory-forecasting',
+    ],
     description:
       'ML-powered inventory forecasting with seasonal trends, multi-location support, and automated alerts',
   },
@@ -364,7 +383,10 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'Scale',
     isCore: false,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/clients/:clientId/compliance-monitor', '/api/compliance-monitor'],
+    apiPrefixes: [
+      '/api/clients/:clientId/compliance-monitor',
+      '/api/compliance-monitor',
+    ],
     description:
       'Real-time compliance monitoring with rule engine, risk scoring, and regulatory reporting for HIPAA, SOX, GDPR, PCI',
   },
@@ -382,7 +404,10 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'Wrench',
     isCore: false,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/clients/:clientId/predictive-maintenance', '/api/predictive-maintenance'],
+    apiPrefixes: [
+      '/api/clients/:clientId/predictive-maintenance',
+      '/api/predictive-maintenance',
+    ],
     description:
       'IoT-integrated predictive maintenance with ML anomaly detection, failure prediction, and work order management',
   },
@@ -400,7 +425,10 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'DollarSign',
     isCore: false,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/clients/:clientId/revenue-management', '/api/revenue-management'],
+    apiPrefixes: [
+      '/api/clients/:clientId/revenue-management',
+      '/api/revenue-management',
+    ],
     description:
       'AI-powered dynamic pricing with demand forecasting, competitor monitoring, and revenue optimization',
   },
@@ -418,9 +446,86 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'HardHat',
     isCore: false,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/clients/:clientId/safety-monitor', '/api/safety-monitor'],
+    apiPrefixes: [
+      '/api/clients/:clientId/safety-monitor',
+      '/api/safety-monitor',
+    ],
     description:
       'Digital safety checklists, incident reporting, OSHA 300 log management, and training compliance tracking',
+  },
+
+  // ============ INFRASTRUCTURE MODULES (INF.1, INF.2, INF.3) ============
+  coreInfrastructure: {
+    id: 'coreInfrastructure',
+    label: 'Core Infrastructure',
+    navGroup: 'infrastructure',
+    path: '/infrastructure/core',
+    icon: 'Server',
+    isCore: false,
+    dependencies: ['admin'],
+    apiPrefixes: ['/api/infrastructure/core'],
+    description:
+      'INF.1 - Authentication, API gateway, audit logging, and billing infrastructure management',
+  },
+  aiMlInfrastructure: {
+    id: 'aiMlInfrastructure',
+    label: 'AI/ML Infrastructure',
+    navGroup: 'infrastructure',
+    path: '/infrastructure/ai-ml',
+    icon: 'Brain',
+    isCore: false,
+    dependencies: ['admin', 'coreInfrastructure'],
+    apiPrefixes: ['/api/infrastructure/ai-ml'],
+    description:
+      'INF.2 - NLP services, ML models, and integrations framework management',
+  },
+  iotInfrastructure: {
+    id: 'iotInfrastructure',
+    label: 'IoT Infrastructure',
+    navGroup: 'infrastructure',
+    path: '/infrastructure/iot',
+    icon: 'Radio',
+    isCore: false,
+    dependencies: ['admin', 'aiMlInfrastructure'],
+    apiPrefixes: ['/api/infrastructure/iot'],
+    description:
+      'INF.3 - Sensor pipeline, real-time processing, and IoT device management',
+  },
+
+  // ============ COMPLIANCE MODULES (COMP.1, COMP.2, COMP.3) ============
+  healthcareCompliance: {
+    id: 'healthcareCompliance',
+    label: 'Healthcare Compliance',
+    navGroup: 'compliance',
+    path: '/compliance/healthcare',
+    icon: 'Heart',
+    isCore: false,
+    dependencies: ['admin'],
+    apiPrefixes: ['/api/compliance/healthcare'],
+    description:
+      'COMP.1 - HIPAA privacy and security rule implementation and monitoring',
+  },
+  financialCompliance: {
+    id: 'financialCompliance',
+    label: 'Financial Compliance',
+    navGroup: 'compliance',
+    path: '/compliance/financial',
+    icon: 'DollarSign',
+    isCore: false,
+    dependencies: ['admin'],
+    apiPrefixes: ['/api/compliance/financial'],
+    description: 'COMP.2 - SOX, FINRA, and PCI DSS compliance management',
+  },
+  generalCompliance: {
+    id: 'generalCompliance',
+    label: 'General Compliance',
+    navGroup: 'compliance',
+    path: '/compliance/general',
+    icon: 'Globe',
+    isCore: false,
+    dependencies: ['admin'],
+    apiPrefixes: ['/api/compliance/general'],
+    description: 'COMP.3 - GDPR and CCPA privacy compliance implementation',
   },
 };
 
@@ -437,7 +542,9 @@ export const NAV_GROUP_CONFIG: Record<
   marketing: { label: 'Marketing', order: 4 },
   sales: { label: 'Sales', order: 5 },
   aiTools: { label: 'AI Tools', order: 6 },
-  admin: { label: 'Admin', order: 7 },
+  infrastructure: { label: 'Infrastructure', order: 7 },
+  compliance: { label: 'Compliance', order: 8 },
+  admin: { label: 'Admin', order: 9 },
 };
 
 /**
@@ -469,6 +576,14 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'predictiveMaintenance',
   'revenueManagement',
   'safetyMonitor',
+  // Infrastructure (INF.1, INF.2, INF.3)
+  'coreInfrastructure',
+  'aiMlInfrastructure',
+  'iotInfrastructure',
+  // Compliance (COMP.1, COMP.2, COMP.3)
+  'healthcareCompliance',
+  'financialCompliance',
+  'generalCompliance',
 ];
 
 /**

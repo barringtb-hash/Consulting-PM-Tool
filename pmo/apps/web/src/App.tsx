@@ -77,6 +77,28 @@ const SafetyMonitorPage = lazy(
   () => import('./pages/ai-tools/SafetyMonitorPage'),
 );
 
+// Infrastructure pages (INF.1, INF.2, INF.3)
+const CoreInfrastructurePage = lazy(
+  () => import('./pages/infrastructure/CoreInfrastructurePage'),
+);
+const AiMlInfrastructurePage = lazy(
+  () => import('./pages/infrastructure/AiMlInfrastructurePage'),
+);
+const IotInfrastructurePage = lazy(
+  () => import('./pages/infrastructure/IotInfrastructurePage'),
+);
+
+// Compliance pages (COMP.1, COMP.2, COMP.3)
+const HealthcareCompliancePage = lazy(
+  () => import('./pages/infrastructure/HealthcareCompliancePage'),
+);
+const FinancialCompliancePage = lazy(
+  () => import('./pages/infrastructure/FinancialCompliancePage'),
+);
+const GeneralCompliancePage = lazy(
+  () => import('./pages/infrastructure/GeneralCompliancePage'),
+);
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -369,6 +391,78 @@ function App(): JSX.Element {
                 element={
                   <LazyPage>
                     <SafetyMonitorPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Core Infrastructure module (INF.1) */}
+            {isModuleEnabled('coreInfrastructure') && (
+              <Route
+                path="/infrastructure/core"
+                element={
+                  <LazyPage>
+                    <CoreInfrastructurePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* AI/ML Infrastructure module (INF.2) */}
+            {isModuleEnabled('aiMlInfrastructure') && (
+              <Route
+                path="/infrastructure/ai-ml"
+                element={
+                  <LazyPage>
+                    <AiMlInfrastructurePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* IoT Infrastructure module (INF.3) */}
+            {isModuleEnabled('iotInfrastructure') && (
+              <Route
+                path="/infrastructure/iot"
+                element={
+                  <LazyPage>
+                    <IotInfrastructurePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Healthcare Compliance module (COMP.1) */}
+            {isModuleEnabled('healthcareCompliance') && (
+              <Route
+                path="/compliance/healthcare"
+                element={
+                  <LazyPage>
+                    <HealthcareCompliancePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Financial Compliance module (COMP.2) */}
+            {isModuleEnabled('financialCompliance') && (
+              <Route
+                path="/compliance/financial"
+                element={
+                  <LazyPage>
+                    <FinancialCompliancePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* General Compliance module (COMP.3) */}
+            {isModuleEnabled('generalCompliance') && (
+              <Route
+                path="/compliance/general"
+                element={
+                  <LazyPage>
+                    <GeneralCompliancePage />
                   </LazyPage>
                 }
               />
