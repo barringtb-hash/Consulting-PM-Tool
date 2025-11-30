@@ -57,7 +57,11 @@ export function TopBar({ onMenuClick }: TopBarProps): JSX.Element {
       {/* Mobile logo */}
       <div className="lg:hidden flex-1 flex items-center justify-center">
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
-          <img src="/favicon.svg" alt="Launchpad" className="w-8 h-8 flex-shrink-0" />
+          <img
+            src="/favicon.svg"
+            alt="Launchpad"
+            className="w-8 h-8 flex-shrink-0"
+          />
           <div className="flex flex-col">
             <span className="font-bold text-rose-800 text-sm tracking-tight leading-tight">
               Launchpad
