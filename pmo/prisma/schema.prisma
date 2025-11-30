@@ -225,6 +225,12 @@ model Client {
   productDescriptionConfig ProductDescriptionConfig?
   schedulingConfig         SchedulingConfig?
   intakeConfig             IntakeConfig?
+
+  // Phase 2 AI Tools
+  documentAnalyzerConfig   DocumentAnalyzerConfig?
+  contentGeneratorConfig   ContentGeneratorConfig?
+  leadScoringConfig        LeadScoringConfig?
+  priorAuthConfig          PriorAuthConfig?
 }
 
 model Contact {
@@ -1762,4 +1768,1064 @@ model WorkflowProgress {
   @@unique([submissionId, workflowId])
   @@index([workflowId, isComplete])
   @@index([assignedTo, isComplete])
+}
+
+// ============================================================================
+// PHASE 2 AI TOOLS - TOOL 2.1: SMART DOCUMENT ANALYZER
+// ============================================================================
+
+enum DocumentFormat {
+  PDF
+  WORD
+  EXCEL
+  IMAGE
+  SCANNED
+  TEXT
+  OTHER
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum ComplianceLevel {
+  PASS
+  WARNING
+  FAIL
+  NOT_APPLICABLE
+}
+
+/**
+ * DocumentAnalyzerConfig - Configuration for smart document analysis per client
+ */
+model DocumentAnalyzerConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  // Analysis settings
+  enableOCR             Boolean   @default(true)
+  enableNER             Boolean   @default(true)
+  enableCompliance      Boolean   @default(true)
+  enableVersionCompare  Boolean   @default(false)
+
+  // Default extraction fields (JSON: [{ name, type, required }])
+  defaultExtractionFields Json?
+
+  // Compliance rules (JSON: [{ ruleId, name, pattern, severity }])
+  complianceRules       Json?
+
+  // Retention settings
+  retentionDays         Int       @default(365)
+
+  // Integration credentials
+  googleVisionApiKey    String?
+  azureFormRecognizerKey String?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  analyzedDocuments     AnalyzedDocument[]
+  extractionTemplates   ExtractionTemplate[]
+  batchJobs             DocumentBatchJob[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * AnalyzedDocument - Documents that have been analyzed
+ */
+model AnalyzedDocument {
+  id                  Int               @id @default(autoincrement())
+  configId            Int
+
+  // Document info
+  filename            String
+  originalUrl         String
+  mimeType            String
+  sizeBytes           Int
+  format              DocumentFormat
+
+  // Analysis status
+  status              AnalysisStatus    @default(PENDING)
+  analyzedAt          DateTime?
+  analysisTimeMs      Int?
+
+  // OCR results
+  ocrText             String?
+  ocrConfidence       Float?
+  pageCount           Int?
+
+  // Extracted data (JSON: { fieldName: { value, confidence, location } })
+  extractedFields     Json?
+
+  // Named entities (JSON: { entityType: [{ value, confidence, location }] })
+  namedEntities       Json?
+
+  // Compliance results
+  complianceStatus    ComplianceLevel?
+  complianceFlags     Json?             // [{ ruleId, status, message, location }]
+
+  // Classification
+  documentType        String?
+  documentTypeConfidence Float?
+  category            String?
+  tags                String[]          @default([])
+
+  // Audit trail
+  auditLog            Json?             // [{ action, userId, timestamp, details }]
+
+  // Version comparison
+  previousVersionId   Int?
+  changesSummary      Json?
+
+  // Error tracking
+  errorMessage        String?
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  config              DocumentAnalyzerConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([configId, documentType])
+  @@index([createdAt(sort: Desc)])
+}
+
+/**
+ * ExtractionTemplate - Templates for custom field extraction
+ */
+model ExtractionTemplate {
+  id                Int                   @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+
+  // Document type this template applies to
+  documentType      String?
+
+  // Extraction rules (JSON: [{ fieldName, type, pattern, location, required }])
+  extractionRules   Json
+
+  // ML model settings
+  useMLExtraction   Boolean               @default(true)
+  mlModelId         String?
+
+  isDefault         Boolean               @default(false)
+  isActive          Boolean               @default(true)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  config            DocumentAnalyzerConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, documentType])
+  @@index([configId, isActive])
+}
+
+/**
+ * DocumentBatchJob - Batch processing jobs for document analysis
+ */
+model DocumentBatchJob {
+  id                Int                   @id @default(autoincrement())
+  configId          Int
+
+  status            AnalysisStatus        @default(PENDING)
+
+  // Job details
+  totalDocuments    Int                   @default(0)
+  processedDocuments Int                  @default(0)
+  successfulDocuments Int                 @default(0)
+  failedDocuments   Int                   @default(0)
+
+  // Settings
+  extractionTemplateId Int?
+  settings          Json?
+
+  // Timing
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  // Error log
+  errorLog          Json?
+
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  config            DocumentAnalyzerConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 2 AI TOOLS - TOOL 2.2: CONTENT GENERATION SUITE
+// ============================================================================
+
+enum ContentGenerationType {
+  SOCIAL_POST
+  EMAIL
+  BLOG_POST
+  AD_COPY
+  LANDING_PAGE
+  NEWSLETTER
+  PRESS_RELEASE
+  PRODUCT_COPY
+  VIDEO_SCRIPT
+}
+
+enum ContentApprovalStatus {
+  DRAFT
+  PENDING_REVIEW
+  REVISION_REQUESTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum WorkflowStepType {
+  CREATE
+  REVIEW
+  REVISE
+  APPROVE
+  PUBLISH
+}
+
+/**
+ * ContentGeneratorConfig - Configuration for content generation per client
+ */
+model ContentGeneratorConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  // Brand voice settings
+  brandVoiceDescription String?
+  toneKeywords          String[]  @default([])
+  avoidKeywords         String[]  @default([])
+
+  // Brand voice samples (for training)
+  voiceSamples          Json?     // [{ text, type, source }]
+  voiceTrainedAt        DateTime?
+
+  // SEO settings
+  enableSEO             Boolean   @default(true)
+  targetKeywords        String[]  @default([])
+
+  // Plagiarism settings
+  enablePlagiarismCheck Boolean   @default(true)
+
+  // Default settings
+  defaultTone           String?   // professional, casual, formal, friendly
+  defaultLength         String?   // short, medium, long
+
+  // Integration settings
+  cmsIntegrations       Json?     // { wordpress: {...}, webflow: {...} }
+  socialIntegrations    Json?     // { hootsuite: {...}, buffer: {...} }
+  emailIntegrations     Json?     // { mailchimp: {...}, klaviyo: {...} }
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  generatedContents     GeneratedContent[]
+  contentTemplates      ContentTemplate[]
+  approvalWorkflows     ContentApprovalWorkflow[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * GeneratedContent - AI-generated content pieces
+ */
+model GeneratedContent {
+  id                  Int                     @id @default(autoincrement())
+  configId            Int
+
+  // Content details
+  title               String
+  type                ContentGenerationType
+  content             String
+  contentHtml         String?
+
+  // SEO elements
+  metaTitle           String?
+  metaDescription     String?
+  keywords            String[]                @default([])
+  seoScore            Int?                    // 0-100
+
+  // Brand voice
+  voiceConsistencyScore Float?                // 0-1
+  toneAnalysis        Json?                   // { tone, confidence }
+
+  // Plagiarism check
+  originalityScore    Float?                  // 0-1
+  plagiarismSources   Json?                   // [{ url, similarity }]
+
+  // Approval workflow
+  approvalStatus      ContentApprovalStatus   @default(DRAFT)
+  approvalWorkflowId  Int?
+  currentApproverId   Int?
+  approvedAt          DateTime?
+  approvedBy          Int?
+
+  // Revision history
+  version             Int                     @default(1)
+  parentVersionId     Int?
+  revisionNotes       String?
+
+  // Generation metadata
+  prompt              String?
+  modelUsed           String?
+  generationParams    Json?
+
+  // Variants for A/B testing
+  variantGroup        String?
+  isControlVariant    Boolean                 @default(false)
+
+  // Publishing
+  publishedAt         DateTime?
+  publishedUrl        String?
+  publishPlatform     String?
+
+  // Performance tracking
+  impressions         Int                     @default(0)
+  clicks              Int                     @default(0)
+  engagementRate      Float?
+
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  config              ContentGeneratorConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, type])
+  @@index([configId, approvalStatus])
+  @@index([createdAt(sort: Desc)])
+}
+
+/**
+ * ContentTemplate - Templates for content generation
+ */
+model ContentTemplate {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  type              ContentGenerationType
+
+  // Template content with placeholders
+  template          String
+  placeholders      Json?                   // [{ name, description, required }]
+
+  // Prompt configuration
+  systemPrompt      String?
+  exampleOutputs    Json?                   // [{ input, output }]
+
+  // Category for organization
+  category          String?
+  tags              String[]                @default([])
+
+  isDefault         Boolean                 @default(false)
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ContentGeneratorConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, type])
+  @@index([configId, category])
+}
+
+/**
+ * ContentApprovalWorkflow - Approval workflow definitions
+ */
+model ContentApprovalWorkflow {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+
+  // Workflow steps (JSON: [{ stepId, name, type, approverIds, required }])
+  steps             Json
+
+  // Auto-assignment rules
+  autoAssign        Boolean                 @default(false)
+  assignmentRules   Json?                   // { type: [...approverIds] }
+
+  isDefault         Boolean                 @default(false)
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ContentGeneratorConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, isActive])
+}
+
+// ============================================================================
+// PHASE 2 AI TOOLS - TOOL 2.3: LEAD SCORING & CRM ASSISTANT
+// ============================================================================
+
+enum LeadScoreLevel {
+  HOT
+  WARM
+  COLD
+  DEAD
+}
+
+enum NurtureSequenceStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum NurtureStepType {
+  EMAIL
+  SMS
+  WAIT
+  CONDITION
+  TASK
+  NOTIFICATION
+}
+
+/**
+ * LeadScoringConfig - Configuration for lead scoring per client
+ */
+model LeadScoringConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  // Scoring model settings
+  scoringModelVersion   String?
+  lastModelTrainedAt    DateTime?
+
+  // Scoring weights (JSON: { demographic: {...}, behavioral: {...}, engagement: {...} })
+  scoringWeights        Json?
+
+  // Thresholds
+  hotThreshold          Int       @default(80)
+  warmThreshold         Int       @default(50)
+  coldThreshold         Int       @default(20)
+
+  // Activity tracking settings
+  trackEmailOpens       Boolean   @default(true)
+  trackEmailClicks      Boolean   @default(true)
+  trackWebsiteVisits    Boolean   @default(true)
+  trackFormSubmissions  Boolean   @default(true)
+
+  // CRM integration
+  crmType               String?   // salesforce, hubspot, zoho
+  crmCredentials        Json?
+  crmSyncEnabled        Boolean   @default(false)
+  lastCrmSyncAt         DateTime?
+
+  // Email integration
+  emailProvider         String?   // sendgrid, mailgun, ses
+  emailCredentials      Json?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scoredLeads           ScoredLead[]
+  nurtureSequences      NurtureSequence[]
+  leadActivities        LeadActivity[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * ScoredLead - Leads with ML-based scoring
+ */
+model ScoredLead {
+  id                  Int               @id @default(autoincrement())
+  configId            Int
+
+  // Lead identification
+  email               String
+  name                String?
+  company             String?
+  phone               String?
+  title               String?
+
+  // External IDs
+  crmLeadId           String?
+  crmContactId        String?
+
+  // Current score
+  score               Int               @default(0)
+  scoreLevel          LeadScoreLevel    @default(COLD)
+  scoredAt            DateTime?
+
+  // Score components (JSON: { demographic: X, behavioral: Y, engagement: Z })
+  scoreBreakdown      Json?
+
+  // Score history (JSON: [{ score, level, scoredAt, reason }])
+  scoreHistory        Json?
+
+  // Prediction
+  conversionProbability Float?
+  predictedValue      Decimal?          @db.Decimal(12, 2)
+  predictedCloseDate  DateTime?
+
+  // Engagement metrics
+  totalEmailsSent     Int               @default(0)
+  totalEmailsOpened   Int               @default(0)
+  totalEmailsClicked  Int               @default(0)
+  totalWebsiteVisits  Int               @default(0)
+  lastEngagementAt    DateTime?
+
+  // Pipeline tracking
+  pipelineStage       String?
+  pipelineValue       Decimal?          @db.Decimal(12, 2)
+  assignedTo          Int?
+
+  // Nurture sequence
+  currentSequenceId   Int?
+  sequenceStepIndex   Int?
+
+  // Tags and segments
+  tags                String[]          @default([])
+  segments            String[]          @default([])
+
+  isActive            Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  config              LeadScoringConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  activities          LeadActivity[]
+  sequenceEnrollments NurtureEnrollment[]
+
+  @@unique([configId, email])
+  @@index([configId, scoreLevel])
+  @@index([configId, score(sort: Desc)])
+  @@index([email])
+}
+
+/**
+ * LeadActivity - Activity tracking for leads
+ */
+model LeadActivity {
+  id                Int               @id @default(autoincrement())
+  configId          Int
+  leadId            Int?
+
+  // Activity details
+  activityType      String            // email_open, email_click, page_view, form_submit, meeting, call
+  activityData      Json?             // { url, subject, duration, etc. }
+
+  // Attribution
+  source            String?           // utm_source equivalent
+  medium            String?           // utm_medium equivalent
+  campaign          String?           // utm_campaign equivalent
+
+  // Scoring impact
+  scoreImpact       Int               @default(0)
+
+  // Metadata
+  ipAddress         String?
+  userAgent         String?
+  deviceType        String?
+
+  createdAt         DateTime          @default(now())
+
+  config            LeadScoringConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  lead              ScoredLead?       @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([configId, activityType])
+  @@index([leadId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
+
+/**
+ * NurtureSequence - Automated nurture sequence definitions
+ */
+model NurtureSequence {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+
+  // Trigger conditions (JSON: { scoreLevel, tags, segments, customConditions })
+  triggerConditions Json?
+
+  // Sequence steps (JSON: [{ stepId, type, config, delayDays, delayHours }])
+  steps             Json
+
+  // Settings
+  allowReEnrollment Boolean            @default(false)
+  reEnrollmentDays  Int?
+  exitOnConversion  Boolean            @default(true)
+  exitOnReply       Boolean            @default(true)
+
+  // Metrics
+  totalEnrollments  Int                @default(0)
+  totalCompletions  Int                @default(0)
+  totalConversions  Int                @default(0)
+
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  config            LeadScoringConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+  enrollments       NurtureEnrollment[]
+
+  @@index([configId, isActive])
+}
+
+/**
+ * NurtureEnrollment - Lead enrollment in nurture sequences
+ */
+model NurtureEnrollment {
+  id                Int                   @id @default(autoincrement())
+  sequenceId        Int
+  leadId            Int
+
+  status            NurtureSequenceStatus @default(ACTIVE)
+
+  // Progress tracking
+  currentStepIndex  Int                   @default(0)
+  nextStepScheduledAt DateTime?
+
+  // Step execution history (JSON: [{ stepIndex, executedAt, result }])
+  executionHistory  Json?
+
+  // Completion
+  completedAt       DateTime?
+  exitReason        String?
+
+  // A/B variant tracking
+  variant           String?
+
+  enrolledAt        DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  sequence          NurtureSequence       @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  lead              ScoredLead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([sequenceId, leadId])
+  @@index([sequenceId, status])
+  @@index([nextStepScheduledAt])
+}
+
+/**
+ * LeadScoringAnalytics - Daily analytics for lead scoring
+ */
+model LeadScoringAnalytics {
+  id                    Int       @id @default(autoincrement())
+  configId              Int
+  date                  DateTime  @db.Date
+
+  // Lead counts
+  totalLeads            Int       @default(0)
+  hotLeads              Int       @default(0)
+  warmLeads             Int       @default(0)
+  coldLeads             Int       @default(0)
+  newLeads              Int       @default(0)
+
+  // Score changes
+  leadsUpgraded         Int       @default(0)
+  leadsDowngraded       Int       @default(0)
+
+  // Engagement metrics
+  totalActivities       Int       @default(0)
+  emailsSent            Int       @default(0)
+  emailsOpened          Int       @default(0)
+  emailsClicked         Int       @default(0)
+  websiteVisits         Int       @default(0)
+
+  // Conversion metrics
+  conversions           Int       @default(0)
+  conversionValue       Decimal?  @db.Decimal(12, 2)
+
+  // Nurture metrics
+  sequenceEnrollments   Int       @default(0)
+  sequenceCompletions   Int       @default(0)
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([configId, date])
+  @@index([configId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 2 AI TOOLS - TOOL 2.4: PRIOR AUTHORIZATION BOT
+// ============================================================================
+
+enum PARequestStatus {
+  DRAFT
+  SUBMITTED
+  PENDING
+  APPROVED
+  DENIED
+  PARTIAL_APPROVAL
+  WITHDRAWN
+  EXPIRED
+}
+
+enum PAUrgency {
+  ROUTINE
+  URGENT
+  EMERGENT
+}
+
+enum DenialReason {
+  MEDICAL_NECESSITY
+  OUT_OF_NETWORK
+  EXPERIMENTAL
+  DOCUMENTATION_INCOMPLETE
+  BENEFIT_EXCLUSION
+  PRE_EXISTING
+  DUPLICATE_REQUEST
+  OTHER
+}
+
+enum AppealStatus {
+  NOT_APPEALED
+  APPEAL_PENDING
+  APPEAL_SUBMITTED
+  APPEAL_APPROVED
+  APPEAL_DENIED
+  EXTERNAL_REVIEW
+}
+
+/**
+ * PriorAuthConfig - Configuration for prior authorization automation per client
+ */
+model PriorAuthConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  // Practice info
+  practiceName          String?
+  practiceNPI           String?
+  practiceAddress       Json?
+
+  // Payer settings (JSON: { payerId: { name, portalUrl, credentials, rules } })
+  payerConfigurations   Json?
+
+  // EHR integration
+  ehrSystem             String?   // epic, cerner, drchrono
+  ehrCredentials        Json?
+  ehrSyncEnabled        Boolean   @default(false)
+
+  // Payer portal integrations
+  availityCredentials   Json?
+  changeHealthCredentials Json?
+
+  // Fax integration
+  faxProvider           String?   // srfax, phaxio
+  faxCredentials        Json?
+
+  // Notification settings
+  notifyOnSubmission    Boolean   @default(true)
+  notifyOnStatusChange  Boolean   @default(true)
+  notificationEmails    String[]  @default([])
+
+  // HIPAA compliance
+  isHipaaEnabled        Boolean   @default(true)
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  paRequests            PARequest[]
+  payerRules            PayerRule[]
+  paTemplates           PATemplate[]
+
+  @@index([clientId, isActive])
+}
+
+/**
+ * PARequest - Prior authorization requests
+ */
+model PARequest {
+  id                  Int               @id @default(autoincrement())
+  configId            Int
+
+  // Request identification
+  requestNumber       String            @unique
+  externalRefNumber   String?           // Payer's reference number
+
+  // Patient info (encrypted for HIPAA)
+  patientName         String
+  patientDob          DateTime
+  patientMemberId     String
+  patientEncrypted    String?           // Encrypted patient details
+
+  // Provider info
+  requestingProvider  String
+  requestingProviderNPI String?
+  renderingProvider   String?
+  renderingProviderNPI String?
+  facilityName        String?
+  facilityNPI         String?
+
+  // Payer info
+  payerId             String
+  payerName           String
+  planName            String?
+  planType            String?           // commercial, medicare, medicaid
+
+  // Request details
+  serviceType         String            // procedure, medication, dme, imaging
+  procedureCodes      String[]          @default([])
+  diagnosisCodes      String[]          @default([])
+  description         String?
+  clinicalNotes       String?
+  encryptedNotes      String?
+
+  // Dates
+  serviceStartDate    DateTime?
+  serviceEndDate      DateTime?
+  submittedAt         DateTime?
+  responseDeadline    DateTime?
+
+  // Status
+  status              PARequestStatus   @default(DRAFT)
+  urgency             PAUrgency         @default(ROUTINE)
+
+  // Decision details
+  decidedAt           DateTime?
+  approvalNumber      String?
+  approvedUnits       Int?
+  approvedStartDate   DateTime?
+  approvedEndDate     DateTime?
+
+  // Denial details
+  denialReason        DenialReason?
+  denialExplanation   String?
+
+  // Appeal tracking
+  appealStatus        AppealStatus      @default(NOT_APPEALED)
+  appealDeadline      DateTime?
+
+  // Document references
+  supportingDocuments Json?             // [{ type, url, uploadedAt }]
+
+  // Audit trail
+  auditLog            Json?             // [{ action, userId, timestamp, details }]
+
+  // Staff tracking
+  assignedTo          Int?
+  lastUpdatedBy       Int?
+
+  // Metrics
+  turnaroundDays      Int?
+  followUpCount       Int               @default(0)
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  config              PriorAuthConfig   @relation(fields: [configId], references: [id], onDelete: Cascade)
+  statusHistory       PAStatusHistory[]
+  appeals             PAAppeal[]
+
+  @@index([configId, status])
+  @@index([payerId, status])
+  @@index([patientMemberId])
+  @@index([requestNumber])
+  @@index([createdAt(sort: Desc)])
+}
+
+/**
+ * PAStatusHistory - Status change history for PA requests
+ */
+model PAStatusHistory {
+  id              Int               @id @default(autoincrement())
+  requestId       Int
+
+  fromStatus      PARequestStatus?
+  toStatus        PARequestStatus
+
+  // Change details
+  changedBy       Int?
+  changeReason    String?
+  notes           String?
+
+  // Payer response details
+  payerResponse   Json?
+
+  createdAt       DateTime          @default(now())
+
+  request         PARequest         @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt(sort: Desc)])
+}
+
+/**
+ * PAAppeal - Appeals for denied PA requests
+ */
+model PAAppeal {
+  id                Int           @id @default(autoincrement())
+  requestId         Int
+
+  // Appeal details
+  appealLevel       Int           @default(1)  // 1st level, 2nd level, external
+  appealType        String?       // standard, expedited, external_review
+
+  // Submission
+  submittedAt       DateTime?
+  submissionMethod  String?       // portal, fax, mail
+
+  // Appeal arguments
+  appealRationale   String?
+  supportingEvidence Json?        // [{ type, description, url }]
+  peerToPeerNotes   String?
+
+  // Response
+  status            AppealStatus  @default(APPEAL_PENDING)
+  decidedAt         DateTime?
+  decisionNotes     String?
+
+  // Deadlines
+  responseDeadline  DateTime?
+
+  // Staff tracking
+  preparedBy        Int?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  request           PARequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, appealLevel])
+  @@index([status])
+}
+
+/**
+ * PayerRule - Payer-specific rules and requirements
+ */
+model PayerRule {
+  id                Int             @id @default(autoincrement())
+  configId          Int
+
+  // Payer identification
+  payerId           String
+  payerName         String
+
+  // Service type this rule applies to
+  serviceType       String?
+  procedureCode     String?
+
+  // Rule details
+  ruleName          String
+  ruleDescription   String?
+
+  // Requirements (JSON: { clinicalCriteria, documentation, timeframes })
+  requirements      Json
+
+  // Submission preferences
+  preferredMethod   String?         // portal, fax, edi
+  portalUrl         String?
+  faxNumber         String?
+
+  // Timeframes
+  standardTurnaround Int?           // days
+  urgentTurnaround  Int?            // days
+
+  // Tips for success
+  successTips       Json?           // [{ tip, importance }]
+
+  lastVerified      DateTime?
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  config            PriorAuthConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, payerId])
+  @@index([payerId, serviceType])
+}
+
+/**
+ * PATemplate - Templates for common PA request types
+ */
+model PATemplate {
+  id                Int             @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+
+  // What this template is for
+  serviceType       String
+  procedureCodes    String[]        @default([])
+
+  // Pre-filled content
+  clinicalTemplate  String?
+  rationaleTemplate String?
+
+  // Required documentation checklist
+  requiredDocs      Json?           // [{ docType, description, required }]
+
+  // Common diagnosis codes
+  commonDiagnoses   Json?           // [{ code, description }]
+
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  config            PriorAuthConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, serviceType])
+}
+
+/**
+ * PAAnalytics - Daily analytics for prior authorization
+ */
+model PAAnalytics {
+  id                    Int       @id @default(autoincrement())
+  configId              Int
+  date                  DateTime  @db.Date
+
+  // Volume metrics
+  totalRequests         Int       @default(0)
+  newRequests           Int       @default(0)
+  submittedRequests     Int       @default(0)
+
+  // Outcome metrics
+  approvedRequests      Int       @default(0)
+  deniedRequests        Int       @default(0)
+  partialApprovals      Int       @default(0)
+  pendingRequests       Int       @default(0)
+
+  // Performance metrics
+  avgTurnaroundDays     Float?
+  onTimeSubmissions     Int       @default(0)
+
+  // Appeal metrics
+  appealsSubmitted      Int       @default(0)
+  appealsWon            Int       @default(0)
+  appealsLost           Int       @default(0)
+
+  // Breakdown by payer (JSON: { payerId: { submitted, approved, denied } })
+  payerBreakdown        Json?
+
+  // Breakdown by service type (JSON: { type: { count, approvalRate } })
+  serviceTypeBreakdown  Json?
+
+  // Denial reason analysis (JSON: { reason: count })
+  denialReasons         Json?
+
+  // Staff workload (JSON: { userId: { submitted, processed } })
+  staffMetrics          Json?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([configId, date])
+  @@index([configId, date(sort: Desc)])
 }

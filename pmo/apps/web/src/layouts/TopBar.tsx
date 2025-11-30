@@ -54,7 +54,7 @@ export function TopBar({ onMenuClick }: TopBarProps): JSX.Element {
         <Menu className="w-6 h-6" />
       </button>
 
-      {/* Mobile logo */}
+      {/* Mobile logo - Launchpad Consulting Partners */}
       <div className="lg:hidden flex-1 flex items-center justify-center">
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
           <img

@@ -4,19 +4,28 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary brand color (blue) - Deeper, more readable blues
+        // Primary brand color - Launchpad Consulting Partners Orange
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#2563eb', // Shifted from bright #3b82f6 to deeper blue
-          600: '#1d4ed8', // Enhanced contrast for interactive elements
-          700: '#1e40af', // Stronger hover states
-          800: '#1e3a8a',
-          900: '#172554',
-          950: '#0f172a',
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#f97316', // Primary brand color - Orange
+          600: '#ea580c',
+          700: '#c2410c',
+          800: '#9a3412',
+          900: '#7c2d12',
+          950: '#431407',
+        },
+        // Brand accent colors - Launchpad Consulting Partners
+        brand: {
+          primary: '#F97316', // Primary - main headings (Orange)
+          orange: '#F97316', // Secondary - sunrise gradient center
+          yellow: '#FCD34D', // Accent - sun rays
+          red: '#EF4444', // Gradient top (reserved for alerts)
+          amber: '#F59E0B', // Gradient bottom
+          rose: '#9F1239', // Horizon line accent
         },
         // Neutral grays - Warm grays with subtle brown/beige undertones
         neutral: {

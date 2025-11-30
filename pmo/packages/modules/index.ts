@@ -28,7 +28,12 @@ export type ModuleId =
   | 'chatbot'
   | 'productDescriptions'
   | 'scheduling'
-  | 'intake';
+  | 'intake'
+  // Phase 2 AI Tool modules
+  | 'documentAnalyzer'
+  | 'contentGenerator'
+  | 'leadScoring'
+  | 'priorAuth';
 
 /**
  * Navigation group identifiers
@@ -251,6 +256,74 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     description:
       'Automated client intake with smart forms, document collection, and compliance',
   },
+
+  // ============ PHASE 2 AI TOOL MODULES ============
+  documentAnalyzer: {
+    id: 'documentAnalyzer',
+    label: 'Document Analyzer',
+    navGroup: 'aiTools',
+    path: '/ai-tools/document-analyzer',
+    additionalPaths: [
+      '/ai-tools/document-analyzer/:configId',
+      '/ai-tools/document-analyzer/:configId/documents',
+    ],
+    icon: 'FileSearch',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/document-analyzer', '/api/document-analyzer'],
+    description:
+      'Smart document analysis with OCR, NER, custom field extraction, and compliance flagging',
+  },
+  contentGenerator: {
+    id: 'contentGenerator',
+    label: 'Content Generator',
+    navGroup: 'aiTools',
+    path: '/ai-tools/content-generator',
+    additionalPaths: [
+      '/ai-tools/content-generator/:configId',
+      '/ai-tools/content-generator/:configId/contents',
+    ],
+    icon: 'PenTool',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/content-generator', '/api/content-generator'],
+    description:
+      'AI-powered content generation suite with brand voice training, templates, and approval workflows',
+  },
+  leadScoring: {
+    id: 'leadScoring',
+    label: 'Lead Scoring',
+    navGroup: 'aiTools',
+    path: '/ai-tools/lead-scoring',
+    additionalPaths: [
+      '/ai-tools/lead-scoring/:configId',
+      '/ai-tools/lead-scoring/:configId/leads',
+      '/ai-tools/lead-scoring/:configId/sequences',
+    ],
+    icon: 'Target',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/lead-scoring', '/api/lead-scoring'],
+    description:
+      'ML-based lead scoring with predictive analytics, nurture sequences, and CRM integration',
+  },
+  priorAuth: {
+    id: 'priorAuth',
+    label: 'Prior Authorization',
+    navGroup: 'aiTools',
+    path: '/ai-tools/prior-auth',
+    additionalPaths: [
+      '/ai-tools/prior-auth/:configId',
+      '/ai-tools/prior-auth/:configId/requests',
+      '/ai-tools/prior-auth/:configId/appeals',
+    ],
+    icon: 'ShieldCheck',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/prior-auth', '/api/prior-auth'],
+    description:
+      'Automated prior authorization submission, status tracking, denial management, and appeals',
+  },
 };
 
 /**
@@ -287,6 +360,11 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'productDescriptions',
   'scheduling',
   'intake',
+  // Phase 2 AI Tools
+  'documentAnalyzer',
+  'contentGenerator',
+  'leadScoring',
+  'priorAuth',
 ];
 
 /**
