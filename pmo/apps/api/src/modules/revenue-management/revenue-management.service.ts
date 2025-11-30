@@ -3,6 +3,7 @@ import {
   DemandForecast,
   PriceRecommendation,
   RateCategory,
+  Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 
@@ -13,7 +14,8 @@ interface ConfigWithRelations {
   pricingStrategy: PricingStrategy;
   minPriceFloor: number | null;
   maxPriceCeiling: number | null;
-  rateCategories: RateCategory[];
+  seasonalFactors?: Prisma.JsonValue;
+  rateCategories?: RateCategory[];
   demandForecasts?: DemandForecastData[];
   competitors?: CompetitorWithRates[];
   bookings?: BookingData[];
@@ -30,12 +32,19 @@ interface CompetitorWithRates {
 
 interface RateData {
   date: Date;
-  rate: number;
+  rate: number | Prisma.Decimal;
 }
 
 interface BookingData {
   stayDate: Date;
   occupancy?: number;
+}
+
+interface DemandFactors {
+  dayOfWeek?: { impact: string; reason: string };
+  seasonal?: { impact: string; multiplier: number };
+  historical?: { impact: string; basedOn: number };
+  [key: string]: unknown;
 }
 
 // ============ Configuration Management ============
@@ -215,7 +224,7 @@ export async function createCompetitor(data: {
       trackingEnabled: data.trackingEnabled ?? true,
       scrapeUrl: data.scrapeUrl,
       apiEndpoint: data.apiEndpoint,
-      categoryMapping: data.categoryMapping,
+      categoryMapping: data.categoryMapping as Prisma.InputJsonValue,
       isActive: true,
     },
   });
@@ -237,7 +246,10 @@ export async function updateCompetitor(
 ) {
   return prisma.competitor.update({
     where: { id: competitorId },
-    data,
+    data: {
+      ...data,
+      categoryMapping: data.categoryMapping as Prisma.InputJsonValue,
+    },
   });
 }
 
@@ -256,7 +268,7 @@ export async function recordCompetitorRate(data: {
       categoryCode: data.categoryCode,
       rate: data.rate,
       availability: data.availability ?? true,
-      restrictions: data.restrictions,
+      restrictions: data.restrictions as Prisma.InputJsonValue,
       scrapedAt: new Date(),
     },
   });
@@ -332,6 +344,7 @@ export async function generateDemandForecasts(
   const config = await prisma.revenueManagementConfig.findUnique({
     where: { id: configId },
     include: {
+      rateCategories: true,
       bookings: {
         orderBy: { bookingDate: 'desc' },
         take: 365,
@@ -352,7 +365,12 @@ export async function generateDemandForecasts(
     forecastDate.setDate(forecastDate.getDate() + i);
     forecastDate.setHours(0, 0, 0, 0);
 
-    const forecast = await generateDailyForecast(config, forecastDate);
+    const forecast = await generateDailyForecast(
+      config as unknown as ConfigWithRelations,
+      forecastDate,
+    );
+    const factors = forecast.factors as DemandFactors;
+    const isWeekend = factors.dayOfWeek?.reason === 'Weekend';
 
     const savedForecast = await prisma.demandForecast.upsert({
       where: {
@@ -366,8 +384,8 @@ export async function generateDemandForecasts(
         predictedDemand: forecast.demand,
         predictedBookings: Math.round(forecast.demand),
         confidenceLevel: forecast.confidence,
-        demandDrivers: forecast.factors,
-        isWeekend: forecast.factors?.dayOfWeek?.reason === 'Weekend',
+        demandDrivers: forecast.factors as Prisma.InputJsonValue,
+        isWeekend,
       },
       create: {
         configId,
@@ -375,8 +393,8 @@ export async function generateDemandForecasts(
         predictedDemand: forecast.demand,
         predictedBookings: Math.round(forecast.demand),
         confidenceLevel: forecast.confidence,
-        demandDrivers: forecast.factors,
-        isWeekend: forecast.factors?.dayOfWeek?.reason === 'Weekend',
+        demandDrivers: forecast.factors as Prisma.InputJsonValue,
+        isWeekend,
       },
     });
 
@@ -546,6 +564,26 @@ export async function generatePriceRecommendations(
     throw new Error('Revenue configuration not found');
   }
 
+  // Transform config to match ConfigWithRelations interface
+  const configWithRelations: ConfigWithRelations = {
+    id: config.id,
+    pricingStrategy: config.pricingStrategy,
+    minPriceFloor: config.minPriceFloor,
+    maxPriceCeiling: config.maxPriceCeiling,
+    seasonalFactors: config.pmsCredentials,
+    rateCategories: config.rateCategories,
+    demandForecasts: config.demandForecasts.map((f) => ({
+      forecastDate: f.forecastDate,
+      predictedDemand: f.predictedDemand,
+    })),
+    competitors: config.competitors.map((c) => ({
+      rates: c.rates.map((r) => ({
+        date: r.date,
+        rate: Number(r.rate),
+      })),
+    })),
+  };
+
   const startDate = options?.startDate || new Date();
   const daysAhead = options?.daysAhead || 30;
   const recommendations: PriceRecommendation[] = [];
@@ -558,39 +596,51 @@ export async function generatePriceRecommendations(
       recommendationDate.setHours(0, 0, 0, 0);
 
       const recommendation = await generateRecommendation(
-        config,
+        configWithRelations,
         category,
         recommendationDate,
       );
 
-      const savedRecommendation = await prisma.priceRecommendation.upsert({
+      // Check if recommendation exists for this config, category, and date
+      const existing = await prisma.priceRecommendation.findFirst({
         where: {
-          configId_categoryId_date: {
-            configId,
-            categoryId: category.id,
-            date: recommendationDate,
-          },
-        },
-        update: {
-          currentRate: recommendation.currentRate,
-          recommendedRate: recommendation.recommendedRate,
-          confidence: recommendation.confidence,
-          status: 'pending',
-        },
-        create: {
           configId,
           categoryId: category.id,
           date: recommendationDate,
-          currentRate: recommendation.currentRate,
-          recommendedRate: recommendation.recommendedRate,
-          changePercent:
-            ((recommendation.recommendedRate - recommendation.currentRate) /
-              recommendation.currentRate) *
-            100,
-          confidence: recommendation.confidence,
-          status: 'pending',
         },
       });
+
+      const changePercent =
+        ((recommendation.recommendedRate - recommendation.currentRate) /
+          recommendation.currentRate) *
+        100;
+
+      let savedRecommendation: PriceRecommendation;
+      if (existing) {
+        savedRecommendation = await prisma.priceRecommendation.update({
+          where: { id: existing.id },
+          data: {
+            currentRate: recommendation.currentRate,
+            recommendedRate: recommendation.recommendedRate,
+            changePercent,
+            confidence: recommendation.confidence,
+            status: 'pending',
+          },
+        });
+      } else {
+        savedRecommendation = await prisma.priceRecommendation.create({
+          data: {
+            configId,
+            categoryId: category.id,
+            date: recommendationDate,
+            currentRate: recommendation.currentRate,
+            recommendedRate: recommendation.recommendedRate,
+            changePercent,
+            confidence: recommendation.confidence,
+            status: 'pending',
+          },
+        });
+      }
 
       recommendations.push(savedRecommendation);
     }

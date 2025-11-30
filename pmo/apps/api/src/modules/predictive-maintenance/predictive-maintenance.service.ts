@@ -1038,15 +1038,13 @@ export async function getMaintenanceAnalytics(
 }
 
 export async function recordDailyAnalytics(configId: number) {
-  const [equipment, workOrders, _downtimeEvents, predictions] =
-    await Promise.all([
-      prisma.equipment.findMany({ where: { configId } }),
-      prisma.maintenanceWorkOrder.findMany({ where: { configId } }),
-      prisma.downtimeEvent.findMany({ where: { configId } }),
-      prisma.failurePrediction.findMany({
-        where: { configId, isActive: true },
-      }),
-    ]);
+  const [equipment, workOrders, predictions] = await Promise.all([
+    prisma.equipment.findMany({ where: { configId } }),
+    prisma.maintenanceWorkOrder.findMany({ where: { configId } }),
+    prisma.failurePrediction.findMany({
+      where: { configId, isActive: true },
+    }),
+  ]);
 
   const totalEquipment = equipment.length;
   const operationalEquipment = equipment.filter(
@@ -1058,7 +1056,7 @@ export async function recordDailyAnalytics(configId: number) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return prisma.maintenanceAnalytics.upsert({
+  return prisma.predictiveMaintenanceAnalytics.upsert({
     where: {
       configId_date: {
         configId,
@@ -1071,11 +1069,12 @@ export async function recordDailyAnalytics(configId: number) {
       equipmentInMaintenance: equipment.filter(
         (e) => e.status === EquipmentStatus.MAINTENANCE,
       ).length,
-      equipmentDown: equipment.filter((e) => e.status === EquipmentStatus.DOWN)
-        .length,
+      equipmentDown: equipment.filter(
+        (e) => e.status === EquipmentStatus.OFFLINE,
+      ).length,
       availability,
       pendingWorkOrders: workOrders.filter(
-        (wo) => wo.status === WorkOrderStatus.PENDING,
+        (wo) => wo.status === WorkOrderStatus.SCHEDULED,
       ).length,
       completedWorkOrders: workOrders.filter(
         (wo) => wo.status === WorkOrderStatus.COMPLETED,
@@ -1090,11 +1089,12 @@ export async function recordDailyAnalytics(configId: number) {
       equipmentInMaintenance: equipment.filter(
         (e) => e.status === EquipmentStatus.MAINTENANCE,
       ).length,
-      equipmentDown: equipment.filter((e) => e.status === EquipmentStatus.DOWN)
-        .length,
+      equipmentDown: equipment.filter(
+        (e) => e.status === EquipmentStatus.OFFLINE,
+      ).length,
       availability,
       pendingWorkOrders: workOrders.filter(
-        (wo) => wo.status === WorkOrderStatus.PENDING,
+        (wo) => wo.status === WorkOrderStatus.SCHEDULED,
       ).length,
       completedWorkOrders: workOrders.filter(
         (wo) => wo.status === WorkOrderStatus.COMPLETED,

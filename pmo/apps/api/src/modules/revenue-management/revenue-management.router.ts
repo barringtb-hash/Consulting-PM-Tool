@@ -80,7 +80,7 @@ const createCompetitorSchema = z.object({
   trackingEnabled: z.boolean().optional(),
   scrapeUrl: z.string().url().optional(),
   apiEndpoint: z.string().url().optional(),
-  categoryMapping: z.record(z.any()).optional(),
+  categoryMapping: z.record(z.string(), z.any()).optional(),
 });
 
 const updateCompetitorSchema = z.object({
@@ -91,7 +91,7 @@ const updateCompetitorSchema = z.object({
   trackingEnabled: z.boolean().optional(),
   scrapeUrl: z.string().url().optional(),
   apiEndpoint: z.string().url().optional(),
-  categoryMapping: z.record(z.any()).optional(),
+  categoryMapping: z.record(z.string(), z.any()).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -101,7 +101,7 @@ const recordCompetitorRateSchema = z.object({
   categoryCode: z.string().optional(),
   rate: z.number().positive(),
   availability: z.boolean().optional(),
-  restrictions: z.record(z.any()).optional(),
+  restrictions: z.record(z.string(), z.any()).optional(),
 });
 
 const createPromotionSchema = z.object({
