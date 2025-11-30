@@ -6,16 +6,10 @@ import {
   SafetyIncident,
   HazardReport,
   TrainingRecord,
+  RiskLevel,
+  Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
-
-// ============ Internal Types ============
-
-interface TrainingWithRequirement {
-  requirement?: {
-    category?: string;
-  };
-}
 
 // ============ Configuration Management ============
 
@@ -380,10 +374,10 @@ export async function createHazard(data: {
   hazardType: string;
   location?: string;
   department?: string;
-  riskLevel: string;
+  riskLevel: RiskLevel;
   likelihood?: number;
   consequence?: number;
-  controlMeasures?: Record<string, unknown>;
+  controlMeasures?: Prisma.InputJsonValue;
   reportedBy?: string;
 }) {
   return prisma.hazardReport.create({
@@ -408,9 +402,9 @@ export async function createHazard(data: {
 export async function updateHazard(
   hazardId: number,
   data: {
-    riskLevel?: string;
+    riskLevel?: RiskLevel;
     mitigationStatus?: string;
-    controlMeasures?: Record<string, unknown>;
+    controlMeasures?: Prisma.InputJsonValue;
     resolvedAt?: Date;
     resolvedBy?: number;
     residualRisk?: number;
@@ -548,7 +542,7 @@ export async function createTrainingRecord(data: {
     where: { id: data.requirementId },
   });
 
-  let status = TrainingStatus.ASSIGNED;
+  let status: TrainingStatus = TrainingStatus.ASSIGNED;
   let passed: boolean | undefined;
   if (data.completedAt) {
     if (requirement?.passingScore && data.score !== undefined) {
@@ -634,23 +628,41 @@ export async function getOshaLogs(
 export async function createOshaLog(data: {
   configId: number;
   year: number;
-  logType: string;
-  entries: Record<string, unknown>[];
-  totalCases?: number;
+  caseNumber: string;
+  employeeName: string;
+  jobTitle: string;
+  department?: string;
+  dateOfInjury: Date;
+  locationOfEvent?: string;
+  description: string;
+  injuryType: string;
+  bodyPartAffected?: string;
+  resultedInDeath?: boolean;
   daysAwayFromWork?: number;
-  daysRestricted?: number;
-  otherRecordable?: number;
+  daysJobTransfer?: number;
+  daysRestriction?: number;
+  otherRecordable?: boolean;
+  incidentId?: number;
 }) {
   return prisma.oshaLog.create({
     data: {
       configId: data.configId,
       year: data.year,
-      logType: data.logType,
-      entries: data.entries,
-      totalCases: data.totalCases ?? 0,
+      caseNumber: data.caseNumber,
+      employeeName: data.employeeName,
+      jobTitle: data.jobTitle,
+      department: data.department,
+      dateOfInjury: data.dateOfInjury,
+      locationOfEvent: data.locationOfEvent,
+      description: data.description,
+      injuryType: data.injuryType,
+      bodyPartAffected: data.bodyPartAffected,
+      resultedInDeath: data.resultedInDeath ?? false,
       daysAwayFromWork: data.daysAwayFromWork ?? 0,
-      daysRestricted: data.daysRestricted ?? 0,
-      otherRecordable: data.otherRecordable ?? 0,
+      daysJobTransfer: data.daysJobTransfer ?? 0,
+      daysRestriction: data.daysRestriction ?? 0,
+      otherRecordable: data.otherRecordable ?? false,
+      incidentId: data.incidentId,
     },
   });
 }
@@ -658,11 +670,20 @@ export async function createOshaLog(data: {
 export async function updateOshaLog(
   logId: number,
   data: {
-    entries?: Record<string, unknown>[];
-    totalCases?: number;
+    employeeName?: string;
+    jobTitle?: string;
+    department?: string;
+    dateOfInjury?: Date;
+    locationOfEvent?: string;
+    description?: string;
+    injuryType?: string;
+    bodyPartAffected?: string;
+    resultedInDeath?: boolean;
     daysAwayFromWork?: number;
-    daysRestricted?: number;
-    otherRecordable?: number;
+    daysJobTransfer?: number;
+    daysRestriction?: number;
+    otherRecordable?: boolean;
+    incidentId?: number;
   },
 ) {
   return prisma.oshaLog.update({
@@ -725,9 +746,9 @@ export async function updateInspection(
     status?: string;
     completedAt?: Date;
     inspector?: string;
-    findings?: Record<string, unknown>;
+    findings?: Prisma.InputJsonValue;
     overallScore?: number;
-    correctiveActions?: Record<string, unknown>;
+    correctiveActions?: Prisma.InputJsonValue;
     followUpDate?: Date;
     deficiencies?: number;
     criticalFindings?: number;
@@ -770,6 +791,9 @@ export async function getSafetyAnalytics(
         where: {
           configId,
           completedAt: { gte: startDate, lte: endDate },
+        },
+        include: {
+          requirement: true,
         },
       }),
       prisma.safetyInspection.findMany({
@@ -886,8 +910,7 @@ export async function getSafetyAnalytics(
     hazardsByCategory: groupBy(hazards, 'hazardType'),
     trainingsByCategory: groupBy(
       trainings,
-      (t: TrainingWithRequirement) =>
-        t.requirement?.category || 'uncategorized',
+      (t) => t.requirement?.category || 'uncategorized',
     ),
   };
 }
@@ -898,10 +921,10 @@ function groupBy<T>(
 ): Record<string, number> {
   const result: Record<string, number> = {};
   for (const item of items) {
-    const groupKey =
+    const groupKey: string =
       typeof key === 'function'
         ? key(item)
-        : (item as Record<string, unknown>)[key as string];
+        : String((item as Record<string, unknown>)[key as string] ?? 'unknown');
     result[groupKey] = (result[groupKey] || 0) + 1;
   }
   return result;
@@ -971,7 +994,9 @@ export async function recordDailyAnalytics(configId: number) {
 
   // Checklists completed today
   const checklistsCompletedToday = checklists.filter(
-    (c) => new Date(c.completedAt).toDateString() === today.toDateString(),
+    (c) =>
+      c.completedAt &&
+      new Date(c.completedAt).toDateString() === today.toDateString(),
   ).length;
 
   // Hazards reported and mitigated
