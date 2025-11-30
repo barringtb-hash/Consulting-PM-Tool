@@ -231,6 +231,13 @@ model Client {
   contentGeneratorConfig   ContentGeneratorConfig?
   leadScoringConfig        LeadScoringConfig?
   priorAuthConfig          PriorAuthConfig?
+
+  // Phase 3 AI Tools
+  inventoryForecastConfig  InventoryForecastConfig?
+  complianceMonitorConfig  ComplianceMonitorConfig?
+  predictiveMaintenanceConfig PredictiveMaintenanceConfig?
+  revenueManagementConfig  RevenueManagementConfig?
+  safetyMonitorConfig      SafetyMonitorConfig?
 }
 
 model Contact {
@@ -2822,6 +2829,1698 @@ model PAAnalytics {
 
   // Staff workload (JSON: { userId: { submitted, processed } })
   staffMetrics          Json?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([configId, date])
+  @@index([configId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 3 AI TOOLS - TOOL 3.1: INVENTORY FORECASTING ENGINE
+// ============================================================================
+
+enum ForecastStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+model InventoryForecastConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  businessName          String?
+  timezone              String    @default("America/New_York")
+  currency              String    @default("USD")
+
+  forecastHorizonDays   Int       @default(90)
+  historicalDataMonths  Int       @default(24)
+  confidenceLevel       Float     @default(0.95)
+
+  enableSeasonality     Boolean   @default(true)
+  enableTrendDetection  Boolean   @default(true)
+  enableHolidayImpact   Boolean   @default(true)
+  modelType             String    @default("prophet")
+
+  lowStockThreshold     Float     @default(0.2)
+  overstockThreshold    Float     @default(2.0)
+
+  erpSystem             String?
+  erpCredentials        Json?
+  posSystem             String?
+  posCredentials        Json?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  locations             InventoryLocation[]
+  products              InventoryProduct[]
+  forecasts             InventoryForecast[]
+  alerts                InventoryAlert[]
+  scenarios             ForecastScenario[]
+
+  @@index([clientId, isActive])
+}
+
+model InventoryLocation {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  code              String?
+  address           Json?
+  timezone          String?
+
+  leadTimeDays      Int                     @default(7)
+  safetyStockDays   Int                     @default(14)
+
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            InventoryForecastConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  stockLevels       StockLevel[]
+  forecasts         InventoryForecast[]
+
+  @@unique([configId, code])
+  @@index([configId, isActive])
+}
+
+model InventoryProduct {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  sku               String
+  name              String
+  category          String?
+  subcategory       String?
+
+  supplierId        String?
+  supplierName      String?
+  supplierLeadTimeDays Int?
+
+  unitCost          Decimal?                @db.Decimal(12, 2)
+  sellingPrice      Decimal?                @db.Decimal(12, 2)
+
+  reorderPoint      Int?
+  reorderQuantity   Int?
+  minOrderQuantity  Int?
+
+  abcClass          String?
+
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            InventoryForecastConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  stockLevels       StockLevel[]
+  forecasts         InventoryForecast[]
+  salesHistory      SalesHistory[]
+
+  @@unique([configId, sku])
+  @@index([configId, category])
+  @@index([configId, isActive])
+}
+
+model StockLevel {
+  id                Int               @id @default(autoincrement())
+  productId         Int
+  locationId        Int
+
+  quantityOnHand    Int               @default(0)
+  quantityReserved  Int               @default(0)
+  quantityOnOrder   Int               @default(0)
+
+  lastCountDate     DateTime?
+  lastReceivedDate  DateTime?
+
+  updatedAt         DateTime          @updatedAt
+
+  product           InventoryProduct  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location          InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locationId])
+  @@index([productId])
+  @@index([locationId])
+}
+
+model SalesHistory {
+  id                Int               @id @default(autoincrement())
+  productId         Int
+
+  date              DateTime          @db.Date
+  quantitySold      Int               @default(0)
+  revenue           Decimal?          @db.Decimal(12, 2)
+  locationId        Int?
+
+  wasPromotion      Boolean           @default(false)
+  wasHoliday        Boolean           @default(false)
+  weatherCondition  String?
+
+  createdAt         DateTime          @default(now())
+
+  product           InventoryProduct  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, date, locationId])
+  @@index([productId, date(sort: Desc)])
+}
+
+model InventoryForecast {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+  productId         Int
+  locationId        Int?
+
+  status            ForecastStatus          @default(PENDING)
+
+  startDate         DateTime
+  endDate           DateTime
+  generatedAt       DateTime?
+
+  predictions       Json?
+
+  totalPredictedDemand Int?
+  peakDemandDate    DateTime?
+  peakDemandValue   Int?
+
+  mape              Float?
+  rmse              Float?
+  confidence        Float?
+
+  suggestedReorderDate DateTime?
+  suggestedReorderQty Int?
+  stockoutRiskScore Float?
+
+  seasonalityPattern Json?
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            InventoryForecastConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  product           InventoryProduct        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location          InventoryLocation?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@index([configId, status])
+  @@index([productId, startDate])
+  @@index([generatedAt(sort: Desc)])
+}
+
+model InventoryAlert {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  alertType         String
+  severity          AlertSeverity           @default(MEDIUM)
+  status            AlertStatus             @default(ACTIVE)
+
+  title             String
+  message           String
+  productId         Int?
+  locationId        Int?
+
+  threshold         Float?
+  currentValue      Float?
+
+  acknowledgedAt    DateTime?
+  acknowledgedBy    Int?
+  resolvedAt        DateTime?
+  resolvedBy        Int?
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            InventoryForecastConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([configId, severity])
+  @@index([createdAt(sort: Desc)])
+}
+
+model ForecastScenario {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+
+  demandMultiplier  Float                   @default(1.0)
+  leadTimeChange    Int                     @default(0)
+  priceChange       Float                   @default(0)
+  promotionImpact   Float                   @default(0)
+
+  results           Json?
+  costImpact        Decimal?                @db.Decimal(12, 2)
+  revenueImpact     Decimal?                @db.Decimal(12, 2)
+
+  isBaseline        Boolean                 @default(false)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            InventoryForecastConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+}
+
+model InventoryForecastAnalytics {
+  id                    Int       @id @default(autoincrement())
+  configId              Int
+  date                  DateTime  @db.Date
+
+  forecastAccuracy      Float?
+  mapeScore             Float?
+
+  totalSkus             Int       @default(0)
+  lowStockSkus          Int       @default(0)
+  overstockSkus         Int       @default(0)
+  stockoutSkus          Int       @default(0)
+
+  inventoryValue        Decimal?  @db.Decimal(14, 2)
+  potentialStockoutCost Decimal?  @db.Decimal(12, 2)
+  holdingCost           Decimal?  @db.Decimal(12, 2)
+
+  alertsGenerated       Int       @default(0)
+  alertsResolved        Int       @default(0)
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([configId, date])
+  @@index([configId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 3 AI TOOLS - TOOL 3.2: COMPLIANCE MONITORING SYSTEM
+// ============================================================================
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ViolationStatus {
+  OPEN
+  INVESTIGATING
+  REMEDIATED
+  ESCALATED
+  CLOSED
+  FALSE_POSITIVE
+}
+
+enum AuditStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+model ComplianceMonitorConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  organizationName      String?
+  industry              String?
+  jurisdiction          String?
+
+  enableHipaa           Boolean   @default(false)
+  enableSox             Boolean   @default(false)
+  enableGdpr            Boolean   @default(false)
+  enablePci             Boolean   @default(false)
+  enableFinra           Boolean   @default(false)
+  customFrameworks      String[]  @default([])
+
+  realTimeMonitoring    Boolean   @default(true)
+  monitoringFrequency   String    @default("daily")
+
+  alertThreshold        String    @default("medium")
+  notificationEmails    String[]  @default([])
+  slackWebhook          String?
+  msTeamsWebhook        String?
+
+  dataSourceConfigs     Json?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  complianceRules       ComplianceRule[]
+  violations            ComplianceViolation[]
+  audits                ComplianceAudit[]
+  evidenceItems         ComplianceEvidence[]
+  riskAssessments       RiskAssessment[]
+  reports               ComplianceReport[]
+
+  @@index([clientId, isActive])
+}
+
+model ComplianceRule {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  framework         String
+  category          String?
+
+  ruleType          String
+  ruleDefinition    Json
+  severity          RiskLevel               @default(MEDIUM)
+
+  isRealtime        Boolean                 @default(false)
+  checkFrequency    String?
+
+  autoRemediate     Boolean                 @default(false)
+  remediationAction Json?
+
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ComplianceMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  violations        ComplianceViolation[]
+
+  @@index([configId, framework])
+  @@index([configId, isActive])
+}
+
+model ComplianceViolation {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+  ruleId            Int
+
+  status            ViolationStatus         @default(OPEN)
+  severity          RiskLevel
+
+  title             String
+  description       String?
+  sourceSystem      String?
+  sourceReference   String?
+
+  violationData     Json?
+  affectedEntities  Json?
+
+  detectedAt        DateTime                @default(now())
+  acknowledgedAt    DateTime?
+  acknowledgedBy    Int?
+  remediatedAt      DateTime?
+  remediatedBy      Int?
+
+  remediationNotes  String?
+  remediationEvidence Json?
+
+  impactScore       Int?
+  financialImpact   Decimal?                @db.Decimal(12, 2)
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ComplianceMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  rule              ComplianceRule          @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([configId, severity])
+  @@index([ruleId])
+  @@index([detectedAt(sort: Desc)])
+}
+
+model ComplianceAudit {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  framework         String
+  scope             Json?
+
+  status            AuditStatus             @default(SCHEDULED)
+
+  scheduledDate     DateTime
+  dueDate           DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  leadAuditor       String?
+  auditTeam         String[]                @default([])
+
+  findings          Json?
+  overallScore      Int?
+  passedControls    Int?
+  failedControls    Int?
+  totalControls     Int?
+
+  recommendations   Json?
+  remediationPlan   Json?
+
+  reportUrl         String?
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ComplianceMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([scheduledDate])
+}
+
+model ComplianceEvidence {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  title             String
+  description       String?
+  evidenceType      String
+  framework         String?
+  controlId         String?
+
+  fileUrl           String?
+  fileHash          String?
+  content           String?
+
+  collectedAt       DateTime                @default(now())
+  collectedBy       Int?
+  verifiedAt        DateTime?
+  verifiedBy        Int?
+
+  retentionDays     Int?
+  expiresAt         DateTime?
+
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            ComplianceMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, framework])
+  @@index([configId, evidenceType])
+}
+
+model RiskAssessment {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  entityType        String
+  entityId          String
+  entityName        String?
+
+  overallRiskScore  Int
+  riskLevel         RiskLevel
+
+  scoreBreakdown    Json?
+
+  previousScore     Int?
+  scoreTrend        String?
+
+  riskFactors       Json?
+
+  mitigationPlan    Json?
+  mitigationStatus  String?
+
+  assessedAt        DateTime                @default(now())
+  nextAssessmentAt  DateTime?
+
+  config            ComplianceMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, entityType])
+  @@index([configId, riskLevel])
+  @@index([assessedAt(sort: Desc)])
+}
+
+model ComplianceReport {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  reportType        String
+  framework         String?
+  period            String?
+
+  reportData        Json?
+  summaryStats      Json?
+  charts            Json?
+
+  generatedAt       DateTime                @default(now())
+  generatedBy       Int?
+  fileUrl           String?
+
+  submissionRequired Boolean               @default(false)
+  submissionDeadline DateTime?
+  submittedAt       DateTime?
+  submissionRef     String?
+
+  createdAt         DateTime                @default(now())
+
+  config            ComplianceMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, reportType])
+  @@index([generatedAt(sort: Desc)])
+}
+
+model ComplianceMonitorAnalytics {
+  id                    Int       @id @default(autoincrement())
+  configId              Int
+  date                  DateTime  @db.Date
+
+  totalViolations       Int       @default(0)
+  openViolations        Int       @default(0)
+  criticalViolations    Int       @default(0)
+  resolvedViolations    Int       @default(0)
+
+  averageRiskScore      Float?
+  entitiesAtHighRisk    Int       @default(0)
+
+  overallComplianceScore Float?
+
+  frameworkScores       Json?
+
+  controlsMonitored     Int       @default(0)
+  controlsPassing       Int       @default(0)
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([configId, date])
+  @@index([configId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 3 AI TOOLS - TOOL 3.3: PREDICTIVE MAINTENANCE PLATFORM
+// ============================================================================
+
+enum EquipmentStatus {
+  OPERATIONAL
+  DEGRADED
+  WARNING
+  CRITICAL
+  OFFLINE
+  MAINTENANCE
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  PREDICTIVE
+  CORRECTIVE
+  EMERGENCY
+}
+
+enum WorkOrderStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model PredictiveMaintenanceConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  facilityName          String?
+  timezone              String    @default("America/New_York")
+
+  predictionHorizonDays Int       @default(30)
+  alertThreshold        Float     @default(0.7)
+  modelUpdateFrequency  String    @default("weekly")
+
+  sensorDataRetentionDays Int     @default(90)
+  anomalyDetectionEnabled Boolean @default(true)
+  realTimeMonitoring    Boolean   @default(true)
+
+  iotGateway            String?
+  iotCredentials        Json?
+  erp                   String?
+  erpCredentials        Json?
+  cmms                  String?
+  cmmsCredentials       Json?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  equipment             Equipment[]
+  sensors               Sensor[]
+  workOrders            MaintenanceWorkOrder[]
+  predictions           FailurePrediction[]
+  sparePartsInventory   SparePart[]
+
+  @@index([clientId, isActive])
+}
+
+model Equipment {
+  id                Int                         @id @default(autoincrement())
+  configId          Int
+
+  assetTag          String
+  name              String
+  description       String?
+  manufacturer      String?
+  model             String?
+  serialNumber      String?
+
+  category          String?
+  criticality       String?
+  location          String?
+  department        String?
+
+  status            EquipmentStatus             @default(OPERATIONAL)
+  healthScore       Int?
+  lastHealthCheck   DateTime?
+
+  installationDate  DateTime?
+  warrantyExpiry    DateTime?
+  expectedLifeYears Int?
+
+  maintenanceSchedule Json?
+  lastMaintenanceDate DateTime?
+  nextMaintenanceDate DateTime?
+
+  purchaseCost      Decimal?                    @db.Decimal(12, 2)
+  maintenanceCostYtd Decimal?                   @db.Decimal(12, 2)
+  downtimeCostPerHour Decimal?                  @db.Decimal(10, 2)
+
+  externalAssetId   String?
+  cmmsAssetId       String?
+
+  isActive          Boolean                     @default(true)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  config            PredictiveMaintenanceConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  sensors           Sensor[]
+  workOrders        MaintenanceWorkOrder[]
+  predictions       FailurePrediction[]
+  downtimeEvents    DowntimeEvent[]
+
+  @@unique([configId, assetTag])
+  @@index([configId, status])
+  @@index([configId, category])
+}
+
+model Sensor {
+  id                Int                         @id @default(autoincrement())
+  configId          Int
+  equipmentId       Int
+
+  sensorId          String
+  name              String
+  sensorType        String
+
+  unit              String?
+  minThreshold      Float?
+  maxThreshold      Float?
+  normalRangeMin    Float?
+  normalRangeMax    Float?
+
+  isOnline          Boolean                     @default(true)
+  lastReading       Float?
+  lastReadingAt     DateTime?
+  batteryLevel      Int?
+
+  alertEnabled      Boolean                     @default(true)
+  alertThreshold    Float?
+
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  config            PredictiveMaintenanceConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  equipment         Equipment                   @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  readings          SensorReading[]
+  anomalies         SensorAnomaly[]
+
+  @@unique([configId, sensorId])
+  @@index([equipmentId])
+  @@index([sensorType])
+}
+
+model SensorReading {
+  id                Int       @id @default(autoincrement())
+  sensorId          Int
+
+  timestamp         DateTime
+  value             Float
+  quality           String?
+
+  rawValue          Float?
+  processedValue    Float?
+
+  @@index([sensorId, timestamp(sort: Desc)])
+}
+
+model SensorAnomaly {
+  id                Int       @id @default(autoincrement())
+  sensorId          Int
+
+  detectedAt        DateTime  @default(now())
+  anomalyType       String
+  severity          AlertSeverity @default(MEDIUM)
+
+  expectedValue     Float?
+  actualValue       Float
+  deviation         Float?
+
+  possibleCauses    Json?
+  recommendedAction String?
+
+  isResolved        Boolean   @default(false)
+  resolvedAt        DateTime?
+  resolution        String?
+
+  sensor            Sensor    @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+
+  @@index([sensorId, detectedAt(sort: Desc)])
+  @@index([severity, isResolved])
+}
+
+model FailurePrediction {
+  id                Int                         @id @default(autoincrement())
+  configId          Int
+  equipmentId       Int
+
+  failureType       String
+  probability       Float
+  confidenceLevel   Float?
+  predictedDate     DateTime?
+  predictionWindow  String?
+
+  modelVersion      String?
+  features          Json?
+
+  riskScore         Int?
+  impactEstimate    Json?
+
+  recommendedAction String?
+  preventiveSteps   Json?
+
+  actualOutcome     String?
+  outcomeDate       DateTime?
+  outcomeNotes      String?
+
+  isActive          Boolean                     @default(true)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  config            PredictiveMaintenanceConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  equipment         Equipment                   @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([configId, isActive])
+  @@index([equipmentId, predictedDate])
+  @@index([probability(sort: Desc)])
+}
+
+model MaintenanceWorkOrder {
+  id                Int                         @id @default(autoincrement())
+  configId          Int
+  equipmentId       Int
+
+  workOrderNumber   String
+  title             String
+  description       String?
+
+  type              MaintenanceType
+  priority          WorkOrderPriority           @default(MEDIUM)
+  status            WorkOrderStatus             @default(DRAFT)
+
+  scheduledDate     DateTime?
+  dueDate           DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  assignedTo        String?
+  assignedTeam      String?
+
+  laborHours        Decimal?                    @db.Decimal(6, 2)
+  partsUsed         Json?
+  notes             String?
+  findings          String?
+
+  laborCost         Decimal?                    @db.Decimal(10, 2)
+  partsCost         Decimal?                    @db.Decimal(10, 2)
+  totalCost         Decimal?                    @db.Decimal(10, 2)
+
+  checklistItems    Json?
+
+  cmmsWorkOrderId   String?
+
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  config            PredictiveMaintenanceConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  equipment         Equipment                   @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, workOrderNumber])
+  @@index([configId, status])
+  @@index([equipmentId])
+  @@index([scheduledDate])
+}
+
+model SparePart {
+  id                Int                         @id @default(autoincrement())
+  configId          Int
+
+  partNumber        String
+  name              String
+  description       String?
+  category          String?
+
+  quantityOnHand    Int                         @default(0)
+  reorderPoint      Int?
+  reorderQuantity   Int?
+  location          String?
+
+  unitCost          Decimal?                    @db.Decimal(10, 2)
+  supplier          String?
+  leadTimeDays      Int?
+
+  lastUsedDate      DateTime?
+  usageCount        Int                         @default(0)
+
+  compatibleEquipment String[]                  @default([])
+
+  isActive          Boolean                     @default(true)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  config            PredictiveMaintenanceConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, partNumber])
+  @@index([configId, category])
+}
+
+model DowntimeEvent {
+  id                Int           @id @default(autoincrement())
+  equipmentId       Int
+
+  startTime         DateTime
+  endTime           DateTime?
+  durationMinutes   Int?
+
+  reason            String
+  description       String?
+  rootCause         String?
+
+  productionLoss    Decimal?      @db.Decimal(12, 2)
+  laborCost         Decimal?      @db.Decimal(10, 2)
+  partsCost         Decimal?      @db.Decimal(10, 2)
+  totalCost         Decimal?      @db.Decimal(12, 2)
+
+  wasPlanned        Boolean       @default(false)
+  wasPredicted      Boolean       @default(false)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  equipment         Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([equipmentId, startTime(sort: Desc)])
+}
+
+model PredictiveMaintenanceAnalytics {
+  id                    Int       @id @default(autoincrement())
+  configId              Int
+  date                  DateTime  @db.Date
+
+  totalEquipment        Int       @default(0)
+  operationalEquipment  Int       @default(0)
+  equipmentInMaintenance Int      @default(0)
+  criticalEquipment     Int       @default(0)
+
+  predictionsGenerated  Int       @default(0)
+  highRiskPredictions   Int       @default(0)
+  predictionsAccuracy   Float?
+
+  workOrdersCreated     Int       @default(0)
+  workOrdersCompleted   Int       @default(0)
+  preventiveMaintenance Int       @default(0)
+  correctiveMaintenance Int       @default(0)
+
+  maintenanceCost       Decimal?  @db.Decimal(12, 2)
+  downtimeCost          Decimal?  @db.Decimal(12, 2)
+  costSavings           Decimal?  @db.Decimal(12, 2)
+
+  oeeScore              Float?
+  availability          Float?
+  performance           Float?
+  quality               Float?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([configId, date])
+  @@index([configId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 3 AI TOOLS - TOOL 3.4: REVENUE MANAGEMENT AI
+// ============================================================================
+
+enum PricingStrategy {
+  STATIC
+  DYNAMIC
+  COMPETITIVE
+  DEMAND_BASED
+  TIME_BASED
+}
+
+enum RateType {
+  STANDARD
+  PROMOTIONAL
+  LAST_MINUTE
+  EARLY_BIRD
+  PACKAGE
+}
+
+model RevenueManagementConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  businessName          String?
+  businessType          String?
+  timezone              String    @default("America/New_York")
+  currency              String    @default("USD")
+
+  pricingStrategy       PricingStrategy @default(DYNAMIC)
+  minPriceFloor         Float?
+  maxPriceCeiling       Float?
+  priceChangeFrequency  String    @default("daily")
+
+  forecastHorizonDays   Int       @default(90)
+  historicalDataMonths  Int       @default(24)
+
+  competitorMonitoring  Boolean   @default(true)
+  competitorUpdateFrequency String @default("daily")
+
+  autoApproveChanges    Boolean   @default(false)
+  maxAutoChangePercent  Float     @default(10)
+
+  pmsSystem             String?
+  pmsCredentials        Json?
+  channelManager        String?
+  channelCredentials    Json?
+  otaConnections        Json?
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  rateCategories        RateCategory[]
+  competitors           Competitor[]
+  demandForecasts       DemandForecast[]
+  priceRecommendations  PriceRecommendation[]
+  promotions            RevenuePromotion[]
+  bookings              BookingData[]
+
+  @@index([clientId, isActive])
+}
+
+model RateCategory {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  code              String
+  name              String
+  description       String?
+  categoryType      String
+
+  baseRate          Decimal                 @db.Decimal(10, 2)
+  minRate           Decimal?                @db.Decimal(10, 2)
+  maxRate           Decimal?                @db.Decimal(10, 2)
+
+  totalInventory    Int?
+  maxOccupancy      Int?
+
+  pricingEnabled    Boolean                 @default(true)
+  demandMultiplier  Float                   @default(1.0)
+
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            RevenueManagementConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  recommendations   PriceRecommendation[]
+  forecasts         DemandForecast[]
+  bookings          BookingData[]
+
+  @@unique([configId, code])
+  @@index([configId, isActive])
+}
+
+model Competitor {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  website           String?
+  location          String?
+  starRating        Float?
+
+  trackingEnabled   Boolean                 @default(true)
+  scrapeUrl         String?
+  apiEndpoint       String?
+
+  categoryMapping   Json?
+
+  lastScrapedAt     DateTime?
+
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            RevenueManagementConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  rates             CompetitorRate[]
+
+  @@index([configId, isActive])
+}
+
+model CompetitorRate {
+  id                Int           @id @default(autoincrement())
+  competitorId      Int
+
+  date              DateTime      @db.Date
+  categoryCode      String?
+  rate              Decimal       @db.Decimal(10, 2)
+  availability      Boolean       @default(true)
+  restrictions      Json?
+
+  scrapedAt         DateTime      @default(now())
+
+  competitor        Competitor    @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+
+  @@index([competitorId, date])
+}
+
+model DemandForecast {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+  categoryId        Int?
+
+  forecastDate      DateTime                @db.Date
+
+  predictedDemand   Float
+  predictedBookings Int?
+  confidenceLevel   Float?
+
+  demandDrivers     Json?
+  isHoliday         Boolean                 @default(false)
+  isWeekend         Boolean                 @default(false)
+  eventImpact       Json?
+
+  recommendedRate   Decimal?                @db.Decimal(10, 2)
+  rateMultiplier    Float?
+
+  generatedAt       DateTime                @default(now())
+
+  config            RevenueManagementConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  category          RateCategory?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([configId, categoryId, forecastDate])
+  @@index([configId, forecastDate])
+}
+
+model PriceRecommendation {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+  categoryId        Int
+
+  date              DateTime                @db.Date
+  currentRate       Decimal                 @db.Decimal(10, 2)
+  recommendedRate   Decimal                 @db.Decimal(10, 2)
+  changePercent     Float
+
+  reason            String?
+  demandLevel       String?
+  competitorPosition String?
+  confidence        Float?
+
+  projectedBookings Int?
+  projectedRevenue  Decimal?                @db.Decimal(12, 2)
+  projectedRevPAR   Decimal?                @db.Decimal(10, 2)
+
+  status            String                  @default("pending")
+  approvedAt        DateTime?
+  approvedBy        Int?
+  appliedAt         DateTime?
+  rejectionReason   String?
+
+  generatedAt       DateTime                @default(now())
+  expiresAt         DateTime?
+
+  config            RevenueManagementConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  category          RateCategory            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([categoryId, date])
+  @@index([date])
+}
+
+model RevenuePromotion {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  code              String?
+  description       String?
+
+  discountType      String
+  discountValue     Decimal                 @db.Decimal(10, 2)
+
+  startDate         DateTime
+  endDate           DateTime
+  bookingWindowStart DateTime?
+  bookingWindowEnd  DateTime?
+
+  minNights         Int?
+  maxNights         Int?
+  applicableCategories String[]             @default([])
+  blackoutDates     DateTime[]              @default([])
+
+  usageCount        Int                     @default(0)
+  maxUsage          Int?
+  totalRevenue      Decimal?                @db.Decimal(12, 2)
+
+  projectedRoi      Float?
+  actualRoi         Float?
+
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  config            RevenueManagementConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, code])
+  @@index([configId, isActive])
+  @@index([startDate, endDate])
+}
+
+model BookingData {
+  id                Int                     @id @default(autoincrement())
+  configId          Int
+  categoryId        Int?
+
+  bookingDate       DateTime
+  stayDate          DateTime                @db.Date
+  checkoutDate      DateTime?               @db.Date
+
+  rate              Decimal                 @db.Decimal(10, 2)
+  nights            Int                     @default(1)
+  totalRevenue      Decimal                 @db.Decimal(12, 2)
+  rateType          RateType                @default(STANDARD)
+
+  channel           String?
+  promotionCode     String?
+
+  leadTimeDays      Int?
+
+  isCancelled       Boolean                 @default(false)
+  cancelledAt       DateTime?
+
+  createdAt         DateTime                @default(now())
+
+  config            RevenueManagementConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  category          RateCategory?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([configId, stayDate])
+  @@index([categoryId, stayDate])
+  @@index([bookingDate])
+}
+
+model RevenueManagementAnalytics {
+  id                    Int       @id @default(autoincrement())
+  configId              Int
+  date                  DateTime  @db.Date
+
+  occupancyRate         Float?
+  availableInventory    Int?
+  soldInventory         Int?
+
+  totalRevenue          Decimal?  @db.Decimal(12, 2)
+  adr                   Decimal?  @db.Decimal(10, 2)
+  revPar                Decimal?  @db.Decimal(10, 2)
+
+  revenueVsLastYear     Float?
+  revParVsLastYear      Float?
+  revenueVsBudget       Float?
+
+  recommendationsApplied Int      @default(0)
+  priceChangesAuto      Int       @default(0)
+  priceChangesManual    Int       @default(0)
+
+  avgCompetitorRate     Decimal?  @db.Decimal(10, 2)
+  marketPosition        String?
+
+  forecastAccuracy      Float?
+  demandVariance        Float?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([configId, date])
+  @@index([configId, date(sort: Desc)])
+}
+
+// ============================================================================
+// PHASE 3 AI TOOLS - TOOL 3.5: SAFETY & COMPLIANCE MONITOR
+// ============================================================================
+
+enum IncidentSeverity {
+  NEAR_MISS
+  MINOR
+  MODERATE
+  SERIOUS
+  SEVERE
+  FATAL
+}
+
+enum IncidentStatus {
+  REPORTED
+  UNDER_INVESTIGATION
+  ROOT_CAUSE_IDENTIFIED
+  CORRECTIVE_ACTION_PENDING
+  CORRECTIVE_ACTION_COMPLETE
+  CLOSED
+}
+
+enum ChecklistStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  SKIPPED
+}
+
+enum TrainingStatus {
+  NOT_ASSIGNED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  FAILED
+}
+
+model SafetyMonitorConfig {
+  id                    Int       @id @default(autoincrement())
+  clientId              Int       @unique
+
+  organizationName      String?
+  industry              String?
+  timezone              String    @default("America/New_York")
+
+  oshaEnabled           Boolean   @default(true)
+  stateRegulations      String[]  @default([])
+  industryStandards     String[]  @default([])
+
+  incidentAlertEmails   String[]  @default([])
+  safetyManagerEmail    String?
+  emergencyContacts     Json?
+
+  oshaEstablishmentName String?
+  oshaEstablishmentAddress Json?
+  oshaReportingThreshold Int     @default(10)
+
+  enableMobileApp       Boolean   @default(true)
+  requirePhotoEvidence  Boolean   @default(false)
+  enableOfflineMode     Boolean   @default(true)
+
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  client                Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  checklists            SafetyChecklist[]
+  checklistCompletions  ChecklistCompletion[]
+  incidents             SafetyIncident[]
+  hazards               HazardReport[]
+  trainingRequirements  TrainingRequirement[]
+  trainingRecords       TrainingRecord[]
+  oshaLogs              OshaLog[]
+  inspections           SafetyInspection[]
+
+  @@index([clientId, isActive])
+}
+
+model SafetyChecklist {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  category          String?
+  department        String?
+  location          String?
+
+  frequency         String?
+  dueTime           String?
+
+  items             Json
+
+  regulatoryReference String?
+  complianceCategory String?
+
+  isTemplate        Boolean             @default(true)
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  completions       ChecklistCompletion[]
+
+  @@index([configId, category])
+  @@index([configId, isActive])
+}
+
+model ChecklistCompletion {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+  checklistId       Int
+
+  status            ChecklistStatus     @default(NOT_STARTED)
+
+  assignedTo        Int?
+  assignedToName    String?
+  location          String?
+  department        String?
+
+  dueDate           DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  responses         Json?
+  deficienciesFound Int                 @default(0)
+  correctiveActions Json?
+
+  signatureUrl      String?
+  signedAt          DateTime?
+
+  latitude          Float?
+  longitude         Float?
+
+  notes             String?
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  checklist         SafetyChecklist     @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([checklistId, dueDate])
+  @@index([assignedTo, status])
+}
+
+model SafetyIncident {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+
+  incidentNumber    String
+  title             String
+  description       String
+
+  incidentType      String
+  severity          IncidentSeverity
+  status            IncidentStatus      @default(REPORTED)
+
+  occurredAt        DateTime
+  reportedAt        DateTime            @default(now())
+  location          String?
+  department        String?
+  specificLocation  String?
+
+  affectedPersons   Json?
+  witnesses         Json?
+  reportedBy        String?
+  reportedById      Int?
+
+  isOshaRecordable  Boolean             @default(false)
+  oshaClassification String?
+  daysAwayFromWork  Int?
+  daysRestricted    Int?
+  daysTransferred   Int?
+
+  investigator      String?
+  investigatorId    Int?
+  investigationStartedAt DateTime?
+  rootCause         String?
+  contributingFactors Json?
+
+  correctiveActions Json?
+  preventiveMeasures Json?
+
+  photoUrls         String[]            @default([])
+  documentUrls      String[]            @default([])
+
+  resolvedAt        DateTime?
+  resolutionNotes   String?
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, incidentNumber])
+  @@index([configId, status])
+  @@index([configId, severity])
+  @@index([occurredAt(sort: Desc)])
+}
+
+model HazardReport {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+
+  title             String
+  description       String
+
+  hazardType        String
+  riskLevel         RiskLevel
+  location          String?
+  department        String?
+
+  reportedBy        String?
+  reportedById      Int?
+  reportedAt        DateTime            @default(now())
+
+  likelihood        Int?
+  consequence       Int?
+  riskScore         Int?
+
+  controlMeasures   Json?
+  mitigationStatus  String              @default("open")
+
+  resolvedAt        DateTime?
+  resolvedBy        Int?
+  residualRisk      Int?
+
+  photoUrls         String[]            @default([])
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, riskLevel])
+  @@index([configId, mitigationStatus])
+}
+
+model TrainingRequirement {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  category          String?
+
+  frequency         String?
+  validityPeriodDays Int?
+  isRequired        Boolean             @default(true)
+
+  regulatoryReference String?
+  complianceCategory String?
+
+  applicableRoles   String[]            @default([])
+  applicableDepartments String[]        @default([])
+
+  contentUrl        String?
+  durationMinutes   Int?
+  passingScore      Int?
+
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  records           TrainingRecord[]
+
+  @@index([configId, category])
+  @@index([configId, isActive])
+}
+
+model TrainingRecord {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+  requirementId     Int
+
+  employeeId        String
+  employeeName      String
+  department        String?
+  role              String?
+
+  status            TrainingStatus      @default(NOT_ASSIGNED)
+  assignedAt        DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  expiresAt         DateTime?
+
+  score             Int?
+  passed            Boolean?
+  attempts          Int                 @default(0)
+
+  certificateUrl    String?
+  certificateNumber String?
+
+  lastReminderSent  DateTime?
+  reminderCount     Int                 @default(0)
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  requirement       TrainingRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, requirementId, employeeId])
+  @@index([configId, status])
+  @@index([employeeId])
+  @@index([expiresAt])
+}
+
+model OshaLog {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+
+  year              Int
+  caseNumber        String
+
+  employeeName      String
+  jobTitle          String
+  department        String?
+
+  dateOfInjury      DateTime
+  locationOfEvent   String?
+  description       String
+
+  injuryType        String
+  bodyPartAffected  String?
+
+  resultedInDeath   Boolean             @default(false)
+  daysAwayFromWork  Int                 @default(0)
+  daysJobTransfer   Int                 @default(0)
+  daysRestriction   Int                 @default(0)
+  otherRecordable   Boolean             @default(false)
+
+  incidentId        Int?
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, year, caseNumber])
+  @@index([configId, year])
+}
+
+model SafetyInspection {
+  id                Int                 @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  inspectionType    String
+  inspector         String?
+  inspectorId       Int?
+
+  scheduledDate     DateTime
+  completedAt       DateTime?
+  status            String              @default("scheduled")
+
+  location          String?
+  department        String?
+  areasInspected    String[]            @default([])
+
+  overallScore      Int?
+  findings          Json?
+  deficiencies      Int                 @default(0)
+  criticalFindings  Int                 @default(0)
+
+  correctiveActions Json?
+  followUpDate      DateTime?
+
+  reportUrl         String?
+  photoUrls         String[]            @default([])
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  config            SafetyMonitorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, status])
+  @@index([scheduledDate])
+}
+
+model SafetyMonitorAnalytics {
+  id                    Int       @id @default(autoincrement())
+  configId              Int
+  date                  DateTime  @db.Date
+
+  totalIncidents        Int       @default(0)
+  oshaRecordables       Int       @default(0)
+  nearMisses            Int       @default(0)
+  daysWithoutIncident   Int       @default(0)
+
+  minorIncidents        Int       @default(0)
+  seriousIncidents      Int       @default(0)
+  severeIncidents       Int       @default(0)
+
+  checklistsCompleted   Int       @default(0)
+  checklistsOverdue     Int       @default(0)
+  deficienciesFound     Int       @default(0)
+
+  hazardsReported       Int       @default(0)
+  hazardsMitigated      Int       @default(0)
+  openHazards           Int       @default(0)
+
+  trainingsCompleted    Int       @default(0)
+  trainingsOverdue      Int       @default(0)
+  complianceRate        Float?
+
+  trir                  Float?
+  dart                  Float?
+  ltir                  Float?
 
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt

@@ -276,3 +276,78 @@ export async function getClientIdFromPATemplate(
   });
   return template?.config?.clientId ?? null;
 }
+
+// ============ PHASE 3 AI TOOLS - Inventory Forecasting ============
+
+/**
+ * Get the client ID from an inventory forecast config
+ */
+export async function getClientIdFromInventoryForecastConfig(
+  configId: string,
+): Promise<number | null> {
+  const config = await prisma.inventoryForecastConfig.findUnique({
+    where: { id: configId },
+    select: { clientId: true },
+  });
+  return config?.clientId ?? null;
+}
+
+// ============ PHASE 3 AI TOOLS - Compliance Monitor ============
+
+/**
+ * Get the client ID from a compliance monitor config
+ */
+export async function getClientIdFromComplianceMonitorConfig(
+  configId: string,
+): Promise<number | null> {
+  const config = await prisma.complianceMonitorConfig.findUnique({
+    where: { id: configId },
+    select: { clientId: true },
+  });
+  return config?.clientId ?? null;
+}
+
+// ============ PHASE 3 AI TOOLS - Predictive Maintenance ============
+
+/**
+ * Get the client ID from a predictive maintenance config
+ */
+export async function getClientIdFromPredictiveMaintenanceConfig(
+  configId: string,
+): Promise<number | null> {
+  const config = await prisma.predictiveMaintenanceConfig.findUnique({
+    where: { id: configId },
+    select: { clientId: true },
+  });
+  return config?.clientId ?? null;
+}
+
+// ============ PHASE 3 AI TOOLS - Revenue Management ============
+
+/**
+ * Get the client ID from a revenue management config
+ */
+export async function getClientIdFromRevenueManagementConfig(
+  configId: string,
+): Promise<number | null> {
+  const config = await prisma.revenueManagementConfig.findUnique({
+    where: { id: configId },
+    select: { clientId: true },
+  });
+  return config?.clientId ?? null;
+}
+
+// ============ PHASE 3 AI TOOLS - Safety Monitor ============
+
+/**
+ * Get the client ID from a safety monitor config
+ */
+export async function getClientIdFromSafetyMonitorConfig(
+  configId: string,
+): Promise<number | null> {
+  const config = await prisma.safetyMonitorConfig.findUnique({
+    where: { id: configId },
+    select: { clientId: true },
+  });
+  return config?.clientId ?? null;
+}

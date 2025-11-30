@@ -33,7 +33,13 @@ export type ModuleId =
   | 'documentAnalyzer'
   | 'contentGenerator'
   | 'leadScoring'
-  | 'priorAuth';
+  | 'priorAuth'
+  // Phase 3 AI Tool modules
+  | 'inventoryForecasting'
+  | 'complianceMonitor'
+  | 'predictiveMaintenance'
+  | 'revenueManagement'
+  | 'safetyMonitor';
 
 /**
  * Navigation group identifiers
@@ -324,6 +330,98 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     description:
       'Automated prior authorization submission, status tracking, denial management, and appeals',
   },
+
+  // ============ PHASE 3 AI TOOL MODULES ============
+  inventoryForecasting: {
+    id: 'inventoryForecasting',
+    label: 'Inventory Forecasting',
+    navGroup: 'aiTools',
+    path: '/ai-tools/inventory-forecasting',
+    additionalPaths: [
+      '/ai-tools/inventory-forecasting/:configId',
+      '/ai-tools/inventory-forecasting/:configId/products',
+      '/ai-tools/inventory-forecasting/:configId/forecasts',
+      '/ai-tools/inventory-forecasting/:configId/alerts',
+    ],
+    icon: 'Package',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/inventory-forecasting', '/api/inventory-forecasting'],
+    description:
+      'ML-powered inventory forecasting with seasonal trends, multi-location support, and automated alerts',
+  },
+  complianceMonitor: {
+    id: 'complianceMonitor',
+    label: 'Compliance Monitor',
+    navGroup: 'aiTools',
+    path: '/ai-tools/compliance-monitor',
+    additionalPaths: [
+      '/ai-tools/compliance-monitor/:configId',
+      '/ai-tools/compliance-monitor/:configId/rules',
+      '/ai-tools/compliance-monitor/:configId/violations',
+      '/ai-tools/compliance-monitor/:configId/audits',
+    ],
+    icon: 'Scale',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/compliance-monitor', '/api/compliance-monitor'],
+    description:
+      'Real-time compliance monitoring with rule engine, risk scoring, and regulatory reporting for HIPAA, SOX, GDPR, PCI',
+  },
+  predictiveMaintenance: {
+    id: 'predictiveMaintenance',
+    label: 'Predictive Maintenance',
+    navGroup: 'aiTools',
+    path: '/ai-tools/predictive-maintenance',
+    additionalPaths: [
+      '/ai-tools/predictive-maintenance/:configId',
+      '/ai-tools/predictive-maintenance/:configId/equipment',
+      '/ai-tools/predictive-maintenance/:configId/sensors',
+      '/ai-tools/predictive-maintenance/:configId/work-orders',
+    ],
+    icon: 'Wrench',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/predictive-maintenance', '/api/predictive-maintenance'],
+    description:
+      'IoT-integrated predictive maintenance with ML anomaly detection, failure prediction, and work order management',
+  },
+  revenueManagement: {
+    id: 'revenueManagement',
+    label: 'Revenue Management',
+    navGroup: 'aiTools',
+    path: '/ai-tools/revenue-management',
+    additionalPaths: [
+      '/ai-tools/revenue-management/:configId',
+      '/ai-tools/revenue-management/:configId/pricing',
+      '/ai-tools/revenue-management/:configId/competitors',
+      '/ai-tools/revenue-management/:configId/forecasts',
+    ],
+    icon: 'DollarSign',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/revenue-management', '/api/revenue-management'],
+    description:
+      'AI-powered dynamic pricing with demand forecasting, competitor monitoring, and revenue optimization',
+  },
+  safetyMonitor: {
+    id: 'safetyMonitor',
+    label: 'Safety Monitor',
+    navGroup: 'aiTools',
+    path: '/ai-tools/safety-monitor',
+    additionalPaths: [
+      '/ai-tools/safety-monitor/:configId',
+      '/ai-tools/safety-monitor/:configId/checklists',
+      '/ai-tools/safety-monitor/:configId/incidents',
+      '/ai-tools/safety-monitor/:configId/training',
+    ],
+    icon: 'HardHat',
+    isCore: false,
+    dependencies: ['clients'],
+    apiPrefixes: ['/api/clients/:clientId/safety-monitor', '/api/safety-monitor'],
+    description:
+      'Digital safety checklists, incident reporting, OSHA 300 log management, and training compliance tracking',
+  },
 };
 
 /**
@@ -365,6 +463,12 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'contentGenerator',
   'leadScoring',
   'priorAuth',
+  // Phase 3 AI Tools
+  'inventoryForecasting',
+  'complianceMonitor',
+  'predictiveMaintenance',
+  'revenueManagement',
+  'safetyMonitor',
 ];
 
 /**

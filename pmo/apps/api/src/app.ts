@@ -27,6 +27,12 @@ import documentAnalyzerRouter from './modules/document-analyzer/document-analyze
 import contentGeneratorRouter from './modules/content-generator/content-generator.router';
 import leadScoringRouter from './modules/lead-scoring/lead-scoring.router';
 import priorAuthRouter from './modules/prior-auth/prior-auth.router';
+// Phase 3 AI Tools
+import inventoryForecastingRouter from './modules/inventory-forecasting/inventory-forecasting.router';
+import complianceMonitorRouter from './modules/compliance-monitor/compliance-monitor.router';
+import predictiveMaintenanceRouter from './modules/predictive-maintenance/predictive-maintenance.router';
+import revenueManagementRouter from './modules/revenue-management/revenue-management.router';
+import safetyMonitorRouter from './modules/safety-monitor/safety-monitor.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -190,6 +196,33 @@ export function createApp(): express.Express {
   // Prior Authorization Bot module (Tool 2.4)
   if (isModuleEnabled('priorAuth')) {
     app.use('/api', requireModule('priorAuth'), priorAuthRouter);
+  }
+
+  // ============ PHASE 3 AI TOOL MODULES ============
+
+  // Inventory Forecasting Engine module (Tool 3.1)
+  if (isModuleEnabled('inventoryForecasting')) {
+    app.use('/api/inventory-forecasting', requireModule('inventoryForecasting'), inventoryForecastingRouter);
+  }
+
+  // Compliance Monitoring System module (Tool 3.2)
+  if (isModuleEnabled('complianceMonitor')) {
+    app.use('/api/compliance-monitor', requireModule('complianceMonitor'), complianceMonitorRouter);
+  }
+
+  // Predictive Maintenance Platform module (Tool 3.3)
+  if (isModuleEnabled('predictiveMaintenance')) {
+    app.use('/api/predictive-maintenance', requireModule('predictiveMaintenance'), predictiveMaintenanceRouter);
+  }
+
+  // Revenue Management AI module (Tool 3.4)
+  if (isModuleEnabled('revenueManagement')) {
+    app.use('/api/revenue-management', requireModule('revenueManagement'), revenueManagementRouter);
+  }
+
+  // Safety & Compliance Monitor module (Tool 3.5)
+  if (isModuleEnabled('safetyMonitor')) {
+    app.use('/api/safety-monitor', requireModule('safetyMonitor'), safetyMonitorRouter);
   }
 
   // Error handling middleware must be last
