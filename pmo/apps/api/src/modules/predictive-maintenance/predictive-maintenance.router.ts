@@ -164,7 +164,10 @@ const recordDowntimeSchema = z.object({
 
 router.get('/config/:clientId', async (req, res) => {
   try {
-    const { clientId } = req.params;
+    const clientId = Number(req.params.clientId);
+    if (Number.isNaN(clientId)) {
+      return res.status(400).json({ error: 'Invalid client ID' });
+    }
 
     if (!hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
@@ -199,7 +202,10 @@ router.post('/config', async (req, res) => {
 
 router.patch('/config/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const data = updateConfigSchema.parse(req.body);
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -222,7 +228,10 @@ router.patch('/config/:configId', async (req, res) => {
 
 router.get('/equipment/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { category, status, location } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -244,7 +253,10 @@ router.get('/equipment/:configId', async (req, res) => {
 
 router.get('/equipment/detail/:equipmentId', async (req, res) => {
   try {
-    const { equipmentId } = req.params;
+    const equipmentId = Number(req.params.equipmentId);
+    if (Number.isNaN(equipmentId)) {
+      return res.status(400).json({ error: 'Invalid equipment ID' });
+    }
 
     const clientId = await maintenanceService.getClientIdFromEquipment(equipmentId);
     if (!clientId || !hasClientAccess(req, clientId)) {
@@ -285,7 +297,10 @@ router.post('/equipment', async (req, res) => {
 
 router.patch('/equipment/:equipmentId', async (req, res) => {
   try {
-    const { equipmentId } = req.params;
+    const equipmentId = Number(req.params.equipmentId);
+    if (Number.isNaN(equipmentId)) {
+      return res.status(400).json({ error: 'Invalid equipment ID' });
+    }
     const data = updateEquipmentSchema.parse(req.body);
 
     const clientId = await maintenanceService.getClientIdFromEquipment(equipmentId);
@@ -310,7 +325,10 @@ router.patch('/equipment/:equipmentId', async (req, res) => {
 
 router.delete('/equipment/:equipmentId', async (req, res) => {
   try {
-    const { equipmentId } = req.params;
+    const equipmentId = Number(req.params.equipmentId);
+    if (Number.isNaN(equipmentId)) {
+      return res.status(400).json({ error: 'Invalid equipment ID' });
+    }
 
     const clientId = await maintenanceService.getClientIdFromEquipment(equipmentId);
     if (!clientId || !hasClientAccess(req, clientId)) {
@@ -329,7 +347,10 @@ router.delete('/equipment/:equipmentId', async (req, res) => {
 
 router.get('/sensors/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { equipmentId, sensorType, isActive } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -371,7 +392,10 @@ router.post('/sensors', async (req, res) => {
 
 router.patch('/sensors/:sensorId', async (req, res) => {
   try {
-    const { sensorId } = req.params;
+    const sensorId = Number(req.params.sensorId);
+    if (Number.isNaN(sensorId)) {
+      return res.status(400).json({ error: 'Invalid sensor ID' });
+    }
     const data = updateSensorSchema.parse(req.body);
 
     const clientId = await maintenanceService.getClientIdFromSensor(sensorId);
@@ -414,7 +438,10 @@ router.post('/readings', async (req, res) => {
 
 router.get('/readings/:sensorId', async (req, res) => {
   try {
-    const { sensorId } = req.params;
+    const sensorId = Number(req.params.sensorId);
+    if (Number.isNaN(sensorId)) {
+      return res.status(400).json({ error: 'Invalid sensor ID' });
+    }
     const { startDate, endDate, limit } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromSensor(sensorId);
@@ -438,7 +465,10 @@ router.get('/readings/:sensorId', async (req, res) => {
 
 router.get('/anomalies/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { sensorId, severity, isResolved } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -462,7 +492,10 @@ router.get('/anomalies/:configId', async (req, res) => {
 
 router.get('/predictions/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { equipmentId, failureType, isActive, minProbability } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -485,7 +518,10 @@ router.get('/predictions/:configId', async (req, res) => {
 
 router.post('/predictions/:configId/generate', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
@@ -507,7 +543,10 @@ router.post('/predictions/:configId/generate', async (req, res) => {
 
 router.get('/work-orders/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { equipmentId, status, priority, maintenanceType, assignedTo } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -554,7 +593,10 @@ router.post('/work-orders', async (req, res) => {
 
 router.patch('/work-orders/:workOrderId', async (req, res) => {
   try {
-    const { workOrderId } = req.params;
+    const workOrderId = Number(req.params.workOrderId);
+    if (Number.isNaN(workOrderId)) {
+      return res.status(400).json({ error: 'Invalid work order ID' });
+    }
     const data = updateWorkOrderSchema.parse(req.body);
 
     const clientId = await maintenanceService.getClientIdFromWorkOrder(workOrderId);
@@ -582,7 +624,10 @@ router.patch('/work-orders/:workOrderId', async (req, res) => {
 
 router.get('/spare-parts/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { category, lowStock } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -623,7 +668,10 @@ router.post('/spare-parts', async (req, res) => {
 
 router.patch('/spare-parts/:partId', async (req, res) => {
   try {
-    const { partId } = req.params;
+    const partId = Number(req.params.partId);
+    if (Number.isNaN(partId)) {
+      return res.status(400).json({ error: 'Invalid part ID' });
+    }
     const data = updateSparePartSchema.parse(req.body);
 
     // Note: For simplicity, we're using the configId from the part itself
@@ -642,7 +690,10 @@ router.patch('/spare-parts/:partId', async (req, res) => {
 
 router.get('/downtime/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { equipmentId, isPlanned, startDate, endDate } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -691,7 +742,10 @@ router.post('/downtime', async (req, res) => {
 
 router.get('/analytics/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { startDate, endDate } = req.query;
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
@@ -712,7 +766,10 @@ router.get('/analytics/:configId', async (req, res) => {
 
 router.post('/analytics/:configId/record', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
 
     const clientId = await maintenanceService.getClientIdFromMaintenanceConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {

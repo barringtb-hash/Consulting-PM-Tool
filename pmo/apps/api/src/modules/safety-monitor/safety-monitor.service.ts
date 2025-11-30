@@ -1,10 +1,9 @@
-import { PrismaClient, IncidentSeverity, IncidentStatus, ChecklistStatus, TrainingStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { IncidentSeverity, IncidentStatus, ChecklistStatus, TrainingStatus } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 
 // ============ Configuration Management ============
 
-export async function getSafetyConfig(clientId: string) {
+export async function getSafetyConfig(clientId: number) {
   return prisma.safetyMonitorConfig.findUnique({
     where: { clientId },
     include: {
@@ -26,7 +25,7 @@ export async function getSafetyConfig(clientId: string) {
 }
 
 export async function createSafetyConfig(data: {
-  clientId: string;
+  clientId: number;
   facilityName: string;
   facilityType: string;
   employeeCount: number;
@@ -52,7 +51,7 @@ export async function createSafetyConfig(data: {
 }
 
 export async function updateSafetyConfig(
-  configId: string,
+  configId: number,
   data: {
     facilityName?: string;
     facilityType?: string;
@@ -72,7 +71,7 @@ export async function updateSafetyConfig(
 
 // ============ Safety Checklists ============
 
-export async function getChecklists(configId: string, filters?: {
+export async function getChecklists(configId: number, filters?: {
   workArea?: string;
   frequency?: string;
   isActive?: boolean;
@@ -94,7 +93,7 @@ export async function getChecklists(configId: string, filters?: {
 }
 
 export async function createChecklist(data: {
-  configId: string;
+  configId: number;
   name: string;
   description?: string;
   workArea: string;
@@ -119,7 +118,7 @@ export async function createChecklist(data: {
 }
 
 export async function updateChecklist(
-  checklistId: string,
+  checklistId: number,
   data: {
     name?: string;
     description?: string;
@@ -137,7 +136,7 @@ export async function updateChecklist(
   });
 }
 
-export async function deleteChecklist(checklistId: string) {
+export async function deleteChecklist(checklistId: number) {
   return prisma.safetyChecklist.delete({
     where: { id: checklistId },
   });
@@ -145,7 +144,7 @@ export async function deleteChecklist(checklistId: string) {
 
 // ============ Checklist Completions ============
 
-export async function getChecklistCompletions(checklistId: string, filters?: {
+export async function getChecklistCompletions(checklistId: number, filters?: {
   status?: ChecklistStatus;
   startDate?: Date;
   endDate?: Date;
@@ -169,7 +168,7 @@ export async function getChecklistCompletions(checklistId: string, filters?: {
 }
 
 export async function createChecklistCompletion(data: {
-  checklistId: string;
+  checklistId: number;
   completedBy: string;
   completedAt: Date;
   responses: Record<string, any>;
@@ -208,7 +207,7 @@ export async function createChecklistCompletion(data: {
 
 // ============ Safety Incidents ============
 
-export async function getIncidents(configId: string, filters?: {
+export async function getIncidents(configId: number, filters?: {
   status?: IncidentStatus;
   severity?: IncidentSeverity;
   workArea?: string;
@@ -233,7 +232,7 @@ export async function getIncidents(configId: string, filters?: {
 }
 
 export async function createIncident(data: {
-  configId: string;
+  configId: number;
   incidentNumber: string;
   title: string;
   description: string;
@@ -273,7 +272,7 @@ export async function createIncident(data: {
 }
 
 export async function updateIncident(
-  incidentId: string,
+  incidentId: number,
   data: {
     status?: IncidentStatus;
     title?: string;
@@ -306,7 +305,7 @@ export async function updateIncident(
 
 // ============ Hazard Reports ============
 
-export async function getHazards(configId: string, filters?: {
+export async function getHazards(configId: number, filters?: {
   category?: string;
   riskLevel?: string;
   status?: string;
@@ -325,7 +324,7 @@ export async function getHazards(configId: string, filters?: {
 }
 
 export async function createHazard(data: {
-  configId: string;
+  configId: number;
   title: string;
   description: string;
   category: string;
@@ -355,7 +354,7 @@ export async function createHazard(data: {
 }
 
 export async function updateHazard(
-  hazardId: string,
+  hazardId: number,
   data: {
     riskLevel?: string;
     status?: string;
@@ -374,7 +373,7 @@ export async function updateHazard(
 
 // ============ Training Management ============
 
-export async function getTrainingRequirements(configId: string, filters?: {
+export async function getTrainingRequirements(configId: number, filters?: {
   category?: string;
   isActive?: boolean;
 }) {
@@ -395,7 +394,7 @@ export async function getTrainingRequirements(configId: string, filters?: {
 }
 
 export async function createTrainingRequirement(data: {
-  configId: string;
+  configId: number;
   name: string;
   description?: string;
   category: string;
@@ -426,7 +425,7 @@ export async function createTrainingRequirement(data: {
 }
 
 export async function updateTrainingRequirement(
-  requirementId: string,
+  requirementId: number,
   data: {
     name?: string;
     description?: string;
@@ -448,8 +447,8 @@ export async function updateTrainingRequirement(
 
 // ============ Training Records ============
 
-export async function getTrainingRecords(configId: string, filters?: {
-  requirementId?: string;
+export async function getTrainingRecords(configId: number, filters?: {
+  requirementId?: number;
   employeeId?: string;
   status?: TrainingStatus;
 }) {
@@ -468,8 +467,8 @@ export async function getTrainingRecords(configId: string, filters?: {
 }
 
 export async function createTrainingRecord(data: {
-  configId: string;
-  requirementId: string;
+  configId: number;
+  requirementId: number;
   employeeId: string;
   employeeName: string;
   scheduledDate?: Date;
@@ -523,7 +522,7 @@ export async function createTrainingRecord(data: {
 }
 
 export async function updateTrainingRecord(
-  recordId: string,
+  recordId: number,
   data: {
     completedAt?: Date;
     trainer?: string;
@@ -544,7 +543,7 @@ export async function updateTrainingRecord(
 
 // ============ OSHA Logs ============
 
-export async function getOshaLogs(configId: string, filters?: {
+export async function getOshaLogs(configId: number, filters?: {
   year?: number;
   logType?: string;
 }) {
@@ -559,7 +558,7 @@ export async function getOshaLogs(configId: string, filters?: {
 }
 
 export async function createOshaLog(data: {
-  configId: string;
+  configId: number;
   year: number;
   logType: string;
   entries: Record<string, any>[];
@@ -583,7 +582,7 @@ export async function createOshaLog(data: {
 }
 
 export async function updateOshaLog(
-  logId: string,
+  logId: number,
   data: {
     entries?: Record<string, any>[];
     totalCases?: number;
@@ -600,7 +599,7 @@ export async function updateOshaLog(
 
 // ============ Safety Inspections ============
 
-export async function getInspections(configId: string, filters?: {
+export async function getInspections(configId: number, filters?: {
   inspectionType?: string;
   status?: string;
   area?: string;
@@ -617,7 +616,7 @@ export async function getInspections(configId: string, filters?: {
 }
 
 export async function createInspection(data: {
-  configId: string;
+  configId: number;
   inspectionType: string;
   title: string;
   description?: string;
@@ -642,7 +641,7 @@ export async function createInspection(data: {
 }
 
 export async function updateInspection(
-  inspectionId: string,
+  inspectionId: number,
   data: {
     status?: string;
     completedAt?: Date;
@@ -662,7 +661,7 @@ export async function updateInspection(
 
 // ============ Analytics ============
 
-export async function getSafetyAnalytics(configId: string, filters?: {
+export async function getSafetyAnalytics(configId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
 }) {
@@ -781,7 +780,7 @@ function groupBy<T>(items: T[], key: string | ((item: T) => string)): Record<str
   return result;
 }
 
-export async function recordDailyAnalytics(configId: string) {
+export async function recordDailyAnalytics(configId: number) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -881,7 +880,7 @@ function calculateComplianceScore(incidents: any[], hazards: any[], trainings: a
 
 // ============ Authorization Helpers ============
 
-export async function getClientIdFromSafetyConfig(configId: string): Promise<string | null> {
+export async function getClientIdFromSafetyConfig(configId: number): Promise<number | null> {
   const config = await prisma.safetyMonitorConfig.findUnique({
     where: { id: configId },
     select: { clientId: true },
@@ -889,7 +888,7 @@ export async function getClientIdFromSafetyConfig(configId: string): Promise<str
   return config?.clientId ?? null;
 }
 
-export async function getClientIdFromChecklist(checklistId: string): Promise<string | null> {
+export async function getClientIdFromChecklist(checklistId: number): Promise<number | null> {
   const checklist = await prisma.safetyChecklist.findUnique({
     where: { id: checklistId },
     include: { config: { select: { clientId: true } } },
@@ -897,7 +896,7 @@ export async function getClientIdFromChecklist(checklistId: string): Promise<str
   return checklist?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromIncident(incidentId: string): Promise<string | null> {
+export async function getClientIdFromIncident(incidentId: number): Promise<number | null> {
   const incident = await prisma.safetyIncident.findUnique({
     where: { id: incidentId },
     include: { config: { select: { clientId: true } } },
@@ -905,7 +904,7 @@ export async function getClientIdFromIncident(incidentId: string): Promise<strin
   return incident?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromHazard(hazardId: string): Promise<string | null> {
+export async function getClientIdFromHazard(hazardId: number): Promise<number | null> {
   const hazard = await prisma.hazardReport.findUnique({
     where: { id: hazardId },
     include: { config: { select: { clientId: true } } },
@@ -913,7 +912,7 @@ export async function getClientIdFromHazard(hazardId: string): Promise<string | 
   return hazard?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromTrainingRequirement(requirementId: string): Promise<string | null> {
+export async function getClientIdFromTrainingRequirement(requirementId: number): Promise<number | null> {
   const requirement = await prisma.trainingRequirement.findUnique({
     where: { id: requirementId },
     include: { config: { select: { clientId: true } } },
@@ -921,7 +920,7 @@ export async function getClientIdFromTrainingRequirement(requirementId: string):
   return requirement?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromInspection(inspectionId: string): Promise<string | null> {
+export async function getClientIdFromInspection(inspectionId: number): Promise<number | null> {
   const inspection = await prisma.safetyInspection.findUnique({
     where: { id: inspectionId },
     include: { config: { select: { clientId: true } } },

@@ -283,7 +283,7 @@ export async function getClientIdFromPATemplate(
  * Get the client ID from an inventory forecast config
  */
 export async function getClientIdFromInventoryForecastConfig(
-  configId: string,
+  configId: number,
 ): Promise<number | null> {
   const config = await prisma.inventoryForecastConfig.findUnique({
     where: { id: configId },
@@ -298,7 +298,7 @@ export async function getClientIdFromInventoryForecastConfig(
  * Get the client ID from a compliance monitor config
  */
 export async function getClientIdFromComplianceMonitorConfig(
-  configId: string,
+  configId: number,
 ): Promise<number | null> {
   const config = await prisma.complianceMonitorConfig.findUnique({
     where: { id: configId },
@@ -313,7 +313,7 @@ export async function getClientIdFromComplianceMonitorConfig(
  * Get the client ID from a predictive maintenance config
  */
 export async function getClientIdFromPredictiveMaintenanceConfig(
-  configId: string,
+  configId: number,
 ): Promise<number | null> {
   const config = await prisma.predictiveMaintenanceConfig.findUnique({
     where: { id: configId },
@@ -328,7 +328,7 @@ export async function getClientIdFromPredictiveMaintenanceConfig(
  * Get the client ID from a revenue management config
  */
 export async function getClientIdFromRevenueManagementConfig(
-  configId: string,
+  configId: number,
 ): Promise<number | null> {
   const config = await prisma.revenueManagementConfig.findUnique({
     where: { id: configId },
@@ -343,7 +343,7 @@ export async function getClientIdFromRevenueManagementConfig(
  * Get the client ID from a safety monitor config
  */
 export async function getClientIdFromSafetyMonitorConfig(
-  configId: string,
+  configId: number,
 ): Promise<number | null> {
   const config = await prisma.safetyMonitorConfig.findUnique({
     where: { id: configId },

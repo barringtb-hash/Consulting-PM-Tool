@@ -214,7 +214,10 @@ const updateInspectionSchema = z.object({
 
 router.get('/config/:clientId', async (req, res) => {
   try {
-    const { clientId } = req.params;
+    const clientId = Number(req.params.clientId);
+    if (Number.isNaN(clientId)) {
+      return res.status(400).json({ error: 'Invalid client ID' });
+    }
 
     if (!hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
@@ -249,7 +252,10 @@ router.post('/config', async (req, res) => {
 
 router.patch('/config/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const data = updateConfigSchema.parse(req.body);
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -272,7 +278,10 @@ router.patch('/config/:configId', async (req, res) => {
 
 router.get('/checklists/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { workArea, frequency, isActive } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -314,7 +323,10 @@ router.post('/checklists', async (req, res) => {
 
 router.patch('/checklists/:checklistId', async (req, res) => {
   try {
-    const { checklistId } = req.params;
+    const checklistId = Number(req.params.checklistId);
+    if (Number.isNaN(checklistId)) {
+      return res.status(400).json({ error: 'Invalid checklist ID' });
+    }
     const data = updateChecklistSchema.parse(req.body);
 
     const clientId = await safetyService.getClientIdFromChecklist(checklistId);
@@ -335,7 +347,10 @@ router.patch('/checklists/:checklistId', async (req, res) => {
 
 router.delete('/checklists/:checklistId', async (req, res) => {
   try {
-    const { checklistId } = req.params;
+    const checklistId = Number(req.params.checklistId);
+    if (Number.isNaN(checklistId)) {
+      return res.status(400).json({ error: 'Invalid checklist ID' });
+    }
 
     const clientId = await safetyService.getClientIdFromChecklist(checklistId);
     if (!clientId || !hasClientAccess(req, clientId)) {
@@ -354,7 +369,10 @@ router.delete('/checklists/:checklistId', async (req, res) => {
 
 router.get('/completions/:checklistId', async (req, res) => {
   try {
-    const { checklistId } = req.params;
+    const checklistId = Number(req.params.checklistId);
+    if (Number.isNaN(checklistId)) {
+      return res.status(400).json({ error: 'Invalid checklist ID' });
+    }
     const { status, startDate, endDate } = req.query;
 
     const clientId = await safetyService.getClientIdFromChecklist(checklistId);
@@ -401,7 +419,10 @@ router.post('/completions', async (req, res) => {
 
 router.get('/incidents/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { status, severity, workArea, startDate, endDate } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -448,7 +469,10 @@ router.post('/incidents', async (req, res) => {
 
 router.patch('/incidents/:incidentId', async (req, res) => {
   try {
-    const { incidentId } = req.params;
+    const incidentId = Number(req.params.incidentId);
+    if (Number.isNaN(incidentId)) {
+      return res.status(400).json({ error: 'Invalid incident ID' });
+    }
     const data = updateIncidentSchema.parse(req.body);
 
     const clientId = await safetyService.getClientIdFromIncident(incidentId);
@@ -474,7 +498,10 @@ router.patch('/incidents/:incidentId', async (req, res) => {
 
 router.get('/hazards/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { category, riskLevel, status, location } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -517,7 +544,10 @@ router.post('/hazards', async (req, res) => {
 
 router.patch('/hazards/:hazardId', async (req, res) => {
   try {
-    const { hazardId } = req.params;
+    const hazardId = Number(req.params.hazardId);
+    if (Number.isNaN(hazardId)) {
+      return res.status(400).json({ error: 'Invalid hazard ID' });
+    }
     const data = updateHazardSchema.parse(req.body);
 
     const clientId = await safetyService.getClientIdFromHazard(hazardId);
@@ -543,7 +573,10 @@ router.patch('/hazards/:hazardId', async (req, res) => {
 
 router.get('/training-requirements/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { category, isActive } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -584,7 +617,10 @@ router.post('/training-requirements', async (req, res) => {
 
 router.patch('/training-requirements/:requirementId', async (req, res) => {
   try {
-    const { requirementId } = req.params;
+    const requirementId = Number(req.params.requirementId);
+    if (Number.isNaN(requirementId)) {
+      return res.status(400).json({ error: 'Invalid requirement ID' });
+    }
     const data = updateTrainingRequirementSchema.parse(req.body);
 
     const clientId = await safetyService.getClientIdFromTrainingRequirement(requirementId);
@@ -607,7 +643,10 @@ router.patch('/training-requirements/:requirementId', async (req, res) => {
 
 router.get('/training-records/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { requirementId, employeeId, status } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -653,7 +692,10 @@ router.post('/training-records', async (req, res) => {
 
 router.patch('/training-records/:recordId', async (req, res) => {
   try {
-    const { recordId } = req.params;
+    const recordId = Number(req.params.recordId);
+    if (Number.isNaN(recordId)) {
+      return res.status(400).json({ error: 'Invalid record ID' });
+    }
     const data = updateTrainingRecordSchema.parse(req.body);
 
     // Note: For simplicity, we assume proper authorization check here
@@ -675,7 +717,10 @@ router.patch('/training-records/:recordId', async (req, res) => {
 
 router.get('/osha-logs/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { year, logType } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -718,7 +763,10 @@ router.post('/osha-logs', async (req, res) => {
 
 router.get('/inspections/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { inspectionType, status, area } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -763,7 +811,10 @@ router.post('/inspections', async (req, res) => {
 
 router.patch('/inspections/:inspectionId', async (req, res) => {
   try {
-    const { inspectionId } = req.params;
+    const inspectionId = Number(req.params.inspectionId);
+    if (Number.isNaN(inspectionId)) {
+      return res.status(400).json({ error: 'Invalid inspection ID' });
+    }
     const data = updateInspectionSchema.parse(req.body);
 
     const clientId = await safetyService.getClientIdFromInspection(inspectionId);
@@ -790,7 +841,10 @@ router.patch('/inspections/:inspectionId', async (req, res) => {
 
 router.get('/analytics/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { startDate, endDate } = req.query;
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
@@ -811,7 +865,10 @@ router.get('/analytics/:configId', async (req, res) => {
 
 router.post('/analytics/:configId/record', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
 
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {

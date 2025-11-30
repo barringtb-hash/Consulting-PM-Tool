@@ -1,10 +1,9 @@
-import { PrismaClient, ViolationStatus, AuditStatus, RiskLevel } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { ViolationStatus, AuditStatus, RiskLevel } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 
 // ============ Configuration Management ============
 
-export async function getComplianceConfig(clientId: string) {
+export async function getComplianceConfig(clientId: number) {
   return prisma.complianceMonitorConfig.findUnique({
     where: { clientId },
     include: {
@@ -21,7 +20,7 @@ export async function getComplianceConfig(clientId: string) {
 }
 
 export async function createComplianceConfig(data: {
-  clientId: string;
+  clientId: number;
   industry: string;
   jurisdictions: string[];
   regulatoryFrameworks: string[];
@@ -45,7 +44,7 @@ export async function createComplianceConfig(data: {
 }
 
 export async function updateComplianceConfig(
-  configId: string,
+  configId: number,
   data: {
     industry?: string;
     jurisdictions?: string[];
@@ -64,7 +63,7 @@ export async function updateComplianceConfig(
 
 // ============ Compliance Rules Management ============
 
-export async function getRules(configId: string, filters?: {
+export async function getRules(configId: number, filters?: {
   framework?: string;
   category?: string;
   isActive?: boolean;
@@ -81,7 +80,7 @@ export async function getRules(configId: string, filters?: {
 }
 
 export async function createRule(data: {
-  configId: string;
+  configId: number;
   ruleCode: string;
   name: string;
   description: string;
@@ -111,7 +110,7 @@ export async function createRule(data: {
 }
 
 export async function updateRule(
-  ruleId: string,
+  ruleId: number,
   data: {
     name?: string;
     description?: string;
@@ -129,7 +128,7 @@ export async function updateRule(
   });
 }
 
-export async function deleteRule(ruleId: string) {
+export async function deleteRule(ruleId: number) {
   return prisma.complianceRule.delete({
     where: { id: ruleId },
   });
@@ -137,9 +136,9 @@ export async function deleteRule(ruleId: string) {
 
 // ============ Violations Management ============
 
-export async function getViolations(configId: string, filters?: {
+export async function getViolations(configId: number, filters?: {
   status?: ViolationStatus;
-  ruleId?: string;
+  ruleId?: number;
   severity?: string;
   startDate?: Date;
   endDate?: Date;
@@ -165,8 +164,8 @@ export async function getViolations(configId: string, filters?: {
 }
 
 export async function createViolation(data: {
-  configId: string;
-  ruleId: string;
+  configId: number;
+  ruleId: number;
   description: string;
   severity: string;
   evidence?: Record<string, any>;
@@ -196,7 +195,7 @@ export async function createViolation(data: {
 }
 
 export async function updateViolation(
-  violationId: string,
+  violationId: number,
   data: {
     status?: ViolationStatus;
     remediationSteps?: string[];
@@ -224,7 +223,7 @@ export async function updateViolation(
 
 // ============ Audits Management ============
 
-export async function getAudits(configId: string, filters?: {
+export async function getAudits(configId: number, filters?: {
   status?: AuditStatus;
   auditType?: string;
 }) {
@@ -242,7 +241,7 @@ export async function getAudits(configId: string, filters?: {
 }
 
 export async function createAudit(data: {
-  configId: string;
+  configId: number;
   auditType: string;
   title: string;
   description?: string;
@@ -269,7 +268,7 @@ export async function createAudit(data: {
 }
 
 export async function updateAudit(
-  auditId: string,
+  auditId: number,
   data: {
     status?: AuditStatus;
     findings?: Record<string, any>;
@@ -291,7 +290,7 @@ export async function updateAudit(
 
 // ============ Evidence Management ============
 
-export async function getEvidence(auditId: string) {
+export async function getEvidence(auditId: number) {
   return prisma.complianceEvidence.findMany({
     where: { auditId },
     orderBy: { uploadedAt: 'desc' },
@@ -299,7 +298,7 @@ export async function getEvidence(auditId: string) {
 }
 
 export async function createEvidence(data: {
-  auditId: string;
+  auditId: number;
   title: string;
   description?: string;
   evidenceType: string;
@@ -323,7 +322,7 @@ export async function createEvidence(data: {
   });
 }
 
-export async function deleteEvidence(evidenceId: string) {
+export async function deleteEvidence(evidenceId: number) {
   return prisma.complianceEvidence.delete({
     where: { id: evidenceId },
   });
@@ -331,7 +330,7 @@ export async function deleteEvidence(evidenceId: string) {
 
 // ============ Risk Assessments ============
 
-export async function getRiskAssessments(configId: string, filters?: {
+export async function getRiskAssessments(configId: number, filters?: {
   riskLevel?: RiskLevel;
   category?: string;
   status?: string;
@@ -348,7 +347,7 @@ export async function getRiskAssessments(configId: string, filters?: {
 }
 
 export async function createRiskAssessment(data: {
-  configId: string;
+  configId: number;
   title: string;
   description: string;
   category: string;
@@ -392,7 +391,7 @@ export async function createRiskAssessment(data: {
 }
 
 export async function updateRiskAssessment(
-  assessmentId: string,
+  assessmentId: number,
   data: {
     title?: string;
     description?: string;
@@ -441,7 +440,7 @@ export async function updateRiskAssessment(
 
 // ============ Compliance Reports ============
 
-export async function getReports(configId: string, filters?: {
+export async function getReports(configId: number, filters?: {
   reportType?: string;
   startDate?: Date;
   endDate?: Date;
@@ -460,7 +459,7 @@ export async function getReports(configId: string, filters?: {
 }
 
 export async function generateComplianceReport(data: {
-  configId: string;
+  configId: number;
   reportType: string;
   title: string;
   periodStart: Date;
@@ -555,7 +554,7 @@ export async function generateComplianceReport(data: {
 
 // ============ AI-Powered Compliance Scanning ============
 
-export async function runComplianceScan(configId: string) {
+export async function runComplianceScan(configId: number) {
   const config = await prisma.complianceMonitorConfig.findUnique({
     where: { id: configId },
     include: {
@@ -635,7 +634,7 @@ async function performAutomatedCheck(rule: any): Promise<{
 
 // ============ Analytics ============
 
-export async function getComplianceAnalytics(configId: string, filters?: {
+export async function getComplianceAnalytics(configId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
 }) {
@@ -727,7 +726,7 @@ function calculateTrends(analytics: any[]): Record<string, any> {
   };
 }
 
-export async function recordDailyAnalytics(configId: string) {
+export async function recordDailyAnalytics(configId: number) {
   const [violations, rules, riskAssessments] = await Promise.all([
     prisma.complianceViolation.findMany({
       where: { configId },
@@ -784,7 +783,7 @@ export async function recordDailyAnalytics(configId: string) {
 
 // ============ Authorization Helpers ============
 
-export async function getClientIdFromComplianceConfig(configId: string): Promise<string | null> {
+export async function getClientIdFromComplianceConfig(configId: number): Promise<number | null> {
   const config = await prisma.complianceMonitorConfig.findUnique({
     where: { id: configId },
     select: { clientId: true },
@@ -792,7 +791,7 @@ export async function getClientIdFromComplianceConfig(configId: string): Promise
   return config?.clientId ?? null;
 }
 
-export async function getClientIdFromRule(ruleId: string): Promise<string | null> {
+export async function getClientIdFromRule(ruleId: number): Promise<number | null> {
   const rule = await prisma.complianceRule.findUnique({
     where: { id: ruleId },
     include: { config: { select: { clientId: true } } },
@@ -800,7 +799,7 @@ export async function getClientIdFromRule(ruleId: string): Promise<string | null
   return rule?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromViolation(violationId: string): Promise<string | null> {
+export async function getClientIdFromViolation(violationId: number): Promise<number | null> {
   const violation = await prisma.complianceViolation.findUnique({
     where: { id: violationId },
     include: { config: { select: { clientId: true } } },
@@ -808,7 +807,7 @@ export async function getClientIdFromViolation(violationId: string): Promise<str
   return violation?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromAudit(auditId: string): Promise<string | null> {
+export async function getClientIdFromAudit(auditId: number): Promise<number | null> {
   const audit = await prisma.complianceAudit.findUnique({
     where: { id: auditId },
     include: { config: { select: { clientId: true } } },
@@ -816,7 +815,7 @@ export async function getClientIdFromAudit(auditId: string): Promise<string | nu
   return audit?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromRiskAssessment(assessmentId: string): Promise<string | null> {
+export async function getClientIdFromRiskAssessment(assessmentId: number): Promise<number | null> {
   const assessment = await prisma.riskAssessment.findUnique({
     where: { id: assessmentId },
     include: { config: { select: { clientId: true } } },

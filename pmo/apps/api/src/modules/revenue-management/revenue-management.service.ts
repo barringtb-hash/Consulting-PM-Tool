@@ -1,10 +1,9 @@
-import { PrismaClient, PricingStrategy, RateType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PricingStrategy, RateType } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 
 // ============ Configuration Management ============
 
-export async function getRevenueConfig(clientId: string) {
+export async function getRevenueConfig(clientId: number) {
   return prisma.revenueManagementConfig.findUnique({
     where: { clientId },
     include: {
@@ -22,7 +21,7 @@ export async function getRevenueConfig(clientId: string) {
 }
 
 export async function createRevenueConfig(data: {
-  clientId: string;
+  clientId: number;
   businessType: string;
   currency: string;
   pricingStrategy: PricingStrategy;
@@ -56,7 +55,7 @@ export async function createRevenueConfig(data: {
 }
 
 export async function updateRevenueConfig(
-  configId: string,
+  configId: number,
   data: {
     businessType?: string;
     pricingStrategy?: PricingStrategy;
@@ -79,7 +78,7 @@ export async function updateRevenueConfig(
 
 // ============ Rate Categories Management ============
 
-export async function getRateCategories(configId: string) {
+export async function getRateCategories(configId: number) {
   return prisma.rateCategory.findMany({
     where: { configId },
     orderBy: { baseRate: 'asc' },
@@ -87,7 +86,7 @@ export async function getRateCategories(configId: string) {
 }
 
 export async function createRateCategory(data: {
-  configId: string;
+  configId: number;
   name: string;
   description?: string;
   rateType: RateType;
@@ -116,7 +115,7 @@ export async function createRateCategory(data: {
 }
 
 export async function updateRateCategory(
-  categoryId: string,
+  categoryId: number,
   data: {
     name?: string;
     description?: string;
@@ -135,7 +134,7 @@ export async function updateRateCategory(
   });
 }
 
-export async function deleteRateCategory(categoryId: string) {
+export async function deleteRateCategory(categoryId: number) {
   return prisma.rateCategory.delete({
     where: { id: categoryId },
   });
@@ -143,7 +142,7 @@ export async function deleteRateCategory(categoryId: string) {
 
 // ============ Competitor Management ============
 
-export async function getCompetitors(configId: string) {
+export async function getCompetitors(configId: number) {
   return prisma.competitor.findMany({
     where: { configId },
     include: {
@@ -157,7 +156,7 @@ export async function getCompetitors(configId: string) {
 }
 
 export async function createCompetitor(data: {
-  configId: string;
+  configId: number;
   name: string;
   website?: string;
   starRating?: number;
@@ -182,7 +181,7 @@ export async function createCompetitor(data: {
 }
 
 export async function updateCompetitor(
-  competitorId: string,
+  competitorId: number,
   data: {
     name?: string;
     website?: string;
@@ -201,7 +200,7 @@ export async function updateCompetitor(
 }
 
 export async function recordCompetitorRate(data: {
-  competitorId: string;
+  competitorId: number;
   rateType: string;
   rate: number;
   roomType?: string;
@@ -233,7 +232,7 @@ export async function recordCompetitorRate(data: {
   return rate;
 }
 
-export async function getCompetitorRates(competitorId: string, filters?: {
+export async function getCompetitorRates(competitorId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
   rateType?: string;
@@ -255,7 +254,7 @@ export async function getCompetitorRates(competitorId: string, filters?: {
 
 // ============ Demand Forecasting ============
 
-export async function getDemandForecasts(configId: string, filters?: {
+export async function getDemandForecasts(configId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
   segment?: string;
@@ -275,7 +274,7 @@ export async function getDemandForecasts(configId: string, filters?: {
   });
 }
 
-export async function generateDemandForecasts(configId: string, options?: {
+export async function generateDemandForecasts(configId: number, options?: {
   startDate?: Date;
   daysAhead?: number;
 }) {
@@ -405,10 +404,10 @@ async function generateDailyForecast(config: any, date: Date): Promise<{
 
 // ============ Price Recommendations ============
 
-export async function getPriceRecommendations(configId: string, filters?: {
+export async function getPriceRecommendations(configId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
-  rateCategoryId?: string;
+  rateCategoryId?: number;
   status?: string;
 }) {
   return prisma.priceRecommendation.findMany({
@@ -430,7 +429,7 @@ export async function getPriceRecommendations(configId: string, filters?: {
   });
 }
 
-export async function generatePriceRecommendations(configId: string, options?: {
+export async function generatePriceRecommendations(configId: number, options?: {
   startDate?: Date;
   daysAhead?: number;
 }) {
@@ -611,7 +610,7 @@ async function generateRecommendation(
   };
 }
 
-export async function applyRecommendation(recommendationId: string, appliedBy: string) {
+export async function applyRecommendation(recommendationId: number, appliedBy: string) {
   const recommendation = await prisma.priceRecommendation.findUnique({
     where: { id: recommendationId },
     include: { rateCategory: true },
@@ -640,7 +639,7 @@ export async function applyRecommendation(recommendationId: string, appliedBy: s
 
 // ============ Promotions Management ============
 
-export async function getPromotions(configId: string, filters?: {
+export async function getPromotions(configId: number, filters?: {
   isActive?: boolean;
   startDate?: Date;
   endDate?: Date;
@@ -659,7 +658,7 @@ export async function getPromotions(configId: string, filters?: {
 }
 
 export async function createPromotion(data: {
-  configId: string;
+  configId: number;
   name: string;
   description?: string;
   discountType: string;
@@ -693,7 +692,7 @@ export async function createPromotion(data: {
 }
 
 export async function updatePromotion(
-  promotionId: string,
+  promotionId: number,
   data: {
     name?: string;
     description?: string;
@@ -716,7 +715,7 @@ export async function updatePromotion(
 // ============ Booking Data Management ============
 
 export async function recordBooking(data: {
-  configId: string;
+  configId: number;
   bookingReference: string;
   bookingDate: Date;
   stayDate: Date;
@@ -749,7 +748,7 @@ export async function recordBooking(data: {
   });
 }
 
-export async function getBookings(configId: string, filters?: {
+export async function getBookings(configId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
   channel?: string;
@@ -773,7 +772,7 @@ export async function getBookings(configId: string, filters?: {
 
 // ============ Analytics ============
 
-export async function getRevenueAnalytics(configId: string, filters?: {
+export async function getRevenueAnalytics(configId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
 }) {
@@ -866,7 +865,7 @@ export async function getRevenueAnalytics(configId: string, filters?: {
   };
 }
 
-export async function recordDailyAnalytics(configId: string) {
+export async function recordDailyAnalytics(configId: number) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -916,7 +915,7 @@ export async function recordDailyAnalytics(configId: string) {
 
 // ============ Authorization Helpers ============
 
-export async function getClientIdFromRevenueConfig(configId: string): Promise<string | null> {
+export async function getClientIdFromRevenueConfig(configId: number): Promise<number | null> {
   const config = await prisma.revenueManagementConfig.findUnique({
     where: { id: configId },
     select: { clientId: true },
@@ -924,7 +923,7 @@ export async function getClientIdFromRevenueConfig(configId: string): Promise<st
   return config?.clientId ?? null;
 }
 
-export async function getClientIdFromRateCategory(categoryId: string): Promise<string | null> {
+export async function getClientIdFromRateCategory(categoryId: number): Promise<number | null> {
   const category = await prisma.rateCategory.findUnique({
     where: { id: categoryId },
     include: { config: { select: { clientId: true } } },
@@ -932,7 +931,7 @@ export async function getClientIdFromRateCategory(categoryId: string): Promise<s
   return category?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromCompetitor(competitorId: string): Promise<string | null> {
+export async function getClientIdFromCompetitor(competitorId: number): Promise<number | null> {
   const competitor = await prisma.competitor.findUnique({
     where: { id: competitorId },
     include: { config: { select: { clientId: true } } },
@@ -940,7 +939,7 @@ export async function getClientIdFromCompetitor(competitorId: string): Promise<s
   return competitor?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromPromotion(promotionId: string): Promise<string | null> {
+export async function getClientIdFromPromotion(promotionId: number): Promise<number | null> {
   const promotion = await prisma.revenuePromotion.findUnique({
     where: { id: promotionId },
     include: { config: { select: { clientId: true } } },
@@ -948,7 +947,7 @@ export async function getClientIdFromPromotion(promotionId: string): Promise<str
   return promotion?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromRecommendation(recommendationId: string): Promise<string | null> {
+export async function getClientIdFromRecommendation(recommendationId: number): Promise<number | null> {
   const recommendation = await prisma.priceRecommendation.findUnique({
     where: { id: recommendationId },
     include: { config: { select: { clientId: true } } },

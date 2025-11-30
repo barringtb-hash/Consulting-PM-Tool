@@ -1,10 +1,9 @@
-import { PrismaClient, EquipmentStatus, MaintenanceType, WorkOrderStatus, WorkOrderPriority } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { EquipmentStatus, MaintenanceType, WorkOrderStatus, WorkOrderPriority } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 
 // ============ Configuration Management ============
 
-export async function getMaintenanceConfig(clientId: string) {
+export async function getMaintenanceConfig(clientId: number) {
   return prisma.predictiveMaintenanceConfig.findUnique({
     where: { clientId },
     include: {
@@ -25,7 +24,7 @@ export async function getMaintenanceConfig(clientId: string) {
 }
 
 export async function createMaintenanceConfig(data: {
-  clientId: string;
+  clientId: number;
   facilityName: string;
   facilityType: string;
   equipmentCategories: string[];
@@ -49,7 +48,7 @@ export async function createMaintenanceConfig(data: {
 }
 
 export async function updateMaintenanceConfig(
-  configId: string,
+  configId: number,
   data: {
     facilityName?: string;
     facilityType?: string;
@@ -68,7 +67,7 @@ export async function updateMaintenanceConfig(
 
 // ============ Equipment Management ============
 
-export async function getEquipment(configId: string, filters?: {
+export async function getEquipment(configId: number, filters?: {
   category?: string;
   status?: EquipmentStatus;
   location?: string;
@@ -94,7 +93,7 @@ export async function getEquipment(configId: string, filters?: {
   });
 }
 
-export async function getEquipmentById(equipmentId: string) {
+export async function getEquipmentById(equipmentId: number) {
   return prisma.equipment.findUnique({
     where: { id: equipmentId },
     include: {
@@ -116,7 +115,7 @@ export async function getEquipmentById(equipmentId: string) {
 }
 
 export async function createEquipment(data: {
-  configId: string;
+  configId: number;
   assetId: string;
   name: string;
   category: string;
@@ -151,7 +150,7 @@ export async function createEquipment(data: {
 }
 
 export async function updateEquipment(
-  equipmentId: string,
+  equipmentId: number,
   data: {
     name?: string;
     category?: string;
@@ -170,7 +169,7 @@ export async function updateEquipment(
   });
 }
 
-export async function deleteEquipment(equipmentId: string) {
+export async function deleteEquipment(equipmentId: number) {
   return prisma.equipment.delete({
     where: { id: equipmentId },
   });
@@ -178,8 +177,8 @@ export async function deleteEquipment(equipmentId: string) {
 
 // ============ Sensor Management ============
 
-export async function getSensors(configId: string, filters?: {
-  equipmentId?: string;
+export async function getSensors(configId: number, filters?: {
+  equipmentId?: number;
   sensorType?: string;
   isActive?: boolean;
 }) {
@@ -198,8 +197,8 @@ export async function getSensors(configId: string, filters?: {
 }
 
 export async function createSensor(data: {
-  configId: string;
-  equipmentId: string;
+  configId: number;
+  equipmentId: number;
   sensorId: string;
   name: string;
   sensorType: string;
@@ -225,7 +224,7 @@ export async function createSensor(data: {
 }
 
 export async function updateSensor(
-  sensorId: string,
+  sensorId: number,
   data: {
     name?: string;
     minThreshold?: number;
@@ -245,7 +244,7 @@ export async function updateSensor(
 // ============ Sensor Readings ============
 
 export async function recordSensorReading(data: {
-  sensorId: string;
+  sensorId: number;
   value: number;
   quality?: string;
   metadata?: Record<string, any>;
@@ -328,7 +327,7 @@ function calculateAnomalySeverity(value: number, min: number | null, max: number
   return 'low';
 }
 
-export async function getSensorReadings(sensorId: string, filters?: {
+export async function getSensorReadings(sensorId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -348,8 +347,8 @@ export async function getSensorReadings(sensorId: string, filters?: {
   });
 }
 
-export async function getAnomalies(configId: string, filters?: {
-  sensorId?: string;
+export async function getAnomalies(configId: number, filters?: {
+  sensorId?: number;
   severity?: string;
   isResolved?: boolean;
 }) {
@@ -371,8 +370,8 @@ export async function getAnomalies(configId: string, filters?: {
 
 // ============ Failure Predictions ============
 
-export async function getFailurePredictions(configId: string, filters?: {
-  equipmentId?: string;
+export async function getFailurePredictions(configId: number, filters?: {
+  equipmentId?: number;
   failureType?: string;
   isActive?: boolean;
   minProbability?: number;
@@ -392,7 +391,7 @@ export async function getFailurePredictions(configId: string, filters?: {
   });
 }
 
-export async function generateFailurePredictions(configId: string) {
+export async function generateFailurePredictions(configId: number) {
   // Get all equipment with sensor data
   const equipment = await prisma.equipment.findMany({
     where: { configId, status: { not: EquipmentStatus.DECOMMISSIONED } },
@@ -564,8 +563,8 @@ async function predictEquipmentFailure(equipment: any): Promise<{
 
 // ============ Work Orders ============
 
-export async function getWorkOrders(configId: string, filters?: {
-  equipmentId?: string;
+export async function getWorkOrders(configId: number, filters?: {
+  equipmentId?: number;
   status?: WorkOrderStatus;
   priority?: WorkOrderPriority;
   maintenanceType?: MaintenanceType;
@@ -589,8 +588,8 @@ export async function getWorkOrders(configId: string, filters?: {
 }
 
 export async function createWorkOrder(data: {
-  configId: string;
-  equipmentId: string;
+  configId: number;
+  equipmentId: number;
   workOrderNumber: string;
   title: string;
   description?: string;
@@ -600,7 +599,7 @@ export async function createWorkOrder(data: {
   estimatedDuration?: number;
   assignedTo?: string;
   estimatedCost?: number;
-  predictionId?: string;
+  predictionId?: number;
 }) {
   return prisma.maintenanceWorkOrder.create({
     data: {
@@ -623,7 +622,7 @@ export async function createWorkOrder(data: {
 }
 
 export async function updateWorkOrder(
-  workOrderId: string,
+  workOrderId: number,
   data: {
     status?: WorkOrderStatus;
     priority?: WorkOrderPriority;
@@ -649,7 +648,7 @@ export async function updateWorkOrder(
 
 // ============ Spare Parts ============
 
-export async function getSpareParts(configId: string, filters?: {
+export async function getSpareParts(configId: number, filters?: {
   category?: string;
   lowStock?: boolean;
 }) {
@@ -669,7 +668,7 @@ export async function getSpareParts(configId: string, filters?: {
 }
 
 export async function createSparePart(data: {
-  configId: string;
+  configId: number;
   partNumber: string;
   name: string;
   category: string;
@@ -701,7 +700,7 @@ export async function createSparePart(data: {
 }
 
 export async function updateSparePart(
-  partId: string,
+  partId: number,
   data: {
     name?: string;
     currentStock?: number;
@@ -720,8 +719,8 @@ export async function updateSparePart(
 // ============ Downtime Events ============
 
 export async function recordDowntimeEvent(data: {
-  configId: string;
-  equipmentId: string;
+  configId: number;
+  equipmentId: number;
   reason: string;
   startTime: Date;
   endTime?: Date;
@@ -759,8 +758,8 @@ export async function recordDowntimeEvent(data: {
   return event;
 }
 
-export async function getDowntimeEvents(configId: string, filters?: {
-  equipmentId?: string;
+export async function getDowntimeEvents(configId: number, filters?: {
+  equipmentId?: number;
   isPlanned?: boolean;
   startDate?: Date;
   endDate?: Date;
@@ -786,7 +785,7 @@ export async function getDowntimeEvents(configId: string, filters?: {
 
 // ============ Analytics ============
 
-export async function getMaintenanceAnalytics(configId: string, filters?: {
+export async function getMaintenanceAnalytics(configId: number, filters?: {
   startDate?: Date;
   endDate?: Date;
 }) {
@@ -886,7 +885,7 @@ export async function getMaintenanceAnalytics(configId: string, filters?: {
   };
 }
 
-export async function recordDailyAnalytics(configId: string) {
+export async function recordDailyAnalytics(configId: number) {
   const [equipment, workOrders, downtimeEvents, predictions] = await Promise.all([
     prisma.equipment.findMany({ where: { configId } }),
     prisma.maintenanceWorkOrder.findMany({ where: { configId } }),
@@ -935,7 +934,7 @@ export async function recordDailyAnalytics(configId: string) {
 
 // ============ Authorization Helpers ============
 
-export async function getClientIdFromMaintenanceConfig(configId: string): Promise<string | null> {
+export async function getClientIdFromMaintenanceConfig(configId: number): Promise<number | null> {
   const config = await prisma.predictiveMaintenanceConfig.findUnique({
     where: { id: configId },
     select: { clientId: true },
@@ -943,7 +942,7 @@ export async function getClientIdFromMaintenanceConfig(configId: string): Promis
   return config?.clientId ?? null;
 }
 
-export async function getClientIdFromEquipment(equipmentId: string): Promise<string | null> {
+export async function getClientIdFromEquipment(equipmentId: number): Promise<number | null> {
   const equipment = await prisma.equipment.findUnique({
     where: { id: equipmentId },
     include: { config: { select: { clientId: true } } },
@@ -951,7 +950,7 @@ export async function getClientIdFromEquipment(equipmentId: string): Promise<str
   return equipment?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromSensor(sensorId: string): Promise<string | null> {
+export async function getClientIdFromSensor(sensorId: number): Promise<number | null> {
   const sensor = await prisma.sensor.findUnique({
     where: { id: sensorId },
     include: { config: { select: { clientId: true } } },
@@ -959,7 +958,7 @@ export async function getClientIdFromSensor(sensorId: string): Promise<string | 
   return sensor?.config?.clientId ?? null;
 }
 
-export async function getClientIdFromWorkOrder(workOrderId: string): Promise<string | null> {
+export async function getClientIdFromWorkOrder(workOrderId: number): Promise<number | null> {
   const workOrder = await prisma.maintenanceWorkOrder.findUnique({
     where: { id: workOrderId },
     include: { config: { select: { clientId: true } } },

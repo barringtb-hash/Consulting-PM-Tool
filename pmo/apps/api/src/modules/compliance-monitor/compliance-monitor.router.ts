@@ -157,7 +157,7 @@ router.get(
       return;
     }
 
-    const config = await complianceService.getComplianceConfig(req.params.clientId);
+    const config = await complianceService.getComplianceConfig(clientId);
     res.json({ config });
   },
 );
@@ -190,7 +190,7 @@ router.post(
     }
 
     const config = await complianceService.createComplianceConfig({
-      clientId: req.params.clientId,
+      clientId,
       ...parsed.data,
     });
     res.status(201).json({ config });
@@ -206,7 +206,13 @@ router.patch(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -224,7 +230,7 @@ router.patch(
       return;
     }
 
-    const config = await complianceService.updateComplianceConfig(req.params.configId, parsed.data);
+    const config = await complianceService.updateComplianceConfig(configId, parsed.data);
     res.json({ config });
   },
 );
@@ -240,7 +246,13 @@ router.get(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -253,7 +265,7 @@ router.get(
     }
 
     const { framework, category, isActive } = req.query;
-    const rules = await complianceService.getRules(req.params.configId, {
+    const rules = await complianceService.getRules(configId, {
       framework: framework as string,
       category: category as string,
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
@@ -271,7 +283,13 @@ router.post(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -290,7 +308,7 @@ router.post(
     }
 
     const rule = await complianceService.createRule({
-      configId: req.params.configId,
+      configId,
       ...parsed.data,
     });
     res.status(201).json({ rule });
@@ -306,13 +324,19 @@ router.patch(
       return;
     }
 
-    const clientId = await complianceService.getClientIdFromRule(req.params.ruleId);
+    const ruleId = Number(req.params.ruleId);
+    if (Number.isNaN(ruleId)) {
+      res.status(400).json({ error: 'Invalid rule ID' });
+      return;
+    }
+
+    const clientId = await complianceService.getClientIdFromRule(ruleId);
     if (!clientId) {
       res.status(404).json({ error: 'Rule not found' });
       return;
     }
 
-    const canAccess = await hasClientAccess(req.userId, Number(clientId));
+    const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Forbidden' });
       return;
@@ -324,7 +348,7 @@ router.patch(
       return;
     }
 
-    const rule = await complianceService.updateRule(req.params.ruleId, parsed.data);
+    const rule = await complianceService.updateRule(ruleId, parsed.data);
     res.json({ rule });
   },
 );
@@ -338,19 +362,25 @@ router.delete(
       return;
     }
 
-    const clientId = await complianceService.getClientIdFromRule(req.params.ruleId);
+    const ruleId = Number(req.params.ruleId);
+    if (Number.isNaN(ruleId)) {
+      res.status(400).json({ error: 'Invalid rule ID' });
+      return;
+    }
+
+    const clientId = await complianceService.getClientIdFromRule(ruleId);
     if (!clientId) {
       res.status(404).json({ error: 'Rule not found' });
       return;
     }
 
-    const canAccess = await hasClientAccess(req.userId, Number(clientId));
+    const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
 
-    await complianceService.deleteRule(req.params.ruleId);
+    await complianceService.deleteRule(ruleId);
     res.status(204).send();
   },
 );
@@ -366,7 +396,13 @@ router.get(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -379,7 +415,7 @@ router.get(
     }
 
     const { status, ruleId, severity, startDate, endDate } = req.query;
-    const violations = await complianceService.getViolations(req.params.configId, {
+    const violations = await complianceService.getViolations(configId, {
       status: status as ViolationStatus,
       ruleId: ruleId as string,
       severity: severity as string,
@@ -399,7 +435,13 @@ router.post(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -418,7 +460,7 @@ router.post(
     }
 
     const violation = await complianceService.createViolation({
-      configId: req.params.configId,
+      configId,
       ...parsed.data,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
     });
@@ -435,13 +477,19 @@ router.patch(
       return;
     }
 
-    const clientId = await complianceService.getClientIdFromViolation(req.params.violationId);
+    const violationId = Number(req.params.violationId);
+    if (Number.isNaN(violationId)) {
+      res.status(400).json({ error: 'Invalid violation ID' });
+      return;
+    }
+
+    const clientId = await complianceService.getClientIdFromViolation(violationId);
     if (!clientId) {
       res.status(404).json({ error: 'Violation not found' });
       return;
     }
 
-    const canAccess = await hasClientAccess(req.userId, Number(clientId));
+    const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Forbidden' });
       return;
@@ -453,7 +501,7 @@ router.patch(
       return;
     }
 
-    const violation = await complianceService.updateViolation(req.params.violationId, {
+    const violation = await complianceService.updateViolation(violationId, {
       ...parsed.data,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
       resolvedAt: parsed.data.resolvedAt ? new Date(parsed.data.resolvedAt) : undefined,
@@ -473,7 +521,13 @@ router.get(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -486,7 +540,7 @@ router.get(
     }
 
     const { status, auditType } = req.query;
-    const audits = await complianceService.getAudits(req.params.configId, {
+    const audits = await complianceService.getAudits(configId, {
       status: status as AuditStatus,
       auditType: auditType as string,
     });
@@ -503,7 +557,13 @@ router.post(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -522,7 +582,7 @@ router.post(
     }
 
     const audit = await complianceService.createAudit({
-      configId: req.params.configId,
+      configId,
       ...parsed.data,
       scheduledDate: new Date(parsed.data.scheduledDate),
     });
@@ -539,13 +599,19 @@ router.patch(
       return;
     }
 
-    const clientId = await complianceService.getClientIdFromAudit(req.params.auditId);
+    const auditId = Number(req.params.auditId);
+    if (Number.isNaN(auditId)) {
+      res.status(400).json({ error: 'Invalid audit ID' });
+      return;
+    }
+
+    const clientId = await complianceService.getClientIdFromAudit(auditId);
     if (!clientId) {
       res.status(404).json({ error: 'Audit not found' });
       return;
     }
 
-    const canAccess = await hasClientAccess(req.userId, Number(clientId));
+    const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Forbidden' });
       return;
@@ -557,7 +623,7 @@ router.patch(
       return;
     }
 
-    const audit = await complianceService.updateAudit(req.params.auditId, {
+    const audit = await complianceService.updateAudit(auditId, {
       ...parsed.data,
       completedDate: parsed.data.completedDate ? new Date(parsed.data.completedDate) : undefined,
       nextAuditDate: parsed.data.nextAuditDate ? new Date(parsed.data.nextAuditDate) : undefined,
@@ -577,7 +643,13 @@ router.get(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -590,7 +662,7 @@ router.get(
     }
 
     const { riskLevel, category, status } = req.query;
-    const risks = await complianceService.getRiskAssessments(req.params.configId, {
+    const risks = await complianceService.getRiskAssessments(configId, {
       riskLevel: riskLevel as RiskLevel,
       category: category as string,
       status: status as string,
@@ -608,7 +680,13 @@ router.post(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -627,7 +705,7 @@ router.post(
     }
 
     const risk = await complianceService.createRiskAssessment({
-      configId: req.params.configId,
+      configId,
       ...parsed.data,
       reviewDate: parsed.data.reviewDate ? new Date(parsed.data.reviewDate) : undefined,
     });
@@ -644,13 +722,19 @@ router.patch(
       return;
     }
 
-    const clientId = await complianceService.getClientIdFromRiskAssessment(req.params.assessmentId);
+    const assessmentId = Number(req.params.assessmentId);
+    if (Number.isNaN(assessmentId)) {
+      res.status(400).json({ error: 'Invalid assessment ID' });
+      return;
+    }
+
+    const clientId = await complianceService.getClientIdFromRiskAssessment(assessmentId);
     if (!clientId) {
       res.status(404).json({ error: 'Risk assessment not found' });
       return;
     }
 
-    const canAccess = await hasClientAccess(req.userId, Number(clientId));
+    const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Forbidden' });
       return;
@@ -662,7 +746,7 @@ router.patch(
       return;
     }
 
-    const risk = await complianceService.updateRiskAssessment(req.params.assessmentId, {
+    const risk = await complianceService.updateRiskAssessment(assessmentId, {
       ...parsed.data,
       reviewDate: parsed.data.reviewDate ? new Date(parsed.data.reviewDate) : undefined,
     });
@@ -681,7 +765,13 @@ router.post(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -693,7 +783,7 @@ router.post(
       return;
     }
 
-    const results = await complianceService.runComplianceScan(req.params.configId);
+    const results = await complianceService.runComplianceScan(configId);
     res.json({ results });
   },
 );
@@ -709,7 +799,13 @@ router.get(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -722,7 +818,7 @@ router.get(
     }
 
     const { reportType, startDate, endDate } = req.query;
-    const reports = await complianceService.getReports(req.params.configId, {
+    const reports = await complianceService.getReports(configId, {
       reportType: reportType as string,
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
@@ -740,7 +836,13 @@ router.post(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -759,7 +861,7 @@ router.post(
     }
 
     const report = await complianceService.generateComplianceReport({
-      configId: req.params.configId,
+      configId,
       ...parsed.data,
       periodStart: new Date(parsed.data.periodStart),
       periodEnd: new Date(parsed.data.periodEnd),
@@ -779,7 +881,13 @@ router.get(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -792,7 +900,7 @@ router.get(
     }
 
     const { startDate, endDate } = req.query;
-    const analytics = await complianceService.getComplianceAnalytics(req.params.configId, {
+    const analytics = await complianceService.getComplianceAnalytics(configId, {
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
     });
@@ -809,7 +917,13 @@ router.post(
       return;
     }
 
-    const clientId = await getClientIdFromComplianceMonitorConfig(req.params.configId);
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromComplianceMonitorConfig(configId);
     if (!clientId) {
       res.status(404).json({ error: 'Config not found' });
       return;
@@ -821,7 +935,7 @@ router.post(
       return;
     }
 
-    const analytics = await complianceService.recordDailyAnalytics(req.params.configId);
+    const analytics = await complianceService.recordDailyAnalytics(configId);
     res.json({ analytics });
   },
 );

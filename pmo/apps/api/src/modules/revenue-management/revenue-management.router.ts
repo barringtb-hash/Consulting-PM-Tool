@@ -163,7 +163,10 @@ const generateRecommendationsSchema = z.object({
 
 router.get('/config/:clientId', async (req, res) => {
   try {
-    const { clientId } = req.params;
+    const clientId = Number(req.params.clientId);
+    if (Number.isNaN(clientId)) {
+      return res.status(400).json({ error: 'Invalid client ID' });
+    }
 
     if (!hasClientAccess(req, clientId)) {
       return res.status(403).json({ error: 'Forbidden' });
@@ -198,7 +201,10 @@ router.post('/config', async (req, res) => {
 
 router.patch('/config/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const data = updateConfigSchema.parse(req.body);
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -221,7 +227,10 @@ router.patch('/config/:configId', async (req, res) => {
 
 router.get('/rate-categories/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
@@ -258,7 +267,10 @@ router.post('/rate-categories', async (req, res) => {
 
 router.patch('/rate-categories/:categoryId', async (req, res) => {
   try {
-    const { categoryId } = req.params;
+    const categoryId = Number(req.params.categoryId);
+    if (Number.isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid category ID' });
+    }
     const data = updateRateCategorySchema.parse(req.body);
 
     const clientId = await revenueService.getClientIdFromRateCategory(categoryId);
@@ -279,7 +291,10 @@ router.patch('/rate-categories/:categoryId', async (req, res) => {
 
 router.delete('/rate-categories/:categoryId', async (req, res) => {
   try {
-    const { categoryId } = req.params;
+    const categoryId = Number(req.params.categoryId);
+    if (Number.isNaN(categoryId)) {
+      return res.status(400).json({ error: 'Invalid category ID' });
+    }
 
     const clientId = await revenueService.getClientIdFromRateCategory(categoryId);
     if (!clientId || !hasClientAccess(req, clientId)) {
@@ -298,7 +313,10 @@ router.delete('/rate-categories/:categoryId', async (req, res) => {
 
 router.get('/competitors/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {
@@ -335,7 +353,10 @@ router.post('/competitors', async (req, res) => {
 
 router.patch('/competitors/:competitorId', async (req, res) => {
   try {
-    const { competitorId } = req.params;
+    const competitorId = Number(req.params.competitorId);
+    if (Number.isNaN(competitorId)) {
+      return res.status(400).json({ error: 'Invalid competitor ID' });
+    }
     const data = updateCompetitorSchema.parse(req.body);
 
     const clientId = await revenueService.getClientIdFromCompetitor(competitorId);
@@ -381,7 +402,10 @@ router.post('/competitor-rates', async (req, res) => {
 
 router.get('/competitor-rates/:competitorId', async (req, res) => {
   try {
-    const { competitorId } = req.params;
+    const competitorId = Number(req.params.competitorId);
+    if (Number.isNaN(competitorId)) {
+      return res.status(400).json({ error: 'Invalid competitor ID' });
+    }
     const { startDate, endDate, rateType } = req.query;
 
     const clientId = await revenueService.getClientIdFromCompetitor(competitorId);
@@ -405,7 +429,10 @@ router.get('/competitor-rates/:competitorId', async (req, res) => {
 
 router.get('/forecasts/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { startDate, endDate, segment } = req.query;
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -427,7 +454,10 @@ router.get('/forecasts/:configId', async (req, res) => {
 
 router.post('/forecasts/:configId/generate', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const options = generateForecastsSchema.parse(req.body);
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -456,7 +486,10 @@ router.post('/forecasts/:configId/generate', async (req, res) => {
 
 router.get('/recommendations/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { startDate, endDate, rateCategoryId, status } = req.query;
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -479,7 +512,10 @@ router.get('/recommendations/:configId', async (req, res) => {
 
 router.post('/recommendations/:configId/generate', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const options = generateRecommendationsSchema.parse(req.body);
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -506,7 +542,10 @@ router.post('/recommendations/:configId/generate', async (req, res) => {
 
 router.post('/recommendations/:recommendationId/apply', async (req, res) => {
   try {
-    const { recommendationId } = req.params;
+    const recommendationId = Number(req.params.recommendationId);
+    if (Number.isNaN(recommendationId)) {
+      return res.status(400).json({ error: 'Invalid recommendation ID' });
+    }
     const { appliedBy } = req.body;
 
     const clientId = await revenueService.getClientIdFromRecommendation(recommendationId);
@@ -526,7 +565,10 @@ router.post('/recommendations/:recommendationId/apply', async (req, res) => {
 
 router.get('/promotions/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { isActive, startDate, endDate } = req.query;
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -572,7 +614,10 @@ router.post('/promotions', async (req, res) => {
 
 router.patch('/promotions/:promotionId', async (req, res) => {
   try {
-    const { promotionId } = req.params;
+    const promotionId = Number(req.params.promotionId);
+    if (Number.isNaN(promotionId)) {
+      return res.status(400).json({ error: 'Invalid promotion ID' });
+    }
     const data = updatePromotionSchema.parse(req.body);
 
     const clientId = await revenueService.getClientIdFromPromotion(promotionId);
@@ -599,7 +644,10 @@ router.patch('/promotions/:promotionId', async (req, res) => {
 
 router.get('/bookings/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { startDate, endDate, channel, segment } = req.query;
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -649,7 +697,10 @@ router.post('/bookings', async (req, res) => {
 
 router.get('/analytics/:configId', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
     const { startDate, endDate } = req.query;
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
@@ -670,7 +721,10 @@ router.get('/analytics/:configId', async (req, res) => {
 
 router.post('/analytics/:configId/record', async (req, res) => {
   try {
-    const { configId } = req.params;
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      return res.status(400).json({ error: 'Invalid config ID' });
+    }
 
     const clientId = await revenueService.getClientIdFromRevenueConfig(configId);
     if (!clientId || !hasClientAccess(req, clientId)) {

@@ -3142,6 +3142,7 @@ enum ViolationStatus {
   OPEN
   INVESTIGATING
   REMEDIATED
+  RESOLVED
   ESCALATED
   CLOSED
   FALSE_POSITIVE
@@ -3591,6 +3592,8 @@ model SensorReading {
 
   rawValue          Float?
   processedValue    Float?
+
+  sensor            Sensor    @relation(fields: [sensorId], references: [id], onDelete: Cascade)
 
   @@index([sensorId, timestamp(sort: Desc)])
 }
