@@ -501,7 +501,7 @@ async function generateBotResponse(
   if (intentResult.intent === 'FAQ' || intentResult.intent === 'GENERAL') {
     const kbMatch = await findKnowledgeBaseMatch(
       customerMessage,
-      conversation.chatbotConfig as unknown as number,
+      conversation.chatbotConfigId,
     );
     if (kbMatch) {
       // Increment view count

@@ -64,7 +64,7 @@ export const generateMarketingContent = async (
         Authorization: `Bearer ${env.openaiApiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-5.1',
+        model: 'gpt-4o-mini',
         max_tokens: getMaxTokens(length),
         temperature: getToneTemperature(tone),
         messages: [
