@@ -150,100 +150,74 @@ export function createApp(): express.Express {
     app.use('/api/users', requireModule('admin'), usersRouter);
   }
 
-  // ============ PHASE 1 AI TOOL MODULES ============
+  // ============ AI TOOL MODULES ============
+  // AI Tool routes are ALWAYS registered to ensure proper error messages.
+  // The requireModule middleware handles runtime access control and returns
+  // informative "module not available" errors instead of generic 404s.
+  // This ensures users see meaningful errors when accessing AI Tools
+  // that aren't enabled in their deployment.
 
+  // Phase 1 AI Tools
   // AI Chatbot module (Tool 1.1) - customer service chatbot
-  if (isModuleEnabled('chatbot')) {
-    app.use('/api', requireModule('chatbot'), chatbotRouter);
-  }
+  app.use('/api', requireModule('chatbot'), chatbotRouter);
 
   // Product Description Generator module (Tool 1.2)
-  if (isModuleEnabled('productDescriptions')) {
-    app.use(
-      '/api',
-      requireModule('productDescriptions'),
-      productDescriptionRouter,
-    );
-  }
+  app.use('/api', requireModule('productDescriptions'), productDescriptionRouter);
 
   // AI Scheduling Assistant module (Tool 1.3)
-  if (isModuleEnabled('scheduling')) {
-    app.use('/api', requireModule('scheduling'), schedulingRouter);
-  }
+  app.use('/api', requireModule('scheduling'), schedulingRouter);
 
   // Client Intake Automator module (Tool 1.4)
-  if (isModuleEnabled('intake')) {
-    app.use('/api', requireModule('intake'), intakeRouter);
-  }
+  app.use('/api', requireModule('intake'), intakeRouter);
 
-  // ============ PHASE 2 AI TOOL MODULES ============
-
+  // Phase 2 AI Tools
   // Smart Document Analyzer module (Tool 2.1)
-  if (isModuleEnabled('documentAnalyzer')) {
-    app.use('/api', requireModule('documentAnalyzer'), documentAnalyzerRouter);
-  }
+  app.use('/api', requireModule('documentAnalyzer'), documentAnalyzerRouter);
 
   // Content Generation Suite module (Tool 2.2)
-  if (isModuleEnabled('contentGenerator')) {
-    app.use('/api', requireModule('contentGenerator'), contentGeneratorRouter);
-  }
+  app.use('/api', requireModule('contentGenerator'), contentGeneratorRouter);
 
   // Lead Scoring & CRM Assistant module (Tool 2.3)
-  if (isModuleEnabled('leadScoring')) {
-    app.use('/api', requireModule('leadScoring'), leadScoringRouter);
-  }
+  app.use('/api', requireModule('leadScoring'), leadScoringRouter);
 
   // Prior Authorization Bot module (Tool 2.4)
-  if (isModuleEnabled('priorAuth')) {
-    app.use('/api', requireModule('priorAuth'), priorAuthRouter);
-  }
+  app.use('/api', requireModule('priorAuth'), priorAuthRouter);
 
-  // ============ PHASE 3 AI TOOL MODULES ============
-
+  // Phase 3 AI Tools
   // Inventory Forecasting Engine module (Tool 3.1)
-  if (isModuleEnabled('inventoryForecasting')) {
-    app.use(
-      '/api/inventory-forecasting',
-      requireModule('inventoryForecasting'),
-      inventoryForecastingRouter,
-    );
-  }
+  app.use(
+    '/api/inventory-forecasting',
+    requireModule('inventoryForecasting'),
+    inventoryForecastingRouter,
+  );
 
   // Compliance Monitoring System module (Tool 3.2)
-  if (isModuleEnabled('complianceMonitor')) {
-    app.use(
-      '/api/compliance-monitor',
-      requireModule('complianceMonitor'),
-      complianceMonitorRouter,
-    );
-  }
+  app.use(
+    '/api/compliance-monitor',
+    requireModule('complianceMonitor'),
+    complianceMonitorRouter,
+  );
 
   // Predictive Maintenance Platform module (Tool 3.3)
-  if (isModuleEnabled('predictiveMaintenance')) {
-    app.use(
-      '/api/predictive-maintenance',
-      requireModule('predictiveMaintenance'),
-      predictiveMaintenanceRouter,
-    );
-  }
+  app.use(
+    '/api/predictive-maintenance',
+    requireModule('predictiveMaintenance'),
+    predictiveMaintenanceRouter,
+  );
 
   // Revenue Management AI module (Tool 3.4)
-  if (isModuleEnabled('revenueManagement')) {
-    app.use(
-      '/api/revenue-management',
-      requireModule('revenueManagement'),
-      revenueManagementRouter,
-    );
-  }
+  app.use(
+    '/api/revenue-management',
+    requireModule('revenueManagement'),
+    revenueManagementRouter,
+  );
 
   // Safety & Compliance Monitor module (Tool 3.5)
-  if (isModuleEnabled('safetyMonitor')) {
-    app.use(
-      '/api/safety-monitor',
-      requireModule('safetyMonitor'),
-      safetyMonitorRouter,
-    );
-  }
+  app.use(
+    '/api/safety-monitor',
+    requireModule('safetyMonitor'),
+    safetyMonitorRouter,
+  );
 
   // Error handling middleware must be last
   app.use(errorHandler);
