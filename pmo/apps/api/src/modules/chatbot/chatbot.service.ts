@@ -467,6 +467,7 @@ async function analyzeSentiment(message: string): Promise<number> {
 async function generateBotResponse(
   conversation: {
     id: number;
+    chatbotConfigId: number;
     chatbotConfig: {
       name: string;
       enableOrderTracking: boolean;
