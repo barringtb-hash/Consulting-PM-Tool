@@ -74,11 +74,10 @@ export class RateLimiter {
   };
 
   private getClientKey(req: Request): string {
-    // Try to get real IP from proxy headers
-    const forwarded = req.headers['x-forwarded-for'] as string;
-    const ip = forwarded
-      ? forwarded.split(',')[0].trim()
-      : req.socket.remoteAddress || 'unknown';
+    // Use req.ip which respects Express's trust proxy setting
+    // This prevents IP spoofing via X-Forwarded-For header when trust proxy is properly configured
+    // If trust proxy is not set, req.ip returns the direct connection IP (safe default)
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
     return `rate-limit:${ip}`;
   }
 

@@ -158,7 +158,10 @@ router.get('/modules/check/:moduleId', async (req, res: Response) => {
   const moduleConfig = tenantConfig.modules.find(
     (m) => m.moduleId === moduleId,
   );
-  const enabled = moduleConfig?.enabled ?? true;
+  // Default to module's isCore status: core modules default enabled, non-core default disabled
+  // This prevents exposing modules that should remain disabled for tenants without explicit config
+  const isCore = MODULE_DEFINITIONS[moduleId].isCore;
+  const enabled = moduleConfig?.enabled ?? isCore;
 
   res.json({
     moduleId,
