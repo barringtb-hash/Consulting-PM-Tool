@@ -40,14 +40,12 @@ import {
   HelpCircle,
   ChevronRight,
   Search,
-  Filter,
   Edit3,
   Eye,
   EyeOff,
   X,
   Tag,
   AlertCircle,
-  CheckCircle,
 } from 'lucide-react';
 
 // Types
@@ -330,7 +328,9 @@ async function createKnowledgeBaseItem(
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     const error = new Error(
-      errorData.message || errorData.error || 'Failed to create knowledge base item',
+      errorData.message ||
+        errorData.error ||
+        'Failed to create knowledge base item',
     ) as ApiError;
     error.status = res.status;
     throw error;
@@ -360,7 +360,9 @@ async function updateKnowledgeBaseItem(
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     const error = new Error(
-      errorData.message || errorData.error || 'Failed to update knowledge base item',
+      errorData.message ||
+        errorData.error ||
+        'Failed to update knowledge base item',
     ) as ApiError;
     error.status = res.status;
     throw error;
@@ -379,7 +381,9 @@ async function deleteKnowledgeBaseItem(id: number): Promise<void> {
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     const error = new Error(
-      errorData.message || errorData.error || 'Failed to delete knowledge base item',
+      errorData.message ||
+        errorData.error ||
+        'Failed to delete knowledge base item',
     ) as ApiError;
     error.status = res.status;
     throw error;
@@ -423,9 +427,13 @@ function ChatbotPage(): JSX.Element {
   // Knowledge Base management state
   const [kbSearchQuery, setKbSearchQuery] = useState('');
   const [kbCategoryFilter, setKbCategoryFilter] = useState('');
-  const [kbPublishedFilter, setKbPublishedFilter] = useState<'all' | 'published' | 'unpublished'>('all');
+  const [kbPublishedFilter, setKbPublishedFilter] = useState<
+    'all' | 'published' | 'unpublished'
+  >('all');
   const [showKbModal, setShowKbModal] = useState(false);
-  const [editingKbItem, setEditingKbItem] = useState<KnowledgeBaseItem | null>(null);
+  const [editingKbItem, setEditingKbItem] = useState<KnowledgeBaseItem | null>(
+    null,
+  );
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [kbFormData, setKbFormData] = useState({
     question: '',
@@ -569,7 +577,9 @@ function ChatbotPage(): JSX.Element {
       isPublished?: boolean;
     }) => createKnowledgeBaseItem(selectedConfigId!, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatbot-knowledge-base', selectedConfigId] });
+      queryClient.invalidateQueries({
+        queryKey: ['chatbot-knowledge-base', selectedConfigId],
+      });
       queryClient.invalidateQueries({ queryKey: ['chatbot-configs'] });
       setShowKbModal(false);
       resetKbForm();
@@ -577,17 +587,26 @@ function ChatbotPage(): JSX.Element {
     },
     onError: (error) => {
       showToast(
-        error instanceof Error ? error.message : 'Failed to create knowledge base item',
+        error instanceof Error
+          ? error.message
+          : 'Failed to create knowledge base item',
         'error',
       );
     },
   });
 
   const updateKbItemMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<KnowledgeBaseItem> }) =>
-      updateKnowledgeBaseItem(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<KnowledgeBaseItem>;
+    }) => updateKnowledgeBaseItem(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatbot-knowledge-base', selectedConfigId] });
+      queryClient.invalidateQueries({
+        queryKey: ['chatbot-knowledge-base', selectedConfigId],
+      });
       setShowKbModal(false);
       setEditingKbItem(null);
       resetKbForm();
@@ -595,7 +614,9 @@ function ChatbotPage(): JSX.Element {
     },
     onError: (error) => {
       showToast(
-        error instanceof Error ? error.message : 'Failed to update knowledge base item',
+        error instanceof Error
+          ? error.message
+          : 'Failed to update knowledge base item',
         'error',
       );
     },
@@ -604,14 +625,18 @@ function ChatbotPage(): JSX.Element {
   const deleteKbItemMutation = useMutation({
     mutationFn: (id: number) => deleteKnowledgeBaseItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatbot-knowledge-base', selectedConfigId] });
+      queryClient.invalidateQueries({
+        queryKey: ['chatbot-knowledge-base', selectedConfigId],
+      });
       queryClient.invalidateQueries({ queryKey: ['chatbot-configs'] });
       setDeleteConfirmId(null);
       showToast('Knowledge base item deleted successfully', 'success');
     },
     onError: (error) => {
       showToast(
-        error instanceof Error ? error.message : 'Failed to delete knowledge base item',
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete knowledge base item',
         'error',
       );
     },
@@ -677,8 +702,11 @@ function ChatbotPage(): JSX.Element {
         const query = kbSearchQuery.toLowerCase();
         const matchesQuestion = item.question.toLowerCase().includes(query);
         const matchesAnswer = item.answer.toLowerCase().includes(query);
-        const matchesKeywords = item.keywords.some((k) => k.toLowerCase().includes(query));
-        if (!matchesQuestion && !matchesAnswer && !matchesKeywords) return false;
+        const matchesKeywords = item.keywords.some((k) =>
+          k.toLowerCase().includes(query),
+        );
+        if (!matchesQuestion && !matchesAnswer && !matchesKeywords)
+          return false;
       }
 
       // Category filter
@@ -690,7 +718,12 @@ function ChatbotPage(): JSX.Element {
 
       return true;
     });
-  }, [knowledgeBaseQuery.data, kbSearchQuery, kbCategoryFilter, kbPublishedFilter]);
+  }, [
+    knowledgeBaseQuery.data,
+    kbSearchQuery,
+    kbCategoryFilter,
+    kbPublishedFilter,
+  ]);
 
   // Calculate helpfulness percentage
   const getHelpfulnessPercent = (item: KnowledgeBaseItem) => {
@@ -1583,7 +1616,14 @@ function ChatbotPage(): JSX.Element {
                       {/* Published Filter */}
                       <Select
                         value={kbPublishedFilter}
-                        onChange={(e) => setKbPublishedFilter(e.target.value as 'all' | 'published' | 'unpublished')}
+                        onChange={(e) =>
+                          setKbPublishedFilter(
+                            e.target.value as
+                              | 'all'
+                              | 'published'
+                              | 'unpublished',
+                          )
+                        }
                         className="md:w-40"
                       >
                         <option value="all">All Status</option>
@@ -1607,52 +1647,70 @@ function ChatbotPage(): JSX.Element {
                 </Card>
 
                 {/* Stats Summary */}
-                {knowledgeBaseQuery.data && knowledgeBaseQuery.data.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card>
-                      <CardBody className="text-center py-3">
-                        <p className="text-2xl font-bold text-primary-600">
-                          {knowledgeBaseQuery.data.length}
-                        </p>
-                        <p className="text-sm text-neutral-600">Total Items</p>
-                      </CardBody>
-                    </Card>
-                    <Card>
-                      <CardBody className="text-center py-3">
-                        <p className="text-2xl font-bold text-green-600">
-                          {knowledgeBaseQuery.data.filter((i) => i.isPublished).length}
-                        </p>
-                        <p className="text-sm text-neutral-600">Published</p>
-                      </CardBody>
-                    </Card>
-                    <Card>
-                      <CardBody className="text-center py-3">
-                        <p className="text-2xl font-bold text-blue-600">
-                          {knowledgeBaseQuery.data.reduce((sum, i) => sum + i.viewCount, 0)}
-                        </p>
-                        <p className="text-sm text-neutral-600">Total Views</p>
-                      </CardBody>
-                    </Card>
-                    <Card>
-                      <CardBody className="text-center py-3">
-                        <p className="text-2xl font-bold text-amber-600">
-                          {(() => {
-                            const total = knowledgeBaseQuery.data.reduce(
-                              (sum, i) => sum + i.helpfulCount + i.notHelpfulCount,
+                {knowledgeBaseQuery.data &&
+                  knowledgeBaseQuery.data.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-primary-600">
+                            {knowledgeBaseQuery.data.length}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            Total Items
+                          </p>
+                        </CardBody>
+                      </Card>
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-green-600">
+                            {
+                              knowledgeBaseQuery.data.filter(
+                                (i) => i.isPublished,
+                              ).length
+                            }
+                          </p>
+                          <p className="text-sm text-neutral-600">Published</p>
+                        </CardBody>
+                      </Card>
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-blue-600">
+                            {knowledgeBaseQuery.data.reduce(
+                              (sum, i) => sum + i.viewCount,
                               0,
-                            );
-                            const helpful = knowledgeBaseQuery.data.reduce(
-                              (sum, i) => sum + i.helpfulCount,
-                              0,
-                            );
-                            return total > 0 ? Math.round((helpful / total) * 100) : 0;
-                          })()}%
-                        </p>
-                        <p className="text-sm text-neutral-600">Helpful Rate</p>
-                      </CardBody>
-                    </Card>
-                  </div>
-                )}
+                            )}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            Total Views
+                          </p>
+                        </CardBody>
+                      </Card>
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-amber-600">
+                            {(() => {
+                              const total = knowledgeBaseQuery.data.reduce(
+                                (sum, i) =>
+                                  sum + i.helpfulCount + i.notHelpfulCount,
+                                0,
+                              );
+                              const helpful = knowledgeBaseQuery.data.reduce(
+                                (sum, i) => sum + i.helpfulCount,
+                                0,
+                              );
+                              return total > 0
+                                ? Math.round((helpful / total) * 100)
+                                : 0;
+                            })()}
+                            %
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            Helpful Rate
+                          </p>
+                        </CardBody>
+                      </Card>
+                    </div>
+                  )}
 
                 {/* Knowledge Base Items List */}
                 {knowledgeBaseQuery.isLoading ? (
@@ -1669,27 +1727,33 @@ function ChatbotPage(): JSX.Element {
                       <div className="text-center py-8">
                         <BookOpen className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
                         <p className="text-neutral-600 mb-2">
-                          {kbSearchQuery || kbCategoryFilter || kbPublishedFilter !== 'all'
+                          {kbSearchQuery ||
+                          kbCategoryFilter ||
+                          kbPublishedFilter !== 'all'
                             ? 'No items match your filters.'
                             : 'No knowledge base items yet.'}
                         </p>
                         <p className="text-sm text-neutral-500 mb-4">
-                          {kbSearchQuery || kbCategoryFilter || kbPublishedFilter !== 'all'
+                          {kbSearchQuery ||
+                          kbCategoryFilter ||
+                          kbPublishedFilter !== 'all'
                             ? 'Try adjusting your search or filters.'
                             : 'Add FAQ items to help your chatbot answer common questions.'}
                         </p>
-                        {!kbSearchQuery && !kbCategoryFilter && kbPublishedFilter === 'all' && (
-                          <Button
-                            onClick={() => {
-                              resetKbForm();
-                              setEditingKbItem(null);
-                              setShowKbModal(true);
-                            }}
-                          >
-                            <Plus className="w-4 h-4" />
-                            Add Your First Item
-                          </Button>
-                        )}
+                        {!kbSearchQuery &&
+                          !kbCategoryFilter &&
+                          kbPublishedFilter === 'all' && (
+                            <Button
+                              onClick={() => {
+                                resetKbForm();
+                                setEditingKbItem(null);
+                                setShowKbModal(true);
+                              }}
+                            >
+                              <Plus className="w-4 h-4" />
+                              Add Your First Item
+                            </Button>
+                          )}
                       </div>
                     </CardBody>
                   </Card>
@@ -1722,12 +1786,18 @@ function ChatbotPage(): JSX.Element {
                                 <div className="flex flex-wrap items-center gap-2 mt-3">
                                   {/* Status Badge */}
                                   {item.isPublished ? (
-                                    <Badge variant="success" className="flex items-center gap-1">
+                                    <Badge
+                                      variant="success"
+                                      className="flex items-center gap-1"
+                                    >
                                       <Eye className="w-3 h-3" />
                                       Published
                                     </Badge>
                                   ) : (
-                                    <Badge variant="neutral" className="flex items-center gap-1">
+                                    <Badge
+                                      variant="neutral"
+                                      className="flex items-center gap-1"
+                                    >
                                       <EyeOff className="w-3 h-3" />
                                       Draft
                                     </Badge>
@@ -1735,7 +1805,10 @@ function ChatbotPage(): JSX.Element {
 
                                   {/* Category Badge */}
                                   {item.category && (
-                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                    <Badge
+                                      variant="secondary"
+                                      className="flex items-center gap-1"
+                                    >
                                       <Tag className="w-3 h-3" />
                                       {item.category}
                                     </Badge>
@@ -1749,8 +1822,10 @@ function ChatbotPage(): JSX.Element {
                                   {/* Keywords */}
                                   {item.keywords.length > 0 && (
                                     <span className="text-xs text-neutral-500">
-                                      Keywords: {item.keywords.slice(0, 3).join(', ')}
-                                      {item.keywords.length > 3 && ` +${item.keywords.length - 3}`}
+                                      Keywords:{' '}
+                                      {item.keywords.slice(0, 3).join(', ')}
+                                      {item.keywords.length > 3 &&
+                                        ` +${item.keywords.length - 3}`}
                                     </span>
                                   )}
                                 </div>
@@ -1810,7 +1885,9 @@ function ChatbotPage(): JSX.Element {
                                     onClick={() =>
                                       updateKbItemMutation.mutate({
                                         id: item.id,
-                                        data: { isPublished: !item.isPublished },
+                                        data: {
+                                          isPublished: !item.isPublished,
+                                        },
                                       })
                                     }
                                     disabled={updateKbItemMutation.isPending}
@@ -1931,7 +2008,9 @@ function ChatbotPage(): JSX.Element {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">
-                  {editingKbItem ? 'Edit Knowledge Base Item' : 'Add Knowledge Base Item'}
+                  {editingKbItem
+                    ? 'Edit Knowledge Base Item'
+                    : 'Add Knowledge Base Item'}
                 </h2>
                 <button
                   onClick={() => {
@@ -1954,7 +2033,10 @@ function ChatbotPage(): JSX.Element {
                   <Input
                     value={kbFormData.question}
                     onChange={(e) =>
-                      setKbFormData((prev) => ({ ...prev, question: e.target.value }))
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        question: e.target.value,
+                      }))
                     }
                     placeholder="e.g., How do I track my order?"
                     required
@@ -1971,7 +2053,10 @@ function ChatbotPage(): JSX.Element {
                   <textarea
                     value={kbFormData.answer}
                     onChange={(e) =>
-                      setKbFormData((prev) => ({ ...prev, answer: e.target.value }))
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        answer: e.target.value,
+                      }))
                     }
                     placeholder="Provide a helpful answer to the question..."
                     required
@@ -1991,7 +2076,10 @@ function ChatbotPage(): JSX.Element {
                     <Select
                       value={kbFormData.category}
                       onChange={(e) =>
-                        setKbFormData((prev) => ({ ...prev, category: e.target.value }))
+                        setKbFormData((prev) => ({
+                          ...prev,
+                          category: e.target.value,
+                        }))
                       }
                     >
                       <option value="">Select a category...</option>
@@ -2035,7 +2123,10 @@ function ChatbotPage(): JSX.Element {
                   <Input
                     value={kbFormData.keywords}
                     onChange={(e) =>
-                      setKbFormData((prev) => ({ ...prev, keywords: e.target.value }))
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        keywords: e.target.value,
+                      }))
                     }
                     placeholder="e.g., order, tracking, shipping, status"
                   />
@@ -2050,11 +2141,17 @@ function ChatbotPage(): JSX.Element {
                     id="isPublished"
                     checked={kbFormData.isPublished}
                     onChange={(e) =>
-                      setKbFormData((prev) => ({ ...prev, isPublished: e.target.checked }))
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        isPublished: e.target.checked,
+                      }))
                     }
                     className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                   />
-                  <label htmlFor="isPublished" className="text-sm text-neutral-700">
+                  <label
+                    htmlFor="isPublished"
+                    className="text-sm text-neutral-700"
+                  >
                     Publish immediately (visible to customers)
                   </label>
                 </div>
@@ -2074,10 +2171,12 @@ function ChatbotPage(): JSX.Element {
                   <Button
                     type="submit"
                     disabled={
-                      createKbItemMutation.isPending || updateKbItemMutation.isPending
+                      createKbItemMutation.isPending ||
+                      updateKbItemMutation.isPending
                     }
                   >
-                    {createKbItemMutation.isPending || updateKbItemMutation.isPending
+                    {createKbItemMutation.isPending ||
+                    updateKbItemMutation.isPending
                       ? 'Saving...'
                       : editingKbItem
                         ? 'Update Item'
@@ -2102,8 +2201,8 @@ function ChatbotPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <p className="text-neutral-600 mb-4">
-                Are you sure you want to delete this knowledge base item? This action cannot
-                be undone.
+                Are you sure you want to delete this knowledge base item? This
+                action cannot be undone.
               </p>
               <div className="flex gap-2 justify-end">
                 <Button
