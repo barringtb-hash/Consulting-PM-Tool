@@ -3,7 +3,7 @@ import { Router } from 'express';
 import prisma from '../prisma/client';
 import { comparePassword } from './password';
 import { signToken } from './jwt';
-import { AuthenticatedRequest, requireAuth } from './auth.middleware';
+import { AuthenticatedRequest, optionalAuth } from './auth.middleware';
 import { buildAuthCookieOptions } from './cookies';
 
 const router = Router();
@@ -62,17 +62,22 @@ router.post('/auth/logout', (_req, res) => {
   res.json({ message: 'Logged out' });
 });
 
-router.get('/auth/me', requireAuth, async (req: AuthenticatedRequest, res) => {
+// Use optionalAuth instead of requireAuth to return 200 with { user: null }
+// for unauthenticated requests. This prevents browser "Failed to load resource"
+// console errors that appear when the server returns 401 on initial page load.
+router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
+    // If no userId, user is not authenticated - return null user with 200 status
     if (!req.userId) {
-      res.status(401).json({ error: 'Unauthorized' });
+      res.json({ user: null });
       return;
     }
 
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
 
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
+      // User ID was in token but user no longer exists in database
+      res.json({ user: null });
       return;
     }
 

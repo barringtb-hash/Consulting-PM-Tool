@@ -1,6 +1,6 @@
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
-import { storeToken, clearStoredToken } from './token-storage';
+import { storeToken, clearStoredToken, getStoredToken } from './token-storage';
 
 export interface AuthUser {
   id: string;
@@ -37,6 +37,8 @@ export async function login(
 }
 
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
+  const hadStoredToken = !!getStoredToken();
+
   const response = await fetch(
     `${AUTH_BASE_PATH}/me`,
     buildOptions({
@@ -53,6 +55,10 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
   // was implemented will get their tokens stored on subsequent page loads.
   if (data.token) {
     storeToken(data.token);
+  } else if (hadStoredToken && !data.user) {
+    // If we had a stored token but the response indicates no authenticated user,
+    // the token was invalid or expired - clear it to avoid sending stale tokens.
+    clearStoredToken();
   }
 
   return data.user ?? null;
