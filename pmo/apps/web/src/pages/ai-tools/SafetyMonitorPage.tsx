@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -106,7 +107,7 @@ const TRAINING_STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchSafetyConfigs(): Promise<SafetyConfig[]> {
-  const res = await fetch('/api/safety-monitor/configs', buildOptions());
+  const res = await fetch(buildApiUrl('/safety-monitor/configs'), buildOptions());
   if (!res.ok) {
     const error = new Error('Failed to fetch safety configs') as ApiError;
     error.status = res.status;
@@ -118,7 +119,7 @@ async function fetchSafetyConfigs(): Promise<SafetyConfig[]> {
 
 async function fetchChecklists(configId: number): Promise<SafetyChecklist[]> {
   const res = await fetch(
-    `/api/safety-monitor/${configId}/checklists`,
+    buildApiUrl(`/safety-monitor/${configId}/checklists`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -132,7 +133,7 @@ async function fetchChecklists(configId: number): Promise<SafetyChecklist[]> {
 
 async function fetchIncidents(configId: number): Promise<SafetyIncident[]> {
   const res = await fetch(
-    `/api/safety-monitor/${configId}/incidents`,
+    buildApiUrl(`/safety-monitor/${configId}/incidents`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -146,7 +147,7 @@ async function fetchIncidents(configId: number): Promise<SafetyIncident[]> {
 
 async function fetchTraining(configId: number): Promise<TrainingRecord[]> {
   const res = await fetch(
-    `/api/safety-monitor/${configId}/training`,
+    buildApiUrl(`/safety-monitor/${configId}/training`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -163,7 +164,7 @@ async function createSafetyConfig(
   data: Partial<SafetyConfig>,
 ): Promise<SafetyConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/safety-monitor`,
+    buildApiUrl(`/clients/${clientId}/safety-monitor`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),

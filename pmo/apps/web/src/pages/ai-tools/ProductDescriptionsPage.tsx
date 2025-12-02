@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -75,7 +76,7 @@ const MARKETPLACE_LABELS: Record<string, string> = {
 
 // API functions
 async function fetchConfigs(): Promise<ProductDescConfig[]> {
-  const res = await fetch('/api/product-descriptions/configs', buildOptions());
+  const res = await fetch(buildApiUrl('/product-descriptions/configs'), buildOptions());
   if (!res.ok) {
     const error = new Error('Failed to fetch configs') as ApiError;
     error.status = res.status;
@@ -87,7 +88,7 @@ async function fetchConfigs(): Promise<ProductDescConfig[]> {
 
 async function fetchProducts(configId: number): Promise<Product[]> {
   const res = await fetch(
-    `/api/product-descriptions/${configId}/products`,
+    buildApiUrl(`/product-descriptions/${configId}/products`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -104,7 +105,7 @@ async function generateDescription(
   marketplace: string,
 ): Promise<ProductDescription> {
   const res = await fetch(
-    `/api/product-descriptions/products/${productId}/generate`,
+    buildApiUrl(`/product-descriptions/products/${productId}/generate`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify({ marketplace }),
@@ -124,7 +125,7 @@ async function createConfig(
   data: Partial<ProductDescConfig>,
 ): Promise<ProductDescConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/product-descriptions`,
+    buildApiUrl(`/clients/${clientId}/product-descriptions`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -144,7 +145,7 @@ async function createProduct(
   data: Partial<Product>,
 ): Promise<Product> {
   const res = await fetch(
-    `/api/product-descriptions/${configId}/products`,
+    buildApiUrl(`/product-descriptions/${configId}/products`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),

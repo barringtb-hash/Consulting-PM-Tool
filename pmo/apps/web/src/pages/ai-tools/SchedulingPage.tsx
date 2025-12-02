@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -91,7 +92,7 @@ const STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchConfigs(): Promise<SchedulingConfig[]> {
-  const res = await fetch('/api/scheduling/configs', buildOptions());
+  const res = await fetch(buildApiUrl('/scheduling/configs'), buildOptions());
   if (!res.ok) {
     const error = new Error('Failed to fetch configs') as ApiError;
     error.status = res.status;
@@ -103,7 +104,7 @@ async function fetchConfigs(): Promise<SchedulingConfig[]> {
 
 async function fetchProviders(configId: number): Promise<Provider[]> {
   const res = await fetch(
-    `/api/scheduling/${configId}/providers`,
+    buildApiUrl(`/scheduling/${configId}/providers`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -126,7 +127,7 @@ async function fetchAppointments(
   if (params.status) searchParams.append('status', params.status);
 
   const res = await fetch(
-    `/api/scheduling/${configId}/appointments?${searchParams}`,
+    buildApiUrl(`/scheduling/${configId}/appointments?${searchParams}`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -143,7 +144,7 @@ async function updateAppointmentStatus(
   status: string,
 ): Promise<Appointment> {
   const res = await fetch(
-    `/api/scheduling/appointments/${appointmentId}/status`,
+    buildApiUrl(`/scheduling/appointments/${appointmentId}/status`),
     buildOptions({
       method: 'PATCH',
       body: JSON.stringify({ status }),
@@ -163,7 +164,7 @@ async function createConfig(
   data: Partial<SchedulingConfig>,
 ): Promise<SchedulingConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/scheduling`,
+    buildApiUrl(`/clients/${clientId}/scheduling`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),

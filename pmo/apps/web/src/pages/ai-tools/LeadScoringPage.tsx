@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -87,7 +88,7 @@ const SCORE_LEVEL_ICONS: Record<string, JSX.Element> = {
 
 // API functions
 async function fetchLeadScoringConfigs(): Promise<LeadScoringConfig[]> {
-  const res = await fetch('/api/lead-scoring/configs', buildOptions());
+  const res = await fetch(buildApiUrl('/lead-scoring/configs'), buildOptions());
   if (!res.ok) {
     const error = new Error('Failed to fetch lead scoring configs') as ApiError;
     error.status = res.status;
@@ -104,7 +105,7 @@ async function fetchLeads(
   const params = new URLSearchParams();
   if (scoreLevel) params.append('scoreLevel', scoreLevel);
   const res = await fetch(
-    `/api/lead-scoring/${configId}/leads?${params}`,
+    buildApiUrl(`/lead-scoring/${configId}/leads?${params}`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -118,7 +119,7 @@ async function fetchLeads(
 
 async function fetchSequences(configId: number): Promise<NurtureSequence[]> {
   const res = await fetch(
-    `/api/lead-scoring/${configId}/sequences`,
+    buildApiUrl(`/lead-scoring/${configId}/sequences`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -135,7 +136,7 @@ async function fetchAnalytics(configId: number): Promise<{
   summary: { totalLeads: number; hotLeads: number; hotLeadPercentage: number };
 }> {
   const res = await fetch(
-    `/api/lead-scoring/${configId}/analytics`,
+    buildApiUrl(`/lead-scoring/${configId}/analytics`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -151,7 +152,7 @@ async function createLeadScoringConfig(
   data: Partial<LeadScoringConfig>,
 ): Promise<LeadScoringConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/lead-scoring`,
+    buildApiUrl(`/clients/${clientId}/lead-scoring`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -171,7 +172,7 @@ async function createLead(
   data: { email: string; name?: string; company?: string },
 ): Promise<ScoredLead> {
   const res = await fetch(
-    `/api/lead-scoring/${configId}/leads`,
+    buildApiUrl(`/lead-scoring/${configId}/leads`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -188,7 +189,7 @@ async function createLead(
 
 async function rescoreLead(leadId: number): Promise<void> {
   const res = await fetch(
-    `/api/lead-scoring/leads/${leadId}/rescore`,
+    buildApiUrl(`/lead-scoring/leads/${leadId}/rescore`),
     buildOptions({ method: 'POST' }),
   );
   if (!res.ok) {
