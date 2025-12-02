@@ -39,6 +39,13 @@ import {
   ThumbsDown,
   HelpCircle,
   ChevronRight,
+  Search,
+  Edit3,
+  Eye,
+  EyeOff,
+  X,
+  Tag,
+  AlertCircle,
 } from 'lucide-react';
 
 // Types
@@ -300,6 +307,101 @@ async function fetchKnowledgeBase(
   return result.items || [];
 }
 
+async function createKnowledgeBaseItem(
+  configId: number,
+  data: {
+    question: string;
+    answer: string;
+    keywords?: string[];
+    category?: string;
+    priority?: number;
+    isPublished?: boolean;
+  },
+): Promise<KnowledgeBaseItem> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/${configId}/knowledge-base`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const error = new Error(
+      errorData.message ||
+        errorData.error ||
+        'Failed to create knowledge base item',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.item;
+}
+
+async function updateKnowledgeBaseItem(
+  id: number,
+  data: {
+    question?: string;
+    answer?: string;
+    keywords?: string[];
+    category?: string;
+    priority?: number;
+    isPublished?: boolean;
+  },
+): Promise<KnowledgeBaseItem> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/knowledge-base/${id}`),
+    buildOptions({
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const error = new Error(
+      errorData.message ||
+        errorData.error ||
+        'Failed to update knowledge base item',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.item;
+}
+
+async function deleteKnowledgeBaseItem(id: number): Promise<void> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/knowledge-base/${id}`),
+    buildOptions({
+      method: 'DELETE',
+    }),
+  );
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const error = new Error(
+      errorData.message ||
+        errorData.error ||
+        'Failed to delete knowledge base item',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+}
+
+// Knowledge base categories
+const KB_CATEGORIES = [
+  'General',
+  'Orders',
+  'Returns',
+  'Shipping',
+  'Products',
+  'Payments',
+  'Account',
+  'Technical',
+] as const;
+
 function ChatbotPage(): JSX.Element {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
@@ -321,6 +423,26 @@ function ChatbotPage(): JSX.Element {
   const [showKnowledgePanel, setShowKnowledgePanel] = useState(false);
   const [elapsedTime, setElapsedTime] = useState<string>('0:00');
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Knowledge Base management state
+  const [kbSearchQuery, setKbSearchQuery] = useState('');
+  const [kbCategoryFilter, setKbCategoryFilter] = useState('');
+  const [kbPublishedFilter, setKbPublishedFilter] = useState<
+    'all' | 'published' | 'unpublished'
+  >('all');
+  const [showKbModal, setShowKbModal] = useState(false);
+  const [editingKbItem, setEditingKbItem] = useState<KnowledgeBaseItem | null>(
+    null,
+  );
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [kbFormData, setKbFormData] = useState({
+    question: '',
+    answer: '',
+    keywords: '',
+    category: '',
+    priority: 1,
+    isPublished: true,
+  });
 
   // Update elapsed time every second when session is active
   useEffect(() => {
@@ -443,6 +565,172 @@ function ChatbotPage(): JSX.Element {
       );
     },
   });
+
+  // Knowledge Base mutations
+  const createKbItemMutation = useMutation({
+    mutationFn: (data: {
+      question: string;
+      answer: string;
+      keywords?: string[];
+      category?: string;
+      priority?: number;
+      isPublished?: boolean;
+    }) => createKnowledgeBaseItem(selectedConfigId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['chatbot-knowledge-base', selectedConfigId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['chatbot-configs'] });
+      setShowKbModal(false);
+      resetKbForm();
+      showToast('Knowledge base item created successfully', 'success');
+    },
+    onError: (error) => {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to create knowledge base item',
+        'error',
+      );
+    },
+  });
+
+  const updateKbItemMutation = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<KnowledgeBaseItem>;
+    }) => updateKnowledgeBaseItem(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['chatbot-knowledge-base', selectedConfigId],
+      });
+      setShowKbModal(false);
+      setEditingKbItem(null);
+      resetKbForm();
+      showToast('Knowledge base item updated successfully', 'success');
+    },
+    onError: (error) => {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update knowledge base item',
+        'error',
+      );
+    },
+  });
+
+  const deleteKbItemMutation = useMutation({
+    mutationFn: (id: number) => deleteKnowledgeBaseItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['chatbot-knowledge-base', selectedConfigId],
+      });
+      queryClient.invalidateQueries({ queryKey: ['chatbot-configs'] });
+      setDeleteConfirmId(null);
+      showToast('Knowledge base item deleted successfully', 'success');
+    },
+    onError: (error) => {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete knowledge base item',
+        'error',
+      );
+    },
+  });
+
+  // Helper function to reset KB form
+  const resetKbForm = () => {
+    setKbFormData({
+      question: '',
+      answer: '',
+      keywords: '',
+      category: '',
+      priority: 1,
+      isPublished: true,
+    });
+  };
+
+  // Open modal for editing KB item
+  const openEditKbModal = (item: KnowledgeBaseItem) => {
+    setEditingKbItem(item);
+    setKbFormData({
+      question: item.question,
+      answer: item.answer,
+      keywords: item.keywords.join(', '),
+      category: item.category || '',
+      priority: item.priority,
+      isPublished: item.isPublished,
+    });
+    setShowKbModal(true);
+  };
+
+  // Handle KB form submission
+  const handleKbFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const keywords = kbFormData.keywords
+      .split(',')
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+
+    const data = {
+      question: kbFormData.question,
+      answer: kbFormData.answer,
+      keywords,
+      category: kbFormData.category || undefined,
+      priority: kbFormData.priority,
+      isPublished: kbFormData.isPublished,
+    };
+
+    if (editingKbItem) {
+      updateKbItemMutation.mutate({ id: editingKbItem.id, data });
+    } else {
+      createKbItemMutation.mutate(data);
+    }
+  };
+
+  // Filter knowledge base items
+  const filteredKbItems = useMemo(() => {
+    if (!knowledgeBaseQuery.data) return [];
+
+    return knowledgeBaseQuery.data.filter((item) => {
+      // Search filter
+      if (kbSearchQuery) {
+        const query = kbSearchQuery.toLowerCase();
+        const matchesQuestion = item.question.toLowerCase().includes(query);
+        const matchesAnswer = item.answer.toLowerCase().includes(query);
+        const matchesKeywords = item.keywords.some((k) =>
+          k.toLowerCase().includes(query),
+        );
+        if (!matchesQuestion && !matchesAnswer && !matchesKeywords)
+          return false;
+      }
+
+      // Category filter
+      if (kbCategoryFilter && item.category !== kbCategoryFilter) return false;
+
+      // Published filter
+      if (kbPublishedFilter === 'published' && !item.isPublished) return false;
+      if (kbPublishedFilter === 'unpublished' && item.isPublished) return false;
+
+      return true;
+    });
+  }, [
+    knowledgeBaseQuery.data,
+    kbSearchQuery,
+    kbCategoryFilter,
+    kbPublishedFilter,
+  ]);
+
+  // Calculate helpfulness percentage
+  const getHelpfulnessPercent = (item: KnowledgeBaseItem) => {
+    const total = item.helpfulCount + item.notHelpfulCount;
+    if (total === 0) return null;
+    return Math.round((item.helpfulCount / total) * 100);
+  };
 
   // Redirect to login on 401 errors from any query or mutation
   useRedirectOnUnauthorized(configsQuery.error);
@@ -1294,23 +1582,345 @@ function ChatbotPage(): JSX.Element {
 
             {/* Knowledge Base Tab */}
             {activeTab === 'knowledge' && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Knowledge Base</h3>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4" />
-                      Add Item
-                    </Button>
+              <div className="space-y-4">
+                {/* Filters and Actions */}
+                <Card>
+                  <CardBody>
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* Search */}
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <input
+                          type="text"
+                          placeholder="Search questions, answers, or keywords..."
+                          className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          value={kbSearchQuery}
+                          onChange={(e) => setKbSearchQuery(e.target.value)}
+                        />
+                      </div>
+
+                      {/* Category Filter */}
+                      <Select
+                        value={kbCategoryFilter}
+                        onChange={(e) => setKbCategoryFilter(e.target.value)}
+                        className="md:w-48"
+                      >
+                        <option value="">All Categories</option>
+                        {KB_CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </Select>
+
+                      {/* Published Filter */}
+                      <Select
+                        value={kbPublishedFilter}
+                        onChange={(e) =>
+                          setKbPublishedFilter(
+                            e.target.value as
+                              | 'all'
+                              | 'published'
+                              | 'unpublished',
+                          )
+                        }
+                        className="md:w-40"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="published">Published</option>
+                        <option value="unpublished">Unpublished</option>
+                      </Select>
+
+                      {/* Add Button */}
+                      <Button
+                        onClick={() => {
+                          resetKbForm();
+                          setEditingKbItem(null);
+                          setShowKbModal(true);
+                        }}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Item
+                      </Button>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Stats Summary */}
+                {knowledgeBaseQuery.data &&
+                  knowledgeBaseQuery.data.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-primary-600">
+                            {knowledgeBaseQuery.data.length}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            Total Items
+                          </p>
+                        </CardBody>
+                      </Card>
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-green-600">
+                            {
+                              knowledgeBaseQuery.data.filter(
+                                (i) => i.isPublished,
+                              ).length
+                            }
+                          </p>
+                          <p className="text-sm text-neutral-600">Published</p>
+                        </CardBody>
+                      </Card>
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-blue-600">
+                            {knowledgeBaseQuery.data.reduce(
+                              (sum, i) => sum + i.viewCount,
+                              0,
+                            )}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            Total Views
+                          </p>
+                        </CardBody>
+                      </Card>
+                      <Card>
+                        <CardBody className="text-center py-3">
+                          <p className="text-2xl font-bold text-amber-600">
+                            {(() => {
+                              const total = knowledgeBaseQuery.data.reduce(
+                                (sum, i) =>
+                                  sum + i.helpfulCount + i.notHelpfulCount,
+                                0,
+                              );
+                              const helpful = knowledgeBaseQuery.data.reduce(
+                                (sum, i) => sum + i.helpfulCount,
+                                0,
+                              );
+                              return total > 0
+                                ? Math.round((helpful / total) * 100)
+                                : 0;
+                            })()}
+                            %
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            Helpful Rate
+                          </p>
+                        </CardBody>
+                      </Card>
+                    </div>
+                  )}
+
+                {/* Knowledge Base Items List */}
+                {knowledgeBaseQuery.isLoading ? (
+                  <Card>
+                    <CardBody>
+                      <p className="text-center text-neutral-500 py-8">
+                        Loading knowledge base items...
+                      </p>
+                    </CardBody>
+                  </Card>
+                ) : filteredKbItems.length === 0 ? (
+                  <Card>
+                    <CardBody>
+                      <div className="text-center py-8">
+                        <BookOpen className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
+                        <p className="text-neutral-600 mb-2">
+                          {kbSearchQuery ||
+                          kbCategoryFilter ||
+                          kbPublishedFilter !== 'all'
+                            ? 'No items match your filters.'
+                            : 'No knowledge base items yet.'}
+                        </p>
+                        <p className="text-sm text-neutral-500 mb-4">
+                          {kbSearchQuery ||
+                          kbCategoryFilter ||
+                          kbPublishedFilter !== 'all'
+                            ? 'Try adjusting your search or filters.'
+                            : 'Add FAQ items to help your chatbot answer common questions.'}
+                        </p>
+                        {!kbSearchQuery &&
+                          !kbCategoryFilter &&
+                          kbPublishedFilter === 'all' && (
+                            <Button
+                              onClick={() => {
+                                resetKbForm();
+                                setEditingKbItem(null);
+                                setShowKbModal(true);
+                              }}
+                            >
+                              <Plus className="w-4 h-4" />
+                              Add Your First Item
+                            </Button>
+                          )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredKbItems.map((item) => {
+                      const helpfulPercent = getHelpfulnessPercent(item);
+                      return (
+                        <Card
+                          key={item.id}
+                          className="hover:shadow-md transition-shadow"
+                        >
+                          <CardBody>
+                            <div className="flex items-start gap-4">
+                              {/* Main Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start gap-2 mb-2">
+                                  <HelpCircle className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-neutral-900">
+                                      {item.question}
+                                    </h4>
+                                    <p className="text-sm text-neutral-600 mt-1 line-clamp-2">
+                                      {item.answer}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Tags and Metadata */}
+                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                  {/* Status Badge */}
+                                  {item.isPublished ? (
+                                    <Badge
+                                      variant="success"
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      Published
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      variant="neutral"
+                                      className="flex items-center gap-1"
+                                    >
+                                      <EyeOff className="w-3 h-3" />
+                                      Draft
+                                    </Badge>
+                                  )}
+
+                                  {/* Category Badge */}
+                                  {item.category && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Tag className="w-3 h-3" />
+                                      {item.category}
+                                    </Badge>
+                                  )}
+
+                                  {/* Priority */}
+                                  <Badge variant="neutral">
+                                    Priority: {item.priority}
+                                  </Badge>
+
+                                  {/* Keywords */}
+                                  {item.keywords.length > 0 && (
+                                    <span className="text-xs text-neutral-500">
+                                      Keywords:{' '}
+                                      {item.keywords.slice(0, 3).join(', ')}
+                                      {item.keywords.length > 3 &&
+                                        ` +${item.keywords.length - 3}`}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Stats */}
+                              <div className="flex flex-col items-end gap-2 text-sm">
+                                <div className="flex items-center gap-3 text-neutral-500">
+                                  <span className="flex items-center gap-1">
+                                    <Eye className="w-4 h-4" />
+                                    {item.viewCount}
+                                  </span>
+                                  <span className="flex items-center gap-1 text-green-600">
+                                    <ThumbsUp className="w-4 h-4" />
+                                    {item.helpfulCount}
+                                  </span>
+                                  <span className="flex items-center gap-1 text-red-600">
+                                    <ThumbsDown className="w-4 h-4" />
+                                    {item.notHelpfulCount}
+                                  </span>
+                                </div>
+
+                                {/* Helpfulness Bar */}
+                                {helpfulPercent !== null && (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-20 h-2 bg-neutral-200 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full ${
+                                          helpfulPercent >= 70
+                                            ? 'bg-green-500'
+                                            : helpfulPercent >= 40
+                                              ? 'bg-yellow-500'
+                                              : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${helpfulPercent}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-xs text-neutral-500">
+                                      {helpfulPercent}% helpful
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => openEditKbModal(item)}
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() =>
+                                      updateKbItemMutation.mutate({
+                                        id: item.id,
+                                        data: {
+                                          isPublished: !item.isPublished,
+                                        },
+                                      })
+                                    }
+                                    disabled={updateKbItemMutation.isPending}
+                                  >
+                                    {item.isPublished ? (
+                                      <>
+                                        <EyeOff className="w-4 h-4" />
+                                        Unpublish
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Eye className="w-4 h-4" />
+                                        Publish
+                                      </>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setDeleteConfirmId(item.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardBody>
+                        </Card>
+                      );
+                    })}
                   </div>
-                </CardHeader>
-                <CardBody>
-                  <p className="text-neutral-500 text-center py-8">
-                    Knowledge base management coming soon. Add FAQ items to help
-                    your chatbot answer common questions.
-                  </p>
-                </CardBody>
-              </Card>
+                )}
+              </div>
             )}
 
             {/* Analytics Tab */}
@@ -1390,6 +2000,229 @@ function ChatbotPage(): JSX.Element {
           </>
         )}
       </div>
+
+      {/* Knowledge Base Add/Edit Modal */}
+      {showKbModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">
+                  {editingKbItem
+                    ? 'Edit Knowledge Base Item'
+                    : 'Add Knowledge Base Item'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowKbModal(false);
+                    setEditingKbItem(null);
+                    resetKbForm();
+                  }}
+                  className="p-1 hover:bg-neutral-100 rounded"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <form onSubmit={handleKbFormSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Question <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={kbFormData.question}
+                    onChange={(e) =>
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        question: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g., How do I track my order?"
+                    required
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    The question customers might ask
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Answer <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={kbFormData.answer}
+                    onChange={(e) =>
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        answer: e.target.value,
+                      }))
+                    }
+                    placeholder="Provide a helpful answer to the question..."
+                    required
+                    rows={4}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    The answer the chatbot will provide
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Category
+                    </label>
+                    <Select
+                      value={kbFormData.category}
+                      onChange={(e) =>
+                        setKbFormData((prev) => ({
+                          ...prev,
+                          category: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select a category...</option>
+                      {KB_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                      Priority
+                    </label>
+                    <Select
+                      value={kbFormData.priority.toString()}
+                      onChange={(e) =>
+                        setKbFormData((prev) => ({
+                          ...prev,
+                          priority: parseInt(e.target.value, 10),
+                        }))
+                      }
+                    >
+                      <option value="1">1 - Low</option>
+                      <option value="2">2</option>
+                      <option value="3">3 - Medium</option>
+                      <option value="4">4</option>
+                      <option value="5">5 - High</option>
+                    </Select>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Higher priority items are matched first
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Keywords
+                  </label>
+                  <Input
+                    value={kbFormData.keywords}
+                    onChange={(e) =>
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        keywords: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g., order, tracking, shipping, status"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Comma-separated keywords to help match this answer
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isPublished"
+                    checked={kbFormData.isPublished}
+                    onChange={(e) =>
+                      setKbFormData((prev) => ({
+                        ...prev,
+                        isPublished: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                  />
+                  <label
+                    htmlFor="isPublished"
+                    className="text-sm text-neutral-700"
+                  >
+                    Publish immediately (visible to customers)
+                  </label>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowKbModal(false);
+                      setEditingKbItem(null);
+                      resetKbForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      createKbItemMutation.isPending ||
+                      updateKbItemMutation.isPending
+                    }
+                  >
+                    {createKbItemMutation.isPending ||
+                    updateKbItemMutation.isPending
+                      ? 'Saving...'
+                      : editingKbItem
+                        ? 'Update Item'
+                        : 'Add Item'}
+                  </Button>
+                </div>
+              </form>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                <h2 className="text-xl font-semibold">Delete Item</h2>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <p className="text-neutral-600 mb-4">
+                Are you sure you want to delete this knowledge base item? This
+                action cannot be undone.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="secondary"
+                  onClick={() => setDeleteConfirmId(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => deleteKbItemMutation.mutate(deleteConfirmId)}
+                  disabled={deleteKbItemMutation.isPending}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {deleteKbItemMutation.isPending ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
 
       {/* Create Modal */}
       {showCreateModal && (
