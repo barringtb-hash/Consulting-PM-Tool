@@ -412,7 +412,9 @@ function buildModuleResultsFromConfigs(
     const config = configMap.get(def.id);
     return {
       moduleId: def.id,
-      enabled: config?.enabled ?? true,
+      // Default to module's isCore status: core modules enabled, non-core disabled
+      // This prevents exposing modules that should remain disabled for tenants without explicit config
+      enabled: config?.enabled ?? def.isCore,
       isCore: def.isCore,
       settings: config?.settings as Record<string, unknown> | undefined,
     };
