@@ -203,8 +203,12 @@ function ChatbotPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from any query or mutation
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(conversationsQuery.error);
+  useRedirectOnUnauthorized(analyticsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
 
   const clients = clientsQuery.data ?? [];
 

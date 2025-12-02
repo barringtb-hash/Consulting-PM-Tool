@@ -224,8 +224,11 @@ function IntakePage(): JSX.Element {
     enabled: !!selectedConfigId && activeTab === 'submissions',
   });
 
+  // Redirect to login on 401 errors from queries
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(formsQuery.error);
+  useRedirectOnUnauthorized(submissionsQuery.error);
 
   const clients = clientsQuery.data ?? [];
   const forms = formsQuery.data ?? [];
@@ -315,6 +318,11 @@ function IntakePage(): JSX.Element {
       );
     },
   });
+
+  // Redirect to login on 401 errors from mutations
+  useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(createFormMutation.error);
+  useRedirectOnUnauthorized(updateStatusMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

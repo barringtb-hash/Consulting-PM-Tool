@@ -225,8 +225,11 @@ function SchedulingPage(): JSX.Element {
     enabled: !!selectedConfigId && activeTab === 'appointments',
   });
 
+  // Redirect to login on 401 errors from queries
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(providersQuery.error);
+  useRedirectOnUnauthorized(appointmentsQuery.error);
 
   const clients = clientsQuery.data ?? [];
   const providers = providersQuery.data ?? [];
@@ -293,6 +296,10 @@ function SchedulingPage(): JSX.Element {
       );
     },
   });
+
+  // Redirect to login on 401 errors from mutations
+  useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(updateStatusMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

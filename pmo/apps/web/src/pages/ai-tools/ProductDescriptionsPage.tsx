@@ -189,8 +189,10 @@ function ProductDescriptionsPage(): JSX.Element {
     enabled: !!selectedConfigId,
   });
 
+  // Redirect to login on 401 errors from any query
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(productsQuery.error);
 
   const clients = clientsQuery.data ?? [];
   const products = productsQuery.data ?? [];
@@ -283,6 +285,11 @@ function ProductDescriptionsPage(): JSX.Element {
       );
     },
   });
+
+  // Redirect to login on 401 errors from mutations
+  useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(createProductMutation.error);
+  useRedirectOnUnauthorized(generateMutation.error);
 
   const handleGenerate = (productId: number, marketplace: string) => {
     setGeneratingFor({ productId, marketplace });
