@@ -125,6 +125,19 @@ describe('auth routes', () => {
     expect(response.body).toEqual({ user: null });
   });
 
+  it('sets no-cache headers on /auth/me to prevent stale auth state', async () => {
+    // The /auth/me endpoint sets cache-control headers to prevent browsers and
+    // proxies from caching auth responses, which could cause issues after login.
+    const response = await request(app).get('/api/auth/me');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['cache-control']).toBe(
+      'no-store, no-cache, must-revalidate, private',
+    );
+    expect(response.headers['pragma']).toBe('no-cache');
+    expect(response.headers['expires']).toBe('0');
+  });
+
   it('sets the auth cookie flags and returns the current user when seeded credentials are used', async () => {
     const { user, password } = await seedAdminUser();
 

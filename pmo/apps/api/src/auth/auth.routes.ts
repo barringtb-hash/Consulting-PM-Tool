@@ -66,6 +66,12 @@ router.post('/auth/logout', (_req, res) => {
 // for unauthenticated requests. This prevents browser "Failed to load resource"
 // console errors that appear when the server returns 401 on initial page load.
 router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
+  // Prevent caching of auth responses to ensure fresh auth state on each request.
+  // This helps avoid issues where stale cached responses cause problems after login.
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   try {
     // If no userId, user is not authenticated - return null user with 200 status
     if (!req.userId) {
