@@ -64,7 +64,12 @@ export function AuthProvider({
           setStatus('unauthenticated');
         }
       } catch (err) {
-        console.error('Failed to fetch current user', err);
+        // Only log unexpected errors - 401 is expected for unauthenticated users
+        // (e.g., initial page load with no valid session or expired token)
+        const isUnauthorized = isApiError(err) && err.status === 401;
+        if (!isUnauthorized) {
+          console.error('Failed to fetch current user', err);
+        }
 
         if (!isMounted) {
           return;
