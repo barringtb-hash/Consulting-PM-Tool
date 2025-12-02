@@ -59,6 +59,32 @@ export const requireAuth = (
   }
 };
 
+/**
+ * Optional authentication middleware.
+ * Extracts user ID from token if present and valid, but does NOT return 401
+ * if unauthenticated. This allows endpoints to handle unauthenticated requests
+ * with a 200 response (e.g., returning { user: null }) instead of 401,
+ * which prevents browser "Failed to load resource" console errors.
+ */
+export const optionalAuth = (
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction,
+): void => {
+  const token = extractToken(req);
+
+  if (token) {
+    try {
+      const payload = verifyToken(token);
+      req.userId = payload.userId;
+    } catch {
+      // Invalid token - treat as unauthenticated (req.userId stays undefined)
+    }
+  }
+
+  next();
+};
+
 export const requireAdmin = async (
   req: AuthenticatedRequest,
   res: Response,
