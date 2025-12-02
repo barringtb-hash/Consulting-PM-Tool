@@ -76,7 +76,10 @@ const MARKETPLACE_LABELS: Record<string, string> = {
 
 // API functions
 async function fetchConfigs(): Promise<ProductDescConfig[]> {
-  const res = await fetch(buildApiUrl('/product-descriptions/configs'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/product-descriptions/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch configs') as ApiError;
     error.status = res.status;

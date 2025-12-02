@@ -80,7 +80,10 @@ const STRATEGY_LABELS: Record<string, string> = {
 
 // API functions
 async function fetchRevenueConfigs(): Promise<RevenueConfig[]> {
-  const res = await fetch(buildApiUrl('/revenue-management/configs'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/revenue-management/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch revenue configs') as ApiError;
     error.status = res.status;

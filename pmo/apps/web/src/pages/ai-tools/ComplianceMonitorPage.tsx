@@ -93,7 +93,10 @@ const STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchComplianceConfigs(): Promise<ComplianceConfig[]> {
-  const res = await fetch(buildApiUrl('/compliance-monitor/configs'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/compliance-monitor/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch compliance configs') as ApiError;
     error.status = res.status;

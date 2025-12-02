@@ -107,7 +107,10 @@ const TRAINING_STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchSafetyConfigs(): Promise<SafetyConfig[]> {
-  const res = await fetch(buildApiUrl('/safety-monitor/configs'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/safety-monitor/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch safety configs') as ApiError;
     error.status = res.status;

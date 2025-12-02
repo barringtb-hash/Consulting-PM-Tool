@@ -78,7 +78,10 @@ const ALERT_SEVERITY_VARIANTS: Record<
 
 // API functions
 async function fetchInventoryConfigs(): Promise<InventoryConfig[]> {
-  const res = await fetch(buildApiUrl('/inventory-forecasting/configs'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/inventory-forecasting/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch inventory configs') as ApiError;
     error.status = res.status;

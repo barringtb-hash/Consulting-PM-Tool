@@ -75,7 +75,10 @@ const COMPLIANCE_ICONS: Record<string, JSX.Element> = {
 async function fetchDocumentAnalyzerConfigs(): Promise<
   DocumentAnalyzerConfig[]
 > {
-  const res = await fetch(buildApiUrl('/document-analyzer/configs'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/document-analyzer/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error(
       'Failed to fetch document analyzer configs',

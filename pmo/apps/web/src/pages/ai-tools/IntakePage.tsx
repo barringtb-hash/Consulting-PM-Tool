@@ -102,7 +102,10 @@ async function fetchConfigs(): Promise<IntakeConfig[]> {
 }
 
 async function fetchForms(configId: number): Promise<IntakeForm[]> {
-  const res = await fetch(buildApiUrl(`/intake/${configId}/forms`), buildOptions());
+  const res = await fetch(
+    buildApiUrl(`/intake/${configId}/forms`),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch forms') as ApiError;
     error.status = res.status;

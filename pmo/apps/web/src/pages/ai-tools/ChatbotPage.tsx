@@ -110,7 +110,10 @@ async function fetchAnalytics(configId: number): Promise<{
   avgSatisfaction: number;
   topIntents: { intent: string; count: number }[];
 }> {
-  const res = await fetch(buildApiUrl(`/chatbot/${configId}/analytics`), buildOptions());
+  const res = await fetch(
+    buildApiUrl(`/chatbot/${configId}/analytics`),
+    buildOptions(),
+  );
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     const error = new Error(

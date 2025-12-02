@@ -81,7 +81,10 @@ const CONTENT_TYPES = [
 async function fetchContentGeneratorConfigs(): Promise<
   ContentGeneratorConfig[]
 > {
-  const res = await fetch(buildApiUrl('/content-generator/configs'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/content-generator/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error(
       'Failed to fetch content generator configs',
