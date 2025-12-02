@@ -72,9 +72,11 @@ interface ToastItemProps {
 }
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: 'bg-success-50 text-success-800 border-success-200',
-  error: 'bg-danger-50 text-danger-800 border-danger-200',
-  info: 'bg-primary-50 text-primary-800 border-primary-200',
+  success:
+    'bg-success-50 dark:bg-success-900/80 text-success-800 dark:text-success-100 border-success-200 dark:border-success-700',
+  error:
+    'bg-danger-50 dark:bg-danger-900/80 text-danger-800 dark:text-danger-100 border-danger-200 dark:border-danger-700',
+  info: 'bg-primary-50 dark:bg-primary-900/80 text-primary-800 dark:text-primary-100 border-primary-200 dark:border-primary-700',
 };
 
 const iconPaths: Record<ToastVariant, JSX.Element> = {

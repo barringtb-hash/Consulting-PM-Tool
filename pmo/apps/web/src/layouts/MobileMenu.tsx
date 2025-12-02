@@ -83,7 +83,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
       <div className={`px-3 space-y-1 ${!isFirst ? 'mt-8' : ''}`}>
         {title && (
           <div className="px-3 mb-2">
-            <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
               {title}
             </h3>
           </div>
@@ -99,15 +99,17 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors no-underline',
                 active
-                  ? 'bg-primary-50 text-primary-700'
-                  : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900',
+                  ? 'bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-neutral-100',
               )}
               aria-current={active ? 'page' : undefined}
             >
               <Icon
                 className={cn(
                   'w-5 h-5 flex-shrink-0',
-                  active ? 'text-primary-600' : 'text-neutral-500',
+                  active
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-neutral-500 dark:text-neutral-400',
                 )}
               />
               <span>{module.label}</span>
@@ -181,7 +183,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-neutral-900/50 z-40 lg:hidden transition-opacity"
+        className="fixed inset-0 bg-neutral-900/50 dark:bg-neutral-950/70 z-40 lg:hidden transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -190,9 +192,9 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
       <div
         ref={menuRef}
         className={cn(
-          'fixed inset-y-0 left-0 w-64 bg-white z-50 lg:hidden',
+          'fixed inset-y-0 left-0 w-64 bg-white dark:bg-neutral-800 z-50 lg:hidden',
           'transform transition-transform duration-300 ease-in-out',
-          'flex flex-col border-r border-neutral-200',
+          'flex flex-col border-r border-neutral-200 dark:border-neutral-700',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         role="dialog"
@@ -200,7 +202,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
         aria-label="Mobile navigation menu"
       >
         {/* Header - Launchpad Consulting Partners */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-neutral-200">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-neutral-200 dark:border-neutral-700">
           <Link
             to="/dashboard"
             className="flex items-center gap-2 no-underline"
@@ -215,10 +217,10 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
               <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-brand-rose rounded" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-primary-600 text-sm leading-tight tracking-tight">
+              <span className="font-bold text-primary-600 dark:text-primary-400 text-sm leading-tight tracking-tight">
                 LAUNCHPAD
               </span>
-              <span className="text-[9px] text-neutral-500 tracking-widest">
+              <span className="text-[9px] text-neutral-500 dark:text-neutral-400 tracking-widest">
                 CONSULTING
               </span>
             </div>
@@ -227,7 +229,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-neutral-600 hover:bg-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+            className="p-2 rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 dark:focus-visible:outline-primary-400"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
