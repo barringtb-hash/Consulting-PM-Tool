@@ -162,7 +162,11 @@ export function createApp(): express.Express {
   app.use('/api', requireModule('chatbot'), chatbotRouter);
 
   // Product Description Generator module (Tool 1.2)
-  app.use('/api', requireModule('productDescriptions'), productDescriptionRouter);
+  app.use(
+    '/api',
+    requireModule('productDescriptions'),
+    productDescriptionRouter,
+  );
 
   // AI Scheduling Assistant module (Tool 1.3)
   app.use('/api', requireModule('scheduling'), schedulingRouter);
