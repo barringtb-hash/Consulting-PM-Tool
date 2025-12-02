@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -76,7 +76,11 @@ const MARKETPLACE_LABELS: Record<string, string> = {
 // API functions
 async function fetchConfigs(): Promise<ProductDescConfig[]> {
   const res = await fetch('/api/product-descriptions/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -86,7 +90,11 @@ async function fetchProducts(configId: number): Promise<Product[]> {
     `/api/product-descriptions/${configId}/products`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch products');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch products') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.products || [];
 }
@@ -102,7 +110,11 @@ async function generateDescription(
       body: JSON.stringify({ marketplace }),
     }),
   );
-  if (!res.ok) throw new Error('Failed to generate description');
+  if (!res.ok) {
+    const error = new Error('Failed to generate description') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.description;
 }
@@ -118,7 +130,11 @@ async function createConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create config');
+  if (!res.ok) {
+    const error = new Error('Failed to create config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -134,7 +150,11 @@ async function createProduct(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create product');
+  if (!res.ok) {
+    const error = new Error('Failed to create product') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.product;
 }

@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -107,7 +107,11 @@ const TRAINING_STATUS_VARIANTS: Record<
 // API functions
 async function fetchSafetyConfigs(): Promise<SafetyConfig[]> {
   const res = await fetch('/api/safety-monitor/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch safety configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch safety configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -117,7 +121,11 @@ async function fetchChecklists(configId: number): Promise<SafetyChecklist[]> {
     `/api/safety-monitor/${configId}/checklists`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch checklists');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch checklists') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.checklists || [];
 }
@@ -127,7 +135,11 @@ async function fetchIncidents(configId: number): Promise<SafetyIncident[]> {
     `/api/safety-monitor/${configId}/incidents`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch incidents');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch incidents') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.incidents || [];
 }
@@ -137,7 +149,11 @@ async function fetchTraining(configId: number): Promise<TrainingRecord[]> {
     `/api/safety-monitor/${configId}/training`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch training records');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch training records') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.training || [];
 }
@@ -153,7 +169,11 @@ async function createSafetyConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create safety config');
+  if (!res.ok) {
+    const error = new Error('Failed to create safety config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -216,7 +236,8 @@ function SafetyMonitorPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

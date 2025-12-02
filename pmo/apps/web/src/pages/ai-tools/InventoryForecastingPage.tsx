@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -78,7 +78,11 @@ const ALERT_SEVERITY_VARIANTS: Record<
 // API functions
 async function fetchInventoryConfigs(): Promise<InventoryConfig[]> {
   const res = await fetch('/api/inventory-forecasting/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch inventory configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch inventory configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -88,7 +92,11 @@ async function fetchLocations(configId: number): Promise<InventoryLocation[]> {
     `/api/inventory-forecasting/${configId}/locations`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch locations');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch locations') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.locations || [];
 }
@@ -98,7 +106,11 @@ async function fetchProducts(configId: number): Promise<InventoryProduct[]> {
     `/api/inventory-forecasting/${configId}/products`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch products');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch products') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.products || [];
 }
@@ -108,7 +120,11 @@ async function fetchAlerts(configId: number): Promise<InventoryAlert[]> {
     `/api/inventory-forecasting/${configId}/alerts`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch alerts');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch alerts') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.alerts || [];
 }
@@ -124,7 +140,11 @@ async function createInventoryConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create inventory config');
+  if (!res.ok) {
+    const error = new Error('Failed to create inventory config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -189,7 +209,8 @@ function InventoryForecastingPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

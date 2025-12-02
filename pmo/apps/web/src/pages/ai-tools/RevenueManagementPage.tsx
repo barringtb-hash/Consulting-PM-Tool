@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -80,7 +80,11 @@ const STRATEGY_LABELS: Record<string, string> = {
 // API functions
 async function fetchRevenueConfigs(): Promise<RevenueConfig[]> {
   const res = await fetch('/api/revenue-management/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch revenue configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch revenue configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -90,7 +94,11 @@ async function fetchPricingRules(configId: number): Promise<PricingRule[]> {
     `/api/revenue-management/${configId}/pricing`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch pricing rules');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch pricing rules') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.rules || [];
 }
@@ -100,7 +108,11 @@ async function fetchCompetitors(configId: number): Promise<Competitor[]> {
     `/api/revenue-management/${configId}/competitors`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch competitors');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch competitors') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.competitors || [];
 }
@@ -110,7 +122,11 @@ async function fetchForecasts(configId: number): Promise<RevenueForecast[]> {
     `/api/revenue-management/${configId}/forecasts`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch forecasts');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch forecasts') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.forecasts || [];
 }
@@ -126,7 +142,11 @@ async function createRevenueConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create revenue config');
+  if (!res.ok) {
+    const error = new Error('Failed to create revenue config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -189,7 +209,8 @@ function RevenueManagementPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

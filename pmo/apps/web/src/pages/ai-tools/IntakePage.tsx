@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -91,14 +91,22 @@ const SUBMISSION_STATUS_VARIANTS: Record<
 // API functions
 async function fetchConfigs(): Promise<IntakeConfig[]> {
   const res = await fetch('/api/intake/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchForms(configId: number): Promise<IntakeForm[]> {
   const res = await fetch(`/api/intake/${configId}/forms`, buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch forms');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch forms') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.forms || [];
 }
@@ -113,7 +121,11 @@ async function fetchSubmissions(
     `/api/intake/${configId}/submissions?${params}`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch submissions');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch submissions') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.submissions || [];
 }
@@ -129,7 +141,11 @@ async function createConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create config');
+  if (!res.ok) {
+    const error = new Error('Failed to create config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -145,7 +161,11 @@ async function createForm(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create form');
+  if (!res.ok) {
+    const error = new Error('Failed to create form') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.form;
 }
@@ -161,7 +181,11 @@ async function updateSubmissionStatus(
       body: JSON.stringify({ status }),
     }),
   );
-  if (!res.ok) throw new Error('Failed to update submission status');
+  if (!res.ok) {
+    const error = new Error('Failed to update submission status') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.submission;
 }

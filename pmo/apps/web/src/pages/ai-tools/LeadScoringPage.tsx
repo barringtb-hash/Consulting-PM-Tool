@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -88,7 +88,11 @@ const SCORE_LEVEL_ICONS: Record<string, JSX.Element> = {
 // API functions
 async function fetchLeadScoringConfigs(): Promise<LeadScoringConfig[]> {
   const res = await fetch('/api/lead-scoring/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch lead scoring configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch lead scoring configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -103,7 +107,11 @@ async function fetchLeads(
     `/api/lead-scoring/${configId}/leads?${params}`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch leads');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch leads') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.leads || [];
 }
@@ -113,7 +121,11 @@ async function fetchSequences(configId: number): Promise<NurtureSequence[]> {
     `/api/lead-scoring/${configId}/sequences`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch sequences');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch sequences') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.sequences || [];
 }
@@ -126,7 +138,11 @@ async function fetchAnalytics(configId: number): Promise<{
     `/api/lead-scoring/${configId}/analytics`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch analytics');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch analytics') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   return res.json();
 }
 
@@ -141,7 +157,11 @@ async function createLeadScoringConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create lead scoring config');
+  if (!res.ok) {
+    const error = new Error('Failed to create lead scoring config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -157,7 +177,11 @@ async function createLead(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create lead');
+  if (!res.ok) {
+    const error = new Error('Failed to create lead') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.lead;
 }
@@ -167,7 +191,11 @@ async function rescoreLead(leadId: number): Promise<void> {
     `/api/lead-scoring/leads/${leadId}/rescore`,
     buildOptions({ method: 'POST' }),
   );
-  if (!res.ok) throw new Error('Failed to rescore lead');
+  if (!res.ok) {
+    const error = new Error('Failed to rescore lead') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
 }
 
 function LeadScoringPage(): JSX.Element {
@@ -256,7 +284,8 @@ function LeadScoringPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

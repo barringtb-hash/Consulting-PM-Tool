@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -114,7 +114,11 @@ async function fetchMaintenanceConfigs(): Promise<MaintenanceConfig[]> {
     '/api/predictive-maintenance/configs',
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch maintenance configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch maintenance configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -124,7 +128,11 @@ async function fetchEquipment(configId: number): Promise<Equipment[]> {
     `/api/predictive-maintenance/${configId}/equipment`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch equipment');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch equipment') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.equipment || [];
 }
@@ -134,7 +142,11 @@ async function fetchSensors(configId: number): Promise<Sensor[]> {
     `/api/predictive-maintenance/${configId}/sensors`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch sensors');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch sensors') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.sensors || [];
 }
@@ -144,7 +156,11 @@ async function fetchWorkOrders(configId: number): Promise<WorkOrder[]> {
     `/api/predictive-maintenance/${configId}/work-orders`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch work orders');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch work orders') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.workOrders || [];
 }
@@ -160,7 +176,11 @@ async function createMaintenanceConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create maintenance config');
+  if (!res.ok) {
+    const error = new Error('Failed to create maintenance config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -225,7 +245,8 @@ function PredictiveMaintenancePage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

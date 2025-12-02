@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -68,7 +68,11 @@ const STATUS_VARIANTS: Record<
 // API functions
 async function fetchChatbotConfigs(): Promise<ChatbotConfig[]> {
   const res = await fetch('/api/chatbot/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch chatbot configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch chatbot configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -83,7 +87,11 @@ async function fetchConversations(
     `/api/chatbot/${configId}/conversations?${params}`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch conversations');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch conversations') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.conversations || [];
 }
@@ -96,7 +104,11 @@ async function fetchAnalytics(configId: number): Promise<{
   topIntents: { intent: string; count: number }[];
 }> {
   const res = await fetch(`/api/chatbot/${configId}/analytics`, buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch analytics');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch analytics') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   return res.json();
 }
 
@@ -111,7 +123,11 @@ async function createChatbotConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create chatbot config');
+  if (!res.ok) {
+    const error = new Error('Failed to create chatbot config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }

@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -93,7 +93,11 @@ const STATUS_VARIANTS: Record<
 // API functions
 async function fetchComplianceConfigs(): Promise<ComplianceConfig[]> {
   const res = await fetch('/api/compliance-monitor/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch compliance configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch compliance configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -103,7 +107,11 @@ async function fetchRules(configId: number): Promise<ComplianceRule[]> {
     `/api/compliance-monitor/${configId}/rules`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch rules');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch rules') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.rules || [];
 }
@@ -115,7 +123,11 @@ async function fetchViolations(
     `/api/compliance-monitor/${configId}/violations`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch violations');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch violations') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.violations || [];
 }
@@ -125,7 +137,11 @@ async function fetchAudits(configId: number): Promise<ComplianceAudit[]> {
     `/api/compliance-monitor/${configId}/audits`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch audits');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch audits') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.audits || [];
 }
@@ -141,7 +157,11 @@ async function createComplianceConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create compliance config');
+  if (!res.ok) {
+    const error = new Error('Failed to create compliance config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -206,7 +226,8 @@ function ComplianceMonitorPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

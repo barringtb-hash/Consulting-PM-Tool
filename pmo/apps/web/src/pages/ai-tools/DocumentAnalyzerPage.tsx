@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -75,7 +75,11 @@ async function fetchDocumentAnalyzerConfigs(): Promise<
   DocumentAnalyzerConfig[]
 > {
   const res = await fetch('/api/document-analyzer/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch document analyzer configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch document analyzer configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -90,7 +94,11 @@ async function fetchDocuments(
     `/api/document-analyzer/${configId}/documents?${params}`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch documents');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch documents') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.documents || [];
 }
@@ -106,7 +114,11 @@ async function createDocumentAnalyzerConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create document analyzer config');
+  if (!res.ok) {
+    const error = new Error('Failed to create document analyzer config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -128,7 +140,11 @@ async function _uploadDocument(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to upload document');
+  if (!res.ok) {
+    const error = new Error('Failed to upload document') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.document;
 }
@@ -138,7 +154,11 @@ async function analyzeDocument(documentId: number): Promise<void> {
     `/api/document-analyzer/documents/${documentId}/analyze`,
     buildOptions({ method: 'POST' }),
   );
-  if (!res.ok) throw new Error('Failed to analyze document');
+  if (!res.ok) {
+    const error = new Error('Failed to analyze document') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
 }
 
 function DocumentAnalyzerPage(): JSX.Element {
@@ -203,7 +223,8 @@ function DocumentAnalyzerPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

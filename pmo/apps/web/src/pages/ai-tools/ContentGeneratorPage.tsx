@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
-import { buildOptions } from '../../api/http';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -81,7 +81,11 @@ async function fetchContentGeneratorConfigs(): Promise<
   ContentGeneratorConfig[]
 > {
   const res = await fetch('/api/content-generator/configs', buildOptions());
-  if (!res.ok) throw new Error('Failed to fetch content generator configs');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch content generator configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -98,7 +102,11 @@ async function fetchContents(
     `/api/content-generator/${configId}/contents?${params}`,
     buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch contents');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch contents') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.contents || [];
 }
@@ -114,7 +122,11 @@ async function createContentGeneratorConfig(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to create content generator config');
+  if (!res.ok) {
+    const error = new Error('Failed to create content generator config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -136,7 +148,11 @@ async function generateContent(
       body: JSON.stringify(data),
     }),
   );
-  if (!res.ok) throw new Error('Failed to generate content');
+  if (!res.ok) {
+    const error = new Error('Failed to generate content') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   return res.json();
 }
 
@@ -224,7 +240,8 @@ function ContentGeneratorPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
