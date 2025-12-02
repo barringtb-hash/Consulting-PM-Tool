@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -89,17 +90,23 @@ const SUBMISSION_STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchConfigs(): Promise<IntakeConfig[]> {
-  const res = await fetch('/api/intake/configs', { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to fetch configs');
+  const res = await fetch('/api/intake/configs', buildOptions());
+  if (!res.ok) {
+    const error = new Error('Failed to fetch configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchForms(configId: number): Promise<IntakeForm[]> {
-  const res = await fetch(`/api/intake/${configId}/forms`, {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch forms');
+  const res = await fetch(`/api/intake/${configId}/forms`, buildOptions());
+  if (!res.ok) {
+    const error = new Error('Failed to fetch forms') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.forms || [];
 }
@@ -110,10 +117,15 @@ async function fetchSubmissions(
 ): Promise<IntakeSubmission[]> {
   const params = new URLSearchParams();
   if (status) params.append('status', status);
-  const res = await fetch(`/api/intake/${configId}/submissions?${params}`, {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch submissions');
+  const res = await fetch(
+    `/api/intake/${configId}/submissions?${params}`,
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch submissions') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.submissions || [];
 }
@@ -122,13 +134,18 @@ async function createConfig(
   clientId: number,
   data: Partial<IntakeConfig>,
 ): Promise<IntakeConfig> {
-  const res = await fetch(`/api/clients/${clientId}/intake`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to create config');
+  const res = await fetch(
+    `/api/clients/${clientId}/intake`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to create config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -137,13 +154,18 @@ async function createForm(
   configId: number,
   data: { name: string; description?: string },
 ): Promise<IntakeForm> {
-  const res = await fetch(`/api/intake/${configId}/forms`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to create form');
+  const res = await fetch(
+    `/api/intake/${configId}/forms`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to create form') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.form;
 }
@@ -152,13 +174,18 @@ async function updateSubmissionStatus(
   submissionId: number,
   status: string,
 ): Promise<IntakeSubmission> {
-  const res = await fetch(`/api/intake/submissions/${submissionId}/status`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) throw new Error('Failed to update submission status');
+  const res = await fetch(
+    `/api/intake/submissions/${submissionId}/status`,
+    buildOptions({
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to update submission status') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.submission;
 }

@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -91,10 +92,12 @@ const URGENCY_VARIANTS: Record<string, 'neutral' | 'warning' | 'secondary'> = {
 
 // API functions
 async function fetchPriorAuthConfigs(): Promise<PriorAuthConfig[]> {
-  const res = await fetch('/api/prior-auth/configs', {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch prior auth configs');
+  const res = await fetch('/api/prior-auth/configs', buildOptions());
+  if (!res.ok) {
+    const error = new Error('Failed to fetch prior auth configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -105,10 +108,15 @@ async function fetchPARequests(
 ): Promise<PARequest[]> {
   const params = new URLSearchParams();
   if (status) params.append('status', status);
-  const res = await fetch(`/api/prior-auth/${configId}/requests?${params}`, {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch PA requests');
+  const res = await fetch(
+    `/api/prior-auth/${configId}/requests?${params}`,
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch PA requests') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.requests || [];
 }
@@ -124,10 +132,15 @@ async function fetchAnalytics(configId: number): Promise<{
   };
   denialReasons: Record<string, number>;
 }> {
-  const res = await fetch(`/api/prior-auth/${configId}/analytics`, {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch analytics');
+  const res = await fetch(
+    `/api/prior-auth/${configId}/analytics`,
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch analytics') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   return res.json();
 }
 
@@ -135,23 +148,32 @@ async function createPriorAuthConfig(
   clientId: number,
   data: Partial<PriorAuthConfig>,
 ): Promise<PriorAuthConfig> {
-  const res = await fetch(`/api/clients/${clientId}/prior-auth`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to create prior auth config');
+  const res = await fetch(
+    `/api/clients/${clientId}/prior-auth`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to create prior auth config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
 
 async function submitPARequest(requestId: number): Promise<void> {
-  const res = await fetch(`/api/prior-auth/requests/${requestId}/submit`, {
-    method: 'POST',
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to submit PA request');
+  const res = await fetch(
+    `/api/prior-auth/requests/${requestId}/submit`,
+    buildOptions({ method: 'POST' }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to submit PA request') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
 }
 
 async function checkPAStatus(
@@ -159,12 +181,13 @@ async function checkPAStatus(
 ): Promise<{ statusChanged: boolean; currentStatus: string }> {
   const res = await fetch(
     `/api/prior-auth/requests/${requestId}/check-status`,
-    {
-      method: 'POST',
-      credentials: 'include',
-    },
+    buildOptions({ method: 'POST' }),
   );
-  if (!res.ok) throw new Error('Failed to check PA status');
+  if (!res.ok) {
+    const error = new Error('Failed to check PA status') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   return res.json();
 }
 
@@ -254,7 +277,8 @@ function PriorAuthPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

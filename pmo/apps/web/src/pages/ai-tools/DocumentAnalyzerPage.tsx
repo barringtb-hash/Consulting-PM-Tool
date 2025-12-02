@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions, ApiError } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -73,10 +74,14 @@ const COMPLIANCE_ICONS: Record<string, JSX.Element> = {
 async function fetchDocumentAnalyzerConfigs(): Promise<
   DocumentAnalyzerConfig[]
 > {
-  const res = await fetch('/api/document-analyzer/configs', {
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch document analyzer configs');
+  const res = await fetch('/api/document-analyzer/configs', buildOptions());
+  if (!res.ok) {
+    const error = new Error(
+      'Failed to fetch document analyzer configs',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.configs || [];
 }
@@ -89,11 +94,13 @@ async function fetchDocuments(
   if (status) params.append('status', status);
   const res = await fetch(
     `/api/document-analyzer/${configId}/documents?${params}`,
-    {
-      credentials: 'include',
-    },
+    buildOptions(),
   );
-  if (!res.ok) throw new Error('Failed to fetch documents');
+  if (!res.ok) {
+    const error = new Error('Failed to fetch documents') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const data = await res.json();
   return data.documents || [];
 }
@@ -102,13 +109,20 @@ async function createDocumentAnalyzerConfig(
   clientId: number,
   data: Partial<DocumentAnalyzerConfig>,
 ): Promise<DocumentAnalyzerConfig> {
-  const res = await fetch(`/api/clients/${clientId}/document-analyzer`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to create document analyzer config');
+  const res = await fetch(
+    `/api/clients/${clientId}/document-analyzer`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error(
+      'Failed to create document analyzer config',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.config;
 }
@@ -123,13 +137,18 @@ async function _uploadDocument(
     format: string;
   },
 ): Promise<AnalyzedDocument> {
-  const res = await fetch(`/api/document-analyzer/${configId}/documents`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to upload document');
+  const res = await fetch(
+    `/api/document-analyzer/${configId}/documents`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to upload document') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
   const result = await res.json();
   return result.document;
 }
@@ -137,12 +156,13 @@ async function _uploadDocument(
 async function analyzeDocument(documentId: number): Promise<void> {
   const res = await fetch(
     `/api/document-analyzer/documents/${documentId}/analyze`,
-    {
-      method: 'POST',
-      credentials: 'include',
-    },
+    buildOptions({ method: 'POST' }),
   );
-  if (!res.ok) throw new Error('Failed to analyze document');
+  if (!res.ok) {
+    const error = new Error('Failed to analyze document') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
 }
 
 function DocumentAnalyzerPage(): JSX.Element {
@@ -207,7 +227,8 @@ function DocumentAnalyzerPage(): JSX.Element {
     },
   });
 
-  useRedirectOnUnauthorized();
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
