@@ -29,6 +29,16 @@ import {
   User,
   Bot,
   Trash2,
+  Smile,
+  Meh,
+  Frown,
+  Zap,
+  TrendingUp,
+  Clock,
+  ThumbsUp,
+  ThumbsDown,
+  HelpCircle,
+  ChevronRight,
 } from 'lucide-react';
 
 // Types
@@ -59,13 +69,21 @@ interface ConversationSummary {
   lastMessageAt: string | null;
 }
 
+interface SuggestedAction {
+  label: string;
+  action: string;
+  payload?: unknown;
+}
+
 interface ChatMessage {
   id: number;
   sender: 'CUSTOMER' | 'BOT' | 'AGENT';
   content: string;
   createdAt: string;
   detectedIntent?: string;
+  intentConfidence?: number;
   sentiment?: number;
+  suggestedActions?: SuggestedAction[];
 }
 
 interface TestConversation {
@@ -73,6 +91,29 @@ interface TestConversation {
   sessionId: string;
   status: string;
   messages: ChatMessage[];
+}
+
+interface KnowledgeBaseItem {
+  id: number;
+  question: string;
+  answer: string;
+  keywords: string[];
+  category: string | null;
+  priority: number;
+  isPublished: boolean;
+  viewCount: number;
+  helpfulCount: number;
+  notHelpfulCount: number;
+}
+
+interface SessionStats {
+  messageCount: number;
+  customerMessageCount: number;
+  botMessageCount: number;
+  intentsDetected: Record<string, number>;
+  avgSentiment: number;
+  sentimentCount: number;
+  startTime: Date;
 }
 
 const STATUS_VARIANTS: Record<
@@ -218,7 +259,7 @@ async function getTestConversation(
 async function sendTestMessage(
   sessionId: string,
   content: string,
-): Promise<{ message: ChatMessage; response: { content: string; suggestedActions?: Array<{ label: string; action: string }> } }> {
+): Promise<{ message: ChatMessage; response: { content: string; suggestedActions?: SuggestedAction[] } }> {
   const res = await fetch(
     buildApiUrl(`/chatbot/conversations/${sessionId}/messages`),
     buildOptions({
@@ -237,6 +278,44 @@ async function sendTestMessage(
   return res.json();
 }
 
+async function fetchKnowledgeBase(configId: number): Promise<KnowledgeBaseItem[]> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/${configId}/knowledge-base`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to fetch knowledge base',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.items || [];
+}
+
+async function submitKnowledgeBaseFeedback(
+  itemId: number,
+  helpful: boolean,
+): Promise<void> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/knowledge-base/${itemId}/feedback`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({ helpful }),
+    }),
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to submit feedback',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+}
+
 function ChatbotPage(): JSX.Element {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
@@ -251,7 +330,56 @@ function ChatbotPage(): JSX.Element {
   const [testMessages, setTestMessages] = useState<ChatMessage[]>([]);
   const [testInput, setTestInput] = useState('');
   const [isTestLoading, setIsTestLoading] = useState(false);
+  const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
+  const [lastSuggestedActions, setLastSuggestedActions] = useState<SuggestedAction[]>([]);
+  const [showKnowledgePanel, setShowKnowledgePanel] = useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Helper function to get sentiment icon and color
+  const getSentimentDisplay = (sentiment: number | undefined) => {
+    if (sentiment === undefined) return null;
+    if (sentiment > 0.3) return { icon: Smile, color: 'text-green-500', label: 'Positive' };
+    if (sentiment < -0.3) return { icon: Frown, color: 'text-red-500', label: 'Negative' };
+    return { icon: Meh, color: 'text-yellow-500', label: 'Neutral' };
+  };
+
+  // Helper function to format elapsed time
+  const formatElapsedTime = (startTime: Date) => {
+    const elapsed = Math.floor((Date.now() - startTime.getTime()) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Update session stats when messages change
+  const updateSessionStats = React.useCallback((messages: ChatMessage[], startTime?: Date) => {
+    const customerMessages = messages.filter(m => m.sender === 'CUSTOMER');
+    const botMessages = messages.filter(m => m.sender === 'BOT');
+
+    const intents: Record<string, number> = {};
+    let totalSentiment = 0;
+    let sentimentCount = 0;
+
+    for (const msg of customerMessages) {
+      if (msg.detectedIntent) {
+        intents[msg.detectedIntent] = (intents[msg.detectedIntent] || 0) + 1;
+      }
+      if (msg.sentiment !== undefined) {
+        totalSentiment += msg.sentiment;
+        sentimentCount++;
+      }
+    }
+
+    setSessionStats({
+      messageCount: messages.length,
+      customerMessageCount: customerMessages.length,
+      botMessageCount: botMessages.length,
+      intentsDetected: intents,
+      avgSentiment: sentimentCount > 0 ? totalSentiment / sentimentCount : 0,
+      sentimentCount,
+      startTime: startTime || sessionStats?.startTime || new Date(),
+    });
+  }, [sessionStats?.startTime]);
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -279,6 +407,12 @@ function ChatbotPage(): JSX.Element {
     queryKey: ['chatbot-analytics', selectedConfigId],
     queryFn: () => fetchAnalytics(selectedConfigId!),
     enabled: !!selectedConfigId && activeTab === 'analytics',
+  });
+
+  const knowledgeBaseQuery = useQuery({
+    queryKey: ['chatbot-knowledge-base', selectedConfigId],
+    queryFn: () => fetchKnowledgeBase(selectedConfigId!),
+    enabled: !!selectedConfigId && (activeTab === 'test' || activeTab === 'knowledge'),
   });
 
   // Mutations
@@ -529,197 +663,442 @@ function ChatbotPage(): JSX.Element {
 
             {/* Test Chat Tab */}
             {activeTab === 'test' && (
-              <Card className="h-[600px] flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Play className="w-5 h-5" />
-                      Test Your Chatbot
-                    </h3>
-                    <div className="flex gap-2">
-                      {testSessionId && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setTestSessionId(null);
-                            setTestMessages([]);
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                {/* Main Chat Area */}
+                <Card className="lg:col-span-3 h-[650px] flex flex-col">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Play className="w-5 h-5" />
+                        Test Your Chatbot
+                        {sessionStats && (
+                          <Badge variant="neutral" className="ml-2">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {formatElapsedTime(sessionStats.startTime)}
+                          </Badge>
+                        )}
+                      </h3>
+                      <div className="flex gap-2">
+                        {testSessionId && (
+                          <>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setShowKnowledgePanel(!showKnowledgePanel)}
+                            >
+                              <BookOpen className="w-4 h-4" />
+                              {showKnowledgePanel ? 'Hide' : 'Show'} KB
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                setTestSessionId(null);
+                                setTestMessages([]);
+                                setTestInput('');
+                                setSessionStats(null);
+                                setLastSuggestedActions([]);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Clear Chat
+                            </Button>
+                          </>
+                        )}
+                        {!testSessionId && (
+                          <Button
+                            size="sm"
+                            disabled={isTestLoading}
+                            onClick={async () => {
+                              if (!selectedConfigId) return;
+                              setIsTestLoading(true);
+                              try {
+                                const conv = await startTestConversation(selectedConfigId);
+                                setTestSessionId(conv.sessionId);
+                                const fullConv = await getTestConversation(conv.sessionId);
+                                setTestMessages(fullConv.messages || []);
+                                const startTime = new Date();
+                                updateSessionStats(fullConv.messages || [], startTime);
+                                showToast('Test conversation started', 'success');
+                              } catch (error) {
+                                showToast(
+                                  error instanceof Error ? error.message : 'Failed to start conversation',
+                                  'error'
+                                );
+                              } finally {
+                                setIsTestLoading(false);
+                              }
+                            }}
+                          >
+                            <Play className="w-4 h-4" />
+                            Start Test Chat
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardBody className="flex-1 flex flex-col overflow-hidden">
+                    {!testSessionId ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                          <Bot className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
+                          <p className="text-neutral-600 mb-2">
+                            Click "Start Test Chat" to begin testing your chatbot
+                          </p>
+                          <p className="text-sm text-neutral-500">
+                            You can send messages and see how your chatbot responds.
+                            <br />
+                            All interactions are logged for analytics.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-neutral-50 rounded-lg">
+                          {testMessages.length === 0 ? (
+                            <p className="text-center text-neutral-500 py-4">
+                              No messages yet. Start typing below!
+                            </p>
+                          ) : (
+                            testMessages.map((msg) => {
+                              const sentimentDisplay = msg.sender === 'CUSTOMER' ? getSentimentDisplay(msg.sentiment) : null;
+                              const SentimentIcon = sentimentDisplay?.icon;
+                              return (
+                                <div
+                                  key={msg.id}
+                                  className={`flex items-start gap-3 ${
+                                    msg.sender === 'CUSTOMER' ? 'flex-row-reverse' : ''
+                                  }`}
+                                >
+                                  <div
+                                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                                      msg.sender === 'CUSTOMER'
+                                        ? 'bg-primary-100'
+                                        : 'bg-neutral-200'
+                                    }`}
+                                  >
+                                    {msg.sender === 'CUSTOMER' ? (
+                                      <User className="w-4 h-4 text-primary-600" />
+                                    ) : (
+                                      <Bot className="w-4 h-4 text-neutral-600" />
+                                    )}
+                                  </div>
+                                  <div className={`max-w-[70%] ${msg.sender === 'CUSTOMER' ? 'text-right' : ''}`}>
+                                    <div
+                                      className={`rounded-lg p-3 ${
+                                        msg.sender === 'CUSTOMER'
+                                          ? 'bg-primary-500 text-white'
+                                          : 'bg-white border border-neutral-200'
+                                      }`}
+                                    >
+                                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                    </div>
+                                    {/* Message metadata */}
+                                    {msg.sender === 'CUSTOMER' && (msg.detectedIntent || sentimentDisplay) && (
+                                      <div className="flex items-center gap-2 mt-1 justify-end text-xs text-neutral-500">
+                                        {msg.detectedIntent && (
+                                          <span className="flex items-center gap-1 bg-neutral-100 px-2 py-0.5 rounded">
+                                            <Zap className="w-3 h-3" />
+                                            {msg.detectedIntent}
+                                            {msg.intentConfidence && (
+                                              <span className="opacity-60">
+                                                ({Math.round(msg.intentConfidence * 100)}%)
+                                              </span>
+                                            )}
+                                          </span>
+                                        )}
+                                        {sentimentDisplay && SentimentIcon && (
+                                          <span className={`flex items-center gap-1 ${sentimentDisplay.color}`}>
+                                            <SentimentIcon className="w-3 h-3" />
+                                            {sentimentDisplay.label}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {/* Suggested actions for bot messages */}
+                                    {msg.sender === 'BOT' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                                      <div className="flex flex-wrap gap-2 mt-2">
+                                        {msg.suggestedActions.map((action, idx) => (
+                                          <button
+                                            key={idx}
+                                            className="text-xs px-3 py-1 bg-primary-100 text-primary-700 rounded-full hover:bg-primary-200 transition-colors flex items-center gap-1"
+                                            onClick={() => {
+                                              if (action.action === 'feedback') {
+                                                const payload = action.payload as { helpful?: boolean } | undefined;
+                                                if (payload?.helpful !== undefined) {
+                                                  showToast(
+                                                    payload.helpful ? 'Thanks for the positive feedback!' : 'Thanks for your feedback. We\'ll improve.',
+                                                    'success'
+                                                  );
+                                                }
+                                              } else if (action.action === 'escalate') {
+                                                showToast('Escalation requested - in production this would connect to a human agent', 'info');
+                                              } else {
+                                                setTestInput(action.label);
+                                              }
+                                            }}
+                                          >
+                                            <ChevronRight className="w-3 h-3" />
+                                            {action.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                          <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Quick Actions from last response */}
+                        {lastSuggestedActions.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3 p-2 bg-primary-50 rounded-lg">
+                            <span className="text-xs text-neutral-500 self-center">Quick replies:</span>
+                            {lastSuggestedActions.map((action, idx) => (
+                              <button
+                                key={idx}
+                                className="text-xs px-3 py-1 bg-white border border-primary-200 text-primary-700 rounded-full hover:bg-primary-100 transition-colors"
+                                onClick={() => setTestInput(action.label)}
+                              >
+                                {action.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Input Area */}
+                        <form
+                          className="flex gap-2"
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!testInput.trim() || !testSessionId || isTestLoading) return;
+
+                            const messageContent = testInput.trim();
                             setTestInput('');
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Clear Chat
-                        </Button>
-                      )}
-                      {!testSessionId && (
-                        <Button
-                          size="sm"
-                          disabled={isTestLoading}
-                          onClick={async () => {
-                            if (!selectedConfigId) return;
                             setIsTestLoading(true);
+
+                            const tempCustomerMsg: ChatMessage = {
+                              id: Date.now(),
+                              sender: 'CUSTOMER',
+                              content: messageContent,
+                              createdAt: new Date().toISOString(),
+                            };
+                            setTestMessages((prev) => [...prev, tempCustomerMsg]);
+
                             try {
-                              const conv = await startTestConversation(selectedConfigId);
-                              setTestSessionId(conv.sessionId);
-                              // Fetch the conversation to get welcome message
-                              const fullConv = await getTestConversation(conv.sessionId);
-                              setTestMessages(fullConv.messages || []);
-                              showToast('Test conversation started', 'success');
+                              const result = await sendTestMessage(testSessionId, messageContent);
+
+                              setTestMessages((prev) => {
+                                const withoutTemp = prev.filter((m) => m.id !== tempCustomerMsg.id);
+                                const customerMsg: ChatMessage = {
+                                  ...result.message,
+                                  sender: 'CUSTOMER',
+                                };
+                                const botMsg: ChatMessage = {
+                                  id: Date.now() + 1,
+                                  sender: 'BOT',
+                                  content: result.response.content,
+                                  createdAt: new Date().toISOString(),
+                                  suggestedActions: result.response.suggestedActions,
+                                };
+                                const newMessages = [...withoutTemp, customerMsg, botMsg];
+                                updateSessionStats(newMessages);
+                                return newMessages;
+                              });
+
+                              // Store suggested actions for quick reply bar
+                              if (result.response.suggestedActions) {
+                                setLastSuggestedActions(result.response.suggestedActions);
+                              } else {
+                                setLastSuggestedActions([]);
+                              }
+
+                              setTimeout(() => {
+                                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                              }, 100);
                             } catch (error) {
                               showToast(
-                                error instanceof Error ? error.message : 'Failed to start conversation',
+                                error instanceof Error ? error.message : 'Failed to send message',
                                 'error'
+                              );
+                              setTestMessages((prev) =>
+                                prev.filter((m) => m.id !== tempCustomerMsg.id)
                               );
                             } finally {
                               setIsTestLoading(false);
                             }
                           }}
                         >
-                          <Play className="w-4 h-4" />
-                          Start Test Chat
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody className="flex-1 flex flex-col overflow-hidden">
-                  {!testSessionId ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="text-center">
-                        <Bot className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
-                        <p className="text-neutral-600 mb-2">
-                          Click "Start Test Chat" to begin testing your chatbot
-                        </p>
-                        <p className="text-sm text-neutral-500">
-                          You can send messages and see how your chatbot responds
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Messages Area */}
-                      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-neutral-50 rounded-lg">
-                        {testMessages.length === 0 ? (
-                          <p className="text-center text-neutral-500 py-4">
-                            No messages yet. Start typing below!
-                          </p>
-                        ) : (
-                          testMessages.map((msg) => (
-                            <div
-                              key={msg.id}
-                              className={`flex items-start gap-3 ${
-                                msg.sender === 'CUSTOMER' ? 'flex-row-reverse' : ''
-                              }`}
-                            >
-                              <div
-                                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                  msg.sender === 'CUSTOMER'
-                                    ? 'bg-primary-100'
-                                    : 'bg-neutral-200'
-                                }`}
-                              >
-                                {msg.sender === 'CUSTOMER' ? (
-                                  <User className="w-4 h-4 text-primary-600" />
-                                ) : (
-                                  <Bot className="w-4 h-4 text-neutral-600" />
-                                )}
-                              </div>
-                              <div
-                                className={`max-w-[70%] rounded-lg p-3 ${
-                                  msg.sender === 'CUSTOMER'
-                                    ? 'bg-primary-500 text-white'
-                                    : 'bg-white border border-neutral-200'
-                                }`}
-                              >
-                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                {msg.detectedIntent && msg.sender === 'CUSTOMER' && (
-                                  <p className="text-xs mt-1 opacity-75">
-                                    Intent: {msg.detectedIntent}
-                                  </p>
-                                )}
+                          <Input
+                            placeholder="Type a message to test your chatbot..."
+                            value={testInput}
+                            onChange={(e) => setTestInput(e.target.value)}
+                            disabled={isTestLoading}
+                            className="flex-1"
+                          />
+                          <Button type="submit" disabled={isTestLoading || !testInput.trim()}>
+                            <Send className="w-4 h-4" />
+                            Send
+                          </Button>
+                        </form>
+                      </>
+                    )}
+                  </CardBody>
+                </Card>
+
+                {/* Session Stats & Knowledge Base Panel */}
+                <div className="space-y-4">
+                  {/* Session Analytics */}
+                  <Card>
+                    <CardHeader>
+                      <h4 className="font-semibold flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        Session Analytics
+                      </h4>
+                    </CardHeader>
+                    <CardBody className="space-y-3">
+                      {!sessionStats ? (
+                        <p className="text-sm text-neutral-500">Start a chat to see analytics</p>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-neutral-50 p-2 rounded text-center">
+                              <p className="text-lg font-bold text-primary-600">
+                                {sessionStats.messageCount}
+                              </p>
+                              <p className="text-xs text-neutral-500">Messages</p>
+                            </div>
+                            <div className="bg-neutral-50 p-2 rounded text-center">
+                              <p className="text-lg font-bold text-primary-600">
+                                {Object.keys(sessionStats.intentsDetected).length}
+                              </p>
+                              <p className="text-xs text-neutral-500">Intents</p>
+                            </div>
+                          </div>
+
+                          {/* Sentiment Gauge */}
+                          {sessionStats.sentimentCount > 0 && (
+                            <div className="bg-neutral-50 p-3 rounded">
+                              <p className="text-xs text-neutral-500 mb-2">Avg. Sentiment</p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full transition-all ${
+                                      sessionStats.avgSentiment > 0.3
+                                        ? 'bg-green-500'
+                                        : sessionStats.avgSentiment < -0.3
+                                          ? 'bg-red-500'
+                                          : 'bg-yellow-500'
+                                    }`}
+                                    style={{
+                                      width: `${((sessionStats.avgSentiment + 1) / 2) * 100}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium">
+                                  {sessionStats.avgSentiment > 0 ? '+' : ''}
+                                  {sessionStats.avgSentiment.toFixed(2)}
+                                </span>
                               </div>
                             </div>
-                          ))
+                          )}
+
+                          {/* Intents Breakdown */}
+                          {Object.keys(sessionStats.intentsDetected).length > 0 && (
+                            <div>
+                              <p className="text-xs text-neutral-500 mb-2">Detected Intents</p>
+                              <div className="space-y-1">
+                                {Object.entries(sessionStats.intentsDetected).map(([intent, count]) => (
+                                  <div
+                                    key={intent}
+                                    className="flex items-center justify-between text-sm bg-neutral-50 px-2 py-1 rounded"
+                                  >
+                                    <span className="flex items-center gap-1">
+                                      <Zap className="w-3 h-3 text-primary-500" />
+                                      {intent}
+                                    </span>
+                                    <Badge variant="neutral">{count}</Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </CardBody>
+                  </Card>
+
+                  {/* Knowledge Base Panel */}
+                  {showKnowledgePanel && (
+                    <Card>
+                      <CardHeader>
+                        <h4 className="font-semibold flex items-center gap-2">
+                          <BookOpen className="w-4 h-4" />
+                          Knowledge Base
+                        </h4>
+                      </CardHeader>
+                      <CardBody className="max-h-[300px] overflow-y-auto">
+                        {knowledgeBaseQuery.isLoading ? (
+                          <p className="text-sm text-neutral-500">Loading...</p>
+                        ) : !knowledgeBaseQuery.data?.length ? (
+                          <p className="text-sm text-neutral-500">No knowledge base items</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {knowledgeBaseQuery.data.map((item) => (
+                              <div
+                                key={item.id}
+                                className="border border-neutral-200 rounded p-2 hover:bg-neutral-50 cursor-pointer transition-colors"
+                                onClick={() => {
+                                  setTestInput(item.question);
+                                }}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <HelpCircle className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{item.question}</p>
+                                    <p className="text-xs text-neutral-500 truncate">{item.answer}</p>
+                                    <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
+                                      <span className="flex items-center gap-1">
+                                        <ThumbsUp className="w-3 h-3" />
+                                        {item.helpfulCount}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <ThumbsDown className="w-3 h-3" />
+                                        {item.notHelpfulCount}
+                                      </span>
+                                      {item.category && (
+                                        <Badge variant="neutral" className="text-[10px]">
+                                          {item.category}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                        <div ref={messagesEndRef} />
-                      </div>
-
-                      {/* Input Area */}
-                      <form
-                        className="flex gap-2"
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          if (!testInput.trim() || !testSessionId || isTestLoading) return;
-
-                          const messageContent = testInput.trim();
-                          setTestInput('');
-                          setIsTestLoading(true);
-
-                          // Optimistically add the customer message
-                          const tempCustomerMsg: ChatMessage = {
-                            id: Date.now(),
-                            sender: 'CUSTOMER',
-                            content: messageContent,
-                            createdAt: new Date().toISOString(),
-                          };
-                          setTestMessages((prev) => [...prev, tempCustomerMsg]);
-
-                          try {
-                            const result = await sendTestMessage(testSessionId, messageContent);
-
-                            // Update with the real customer message and add bot response
-                            setTestMessages((prev) => {
-                              // Remove the temp message
-                              const withoutTemp = prev.filter((m) => m.id !== tempCustomerMsg.id);
-                              // Add the actual customer message (with intent info)
-                              const customerMsg: ChatMessage = {
-                                ...result.message,
-                                sender: 'CUSTOMER',
-                              };
-                              // Add bot response
-                              const botMsg: ChatMessage = {
-                                id: Date.now() + 1,
-                                sender: 'BOT',
-                                content: result.response.content,
-                                createdAt: new Date().toISOString(),
-                              };
-                              return [...withoutTemp, customerMsg, botMsg];
-                            });
-
-                            // Scroll to bottom
-                            setTimeout(() => {
-                              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-                            }, 100);
-                          } catch (error) {
-                            showToast(
-                              error instanceof Error ? error.message : 'Failed to send message',
-                              'error'
-                            );
-                            // Remove the optimistic message on error
-                            setTestMessages((prev) =>
-                              prev.filter((m) => m.id !== tempCustomerMsg.id)
-                            );
-                          } finally {
-                            setIsTestLoading(false);
-                          }
-                        }}
-                      >
-                        <Input
-                          placeholder="Type a message to test your chatbot..."
-                          value={testInput}
-                          onChange={(e) => setTestInput(e.target.value)}
-                          disabled={isTestLoading}
-                          className="flex-1"
-                        />
-                        <Button type="submit" disabled={isTestLoading || !testInput.trim()}>
-                          <Send className="w-4 h-4" />
-                          Send
-                        </Button>
-                      </form>
-                    </>
+                      </CardBody>
+                    </Card>
                   )}
-                </CardBody>
-              </Card>
+
+                  {/* Tips Card */}
+                  <Card>
+                    <CardBody className="text-xs text-neutral-500 space-y-2">
+                      <p className="font-medium text-neutral-700">Testing Tips:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Try asking about order status</li>
+                        <li>Request a return or refund</li>
+                        <li>Ask to speak with an agent</li>
+                        <li>Test FAQ questions from KB</li>
+                      </ul>
+                    </CardBody>
+                  </Card>
+                </div>
+              </div>
             )}
 
             {/* Conversations Tab */}
