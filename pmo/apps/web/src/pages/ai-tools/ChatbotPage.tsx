@@ -1727,10 +1727,11 @@ function ChatbotPage(): JSX.Element {
                                       sum + i.helpfulCount + i.notHelpfulCount,
                                     0,
                                   );
-                                  const helpful = knowledgeBaseQuery.data.reduce(
-                                    (sum, i) => sum + i.helpfulCount,
-                                    0,
-                                  );
+                                  const helpful =
+                                    knowledgeBaseQuery.data.reduce(
+                                      (sum, i) => sum + i.helpfulCount,
+                                      0,
+                                    );
                                   return total > 0
                                     ? Math.round((helpful / total) * 100)
                                     : 0;
@@ -1777,7 +1778,7 @@ function ChatbotPage(): JSX.Element {
                           {kbSearchQuery ||
                           kbCategoryFilter ||
                           kbPublishedFilter !== 'all'
-                            ? 'Try adjusting your search or filters to find what you\'re looking for.'
+                            ? "Try adjusting your search or filters to find what you're looking for."
                             : 'Add FAQ items to help your chatbot answer common questions and provide better support to your customers.'}
                         </p>
                         {!kbSearchQuery &&
