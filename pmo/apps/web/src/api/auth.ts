@@ -44,7 +44,17 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
     }),
   );
 
-  const data = await handleResponse<{ user: AuthUser | null }>(response);
+  const data = await handleResponse<{ user: AuthUser | null; token?: string }>(
+    response,
+  );
+
+  // Store token for Safari ITP fallback.
+  // This ensures users who logged in before the Safari localStorage fallback
+  // was implemented will get their tokens stored on subsequent page loads.
+  if (data.token) {
+    storeToken(data.token);
+  }
+
   return data.user ?? null;
 }
 

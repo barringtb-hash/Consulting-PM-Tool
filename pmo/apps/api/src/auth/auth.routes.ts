@@ -76,6 +76,13 @@ router.get('/auth/me', requireAuth, async (req: AuthenticatedRequest, res) => {
       return;
     }
 
+    // Generate a fresh token for Safari ITP fallback.
+    // This ensures users who logged in before the Safari localStorage fallback
+    // was implemented will get their tokens stored on subsequent page loads.
+    // Safari's ITP may block cross-origin cookies even with partitioned attribute,
+    // so the frontend stores this token and sends via Authorization header.
+    const token = signToken({ userId: req.userId });
+
     res.json({
       user: {
         id: user.id,
@@ -83,6 +90,7 @@ router.get('/auth/me', requireAuth, async (req: AuthenticatedRequest, res) => {
         email: user.email,
         timezone: user.timezone,
       },
+      token, // For Safari localStorage fallback
     });
   } catch (error) {
     console.error('Get user error:', error);
