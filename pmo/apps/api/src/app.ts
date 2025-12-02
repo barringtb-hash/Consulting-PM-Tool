@@ -94,6 +94,11 @@ function buildCorsOrigin(): cors.CorsOptions['origin'] {
 export function createApp(): express.Express {
   const app = express();
 
+  // Trust the first proxy hop (Render, Vercel, etc.)
+  // This enables req.ip to return the correct client IP instead of the proxy's IP
+  // Required for rate limiting and security logging to work correctly
+  app.set('trust proxy', 1);
+
   // Log enabled modules at startup
   logEnabledModules();
 

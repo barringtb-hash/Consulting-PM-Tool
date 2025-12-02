@@ -467,6 +467,7 @@ async function analyzeSentiment(message: string): Promise<number> {
 async function generateBotResponse(
   conversation: {
     id: number;
+    chatbotConfigId: number;
     chatbotConfig: {
       name: string;
       enableOrderTracking: boolean;
@@ -501,7 +502,7 @@ async function generateBotResponse(
   if (intentResult.intent === 'FAQ' || intentResult.intent === 'GENERAL') {
     const kbMatch = await findKnowledgeBaseMatch(
       customerMessage,
-      conversation.chatbotConfig as unknown as number,
+      conversation.chatbotConfigId,
     );
     if (kbMatch) {
       // Increment view count
