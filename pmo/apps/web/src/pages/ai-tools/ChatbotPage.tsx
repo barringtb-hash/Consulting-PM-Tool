@@ -542,7 +542,7 @@ function ChatbotPage(): JSX.Element {
                     <Card>
                       <CardBody>
                         <p className="text-3xl font-bold text-primary-600">
-                          {analyticsQuery.data.totalConversations}
+                          {analyticsQuery.data.totalConversations ?? 0}
                         </p>
                         <p className="text-sm text-neutral-600">
                           Total Conversations
@@ -552,7 +552,7 @@ function ChatbotPage(): JSX.Element {
                     <Card>
                       <CardBody>
                         <p className="text-3xl font-bold text-primary-600">
-                          {analyticsQuery.data.avgResponseTime.toFixed(1)}s
+                          {(analyticsQuery.data.avgResponseTime ?? 0).toFixed(1)}s
                         </p>
                         <p className="text-sm text-neutral-600">
                           Avg Response Time
@@ -562,7 +562,7 @@ function ChatbotPage(): JSX.Element {
                     <Card>
                       <CardBody>
                         <p className="text-3xl font-bold text-primary-600">
-                          {(analyticsQuery.data.resolutionRate * 100).toFixed(
+                          {((analyticsQuery.data.resolutionRate ?? 0) * 100).toFixed(
                             0,
                           )}
                           %
@@ -575,7 +575,7 @@ function ChatbotPage(): JSX.Element {
                     <Card>
                       <CardBody>
                         <p className="text-3xl font-bold text-primary-600">
-                          {analyticsQuery.data.avgSatisfaction.toFixed(1)}/5
+                          {(analyticsQuery.data.avgSatisfaction ?? 0).toFixed(1)}/5
                         </p>
                         <p className="text-sm text-neutral-600">
                           Avg Satisfaction
