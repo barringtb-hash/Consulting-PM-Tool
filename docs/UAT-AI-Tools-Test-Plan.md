@@ -94,10 +94,10 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 | 4 | Select a client from dropdown | Client is selected | Pass | |
 | 5 | Enter chatbot name (e.g., "Customer Support Bot") | Name is entered | Pass | |
 | 6 | Enter welcome message (e.g., "Hi! How can I help you today?") | Message is entered | Pass | |
-| 7 | Click "Create" button | Button shows "Creating..." while processing | Fail | |
-| 8 | Verify success | Toast notification shows "Chatbot configuration created successfully", modal closes | | |
-| 9 | Verify new config in list | New chatbot appears in the Chatbot Configuration dropdown | | |
-| 10 | Click "Cancel" button (on new modal) | Modal closes without creating | | |
+| 7 | Click "Create" button | Button shows "Creating..." while processing | Pass | |
+| 8 | Verify success | Toast notification shows "Chatbot configuration created successfully", modal closes | Pass | |
+| 9 | Verify new config in list | New chatbot appears in the Chatbot Configuration dropdown | Pass | |
+| 10 | Click "Cancel" button (on new modal) | Modal closes without creating | Pass | |
 
 ---
 
@@ -105,10 +105,10 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Select a chatbot configuration from dropdown | Tab navigation appears with: Overview, Conversations, Knowledge Base, Analytics | | |
-| 2 | Verify Overview tab is active by default | Overview tab is highlighted with blue border | | |
-| 3 | Verify Configuration card | Shows: Name, Status (Active/Inactive badge), Welcome Message, Features badges (FAQ, Order Tracking, Returns, Human Handoff) | | |
-| 4 | Verify Quick Stats card | Shows: Total Conversations count, Knowledge Base Items count | | |
+| 1 | Select a chatbot configuration from dropdown | Tab navigation appears with: Overview, Conversations, Knowledge Base, Analytics | Pass | |
+| 2 | Verify Overview tab is active by default | Overview tab is highlighted with blue border | Partial Pass | The Overview tab is the default, but it doesn't have a blue border. This isn't an issue for me. |
+| 3 | Verify Configuration card | Shows: Name, Status (Active/Inactive badge), Welcome Message, Features badges (FAQ, Order Tracking, Returns, Human Handoff) | Pass | |
+| 4 | Verify Quick Stats card | Shows: Total Conversations count, Knowledge Base Items count | Pass | |
 
 ---
 
@@ -116,13 +116,13 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "Conversations" tab | Conversations tab becomes active | | |
-| 2 | Verify status filter dropdown | Options: All Statuses, Active, Escalated, Resolved, Closed | | |
+| 1 | Click "Conversations" tab | Conversations tab becomes active | Pass | |
+| 2 | Verify status filter dropdown | Options: All Statuses, Active, Escalated, Resolved, Closed | Pass | |
 | 3 | If conversations exist | Each conversation card shows: Customer name/email/"Anonymous", Status badge (color-coded), Channel badge, Message count, Started date | | |
-| 4 | If no conversations | Shows message "No conversations found." | | |
-| 5 | Change status filter to "Active" | Only active conversations are displayed | | |
-| 6 | Change status filter to "Escalated" | Only escalated conversations are displayed | | |
-| 7 | Verify status badge colors | ACTIVE=primary(blue), WAITING=warning(yellow), ESCALATED=secondary, RESOLVED=success(green), CLOSED=neutral(gray) | | |
+| 4 | If no conversations | Shows message "No conversations found." | Pass | |
+| 5 | Change status filter to "Active" | Only active conversations are displayed | | Couldn't check because we didn't have any conversations in the databse |
+| 6 | Change status filter to "Escalated" | Only escalated conversations are displayed | | Couldn't check because we didn't have any conversations in the databse |
+| 7 | Verify status badge colors | ACTIVE=primary(blue), WAITING=warning(yellow), ESCALATED=secondary, RESOLVED=success(green), CLOSED=neutral(gray) | | Couldn't check because we didn't have any conversations in the databse |
 
 ---
 
@@ -130,9 +130,9 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "Knowledge Base" tab | Knowledge Base tab becomes active | | |
-| 2 | Verify page content | Shows header "Knowledge Base" with "Add Item" button | | |
-| 3 | Verify placeholder message | Shows "Knowledge base management coming soon. Add FAQ items to help your chatbot answer common questions." | | |
+| 1 | Click "Knowledge Base" tab | Knowledge Base tab becomes active | Pass | |
+| 2 | Verify page content | Shows header "Knowledge Base" with "Add Item" button | Pass | |
+| 3 | Verify placeholder message | Shows "Knowledge base management coming soon. Add FAQ items to help your chatbot answer common questions." | Pass | |
 
 ---
 
@@ -140,10 +140,9 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "Analytics" tab | Analytics tab becomes active | | |
-| 2 | If analytics data exists | Shows 4 metric cards: Total Conversations, Avg Response Time (in seconds), Resolution Rate (percentage), Avg Satisfaction (out of 5) | | |
-| 3 | If no analytics data | Shows "No analytics data available." | | |
-| 4 | Verify loading state | While loading shows "Loading analytics..." | | |
+| 1 | Click "Analytics" tab | Analytics tab becomes active | Pass | | |
+| 3 | If no analytics data | Shows "No analytics data available." | Pass | |
+| 4 | Verify loading state | While loading shows "Loading analytics..." | | We don't have any data to test |
 
 ---
 
@@ -151,7 +150,7 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Select "All Clients" in Client dropdown | All chatbot configurations are shown in Configuration dropdown | | |
+| 1 | Select "All Clients" in Client dropdown | All chatbot configurations are shown in Configuration dropdown | Fail | |
 | 2 | Select a specific client | Only chatbot configurations for that client appear in Configuration dropdown | | |
 | 3 | Select a different client | Configuration dropdown updates to show only that client's configs | | |
 
