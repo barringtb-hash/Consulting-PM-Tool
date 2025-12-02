@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -90,7 +91,7 @@ const SUBMISSION_STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchConfigs(): Promise<IntakeConfig[]> {
-  const res = await fetch('/api/intake/configs', buildOptions());
+  const res = await fetch(buildApiUrl('/intake/configs'), buildOptions());
   if (!res.ok) {
     const error = new Error('Failed to fetch configs') as ApiError;
     error.status = res.status;
@@ -101,7 +102,10 @@ async function fetchConfigs(): Promise<IntakeConfig[]> {
 }
 
 async function fetchForms(configId: number): Promise<IntakeForm[]> {
-  const res = await fetch(`/api/intake/${configId}/forms`, buildOptions());
+  const res = await fetch(
+    buildApiUrl(`/intake/${configId}/forms`),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch forms') as ApiError;
     error.status = res.status;
@@ -118,7 +122,7 @@ async function fetchSubmissions(
   const params = new URLSearchParams();
   if (status) params.append('status', status);
   const res = await fetch(
-    `/api/intake/${configId}/submissions?${params}`,
+    buildApiUrl(`/intake/${configId}/submissions?${params}`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -135,7 +139,7 @@ async function createConfig(
   data: Partial<IntakeConfig>,
 ): Promise<IntakeConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/intake`,
+    buildApiUrl(`/clients/${clientId}/intake`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -155,7 +159,7 @@ async function createForm(
   data: { name: string; description?: string },
 ): Promise<IntakeForm> {
   const res = await fetch(
-    `/api/intake/${configId}/forms`,
+    buildApiUrl(`/intake/${configId}/forms`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -175,7 +179,7 @@ async function updateSubmissionStatus(
   status: string,
 ): Promise<IntakeSubmission> {
   const res = await fetch(
-    `/api/intake/submissions/${submissionId}/status`,
+    buildApiUrl(`/intake/submissions/${submissionId}/status`),
     buildOptions({
       method: 'PATCH',
       body: JSON.stringify({ status }),
@@ -224,8 +228,11 @@ function IntakePage(): JSX.Element {
     enabled: !!selectedConfigId && activeTab === 'submissions',
   });
 
+  // Redirect to login on 401 errors from queries
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(formsQuery.error);
+  useRedirectOnUnauthorized(submissionsQuery.error);
 
   const clients = clientsQuery.data ?? [];
   const forms = formsQuery.data ?? [];
@@ -315,6 +322,11 @@ function IntakePage(): JSX.Element {
       );
     },
   });
+
+  // Redirect to login on 401 errors from mutations
+  useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(createFormMutation.error);
+  useRedirectOnUnauthorized(updateStatusMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

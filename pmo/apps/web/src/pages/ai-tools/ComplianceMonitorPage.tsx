@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -92,7 +93,10 @@ const STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchComplianceConfigs(): Promise<ComplianceConfig[]> {
-  const res = await fetch('/api/compliance-monitor/configs', buildOptions());
+  const res = await fetch(
+    buildApiUrl('/compliance-monitor/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch compliance configs') as ApiError;
     error.status = res.status;
@@ -104,7 +108,7 @@ async function fetchComplianceConfigs(): Promise<ComplianceConfig[]> {
 
 async function fetchRules(configId: number): Promise<ComplianceRule[]> {
   const res = await fetch(
-    `/api/compliance-monitor/${configId}/rules`,
+    buildApiUrl(`/compliance-monitor/${configId}/rules`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -120,7 +124,7 @@ async function fetchViolations(
   configId: number,
 ): Promise<ComplianceViolation[]> {
   const res = await fetch(
-    `/api/compliance-monitor/${configId}/violations`,
+    buildApiUrl(`/compliance-monitor/${configId}/violations`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -134,7 +138,7 @@ async function fetchViolations(
 
 async function fetchAudits(configId: number): Promise<ComplianceAudit[]> {
   const res = await fetch(
-    `/api/compliance-monitor/${configId}/audits`,
+    buildApiUrl(`/compliance-monitor/${configId}/audits`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -151,7 +155,7 @@ async function createComplianceConfig(
   data: Partial<ComplianceConfig>,
 ): Promise<ComplianceConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/compliance-monitor`,
+    buildApiUrl(`/clients/${clientId}/compliance-monitor`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -226,8 +230,10 @@ function ComplianceMonitorPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from queries or mutations
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -92,7 +93,7 @@ const URGENCY_VARIANTS: Record<string, 'neutral' | 'warning' | 'secondary'> = {
 
 // API functions
 async function fetchPriorAuthConfigs(): Promise<PriorAuthConfig[]> {
-  const res = await fetch('/api/prior-auth/configs', buildOptions());
+  const res = await fetch(buildApiUrl('/prior-auth/configs'), buildOptions());
   if (!res.ok) {
     const error = new Error('Failed to fetch prior auth configs') as ApiError;
     error.status = res.status;
@@ -109,7 +110,7 @@ async function fetchPARequests(
   const params = new URLSearchParams();
   if (status) params.append('status', status);
   const res = await fetch(
-    `/api/prior-auth/${configId}/requests?${params}`,
+    buildApiUrl(`/prior-auth/${configId}/requests?${params}`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -133,7 +134,7 @@ async function fetchAnalytics(configId: number): Promise<{
   denialReasons: Record<string, number>;
 }> {
   const res = await fetch(
-    `/api/prior-auth/${configId}/analytics`,
+    buildApiUrl(`/prior-auth/${configId}/analytics`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -149,7 +150,7 @@ async function createPriorAuthConfig(
   data: Partial<PriorAuthConfig>,
 ): Promise<PriorAuthConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/prior-auth`,
+    buildApiUrl(`/clients/${clientId}/prior-auth`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -166,7 +167,7 @@ async function createPriorAuthConfig(
 
 async function submitPARequest(requestId: number): Promise<void> {
   const res = await fetch(
-    `/api/prior-auth/requests/${requestId}/submit`,
+    buildApiUrl(`/prior-auth/requests/${requestId}/submit`),
     buildOptions({ method: 'POST' }),
   );
   if (!res.ok) {
@@ -180,7 +181,7 @@ async function checkPAStatus(
   requestId: number,
 ): Promise<{ statusChanged: boolean; currentStatus: string }> {
   const res = await fetch(
-    `/api/prior-auth/requests/${requestId}/check-status`,
+    buildApiUrl(`/prior-auth/requests/${requestId}/check-status`),
     buildOptions({ method: 'POST' }),
   );
   if (!res.ok) {
@@ -277,8 +278,12 @@ function PriorAuthPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from queries or mutations
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(submitMutation.error);
+  useRedirectOnUnauthorized(checkStatusMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

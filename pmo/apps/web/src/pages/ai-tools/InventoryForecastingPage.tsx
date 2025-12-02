@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -77,7 +78,10 @@ const ALERT_SEVERITY_VARIANTS: Record<
 
 // API functions
 async function fetchInventoryConfigs(): Promise<InventoryConfig[]> {
-  const res = await fetch('/api/inventory-forecasting/configs', buildOptions());
+  const res = await fetch(
+    buildApiUrl('/inventory-forecasting/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch inventory configs') as ApiError;
     error.status = res.status;
@@ -89,7 +93,7 @@ async function fetchInventoryConfigs(): Promise<InventoryConfig[]> {
 
 async function fetchLocations(configId: number): Promise<InventoryLocation[]> {
   const res = await fetch(
-    `/api/inventory-forecasting/${configId}/locations`,
+    buildApiUrl(`/inventory-forecasting/${configId}/locations`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -103,7 +107,7 @@ async function fetchLocations(configId: number): Promise<InventoryLocation[]> {
 
 async function fetchProducts(configId: number): Promise<InventoryProduct[]> {
   const res = await fetch(
-    `/api/inventory-forecasting/${configId}/products`,
+    buildApiUrl(`/inventory-forecasting/${configId}/products`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -117,7 +121,7 @@ async function fetchProducts(configId: number): Promise<InventoryProduct[]> {
 
 async function fetchAlerts(configId: number): Promise<InventoryAlert[]> {
   const res = await fetch(
-    `/api/inventory-forecasting/${configId}/alerts`,
+    buildApiUrl(`/inventory-forecasting/${configId}/alerts`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -134,7 +138,7 @@ async function createInventoryConfig(
   data: Partial<InventoryConfig>,
 ): Promise<InventoryConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/inventory-forecasting`,
+    buildApiUrl(`/clients/${clientId}/inventory-forecasting`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -209,8 +213,10 @@ function InventoryForecastingPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from queries or mutations
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

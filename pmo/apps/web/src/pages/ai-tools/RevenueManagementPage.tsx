@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -79,7 +80,10 @@ const STRATEGY_LABELS: Record<string, string> = {
 
 // API functions
 async function fetchRevenueConfigs(): Promise<RevenueConfig[]> {
-  const res = await fetch('/api/revenue-management/configs', buildOptions());
+  const res = await fetch(
+    buildApiUrl('/revenue-management/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch revenue configs') as ApiError;
     error.status = res.status;
@@ -91,7 +95,7 @@ async function fetchRevenueConfigs(): Promise<RevenueConfig[]> {
 
 async function fetchPricingRules(configId: number): Promise<PricingRule[]> {
   const res = await fetch(
-    `/api/revenue-management/${configId}/pricing`,
+    buildApiUrl(`/revenue-management/${configId}/pricing`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -105,7 +109,7 @@ async function fetchPricingRules(configId: number): Promise<PricingRule[]> {
 
 async function fetchCompetitors(configId: number): Promise<Competitor[]> {
   const res = await fetch(
-    `/api/revenue-management/${configId}/competitors`,
+    buildApiUrl(`/revenue-management/${configId}/competitors`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -119,7 +123,7 @@ async function fetchCompetitors(configId: number): Promise<Competitor[]> {
 
 async function fetchForecasts(configId: number): Promise<RevenueForecast[]> {
   const res = await fetch(
-    `/api/revenue-management/${configId}/forecasts`,
+    buildApiUrl(`/revenue-management/${configId}/forecasts`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -136,7 +140,7 @@ async function createRevenueConfig(
   data: Partial<RevenueConfig>,
 ): Promise<RevenueConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/revenue-management`,
+    buildApiUrl(`/clients/${clientId}/revenue-management`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -209,8 +213,10 @@ function RevenueManagementPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from queries or mutations
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

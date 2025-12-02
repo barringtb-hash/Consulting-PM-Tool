@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -80,7 +81,10 @@ const CONTENT_TYPES = [
 async function fetchContentGeneratorConfigs(): Promise<
   ContentGeneratorConfig[]
 > {
-  const res = await fetch('/api/content-generator/configs', buildOptions());
+  const res = await fetch(
+    buildApiUrl('/content-generator/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error(
       'Failed to fetch content generator configs',
@@ -101,7 +105,7 @@ async function fetchContents(
   if (type) params.append('type', type);
   if (status) params.append('status', status);
   const res = await fetch(
-    `/api/content-generator/${configId}/contents?${params}`,
+    buildApiUrl(`/content-generator/${configId}/contents?${params}`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -118,7 +122,7 @@ async function createContentGeneratorConfig(
   data: Partial<ContentGeneratorConfig>,
 ): Promise<ContentGeneratorConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/content-generator`,
+    buildApiUrl(`/clients/${clientId}/content-generator`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -146,7 +150,7 @@ async function generateContent(
   },
 ): Promise<{ contents: GeneratedContent[] }> {
   const res = await fetch(
-    `/api/content-generator/${configId}/generate`,
+    buildApiUrl(`/content-generator/${configId}/generate`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -244,8 +248,11 @@ function ContentGeneratorPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from queries or mutations
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(generateMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

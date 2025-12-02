@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -74,7 +75,10 @@ const COMPLIANCE_ICONS: Record<string, JSX.Element> = {
 async function fetchDocumentAnalyzerConfigs(): Promise<
   DocumentAnalyzerConfig[]
 > {
-  const res = await fetch('/api/document-analyzer/configs', buildOptions());
+  const res = await fetch(
+    buildApiUrl('/document-analyzer/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error(
       'Failed to fetch document analyzer configs',
@@ -93,7 +97,7 @@ async function fetchDocuments(
   const params = new URLSearchParams();
   if (status) params.append('status', status);
   const res = await fetch(
-    `/api/document-analyzer/${configId}/documents?${params}`,
+    buildApiUrl(`/document-analyzer/${configId}/documents?${params}`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -110,7 +114,7 @@ async function createDocumentAnalyzerConfig(
   data: Partial<DocumentAnalyzerConfig>,
 ): Promise<DocumentAnalyzerConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/document-analyzer`,
+    buildApiUrl(`/clients/${clientId}/document-analyzer`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -138,7 +142,7 @@ async function _uploadDocument(
   },
 ): Promise<AnalyzedDocument> {
   const res = await fetch(
-    `/api/document-analyzer/${configId}/documents`,
+    buildApiUrl(`/document-analyzer/${configId}/documents`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -155,7 +159,7 @@ async function _uploadDocument(
 
 async function analyzeDocument(documentId: number): Promise<void> {
   const res = await fetch(
-    `/api/document-analyzer/documents/${documentId}/analyze`,
+    buildApiUrl(`/document-analyzer/documents/${documentId}/analyze`),
     buildOptions({ method: 'POST' }),
   );
   if (!res.ok) {
@@ -227,8 +231,11 @@ function DocumentAnalyzerPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from queries or mutations
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(analyzeMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

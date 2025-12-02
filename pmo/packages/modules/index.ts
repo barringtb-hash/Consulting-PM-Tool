@@ -176,7 +176,11 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     path: '/sales/leads',
     icon: 'UserCheck',
     isCore: false,
-    apiPrefixes: ['/api/leads', '/api/public/leads', '/api/public/inbound-leads'],
+    apiPrefixes: [
+      '/api/leads',
+      '/api/public/leads',
+      '/api/public/inbound-leads',
+    ],
     description: 'Lead capture and management',
   },
   pipeline: {

@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -67,7 +68,7 @@ const STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchChatbotConfigs(): Promise<ChatbotConfig[]> {
-  const res = await fetch('/api/chatbot/configs', buildOptions());
+  const res = await fetch(buildApiUrl('/chatbot/configs'), buildOptions());
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     const error = new Error(
@@ -87,7 +88,7 @@ async function fetchConversations(
   const params = new URLSearchParams();
   if (status) params.append('status', status);
   const res = await fetch(
-    `/api/chatbot/${configId}/conversations?${params}`,
+    buildApiUrl(`/chatbot/${configId}/conversations?${params}`),
     buildOptions(),
   );
   if (!res.ok) {
@@ -109,7 +110,10 @@ async function fetchAnalytics(configId: number): Promise<{
   avgSatisfaction: number;
   topIntents: { intent: string; count: number }[];
 }> {
-  const res = await fetch(`/api/chatbot/${configId}/analytics`, buildOptions());
+  const res = await fetch(
+    buildApiUrl(`/chatbot/${configId}/analytics`),
+    buildOptions(),
+  );
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     const error = new Error(
@@ -126,7 +130,7 @@ async function createChatbotConfig(
   data: Partial<ChatbotConfig>,
 ): Promise<ChatbotConfig> {
   const res = await fetch(
-    `/api/clients/${clientId}/chatbot`,
+    buildApiUrl(`/clients/${clientId}/chatbot`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -203,8 +207,12 @@ function ChatbotPage(): JSX.Element {
     },
   });
 
+  // Redirect to login on 401 errors from any query or mutation
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(conversationsQuery.error);
+  useRedirectOnUnauthorized(analyticsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
 
   const clients = clientsQuery.data ?? [];
 
