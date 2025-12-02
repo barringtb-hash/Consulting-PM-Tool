@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -79,9 +80,7 @@ const CONTENT_TYPES = [
 async function fetchContentGeneratorConfigs(): Promise<
   ContentGeneratorConfig[]
 > {
-  const res = await fetch('/api/content-generator/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/content-generator/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch content generator configs');
   const data = await res.json();
   return data.configs || [];
@@ -97,9 +96,7 @@ async function fetchContents(
   if (status) params.append('status', status);
   const res = await fetch(
     `/api/content-generator/${configId}/contents?${params}`,
-    {
-      credentials: 'include',
-    },
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch contents');
   const data = await res.json();
@@ -110,12 +107,13 @@ async function createContentGeneratorConfig(
   clientId: number,
   data: Partial<ContentGeneratorConfig>,
 ): Promise<ContentGeneratorConfig> {
-  const res = await fetch(`/api/clients/${clientId}/content-generator`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/content-generator`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create content generator config');
   const result = await res.json();
   return result.config;
@@ -131,12 +129,13 @@ async function generateContent(
     targetLength?: string;
   },
 ): Promise<{ contents: GeneratedContent[] }> {
-  const res = await fetch(`/api/content-generator/${configId}/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/content-generator/${configId}/generate`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to generate content');
   return res.json();
 }

@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -109,27 +110,30 @@ const WORK_ORDER_STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchMaintenanceConfigs(): Promise<MaintenanceConfig[]> {
-  const res = await fetch('/api/predictive-maintenance/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    '/api/predictive-maintenance/configs',
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch maintenance configs');
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchEquipment(configId: number): Promise<Equipment[]> {
-  const res = await fetch(`/api/predictive-maintenance/${configId}/equipment`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/predictive-maintenance/${configId}/equipment`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch equipment');
   const data = await res.json();
   return data.equipment || [];
 }
 
 async function fetchSensors(configId: number): Promise<Sensor[]> {
-  const res = await fetch(`/api/predictive-maintenance/${configId}/sensors`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/predictive-maintenance/${configId}/sensors`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch sensors');
   const data = await res.json();
   return data.sensors || [];
@@ -138,7 +142,7 @@ async function fetchSensors(configId: number): Promise<Sensor[]> {
 async function fetchWorkOrders(configId: number): Promise<WorkOrder[]> {
   const res = await fetch(
     `/api/predictive-maintenance/${configId}/work-orders`,
-    { credentials: 'include' },
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch work orders');
   const data = await res.json();
@@ -149,12 +153,13 @@ async function createMaintenanceConfig(
   clientId: number,
   data: Partial<MaintenanceConfig>,
 ): Promise<MaintenanceConfig> {
-  const res = await fetch(`/api/clients/${clientId}/predictive-maintenance`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/predictive-maintenance`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create maintenance config');
   const result = await res.json();
   return result.config;

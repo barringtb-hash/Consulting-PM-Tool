@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -90,18 +91,17 @@ const STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchConfigs(): Promise<SchedulingConfig[]> {
-  const res = await fetch('/api/scheduling/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/scheduling/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch configs');
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchProviders(configId: number): Promise<Provider[]> {
-  const res = await fetch(`/api/scheduling/${configId}/providers`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/scheduling/${configId}/providers`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch providers');
   const data = await res.json();
   return data.providers || [];
@@ -119,9 +119,7 @@ async function fetchAppointments(
 
   const res = await fetch(
     `/api/scheduling/${configId}/appointments?${searchParams}`,
-    {
-      credentials: 'include',
-    },
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch appointments');
   const data = await res.json();
@@ -134,12 +132,10 @@ async function updateAppointmentStatus(
 ): Promise<Appointment> {
   const res = await fetch(
     `/api/scheduling/appointments/${appointmentId}/status`,
-    {
+    buildOptions({
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ status }),
-    },
+    }),
   );
   if (!res.ok) throw new Error('Failed to update appointment status');
   const result = await res.json();
@@ -150,12 +146,13 @@ async function createConfig(
   clientId: number,
   data: Partial<SchedulingConfig>,
 ): Promise<SchedulingConfig> {
-  const res = await fetch(`/api/clients/${clientId}/scheduling`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/scheduling`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create config');
   const result = await res.json();
   return result.config;

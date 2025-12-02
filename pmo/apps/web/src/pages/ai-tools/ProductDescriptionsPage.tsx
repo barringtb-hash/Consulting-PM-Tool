@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -74,18 +75,17 @@ const MARKETPLACE_LABELS: Record<string, string> = {
 
 // API functions
 async function fetchConfigs(): Promise<ProductDescConfig[]> {
-  const res = await fetch('/api/product-descriptions/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/product-descriptions/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch configs');
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchProducts(configId: number): Promise<Product[]> {
-  const res = await fetch(`/api/product-descriptions/${configId}/products`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/product-descriptions/${configId}/products`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch products');
   const data = await res.json();
   return data.products || [];
@@ -97,12 +97,10 @@ async function generateDescription(
 ): Promise<ProductDescription> {
   const res = await fetch(
     `/api/product-descriptions/products/${productId}/generate`,
-    {
+    buildOptions({
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ marketplace }),
-    },
+    }),
   );
   if (!res.ok) throw new Error('Failed to generate description');
   const data = await res.json();
@@ -113,12 +111,13 @@ async function createConfig(
   clientId: number,
   data: Partial<ProductDescConfig>,
 ): Promise<ProductDescConfig> {
-  const res = await fetch(`/api/clients/${clientId}/product-descriptions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/product-descriptions`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create config');
   const result = await res.json();
   return result.config;
@@ -128,12 +127,13 @@ async function createProduct(
   configId: number,
   data: Partial<Product>,
 ): Promise<Product> {
-  const res = await fetch(`/api/product-descriptions/${configId}/products`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/product-descriptions/${configId}/products`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create product');
   const result = await res.json();
   return result.product;

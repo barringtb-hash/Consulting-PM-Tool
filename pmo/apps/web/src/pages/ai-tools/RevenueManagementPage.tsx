@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -78,36 +79,37 @@ const STRATEGY_LABELS: Record<string, string> = {
 
 // API functions
 async function fetchRevenueConfigs(): Promise<RevenueConfig[]> {
-  const res = await fetch('/api/revenue-management/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/revenue-management/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch revenue configs');
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchPricingRules(configId: number): Promise<PricingRule[]> {
-  const res = await fetch(`/api/revenue-management/${configId}/pricing`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/revenue-management/${configId}/pricing`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch pricing rules');
   const data = await res.json();
   return data.rules || [];
 }
 
 async function fetchCompetitors(configId: number): Promise<Competitor[]> {
-  const res = await fetch(`/api/revenue-management/${configId}/competitors`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/revenue-management/${configId}/competitors`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch competitors');
   const data = await res.json();
   return data.competitors || [];
 }
 
 async function fetchForecasts(configId: number): Promise<RevenueForecast[]> {
-  const res = await fetch(`/api/revenue-management/${configId}/forecasts`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/revenue-management/${configId}/forecasts`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch forecasts');
   const data = await res.json();
   return data.forecasts || [];
@@ -117,12 +119,13 @@ async function createRevenueConfig(
   clientId: number,
   data: Partial<RevenueConfig>,
 ): Promise<RevenueConfig> {
-  const res = await fetch(`/api/clients/${clientId}/revenue-management`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/revenue-management`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create revenue config');
   const result = await res.json();
   return result.config;

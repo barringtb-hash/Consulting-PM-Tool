@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -76,36 +77,37 @@ const ALERT_SEVERITY_VARIANTS: Record<
 
 // API functions
 async function fetchInventoryConfigs(): Promise<InventoryConfig[]> {
-  const res = await fetch('/api/inventory-forecasting/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/inventory-forecasting/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch inventory configs');
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchLocations(configId: number): Promise<InventoryLocation[]> {
-  const res = await fetch(`/api/inventory-forecasting/${configId}/locations`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/inventory-forecasting/${configId}/locations`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch locations');
   const data = await res.json();
   return data.locations || [];
 }
 
 async function fetchProducts(configId: number): Promise<InventoryProduct[]> {
-  const res = await fetch(`/api/inventory-forecasting/${configId}/products`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/inventory-forecasting/${configId}/products`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch products');
   const data = await res.json();
   return data.products || [];
 }
 
 async function fetchAlerts(configId: number): Promise<InventoryAlert[]> {
-  const res = await fetch(`/api/inventory-forecasting/${configId}/alerts`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/inventory-forecasting/${configId}/alerts`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch alerts');
   const data = await res.json();
   return data.alerts || [];
@@ -115,12 +117,13 @@ async function createInventoryConfig(
   clientId: number,
   data: Partial<InventoryConfig>,
 ): Promise<InventoryConfig> {
-  const res = await fetch(`/api/clients/${clientId}/inventory-forecasting`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/inventory-forecasting`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create inventory config');
   const result = await res.json();
   return result.config;

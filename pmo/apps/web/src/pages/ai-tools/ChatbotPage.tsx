@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -66,7 +67,7 @@ const STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchChatbotConfigs(): Promise<ChatbotConfig[]> {
-  const res = await fetch('/api/chatbot/configs', { credentials: 'include' });
+  const res = await fetch('/api/chatbot/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch chatbot configs');
   const data = await res.json();
   return data.configs || [];
@@ -78,9 +79,10 @@ async function fetchConversations(
 ): Promise<ConversationSummary[]> {
   const params = new URLSearchParams();
   if (status) params.append('status', status);
-  const res = await fetch(`/api/chatbot/${configId}/conversations?${params}`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/chatbot/${configId}/conversations?${params}`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch conversations');
   const data = await res.json();
   return data.conversations || [];
@@ -93,9 +95,7 @@ async function fetchAnalytics(configId: number): Promise<{
   avgSatisfaction: number;
   topIntents: { intent: string; count: number }[];
 }> {
-  const res = await fetch(`/api/chatbot/${configId}/analytics`, {
-    credentials: 'include',
-  });
+  const res = await fetch(`/api/chatbot/${configId}/analytics`, buildOptions());
   if (!res.ok) throw new Error('Failed to fetch analytics');
   return res.json();
 }
@@ -104,12 +104,13 @@ async function createChatbotConfig(
   clientId: number,
   data: Partial<ChatbotConfig>,
 ): Promise<ChatbotConfig> {
-  const res = await fetch(`/api/clients/${clientId}/chatbot`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/chatbot`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create chatbot config');
   const result = await res.json();
   return result.config;

@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -91,18 +92,17 @@ const STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchComplianceConfigs(): Promise<ComplianceConfig[]> {
-  const res = await fetch('/api/compliance-monitor/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/compliance-monitor/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch compliance configs');
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchRules(configId: number): Promise<ComplianceRule[]> {
-  const res = await fetch(`/api/compliance-monitor/${configId}/rules`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/compliance-monitor/${configId}/rules`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch rules');
   const data = await res.json();
   return data.rules || [];
@@ -111,18 +111,20 @@ async function fetchRules(configId: number): Promise<ComplianceRule[]> {
 async function fetchViolations(
   configId: number,
 ): Promise<ComplianceViolation[]> {
-  const res = await fetch(`/api/compliance-monitor/${configId}/violations`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/compliance-monitor/${configId}/violations`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch violations');
   const data = await res.json();
   return data.violations || [];
 }
 
 async function fetchAudits(configId: number): Promise<ComplianceAudit[]> {
-  const res = await fetch(`/api/compliance-monitor/${configId}/audits`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/compliance-monitor/${configId}/audits`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch audits');
   const data = await res.json();
   return data.audits || [];
@@ -132,12 +134,13 @@ async function createComplianceConfig(
   clientId: number,
   data: Partial<ComplianceConfig>,
 ): Promise<ComplianceConfig> {
-  const res = await fetch(`/api/clients/${clientId}/compliance-monitor`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/compliance-monitor`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create compliance config');
   const result = await res.json();
   return result.config;

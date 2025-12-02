@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -73,9 +74,7 @@ const COMPLIANCE_ICONS: Record<string, JSX.Element> = {
 async function fetchDocumentAnalyzerConfigs(): Promise<
   DocumentAnalyzerConfig[]
 > {
-  const res = await fetch('/api/document-analyzer/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/document-analyzer/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch document analyzer configs');
   const data = await res.json();
   return data.configs || [];
@@ -89,9 +88,7 @@ async function fetchDocuments(
   if (status) params.append('status', status);
   const res = await fetch(
     `/api/document-analyzer/${configId}/documents?${params}`,
-    {
-      credentials: 'include',
-    },
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch documents');
   const data = await res.json();
@@ -102,12 +99,13 @@ async function createDocumentAnalyzerConfig(
   clientId: number,
   data: Partial<DocumentAnalyzerConfig>,
 ): Promise<DocumentAnalyzerConfig> {
-  const res = await fetch(`/api/clients/${clientId}/document-analyzer`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/document-analyzer`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create document analyzer config');
   const result = await res.json();
   return result.config;
@@ -123,12 +121,13 @@ async function _uploadDocument(
     format: string;
   },
 ): Promise<AnalyzedDocument> {
-  const res = await fetch(`/api/document-analyzer/${configId}/documents`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/document-analyzer/${configId}/documents`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to upload document');
   const result = await res.json();
   return result.document;
@@ -137,10 +136,7 @@ async function _uploadDocument(
 async function analyzeDocument(documentId: number): Promise<void> {
   const res = await fetch(
     `/api/document-analyzer/documents/${documentId}/analyze`,
-    {
-      method: 'POST',
-      credentials: 'include',
-    },
+    buildOptions({ method: 'POST' }),
   );
   if (!res.ok) throw new Error('Failed to analyze document');
 }

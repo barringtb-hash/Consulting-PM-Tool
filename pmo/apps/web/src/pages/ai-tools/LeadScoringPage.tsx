@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -86,9 +87,7 @@ const SCORE_LEVEL_ICONS: Record<string, JSX.Element> = {
 
 // API functions
 async function fetchLeadScoringConfigs(): Promise<LeadScoringConfig[]> {
-  const res = await fetch('/api/lead-scoring/configs', {
-    credentials: 'include',
-  });
+  const res = await fetch('/api/lead-scoring/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch lead scoring configs');
   const data = await res.json();
   return data.configs || [];
@@ -100,18 +99,20 @@ async function fetchLeads(
 ): Promise<ScoredLead[]> {
   const params = new URLSearchParams();
   if (scoreLevel) params.append('scoreLevel', scoreLevel);
-  const res = await fetch(`/api/lead-scoring/${configId}/leads?${params}`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/lead-scoring/${configId}/leads?${params}`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch leads');
   const data = await res.json();
   return data.leads || [];
 }
 
 async function fetchSequences(configId: number): Promise<NurtureSequence[]> {
-  const res = await fetch(`/api/lead-scoring/${configId}/sequences`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/lead-scoring/${configId}/sequences`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch sequences');
   const data = await res.json();
   return data.sequences || [];
@@ -121,9 +122,10 @@ async function fetchAnalytics(configId: number): Promise<{
   leadDistribution: { level: string; count: number }[];
   summary: { totalLeads: number; hotLeads: number; hotLeadPercentage: number };
 }> {
-  const res = await fetch(`/api/lead-scoring/${configId}/analytics`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/lead-scoring/${configId}/analytics`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch analytics');
   return res.json();
 }
@@ -132,12 +134,13 @@ async function createLeadScoringConfig(
   clientId: number,
   data: Partial<LeadScoringConfig>,
 ): Promise<LeadScoringConfig> {
-  const res = await fetch(`/api/clients/${clientId}/lead-scoring`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/lead-scoring`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create lead scoring config');
   const result = await res.json();
   return result.config;
@@ -147,22 +150,23 @@ async function createLead(
   configId: number,
   data: { email: string; name?: string; company?: string },
 ): Promise<ScoredLead> {
-  const res = await fetch(`/api/lead-scoring/${configId}/leads`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/lead-scoring/${configId}/leads`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create lead');
   const result = await res.json();
   return result.lead;
 }
 
 async function rescoreLead(leadId: number): Promise<void> {
-  const res = await fetch(`/api/lead-scoring/leads/${leadId}/rescore`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/lead-scoring/leads/${leadId}/rescore`,
+    buildOptions({ method: 'POST' }),
+  );
   if (!res.ok) throw new Error('Failed to rescore lead');
 }
 

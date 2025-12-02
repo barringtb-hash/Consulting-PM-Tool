@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions } from '../../api/http';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
@@ -89,16 +90,14 @@ const SUBMISSION_STATUS_VARIANTS: Record<
 
 // API functions
 async function fetchConfigs(): Promise<IntakeConfig[]> {
-  const res = await fetch('/api/intake/configs', { credentials: 'include' });
+  const res = await fetch('/api/intake/configs', buildOptions());
   if (!res.ok) throw new Error('Failed to fetch configs');
   const data = await res.json();
   return data.configs || [];
 }
 
 async function fetchForms(configId: number): Promise<IntakeForm[]> {
-  const res = await fetch(`/api/intake/${configId}/forms`, {
-    credentials: 'include',
-  });
+  const res = await fetch(`/api/intake/${configId}/forms`, buildOptions());
   if (!res.ok) throw new Error('Failed to fetch forms');
   const data = await res.json();
   return data.forms || [];
@@ -110,9 +109,10 @@ async function fetchSubmissions(
 ): Promise<IntakeSubmission[]> {
   const params = new URLSearchParams();
   if (status) params.append('status', status);
-  const res = await fetch(`/api/intake/${configId}/submissions?${params}`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `/api/intake/${configId}/submissions?${params}`,
+    buildOptions(),
+  );
   if (!res.ok) throw new Error('Failed to fetch submissions');
   const data = await res.json();
   return data.submissions || [];
@@ -122,12 +122,13 @@ async function createConfig(
   clientId: number,
   data: Partial<IntakeConfig>,
 ): Promise<IntakeConfig> {
-  const res = await fetch(`/api/clients/${clientId}/intake`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/clients/${clientId}/intake`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create config');
   const result = await res.json();
   return result.config;
@@ -137,12 +138,13 @@ async function createForm(
   configId: number,
   data: { name: string; description?: string },
 ): Promise<IntakeForm> {
-  const res = await fetch(`/api/intake/${configId}/forms`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `/api/intake/${configId}/forms`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to create form');
   const result = await res.json();
   return result.form;
@@ -152,12 +154,13 @@ async function updateSubmissionStatus(
   submissionId: number,
   status: string,
 ): Promise<IntakeSubmission> {
-  const res = await fetch(`/api/intake/submissions/${submissionId}/status`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ status }),
-  });
+  const res = await fetch(
+    `/api/intake/submissions/${submissionId}/status`,
+    buildOptions({
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+  );
   if (!res.ok) throw new Error('Failed to update submission status');
   const result = await res.json();
   return result.submission;
