@@ -21,7 +21,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 const THEME_STORAGE_KEY = 'pmo-theme';
 
 function getSystemTheme(): ResolvedTheme {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined' || !window.matchMedia) return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
@@ -55,8 +55,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): JSX.Element {
     getSystemTheme(),
   );
 
-  const resolvedTheme: ResolvedTheme =
-    theme === 'system' ? systemTheme : theme;
+  const resolvedTheme: ResolvedTheme = theme === 'system' ? systemTheme : theme;
 
   // Apply theme to document
   useEffect(() => {
@@ -65,6 +64,8 @@ export function ThemeProvider({ children }: ThemeProviderProps): JSX.Element {
 
   // Listen for system theme changes
   useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleChange = (e: MediaQueryListEvent) => {
