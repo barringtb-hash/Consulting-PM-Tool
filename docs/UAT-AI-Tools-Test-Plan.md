@@ -94,19 +94,7 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 | 4 | Select a client from dropdown | Client is selected | Pass | |
 | 5 | Enter chatbot name (e.g., "Customer Support Bot") | Name is entered | Pass | |
 | 6 | Enter welcome message (e.g., "Hi! How can I help you today?") | Message is entered | Pass | |
-| 7 | Click "Create" button | Button shows "Creating..." while processing | Fail | [Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
-[Error] Failed to fetch current user – Error: Unauthorized
-Error: Unauthorized
-	(anonymous function) (index-U7j7-mAg.js:68:4689)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
-[Error] Failed to load resource: the server responded with a status of 404 () (chatbot, line 0) |
+| 7 | Click "Create" button | Button shows "Creating..." while processing | Fail | |
 | 8 | Verify success | Toast notification shows "Chatbot configuration created successfully", modal closes | | |
 | 9 | Verify new config in list | New chatbot appears in the Chatbot Configuration dropdown | | |
 | 10 | Click "Cancel" button (on new modal) | Modal closes without creating | | |
