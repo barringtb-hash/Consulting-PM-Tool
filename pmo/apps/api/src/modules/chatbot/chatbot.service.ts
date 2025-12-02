@@ -78,6 +78,7 @@ export async function listChatbotConfigs(filters?: { clientId?: number }) {
     where: filters?.clientId ? { clientId: filters.clientId } : undefined,
     include: {
       client: { select: { id: true, name: true, industry: true } },
+      _count: { select: { conversations: true, knowledgeBase: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
