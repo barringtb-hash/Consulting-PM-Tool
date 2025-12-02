@@ -115,11 +115,14 @@ describe('auth routes', () => {
     ).toBe(true);
   });
 
-  it('blocks access to /auth/me without authentication', async () => {
+  it('returns null user for /auth/me without authentication', async () => {
+    // The /auth/me endpoint returns 200 with { user: null } for unauthenticated
+    // requests to avoid browser "Failed to load resource" console errors that
+    // appear when the server returns 401 on initial page load.
     const response = await request(app).get('/api/auth/me');
 
-    expect(response.status).toBe(401);
-    expect(response.body).toEqual({ error: 'Unauthorized' });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ user: null });
   });
 
   it('sets the auth cookie flags and returns the current user when seeded credentials are used', async () => {
@@ -154,8 +157,9 @@ describe('auth routes', () => {
       timezone: user.timezone,
     });
 
+    // Without cookie, returns 200 with null user (not 401) to avoid browser console errors
     const meResponseWithoutCookie = await request(app).get('/api/auth/me');
-    expect(meResponseWithoutCookie.status).toBe(401);
-    expect(meResponseWithoutCookie.body).toEqual({ error: 'Unauthorized' });
+    expect(meResponseWithoutCookie.status).toBe(200);
+    expect(meResponseWithoutCookie.body).toEqual({ user: null });
   });
 });
