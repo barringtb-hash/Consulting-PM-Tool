@@ -20,6 +20,32 @@ import {
 } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
+// Timeout for OpenAI API calls (10 seconds)
+const OPENAI_TIMEOUT_MS = 10000;
+
+/**
+ * Fetch with timeout support.
+ * Prevents hanging requests when OpenAI API is slow or unresponsive.
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = OPENAI_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -303,7 +329,7 @@ async function analyzeIntent(
   // Use AI for intent classification if API key is available
   if (env.openaiApiKey) {
     try {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         'https://api.openai.com/v1/chat/completions',
         {
           method: 'POST',
@@ -346,9 +372,12 @@ Respond with JSON: {"intent": "INTENT_NAME", "confidence": 0.0-1.0, "entities": 
           confidence: result.confidence,
           entities: result.entities,
         };
+      } else {
+        console.error('OpenAI intent API error:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Intent analysis error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Intent analysis error:', errorMessage);
     }
   }
 
@@ -409,7 +438,7 @@ function classifyIntentRuleBased(message: string): IntentResult {
 async function analyzeSentiment(message: string): Promise<number> {
   if (env.openaiApiKey) {
     try {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         'https://api.openai.com/v1/chat/completions',
         {
           method: 'POST',
@@ -439,9 +468,12 @@ async function analyzeSentiment(message: string): Promise<number> {
       if (response.ok) {
         const data = await response.json();
         return parseFloat(data.choices[0].message.content) || 0;
+      } else {
+        console.error('OpenAI sentiment API error:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Sentiment analysis error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Sentiment analysis error:', errorMessage);
     }
   }
 
@@ -569,7 +601,7 @@ async function generateBotResponse(
   // Use AI for complex responses if available
   if (env.openaiApiKey) {
     try {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         'https://api.openai.com/v1/chat/completions',
         {
           method: 'POST',
@@ -600,9 +632,12 @@ async function generateBotResponse(
         return {
           content: data.choices[0].message.content,
         };
+      } else {
+        console.error('OpenAI response API error:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Bot response generation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Bot response generation error:', errorMessage);
     }
   }
 
