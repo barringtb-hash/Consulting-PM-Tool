@@ -126,13 +126,131 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 ---
 
-#### Test Case 1.1.5: Knowledge Base Tab
+#### Test Case 1.1.5: Knowledge Base Tab - Page Layout and Filters
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "Knowledge Base" tab | Knowledge Base tab becomes active | Pass | |
-| 2 | Verify page content | Shows header "Knowledge Base" with "Add Item" button | Pass | |
-| 3 | Verify placeholder message | Shows "Knowledge base management coming soon. Add FAQ items to help your chatbot answer common questions." | Pass | |
+| 1 | Click "Knowledge Base" tab | Knowledge Base tab becomes active | | |
+| 2 | Verify filter bar | Shows search input, Category dropdown, Status dropdown, and "Add Item" button | | |
+| 3 | Verify search placeholder | Shows "Search questions, answers, or keywords..." | | |
+| 4 | Verify Category filter options | Shows: All Categories, General, Orders, Returns, Shipping, Products, Payments, Account, Technical | | |
+| 5 | Verify Status filter options | Shows: All Status, Published, Unpublished | | |
+| 6 | If KB items exist | Stats summary cards appear showing: Total Items, Published count, Total Views, Helpful Rate % | | |
+| 7 | If no KB items | Shows empty state with BookOpen icon and "No knowledge base items yet" message with "Add Your First Item" button | | |
+
+---
+
+#### Test Case 1.1.5a: Knowledge Base Tab - Create New Item
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Click "Add Item" button | Modal opens with title "Add Knowledge Base Item" | | |
+| 2 | Verify form fields | Modal contains: Question (required), Answer (required), Category dropdown, Priority dropdown, Keywords input, Published checkbox | | |
+| 3 | Verify Priority options | Shows: 1 - Low, 2, 3 - Medium, 4, 5 - High | | |
+| 4 | Verify Keywords help text | Shows "Comma-separated keywords to help match this answer" | | |
+| 5 | Verify Published checkbox | Shows "Publish immediately (visible to customers)" checkbox, checked by default | | |
+| 6 | Try submitting empty form | Form validation prevents submission, required fields highlighted | | |
+| 7 | Fill in Question field | e.g., "How do I track my order?" | | |
+| 8 | Fill in Answer field | e.g., "You can track your order by clicking the 'Track Order' link in your confirmation email..." | | |
+| 9 | Select Category | e.g., "Orders" | | |
+| 10 | Enter Keywords | e.g., "order, tracking, shipping, status" | | |
+| 11 | Click "Add Item" button | Button shows "Saving...", then toast "Knowledge base item created successfully" | | |
+| 12 | Verify modal closes | Modal closes after successful creation | | |
+| 13 | Verify new item in list | New KB item appears in the list with entered details | | |
+
+---
+
+#### Test Case 1.1.5b: Knowledge Base Tab - Item Display and Analytics
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | View a KB item card | Shows: Question text, Answer preview (truncated), Status badge (Published/Draft) | | |
+| 2 | Verify Published badge | Published items show green "Published" badge with Eye icon | | |
+| 3 | Verify Draft badge | Unpublished items show gray "Draft" badge with EyeOff icon | | |
+| 4 | Verify Category badge | Shows category with Tag icon if category is set | | |
+| 5 | Verify Priority badge | Shows "Priority: [1-5]" badge | | |
+| 6 | Verify Keywords display | Shows "Keywords: [first 3 keywords]" with "+X" if more exist | | |
+| 7 | Verify analytics stats | Shows: View count (Eye icon), Helpful count (ThumbsUp, green), Not Helpful count (ThumbsDown, red) | | |
+| 8 | Verify helpfulness bar | If feedback exists, shows colored progress bar with percentage (green >=70%, yellow >=40%, red <40%) | | |
+| 9 | Verify action buttons | Shows: Edit, Publish/Unpublish toggle, Delete (trash icon) | | |
+
+---
+
+#### Test Case 1.1.5c: Knowledge Base Tab - Edit Item
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Click "Edit" button on an item | Modal opens with title "Edit Knowledge Base Item" | | |
+| 2 | Verify pre-filled values | Form is populated with existing item data (question, answer, keywords, category, priority, published status) | | |
+| 3 | Modify the Question field | Change to new text | | |
+| 4 | Modify the Answer field | Change to new text | | |
+| 5 | Change Category | Select different category | | |
+| 6 | Change Priority | Select different priority | | |
+| 7 | Modify Keywords | Add or remove keywords | | |
+| 8 | Click "Update Item" button | Button shows "Saving...", then toast "Knowledge base item updated successfully" | | |
+| 9 | Verify changes saved | Item in list reflects all updated values | | |
+| 10 | Click X or Cancel to close modal | Modal closes without saving changes | | |
+
+---
+
+#### Test Case 1.1.5d: Knowledge Base Tab - Publish/Unpublish Items
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Find a Published item | Item shows "Published" badge with Eye icon | | |
+| 2 | Click "Unpublish" button | Button shows loading state briefly | | |
+| 3 | Verify status changed | Toast shows "Knowledge base item updated successfully", badge changes to "Draft" with EyeOff icon | | |
+| 4 | Find an Unpublished item | Item shows "Draft" badge with EyeOff icon | | |
+| 5 | Click "Publish" button | Button shows loading state briefly | | |
+| 6 | Verify status changed | Toast shows success, badge changes to "Published" with Eye icon | | |
+| 7 | Verify Quick Stats update | Published count in stats summary updates accordingly | | |
+
+---
+
+#### Test Case 1.1.5e: Knowledge Base Tab - Delete Item
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Click Delete (trash) button on an item | Confirmation modal opens with title "Delete Item" and AlertCircle icon | | |
+| 2 | Verify confirmation message | Shows "Are you sure you want to delete this knowledge base item? This action cannot be undone." | | |
+| 3 | Click "Cancel" button | Modal closes, item is NOT deleted | | |
+| 4 | Click Delete button again | Confirmation modal opens | | |
+| 5 | Click "Delete" button in modal | Button shows "Deleting...", then toast "Knowledge base item deleted successfully" | | |
+| 6 | Verify item removed | Item no longer appears in the list | | |
+| 7 | Verify stats update | Total Items count decreases by 1 | | |
+
+---
+
+#### Test Case 1.1.5f: Knowledge Base Tab - Search and Filters
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Type in search field | List filters in real-time as you type | | |
+| 2 | Search by question text | Items matching question text are shown | | |
+| 3 | Search by answer text | Items matching answer text are shown | | |
+| 4 | Search by keyword | Items with matching keywords are shown | | |
+| 5 | Clear search field | All items shown again | | |
+| 6 | Select a Category filter | Only items with that category are shown | | |
+| 7 | Select "Published" status | Only published items are shown | | |
+| 8 | Select "Unpublished" status | Only draft/unpublished items are shown | | |
+| 9 | Combine search + Category filter | Items must match both criteria | | |
+| 10 | Combine search + Status filter | Items must match both criteria | | |
+| 11 | No results scenario | Shows "No items match your filters" message with suggestion to adjust filters | | |
+| 12 | Reset all filters | Set search empty, category to "All", status to "All" - all items shown | | |
+
+---
+
+#### Test Case 1.1.5g: Knowledge Base Tab - Stats Summary Cards
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | View Total Items card | Shows count of all KB items in primary color | | |
+| 2 | View Published card | Shows count of published items in green | | |
+| 3 | View Total Views card | Shows sum of all view counts in blue | | |
+| 4 | View Helpful Rate card | Shows overall helpful percentage in amber (calculated as total helpful / (helpful + not helpful) * 100) | | |
+| 5 | Add new item | Total Items count increases | | |
+| 6 | Delete an item | Total Items count decreases | | |
+| 7 | Publish/Unpublish item | Published count updates accordingly | | |
 
 ---
 
