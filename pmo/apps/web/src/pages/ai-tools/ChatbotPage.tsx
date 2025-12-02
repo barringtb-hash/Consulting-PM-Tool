@@ -46,6 +46,7 @@ import {
   X,
   Tag,
   AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
 
 // Types
@@ -1585,51 +1586,54 @@ function ChatbotPage(): JSX.Element {
               <div className="space-y-4">
                 {/* Filters and Actions */}
                 <Card>
-                  <CardBody>
-                    <div className="flex flex-col md:flex-row gap-4">
+                  <CardBody className="p-5">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
                       {/* Search */}
-                      <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                      <div className="flex-1 relative min-w-0">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                         <input
                           type="text"
                           placeholder="Search questions, answers, or keywords..."
-                          className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          className="w-full h-11 pl-12 pr-4 text-sm border border-neutral-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-shadow placeholder:text-neutral-400"
                           value={kbSearchQuery}
                           onChange={(e) => setKbSearchQuery(e.target.value)}
                         />
                       </div>
 
-                      {/* Category Filter */}
-                      <Select
-                        value={kbCategoryFilter}
-                        onChange={(e) => setKbCategoryFilter(e.target.value)}
-                        className="md:w-48"
-                      >
-                        <option value="">All Categories</option>
-                        {KB_CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                      </Select>
+                      {/* Filter Dropdowns */}
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        {/* Category Filter */}
+                        <Select
+                          value={kbCategoryFilter}
+                          onChange={(e) => setKbCategoryFilter(e.target.value)}
+                          className="w-full sm:w-44 h-11"
+                        >
+                          <option value="">All Categories</option>
+                          {KB_CATEGORIES.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </Select>
 
-                      {/* Published Filter */}
-                      <Select
-                        value={kbPublishedFilter}
-                        onChange={(e) =>
-                          setKbPublishedFilter(
-                            e.target.value as
-                              | 'all'
-                              | 'published'
-                              | 'unpublished',
-                          )
-                        }
-                        className="md:w-40"
-                      >
-                        <option value="all">All Status</option>
-                        <option value="published">Published</option>
-                        <option value="unpublished">Unpublished</option>
-                      </Select>
+                        {/* Published Filter */}
+                        <Select
+                          value={kbPublishedFilter}
+                          onChange={(e) =>
+                            setKbPublishedFilter(
+                              e.target.value as
+                                | 'all'
+                                | 'published'
+                                | 'unpublished',
+                            )
+                          }
+                          className="w-full sm:w-36 h-11"
+                        >
+                          <option value="all">All Status</option>
+                          <option value="published">Published</option>
+                          <option value="unpublished">Unpublished</option>
+                        </Select>
+                      </div>
 
                       {/* Add Button */}
                       <Button
@@ -1638,6 +1642,7 @@ function ChatbotPage(): JSX.Element {
                           setEditingKbItem(null);
                           setShowKbModal(true);
                         }}
+                        className="h-11 px-5 whitespace-nowrap"
                       >
                         <Plus className="w-4 h-4" />
                         Add Item
@@ -1649,64 +1654,94 @@ function ChatbotPage(): JSX.Element {
                 {/* Stats Summary */}
                 {knowledgeBaseQuery.data &&
                   knowledgeBaseQuery.data.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <Card>
-                        <CardBody className="text-center py-3">
-                          <p className="text-2xl font-bold text-primary-600">
-                            {knowledgeBaseQuery.data.length}
-                          </p>
-                          <p className="text-sm text-neutral-600">
-                            Total Items
-                          </p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="border-l-4 border-l-primary-500">
+                        <CardBody className="py-4 px-5">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                                Total Items
+                              </p>
+                              <p className="text-2xl font-bold text-neutral-800">
+                                {knowledgeBaseQuery.data.length}
+                              </p>
+                            </div>
+                            <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                              <BookOpen className="w-5 h-5 text-primary-600" />
+                            </div>
+                          </div>
                         </CardBody>
                       </Card>
-                      <Card>
-                        <CardBody className="text-center py-3">
-                          <p className="text-2xl font-bold text-green-600">
-                            {
-                              knowledgeBaseQuery.data.filter(
-                                (i) => i.isPublished,
-                              ).length
-                            }
-                          </p>
-                          <p className="text-sm text-neutral-600">Published</p>
+                      <Card className="border-l-4 border-l-green-500">
+                        <CardBody className="py-4 px-5">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                                Published
+                              </p>
+                              <p className="text-2xl font-bold text-neutral-800">
+                                {
+                                  knowledgeBaseQuery.data.filter(
+                                    (i) => i.isPublished,
+                                  ).length
+                                }
+                              </p>
+                            </div>
+                            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                            </div>
+                          </div>
                         </CardBody>
                       </Card>
-                      <Card>
-                        <CardBody className="text-center py-3">
-                          <p className="text-2xl font-bold text-blue-600">
-                            {knowledgeBaseQuery.data.reduce(
-                              (sum, i) => sum + i.viewCount,
-                              0,
-                            )}
-                          </p>
-                          <p className="text-sm text-neutral-600">
-                            Total Views
-                          </p>
+                      <Card className="border-l-4 border-l-blue-500">
+                        <CardBody className="py-4 px-5">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                                Total Views
+                              </p>
+                              <p className="text-2xl font-bold text-neutral-800">
+                                {knowledgeBaseQuery.data.reduce(
+                                  (sum, i) => sum + i.viewCount,
+                                  0,
+                                )}
+                              </p>
+                            </div>
+                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                              <Eye className="w-5 h-5 text-blue-600" />
+                            </div>
+                          </div>
                         </CardBody>
                       </Card>
-                      <Card>
-                        <CardBody className="text-center py-3">
-                          <p className="text-2xl font-bold text-amber-600">
-                            {(() => {
-                              const total = knowledgeBaseQuery.data.reduce(
-                                (sum, i) =>
-                                  sum + i.helpfulCount + i.notHelpfulCount,
-                                0,
-                              );
-                              const helpful = knowledgeBaseQuery.data.reduce(
-                                (sum, i) => sum + i.helpfulCount,
-                                0,
-                              );
-                              return total > 0
-                                ? Math.round((helpful / total) * 100)
-                                : 0;
-                            })()}
-                            %
-                          </p>
-                          <p className="text-sm text-neutral-600">
-                            Helpful Rate
-                          </p>
+                      <Card className="border-l-4 border-l-amber-500">
+                        <CardBody className="py-4 px-5">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                                Helpful Rate
+                              </p>
+                              <p className="text-2xl font-bold text-neutral-800">
+                                {(() => {
+                                  const total = knowledgeBaseQuery.data.reduce(
+                                    (sum, i) =>
+                                      sum + i.helpfulCount + i.notHelpfulCount,
+                                    0,
+                                  );
+                                  const helpful = knowledgeBaseQuery.data.reduce(
+                                    (sum, i) => sum + i.helpfulCount,
+                                    0,
+                                  );
+                                  return total > 0
+                                    ? Math.round((helpful / total) * 100)
+                                    : 0;
+                                })()}
+                                %
+                              </p>
+                            </div>
+                            <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                              <ThumbsUp className="w-5 h-5 text-amber-600" />
+                            </div>
+                          </div>
                         </CardBody>
                       </Card>
                     </div>
@@ -1715,30 +1750,35 @@ function ChatbotPage(): JSX.Element {
                 {/* Knowledge Base Items List */}
                 {knowledgeBaseQuery.isLoading ? (
                   <Card>
-                    <CardBody>
-                      <p className="text-center text-neutral-500 py-8">
-                        Loading knowledge base items...
-                      </p>
+                    <CardBody className="py-16">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 border-3 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-4" />
+                        <p className="text-neutral-500 text-sm">
+                          Loading knowledge base items...
+                        </p>
+                      </div>
                     </CardBody>
                   </Card>
                 ) : filteredKbItems.length === 0 ? (
                   <Card>
-                    <CardBody>
-                      <div className="text-center py-8">
-                        <BookOpen className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-                        <p className="text-neutral-600 mb-2">
+                    <CardBody className="py-16">
+                      <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
+                        <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
+                          <BookOpen className="w-10 h-10 text-neutral-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-neutral-700 mb-2">
                           {kbSearchQuery ||
                           kbCategoryFilter ||
                           kbPublishedFilter !== 'all'
-                            ? 'No items match your filters.'
-                            : 'No knowledge base items yet.'}
-                        </p>
-                        <p className="text-sm text-neutral-500 mb-4">
+                            ? 'No items match your filters'
+                            : 'No knowledge base items yet'}
+                        </h3>
+                        <p className="text-sm text-neutral-500 mb-6 leading-relaxed">
                           {kbSearchQuery ||
                           kbCategoryFilter ||
                           kbPublishedFilter !== 'all'
-                            ? 'Try adjusting your search or filters.'
-                            : 'Add FAQ items to help your chatbot answer common questions.'}
+                            ? 'Try adjusting your search or filters to find what you\'re looking for.'
+                            : 'Add FAQ items to help your chatbot answer common questions and provide better support to your customers.'}
                         </p>
                         {!kbSearchQuery &&
                           !kbCategoryFilter &&
@@ -1749,6 +1789,7 @@ function ChatbotPage(): JSX.Element {
                                 setEditingKbItem(null);
                                 setShowKbModal(true);
                               }}
+                              className="px-6"
                             >
                               <Plus className="w-4 h-4" />
                               Add Your First Item

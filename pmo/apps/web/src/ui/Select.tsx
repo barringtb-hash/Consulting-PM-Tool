@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from './utils';
 
 export interface SelectProps
@@ -33,31 +34,37 @@ export function Select({
           )}
         </label>
       )}
-      <select
-        id={selectId}
-        className={cn(
-          'w-full px-3 py-2 rounded-lg border text-neutral-900 dark:text-neutral-100',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600 dark:focus:ring-primary-400',
-          'disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-400',
-          'bg-white dark:bg-neutral-700 appearance-none',
-          "bg-[url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")] dark:bg-[url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")] bg-[length:1.25rem] bg-[center_right_0.5rem] bg-no-repeat pr-10",
-          hasError
-            ? 'border-danger-300 dark:border-danger-500 focus:ring-danger-600 dark:focus:ring-danger-400'
-            : 'border-neutral-300 dark:border-neutral-600',
-          className,
-        )}
-        aria-invalid={hasError}
-        aria-describedby={
-          error
-            ? `${selectId}-error`
-            : helperText
-              ? `${selectId}-helper`
-              : undefined
-        }
-        {...props}
-      >
-        {children}
-      </select>
+      <div className="relative">
+        <select
+          id={selectId}
+          className={cn(
+            'w-full px-4 py-2.5 rounded-lg border text-sm text-neutral-900 dark:text-neutral-100',
+            'focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-500 focus:border-primary-500',
+            'disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-400',
+            'bg-white dark:bg-neutral-700 appearance-none cursor-pointer',
+            'pr-10 transition-shadow',
+            hasError
+              ? 'border-danger-300 dark:border-danger-500 focus:ring-danger-600 dark:focus:ring-danger-400'
+              : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500',
+            className,
+          )}
+          aria-invalid={hasError}
+          aria-describedby={
+            error
+              ? `${selectId}-error`
+              : helperText
+                ? `${selectId}-helper`
+                : undefined
+          }
+          {...props}
+        >
+          {children}
+        </select>
+        <ChevronDown
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500 pointer-events-none"
+          aria-hidden="true"
+        />
+      </div>
       {error && (
         <p
           id={`${selectId}-error`}
