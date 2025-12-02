@@ -99,10 +99,19 @@ export function createApp(): express.Express {
 
   // CORS configuration for cross-origin cookie authentication
   // Supports multiple origins and Vercel preview deployments
+  // Explicitly allows Authorization header for Safari ITP fallback authentication
   app.use(
     cors({
       origin: buildCorsOrigin(),
       credentials: true,
+      // Explicitly allow Authorization header for Safari ITP fallback
+      // Safari's ITP may block cookies, so we use Authorization header as fallback
+      // Content-Type is needed for JSON requests
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      // Allow browser to read these headers from responses
+      exposedHeaders: ['Content-Type'],
+      // Cache preflight response for 24 hours to reduce OPTIONS requests
+      maxAge: 86400,
     }),
   );
   app.use(express.json());
