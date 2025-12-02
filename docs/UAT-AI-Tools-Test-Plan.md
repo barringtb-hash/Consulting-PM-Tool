@@ -77,10 +77,10 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
 | 1 | Navigate to `/ai-tools/chatbot` | Page loads with header "AI Chatbot" and description "Configure and manage AI-powered customer service chatbots" | Pass | |
-| 2 | Verify header actions | "New Chatbot" button is visible and clickable | | |
-| 3 | Check filter section | Card with "Client" and "Chatbot Configuration" dropdowns is visible | | |
-| 4 | Verify empty state | When no configuration selected, shows message "Select a chatbot configuration to view details, or create a new one." with MessageCircle icon | | |
-| 5 | Click Refresh button | Button shows spinning icon while loading, configs list refreshes | | |
+| 2 | Verify header actions | "New Chatbot" button is visible and clickable | Pass | All headers are visibile and clickable. They work as expected |
+| 3 | Check filter section | Card with "Client" and "Chatbot Configuration" dropdowns is visible | Pass | |
+| 4 | Verify empty state | When no configuration selected, shows message "Select a chatbot configuration to view details, or create a new one." with MessageCircle icon | Pass | |
+| 5 | Click Refresh button | Button shows spinning icon while loading, configs list refreshes | Pass | |
 
 ---
 
@@ -88,13 +88,25 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "New Chatbot" button | Modal opens with title "Create New Chatbot" | | |
-| 2 | Verify form fields | Modal contains: Client dropdown (required), Chatbot Name input (required), Welcome Message input | | |
-| 3 | Try submitting empty form | Form validation prevents submission, required fields highlighted | | |
-| 4 | Select a client from dropdown | Client is selected | | |
-| 5 | Enter chatbot name (e.g., "Customer Support Bot") | Name is entered | | |
-| 6 | Enter welcome message (e.g., "Hi! How can I help you today?") | Message is entered | | |
-| 7 | Click "Create" button | Button shows "Creating..." while processing | | |
+| 1 | Click "New Chatbot" button | Modal opens with title "Create New Chatbot" | Pass | |
+| 2 | Verify form fields | Modal contains: Client dropdown (required), Chatbot Name input (required), Welcome Message input | Pass | |
+| 3 | Try submitting empty form | Form validation prevents submission, required fields highlighted | Pass | |
+| 4 | Select a client from dropdown | Client is selected | Pass | |
+| 5 | Enter chatbot name (e.g., "Customer Support Bot") | Name is entered | Pass | |
+| 6 | Enter welcome message (e.g., "Hi! How can I help you today?") | Message is entered | Pass | |
+| 7 | Click "Create" button | Button shows "Creating..." while processing | Fail | [Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Error] Failed to fetch current user – Error: Unauthorized
+Error: Unauthorized
+	(anonymous function) (index-U7j7-mAg.js:68:4689)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (configs, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (chatbot, line 0) |
 | 8 | Verify success | Toast notification shows "Chatbot configuration created successfully", modal closes | | |
 | 9 | Verify new config in list | New chatbot appears in the Chatbot Configuration dropdown | | |
 | 10 | Click "Cancel" button (on new modal) | Modal closes without creating | | |
