@@ -105,7 +105,7 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Select a chatbot configuration from dropdown | Tab navigation appears with: Overview, Conversations, Knowledge Base, Analytics | Pass | |
+| 1 | Select a chatbot configuration from dropdown | Tab navigation appears with: Overview, Test Chat, Conversations, Knowledge Base, Analytics | | |
 | 2 | Verify Overview tab is active by default | Overview tab is highlighted with blue border | Partial Pass | The Overview tab is the default, but it doesn't have a blue border. This isn't an issue for me. |
 | 3 | Verify Configuration card | Shows: Name, Status (Active/Inactive badge), Welcome Message, Features badges (FAQ, Order Tracking, Returns, Human Handoff) | Pass | |
 | 4 | Verify Quick Stats card | Shows: Total Conversations count, Knowledge Base Items count | Pass | |
@@ -146,7 +146,73 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 ---
 
-#### Test Case 1.1.7: Client Filtering
+#### Test Case 1.1.7: Test Chat Tab - Starting a Test Conversation
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Click "Test Chat" tab | Test Chat tab becomes active, shows main chat area and session analytics panel | | |
+| 2 | Verify empty state | Shows Bot icon with "Click 'Start Test Chat' to begin testing your chatbot" message and "All interactions are logged for analytics" note | | |
+| 3 | Click "Start Test Chat" button | Button shows loading state while creating conversation | | |
+| 4 | Verify conversation started | Toast shows "Test conversation started", welcome message appears in chat (if configured) | | |
+| 5 | Verify session timer starts | Timer badge appears in header showing elapsed time (e.g., "0:05") | | |
+| 6 | Verify timer updates | Timer increments every second in real-time | | |
+
+---
+
+#### Test Case 1.1.8: Test Chat Tab - Sending Messages and Viewing Responses
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Type message in input field | Text appears in input | | |
+| 2 | Click Send button (or press Enter) | Message appears right-aligned with blue background and User icon | | |
+| 3 | Verify bot response | Bot response appears left-aligned with white background and Bot icon | | |
+| 4 | Try sending "Where is my order?" | Message shows detected intent badge (e.g., "ORDER_STATUS (80%)") below message | | |
+| 5 | Verify sentiment indicator | Positive messages show green smile icon, negative show red frown, neutral show yellow meh | | |
+| 6 | Click "Clear Chat" button | Resets conversation - all messages cleared, timer reset, session analytics cleared | | |
+
+---
+
+#### Test Case 1.1.9: Test Chat Tab - Session Analytics Panel
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Start a test conversation | Session Analytics panel shows "Start a chat to see analytics" initially | | |
+| 2 | Send a few messages | "Messages" counter updates with total message count | | |
+| 3 | Send messages with different intents | "Intents" counter shows number of unique intents detected | | |
+| 4 | Verify sentiment gauge | After sending messages, sentiment gauge appears showing average sentiment (-1 to +1) with colored progress bar | | |
+| 5 | Verify sentiment bar colors | Positive (>0.3): green, Neutral: yellow, Negative (<-0.3): red | | |
+| 6 | Verify intents breakdown | "Detected Intents" section lists each intent with occurrence count badge | | |
+
+---
+
+#### Test Case 1.1.10: Test Chat Tab - Knowledge Base Integration
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Start a test conversation | "Show KB" button appears in header | | |
+| 2 | Click "Show KB" button | Knowledge Base panel appears in sidebar showing all KB items | | |
+| 3 | Verify KB item display | Each item shows: question, answer preview, helpful/not-helpful counts, category badge | | |
+| 4 | Click on a KB item | The question text populates the chat input field | | |
+| 5 | Send the KB question | Bot should respond with the knowledge base answer (if FAQ matching is enabled) | | |
+| 6 | Click "Hide KB" button | Knowledge Base panel is hidden | | |
+| 7 | If no KB items exist | Shows "No knowledge base items" message | | |
+
+---
+
+#### Test Case 1.1.11: Test Chat Tab - Suggested Actions and Quick Replies
+
+| Step | Action | Expected Result | Pass/Fail | Notes |
+|------|--------|-----------------|-----------|-------|
+| 1 | Send a message that triggers suggested actions | Bot response includes clickable action buttons (e.g., "Was this helpful?", "Talk to agent") | | |
+| 2 | Click "Was this helpful?" action | Toast notification appears with feedback message | | |
+| 3 | Click "Talk to agent" action | Toast shows "Escalation requested - in production this would connect to a human agent" | | |
+| 4 | Verify quick reply bar | When bot response has suggested actions, "Quick replies:" bar appears above input | | |
+| 5 | Click quick reply button | Text populates in input field | | |
+| 6 | Verify action button styling | Buttons have rounded-full styling with primary colors and ChevronRight icon | | |
+
+---
+
+#### Test Case 1.1.12: Client Filtering
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
