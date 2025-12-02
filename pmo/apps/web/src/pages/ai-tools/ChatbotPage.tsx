@@ -24,6 +24,11 @@ import {
   BarChart3,
   BookOpen,
   RefreshCw,
+  Play,
+  Send,
+  User,
+  Bot,
+  Trash2,
 } from 'lucide-react';
 
 // Types
@@ -52,6 +57,22 @@ interface ConversationSummary {
   messageCount: number;
   startedAt: string;
   lastMessageAt: string | null;
+}
+
+interface ChatMessage {
+  id: number;
+  sender: 'CUSTOMER' | 'BOT' | 'AGENT';
+  content: string;
+  createdAt: string;
+  detectedIntent?: string;
+  sentiment?: number;
+}
+
+interface TestConversation {
+  id: number;
+  sessionId: string;
+  status: string;
+  messages: ChatMessage[];
 }
 
 const STATUS_VARIANTS: Record<
@@ -148,14 +169,89 @@ async function createChatbotConfig(
   return result.config;
 }
 
+// Test chat API functions
+async function startTestConversation(
+  configId: number,
+): Promise<TestConversation> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/${configId}/conversations`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({
+        customerName: 'Test User',
+        customerEmail: 'test@example.com',
+        channel: 'WEB',
+      }),
+    }),
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to start test conversation',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.conversation;
+}
+
+async function getTestConversation(
+  sessionId: string,
+): Promise<TestConversation> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/conversations/${sessionId}`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to fetch conversation',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.conversation;
+}
+
+async function sendTestMessage(
+  sessionId: string,
+  content: string,
+): Promise<{ message: ChatMessage; response: { content: string; suggestedActions?: Array<{ label: string; action: string }> } }> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/conversations/${sessionId}/messages`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to send message',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  return res.json();
+}
+
 function ChatbotPage(): JSX.Element {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'conversations' | 'knowledge' | 'analytics'
+    'overview' | 'conversations' | 'knowledge' | 'analytics' | 'test'
   >('overview');
+
+  // Test chat state
+  const [testSessionId, setTestSessionId] = useState<string | null>(null);
+  const [testMessages, setTestMessages] = useState<ChatMessage[]>([]);
+  const [testInput, setTestInput] = useState('');
+  const [isTestLoading, setIsTestLoading] = useState(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -303,6 +399,7 @@ function ChatbotPage(): JSX.Element {
           <div className="flex gap-2 border-b border-neutral-200">
             {[
               { id: 'overview', label: 'Overview', icon: MessageCircle },
+              { id: 'test', label: 'Test Chat', icon: Play },
               {
                 id: 'conversations',
                 label: 'Conversations',
@@ -428,6 +525,201 @@ function ChatbotPage(): JSX.Element {
                   </CardBody>
                 </Card>
               </div>
+            )}
+
+            {/* Test Chat Tab */}
+            {activeTab === 'test' && (
+              <Card className="h-[600px] flex flex-col">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Play className="w-5 h-5" />
+                      Test Your Chatbot
+                    </h3>
+                    <div className="flex gap-2">
+                      {testSessionId && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setTestSessionId(null);
+                            setTestMessages([]);
+                            setTestInput('');
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Clear Chat
+                        </Button>
+                      )}
+                      {!testSessionId && (
+                        <Button
+                          size="sm"
+                          disabled={isTestLoading}
+                          onClick={async () => {
+                            if (!selectedConfigId) return;
+                            setIsTestLoading(true);
+                            try {
+                              const conv = await startTestConversation(selectedConfigId);
+                              setTestSessionId(conv.sessionId);
+                              // Fetch the conversation to get welcome message
+                              const fullConv = await getTestConversation(conv.sessionId);
+                              setTestMessages(fullConv.messages || []);
+                              showToast('Test conversation started', 'success');
+                            } catch (error) {
+                              showToast(
+                                error instanceof Error ? error.message : 'Failed to start conversation',
+                                'error'
+                              );
+                            } finally {
+                              setIsTestLoading(false);
+                            }
+                          }}
+                        >
+                          <Play className="w-4 h-4" />
+                          Start Test Chat
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody className="flex-1 flex flex-col overflow-hidden">
+                  {!testSessionId ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center">
+                        <Bot className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
+                        <p className="text-neutral-600 mb-2">
+                          Click "Start Test Chat" to begin testing your chatbot
+                        </p>
+                        <p className="text-sm text-neutral-500">
+                          You can send messages and see how your chatbot responds
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Messages Area */}
+                      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-neutral-50 rounded-lg">
+                        {testMessages.length === 0 ? (
+                          <p className="text-center text-neutral-500 py-4">
+                            No messages yet. Start typing below!
+                          </p>
+                        ) : (
+                          testMessages.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className={`flex items-start gap-3 ${
+                                msg.sender === 'CUSTOMER' ? 'flex-row-reverse' : ''
+                              }`}
+                            >
+                              <div
+                                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                                  msg.sender === 'CUSTOMER'
+                                    ? 'bg-primary-100'
+                                    : 'bg-neutral-200'
+                                }`}
+                              >
+                                {msg.sender === 'CUSTOMER' ? (
+                                  <User className="w-4 h-4 text-primary-600" />
+                                ) : (
+                                  <Bot className="w-4 h-4 text-neutral-600" />
+                                )}
+                              </div>
+                              <div
+                                className={`max-w-[70%] rounded-lg p-3 ${
+                                  msg.sender === 'CUSTOMER'
+                                    ? 'bg-primary-500 text-white'
+                                    : 'bg-white border border-neutral-200'
+                                }`}
+                              >
+                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                {msg.detectedIntent && msg.sender === 'CUSTOMER' && (
+                                  <p className="text-xs mt-1 opacity-75">
+                                    Intent: {msg.detectedIntent}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+
+                      {/* Input Area */}
+                      <form
+                        className="flex gap-2"
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          if (!testInput.trim() || !testSessionId || isTestLoading) return;
+
+                          const messageContent = testInput.trim();
+                          setTestInput('');
+                          setIsTestLoading(true);
+
+                          // Optimistically add the customer message
+                          const tempCustomerMsg: ChatMessage = {
+                            id: Date.now(),
+                            sender: 'CUSTOMER',
+                            content: messageContent,
+                            createdAt: new Date().toISOString(),
+                          };
+                          setTestMessages((prev) => [...prev, tempCustomerMsg]);
+
+                          try {
+                            const result = await sendTestMessage(testSessionId, messageContent);
+
+                            // Update with the real customer message and add bot response
+                            setTestMessages((prev) => {
+                              // Remove the temp message
+                              const withoutTemp = prev.filter((m) => m.id !== tempCustomerMsg.id);
+                              // Add the actual customer message (with intent info)
+                              const customerMsg: ChatMessage = {
+                                ...result.message,
+                                sender: 'CUSTOMER',
+                              };
+                              // Add bot response
+                              const botMsg: ChatMessage = {
+                                id: Date.now() + 1,
+                                sender: 'BOT',
+                                content: result.response.content,
+                                createdAt: new Date().toISOString(),
+                              };
+                              return [...withoutTemp, customerMsg, botMsg];
+                            });
+
+                            // Scroll to bottom
+                            setTimeout(() => {
+                              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                            }, 100);
+                          } catch (error) {
+                            showToast(
+                              error instanceof Error ? error.message : 'Failed to send message',
+                              'error'
+                            );
+                            // Remove the optimistic message on error
+                            setTestMessages((prev) =>
+                              prev.filter((m) => m.id !== tempCustomerMsg.id)
+                            );
+                          } finally {
+                            setIsTestLoading(false);
+                          }
+                        }}
+                      >
+                        <Input
+                          placeholder="Type a message to test your chatbot..."
+                          value={testInput}
+                          onChange={(e) => setTestInput(e.target.value)}
+                          disabled={isTestLoading}
+                          className="flex-1"
+                        />
+                        <Button type="submit" disabled={isTestLoading || !testInput.trim()}>
+                          <Send className="w-4 h-4" />
+                          Send
+                        </Button>
+                      </form>
+                    </>
+                  )}
+                </CardBody>
+              </Card>
             )}
 
             {/* Conversations Tab */}
