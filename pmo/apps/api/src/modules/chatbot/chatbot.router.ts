@@ -560,12 +560,69 @@ router.get(
       ? new Date(req.query.end as string)
       : new Date();
 
+    // Aggregate analytics for each day in the date range before fetching
+    // This ensures the ChatAnalytics table is populated with fresh data
+    const currentDate = new Date(startDate);
+    currentDate.setHours(0, 0, 0, 0);
+    const endDateNormalized = new Date(endDate);
+    endDateNormalized.setHours(23, 59, 59, 999);
+
+    while (currentDate <= endDateNormalized) {
+      await chatbotService.updateDailyAnalytics(
+        configId,
+        new Date(currentDate),
+      );
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
     const analytics = await chatbotService.getChatAnalytics(configId, {
       start: startDate,
       end: endDate,
     });
 
-    res.json(analytics);
+    // Transform to frontend-expected format
+    const { summary, daily } = analytics;
+
+    // Calculate resolution rate (as decimal 0-1)
+    const resolutionRate =
+      summary.totalConversations > 0
+        ? summary.resolvedByBot / summary.totalConversations
+        : 0;
+
+    // Calculate average response time from conversations
+    // For now, we'll estimate based on messages per conversation
+    const avgResponseTime =
+      summary.totalConversations > 0
+        ? (summary.totalMessages / summary.totalConversations) * 1.5 // Estimate ~1.5s per message exchange
+        : 0;
+
+    // Aggregate intent breakdown from all daily records
+    const intentCounts: Record<string, number> = {};
+    for (const dayData of daily) {
+      const intentBreakdown = dayData.intentBreakdown as Record<
+        string,
+        number
+      > | null;
+      if (intentBreakdown) {
+        for (const [intent, count] of Object.entries(intentBreakdown)) {
+          intentCounts[intent] = (intentCounts[intent] || 0) + count;
+        }
+      }
+    }
+
+    // Convert to sorted array of top intents
+    const topIntents = Object.entries(intentCounts)
+      .map(([intent, count]) => ({ intent, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    res.json({
+      totalConversations: summary.totalConversations,
+      avgResponseTime,
+      resolutionRate,
+      avgSatisfaction: summary.avgSatisfactionRating ?? 0,
+      topIntents,
+    });
   },
 );
 
