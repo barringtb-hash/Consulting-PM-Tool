@@ -259,7 +259,10 @@ async function getTestConversation(
 async function sendTestMessage(
   sessionId: string,
   content: string,
-): Promise<{ message: ChatMessage; response: { content: string; suggestedActions?: SuggestedAction[] } }> {
+): Promise<{
+  message: ChatMessage;
+  response: { content: string; suggestedActions?: SuggestedAction[] };
+}> {
   const res = await fetch(
     buildApiUrl(`/chatbot/conversations/${sessionId}/messages`),
     buildOptions({
@@ -278,7 +281,9 @@ async function sendTestMessage(
   return res.json();
 }
 
-async function fetchKnowledgeBase(configId: number): Promise<KnowledgeBaseItem[]> {
+async function fetchKnowledgeBase(
+  configId: number,
+): Promise<KnowledgeBaseItem[]> {
   const res = await fetch(
     buildApiUrl(`/chatbot/${configId}/knowledge-base`),
     buildOptions(),
@@ -293,27 +298,6 @@ async function fetchKnowledgeBase(configId: number): Promise<KnowledgeBaseItem[]
   }
   const result = await res.json();
   return result.items || [];
-}
-
-async function submitKnowledgeBaseFeedback(
-  itemId: number,
-  helpful: boolean,
-): Promise<void> {
-  const res = await fetch(
-    buildApiUrl(`/chatbot/knowledge-base/${itemId}/feedback`),
-    buildOptions({
-      method: 'POST',
-      body: JSON.stringify({ helpful }),
-    }),
-  );
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    const error = new Error(
-      data.message || data.error || 'Failed to submit feedback',
-    ) as ApiError;
-    error.status = res.status;
-    throw error;
-  }
 }
 
 function ChatbotPage(): JSX.Element {
@@ -331,7 +315,9 @@ function ChatbotPage(): JSX.Element {
   const [testInput, setTestInput] = useState('');
   const [isTestLoading, setIsTestLoading] = useState(false);
   const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
-  const [lastSuggestedActions, setLastSuggestedActions] = useState<SuggestedAction[]>([]);
+  const [lastSuggestedActions, setLastSuggestedActions] = useState<
+    SuggestedAction[]
+  >([]);
   const [showKnowledgePanel, setShowKnowledgePanel] = useState(false);
   const [elapsedTime, setElapsedTime] = useState<string>('0:00');
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
@@ -344,7 +330,9 @@ function ChatbotPage(): JSX.Element {
     }
 
     const updateTimer = () => {
-      const elapsed = Math.floor((Date.now() - sessionStats.startTime.getTime()) / 1000);
+      const elapsed = Math.floor(
+        (Date.now() - sessionStats.startTime.getTime()) / 1000,
+      );
       const mins = Math.floor(elapsed / 60);
       const secs = elapsed % 60;
       setElapsedTime(`${mins}:${secs.toString().padStart(2, '0')}`);
@@ -359,40 +347,45 @@ function ChatbotPage(): JSX.Element {
   // Helper function to get sentiment icon and color
   const getSentimentDisplay = (sentiment: number | undefined) => {
     if (sentiment === undefined) return null;
-    if (sentiment > 0.3) return { icon: Smile, color: 'text-green-500', label: 'Positive' };
-    if (sentiment < -0.3) return { icon: Frown, color: 'text-red-500', label: 'Negative' };
+    if (sentiment > 0.3)
+      return { icon: Smile, color: 'text-green-500', label: 'Positive' };
+    if (sentiment < -0.3)
+      return { icon: Frown, color: 'text-red-500', label: 'Negative' };
     return { icon: Meh, color: 'text-yellow-500', label: 'Neutral' };
   };
 
   // Update session stats when messages change
-  const updateSessionStats = React.useCallback((messages: ChatMessage[], startTime?: Date) => {
-    const customerMessages = messages.filter(m => m.sender === 'CUSTOMER');
-    const botMessages = messages.filter(m => m.sender === 'BOT');
+  const updateSessionStats = React.useCallback(
+    (messages: ChatMessage[], startTime?: Date) => {
+      const customerMessages = messages.filter((m) => m.sender === 'CUSTOMER');
+      const botMessages = messages.filter((m) => m.sender === 'BOT');
 
-    const intents: Record<string, number> = {};
-    let totalSentiment = 0;
-    let sentimentCount = 0;
+      const intents: Record<string, number> = {};
+      let totalSentiment = 0;
+      let sentimentCount = 0;
 
-    for (const msg of customerMessages) {
-      if (msg.detectedIntent) {
-        intents[msg.detectedIntent] = (intents[msg.detectedIntent] || 0) + 1;
+      for (const msg of customerMessages) {
+        if (msg.detectedIntent) {
+          intents[msg.detectedIntent] = (intents[msg.detectedIntent] || 0) + 1;
+        }
+        if (msg.sentiment !== undefined) {
+          totalSentiment += msg.sentiment;
+          sentimentCount++;
+        }
       }
-      if (msg.sentiment !== undefined) {
-        totalSentiment += msg.sentiment;
-        sentimentCount++;
-      }
-    }
 
-    setSessionStats({
-      messageCount: messages.length,
-      customerMessageCount: customerMessages.length,
-      botMessageCount: botMessages.length,
-      intentsDetected: intents,
-      avgSentiment: sentimentCount > 0 ? totalSentiment / sentimentCount : 0,
-      sentimentCount,
-      startTime: startTime || sessionStats?.startTime || new Date(),
-    });
-  }, [sessionStats?.startTime]);
+      setSessionStats({
+        messageCount: messages.length,
+        customerMessageCount: customerMessages.length,
+        botMessageCount: botMessages.length,
+        intentsDetected: intents,
+        avgSentiment: sentimentCount > 0 ? totalSentiment / sentimentCount : 0,
+        sentimentCount,
+        startTime: startTime || sessionStats?.startTime || new Date(),
+      });
+    },
+    [sessionStats?.startTime],
+  );
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -425,7 +418,8 @@ function ChatbotPage(): JSX.Element {
   const knowledgeBaseQuery = useQuery({
     queryKey: ['chatbot-knowledge-base', selectedConfigId],
     queryFn: () => fetchKnowledgeBase(selectedConfigId!),
-    enabled: !!selectedConfigId && (activeTab === 'test' || activeTab === 'knowledge'),
+    enabled:
+      !!selectedConfigId && (activeTab === 'test' || activeTab === 'knowledge'),
   });
 
   // Mutations
@@ -698,7 +692,9 @@ function ChatbotPage(): JSX.Element {
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => setShowKnowledgePanel(!showKnowledgePanel)}
+                              onClick={() =>
+                                setShowKnowledgePanel(!showKnowledgePanel)
+                              }
                             >
                               <BookOpen className="w-4 h-4" />
                               {showKnowledgePanel ? 'Hide' : 'Show'} KB
@@ -727,17 +723,28 @@ function ChatbotPage(): JSX.Element {
                               if (!selectedConfigId) return;
                               setIsTestLoading(true);
                               try {
-                                const conv = await startTestConversation(selectedConfigId);
+                                const conv =
+                                  await startTestConversation(selectedConfigId);
                                 setTestSessionId(conv.sessionId);
-                                const fullConv = await getTestConversation(conv.sessionId);
+                                const fullConv = await getTestConversation(
+                                  conv.sessionId,
+                                );
                                 setTestMessages(fullConv.messages || []);
                                 const startTime = new Date();
-                                updateSessionStats(fullConv.messages || [], startTime);
-                                showToast('Test conversation started', 'success');
+                                updateSessionStats(
+                                  fullConv.messages || [],
+                                  startTime,
+                                );
+                                showToast(
+                                  'Test conversation started',
+                                  'success',
+                                );
                               } catch (error) {
                                 showToast(
-                                  error instanceof Error ? error.message : 'Failed to start conversation',
-                                  'error'
+                                  error instanceof Error
+                                    ? error.message
+                                    : 'Failed to start conversation',
+                                  'error',
                                 );
                               } finally {
                                 setIsTestLoading(false);
@@ -757,10 +764,12 @@ function ChatbotPage(): JSX.Element {
                         <div className="text-center">
                           <Bot className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
                           <p className="text-neutral-600 mb-2">
-                            Click "Start Test Chat" to begin testing your chatbot
+                            Click &quot;Start Test Chat&quot; to begin testing
+                            your chatbot
                           </p>
                           <p className="text-sm text-neutral-500">
-                            You can send messages and see how your chatbot responds.
+                            You can send messages and see how your chatbot
+                            responds.
                             <br />
                             All interactions are logged for analytics.
                           </p>
@@ -776,13 +785,18 @@ function ChatbotPage(): JSX.Element {
                             </p>
                           ) : (
                             testMessages.map((msg) => {
-                              const sentimentDisplay = msg.sender === 'CUSTOMER' ? getSentimentDisplay(msg.sentiment) : null;
+                              const sentimentDisplay =
+                                msg.sender === 'CUSTOMER'
+                                  ? getSentimentDisplay(msg.sentiment)
+                                  : null;
                               const SentimentIcon = sentimentDisplay?.icon;
                               return (
                                 <div
                                   key={msg.id}
                                   className={`flex items-start gap-3 ${
-                                    msg.sender === 'CUSTOMER' ? 'flex-row-reverse' : ''
+                                    msg.sender === 'CUSTOMER'
+                                      ? 'flex-row-reverse'
+                                      : ''
                                   }`}
                                 >
                                   <div
@@ -798,7 +812,9 @@ function ChatbotPage(): JSX.Element {
                                       <Bot className="w-4 h-4 text-neutral-600" />
                                     )}
                                   </div>
-                                  <div className={`max-w-[70%] ${msg.sender === 'CUSTOMER' ? 'text-right' : ''}`}>
+                                  <div
+                                    className={`max-w-[70%] ${msg.sender === 'CUSTOMER' ? 'text-right' : ''}`}
+                                  >
                                     <div
                                       className={`rounded-lg p-3 ${
                                         msg.sender === 'CUSTOMER'
@@ -806,59 +822,89 @@ function ChatbotPage(): JSX.Element {
                                           : 'bg-white border border-neutral-200'
                                       }`}
                                     >
-                                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                      <p className="text-sm whitespace-pre-wrap">
+                                        {msg.content}
+                                      </p>
                                     </div>
                                     {/* Message metadata */}
-                                    {msg.sender === 'CUSTOMER' && (msg.detectedIntent || sentimentDisplay) && (
-                                      <div className="flex items-center gap-2 mt-1 justify-end text-xs text-neutral-500">
-                                        {msg.detectedIntent && (
-                                          <span className="flex items-center gap-1 bg-neutral-100 px-2 py-0.5 rounded">
-                                            <Zap className="w-3 h-3" />
-                                            {msg.detectedIntent}
-                                            {msg.intentConfidence && (
-                                              <span className="opacity-60">
-                                                ({Math.round(msg.intentConfidence * 100)}%)
+                                    {msg.sender === 'CUSTOMER' &&
+                                      (msg.detectedIntent ||
+                                        sentimentDisplay) && (
+                                        <div className="flex items-center gap-2 mt-1 justify-end text-xs text-neutral-500">
+                                          {msg.detectedIntent && (
+                                            <span className="flex items-center gap-1 bg-neutral-100 px-2 py-0.5 rounded">
+                                              <Zap className="w-3 h-3" />
+                                              {msg.detectedIntent}
+                                              {msg.intentConfidence && (
+                                                <span className="opacity-60">
+                                                  (
+                                                  {Math.round(
+                                                    msg.intentConfidence * 100,
+                                                  )}
+                                                  %)
+                                                </span>
+                                              )}
+                                            </span>
+                                          )}
+                                          {sentimentDisplay &&
+                                            SentimentIcon && (
+                                              <span
+                                                className={`flex items-center gap-1 ${sentimentDisplay.color}`}
+                                              >
+                                                <SentimentIcon className="w-3 h-3" />
+                                                {sentimentDisplay.label}
                                               </span>
                                             )}
-                                          </span>
-                                        )}
-                                        {sentimentDisplay && SentimentIcon && (
-                                          <span className={`flex items-center gap-1 ${sentimentDisplay.color}`}>
-                                            <SentimentIcon className="w-3 h-3" />
-                                            {sentimentDisplay.label}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
+                                        </div>
+                                      )}
                                     {/* Suggested actions for bot messages */}
-                                    {msg.sender === 'BOT' && msg.suggestedActions && msg.suggestedActions.length > 0 && (
-                                      <div className="flex flex-wrap gap-2 mt-2">
-                                        {msg.suggestedActions.map((action, idx) => (
-                                          <button
-                                            key={idx}
-                                            className="text-xs px-3 py-1 bg-primary-100 text-primary-700 rounded-full hover:bg-primary-200 transition-colors flex items-center gap-1"
-                                            onClick={() => {
-                                              if (action.action === 'feedback') {
-                                                const payload = action.payload as { helpful?: boolean } | undefined;
-                                                if (payload?.helpful !== undefined) {
-                                                  showToast(
-                                                    payload.helpful ? 'Thanks for the positive feedback!' : 'Thanks for your feedback. We\'ll improve.',
-                                                    'success'
-                                                  );
-                                                }
-                                              } else if (action.action === 'escalate') {
-                                                showToast('Escalation requested - in production this would connect to a human agent', 'info');
-                                              } else {
-                                                setTestInput(action.label);
-                                              }
-                                            }}
-                                          >
-                                            <ChevronRight className="w-3 h-3" />
-                                            {action.label}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
+                                    {msg.sender === 'BOT' &&
+                                      msg.suggestedActions &&
+                                      msg.suggestedActions.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                          {msg.suggestedActions.map(
+                                            (action, idx) => (
+                                              <button
+                                                key={idx}
+                                                className="text-xs px-3 py-1 bg-primary-100 text-primary-700 rounded-full hover:bg-primary-200 transition-colors flex items-center gap-1"
+                                                onClick={() => {
+                                                  if (
+                                                    action.action === 'feedback'
+                                                  ) {
+                                                    const payload =
+                                                      action.payload as
+                                                        | { helpful?: boolean }
+                                                        | undefined;
+                                                    if (
+                                                      payload?.helpful !==
+                                                      undefined
+                                                    ) {
+                                                      showToast(
+                                                        payload.helpful
+                                                          ? 'Thanks for the positive feedback!'
+                                                          : "Thanks for your feedback. We'll improve.",
+                                                        'success',
+                                                      );
+                                                    }
+                                                  } else if (
+                                                    action.action === 'escalate'
+                                                  ) {
+                                                    showToast(
+                                                      'Escalation requested - in production this would connect to a human agent',
+                                                      'info',
+                                                    );
+                                                  } else {
+                                                    setTestInput(action.label);
+                                                  }
+                                                }}
+                                              >
+                                                <ChevronRight className="w-3 h-3" />
+                                                {action.label}
+                                              </button>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
                                   </div>
                                 </div>
                               );
@@ -870,7 +916,9 @@ function ChatbotPage(): JSX.Element {
                         {/* Quick Actions from last response */}
                         {lastSuggestedActions.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-3 p-2 bg-primary-50 rounded-lg">
-                            <span className="text-xs text-neutral-500 self-center">Quick replies:</span>
+                            <span className="text-xs text-neutral-500 self-center">
+                              Quick replies:
+                            </span>
                             {lastSuggestedActions.map((action, idx) => (
                               <button
                                 key={idx}
@@ -888,7 +936,12 @@ function ChatbotPage(): JSX.Element {
                           className="flex gap-2"
                           onSubmit={async (e) => {
                             e.preventDefault();
-                            if (!testInput.trim() || !testSessionId || isTestLoading) return;
+                            if (
+                              !testInput.trim() ||
+                              !testSessionId ||
+                              isTestLoading
+                            )
+                              return;
 
                             const messageContent = testInput.trim();
                             setTestInput('');
@@ -900,13 +953,21 @@ function ChatbotPage(): JSX.Element {
                               content: messageContent,
                               createdAt: new Date().toISOString(),
                             };
-                            setTestMessages((prev) => [...prev, tempCustomerMsg]);
+                            setTestMessages((prev) => [
+                              ...prev,
+                              tempCustomerMsg,
+                            ]);
 
                             try {
-                              const result = await sendTestMessage(testSessionId, messageContent);
+                              const result = await sendTestMessage(
+                                testSessionId,
+                                messageContent,
+                              );
 
                               setTestMessages((prev) => {
-                                const withoutTemp = prev.filter((m) => m.id !== tempCustomerMsg.id);
+                                const withoutTemp = prev.filter(
+                                  (m) => m.id !== tempCustomerMsg.id,
+                                );
                                 const customerMsg: ChatMessage = {
                                   ...result.message,
                                   sender: 'CUSTOMER',
@@ -916,30 +977,41 @@ function ChatbotPage(): JSX.Element {
                                   sender: 'BOT',
                                   content: result.response.content,
                                   createdAt: new Date().toISOString(),
-                                  suggestedActions: result.response.suggestedActions,
+                                  suggestedActions:
+                                    result.response.suggestedActions,
                                 };
-                                const newMessages = [...withoutTemp, customerMsg, botMsg];
+                                const newMessages = [
+                                  ...withoutTemp,
+                                  customerMsg,
+                                  botMsg,
+                                ];
                                 updateSessionStats(newMessages);
                                 return newMessages;
                               });
 
                               // Store suggested actions for quick reply bar
                               if (result.response.suggestedActions) {
-                                setLastSuggestedActions(result.response.suggestedActions);
+                                setLastSuggestedActions(
+                                  result.response.suggestedActions,
+                                );
                               } else {
                                 setLastSuggestedActions([]);
                               }
 
                               setTimeout(() => {
-                                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                messagesEndRef.current?.scrollIntoView({
+                                  behavior: 'smooth',
+                                });
                               }, 100);
                             } catch (error) {
                               showToast(
-                                error instanceof Error ? error.message : 'Failed to send message',
-                                'error'
+                                error instanceof Error
+                                  ? error.message
+                                  : 'Failed to send message',
+                                'error',
                               );
                               setTestMessages((prev) =>
-                                prev.filter((m) => m.id !== tempCustomerMsg.id)
+                                prev.filter((m) => m.id !== tempCustomerMsg.id),
                               );
                             } finally {
                               setIsTestLoading(false);
@@ -953,7 +1025,10 @@ function ChatbotPage(): JSX.Element {
                             disabled={isTestLoading}
                             className="flex-1"
                           />
-                          <Button type="submit" disabled={isTestLoading || !testInput.trim()}>
+                          <Button
+                            type="submit"
+                            disabled={isTestLoading || !testInput.trim()}
+                          >
                             <Send className="w-4 h-4" />
                             Send
                           </Button>
@@ -975,7 +1050,9 @@ function ChatbotPage(): JSX.Element {
                     </CardHeader>
                     <CardBody className="space-y-3">
                       {!sessionStats ? (
-                        <p className="text-sm text-neutral-500">Start a chat to see analytics</p>
+                        <p className="text-sm text-neutral-500">
+                          Start a chat to see analytics
+                        </p>
                       ) : (
                         <>
                           <div className="grid grid-cols-2 gap-2">
@@ -983,20 +1060,29 @@ function ChatbotPage(): JSX.Element {
                               <p className="text-lg font-bold text-primary-600">
                                 {sessionStats.messageCount}
                               </p>
-                              <p className="text-xs text-neutral-500">Messages</p>
+                              <p className="text-xs text-neutral-500">
+                                Messages
+                              </p>
                             </div>
                             <div className="bg-neutral-50 p-2 rounded text-center">
                               <p className="text-lg font-bold text-primary-600">
-                                {Object.keys(sessionStats.intentsDetected).length}
+                                {
+                                  Object.keys(sessionStats.intentsDetected)
+                                    .length
+                                }
                               </p>
-                              <p className="text-xs text-neutral-500">Intents</p>
+                              <p className="text-xs text-neutral-500">
+                                Intents
+                              </p>
                             </div>
                           </div>
 
                           {/* Sentiment Gauge */}
                           {sessionStats.sentimentCount > 0 && (
                             <div className="bg-neutral-50 p-3 rounded">
-                              <p className="text-xs text-neutral-500 mb-2">Avg. Sentiment</p>
+                              <p className="text-xs text-neutral-500 mb-2">
+                                Avg. Sentiment
+                              </p>
                               <div className="flex items-center gap-2">
                                 <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
                                   <div
@@ -1021,11 +1107,16 @@ function ChatbotPage(): JSX.Element {
                           )}
 
                           {/* Intents Breakdown */}
-                          {Object.keys(sessionStats.intentsDetected).length > 0 && (
+                          {Object.keys(sessionStats.intentsDetected).length >
+                            0 && (
                             <div>
-                              <p className="text-xs text-neutral-500 mb-2">Detected Intents</p>
+                              <p className="text-xs text-neutral-500 mb-2">
+                                Detected Intents
+                              </p>
                               <div className="space-y-1">
-                                {Object.entries(sessionStats.intentsDetected).map(([intent, count]) => (
+                                {Object.entries(
+                                  sessionStats.intentsDetected,
+                                ).map(([intent, count]) => (
                                   <div
                                     key={intent}
                                     className="flex items-center justify-between text-sm bg-neutral-50 px-2 py-1 rounded"
@@ -1058,7 +1149,9 @@ function ChatbotPage(): JSX.Element {
                         {knowledgeBaseQuery.isLoading ? (
                           <p className="text-sm text-neutral-500">Loading...</p>
                         ) : !knowledgeBaseQuery.data?.length ? (
-                          <p className="text-sm text-neutral-500">No knowledge base items</p>
+                          <p className="text-sm text-neutral-500">
+                            No knowledge base items
+                          </p>
                         ) : (
                           <div className="space-y-2">
                             {knowledgeBaseQuery.data.map((item) => (
@@ -1072,8 +1165,12 @@ function ChatbotPage(): JSX.Element {
                                 <div className="flex items-start gap-2">
                                   <HelpCircle className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" />
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{item.question}</p>
-                                    <p className="text-xs text-neutral-500 truncate">{item.answer}</p>
+                                    <p className="text-sm font-medium truncate">
+                                      {item.question}
+                                    </p>
+                                    <p className="text-xs text-neutral-500 truncate">
+                                      {item.answer}
+                                    </p>
                                     <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
                                       <span className="flex items-center gap-1">
                                         <ThumbsUp className="w-3 h-3" />
@@ -1084,7 +1181,10 @@ function ChatbotPage(): JSX.Element {
                                         {item.notHelpfulCount}
                                       </span>
                                       {item.category && (
-                                        <Badge variant="neutral" className="text-[10px]">
+                                        <Badge
+                                          variant="neutral"
+                                          className="text-[10px]"
+                                        >
                                           {item.category}
                                         </Badge>
                                       )}
@@ -1102,7 +1202,9 @@ function ChatbotPage(): JSX.Element {
                   {/* Tips Card */}
                   <Card>
                     <CardBody className="text-xs text-neutral-500 space-y-2">
-                      <p className="font-medium text-neutral-700">Testing Tips:</p>
+                      <p className="font-medium text-neutral-700">
+                        Testing Tips:
+                      </p>
                       <ul className="list-disc list-inside space-y-1">
                         <li>Try asking about order status</li>
                         <li>Request a return or refund</li>
