@@ -69,7 +69,10 @@ const STATUS_VARIANTS: Record<
 async function fetchChatbotConfigs(): Promise<ChatbotConfig[]> {
   const res = await fetch('/api/chatbot/configs', buildOptions());
   if (!res.ok) {
-    const error = new Error('Failed to fetch chatbot configs') as ApiError;
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to fetch chatbot configs',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
@@ -88,7 +91,10 @@ async function fetchConversations(
     buildOptions(),
   );
   if (!res.ok) {
-    const error = new Error('Failed to fetch conversations') as ApiError;
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to fetch conversations',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
@@ -105,7 +111,10 @@ async function fetchAnalytics(configId: number): Promise<{
 }> {
   const res = await fetch(`/api/chatbot/${configId}/analytics`, buildOptions());
   if (!res.ok) {
-    const error = new Error('Failed to fetch analytics') as ApiError;
+    const data = await res.json().catch(() => ({}));
+    const error = new Error(
+      data.message || data.error || 'Failed to fetch analytics',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
@@ -124,7 +133,10 @@ async function createChatbotConfig(
     }),
   );
   if (!res.ok) {
-    const error = new Error('Failed to create chatbot config') as ApiError;
+    const errorData = await res.json().catch(() => ({}));
+    const error = new Error(
+      errorData.message || errorData.error || 'Failed to create chatbot config',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
