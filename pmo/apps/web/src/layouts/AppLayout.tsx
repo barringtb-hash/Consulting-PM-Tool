@@ -19,7 +19,7 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-50">
+    <div className="flex h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-900">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-shrink-0">
         <Sidebar />
@@ -31,7 +31,9 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <TopBar onMenuClick={toggleMobileMenu} />
-        <main className="flex-1 overflow-y-auto bg-neutral-50">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-neutral-50 dark:bg-neutral-900">
+          {children}
+        </main>
       </div>
     </div>
   );

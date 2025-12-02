@@ -27,10 +27,11 @@ export function Checkbox({
           type="checkbox"
           id={checkboxId}
           className={cn(
-            'w-4 h-4 rounded border-neutral-300 text-primary-600',
-            'focus:ring-2 focus:ring-offset-0 focus:ring-primary-600',
+            'w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 dark:text-primary-500',
+            'bg-white dark:bg-neutral-700',
+            'focus:ring-2 focus:ring-offset-0 focus:ring-primary-600 dark:focus:ring-primary-400',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            hasError && 'border-danger-300',
+            hasError && 'border-danger-300 dark:border-danger-500',
             className,
           )}
           aria-invalid={hasError}
@@ -49,7 +50,7 @@ export function Checkbox({
           {label && (
             <label
               htmlFor={checkboxId}
-              className="font-medium text-neutral-700 cursor-pointer"
+              className="font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer"
             >
               {label}
             </label>
@@ -57,14 +58,17 @@ export function Checkbox({
           {error && (
             <p
               id={`${checkboxId}-error`}
-              className="text-danger-600"
+              className="text-danger-600 dark:text-danger-400"
               role="alert"
             >
               {error}
             </p>
           )}
           {!error && helperText && (
-            <p id={`${checkboxId}-helper`} className="text-neutral-500">
+            <p
+              id={`${checkboxId}-helper`}
+              className="text-neutral-500 dark:text-neutral-400"
+            >
               {helperText}
             </p>
           )}
