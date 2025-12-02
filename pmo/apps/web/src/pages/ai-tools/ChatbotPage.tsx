@@ -4,7 +4,7 @@
  * Tool 1.1: Customer Service Chatbot configuration, conversations, and analytics
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
@@ -333,7 +333,28 @@ function ChatbotPage(): JSX.Element {
   const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
   const [lastSuggestedActions, setLastSuggestedActions] = useState<SuggestedAction[]>([]);
   const [showKnowledgePanel, setShowKnowledgePanel] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState<string>('0:00');
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Update elapsed time every second when session is active
+  useEffect(() => {
+    if (!sessionStats?.startTime) {
+      setElapsedTime('0:00');
+      return;
+    }
+
+    const updateTimer = () => {
+      const elapsed = Math.floor((Date.now() - sessionStats.startTime.getTime()) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      setElapsedTime(`${mins}:${secs.toString().padStart(2, '0')}`);
+    };
+
+    updateTimer(); // Initial update
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionStats?.startTime]);
 
   // Helper function to get sentiment icon and color
   const getSentimentDisplay = (sentiment: number | undefined) => {
@@ -341,14 +362,6 @@ function ChatbotPage(): JSX.Element {
     if (sentiment > 0.3) return { icon: Smile, color: 'text-green-500', label: 'Positive' };
     if (sentiment < -0.3) return { icon: Frown, color: 'text-red-500', label: 'Negative' };
     return { icon: Meh, color: 'text-yellow-500', label: 'Neutral' };
-  };
-
-  // Helper function to format elapsed time
-  const formatElapsedTime = (startTime: Date) => {
-    const elapsed = Math.floor((Date.now() - startTime.getTime()) / 1000);
-    const mins = Math.floor(elapsed / 60);
-    const secs = elapsed % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Update session stats when messages change
@@ -442,6 +455,7 @@ function ChatbotPage(): JSX.Element {
   useRedirectOnUnauthorized(clientsQuery.error);
   useRedirectOnUnauthorized(conversationsQuery.error);
   useRedirectOnUnauthorized(analyticsQuery.error);
+  useRedirectOnUnauthorized(knowledgeBaseQuery.error);
   useRedirectOnUnauthorized(createConfigMutation.error);
 
   const clients = clientsQuery.data ?? [];
@@ -674,7 +688,7 @@ function ChatbotPage(): JSX.Element {
                         {sessionStats && (
                           <Badge variant="neutral" className="ml-2">
                             <Clock className="w-3 h-3 mr-1" />
-                            {formatElapsedTime(sessionStats.startTime)}
+                            {elapsedTime}
                           </Badge>
                         )}
                       </h3>
