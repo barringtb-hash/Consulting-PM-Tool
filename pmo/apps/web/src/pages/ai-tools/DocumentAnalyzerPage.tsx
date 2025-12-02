@@ -76,7 +76,9 @@ async function fetchDocumentAnalyzerConfigs(): Promise<
 > {
   const res = await fetch('/api/document-analyzer/configs', buildOptions());
   if (!res.ok) {
-    const error = new Error('Failed to fetch document analyzer configs') as ApiError;
+    const error = new Error(
+      'Failed to fetch document analyzer configs',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
@@ -115,7 +117,9 @@ async function createDocumentAnalyzerConfig(
     }),
   );
   if (!res.ok) {
-    const error = new Error('Failed to create document analyzer config') as ApiError;
+    const error = new Error(
+      'Failed to create document analyzer config',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }

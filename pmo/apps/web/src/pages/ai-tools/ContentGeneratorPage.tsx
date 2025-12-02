@@ -82,7 +82,9 @@ async function fetchContentGeneratorConfigs(): Promise<
 > {
   const res = await fetch('/api/content-generator/configs', buildOptions());
   if (!res.ok) {
-    const error = new Error('Failed to fetch content generator configs') as ApiError;
+    const error = new Error(
+      'Failed to fetch content generator configs',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
@@ -123,7 +125,9 @@ async function createContentGeneratorConfig(
     }),
   );
   if (!res.ok) {
-    const error = new Error('Failed to create content generator config') as ApiError;
+    const error = new Error(
+      'Failed to create content generator config',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
