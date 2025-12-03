@@ -118,11 +118,11 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 |------|--------|-----------------|-----------|-------|
 | 1 | Click "Conversations" tab | Conversations tab becomes active | Pass | |
 | 2 | Verify status filter dropdown | Options: All Statuses, Active, Escalated, Resolved, Closed | Pass | |
-| 3 | If conversations exist | Each conversation card shows: Customer name/email/"Anonymous", Status badge (color-coded), Channel badge, Message count, Started date | | |
+| 3 | If conversations exist | Each conversation card shows: Customer name/email/"Anonymous", Status badge (color-coded), Channel badge, Message count, Started date | Fail | I see a "Test User" but no email/ananymous. There is no message count, but everything else is present. |
 | 4 | If no conversations | Shows message "No conversations found." | Pass | |
-| 5 | Change status filter to "Active" | Only active conversations are displayed | | Couldn't check because we didn't have any conversations in the databse |
-| 6 | Change status filter to "Escalated" | Only escalated conversations are displayed | | Couldn't check because we didn't have any conversations in the databse |
-| 7 | Verify status badge colors | ACTIVE=primary(blue), WAITING=warning(yellow), ESCALATED=secondary, RESOLVED=success(green), CLOSED=neutral(gray) | | Couldn't check because we didn't have any conversations in the databse |
+| 5 | Change status filter to "Active" | Pass| | |
+| 6 | Change status filter to "Escalated" | Pass | | |
+| 7 | Verify status badge colors | ACTIVE=primary(blue), WAITING=warning(yellow), ESCALATED=secondary, RESOLVED=success(green), CLOSED=neutral(gray) | Fail | The colors that I can verify are Active=Orange, Escalated=Grey |
 
 ---
 
@@ -130,13 +130,13 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "Knowledge Base" tab | Knowledge Base tab becomes active | | |
-| 2 | Verify filter bar | Shows search input, Category dropdown, Status dropdown, and "Add Item" button | | |
-| 3 | Verify search placeholder | Shows "Search questions, answers, or keywords..." | | |
-| 4 | Verify Category filter options | Shows: All Categories, General, Orders, Returns, Shipping, Products, Payments, Account, Technical | | |
-| 5 | Verify Status filter options | Shows: All Status, Published, Unpublished | | |
-| 6 | If KB items exist | Stats summary cards appear showing: Total Items, Published count, Total Views, Helpful Rate % | | |
-| 7 | If no KB items | Shows empty state with BookOpen icon and "No knowledge base items yet" message with "Add Your First Item" button | | |
+| 1 | Click "Knowledge Base" tab | Knowledge Base tab becomes active | Pass | |
+| 2 | Verify filter bar | Shows search input, Category dropdown, Status dropdown, and "Add Item" button | Pass | |
+| 3 | Verify search placeholder | Shows "Search questions, answers, or keywords..." | Pass | |
+| 4 | Verify Category filter options | Shows: All Categories, General, Orders, Returns, Shipping, Products, Payments, Account, Technical | Pass | |
+| 5 | Verify Status filter options | Shows: All Status, Published, Unpublished | Pass | |
+| 6 | If KB items exist | Stats summary cards appear showing: Total Items, Published count, Total Views, Helpful Rate % | Partial | The Helpful Rate % i don't think is mapped properly. |
+| 7 | If no KB items | Shows empty state with BookOpen icon and "No knowledge base items yet" message with "Add Your First Item" button | Pass | |
 
 ---
 
@@ -144,19 +144,19 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "Add Item" button | Modal opens with title "Add Knowledge Base Item" | | |
-| 2 | Verify form fields | Modal contains: Question (required), Answer (required), Category dropdown, Priority dropdown, Keywords input, Published checkbox | | |
-| 3 | Verify Priority options | Shows: 1 - Low, 2, 3 - Medium, 4, 5 - High | | |
-| 4 | Verify Keywords help text | Shows "Comma-separated keywords to help match this answer" | | |
-| 5 | Verify Published checkbox | Shows "Publish immediately (visible to customers)" checkbox, checked by default | | |
-| 6 | Try submitting empty form | Form validation prevents submission, required fields highlighted | | |
-| 7 | Fill in Question field | e.g., "How do I track my order?" | | |
-| 8 | Fill in Answer field | e.g., "You can track your order by clicking the 'Track Order' link in your confirmation email..." | | |
-| 9 | Select Category | e.g., "Orders" | | |
-| 10 | Enter Keywords | e.g., "order, tracking, shipping, status" | | |
-| 11 | Click "Add Item" button | Button shows "Saving...", then toast "Knowledge base item created successfully" | | |
-| 12 | Verify modal closes | Modal closes after successful creation | | |
-| 13 | Verify new item in list | New KB item appears in the list with entered details | | |
+| 1 | Click "Add Item" button | Modal opens with title "Add Knowledge Base Item" | Pass | |
+| 2 | Verify form fields | Modal contains: Question (required), Answer (required), Category dropdown, Priority dropdown, Keywords input, Published checkbox | Pass | |
+| 3 | Verify Priority options | Shows: 1 - Low, 2, 3 - Medium, 4, 5 - High | Pass | |
+| 4 | Verify Keywords help text | Shows "Comma-separated keywords to help match this answer" | Pass | |
+| 5 | Verify Published checkbox | Shows "Publish immediately (visible to customers)" checkbox, checked by default | Pass | |
+| 6 | Try submitting empty form | Form validation prevents submission, required fields highlighted | Pass | |
+| 7 | Fill in Question field | e.g., "How do I track my order?" | Pass | |
+| 8 | Fill in Answer field | e.g., "You can track your order by clicking the 'Track Order' link in your confirmation email..." | Pass | |
+| 9 | Select Category | e.g., "Orders" | Pass | |
+| 10 | Enter Keywords | e.g., "order, tracking, shipping, status" | Pass | |
+| 11 | Click "Add Item" button | Button shows "Saving...", then toast "Knowledge base item created successfully" | Pass | |
+| 12 | Verify modal closes | Modal closes after successful creation | Pass | |
+| 13 | Verify new item in list | New KB item appears in the list with entered details | Pass | |
 
 ---
 
@@ -164,15 +164,15 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | View a KB item card | Shows: Question text, Answer preview (truncated), Status badge (Published/Draft) | | |
-| 2 | Verify Published badge | Published items show green "Published" badge with Eye icon | | |
-| 3 | Verify Draft badge | Unpublished items show gray "Draft" badge with EyeOff icon | | |
-| 4 | Verify Category badge | Shows category with Tag icon if category is set | | |
-| 5 | Verify Priority badge | Shows "Priority: [1-5]" badge | | |
-| 6 | Verify Keywords display | Shows "Keywords: [first 3 keywords]" with "+X" if more exist | | |
-| 7 | Verify analytics stats | Shows: View count (Eye icon), Helpful count (ThumbsUp, green), Not Helpful count (ThumbsDown, red) | | |
-| 8 | Verify helpfulness bar | If feedback exists, shows colored progress bar with percentage (green >=70%, yellow >=40%, red <40%) | | |
-| 9 | Verify action buttons | Shows: Edit, Publish/Unpublish toggle, Delete (trash icon) | | |
+| 1 | View a KB item card | Shows: Question text, Answer preview (truncated), Status badge (Published/Draft) | Pass | |
+| 2 | Verify Published badge | Published items show green "Published" badge with Eye icon | Pass | |
+| 3 | Verify Draft badge | Unpublished items show gray "Draft" badge with EyeOff icon | Untested | The "unpublish" button doesn't work. If try to edit and unselect the publish button, it doesn't work. This needs to be fixed. |
+| 4 | Verify Category badge | Shows category with Tag icon if category is set | Pass | |
+| 5 | Verify Priority badge | Shows "Priority: [1-5]" badge | Pass | |
+| 6 | Verify Keywords display | Shows "Keywords: [first 3 keywords]" with "+X" if more exist | Pass | |
+| 7 | Verify analytics stats | Shows: View count (Eye icon), Helpful count (ThumbsUp, green), Not Helpful count (ThumbsDown, red) | Pass | |
+| 8 | Verify helpfulness bar | If feedback exists, shows colored progress bar with percentage (green >=70%, yellow >=40%, red <40%) | Pass | |
+| 9 | Verify action buttons | Shows: Edit, Publish/Unpublish toggle, Delete (trash icon) | Pass | |
 
 ---
 
@@ -180,16 +180,16 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click "Edit" button on an item | Modal opens with title "Edit Knowledge Base Item" | | |
-| 2 | Verify pre-filled values | Form is populated with existing item data (question, answer, keywords, category, priority, published status) | | |
-| 3 | Modify the Question field | Change to new text | | |
-| 4 | Modify the Answer field | Change to new text | | |
-| 5 | Change Category | Select different category | | |
-| 6 | Change Priority | Select different priority | | |
-| 7 | Modify Keywords | Add or remove keywords | | |
-| 8 | Click "Update Item" button | Button shows "Saving...", then toast "Knowledge base item updated successfully" | | |
-| 9 | Verify changes saved | Item in list reflects all updated values | | |
-| 10 | Click X or Cancel to close modal | Modal closes without saving changes | | |
+| 1 | Click "Edit" button on an item | Modal opens with title "Edit Knowledge Base Item" | Pass | |
+| 2 | Verify pre-filled values | Form is populated with existing item data (question, answer, keywords, category, priority, published status) | Pass | |
+| 3 | Modify the Question field | Change to new text | Pass | |
+| 4 | Modify the Answer field | Change to new text | Pass | |
+| 5 | Change Category | Select different category | Pass | |
+| 6 | Change Priority | Select different priority | Pass | |
+| 7 | Modify Keywords | Add or remove keywords | Pass | |
+| 8 | Click "Update Item" button | Button shows "Saving...", then toast "Knowledge base item updated successfully" | Pass | |
+| 9 | Verify changes saved | Item in list reflects all updated values | Pass | |
+| 10 | Click X or Cancel to close modal | Modal closes without saving changes | Pass | |
 
 ---
 
@@ -197,13 +197,13 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Find a Published item | Item shows "Published" badge with Eye icon | | |
+| 1 | Find a Published item | Item shows "Published" badge with Eye icon | Pass | |
 | 2 | Click "Unpublish" button | Button shows loading state briefly | | |
 | 3 | Verify status changed | Toast shows "Knowledge base item updated successfully", badge changes to "Draft" with EyeOff icon | | |
-| 4 | Find an Unpublished item | Item shows "Draft" badge with EyeOff icon | | |
-| 5 | Click "Publish" button | Button shows loading state briefly | | |
-| 6 | Verify status changed | Toast shows success, badge changes to "Published" with Eye icon | | |
-| 7 | Verify Quick Stats update | Published count in stats summary updates accordingly | | |
+| 4 | Find an Unpublished item | Item shows "Draft" badge with EyeOff icon | Fail | When I uncheck the publish check box, the system still publishes the knowledge base item. This needs to be fixed. |
+| 5 | Click "Publish" button | Button shows loading state briefly | Pass | |
+| 6 | Verify status changed | Toast shows success, badge changes to "Published" with Eye icon | Pass | |
+| 7 | Verify Quick Stats update | Published count in stats summary updates accordingly | Pass | |
 
 ---
 
@@ -211,13 +211,13 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Click Delete (trash) button on an item | Confirmation modal opens with title "Delete Item" and AlertCircle icon | | |
-| 2 | Verify confirmation message | Shows "Are you sure you want to delete this knowledge base item? This action cannot be undone." | | |
-| 3 | Click "Cancel" button | Modal closes, item is NOT deleted | | |
-| 4 | Click Delete button again | Confirmation modal opens | | |
-| 5 | Click "Delete" button in modal | Button shows "Deleting...", then toast "Knowledge base item deleted successfully" | | |
-| 6 | Verify item removed | Item no longer appears in the list | | |
-| 7 | Verify stats update | Total Items count decreases by 1 | | |
+| 1 | Click Delete (trash) button on an item | Confirmation modal opens with title "Delete Item" and AlertCircle icon | Pass |  |
+| 2 | Verify confirmation message | Shows "Are you sure you want to delete this knowledge base item? This action cannot be undone." | Pass | |
+| 3 | Click "Cancel" button | Modal closes, item is NOT deleted | Pass | |
+| 4 | Click Delete button again | Confirmation modal opens | Pass | |
+| 5 | Click "Delete" button in modal | Button shows "Deleting...", then toast "Knowledge base item deleted successfully" | Fail | I get an error message that says "Invalid Token" this needs to be fixed. |
+| 6 | Verify item removed | Item no longer appears in the list | Untested | |
+| 7 | Verify stats update | Total Items count decreases by 1 | Untested | |
 
 ---
 
@@ -225,18 +225,18 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | Type in search field | List filters in real-time as you type | | |
-| 2 | Search by question text | Items matching question text are shown | | |
-| 3 | Search by answer text | Items matching answer text are shown | | |
-| 4 | Search by keyword | Items with matching keywords are shown | | |
-| 5 | Clear search field | All items shown again | | |
-| 6 | Select a Category filter | Only items with that category are shown | | |
-| 7 | Select "Published" status | Only published items are shown | | |
-| 8 | Select "Unpublished" status | Only draft/unpublished items are shown | | |
-| 9 | Combine search + Category filter | Items must match both criteria | | |
-| 10 | Combine search + Status filter | Items must match both criteria | | |
-| 11 | No results scenario | Shows "No items match your filters" message with suggestion to adjust filters | | |
-| 12 | Reset all filters | Set search empty, category to "All", status to "All" - all items shown | | |
+| 1 | Type in search field | List filters in real-time as you type | Pass | |
+| 2 | Search by question text | Items matching question text are shown | Pass | |
+| 3 | Search by answer text | Items matching answer text are shown | Pass | |
+| 4 | Search by keyword | Items with matching keywords are shown | Pass | |
+| 5 | Clear search field | All items shown again | Pass | |
+| 6 | Select a Category filter | Only items with that category are shown | Pass | |
+| 7 | Select "Published" status | Only published items are shown | Pass | |
+| 8 | Select "Unpublished" status | Only draft/unpublished items are shown | Pass | |
+| 9 | Combine search + Category filter | Items must match both criteria | Pass | |
+| 10 | Combine search + Status filter | Items must match both criteria | Pass | |
+| 11 | No results scenario | Shows "No items match your filters" message with suggestion to adjust filters | Pass | |
+| 12 | Reset all filters | Set search empty, category to "All", status to "All" - all items shown | Pass | |
 
 ---
 
@@ -244,13 +244,13 @@ The Customer Service Chatbot provides 24/7 AI-powered customer support with mult
 
 | Step | Action | Expected Result | Pass/Fail | Notes |
 |------|--------|-----------------|-----------|-------|
-| 1 | View Total Items card | Shows count of all KB items in primary color | | |
-| 2 | View Published card | Shows count of published items in green | | |
-| 3 | View Total Views card | Shows sum of all view counts in blue | | |
-| 4 | View Helpful Rate card | Shows overall helpful percentage in amber (calculated as total helpful / (helpful + not helpful) * 100) | | |
-| 5 | Add new item | Total Items count increases | | |
-| 6 | Delete an item | Total Items count decreases | | |
-| 7 | Publish/Unpublish item | Published count updates accordingly | | |
+| 1 | View Total Items card | Shows count of all KB items in primary color | Pass | |
+| 2 | View Published card | Shows count of published items in green | Pass | |
+| 3 | View Total Views card | Shows sum of all view counts in blue | Pass | |
+| 4 | View Helpful Rate card | Shows overall helpful percentage in amber (calculated as total helpful / (helpful + not helpful) * 100) | Pass | |
+| 5 | Add new item | Total Items count increases | Pass | |
+| 6 | Delete an item | Total Items count decreases | Untested | |
+| 7 | Publish/Unpublish item | Published count updates accordingly | Pass | |
 
 ---
 
