@@ -351,8 +351,8 @@ function FinancialCompliancePage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-sm text-gray-500">{framework.shortName}</p>
-                  <p className="text-xs text-gray-400">{framework.name}</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">{framework.shortName}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{framework.name}</p>
                 </div>
                 <Badge variant={STATUS_VARIANTS[framework.status]}>
                   {framework.status}
@@ -360,14 +360,14 @@ function FinancialCompliancePage(): JSX.Element {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     {framework.controlsCompliant}/{framework.controlsTotal}
                   </p>
-                  <p className="text-sm text-gray-400">Controls Compliant</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Controls Compliant</p>
                 </div>
                 <div className="text-right text-sm">
-                  <p className="text-gray-500">Next Audit</p>
-                  <p className="font-medium">
+                  <p className="text-neutral-600 dark:text-neutral-400">Next Audit</p>
+                  <p className="font-medium text-neutral-900 dark:text-neutral-100">
                     {framework.nextAudit
                       ? new Date(framework.nextAudit).toLocaleDateString()
                       : 'TBD'}
@@ -380,7 +380,7 @@ function FinancialCompliancePage(): JSX.Element {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -393,8 +393,8 @@ function FinancialCompliancePage(): JSX.Element {
               onClick={() => setActiveTab(id as typeof activeTab)}
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -409,7 +409,7 @@ function FinancialCompliancePage(): JSX.Element {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Financial Compliance Checklist
               </h3>
             </CardHeader>
@@ -432,17 +432,17 @@ function FinancialCompliancePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-gray-900' : 'text-gray-500'}
+                      className={item.done ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-600 dark:text-neutral-400'}
                     >
                       {item.label}
                     </span>
                     {item.done ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
+                      <Clock className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                     )}
                   </div>
                 ))}
@@ -452,21 +452,21 @@ function FinancialCompliancePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">Compliance Summary</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Compliance Summary</h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Scale className="h-5 w-5 text-blue-500" />
-                      <span className="font-medium">SOX Controls</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">SOX Controls</span>
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {soxCompliant}/{soxQuery.data?.length || 0} effective
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                     <div
                       className="h-2 rounded-full bg-blue-500"
                       style={{
@@ -476,18 +476,18 @@ function FinancialCompliancePage(): JSX.Element {
                   </div>
                 </div>
 
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Archive className="h-5 w-5 text-purple-500" />
-                      <span className="font-medium">FINRA Records</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">FINRA Records</span>
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {finraCurrentRecords}/{finraQuery.data?.length || 0}{' '}
                       current
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                     <div
                       className="h-2 rounded-full bg-purple-500"
                       style={{
@@ -497,17 +497,17 @@ function FinancialCompliancePage(): JSX.Element {
                   </div>
                 </div>
 
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-5 w-5 text-green-500" />
-                      <span className="font-medium">PCI DSS Requirements</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">PCI DSS Requirements</span>
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {pciCompliant}/{pciQuery.data?.length || 0} compliant
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                     <div
                       className="h-2 rounded-full bg-green-500"
                       style={{
@@ -527,7 +527,7 @@ function FinancialCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Sarbanes-Oxley Controls</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Sarbanes-Oxley Controls</h3>
               <Button variant="secondary" size="sm">
                 <Eye className="h-4 w-4 mr-2" />
                 Run Control Test
@@ -537,11 +537,11 @@ function FinancialCompliancePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {soxQuery.data?.map((control) => (
-                <div key={control.id} className="border rounded-lg p-4">
+                <div key={control.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="font-medium">{control.requirement}</p>
-                      <p className="text-sm text-gray-500">{control.section}</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">{control.requirement}</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">{control.section}</p>
                     </div>
                     <Badge variant={STATUS_VARIANTS[control.status]}>
                       {control.status}
@@ -552,13 +552,13 @@ function FinancialCompliancePage(): JSX.Element {
                       {control.evidence.map((ev, idx) => (
                         <span
                           key={idx}
-                          className="bg-gray-100 px-2 py-1 rounded text-xs"
+                          className="bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded text-xs text-neutral-700 dark:text-neutral-300"
                         >
                           {ev}
                         </span>
                       ))}
                     </div>
-                    <span className="text-gray-500">
+                    <span className="text-neutral-600 dark:text-neutral-400">
                       Tested:{' '}
                       {control.testDate
                         ? new Date(control.testDate).toLocaleDateString()
@@ -577,7 +577,7 @@ function FinancialCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 FINRA Compliance Records
               </h3>
               <Button variant="secondary" size="sm">
@@ -588,30 +588,30 @@ function FinancialCompliancePage(): JSX.Element {
           </CardHeader>
           <CardBody>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead className="bg-neutral-50 dark:bg-neutral-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Description
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Date
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                   {finraQuery.data?.map((record) => (
                     <tr key={record.id}>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
                         {record.type}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {record.description}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -619,7 +619,7 @@ function FinancialCompliancePage(): JSX.Element {
                           {record.status}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {new Date(record.date).toLocaleDateString()}
                       </td>
                     </tr>
@@ -636,7 +636,7 @@ function FinancialCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">PCI DSS Requirements</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">PCI DSS Requirements</h3>
               <Button variant="secondary" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 SAQ Assessment
@@ -654,18 +654,18 @@ function FinancialCompliancePage(): JSX.Element {
                 'Maintain an Information Security Policy',
               ].map((category) => (
                 <div key={category}>
-                  <h4 className="font-medium text-gray-700 mb-3">{category}</h4>
+                  <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-3">{category}</h4>
                   <div className="space-y-2">
                     {pciQuery.data
                       ?.filter((r) => r.category === category)
                       .map((requirement) => (
                         <div
                           key={requirement.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
+                          className="flex items-center justify-between p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg"
                         >
                           <div>
-                            <p className="text-sm">{requirement.requirement}</p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-sm text-neutral-900 dark:text-neutral-100">{requirement.requirement}</p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
                               Last validated:{' '}
                               {requirement.lastValidated
                                 ? new Date(

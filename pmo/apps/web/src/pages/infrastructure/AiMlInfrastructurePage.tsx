@@ -260,7 +260,7 @@ function AiMlInfrastructurePage(): JSX.Element {
     integrationsQuery.data?.filter((i) => i.status === 'connected').length || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 space-y-6">
       <PageHeader
         title="AI/ML Infrastructure"
         subtitle="INF.2 - NLP Services, Machine Learning Models, and Integration Framework"
@@ -279,11 +279,11 @@ function AiMlInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">NLP Requests (Today)</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">NLP Requests (Today)</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {totalRequests.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
                   {avgLatency}ms avg latency
                 </p>
               </div>
@@ -296,11 +296,11 @@ function AiMlInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">ML Models</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">ML Models</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {deployedModels}/{modelsQuery.data?.length || 0}
                 </p>
-                <p className="text-sm text-gray-400">Deployed</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">Deployed</p>
               </div>
               <Cpu className="h-8 w-8 text-purple-500" />
             </div>
@@ -311,11 +311,11 @@ function AiMlInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Integrations</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Integrations</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {connectedIntegrations}/{integrationsQuery.data?.length || 0}
                 </p>
-                <p className="text-sm text-gray-400">Connected</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">Connected</p>
               </div>
               <Link className="h-8 w-8 text-green-500" />
             </div>
@@ -326,8 +326,8 @@ function AiMlInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Avg Model Accuracy</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Avg Model Accuracy</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-500">
                   {modelsQuery.data
                     ? (
                         modelsQuery.data.reduce(
@@ -346,7 +346,7 @@ function AiMlInfrastructurePage(): JSX.Element {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'overview', label: 'Overview', icon: Layers },
@@ -359,8 +359,8 @@ function AiMlInfrastructurePage(): JSX.Element {
               onClick={() => setActiveTab(id as typeof activeTab)}
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -375,7 +375,7 @@ function AiMlInfrastructurePage(): JSX.Element {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 AI/ML Infrastructure Checklist
               </h3>
             </CardHeader>
@@ -399,17 +399,17 @@ function AiMlInfrastructurePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-gray-900' : 'text-gray-500'}
+                      className={item.done ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-500 dark:text-neutral-400'}
                     >
                       {item.label}
                     </span>
                     {item.done ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
+                      <Clock className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                     )}
                   </div>
                 ))}
@@ -419,7 +419,7 @@ function AiMlInfrastructurePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">AI Service Providers</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">AI Service Providers</h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
@@ -445,9 +445,9 @@ function AiMlInfrastructurePage(): JSX.Element {
                     status: 'pending',
                   },
                 ].map((provider, idx) => (
-                  <div key={idx} className="p-4 border rounded-lg">
+                  <div key={idx} className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">{provider.name}</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{provider.name}</span>
                       <Badge
                         variant={
                           provider.status === 'connected' ||
@@ -463,7 +463,7 @@ function AiMlInfrastructurePage(): JSX.Element {
                       {provider.services.map((service, sidx) => (
                         <span
                           key={sidx}
-                          className="text-xs bg-gray-100 px-2 py-1 rounded"
+                          className="text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-2 py-1 rounded"
                         >
                           {service}
                         </span>
@@ -482,7 +482,7 @@ function AiMlInfrastructurePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">NLP Services</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">NLP Services</h3>
               <Button variant="secondary" size="sm">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -491,39 +491,39 @@ function AiMlInfrastructurePage(): JSX.Element {
           </CardHeader>
           <CardBody>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Service
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Provider
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Requests (Today)
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Avg Latency
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Error Rate
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                   {nlpQuery.data?.map((service, idx) => (
                     <tr key={idx}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <MessageSquare className="h-4 w-4 text-gray-400 mr-2" />
-                          <span className="font-medium">{service.name}</span>
+                          <MessageSquare className="h-4 w-4 text-neutral-400 dark:text-neutral-500 mr-2" />
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">{service.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {service.provider}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -531,15 +531,15 @@ function AiMlInfrastructurePage(): JSX.Element {
                           <div
                             className={`w-2 h-2 rounded-full mr-2 ${STATUS_COLORS[service.status]}`}
                           />
-                          <span className="text-sm capitalize">
+                          <span className="text-sm capitalize text-neutral-900 dark:text-neutral-100">
                             {service.status}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                         {service.requestsToday.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                         {service.avgLatency}ms
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -547,7 +547,7 @@ function AiMlInfrastructurePage(): JSX.Element {
                           className={
                             service.errorRate > 0.03
                               ? 'text-red-500'
-                              : 'text-green-600'
+                              : 'text-green-600 dark:text-green-500'
                           }
                         >
                           {(service.errorRate * 100).toFixed(2)}%
@@ -567,7 +567,7 @@ function AiMlInfrastructurePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Machine Learning Models</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Machine Learning Models</h3>
               <Button variant="secondary" size="sm">
                 <Zap className="h-4 w-4 mr-2" />
                 Train New Model
@@ -577,16 +577,16 @@ function AiMlInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {modelsQuery.data?.map((model) => (
-                <div key={model.id} className="border rounded-lg p-4">
+                <div key={model.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <Cpu className="h-5 w-5 text-purple-500" />
                       <div>
-                        <p className="font-medium">{model.name}</p>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">{model.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                           <GitBranch className="h-3 w-3" />
                           <span>v{model.version}</span>
-                          <span className="text-gray-300">|</span>
+                          <span className="text-neutral-300 dark:text-neutral-600">|</span>
                           <span>{model.type}</span>
                         </div>
                       </div>
@@ -604,20 +604,20 @@ function AiMlInfrastructurePage(): JSX.Element {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500">Accuracy</p>
-                      <p className="font-semibold text-green-600">
+                      <p className="text-neutral-600 dark:text-neutral-400">Accuracy</p>
+                      <p className="font-semibold text-green-600 dark:text-green-500">
                         {model.accuracy}%
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Last Trained</p>
-                      <p className="font-medium">
+                      <p className="text-neutral-600 dark:text-neutral-400">Last Trained</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
                         {new Date(model.lastTrained).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Type</p>
-                      <p className="font-medium">{model.type}</p>
+                      <p className="text-neutral-600 dark:text-neutral-400">Type</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">{model.type}</p>
                     </div>
                     <div className="flex items-end justify-end">
                       <Button variant="secondary" size="sm">
@@ -638,7 +638,7 @@ function AiMlInfrastructurePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Integration Connectors</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Integration Connectors</h3>
               <Button variant="secondary" size="sm">
                 <Link className="h-4 w-4 mr-2" />
                 Add Integration
@@ -648,9 +648,9 @@ function AiMlInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {integrationsQuery.data?.map((integration, idx) => (
-                <div key={idx} className="border rounded-lg p-4">
+                <div key={idx} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{integration.name}</span>
+                    <span className="font-medium text-neutral-900 dark:text-neutral-100">{integration.name}</span>
                     <Badge
                       variant={
                         integration.status === 'connected'
@@ -663,11 +663,11 @@ function AiMlInfrastructurePage(): JSX.Element {
                       {integration.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-500 mb-2">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
                     {integration.category}
                   </p>
                   {integration.lastSync && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-500">
                       Last sync:{' '}
                       {new Date(integration.lastSync).toLocaleString()}
                     </p>
