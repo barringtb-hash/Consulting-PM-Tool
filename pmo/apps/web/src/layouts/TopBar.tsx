@@ -44,7 +44,7 @@ export function TopBar({ onMenuClick }: TopBarProps): JSX.Element {
   }, [isUserMenuOpen]);
 
   return (
-    <header className="flex items-center h-16 px-4 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 flex-shrink-0">
+    <header className="flex items-center h-16 px-4 bg-white dark:bg-neutral-800/80 border-b border-neutral-200 dark:border-neutral-700/80 flex-shrink-0">
       {/* Mobile menu button */}
       <button
         type="button"
@@ -103,7 +103,7 @@ export function TopBar({ onMenuClick }: TopBarProps): JSX.Element {
 
         {/* Dropdown Menu */}
         {isUserMenuOpen && (
-          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1 z-50">
+          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-800/95 dark:backdrop-blur-sm rounded-lg shadow-lg dark:shadow-dark-lg border border-neutral-200 dark:border-neutral-700/80 dark:ring-1 dark:ring-white/5 py-1 z-50">
             {/* User info */}
             <div className="px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
               <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">

@@ -339,7 +339,7 @@ function ProductDescriptionsPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Product Descriptions"
         description="Generate AI-powered product descriptions for multiple marketplaces"
@@ -441,24 +441,24 @@ function ProductDescriptionsPage(): JSX.Element {
                       No products yet.
                     </p>
                   ) : (
-                    <div className="divide-y divide-neutral-100">
+                    <div className="divide-y divide-neutral-100 dark:divide-neutral-700">
                       {products.map((product) => (
                         <button
                           key={product.id}
                           onClick={() => setSelectedProductId(product.id)}
-                          className={`w-full text-left p-4 hover:bg-neutral-50 transition-colors ${
+                          className={`w-full text-left p-4 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors ${
                             selectedProductId === product.id
-                              ? 'bg-primary-50'
+                              ? 'bg-primary-50 dark:bg-primary-900/30'
                               : ''
                           }`}
                         >
-                          <p className="font-medium truncate">{product.name}</p>
+                          <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">{product.name}</p>
                           {product.sku && (
-                            <p className="text-sm text-neutral-500">
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
                               SKU: {product.sku}
                             </p>
                           )}
-                          <p className="text-xs text-neutral-400 mt-1">
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                             {product.descriptions?.length || 0} descriptions
                           </p>
                         </button>
@@ -596,7 +596,7 @@ function ProductDescriptionsPage(): JSX.Element {
                           {selectedProduct.descriptions?.map((desc) => (
                             <div
                               key={desc.id}
-                              className="border border-neutral-200 rounded-lg p-4"
+                              className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <Badge variant="primary">
@@ -625,7 +625,7 @@ function ProductDescriptionsPage(): JSX.Element {
                               <h4 className="font-semibold mb-2">
                                 {desc.title}
                               </h4>
-                              <p className="text-sm text-neutral-700 whitespace-pre-wrap">
+                              <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
                                 {desc.description}
                               </p>
                               {desc.bulletPoints.length > 0 && (
@@ -640,7 +640,7 @@ function ProductDescriptionsPage(): JSX.Element {
                                   {desc.keywords.map((keyword, idx) => (
                                     <span
                                       key={idx}
-                                      className="px-2 py-0.5 text-xs bg-neutral-100 text-neutral-600 rounded"
+                                      className="px-2 py-0.5 text-xs bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded"
                                     >
                                       {keyword}
                                     </span>
@@ -662,7 +662,7 @@ function ProductDescriptionsPage(): JSX.Element {
 
       {/* Create Config Modal */}
       {showCreateConfigModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
               <h2 className="text-xl font-semibold">New Configuration</h2>
@@ -717,7 +717,7 @@ function ProductDescriptionsPage(): JSX.Element {
 
       {/* Create Product Modal */}
       {showCreateProductModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <Card className="w-full max-w-lg mx-4">
             <CardHeader>
               <h2 className="text-xl font-semibold">Add Product</h2>
@@ -740,24 +740,24 @@ function ProductDescriptionsPage(): JSX.Element {
                   placeholder="e.g., Electronics > Audio"
                 />
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                     Base Description
                   </label>
                   <textarea
                     name="baseDescription"
                     rows={3}
-                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Original product description..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                     Features (one per line)
                   </label>
                   <textarea
                     name="features"
                     rows={4}
-                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Noise cancellation&#10;40-hour battery life&#10;Bluetooth 5.0"
                   />
                 </div>

@@ -192,9 +192,9 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
       <div
         ref={menuRef}
         className={cn(
-          'fixed inset-y-0 left-0 w-64 bg-white dark:bg-neutral-800 z-50 lg:hidden',
+          'fixed inset-y-0 left-0 w-64 bg-white dark:bg-neutral-800/95 dark:backdrop-blur-sm z-50 lg:hidden',
           'transform transition-transform duration-300 ease-in-out',
-          'flex flex-col border-r border-neutral-200 dark:border-neutral-700',
+          'flex flex-col border-r border-neutral-200 dark:border-neutral-700/80',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
         role="dialog"

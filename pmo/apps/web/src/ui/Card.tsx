@@ -13,7 +13,8 @@ export function Card({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm',
+        'bg-white dark:bg-neutral-800/80 rounded-lg border border-neutral-200 dark:border-neutral-700/80 shadow-sm dark:shadow-dark-md',
+        'dark:ring-1 dark:ring-white/5',
         className,
       )}
       {...props}
@@ -98,7 +99,7 @@ export function CardFooter({
   return (
     <div
       className={cn(
-        'px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900',
+        'px-6 py-4 border-t border-neutral-200 dark:border-neutral-700/80 bg-neutral-50 dark:bg-neutral-900/50',
         className,
       )}
       {...props}

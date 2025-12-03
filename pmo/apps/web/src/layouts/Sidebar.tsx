@@ -114,7 +114,7 @@ export function Sidebar(): JSX.Element {
   };
 
   return (
-    <div className="flex flex-col w-60 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 h-full">
+    <div className="flex flex-col w-60 bg-white dark:bg-neutral-800/80 border-r border-neutral-200 dark:border-neutral-700/80 h-full">
       {/* Logo/Brand */}
       <div className="flex items-center h-16 px-4 border-b border-neutral-200 dark:border-neutral-700">
         <Link to="/dashboard" className="flex items-center gap-3 no-underline">

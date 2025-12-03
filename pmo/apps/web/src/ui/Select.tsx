@@ -40,9 +40,9 @@ export function Select({
           className={cn(
             'w-full px-4 py-2.5 rounded-lg border text-sm text-neutral-900 dark:text-neutral-100',
             'focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-500 focus:border-primary-500',
-            'disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-400',
-            'bg-white dark:bg-neutral-700 appearance-none cursor-pointer',
-            'pr-10 transition-shadow',
+            'disabled:bg-neutral-100 dark:disabled:bg-neutral-800/50 disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-400',
+            'bg-white dark:bg-neutral-900/50 appearance-none cursor-pointer',
+            'pr-10 transition-colors',
             hasError
               ? 'border-danger-300 dark:border-danger-500 focus:ring-danger-600 dark:focus:ring-danger-400'
               : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500',
