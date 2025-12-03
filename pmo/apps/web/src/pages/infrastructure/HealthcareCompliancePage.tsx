@@ -356,11 +356,15 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">HIPAA Controls</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  HIPAA Controls
+                </p>
                 <p className="text-2xl font-bold text-green-600">
                   {compliantControls}/{totalControls}
                 </p>
-                <p className="text-sm text-gray-400">Compliant</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Compliant
+                </p>
               </div>
               <Shield className="h-8 w-8 text-green-500" />
             </div>
@@ -371,11 +375,15 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">BAA Agreements</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  BAA Agreements
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {activeBaas}/{baaQuery.data?.length || 0}
                 </p>
-                <p className="text-sm text-gray-400">Active</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Active
+                </p>
               </div>
               <FileCheck className="h-8 w-8 text-blue-500" />
             </div>
@@ -386,13 +394,17 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Security Assessments</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Security Assessments
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {assessmentsQuery.data?.filter(
                     (a) => a.status === 'completed',
                   ).length || 0}
                 </p>
-                <p className="text-sm text-gray-400">Completed YTD</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Completed YTD
+                </p>
               </div>
               <Eye className="h-8 w-8 text-purple-500" />
             </div>
@@ -403,11 +415,13 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Training Compliance</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Training Compliance
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {completedTraining}/{trainingQuery.data?.length || 0}
                 </p>
-                <p className="text-sm text-orange-500">
+                <p className="text-sm text-orange-500 dark:text-orange-400">
                   {trainingQuery.data?.filter((t) => t.status === 'overdue')
                     .length || 0}{' '}
                   overdue
@@ -420,7 +434,7 @@ function HealthcareCompliancePage(): JSX.Element {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'overview', label: 'Overview', icon: Heart },
@@ -434,8 +448,8 @@ function HealthcareCompliancePage(): JSX.Element {
               onClick={() => setActiveTab(id as typeof activeTab)}
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -450,7 +464,7 @@ function HealthcareCompliancePage(): JSX.Element {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 HIPAA Implementation Checklist
               </h3>
             </CardHeader>
@@ -474,17 +488,21 @@ function HealthcareCompliancePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-gray-900' : 'text-gray-500'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-600 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
                     {item.done ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
+                      <Clock className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                     )}
                   </div>
                 ))}
@@ -494,7 +512,7 @@ function HealthcareCompliancePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Compliance by Safeguard Category
               </h3>
             </CardHeader>
@@ -509,14 +527,19 @@ function HealthcareCompliancePage(): JSX.Element {
                   { category: 'Physical Safeguards', compliant: 3, total: 3 },
                   { category: 'Technical Safeguards', compliant: 4, total: 4 },
                 ].map((item, idx) => (
-                  <div key={idx} className="p-4 bg-gray-50 rounded-lg">
+                  <div
+                    key={idx}
+                    className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg"
+                  >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">{item.category}</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {item.category}
+                      </span>
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">
                         {item.compliant}/{item.total}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
                           item.compliant === item.total
@@ -540,7 +563,7 @@ function HealthcareCompliancePage(): JSX.Element {
       {activeTab === 'controls' && (
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold">
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               HIPAA Security Rule Controls
             </h3>
           </CardHeader>
@@ -552,7 +575,7 @@ function HealthcareCompliancePage(): JSX.Element {
                 'Technical Safeguards',
               ].map((category) => (
                 <div key={category}>
-                  <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-3 flex items-center gap-2">
                     {category === 'Administrative Safeguards' && (
                       <Users className="h-4 w-4" />
                     )}
@@ -570,11 +593,13 @@ function HealthcareCompliancePage(): JSX.Element {
                       .map((control) => (
                         <div
                           key={control.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
+                          className="flex items-center justify-between p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg"
                         >
                           <div>
-                            <p className="font-medium">{control.requirement}</p>
-                            <p className="text-sm text-gray-500">
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {control.requirement}
+                            </p>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
                               Last audit:{' '}
                               {control.lastAudit
                                 ? new Date(
@@ -601,7 +626,7 @@ function HealthcareCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Business Associate Agreements
               </h3>
               <Button variant="secondary" size="sm">
@@ -612,30 +637,30 @@ function HealthcareCompliancePage(): JSX.Element {
           </CardHeader>
           <CardBody>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead className="bg-neutral-50 dark:bg-neutral-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Partner
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Signed Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Expiration
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                   {baaQuery.data?.map((baa) => (
                     <tr key={baa.partnerId}>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
                         {baa.partnerName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -643,12 +668,12 @@ function HealthcareCompliancePage(): JSX.Element {
                           {baa.status}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {baa.signedDate
                           ? new Date(baa.signedDate).toLocaleDateString()
                           : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {baa.expirationDate
                           ? new Date(baa.expirationDate).toLocaleDateString()
                           : '-'}
@@ -672,7 +697,9 @@ function HealthcareCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Security Assessments</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Security Assessments
+              </h3>
               <Button variant="secondary" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 Schedule Assessment
@@ -682,11 +709,16 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {assessmentsQuery.data?.map((assessment, idx) => (
-                <div key={idx} className="border rounded-lg p-4">
+                <div
+                  key={idx}
+                  className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="font-medium">{assessment.type}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {assessment.type}
+                      </p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         {new Date(assessment.date).toLocaleDateString()}
                       </p>
                     </div>
@@ -703,15 +735,19 @@ function HealthcareCompliancePage(): JSX.Element {
                   {assessment.status === 'completed' && (
                     <div className="flex gap-4 text-sm">
                       <span>
-                        <span className="text-gray-500">Findings:</span>{' '}
-                        <span className="font-medium">
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          Findings:
+                        </span>{' '}
+                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
                           {assessment.findings}
                         </span>
                       </span>
                       <span>
-                        <span className="text-gray-500">Critical:</span>{' '}
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          Critical:
+                        </span>{' '}
                         <span
-                          className={`font-medium ${assessment.criticalFindings > 0 ? 'text-red-500' : 'text-green-500'}`}
+                          className={`font-medium ${assessment.criticalFindings > 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`}
                         >
                           {assessment.criticalFindings}
                         </span>
@@ -730,7 +766,9 @@ function HealthcareCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">HIPAA Training Records</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                HIPAA Training Records
+              </h3>
               <Button variant="secondary" size="sm">
                 <Users className="h-4 w-4 mr-2" />
                 Assign Training
@@ -739,33 +777,33 @@ function HealthcareCompliancePage(): JSX.Element {
           </CardHeader>
           <CardBody>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead className="bg-neutral-50 dark:bg-neutral-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Employee
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Course
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Completed
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Due Date
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                   {trainingQuery.data?.map((record) => (
                     <tr key={record.userId}>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
                         {record.userName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {record.course}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -773,12 +811,12 @@ function HealthcareCompliancePage(): JSX.Element {
                           {record.status}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {record.completedDate
                           ? new Date(record.completedDate).toLocaleDateString()
                           : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {new Date(record.dueDate).toLocaleDateString()}
                       </td>
                     </tr>

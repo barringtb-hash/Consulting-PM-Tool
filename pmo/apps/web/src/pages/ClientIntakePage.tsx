@@ -91,8 +91,8 @@ function ProgressIndicator({
                       <div
                         className={`absolute right-full w-full h-0.5 -mr-8 ${
                           isCompleted || isCurrent
-                            ? 'bg-primary-600'
-                            : 'bg-neutral-200'
+                            ? 'bg-primary-600 dark:bg-primary-500'
+                            : 'bg-neutral-200 dark:bg-neutral-700'
                         }`}
                         aria-hidden="true"
                       />
@@ -100,10 +100,10 @@ function ProgressIndicator({
                     <div
                       className={`relative flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
                         isCompleted
-                          ? 'bg-primary-600 border-primary-600'
+                          ? 'bg-primary-600 dark:bg-primary-500 border-primary-600 dark:border-primary-500'
                           : isCurrent
-                            ? 'bg-white border-primary-600'
-                            : 'bg-white border-neutral-300'
+                            ? 'bg-white dark:bg-neutral-800 border-primary-600 dark:border-primary-500'
+                            : 'bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600'
                       }`}
                     >
                       {isCompleted ? (
@@ -111,7 +111,9 @@ function ProgressIndicator({
                       ) : (
                         <span
                           className={`text-sm font-semibold ${
-                            isCurrent ? 'text-primary-600' : 'text-neutral-500'
+                            isCurrent
+                              ? 'text-primary-600 dark:text-primary-400'
+                              : 'text-neutral-500 dark:text-neutral-400'
                           }`}
                         >
                           {index + 1}
@@ -123,13 +125,13 @@ function ProgressIndicator({
                     <p
                       className={`text-sm font-medium ${
                         isCompleted || isCurrent
-                          ? 'text-neutral-900'
-                          : 'text-neutral-500'
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-500 dark:text-neutral-400'
                       }`}
                     >
                       {step.label}
                     </p>
-                    <p className="text-xs text-neutral-600 mt-0.5">
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
                       {step.description}
                     </p>
                   </div>
@@ -172,7 +174,7 @@ function EngagementContextForm({
       <div>
         <label
           htmlFor="engagement-goals"
-          className="block text-sm font-medium text-neutral-700 mb-1.5"
+          className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5"
         >
           High-level goals
         </label>
@@ -182,14 +184,14 @@ function EngagementContextForm({
           onChange={(e) => handleChange('goals', e.target.value)}
           placeholder="What are the main objectives for this engagement?"
           rows={4}
-          className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600"
+          className="w-full px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600 dark:focus:ring-primary-500"
         />
       </div>
 
       <div>
         <label
           htmlFor="engagement-project-idea"
-          className="block text-sm font-medium text-neutral-700 mb-1.5"
+          className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5"
         >
           Initial project idea
         </label>
@@ -199,14 +201,14 @@ function EngagementContextForm({
           onChange={(e) => handleChange('projectIdea', e.target.value)}
           placeholder="Describe any initial project concepts or areas of interest"
           rows={4}
-          className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600"
+          className="w-full px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600 dark:focus:ring-primary-500"
         />
       </div>
 
       <div>
         <label
           htmlFor="engagement-constraints"
-          className="block text-sm font-medium text-neutral-700 mb-1.5"
+          className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5"
         >
           Important constraints
         </label>
@@ -216,7 +218,7 @@ function EngagementContextForm({
           onChange={(e) => handleChange('constraints', e.target.value)}
           placeholder="Any timeline, budget, or technical constraints to be aware of?"
           rows={4}
-          className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600"
+          className="w-full px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600 dark:focus:ring-primary-500"
         />
       </div>
 
@@ -334,7 +336,7 @@ function ClientIntakePage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Client Intake"
         description="Capture key information about your new client in a few simple steps."
@@ -342,7 +344,7 @@ function ClientIntakePage(): JSX.Element {
 
       <main className="container-padding py-6">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-8">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-8">
             <ProgressIndicator
               currentStep={step}
               completedSteps={completedSteps}
@@ -350,10 +352,10 @@ function ClientIntakePage(): JSX.Element {
 
             {step === 'client' && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                   Step 1: Organization Basics
                 </h2>
-                <p className="text-sm text-neutral-600 mb-6">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
                   Tell us about the organization you&apos;ll be working with.
                 </p>
                 <ClientForm
@@ -368,10 +370,10 @@ function ClientIntakePage(): JSX.Element {
 
             {step === 'contact' && client && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                   Step 2: Primary Contact
                 </h2>
-                <p className="text-sm text-neutral-600 mb-6">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
                   Add the primary stakeholder for {client.name}. You can skip
                   this step if needed.
                 </p>
@@ -388,10 +390,10 @@ function ClientIntakePage(): JSX.Element {
 
             {step === 'engagement' && client && (
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                   Step 3: Engagement Context
                 </h2>
-                <p className="text-sm text-neutral-600 mb-6">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
                   Provide high-level context about this engagement. This helps
                   inform future project planning.
                 </p>

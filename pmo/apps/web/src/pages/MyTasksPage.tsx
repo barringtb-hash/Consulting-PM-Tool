@@ -198,18 +198,18 @@ function MyTasksPage(): JSX.Element {
   );
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="My Tasks"
         description="Track and manage tasks across all your projects."
         actions={
-          <div className="flex items-center gap-2 bg-white rounded-lg border border-neutral-200 p-1">
+          <div className="flex items-center gap-2 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-1">
             <button
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 viewMode === 'list'
                   ? 'bg-primary-100 text-primary-700'
-                  : 'text-neutral-600 hover:text-neutral-900'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
               }`}
               aria-label="List view"
             >
@@ -221,7 +221,7 @@ function MyTasksPage(): JSX.Element {
               className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 viewMode === 'board'
                   ? 'bg-primary-100 text-primary-700'
-                  : 'text-neutral-600 hover:text-neutral-900'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
               }`}
               aria-label="Board view"
             >
@@ -234,9 +234,11 @@ function MyTasksPage(): JSX.Element {
 
       <main className="container-padding py-6 space-y-6">
         {/* Filter Section */}
-        <section className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6">
+        <section className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900">Filters</h2>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Filters
+            </h2>
             {activeFilterCount > 0 && (
               <Button variant="subtle" size="sm" onClick={clearFilters}>
                 Clear filters ({activeFilterCount})
@@ -313,7 +315,9 @@ function MyTasksPage(): JSX.Element {
           {/* Active Filters Display */}
           {activeFilterCount > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="text-sm text-neutral-600">Active filters:</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                Active filters:
+              </span>
               {filters.projectId && selectedProject && (
                 <Badge variant="primary">Project: {selectedProject.name}</Badge>
               )}
@@ -339,15 +343,15 @@ function MyTasksPage(): JSX.Element {
           className={
             viewMode === 'board'
               ? ''
-              : 'bg-white rounded-lg border border-neutral-200 shadow-sm'
+              : 'bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm'
           }
         >
           {viewMode === 'list' && (
-            <div className="px-6 py-4 border-b border-neutral-200">
-              <h2 className="text-lg font-semibold text-neutral-900">
+            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Tasks
                 {filteredTasks.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-neutral-600">
+                  <span className="ml-2 text-sm font-normal text-neutral-600 dark:text-neutral-400">
                     ({filteredTasks.length}{' '}
                     {filteredTasks.length === 1 ? 'task' : 'tasks'})
                   </span>
@@ -363,7 +367,7 @@ function MyTasksPage(): JSX.Element {
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
-                    className="h-16 bg-neutral-100 animate-pulse rounded"
+                    className="h-16 bg-neutral-100 dark:bg-neutral-700 animate-pulse rounded"
                   />
                 ))}
               </div>
@@ -374,11 +378,11 @@ function MyTasksPage(): JSX.Element {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[1, 2, 3, 4].map((col) => (
                   <div key={col} className="space-y-3">
-                    <div className="h-8 bg-neutral-200 animate-pulse rounded" />
+                    <div className="h-8 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
                     {[1, 2, 3].map((card) => (
                       <div
                         key={card}
-                        className="h-24 bg-neutral-100 animate-pulse rounded"
+                        className="h-24 bg-neutral-100 dark:bg-neutral-700 animate-pulse rounded"
                       />
                     ))}
                   </div>
@@ -409,7 +413,7 @@ function MyTasksPage(): JSX.Element {
                 <p className="text-danger-600 font-medium" role="alert">
                   Unable to load tasks
                 </p>
-                <p className="text-neutral-600 text-sm mt-1">
+                <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
                   Please try refreshing the page or contact support if the
                   problem persists.
                 </p>
@@ -423,9 +427,9 @@ function MyTasksPage(): JSX.Element {
             filteredTasks.length === 0 && (
               <div className="px-6 py-12">
                 <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 mb-4">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-700 mb-4">
                     <svg
-                      className="w-6 h-6 text-neutral-400"
+                      className="w-6 h-6 text-neutral-400 dark:text-neutral-500"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -440,20 +444,20 @@ function MyTasksPage(): JSX.Element {
                   </div>
                   {activeFilterCount > 0 ? (
                     <>
-                      <p className="text-neutral-900 font-medium">
+                      <p className="text-neutral-900 dark:text-neutral-100 font-medium">
                         No tasks match your filters
                       </p>
-                      <p className="text-neutral-600 text-sm mt-1">
+                      <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
                         Try adjusting or clearing your filters to see more
                         tasks.
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-neutral-900 font-medium">
+                      <p className="text-neutral-900 dark:text-neutral-100 font-medium">
                         {EMPTY_STATES.noTasks}
                       </p>
-                      <p className="text-neutral-600 text-sm mt-1">
+                      <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
                         Tasks are created within projects. Visit a project to
                         create your first task.
                       </p>
@@ -470,36 +474,36 @@ function MyTasksPage(): JSX.Element {
             filteredTasks.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-neutral-50 border-b border-neutral-200">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider w-8">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider w-8">
                         Done
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                         Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                         Project
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                         Priority
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                         Due Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-neutral-200">
+                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                     {filteredTasks.map((task) => (
                       <tr
                         key={task.id}
-                        className="hover:bg-neutral-50 transition-colors"
+                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                       >
                         <td className="px-6 py-4">
                           <Checkbox
@@ -513,8 +517,8 @@ function MyTasksPage(): JSX.Element {
                             <p
                               className={`text-sm font-medium ${
                                 task.status === 'DONE'
-                                  ? 'line-through text-neutral-500'
-                                  : 'text-neutral-900'
+                                  ? 'line-through text-neutral-500 dark:text-neutral-400'
+                                  : 'text-neutral-900 dark:text-neutral-100'
                               }`}
                               title={task.title}
                             >
@@ -522,7 +526,7 @@ function MyTasksPage(): JSX.Element {
                             </p>
                             {task.description && (
                               <p
-                                className="text-xs text-neutral-600 mt-1 line-clamp-2"
+                                className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2"
                                 title={task.description}
                               >
                                 {task.description}
@@ -553,7 +557,7 @@ function MyTasksPage(): JSX.Element {
                                   e.target.value as TaskStatus,
                                 )
                               }
-                              className="text-xs border border-neutral-300 bg-white rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-600"
+                              className="text-xs border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-600"
                               aria-label={`Change status for task "${task.title}"`}
                             >
                               {TASK_STATUSES.map((status) => (
@@ -571,7 +575,7 @@ function MyTasksPage(): JSX.Element {
                             {task.priority ?? 'None'}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {formatDate(task.dueDate)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">

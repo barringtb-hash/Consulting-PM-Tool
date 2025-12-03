@@ -322,7 +322,7 @@ function SchedulingPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="AI Scheduling"
         description="Smart appointment scheduling with no-show prediction and automated reminders"
@@ -393,7 +393,7 @@ function SchedulingPage(): JSX.Element {
 
         {/* Tab Navigation */}
         {selectedConfig && (
-          <div className="flex gap-2 border-b border-neutral-200">
+          <div className="flex gap-2 border-b border-neutral-200 dark:border-neutral-700">
             {[
               { id: 'calendar', label: 'Calendar', icon: Calendar },
               { id: 'appointments', label: 'Appointments', icon: Clock },
@@ -405,8 +405,8 @@ function SchedulingPage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
                   activeTab === id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -421,8 +421,8 @@ function SchedulingPage(): JSX.Element {
           <Card>
             <CardBody>
               <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                <p className="text-neutral-600">
+                <Calendar className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mx-auto mb-4" />
+                <p className="text-neutral-600 dark:text-neutral-400">
                   Select a scheduling configuration to view appointments, or
                   create a new one.
                 </p>
@@ -433,16 +433,16 @@ function SchedulingPage(): JSX.Element {
           <>
             {/* High Risk Alert */}
             {highRiskAppointments.length > 0 && activeTab !== 'analytics' && (
-              <Card className="border-orange-200 bg-orange-50">
+              <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
                 <CardBody>
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-orange-500" />
+                    <AlertTriangle className="w-5 h-5 text-orange-500 dark:text-orange-400" />
                     <div>
-                      <p className="font-medium text-orange-800">
+                      <p className="font-medium text-orange-800 dark:text-orange-200">
                         {highRiskAppointments.length} appointments with high
                         no-show risk
                       </p>
-                      <p className="text-sm text-orange-600">
+                      <p className="text-sm text-orange-600 dark:text-orange-300">
                         Consider sending additional reminders or confirming
                         these appointments.
                       </p>
@@ -471,11 +471,11 @@ function SchedulingPage(): JSX.Element {
                     </CardHeader>
                     <CardBody>
                       {appointmentsQuery.isLoading ? (
-                        <p className="text-center text-neutral-500 py-8">
+                        <p className="text-center text-neutral-500 dark:text-neutral-400 py-8">
                           Loading...
                         </p>
                       ) : appointments.length === 0 ? (
-                        <p className="text-center text-neutral-500 py-8">
+                        <p className="text-center text-neutral-500 dark:text-neutral-400 py-8">
                           No appointments scheduled for this date.
                         </p>
                       ) : (
@@ -486,14 +486,14 @@ function SchedulingPage(): JSX.Element {
                               className={`p-4 rounded-lg border ${
                                 appt.noShowRiskScore &&
                                 appt.noShowRiskScore > 0.5
-                                  ? 'border-orange-200 bg-orange-50'
-                                  : 'border-neutral-200 bg-white'
+                                  ? 'border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20'
+                                  : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800'
                               }`}
                             >
                               <div className="flex items-start justify-between">
                                 <div>
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium">
+                                    <span className="font-medium text-neutral-900 dark:text-neutral-100">
                                       {appt.patientName}
                                     </span>
                                     <Badge
@@ -514,17 +514,17 @@ function SchedulingPage(): JSX.Element {
                                         </Badge>
                                       )}
                                   </div>
-                                  <p className="text-sm text-neutral-600">
+                                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
                                     {formatTime(appt.scheduledAt)} (
                                     {appt.durationMinutes} min)
                                   </p>
                                   {appt.provider && (
-                                    <p className="text-sm text-neutral-500">
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
                                       Provider: {appt.provider.name}
                                     </p>
                                   )}
                                   {appt.appointmentType && (
-                                    <p className="text-sm text-neutral-500">
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
                                       Type: {appt.appointmentType.name}
                                     </p>
                                   )}
@@ -576,14 +576,18 @@ function SchedulingPage(): JSX.Element {
                     <CardBody>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-neutral-600">Total Today</span>
-                          <span className="font-semibold">
+                          <span className="text-neutral-600 dark:text-neutral-400">
+                            Total Today
+                          </span>
+                          <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                             {appointments.length}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-neutral-600">Confirmed</span>
-                          <span className="font-semibold text-green-600">
+                          <span className="text-neutral-600 dark:text-neutral-400">
+                            Confirmed
+                          </span>
+                          <span className="font-semibold text-green-600 dark:text-green-400">
                             {
                               appointments.filter(
                                 (a) => a.status === 'CONFIRMED',
@@ -592,8 +596,10 @@ function SchedulingPage(): JSX.Element {
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-neutral-600">Pending</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="text-neutral-600 dark:text-neutral-400">
+                            Pending
+                          </span>
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">
                             {
                               appointments.filter(
                                 (a) => a.status === 'SCHEDULED',
@@ -602,8 +608,10 @@ function SchedulingPage(): JSX.Element {
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-neutral-600">High Risk</span>
-                          <span className="font-semibold text-orange-600">
+                          <span className="text-neutral-600 dark:text-neutral-400">
+                            High Risk
+                          </span>
+                          <span className="font-semibold text-orange-600 dark:text-orange-400">
                             {highRiskAppointments.length}
                           </span>
                         </div>
@@ -617,7 +625,7 @@ function SchedulingPage(): JSX.Element {
                     </CardHeader>
                     <CardBody>
                       {providers.length === 0 ? (
-                        <p className="text-sm text-neutral-500">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
                           No providers configured.
                         </p>
                       ) : (
@@ -627,8 +635,10 @@ function SchedulingPage(): JSX.Element {
                               key={provider.id}
                               className="flex items-center gap-2 text-sm"
                             >
-                              <User className="w-4 h-4 text-neutral-400" />
-                              <span>{provider.name}</span>
+                              <User className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                              <span className="text-neutral-900 dark:text-neutral-100">
+                                {provider.name}
+                              </span>
                               {provider.specialty && (
                                 <Badge variant="neutral" className="text-xs">
                                   {provider.specialty}
@@ -681,7 +691,7 @@ function SchedulingPage(): JSX.Element {
                 {appointmentsQuery.isLoading ? (
                   <Card>
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         Loading appointments...
                       </p>
                     </CardBody>
@@ -689,7 +699,7 @@ function SchedulingPage(): JSX.Element {
                 ) : appointments.length === 0 ? (
                   <Card>
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         No appointments found.
                       </p>
                     </CardBody>
@@ -701,7 +711,7 @@ function SchedulingPage(): JSX.Element {
                         <div className="flex items-start justify-between">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">
+                              <span className="font-medium text-neutral-900 dark:text-neutral-100">
                                 {appt.patientName}
                               </span>
                               <Badge
@@ -712,10 +722,10 @@ function SchedulingPage(): JSX.Element {
                                 {appt.status.replace('_', ' ')}
                               </Badge>
                             </div>
-                            <p className="text-sm text-neutral-600">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
                               {new Date(appt.scheduledAt).toLocaleString()}
                             </p>
-                            <p className="text-sm text-neutral-500">
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
                               {appt.provider?.name} -{' '}
                               {appt.appointmentType?.name}
                             </p>
@@ -742,7 +752,7 @@ function SchedulingPage(): JSX.Element {
                 </CardHeader>
                 <CardBody>
                   {providers.length === 0 ? (
-                    <p className="text-center text-neutral-500 py-8">
+                    <p className="text-center text-neutral-500 dark:text-neutral-400 py-8">
                       No providers configured. Add providers to enable
                       scheduling.
                     </p>
@@ -751,16 +761,18 @@ function SchedulingPage(): JSX.Element {
                       {providers.map((provider) => (
                         <div
                           key={provider.id}
-                          className="flex items-center justify-between p-4 border rounded-lg"
+                          className="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                              <User className="w-5 h-5 text-primary-600" />
+                            <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                              <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                             </div>
                             <div>
-                              <p className="font-medium">{provider.name}</p>
+                              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                                {provider.name}
+                              </p>
                               {provider.specialty && (
-                                <p className="text-sm text-neutral-500">
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
                                   {provider.specialty}
                                 </p>
                               )}
@@ -784,38 +796,40 @@ function SchedulingPage(): JSX.Element {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                   <CardBody>
-                    <p className="text-3xl font-bold text-primary-600">
+                    <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
                       {selectedConfig._count?.appointments ?? 0}
                     </p>
-                    <p className="text-sm text-neutral-600">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       Total Appointments
                     </p>
                   </CardBody>
                 </Card>
                 <Card>
                   <CardBody>
-                    <p className="text-3xl font-bold text-primary-600">
+                    <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
                       {selectedConfig._count?.providers ?? 0}
                     </p>
-                    <p className="text-sm text-neutral-600">Active Providers</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Active Providers
+                    </p>
                   </CardBody>
                 </Card>
                 <Card>
                   <CardBody>
-                    <p className="text-3xl font-bold text-primary-600">
+                    <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
                       {selectedConfig._count?.appointmentTypes ?? 0}
                     </p>
-                    <p className="text-sm text-neutral-600">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       Appointment Types
                     </p>
                   </CardBody>
                 </Card>
                 <Card>
                   <CardBody>
-                    <p className="text-3xl font-bold text-orange-600">
+                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                       {highRiskAppointments.length}
                     </p>
-                    <p className="text-sm text-neutral-600">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       High-Risk (Today)
                     </p>
                   </CardBody>
@@ -885,7 +899,7 @@ function SchedulingPage(): JSX.Element {
               <h2 className="text-xl font-semibold">Book Appointment</h2>
             </CardHeader>
             <CardBody>
-              <p className="text-neutral-500 text-center py-8">
+              <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">
                 Appointment booking form coming soon. Configure providers and
                 appointment types first.
               </p>

@@ -290,8 +290,8 @@ function GeneralCompliancePage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">
+                  <MapPin className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
                     {framework.region}
                   </span>
                 </div>
@@ -299,10 +299,14 @@ function GeneralCompliancePage(): JSX.Element {
                   {framework.status}
                 </Badge>
               </div>
-              <p className="text-lg font-bold">{framework.shortName}</p>
-              <p className="text-xs text-gray-400 mb-2">{framework.name}</p>
+              <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                {framework.shortName}
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                {framework.name}
+              </p>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">
+                <span className="text-neutral-600 dark:text-neutral-400">
                   {framework.requirementsCompliant}/
                   {framework.requirementsTotal} requirements
                 </span>
@@ -314,11 +318,15 @@ function GeneralCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Pending DSRs</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Pending DSRs
+                </p>
                 <p className="text-2xl font-bold text-orange-500">
                   {pendingRequests}
                 </p>
-                <p className="text-sm text-gray-400">requests open</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  requests open
+                </p>
               </div>
               <Users className="h-8 w-8 text-orange-500" />
             </div>
@@ -328,11 +336,15 @@ function GeneralCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Avg Opt-In Rate</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Avg Opt-In Rate
+                </p>
                 <p className="text-2xl font-bold text-green-600">
                   {avgOptInRate}%
                 </p>
-                <p className="text-sm text-gray-400">across all purposes</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  across all purposes
+                </p>
               </div>
               <Bell className="h-8 w-8 text-green-500" />
             </div>
@@ -341,7 +353,7 @@ function GeneralCompliancePage(): JSX.Element {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'overview', label: 'Overview', icon: Globe },
@@ -354,8 +366,8 @@ function GeneralCompliancePage(): JSX.Element {
               onClick={() => setActiveTab(id as typeof activeTab)}
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -370,7 +382,7 @@ function GeneralCompliancePage(): JSX.Element {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 GDPR Implementation Checklist
               </h3>
             </CardHeader>
@@ -390,17 +402,21 @@ function GeneralCompliancePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-gray-900' : 'text-gray-500'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-600 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
                     {item.done ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
+                      <Clock className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                     )}
                   </div>
                 ))}
@@ -410,7 +426,7 @@ function GeneralCompliancePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 CCPA Implementation Checklist
               </h3>
             </CardHeader>
@@ -428,17 +444,21 @@ function GeneralCompliancePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-gray-900' : 'text-gray-500'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-600 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
                     {item.done ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
+                      <Clock className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                     )}
                   </div>
                 ))}
@@ -453,7 +473,9 @@ function GeneralCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Data Subject Requests</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Data Subject Requests
+              </h3>
               <Button variant="secondary" size="sm">
                 <FileText className="h-4 w-4 mr-2" />
                 New Request
@@ -462,36 +484,36 @@ function GeneralCompliancePage(): JSX.Element {
           </CardHeader>
           <CardBody>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead className="bg-neutral-50 dark:bg-neutral-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Requester
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Submitted
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Due Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                   {requestsQuery.data?.map((request) => (
                     <tr key={request.id}>
-                      <td className="px-6 py-4 whitespace-nowrap font-mono text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-neutral-900 dark:text-neutral-100">
                         {request.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -508,12 +530,12 @@ function GeneralCompliancePage(): JSX.Element {
                           {request.type === 'opt-out' && (
                             <UserX className="h-4 w-4 text-orange-400 mr-2" />
                           )}
-                          <span className="text-sm">
+                          <span className="text-sm text-neutral-900 dark:text-neutral-100">
                             {REQUEST_TYPE_LABELS[request.type]}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {request.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -521,10 +543,10 @@ function GeneralCompliancePage(): JSX.Element {
                           {request.status}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {new Date(request.submittedDate).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {new Date(request.dueDate).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -546,7 +568,7 @@ function GeneralCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Consent Records by Purpose
               </h3>
               <Button variant="secondary" size="sm">
@@ -558,11 +580,16 @@ function GeneralCompliancePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {consentQuery.data?.map((consent) => (
-                <div key={consent.id} className="border rounded-lg p-4">
+                <div
+                  key={consent.id}
+                  className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="font-medium">{consent.purpose}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {consent.purpose}
+                      </p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         {consent.category}
                       </p>
                     </div>
@@ -570,9 +597,11 @@ function GeneralCompliancePage(): JSX.Element {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Opt-In Rate</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Opt-In Rate
+                      </p>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div className="flex-1 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                           <div
                             className={`h-2 rounded-full ${
                               consent.optInRate > 50
@@ -582,20 +611,24 @@ function GeneralCompliancePage(): JSX.Element {
                             style={{ width: `${consent.optInRate}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                           {consent.optInRate}%
                         </span>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Total Consents</p>
-                      <p className="font-semibold">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Total Consents
+                      </p>
+                      <p className="font-semibold text-neutral-900 dark:text-neutral-100">
                         {consent.totalConsents.toLocaleString()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Last Updated</p>
-                      <p className="font-medium">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Last Updated
+                      </p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
                         {new Date(consent.lastUpdated).toLocaleDateString()}
                       </p>
                     </div>
@@ -612,7 +645,7 @@ function GeneralCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Data Processing Inventory
               </h3>
               <Button variant="secondary" size="sm">
@@ -623,36 +656,36 @@ function GeneralCompliancePage(): JSX.Element {
           </CardHeader>
           <CardBody>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead className="bg-neutral-50 dark:bg-neutral-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Data Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Purpose
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Retention
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Third-Party
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase">
                       Cross-Border
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                   {dataMappingQuery.data?.map((mapping) => (
                     <tr key={mapping.id}>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
                         {mapping.dataCategory}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {mapping.purpose}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                         {mapping.retentionPeriod}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

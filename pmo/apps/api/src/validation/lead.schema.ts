@@ -38,6 +38,7 @@ export const leadConvertSchema = z.object({
   projectName: z.string().optional(),
   pipelineStage: z.string().optional(),
   pipelineValue: z.number().optional(),
+  ownerId: z.number().int().positive().optional(),
 });
 
 export const publicLeadCreateSchema = z.object({

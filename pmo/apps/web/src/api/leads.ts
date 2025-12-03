@@ -99,6 +99,7 @@ export interface LeadConversionPayload {
   projectName?: string;
   pipelineStage?: string;
   pipelineValue?: number;
+  ownerId?: number;
 }
 
 export interface LeadConversionResult {

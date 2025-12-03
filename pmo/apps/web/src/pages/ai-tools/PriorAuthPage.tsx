@@ -371,7 +371,7 @@ function PriorAuthPage(): JSX.Element {
 
       {/* Tabs */}
       {selectedConfigId && (
-        <div className="border-b border-gray-200">
+        <div className="border-b border-neutral-200 dark:border-neutral-700">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: ShieldCheck },
@@ -384,8 +384,8 @@ function PriorAuthPage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -403,7 +403,9 @@ function PriorAuthPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Practice</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Practice
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.practiceName || 'Not set'}
                   </p>
@@ -416,7 +418,9 @@ function PriorAuthPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">NPI</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    NPI
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.practiceNPI || 'Not set'}
                   </p>
@@ -429,7 +433,9 @@ function PriorAuthPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">EHR System</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    EHR System
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.ehrSystem || 'Not connected'}
                   </p>
@@ -442,7 +448,9 @@ function PriorAuthPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">HIPAA</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    HIPAA
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.isHipaaEnabled ? 'Enabled' : 'Disabled'}
                   </p>
@@ -472,42 +480,42 @@ function PriorAuthPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {requestsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading requests...
               </div>
             ) : requestsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No PA requests found. Create your first request to get started.
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Request #
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Patient
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Payer
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Service
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Urgency
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                     {requestsQuery.data?.map((request) => (
                       <tr key={request.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
@@ -516,7 +524,7 @@ function PriorAuthPage(): JSX.Element {
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {request.patientName}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {request.payerName}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -600,43 +608,55 @@ function PriorAuthPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-center p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                   <div className="text-3xl font-bold">
                     {analyticsQuery.data.summary.totalRequests}
                   </div>
-                  <div className="text-sm text-gray-500">Total Requests</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Total Requests
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600">
+                <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                     {analyticsQuery.data.summary.approvedRequests}
                   </div>
-                  <div className="text-sm text-gray-500">Approved</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Approved
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-3xl font-bold text-red-600">
+                <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                  <div className="text-3xl font-bold text-red-600 dark:text-red-400">
                     {analyticsQuery.data.summary.deniedRequests}
                   </div>
-                  <div className="text-sm text-gray-500">Denied</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Denied
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-3xl font-bold text-yellow-600">
+                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
+                  <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                     {analyticsQuery.data.summary.pendingRequests}
                   </div>
-                  <div className="text-sm text-gray-500">Pending</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Pending
+                  </div>
                 </div>
               </div>
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg text-center">
-                <div className="text-4xl font-bold text-blue-600">
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-center">
+                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                   {analyticsQuery.data.summary.approvalRate}%
                 </div>
-                <div className="text-sm text-gray-500">Approval Rate</div>
+                <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Approval Rate
+                </div>
               </div>
               {analyticsQuery.data.summary.avgTurnaround !== null && (
-                <div className="mt-4 p-4 bg-purple-50 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-purple-600">
+                <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                     {analyticsQuery.data.summary.avgTurnaround.toFixed(1)} days
                   </div>
-                  <div className="text-sm text-gray-500">Avg. Turnaround</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Avg. Turnaround
+                  </div>
                 </div>
               )}
             </CardBody>
@@ -648,7 +668,7 @@ function PriorAuthPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {Object.keys(analyticsQuery.data.denialReasons).length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                   No denials recorded yet.
                 </div>
               ) : (
@@ -657,7 +677,7 @@ function PriorAuthPage(): JSX.Element {
                     ([reason, count]) => (
                       <div
                         key={reason}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg"
                       >
                         <span className="text-sm">
                           {reason.replace(/_/g, ' ')}
@@ -676,7 +696,7 @@ function PriorAuthPage(): JSX.Element {
       {/* Create Configuration Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-4">
               Create Prior Auth Configuration
             </h2>

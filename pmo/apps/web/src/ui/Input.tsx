@@ -36,9 +36,10 @@ export function Input({
         id={inputId}
         className={cn(
           'w-full px-3 py-2 rounded-lg border text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
-          'bg-white dark:bg-neutral-700',
+          'bg-white dark:bg-neutral-900/50',
           'focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-600 dark:focus:ring-primary-400',
-          'disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-400',
+          'disabled:bg-neutral-100 dark:disabled:bg-neutral-800/50 disabled:cursor-not-allowed disabled:text-neutral-500 dark:disabled:text-neutral-400',
+          'transition-colors',
           hasError
             ? 'border-danger-300 dark:border-danger-500 focus:ring-danger-600 dark:focus:ring-danger-400'
             : 'border-neutral-300 dark:border-neutral-600',

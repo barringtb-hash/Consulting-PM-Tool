@@ -147,7 +147,7 @@ function CoreInfrastructurePage(): JSX.Element {
     }).format(amount);
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 space-y-6">
       <PageHeader
         title="Core Infrastructure"
         subtitle="INF.1 - Authentication, API Gateway, Audit Logging, and Billing"
@@ -166,7 +166,9 @@ function CoreInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Authentication</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Authentication
+                </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge
                     variant={STATUS_VARIANTS[authQuery.data?.status || 'down']}
@@ -174,7 +176,7 @@ function CoreInfrastructurePage(): JSX.Element {
                     {authQuery.data?.status || 'loading'}
                   </Badge>
                 </div>
-                <p className="text-lg font-semibold mt-1">
+                <p className="text-lg font-semibold mt-1 text-neutral-900 dark:text-neutral-100">
                   {authQuery.data?.activeSessions || 0} sessions
                 </p>
               </div>
@@ -187,7 +189,9 @@ function CoreInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">API Gateway</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  API Gateway
+                </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge
                     variant={STATUS_VARIANTS[apiQuery.data?.status || 'down']}
@@ -195,7 +199,7 @@ function CoreInfrastructurePage(): JSX.Element {
                     {apiQuery.data?.status || 'loading'}
                   </Badge>
                 </div>
-                <p className="text-lg font-semibold mt-1">
+                <p className="text-lg font-semibold mt-1 text-neutral-900 dark:text-neutral-100">
                   {apiQuery.data?.avgResponseTime || 0}ms avg
                 </p>
               </div>
@@ -208,8 +212,10 @@ function CoreInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Audit Logs (24h)</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Audit Logs (24h)
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {auditQuery.data?.totalLogs24h?.toLocaleString() || 0}
                 </p>
                 <p className="text-sm text-orange-500">
@@ -225,11 +231,13 @@ function CoreInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Monthly Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Monthly Revenue
+                </p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-500">
                   {formatCurrency(billingQuery.data?.mrr || 0)}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   {billingQuery.data?.activeSubscriptions || 0} subscriptions
                 </p>
               </div>
@@ -240,7 +248,7 @@ function CoreInfrastructurePage(): JSX.Element {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'overview', label: 'Overview', icon: Server },
@@ -254,8 +262,8 @@ function CoreInfrastructurePage(): JSX.Element {
               onClick={() => setActiveTab(id as typeof activeTab)}
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -270,7 +278,7 @@ function CoreInfrastructurePage(): JSX.Element {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Infrastructure Checklist
               </h3>
             </CardHeader>
@@ -291,17 +299,21 @@ function CoreInfrastructurePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-gray-900' : 'text-gray-500'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-500 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
                     {item.done ? (
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
+                      <Clock className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                     )}
                   </div>
                 ))}
@@ -311,7 +323,9 @@ function CoreInfrastructurePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">System Health</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                System Health
+              </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
@@ -328,7 +342,7 @@ function CoreInfrastructurePage(): JSX.Element {
                 ].map((service, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -340,9 +354,11 @@ function CoreInfrastructurePage(): JSX.Element {
                               : 'bg-red-500'
                         }`}
                       />
-                      <span className="font-medium">{service.name}</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {service.name}
+                      </span>
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {service.uptime}
                     </span>
                   </div>
@@ -358,28 +374,34 @@ function CoreInfrastructurePage(): JSX.Element {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Authentication Configuration
               </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-gray-600">Authentication Provider</span>
-                  <span className="font-medium">
+                <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Authentication Provider
+                  </span>
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
                     {authQuery.data?.provider}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-gray-600">MFA Status</span>
+                <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    MFA Status
+                  </span>
                   <Badge
                     variant={authQuery.data?.mfaEnabled ? 'success' : 'warning'}
                   >
                     {authQuery.data?.mfaEnabled ? 'Enabled' : 'Disabled'}
                   </Badge>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-gray-600">SSO Integration</span>
+                <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    SSO Integration
+                  </span>
                   <Badge
                     variant={
                       authQuery.data?.ssoConfigured ? 'success' : 'neutral'
@@ -391,8 +413,10 @@ function CoreInfrastructurePage(): JSX.Element {
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">Active Sessions</span>
-                  <span className="font-medium">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Active Sessions
+                  </span>
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
                     {authQuery.data?.activeSessions}
                   </span>
                 </div>
@@ -402,7 +426,9 @@ function CoreInfrastructurePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">Security Features</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Security Features
+              </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-3">
@@ -422,9 +448,11 @@ function CoreInfrastructurePage(): JSX.Element {
                       {item.enabled ? (
                         <Lock className="h-4 w-4 text-green-500" />
                       ) : (
-                        <AlertCircle className="h-4 w-4 text-gray-400" />
+                        <AlertCircle className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
                       )}
-                      <span>{item.feature}</span>
+                      <span className="text-neutral-900 dark:text-neutral-100">
+                        {item.feature}
+                      </span>
                     </div>
                     <Badge variant={item.enabled ? 'success' : 'neutral'}>
                       {item.enabled ? 'Active' : 'Pending'}
@@ -443,23 +471,29 @@ function CoreInfrastructurePage(): JSX.Element {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Requests (24h)</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Requests (24h)
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {apiQuery.data?.totalRequests24h?.toLocaleString()}
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Avg Response Time</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Avg Response Time
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {apiQuery.data?.avgResponseTime}ms
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Error Rate</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Error Rate
+                </p>
                 <p className="text-2xl font-bold text-red-500">
                   {apiQuery.data?.errorRate}%
                 </p>
@@ -467,8 +501,10 @@ function CoreInfrastructurePage(): JSX.Element {
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Active Routes</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Active Routes
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {apiQuery.data?.activeRoutes}
                 </p>
               </CardBody>
@@ -478,7 +514,9 @@ function CoreInfrastructurePage(): JSX.Element {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">API Gateway Features</h3>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  API Gateway Features
+                </h3>
                 <Button variant="secondary" size="sm">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
@@ -505,12 +543,14 @@ function CoreInfrastructurePage(): JSX.Element {
                 ].map((feature, idx) => (
                   <div
                     key={idx}
-                    className="p-4 border rounded-lg flex items-center justify-between"
+                    className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg flex items-center justify-between"
                   >
                     <div>
-                      <p className="font-medium">{feature.name}</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {feature.name}
+                      </p>
                       {feature.hits !== null && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           {feature.hits} rate limit hits (24h)
                         </p>
                       )}
@@ -530,15 +570,19 @@ function CoreInfrastructurePage(): JSX.Element {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Total Logs (24h)</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Total Logs (24h)
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {auditQuery.data?.totalLogs24h?.toLocaleString()}
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Critical Events</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Critical Events
+                </p>
                 <p className="text-2xl font-bold text-red-500">
                   {auditQuery.data?.criticalEvents}
                 </p>
@@ -546,16 +590,20 @@ function CoreInfrastructurePage(): JSX.Element {
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Compliance Events</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Compliance Events
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {auditQuery.data?.complianceEvents}
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Retention Period</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Retention Period
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {auditQuery.data?.retentionDays} days
                 </p>
               </CardBody>
@@ -564,7 +612,9 @@ function CoreInfrastructurePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">Audit Log Configuration</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Audit Log Configuration
+              </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
@@ -579,9 +629,11 @@ function CoreInfrastructurePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
-                    <span>{item.name}</span>
+                    <span className="text-neutral-900 dark:text-neutral-100">
+                      {item.name}
+                    </span>
                     <Badge variant={item.enabled ? 'success' : 'neutral'}>
                       {item.enabled ? 'Enabled' : 'Pending'}
                     </Badge>
@@ -599,31 +651,39 @@ function CoreInfrastructurePage(): JSX.Element {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Active Subscriptions</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Active Subscriptions
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {billingQuery.data?.activeSubscriptions}
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Monthly Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Monthly Revenue
+                </p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-500">
                   {formatCurrency(billingQuery.data?.mrr || 0)}
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Pending Invoices</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Pending Invoices
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {billingQuery.data?.pendingInvoices}
                 </p>
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <p className="text-sm text-gray-500">Failed Payments</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Failed Payments
+                </p>
                 <p className="text-2xl font-bold text-red-500">
                   {billingQuery.data?.failedPayments}
                 </p>
@@ -633,13 +693,17 @@ function CoreInfrastructurePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">Billing Configuration</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Billing Configuration
+              </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-gray-600">Payment Processor</span>
-                  <span className="font-medium">
+                <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-neutral-700">
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Payment Processor
+                  </span>
+                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
                     {billingQuery.data?.paymentProcessor}
                   </span>
                 </div>
@@ -653,9 +717,11 @@ function CoreInfrastructurePage(): JSX.Element {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
-                    <span>{item.name}</span>
+                    <span className="text-neutral-900 dark:text-neutral-100">
+                      {item.name}
+                    </span>
                     <Badge variant={item.enabled ? 'success' : 'neutral'}>
                       {item.enabled ? 'Active' : 'Pending'}
                     </Badge>

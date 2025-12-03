@@ -30,11 +30,11 @@ function DashboardErrorBanner(): JSX.Element | null {
   }
 
   return (
-    <Card className="mb-8 border-danger-200 bg-danger-50">
+    <Card className="mb-8 border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/20">
       <CardBody>
         <div className="flex items-start gap-3">
           <svg
-            className="w-5 h-5 text-danger-600 mt-0.5 flex-shrink-0"
+            className="w-5 h-5 text-danger-600 dark:text-danger-400 mt-0.5 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -47,10 +47,10 @@ function DashboardErrorBanner(): JSX.Element | null {
             />
           </svg>
           <div>
-            <h3 className="font-semibold text-danger-900 mb-1">
+            <h3 className="font-semibold text-danger-900 dark:text-danger-100 mb-1">
               Failed to load dashboard data
             </h3>
-            <p className="text-sm text-danger-700 mb-3">
+            <p className="text-sm text-danger-700 dark:text-danger-300 mb-3">
               There was a problem loading some of your data. Please try again.
             </p>
             <Button variant="secondary" size="sm" onClick={refetchAll}>
