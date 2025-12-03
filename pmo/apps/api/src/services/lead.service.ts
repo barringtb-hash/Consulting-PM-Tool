@@ -198,10 +198,19 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
 
     // Create pipeline project if requested
     if (conversion.createProject && clientId) {
+      // Determine the owner ID: use provided ownerId, fall back to lead's owner
+      const projectOwnerId = conversion.ownerId || lead.ownerUserId;
+
+      if (!projectOwnerId) {
+        throw new Error(
+          'Project owner not specified. Please provide an ownerId or ensure the lead has an assigned owner.'
+        );
+      }
+
       const project = await tx.project.create({
         data: {
           clientId,
-          ownerId: lead.ownerUserId || 1, // Default to first user if no owner
+          ownerId: projectOwnerId,
           name:
             conversion.projectName ||
             `${lead.company || lead.email} - ${lead.serviceInterest}`,
