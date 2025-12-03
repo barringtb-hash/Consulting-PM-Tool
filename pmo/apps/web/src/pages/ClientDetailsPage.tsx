@@ -106,13 +106,13 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
     <Card>
       <CardHeader>
         <CardTitle>Contacts</CardTitle>
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
           Manage points of contact for this client.
         </p>
       </CardHeader>
       <CardBody>
         {contactsQuery.isLoading && (
-          <p className="text-neutral-600">Loading contacts…</p>
+          <p className="text-neutral-600 dark:text-neutral-400">Loading contacts…</p>
         )}
         {contactsQuery.error && (
           <p role="alert" className="text-danger-600">
@@ -125,36 +125,36 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
         {!contactsQuery.isLoading && !contactsQuery.error && (
           <>
             {contactsQuery.data && contactsQuery.data.length === 0 ? (
-              <p className="text-neutral-600">{EMPTY_STATES.noContacts}</p>
+              <p className="text-neutral-600 dark:text-neutral-400">{EMPTY_STATES.noContacts}</p>
             ) : (
               <div className="space-y-4">
                 {contactsQuery.data?.map((contact) => (
                   <div
                     key={contact.id}
-                    className="p-4 bg-neutral-50 rounded-lg border border-neutral-200"
+                    className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-neutral-900">
+                        <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
                           {contact.name}
                         </h4>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           {contact.email}
                         </p>
                         {contact.role && (
-                          <p className="text-sm text-neutral-600 mt-1">
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                             <span className="font-medium">Role:</span>{' '}
                             {contact.role}
                           </p>
                         )}
                         {contact.phone && (
-                          <p className="text-sm text-neutral-600">
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
                             <span className="font-medium">Phone:</span>{' '}
                             {contact.phone}
                           </p>
                         )}
                         {contact.notes && (
-                          <p className="text-sm text-neutral-600 mt-2">
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
                             {contact.notes}
                           </p>
                         )}
@@ -190,8 +190,8 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
           </>
         )}
 
-        <div className="mt-6 pt-6 border-t border-neutral-200">
-          <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+        <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
             {editingContact ? 'Edit Contact' : 'Add Contact'}
           </h3>
           <ContactForm
@@ -300,7 +300,7 @@ function ClientDetailsPage(): JSX.Element {
   const client = clientQuery.data as Client;
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title={client.name}
         description={client.industry || EMPTY_STATES.notProvided}
@@ -326,34 +326,34 @@ function ClientDetailsPage(): JSX.Element {
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                <dt className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Company Size
                 </dt>
-                <dd className="text-sm text-neutral-900">
+                <dd className="text-sm text-neutral-900 dark:text-neutral-100">
                   {client.companySize || EMPTY_STATES.notProvided}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                <dt className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Timezone
                 </dt>
-                <dd className="text-sm text-neutral-900">
+                <dd className="text-sm text-neutral-900 dark:text-neutral-100">
                   {client.timezone || EMPTY_STATES.notProvided}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                <dt className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   AI Maturity
                 </dt>
-                <dd className="text-sm text-neutral-900">
+                <dd className="text-sm text-neutral-900 dark:text-neutral-100">
                   {client.aiMaturity || EMPTY_STATES.notProvided}
                 </dd>
               </div>
               <div className="md:col-span-2">
-                <dt className="text-sm font-medium text-neutral-700 mb-1">
+                <dt className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Notes
                 </dt>
-                <dd className="text-sm text-neutral-900">
+                <dd className="text-sm text-neutral-900 dark:text-neutral-100">
                   {client.notes || EMPTY_STATES.notProvided}
                 </dd>
               </div>
@@ -382,7 +382,7 @@ function ClientDetailsPage(): JSX.Element {
               error={formError}
             />
             {!client.archived && (
-              <div className="mt-4 pt-4 border-t border-neutral-200">
+              <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                 <Button variant="danger" onClick={handleArchive}>
                   Archive Client
                 </Button>
@@ -411,7 +411,7 @@ function ClientDetailsPage(): JSX.Element {
             </div>
           </CardHeader>
           <CardBody>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Project tracking for this client is coming soon.
             </p>
           </CardBody>
@@ -423,7 +423,7 @@ function ClientDetailsPage(): JSX.Element {
             <CardTitle>Meetings</CardTitle>
           </CardHeader>
           <CardBody>
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Meeting notes and actions will appear here when available.
             </p>
           </CardBody>

@@ -68,28 +68,28 @@ function DealCard({ deal, onClick }: DealCardProps): JSX.Element {
   return (
     <div
       onClick={onClick}
-      className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm hover:shadow-md cursor-pointer transition-all"
+      className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 shadow-sm hover:shadow-md cursor-pointer transition-all"
     >
-      <h4 className="font-medium text-neutral-900 mb-2 line-clamp-2">
+      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 line-clamp-2">
         {deal.name}
       </h4>
 
-      <div className="text-sm text-neutral-600 mb-3">{deal.clientName}</div>
+      <div className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{deal.clientName}</div>
 
       {deal.pipelineValue && (
         <div className="flex items-center gap-2 mb-2">
           <DollarSign size={14} className="text-green-600" />
-          <span className="font-semibold text-neutral-900">
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100">
             {formatCurrency(deal.pipelineValue)}
           </span>
-          <Badge className="ml-auto bg-neutral-100 text-neutral-700 text-xs">
+          <Badge className="ml-auto bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs">
             {probability}%
           </Badge>
         </div>
       )}
 
       {deal.expectedCloseDate && (
-        <div className="flex items-center gap-2 text-xs text-neutral-500">
+        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
           <Calendar size={12} />
           <span>{formatDate(deal.expectedCloseDate)}</span>
         </div>
@@ -127,15 +127,15 @@ function PipelineColumn({
   );
 
   return (
-    <div className="flex-shrink-0 w-80 bg-neutral-50 rounded-lg p-4">
+    <div className="flex-shrink-0 w-80 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-neutral-900">{stage.label}</h3>
+          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">{stage.label}</h3>
           <Badge className="bg-primary-100 text-primary-700">
             {deals.length}
           </Badge>
         </div>
-        <div className="text-xs text-neutral-600">
+        <div className="text-xs text-neutral-600 dark:text-neutral-400">
           <div>Total: {formatCurrency(totalValue)}</div>
           <div>Weighted: {formatCurrency(weightedValue)}</div>
         </div>
@@ -143,7 +143,7 @@ function PipelineColumn({
 
       <div className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto">
         {deals.length === 0 ? (
-          <div className="text-center py-8 text-sm text-neutral-400">
+          <div className="text-center py-8 text-sm text-neutral-400 dark:text-neutral-500">
             No deals in this stage
           </div>
         ) : (
@@ -246,7 +246,7 @@ export function PipelinePage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Sales Pipeline"
         description="Track deals through your sales process from lead to close."
@@ -261,28 +261,28 @@ export function PipelinePage(): JSX.Element {
       <main className="container-padding py-6 space-y-6">
         {/* Pipeline Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-1">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
               <TrendingUp size={16} />
               <span>Open Deals</span>
             </div>
-            <div className="text-2xl font-bold text-neutral-900">
+            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               {pipelineStats.totalDeals}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-1">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
               <DollarSign size={16} />
               <span>Total Pipeline</span>
             </div>
-            <div className="text-2xl font-bold text-neutral-900">
+            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               {formatCurrency(pipelineStats.totalValue)}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-1">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
               <DollarSign size={16} />
               <span>Weighted Pipeline</span>
             </div>
@@ -291,19 +291,19 @@ export function PipelinePage(): JSX.Element {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 mb-1">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
               <DollarSign size={16} />
               <span>Avg Deal Size</span>
             </div>
-            <div className="text-2xl font-bold text-neutral-900">
+            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               {formatCurrency(pipelineStats.avgDealSize)}
             </div>
           </div>
         </div>
 
         {/* Pipeline Board */}
-        <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6 overflow-x-auto">
+        <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6 overflow-x-auto">
           <div className="flex gap-4 min-w-max">
             {PIPELINE_STAGES.map((stage) => (
               <PipelineColumn
@@ -318,15 +318,15 @@ export function PipelinePage(): JSX.Element {
 
         {/* Empty State */}
         {pipelineDeals.length === 0 && (
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-12 text-center">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-12 text-center">
             <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp size={32} className="text-neutral-400" />
+              <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp size={32} className="text-neutral-400 dark:text-neutral-500" />
               </div>
-              <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                 No deals in pipeline yet
               </h3>
-              <p className="text-neutral-600 mb-6">
+              <p className="text-neutral-600 dark:text-neutral-400 mb-6">
                 Get started by converting leads from your leads page or create a
                 new deal directly.
               </p>

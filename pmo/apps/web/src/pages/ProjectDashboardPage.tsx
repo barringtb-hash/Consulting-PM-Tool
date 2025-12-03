@@ -372,7 +372,7 @@ function ProjectDashboardPage(): JSX.Element {
   if (projectQuery.isLoading) {
     return (
       <main className="p-6">
-        <p className="text-neutral-600">Loading project…</p>
+        <p className="text-neutral-600 dark:text-neutral-400">Loading project…</p>
       </main>
     );
   }
@@ -394,7 +394,7 @@ function ProjectDashboardPage(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       {/* Page Header */}
       <PageHeader
         title={project.name}
@@ -436,12 +436,12 @@ function ProjectDashboardPage(): JSX.Element {
       />
 
       {/* Project Status Bar */}
-      <div className="bg-white border-b border-neutral-200">
+      <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-600">Status:</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">Status:</span>
                 <Badge
                   variant={
                     project.status === 'IN_PROGRESS'
@@ -458,7 +458,7 @@ function ProjectDashboardPage(): JSX.Element {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-600">Health:</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">Health:</span>
                 <ProjectStatusPill
                   healthStatus={project.healthStatus}
                   statusSummary={project.statusSummary}
@@ -466,7 +466,7 @@ function ProjectDashboardPage(): JSX.Element {
                 />
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <span>{formatDate(project.startDate)}</span>
                 <span>→</span>
                 <span>{formatDate(project.endDate)}</span>
@@ -490,7 +490,7 @@ function ProjectDashboardPage(): JSX.Element {
                   <div>
                     <label
                       htmlFor="edit-status"
-                      className="block text-sm font-medium text-neutral-900 mb-1"
+                      className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                     >
                       Project Status
                     </label>
@@ -512,7 +512,7 @@ function ProjectDashboardPage(): JSX.Element {
                   <div>
                     <label
                       htmlFor="edit-start-date"
-                      className="block text-sm font-medium text-neutral-900 mb-1"
+                      className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                     >
                       Start Date
                     </label>
@@ -527,7 +527,7 @@ function ProjectDashboardPage(): JSX.Element {
                   <div>
                     <label
                       htmlFor="edit-end-date"
-                      className="block text-sm font-medium text-neutral-900 mb-1"
+                      className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                     >
                       Target End Date
                     </label>
@@ -627,7 +627,7 @@ function ProjectDashboardPage(): JSX.Element {
                       <div>
                         <label
                           htmlFor="milestone-name"
-                          className="block text-sm font-medium text-neutral-900 mb-1"
+                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                         >
                           Name
                         </label>
@@ -647,7 +647,7 @@ function ProjectDashboardPage(): JSX.Element {
                       <div>
                         <label
                           htmlFor="milestone-status"
-                          className="block text-sm font-medium text-neutral-900 mb-1"
+                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                         >
                           Status
                         </label>
@@ -672,7 +672,7 @@ function ProjectDashboardPage(): JSX.Element {
                       <div>
                         <label
                           htmlFor="milestone-due-date"
-                          className="block text-sm font-medium text-neutral-900 mb-1"
+                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                         >
                           Due Date
                         </label>
@@ -692,7 +692,7 @@ function ProjectDashboardPage(): JSX.Element {
                       <div className="md:col-span-2">
                         <label
                           htmlFor="milestone-description"
-                          className="block text-sm font-medium text-neutral-900 mb-1"
+                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                         >
                           Description
                         </label>
@@ -744,7 +744,7 @@ function ProjectDashboardPage(): JSX.Element {
               {milestonesQuery.isLoading && (
                 <Card>
                   <CardBody>
-                    <p className="text-neutral-600">Loading milestones...</p>
+                    <p className="text-neutral-600 dark:text-neutral-400">Loading milestones...</p>
                   </CardBody>
                 </Card>
               )}
@@ -752,7 +752,7 @@ function ProjectDashboardPage(): JSX.Element {
               {milestones.length === 0 && !milestonesQuery.isLoading && (
                 <Card>
                   <CardBody>
-                    <p className="text-neutral-600">
+                    <p className="text-neutral-600 dark:text-neutral-400">
                       {EMPTY_STATES.noMilestones}
                     </p>
                   </CardBody>
@@ -766,11 +766,11 @@ function ProjectDashboardPage(): JSX.Element {
                       <CardBody>
                         <div className="space-y-3">
                           <div>
-                            <h4 className="font-semibold text-neutral-900">
+                            <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
                               {milestone.name}
                             </h4>
                             {milestone.description && (
-                              <p className="text-sm text-neutral-600 mt-1">
+                              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                                 {milestone.description}
                               </p>
                             )}
@@ -788,7 +788,7 @@ function ProjectDashboardPage(): JSX.Element {
                             >
                               {formatStatus(milestone.status)}
                             </Badge>
-                            <span className="text-sm text-neutral-600">
+                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
                               Due: {formatDate(milestone.dueDate)}
                             </span>
                           </div>
@@ -833,12 +833,12 @@ function ProjectDashboardPage(): JSX.Element {
                 </CardHeader>
                 <CardBody>
                   {projectAssetsQuery.isLoading && (
-                    <p className="text-neutral-600">Loading assets...</p>
+                    <p className="text-neutral-600 dark:text-neutral-400">Loading assets...</p>
                   )}
 
                   {projectAssets.length === 0 &&
                     !projectAssetsQuery.isLoading && (
-                      <p className="text-neutral-600">
+                      <p className="text-neutral-600 dark:text-neutral-400">
                         {EMPTY_STATES.noLinkedAssets}
                       </p>
                     )}
@@ -848,14 +848,14 @@ function ProjectDashboardPage(): JSX.Element {
                       {projectAssets.map((entry) => (
                         <div
                           key={entry.id}
-                          className="p-4 bg-neutral-50 rounded-lg"
+                          className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg"
                         >
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="font-semibold text-neutral-900">
+                              <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
                                 {entry.asset.name}
                               </h4>
-                              <p className="text-sm text-neutral-600 mt-1">
+                              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                                 {entry.asset.description}
                               </p>
                               <div className="flex items-center gap-2 mt-2">
@@ -888,7 +888,7 @@ function ProjectDashboardPage(): JSX.Element {
                   <div>
                     <label
                       htmlFor="asset-select"
-                      className="block text-sm font-medium text-neutral-900 mb-1"
+                      className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                     >
                       Select Asset
                     </label>
@@ -909,7 +909,7 @@ function ProjectDashboardPage(): JSX.Element {
                   <div>
                     <label
                       htmlFor="asset-notes"
-                      className="block text-sm font-medium text-neutral-900 mb-1"
+                      className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                     >
                       Notes (optional)
                     </label>
@@ -986,14 +986,14 @@ function ProjectDashboardPage(): JSX.Element {
                 </CardHeader>
                 <CardBody>
                   {projectMarketingContentsQuery.isLoading && (
-                    <p className="text-neutral-600">
+                    <p className="text-neutral-600 dark:text-neutral-400">
                       Loading marketing content...
                     </p>
                   )}
 
                   {marketingContents.length === 0 &&
                     !projectMarketingContentsQuery.isLoading && (
-                      <p className="text-neutral-600">
+                      <p className="text-neutral-600 dark:text-neutral-400">
                         No marketing content for this project yet. Click
                         &ldquo;Generate Marketing Content&rdquo; to create
                         content from this project.
@@ -1005,7 +1005,7 @@ function ProjectDashboardPage(): JSX.Element {
                       {marketingContents.map((content) => (
                         <div
                           key={content.id}
-                          className="p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
+                          className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -1015,7 +1015,7 @@ function ProjectDashboardPage(): JSX.Element {
                                 </span>
                                 <div>
                                   <h4
-                                    className="font-semibold text-neutral-900 cursor-pointer hover:text-primary-600"
+                                    className="font-semibold text-neutral-900 dark:text-neutral-100 cursor-pointer hover:text-primary-600"
                                     onClick={() =>
                                       handleViewMarketingContent(content)
                                     }
@@ -1033,7 +1033,7 @@ function ProjectDashboardPage(): JSX.Element {
                                 </div>
                               </div>
                               {content.summary && (
-                                <p className="text-sm text-neutral-600 mt-2 line-clamp-2">
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2 line-clamp-2">
                                   {content.summary}
                                 </p>
                               )}
@@ -1042,7 +1042,7 @@ function ProjectDashboardPage(): JSX.Element {
                                   {content.tags.map((tag) => (
                                     <span
                                       key={tag}
-                                      className="px-2 py-1 text-xs bg-neutral-200 text-neutral-700 rounded"
+                                      className="px-2 py-1 text-xs bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded"
                                     >
                                       #{tag}
                                     </span>

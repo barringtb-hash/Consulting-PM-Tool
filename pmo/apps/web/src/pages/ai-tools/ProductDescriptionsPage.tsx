@@ -452,7 +452,9 @@ function ProductDescriptionsPage(): JSX.Element {
                               : ''
                           }`}
                         >
-                          <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">{product.name}</p>
+                          <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">
+                            {product.name}
+                          </p>
                           {product.sku && (
                             <p className="text-sm text-neutral-500 dark:text-neutral-400">
                               SKU: {product.sku}

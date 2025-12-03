@@ -126,7 +126,7 @@ function AssetsPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Assets Library"
         description="Manage AI prompts, workflows, datasets, and reusable templates"
@@ -220,7 +220,7 @@ function AssetsPage(): JSX.Element {
         {/* Asset List */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {assets.length === 0
                 ? EMPTY_STATES.noAssets
                 : `${assets.length} asset${assets.length === 1 ? '' : 's'}`}
@@ -234,12 +234,12 @@ function AssetsPage(): JSX.Element {
                 <Card key={i}>
                   <CardBody>
                     <div className="animate-pulse space-y-3">
-                      <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
-                      <div className="h-16 bg-neutral-200 rounded"></div>
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                      <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+                      <div className="h-16 bg-neutral-200 dark:bg-neutral-700 rounded"></div>
                       <div className="flex gap-2">
-                        <div className="h-6 bg-neutral-200 rounded w-16"></div>
-                        <div className="h-6 bg-neutral-200 rounded w-20"></div>
+                        <div className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-16"></div>
+                        <div className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded w-20"></div>
                       </div>
                     </div>
                   </CardBody>
@@ -272,10 +272,10 @@ function AssetsPage(): JSX.Element {
                 <CardBody>
                   <div className="text-center py-12">
                     <FolderOpen className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                       {EMPTY_STATES.noAssets}
                     </h3>
-                    <p className="text-neutral-600 text-sm mb-6 max-w-md mx-auto">
+                    <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-6 max-w-md mx-auto">
                       {search || type || template || clientId
                         ? "Try adjusting your filters to find what you're looking for."
                         : 'Get started by creating your first asset — a prompt template, workflow, dataset, or training material.'}
@@ -307,7 +307,7 @@ function AssetsPage(): JSX.Element {
                       <CardBody className="space-y-3">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-neutral-900 truncate">
+                            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                               {asset.name}
                             </h3>
                             {asset.archived && (
@@ -321,14 +321,14 @@ function AssetsPage(): JSX.Element {
                           </Badge>
                         </div>
 
-                        <p className="text-sm text-neutral-600 line-clamp-2 min-h-[2.5rem]">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 min-h-[2.5rem]">
                           {asset.description || EMPTY_STATES.noDescription}
                         </p>
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
                             <FileText className="w-4 h-4 text-neutral-400" />
-                            <span className="text-neutral-600">
+                            <span className="text-neutral-600 dark:text-neutral-400">
                               {client
                                 ? client.name
                                 : asset.isTemplate
@@ -356,7 +356,7 @@ function AssetsPage(): JSX.Element {
                             </div>
                           )}
 
-                          <div className="text-xs text-neutral-500">
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400">
                             Updated {formatDate(asset.updatedAt)}
                           </div>
                         </div>

@@ -115,15 +115,15 @@ function LeadDetailPanel({
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl border-l border-neutral-200 overflow-y-auto z-50">
+    <div className="fixed inset-y-0 right-0 w-96 bg-white dark:bg-neutral-800 shadow-xl border-l border-neutral-200 dark:border-neutral-700 overflow-y-auto z-50">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-neutral-900">
+          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
             Lead Details
           </h2>
           <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-neutral-700"
+            className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
           >
             ✕
           </button>
@@ -132,7 +132,7 @@ function LeadDetailPanel({
         <div className="space-y-4">
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
               Status
             </label>
             <Select
@@ -149,16 +149,16 @@ function LeadDetailPanel({
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-sm font-medium text-neutral-700 mb-2">
+            <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
               Contact Information
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <User size={16} className="text-neutral-400" />
+                <User size={16} className="text-neutral-400 dark:text-neutral-500" />
                 <span>{lead.name || 'No name'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Mail size={16} className="text-neutral-400" />
+                <Mail size={16} className="text-neutral-400 dark:text-neutral-500" />
                 <a
                   href={`mailto:${lead.email}`}
                   className="text-primary-600 hover:underline"
@@ -168,7 +168,7 @@ function LeadDetailPanel({
               </div>
               {lead.company && (
                 <div className="flex items-center gap-2">
-                  <Building2 size={16} className="text-neutral-400" />
+                  <Building2 size={16} className="text-neutral-400 dark:text-neutral-500" />
                   <span>{lead.company}</span>
                 </div>
               )}
@@ -177,24 +177,24 @@ function LeadDetailPanel({
 
           {/* Lead Details */}
           <div>
-            <h3 className="text-sm font-medium text-neutral-700 mb-2">
+            <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
               Lead Details
             </h3>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="text-neutral-500">Source: </span>
+                <span className="text-neutral-500 dark:text-neutral-400">Source: </span>
                 <span className="font-medium">
                   {formatLeadSource(lead.source)}
                 </span>
               </div>
               <div>
-                <span className="text-neutral-500">Interest: </span>
+                <span className="text-neutral-500 dark:text-neutral-400">Interest: </span>
                 <span className="font-medium">
                   {formatServiceInterest(lead.serviceInterest)}
                 </span>
               </div>
               <div>
-                <span className="text-neutral-500">Created: </span>
+                <span className="text-neutral-500 dark:text-neutral-400">Created: </span>
                 <span>{formatDate(lead.createdAt)}</span>
               </div>
             </div>
@@ -203,17 +203,17 @@ function LeadDetailPanel({
           {/* Message */}
           {lead.message && (
             <div>
-              <h3 className="text-sm font-medium text-neutral-700 mb-2">
+              <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                 Message
               </h3>
-              <p className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-lg">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 p-3 rounded-lg">
                 {lead.message}
               </p>
             </div>
           )}
 
           {/* Actions */}
-          <div className="space-y-2 pt-4 border-t border-neutral-200">
+          <div className="space-y-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
             {lead.status !== 'CONVERTED' && lead.status !== 'DISQUALIFIED' && (
               <Button onClick={handleConvert} className="w-full">
                 Convert to Client
@@ -351,7 +351,7 @@ export function LeadsPage(): JSX.Element {
   ].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Leads"
         description="Manage inbound leads and convert them to clients and projects."
@@ -366,26 +366,26 @@ export function LeadsPage(): JSX.Element {
       <main className="container-padding py-6 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="text-sm text-neutral-500">Total Leads</div>
-            <div className="text-2xl font-bold text-neutral-900">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">Total Leads</div>
+            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               {stats.total}
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="text-sm text-neutral-500">New</div>
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">New</div>
             <div className="text-2xl font-bold text-blue-600">
               {stats.newLeads}
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="text-sm text-neutral-500">Contacted</div>
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">Contacted</div>
             <div className="text-2xl font-bold text-yellow-600">
               {stats.contacted}
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
-            <div className="text-sm text-neutral-500">Qualified</div>
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">Qualified</div>
             <div className="text-2xl font-bold text-green-600">
               {stats.qualified}
             </div>
@@ -394,8 +394,8 @@ export function LeadsPage(): JSX.Element {
 
         {/* New Lead Form */}
         {showNewLeadForm && (
-          <section className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+          <section className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
               New Lead
             </h2>
             <form onSubmit={handleCreateLead} className="space-y-4">
@@ -465,11 +465,11 @@ export function LeadsPage(): JSX.Element {
                   <option value="NOT_SURE">Not Sure</option>
                 </Select>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                     Message
                   </label>
                   <textarea
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-800 dark:text-neutral-100"
                     rows={3}
                     placeholder="Any additional information..."
                     value={newLead.message}
@@ -499,9 +499,9 @@ export function LeadsPage(): JSX.Element {
         )}
 
         {/* Filters */}
-        <section className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6">
+        <section className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900">Filters</h2>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Filters</h2>
             {activeFilterCount > 0 && (
               <Button variant="subtle" size="sm" onClick={clearFilters}>
                 Clear filters ({activeFilterCount})
@@ -561,37 +561,37 @@ export function LeadsPage(): JSX.Element {
         </section>
 
         {/* Leads List */}
-        <section className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
+        <section className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
+              <thead className="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Lead
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Company
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Source
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Interest
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Created
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200">
+              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
                 {leads.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-6 py-8 text-center text-neutral-500"
+                      className="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400"
                     >
                       No leads found. Create your first lead to get started.
                     </td>
@@ -601,25 +601,25 @@ export function LeadsPage(): JSX.Element {
                     <tr
                       key={lead.id}
                       onClick={() => setSelectedLead(lead)}
-                      className="hover:bg-neutral-50 cursor-pointer transition-colors"
+                      className="hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-sm font-medium text-neutral-900">
+                          <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                             {lead.name || 'No name'}
                           </div>
-                          <div className="text-sm text-neutral-500">
+                          <div className="text-sm text-neutral-500 dark:text-neutral-400">
                             {lead.email}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-neutral-900">
+                      <td className="px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
                         {lead.company || '—'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-neutral-600">
+                      <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">
                         {formatLeadSource(lead.source)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-neutral-600">
+                      <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">
                         {formatServiceInterest(lead.serviceInterest)}
                       </td>
                       <td className="px-6 py-4">
@@ -628,7 +628,7 @@ export function LeadsPage(): JSX.Element {
                             lead.status.slice(1).toLowerCase()}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-sm text-neutral-600">
+                      <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">
                         {formatDate(lead.createdAt)}
                       </td>
                     </tr>

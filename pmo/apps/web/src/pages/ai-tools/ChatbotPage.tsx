@@ -763,7 +763,7 @@ function ChatbotPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="AI Chatbot"
         description="Configure and manage AI-powered customer service chatbots"
@@ -827,7 +827,7 @@ function ChatbotPage(): JSX.Element {
 
         {/* Tab Navigation */}
         {selectedConfig && (
-          <div className="flex gap-2 border-b border-neutral-200">
+          <div className="flex gap-2 border-b border-neutral-200 dark:border-neutral-700">
             {[
               { id: 'overview', label: 'Overview', icon: MessageCircle },
               { id: 'test', label: 'Test Chat', icon: Play },
@@ -845,7 +845,7 @@ function ChatbotPage(): JSX.Element {
                 className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
                   activeTab === id
                     ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -861,7 +861,7 @@ function ChatbotPage(): JSX.Element {
             <CardBody>
               <div className="text-center py-8">
                 <MessageCircle className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                <p className="text-neutral-600">
+                <p className="text-neutral-600 dark:text-neutral-400">
                   Select a chatbot configuration to view details, or create a
                   new one.
                 </p>
@@ -875,7 +875,7 @@ function ChatbotPage(): JSX.Element {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                       <Settings className="w-5 h-5" />
                       Configuration
                     </h3>
@@ -883,11 +883,11 @@ function ChatbotPage(): JSX.Element {
                   <CardBody>
                     <dl className="space-y-3">
                       <div>
-                        <dt className="text-sm text-neutral-500">Name</dt>
-                        <dd className="font-medium">{selectedConfig.name}</dd>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">Name</dt>
+                        <dd className="font-medium text-neutral-900 dark:text-neutral-100">{selectedConfig.name}</dd>
                       </div>
                       <div>
-                        <dt className="text-sm text-neutral-500">Status</dt>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">Status</dt>
                         <dd>
                           <Badge
                             variant={
@@ -899,15 +899,15 @@ function ChatbotPage(): JSX.Element {
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm text-neutral-500">
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">
                           Welcome Message
                         </dt>
-                        <dd className="text-sm">
+                        <dd className="text-sm text-neutral-900 dark:text-neutral-100">
                           {selectedConfig.welcomeMessage || 'Not set'}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm text-neutral-500">Features</dt>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">Features</dt>
                         <dd className="flex gap-2 flex-wrap mt-1">
                           {selectedConfig.enableFAQ && (
                             <Badge variant="primary">FAQ</Badge>
@@ -929,26 +929,26 @@ function ChatbotPage(): JSX.Element {
 
                 <Card>
                   <CardHeader>
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                       <BarChart3 className="w-5 h-5" />
                       Quick Stats
                     </h3>
                   </CardHeader>
                   <CardBody>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-neutral-50 rounded-lg">
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                         <p className="text-2xl font-bold text-primary-600">
                           {selectedConfig._count?.conversations ?? 0}
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Total Conversations
                         </p>
                       </div>
-                      <div className="p-4 bg-neutral-50 rounded-lg">
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                         <p className="text-2xl font-bold text-primary-600">
                           {selectedConfig._count?.knowledgeBase ?? 0}
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Knowledge Base Items
                         </p>
                       </div>
@@ -965,7 +965,7 @@ function ChatbotPage(): JSX.Element {
                 <Card className="lg:col-span-3 h-[650px] flex flex-col">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                         <Play className="w-5 h-5" />
                         Test Your Chatbot
                         {sessionStats && (
@@ -1051,12 +1051,12 @@ function ChatbotPage(): JSX.Element {
                     {!testSessionId ? (
                       <div className="flex-1 flex items-center justify-center">
                         <div className="text-center">
-                          <Bot className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
-                          <p className="text-neutral-600 mb-2">
+                          <Bot className="w-16 h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+                          <p className="text-neutral-600 dark:text-neutral-400 mb-2">
                             Click &quot;Start Test Chat&quot; to begin testing
                             your chatbot
                           </p>
-                          <p className="text-sm text-neutral-500">
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
                             You can send messages and see how your chatbot
                             responds.
                             <br />
@@ -1067,9 +1067,9 @@ function ChatbotPage(): JSX.Element {
                     ) : (
                       <>
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-neutral-50 rounded-lg">
+                        <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                           {testMessages.length === 0 ? (
-                            <p className="text-center text-neutral-500 py-4">
+                            <p className="text-center text-neutral-500 dark:text-neutral-400 py-4">
                               No messages yet. Start typing below!
                             </p>
                           ) : (
@@ -1091,14 +1091,14 @@ function ChatbotPage(): JSX.Element {
                                   <div
                                     className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                                       msg.sender === 'CUSTOMER'
-                                        ? 'bg-primary-100'
-                                        : 'bg-neutral-200'
+                                        ? 'bg-primary-100 dark:bg-primary-900/30'
+                                        : 'bg-neutral-200 dark:bg-neutral-700'
                                     }`}
                                   >
                                     {msg.sender === 'CUSTOMER' ? (
-                                      <User className="w-4 h-4 text-primary-600" />
+                                      <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                                     ) : (
-                                      <Bot className="w-4 h-4 text-neutral-600" />
+                                      <Bot className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
                                     )}
                                   </div>
                                   <div
@@ -1108,7 +1108,7 @@ function ChatbotPage(): JSX.Element {
                                       className={`rounded-lg p-3 ${
                                         msg.sender === 'CUSTOMER'
                                           ? 'bg-primary-500 text-white'
-                                          : 'bg-white border border-neutral-200'
+                                          : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
                                       }`}
                                     >
                                       <p className="text-sm whitespace-pre-wrap">
@@ -1119,9 +1119,9 @@ function ChatbotPage(): JSX.Element {
                                     {msg.sender === 'CUSTOMER' &&
                                       (msg.detectedIntent ||
                                         sentimentDisplay) && (
-                                        <div className="flex items-center gap-2 mt-1 justify-end text-xs text-neutral-500">
+                                        <div className="flex items-center gap-2 mt-1 justify-end text-xs text-neutral-500 dark:text-neutral-400">
                                           {msg.detectedIntent && (
-                                            <span className="flex items-center gap-1 bg-neutral-100 px-2 py-0.5 rounded">
+                                            <span className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded">
                                               <Zap className="w-3 h-3" />
                                               {msg.detectedIntent}
                                               {msg.intentConfidence && (
@@ -1204,14 +1204,14 @@ function ChatbotPage(): JSX.Element {
 
                         {/* Quick Actions from last response */}
                         {lastSuggestedActions.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3 p-2 bg-primary-50 rounded-lg">
-                            <span className="text-xs text-neutral-500 self-center">
+                          <div className="flex flex-wrap gap-2 mb-3 p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400 self-center">
                               Quick replies:
                             </span>
                             {lastSuggestedActions.map((action, idx) => (
                               <button
                                 key={idx}
-                                className="text-xs px-3 py-1 bg-white border border-primary-200 text-primary-700 rounded-full hover:bg-primary-100 transition-colors"
+                                className="text-xs px-3 py-1 bg-white dark:bg-neutral-800 border border-primary-200 dark:border-primary-700 text-primary-700 rounded-full hover:bg-primary-100 dark:hover:bg-neutral-700 transition-colors"
                                 onClick={() => setTestInput(action.label)}
                               >
                                 {action.label}
@@ -1332,35 +1332,35 @@ function ChatbotPage(): JSX.Element {
                   {/* Session Analytics */}
                   <Card>
                     <CardHeader>
-                      <h4 className="font-semibold flex items-center gap-2">
+                      <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                         <TrendingUp className="w-4 h-4" />
                         Session Analytics
                       </h4>
                     </CardHeader>
                     <CardBody className="space-y-3">
                       {!sessionStats ? (
-                        <p className="text-sm text-neutral-500">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
                           Start a chat to see analytics
                         </p>
                       ) : (
                         <>
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-neutral-50 p-2 rounded text-center">
+                            <div className="bg-neutral-50 dark:bg-neutral-800 p-2 rounded text-center">
                               <p className="text-lg font-bold text-primary-600">
                                 {sessionStats.messageCount}
                               </p>
-                              <p className="text-xs text-neutral-500">
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
                                 Messages
                               </p>
                             </div>
-                            <div className="bg-neutral-50 p-2 rounded text-center">
+                            <div className="bg-neutral-50 dark:bg-neutral-800 p-2 rounded text-center">
                               <p className="text-lg font-bold text-primary-600">
                                 {
                                   Object.keys(sessionStats.intentsDetected)
                                     .length
                                 }
                               </p>
-                              <p className="text-xs text-neutral-500">
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
                                 Intents
                               </p>
                             </div>
@@ -1368,8 +1368,8 @@ function ChatbotPage(): JSX.Element {
 
                           {/* Sentiment Gauge */}
                           {sessionStats.sentimentCount > 0 && (
-                            <div className="bg-neutral-50 p-3 rounded">
-                              <p className="text-xs text-neutral-500 mb-2">
+                            <div className="bg-neutral-50 dark:bg-neutral-800 p-3 rounded">
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
                                 Avg. Sentiment
                               </p>
                               <div className="flex items-center gap-2">
@@ -1399,7 +1399,7 @@ function ChatbotPage(): JSX.Element {
                           {Object.keys(sessionStats.intentsDetected).length >
                             0 && (
                             <div>
-                              <p className="text-xs text-neutral-500 mb-2">
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
                                 Detected Intents
                               </p>
                               <div className="space-y-1">
@@ -1408,7 +1408,7 @@ function ChatbotPage(): JSX.Element {
                                 ).map(([intent, count]) => (
                                   <div
                                     key={intent}
-                                    className="flex items-center justify-between text-sm bg-neutral-50 px-2 py-1 rounded"
+                                    className="flex items-center justify-between text-sm bg-neutral-50 dark:bg-neutral-800 px-2 py-1 rounded"
                                   >
                                     <span className="flex items-center gap-1">
                                       <Zap className="w-3 h-3 text-primary-500" />
@@ -1429,16 +1429,16 @@ function ChatbotPage(): JSX.Element {
                   {showKnowledgePanel && (
                     <Card>
                       <CardHeader>
-                        <h4 className="font-semibold flex items-center gap-2">
+                        <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                           <BookOpen className="w-4 h-4" />
                           Knowledge Base
                         </h4>
                       </CardHeader>
                       <CardBody className="max-h-[300px] overflow-y-auto">
                         {knowledgeBaseQuery.isLoading ? (
-                          <p className="text-sm text-neutral-500">Loading...</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading...</p>
                         ) : !knowledgeBaseQuery.data?.length ? (
-                          <p className="text-sm text-neutral-500">
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
                             No knowledge base items
                           </p>
                         ) : (
@@ -1446,7 +1446,7 @@ function ChatbotPage(): JSX.Element {
                             {knowledgeBaseQuery.data.map((item) => (
                               <div
                                 key={item.id}
-                                className="border border-neutral-200 rounded p-2 hover:bg-neutral-50 cursor-pointer transition-colors"
+                                className="border border-neutral-200 dark:border-neutral-700 rounded p-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
                                 onClick={() => {
                                   setTestInput(item.question);
                                 }}
@@ -1454,10 +1454,10 @@ function ChatbotPage(): JSX.Element {
                                 <div className="flex items-start gap-2">
                                   <HelpCircle className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" />
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">
+                                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
                                       {item.question}
                                     </p>
-                                    <p className="text-xs text-neutral-500 truncate">
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                                       {item.answer}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
@@ -1490,8 +1490,8 @@ function ChatbotPage(): JSX.Element {
 
                   {/* Tips Card */}
                   <Card>
-                    <CardBody className="text-xs text-neutral-500 space-y-2">
-                      <p className="font-medium text-neutral-700">
+                    <CardBody className="text-xs text-neutral-500 dark:text-neutral-400 space-y-2">
+                      <p className="font-medium text-neutral-700 dark:text-neutral-300">
                         Testing Tips:
                       </p>
                       <ul className="list-disc list-inside space-y-1">
@@ -1528,7 +1528,7 @@ function ChatbotPage(): JSX.Element {
                 {conversationsQuery.isLoading ? (
                   <Card>
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         Loading conversations...
                       </p>
                     </CardBody>
@@ -1536,7 +1536,7 @@ function ChatbotPage(): JSX.Element {
                 ) : (conversationsQuery.data?.length ?? 0) === 0 ? (
                   <Card>
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         No conversations found.
                       </p>
                     </CardBody>
@@ -1551,7 +1551,7 @@ function ChatbotPage(): JSX.Element {
                         <div className="flex items-start justify-between">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">
+                              <span className="font-medium text-neutral-900 dark:text-neutral-100">
                                 {conv.customerName ||
                                   conv.customerEmail ||
                                   'Anonymous'}
@@ -1565,10 +1565,10 @@ function ChatbotPage(): JSX.Element {
                               </Badge>
                               <Badge variant="neutral">{conv.channel}</Badge>
                             </div>
-                            <p className="text-sm text-neutral-600">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
                               {conv.messageCount} messages
                             </p>
-                            <p className="text-xs text-neutral-500 mt-1">
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                               Started:{' '}
                               {new Date(conv.startedAt).toLocaleString()}
                             </p>
@@ -1594,7 +1594,7 @@ function ChatbotPage(): JSX.Element {
                         <input
                           type="text"
                           placeholder="Search questions, answers, or keywords..."
-                          className="w-full h-11 pl-12 pr-4 text-sm border border-neutral-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-shadow placeholder:text-neutral-400"
+                          className="w-full h-11 pl-12 pr-4 text-sm border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900/50 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-shadow placeholder:text-neutral-400"
                           value={kbSearchQuery}
                           onChange={(e) => setKbSearchQuery(e.target.value)}
                         />
@@ -1659,14 +1659,14 @@ function ChatbotPage(): JSX.Element {
                         <CardBody className="py-4 px-5">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                                 Total Items
                               </p>
-                              <p className="text-2xl font-bold text-neutral-800">
+                              <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
                                 {knowledgeBaseQuery.data.length}
                               </p>
                             </div>
-                            <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                               <BookOpen className="w-5 h-5 text-primary-600" />
                             </div>
                           </div>
@@ -1676,10 +1676,10 @@ function ChatbotPage(): JSX.Element {
                         <CardBody className="py-4 px-5">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                                 Published
                               </p>
-                              <p className="text-2xl font-bold text-neutral-800">
+                              <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
                                 {
                                   knowledgeBaseQuery.data.filter(
                                     (i) => i.isPublished,
@@ -1687,7 +1687,7 @@ function ChatbotPage(): JSX.Element {
                                 }
                               </p>
                             </div>
-                            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
                               <CheckCircle className="w-5 h-5 text-green-600" />
                             </div>
                           </div>
@@ -1697,17 +1697,17 @@ function ChatbotPage(): JSX.Element {
                         <CardBody className="py-4 px-5">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                                 Total Views
                               </p>
-                              <p className="text-2xl font-bold text-neutral-800">
+                              <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
                                 {knowledgeBaseQuery.data.reduce(
                                   (sum, i) => sum + i.viewCount,
                                   0,
                                 )}
                               </p>
                             </div>
-                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                               <Eye className="w-5 h-5 text-blue-600" />
                             </div>
                           </div>
@@ -1717,10 +1717,10 @@ function ChatbotPage(): JSX.Element {
                         <CardBody className="py-4 px-5">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-neutral-500 mb-1">
+                              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                                 Helpful Rate
                               </p>
-                              <p className="text-2xl font-bold text-neutral-800">
+                              <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
                                 {(() => {
                                   const total = knowledgeBaseQuery.data.reduce(
                                     (sum, i) =>
@@ -1739,7 +1739,7 @@ function ChatbotPage(): JSX.Element {
                                 %
                               </p>
                             </div>
-                            <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
                               <ThumbsUp className="w-5 h-5 text-amber-600" />
                             </div>
                           </div>
@@ -1754,7 +1754,7 @@ function ChatbotPage(): JSX.Element {
                     <CardBody className="py-16">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-10 h-10 border-3 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-4" />
-                        <p className="text-neutral-500 text-sm">
+                        <p className="text-neutral-500 dark:text-neutral-400 text-sm">
                           Loading knowledge base items...
                         </p>
                       </div>
@@ -1764,17 +1764,17 @@ function ChatbotPage(): JSX.Element {
                   <Card>
                     <CardBody className="py-16">
                       <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
-                        <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
+                        <div className="w-20 h-20 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-6">
                           <BookOpen className="w-10 h-10 text-neutral-400" />
                         </div>
-                        <h3 className="text-lg font-semibold text-neutral-700 mb-2">
+                        <h3 className="text-lg font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
                           {kbSearchQuery ||
                           kbCategoryFilter ||
                           kbPublishedFilter !== 'all'
                             ? 'No items match your filters'
                             : 'No knowledge base items yet'}
                         </h3>
-                        <p className="text-sm text-neutral-500 mb-6 leading-relaxed">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6 leading-relaxed">
                           {kbSearchQuery ||
                           kbCategoryFilter ||
                           kbPublishedFilter !== 'all'
@@ -1815,10 +1815,10 @@ function ChatbotPage(): JSX.Element {
                                 <div className="flex items-start gap-2 mb-2">
                                   <HelpCircle className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
                                   <div className="flex-1">
-                                    <h4 className="font-medium text-neutral-900">
+                                    <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
                                       {item.question}
                                     </h4>
-                                    <p className="text-sm text-neutral-600 mt-1 line-clamp-2">
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">
                                       {item.answer}
                                     </p>
                                   </div>
@@ -1863,7 +1863,7 @@ function ChatbotPage(): JSX.Element {
 
                                   {/* Keywords */}
                                   {item.keywords.length > 0 && (
-                                    <span className="text-xs text-neutral-500">
+                                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
                                       Keywords:{' '}
                                       {item.keywords.slice(0, 3).join(', ')}
                                       {item.keywords.length > 3 &&
@@ -1875,7 +1875,7 @@ function ChatbotPage(): JSX.Element {
 
                               {/* Stats */}
                               <div className="flex flex-col items-end gap-2 text-sm">
-                                <div className="flex items-center gap-3 text-neutral-500">
+                                <div className="flex items-center gap-3 text-neutral-500 dark:text-neutral-400">
                                   <span className="flex items-center gap-1">
                                     <Eye className="w-4 h-4" />
                                     {item.viewCount}
@@ -1893,7 +1893,7 @@ function ChatbotPage(): JSX.Element {
                                 {/* Helpfulness Bar */}
                                 {helpfulPercent !== null && (
                                   <div className="flex items-center gap-2">
-                                    <div className="w-20 h-2 bg-neutral-200 rounded-full overflow-hidden">
+                                    <div className="w-20 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                                       <div
                                         className={`h-full ${
                                           helpfulPercent >= 70
@@ -1905,7 +1905,7 @@ function ChatbotPage(): JSX.Element {
                                         style={{ width: `${helpfulPercent}%` }}
                                       />
                                     </div>
-                                    <span className="text-xs text-neutral-500">
+                                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
                                       {helpfulPercent}% helpful
                                     </span>
                                   </div>
@@ -1971,7 +1971,7 @@ function ChatbotPage(): JSX.Element {
                 {analyticsQuery.isLoading ? (
                   <Card className="col-span-full">
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         Loading analytics...
                       </p>
                     </CardBody>
@@ -1983,7 +1983,7 @@ function ChatbotPage(): JSX.Element {
                         <p className="text-3xl font-bold text-primary-600">
                           {analyticsQuery.data.totalConversations ?? 0}
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Total Conversations
                         </p>
                       </CardBody>
@@ -1996,7 +1996,7 @@ function ChatbotPage(): JSX.Element {
                           )}
                           s
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Avg Response Time
                         </p>
                       </CardBody>
@@ -2009,7 +2009,7 @@ function ChatbotPage(): JSX.Element {
                           ).toFixed(0)}
                           %
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Resolution Rate
                         </p>
                       </CardBody>
@@ -2022,7 +2022,7 @@ function ChatbotPage(): JSX.Element {
                           )}
                           /5
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Avg Satisfaction
                         </p>
                       </CardBody>
@@ -2031,7 +2031,7 @@ function ChatbotPage(): JSX.Element {
                 ) : (
                   <Card className="col-span-full">
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         No analytics data available.
                       </p>
                     </CardBody>
@@ -2049,7 +2049,7 @@ function ChatbotPage(): JSX.Element {
           <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                   {editingKbItem
                     ? 'Edit Knowledge Base Item'
                     : 'Add Knowledge Base Item'}
@@ -2060,7 +2060,7 @@ function ChatbotPage(): JSX.Element {
                     setEditingKbItem(null);
                     resetKbForm();
                   }}
-                  className="p-1 hover:bg-neutral-100 rounded"
+                  className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2069,7 +2069,7 @@ function ChatbotPage(): JSX.Element {
             <CardBody>
               <form onSubmit={handleKbFormSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
                     Question <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -2083,13 +2083,13 @@ function ChatbotPage(): JSX.Element {
                     placeholder="e.g., How do I track my order?"
                     required
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                     The question customers might ask
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
                     Answer <span className="text-red-500">*</span>
                   </label>
                   <textarea
@@ -2103,16 +2103,16 @@ function ChatbotPage(): JSX.Element {
                     placeholder="Provide a helpful answer to the question..."
                     required
                     rows={4}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900/50 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                     The answer the chatbot will provide
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
                       Category
                     </label>
                     <Select
@@ -2134,7 +2134,7 @@ function ChatbotPage(): JSX.Element {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
                       Priority
                     </label>
                     <Select
@@ -2152,14 +2152,14 @@ function ChatbotPage(): JSX.Element {
                       <option value="4">4</option>
                       <option value="5">5 - High</option>
                     </Select>
-                    <p className="text-xs text-neutral-500 mt-1">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                       Higher priority items are matched first
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
                     Keywords
                   </label>
                   <Input
@@ -2172,7 +2172,7 @@ function ChatbotPage(): JSX.Element {
                     }
                     placeholder="e.g., order, tracking, shipping, status"
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                     Comma-separated keywords to help match this answer
                   </p>
                 </div>
@@ -2192,7 +2192,7 @@ function ChatbotPage(): JSX.Element {
                   />
                   <label
                     htmlFor="isPublished"
-                    className="text-sm text-neutral-700"
+                    className="text-sm text-neutral-900 dark:text-neutral-100"
                   >
                     Publish immediately (visible to customers)
                   </label>
@@ -2236,13 +2236,13 @@ function ChatbotPage(): JSX.Element {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <div className="flex items-center gap-2 text-red-600">
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                 <AlertCircle className="w-5 h-5" />
                 <h2 className="text-xl font-semibold">Delete Item</h2>
               </div>
             </CardHeader>
             <CardBody>
-              <p className="text-neutral-600 mb-4">
+              <p className="text-neutral-600 dark:text-neutral-400 mb-4">
                 Are you sure you want to delete this knowledge base item? This
                 action cannot be undone.
               </p>
@@ -2271,7 +2271,7 @@ function ChatbotPage(): JSX.Element {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <h2 className="text-xl font-semibold">Create New Chatbot</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Create New Chatbot</h2>
             </CardHeader>
             <CardBody>
               <form onSubmit={handleCreateConfig} className="space-y-4">
