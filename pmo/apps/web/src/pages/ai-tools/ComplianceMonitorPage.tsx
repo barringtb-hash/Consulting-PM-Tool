@@ -326,7 +326,9 @@ function ComplianceMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Frameworks</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Frameworks
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {selectedConfig.frameworks.map((fw) => (
                       <Badge key={fw} variant="primary">
@@ -343,7 +345,9 @@ function ComplianceMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Auto Scan</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Auto Scan
+                  </p>
                   <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.autoScanEnabled ? 'Enabled' : 'Disabled'}
                   </p>
@@ -356,7 +360,9 @@ function ComplianceMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Scan Frequency</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Scan Frequency
+                  </p>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.scanFrequencyHours}h
                   </p>
@@ -369,7 +375,9 @@ function ComplianceMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Risk Threshold</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Risk Threshold
+                  </p>
                   <p className="text-2xl font-bold text-orange-500">
                     {selectedConfig.riskThreshold}
                   </p>
@@ -386,7 +394,9 @@ function ComplianceMonitorPage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Compliance Rules</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Compliance Rules
+              </h3>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Rule
@@ -467,7 +477,9 @@ function ComplianceMonitorPage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Compliance Violations</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Compliance Violations
+              </h3>
               <Button
                 variant="secondary"
                 onClick={() =>
@@ -492,7 +504,10 @@ function ComplianceMonitorPage(): JSX.Element {
             ) : (
               <div className="space-y-4">
                 {violationsQuery.data?.map((violation) => (
-                  <div key={violation.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                  <div
+                    key={violation.id}
+                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                  >
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2">
@@ -507,7 +522,9 @@ function ComplianceMonitorPage(): JSX.Element {
                             {violation.severity}
                           </Badge>
                         </div>
-                        <p className="font-medium mt-1 text-neutral-900 dark:text-neutral-100">{violation.ruleName}</p>
+                        <p className="font-medium mt-1 text-neutral-900 dark:text-neutral-100">
+                          {violation.ruleName}
+                        </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                           Detected:{' '}
                           {new Date(violation.detectedAt).toLocaleString()}
@@ -532,7 +549,9 @@ function ComplianceMonitorPage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Compliance Audits</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Compliance Audits
+              </h3>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Start Audit
@@ -603,7 +622,9 @@ function ComplianceMonitorPage(): JSX.Element {
                               {audit.score}%
                             </span>
                           ) : (
-                            <span className="text-neutral-600 dark:text-neutral-400">-</span>
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              -
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
@@ -653,7 +674,9 @@ function ComplianceMonitorPage(): JSX.Element {
                   {['HIPAA', 'SOX', 'GDPR', 'PCI-DSS'].map((fw) => (
                     <label key={fw} className="flex items-center gap-2">
                       <input type="checkbox" name="frameworks" value={fw} />
-                      <span className="text-sm text-neutral-900 dark:text-neutral-100">{fw}</span>
+                      <span className="text-sm text-neutral-900 dark:text-neutral-100">
+                        {fw}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -688,7 +711,9 @@ function ComplianceMonitorPage(): JSX.Element {
                     name="autoScanEnabled"
                     defaultChecked
                   />
-                  <span className="text-sm text-neutral-900 dark:text-neutral-100">Enable Automated Scanning</span>
+                  <span className="text-sm text-neutral-900 dark:text-neutral-100">
+                    Enable Automated Scanning
+                  </span>
                 </label>
               </div>
 

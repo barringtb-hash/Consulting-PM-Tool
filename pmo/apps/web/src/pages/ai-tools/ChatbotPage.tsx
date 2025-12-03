@@ -883,11 +883,17 @@ function ChatbotPage(): JSX.Element {
                   <CardBody>
                     <dl className="space-y-3">
                       <div>
-                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">Name</dt>
-                        <dd className="font-medium text-neutral-900 dark:text-neutral-100">{selectedConfig.name}</dd>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Name
+                        </dt>
+                        <dd className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {selectedConfig.name}
+                        </dd>
                       </div>
                       <div>
-                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">Status</dt>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Status
+                        </dt>
                         <dd>
                           <Badge
                             variant={
@@ -907,7 +913,9 @@ function ChatbotPage(): JSX.Element {
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">Features</dt>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Features
+                        </dt>
                         <dd className="flex gap-2 flex-wrap mt-1">
                           {selectedConfig.enableFAQ && (
                             <Badge variant="primary">FAQ</Badge>
@@ -1436,7 +1444,9 @@ function ChatbotPage(): JSX.Element {
                       </CardHeader>
                       <CardBody className="max-h-[300px] overflow-y-auto">
                         {knowledgeBaseQuery.isLoading ? (
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading...</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Loading...
+                          </p>
                         ) : !knowledgeBaseQuery.data?.length ? (
                           <p className="text-sm text-neutral-500 dark:text-neutral-400">
                             No knowledge base items
@@ -2271,7 +2281,9 @@ function ChatbotPage(): JSX.Element {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Create New Chatbot</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                Create New Chatbot
+              </h2>
             </CardHeader>
             <CardBody>
               <form onSubmit={handleCreateConfig} className="space-y-4">

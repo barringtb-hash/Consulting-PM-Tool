@@ -219,7 +219,9 @@ function ClientsPage(): JSX.Element {
         {/* Filters Section */}
         <section className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Filters</h2>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Filters
+            </h2>
             {activeFilterCount > 0 && (
               <Button variant="subtle" size="sm" onClick={clearFilters}>
                 Clear filters ({activeFilterCount})
@@ -308,7 +310,9 @@ function ClientsPage(): JSX.Element {
           {/* Active Filters Display */}
           {activeFilterCount > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">Active filters:</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                Active filters:
+              </span>
               {filters.search && (
                 <Badge variant="primary">
                   Search: &quot;{filters.search}&quot;
@@ -512,7 +516,9 @@ function ClientsPage(): JSX.Element {
                               {formatAiMaturity(client.aiMaturity)}
                             </Badge>
                           ) : (
-                            <span className="text-sm text-neutral-600 dark:text-neutral-400">—</span>
+                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                              —
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">

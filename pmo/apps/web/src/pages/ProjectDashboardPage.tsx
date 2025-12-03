@@ -372,7 +372,9 @@ function ProjectDashboardPage(): JSX.Element {
   if (projectQuery.isLoading) {
     return (
       <main className="p-6">
-        <p className="text-neutral-600 dark:text-neutral-400">Loading project…</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          Loading project…
+        </p>
       </main>
     );
   }
@@ -441,7 +443,9 @@ function ProjectDashboardPage(): JSX.Element {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">Status:</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Status:
+                </span>
                 <Badge
                   variant={
                     project.status === 'IN_PROGRESS'
@@ -458,7 +462,9 @@ function ProjectDashboardPage(): JSX.Element {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">Health:</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Health:
+                </span>
                 <ProjectStatusPill
                   healthStatus={project.healthStatus}
                   statusSummary={project.statusSummary}
@@ -744,7 +750,9 @@ function ProjectDashboardPage(): JSX.Element {
               {milestonesQuery.isLoading && (
                 <Card>
                   <CardBody>
-                    <p className="text-neutral-600 dark:text-neutral-400">Loading milestones...</p>
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Loading milestones...
+                    </p>
                   </CardBody>
                 </Card>
               )}
@@ -833,7 +841,9 @@ function ProjectDashboardPage(): JSX.Element {
                 </CardHeader>
                 <CardBody>
                   {projectAssetsQuery.isLoading && (
-                    <p className="text-neutral-600 dark:text-neutral-400">Loading assets...</p>
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Loading assets...
+                    </p>
                   )}
 
                   {projectAssets.length === 0 &&

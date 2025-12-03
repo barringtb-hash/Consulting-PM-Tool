@@ -365,7 +365,7 @@ function ContentGeneratorPage(): JSX.Element {
 
       {/* Tabs */}
       {selectedConfigId && (
-        <div className="border-b border-gray-200">
+        <div className="border-b border-neutral-200 dark:border-neutral-700">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: PenTool },
@@ -378,8 +378,8 @@ function ContentGeneratorPage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -397,7 +397,9 @@ function ContentGeneratorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">SEO Optimization</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    SEO Optimization
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.enableSEO ? 'Enabled' : 'Disabled'}
                   </p>
@@ -410,7 +412,9 @@ function ContentGeneratorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Plagiarism Check</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Plagiarism Check
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.enablePlagiarismCheck
                       ? 'Enabled'
@@ -425,7 +429,9 @@ function ContentGeneratorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Default Tone</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Default Tone
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.defaultTone || 'Not set'}
                   </p>
@@ -438,7 +444,9 @@ function ContentGeneratorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Default Length</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Default Length
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.defaultLength || 'Medium'}
                   </p>
@@ -470,17 +478,20 @@ function ContentGeneratorPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {contentsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading content...
               </div>
             ) : contentsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No content found. Generate your first piece of content!
               </div>
             ) : (
               <div className="space-y-4">
                 {contentsQuery.data?.map((content) => (
-                  <div key={content.id} className="border rounded-lg p-4">
+                  <div
+                    key={content.id}
+                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                  >
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium">{content.title}</h4>
@@ -498,7 +509,7 @@ function ContentGeneratorPage(): JSX.Element {
                           </Badge>
                         </div>
                       </div>
-                      <div className="text-right text-sm text-gray-500">
+                      <div className="text-right text-sm text-neutral-500 dark:text-neutral-400">
                         {content.seoScore !== null && (
                           <div>SEO: {content.seoScore}%</div>
                         )}
@@ -510,7 +521,7 @@ function ContentGeneratorPage(): JSX.Element {
                         )}
                       </div>
                     </div>
-                    <p className="mt-2 text-sm text-gray-600 line-clamp-3">
+                    <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
                       {content.content}
                     </p>
                   </div>
@@ -524,7 +535,7 @@ function ContentGeneratorPage(): JSX.Element {
       {/* Create Configuration Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-4">
               Create Content Generator Configuration
             </h2>
@@ -545,13 +556,13 @@ function ContentGeneratorPage(): JSX.Element {
               </Select>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Brand Voice Description
                 </label>
                 <textarea
                   name="brandVoiceDescription"
                   rows={3}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 px-3 py-2 text-sm"
                   placeholder="Describe your brand voice (e.g., professional, friendly, innovative...)"
                 />
               </div>
@@ -606,7 +617,7 @@ function ContentGeneratorPage(): JSX.Element {
       {/* Generate Content Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-lg w-full p-6">
             <h2 className="text-lg font-semibold mb-4">Generate New Content</h2>
             <form onSubmit={handleGenerateContent} className="space-y-4">
               <Input
@@ -626,13 +637,13 @@ function ContentGeneratorPage(): JSX.Element {
               </Select>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                   Prompt / Instructions
                 </label>
                 <textarea
                   name="prompt"
                   rows={4}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 px-3 py-2 text-sm"
                   placeholder="Describe what you want to generate..."
                 />
               </div>

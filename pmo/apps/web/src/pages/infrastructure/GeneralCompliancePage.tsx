@@ -299,8 +299,12 @@ function GeneralCompliancePage(): JSX.Element {
                   {framework.status}
                 </Badge>
               </div>
-              <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{framework.shortName}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">{framework.name}</p>
+              <p className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                {framework.shortName}
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                {framework.name}
+              </p>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-neutral-600 dark:text-neutral-400">
                   {framework.requirementsCompliant}/
@@ -314,11 +318,15 @@ function GeneralCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Pending DSRs</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Pending DSRs
+                </p>
                 <p className="text-2xl font-bold text-orange-500">
                   {pendingRequests}
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">requests open</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  requests open
+                </p>
               </div>
               <Users className="h-8 w-8 text-orange-500" />
             </div>
@@ -328,11 +336,15 @@ function GeneralCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Avg Opt-In Rate</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Avg Opt-In Rate
+                </p>
                 <p className="text-2xl font-bold text-green-600">
                   {avgOptInRate}%
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">across all purposes</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  across all purposes
+                </p>
               </div>
               <Bell className="h-8 w-8 text-green-500" />
             </div>
@@ -393,7 +405,11 @@ function GeneralCompliancePage(): JSX.Element {
                     className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-600 dark:text-neutral-400'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-600 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
@@ -431,7 +447,11 @@ function GeneralCompliancePage(): JSX.Element {
                     className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-600 dark:text-neutral-400'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-600 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
@@ -453,7 +473,9 @@ function GeneralCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Data Subject Requests</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Data Subject Requests
+              </h3>
               <Button variant="secondary" size="sm">
                 <FileText className="h-4 w-4 mr-2" />
                 New Request
@@ -558,10 +580,15 @@ function GeneralCompliancePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {consentQuery.data?.map((consent) => (
-                <div key={consent.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                <div
+                  key={consent.id}
+                  className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">{consent.purpose}</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {consent.purpose}
+                      </p>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         {consent.category}
                       </p>
@@ -570,7 +597,9 @@ function GeneralCompliancePage(): JSX.Element {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">Opt-In Rate</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Opt-In Rate
+                      </p>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                           <div
@@ -588,13 +617,17 @@ function GeneralCompliancePage(): JSX.Element {
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Consents</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Total Consents
+                      </p>
                       <p className="font-semibold text-neutral-900 dark:text-neutral-100">
                         {consent.totalConsents.toLocaleString()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">Last Updated</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Last Updated
+                      </p>
                       <p className="font-medium text-neutral-900 dark:text-neutral-100">
                         {new Date(consent.lastUpdated).toLocaleDateString()}
                       </p>

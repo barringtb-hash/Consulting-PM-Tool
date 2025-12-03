@@ -63,7 +63,9 @@ function LoginPage(): JSX.Element {
     <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 px-4 py-12 transition-colors">
       <section className="w-full max-w-md">
         <div className="bg-white dark:bg-neutral-800/80 rounded-lg shadow-md dark:shadow-dark-lg border border-neutral-200 dark:border-neutral-700/80 dark:ring-1 dark:ring-white/5 px-8 py-10">
-          <h1 className="text-center mb-2 text-neutral-900 dark:text-neutral-100">Sign in</h1>
+          <h1 className="text-center mb-2 text-neutral-900 dark:text-neutral-100">
+            Sign in
+          </h1>
           <p className="text-center text-neutral-600 dark:text-neutral-400 mb-8">
             Access the AI Consulting PMO workspace.
           </p>

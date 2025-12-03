@@ -351,8 +351,12 @@ function FinancialCompliancePage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">{framework.shortName}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{framework.name}</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {framework.shortName}
+                  </p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {framework.name}
+                  </p>
                 </div>
                 <Badge variant={STATUS_VARIANTS[framework.status]}>
                   {framework.status}
@@ -363,10 +367,14 @@ function FinancialCompliancePage(): JSX.Element {
                   <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     {framework.controlsCompliant}/{framework.controlsTotal}
                   </p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Controls Compliant</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Controls Compliant
+                  </p>
                 </div>
                 <div className="text-right text-sm">
-                  <p className="text-neutral-600 dark:text-neutral-400">Next Audit</p>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Next Audit
+                  </p>
                   <p className="font-medium text-neutral-900 dark:text-neutral-100">
                     {framework.nextAudit
                       ? new Date(framework.nextAudit).toLocaleDateString()
@@ -435,7 +443,11 @@ function FinancialCompliancePage(): JSX.Element {
                     className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-600 dark:text-neutral-400'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-600 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
@@ -452,7 +464,9 @@ function FinancialCompliancePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Compliance Summary</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Compliance Summary
+              </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
@@ -460,7 +474,9 @@ function FinancialCompliancePage(): JSX.Element {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Scale className="h-5 w-5 text-blue-500" />
-                      <span className="font-medium text-neutral-900 dark:text-neutral-100">SOX Controls</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        SOX Controls
+                      </span>
                     </div>
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {soxCompliant}/{soxQuery.data?.length || 0} effective
@@ -480,7 +496,9 @@ function FinancialCompliancePage(): JSX.Element {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Archive className="h-5 w-5 text-purple-500" />
-                      <span className="font-medium text-neutral-900 dark:text-neutral-100">FINRA Records</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        FINRA Records
+                      </span>
                     </div>
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {finraCurrentRecords}/{finraQuery.data?.length || 0}{' '}
@@ -501,7 +519,9 @@ function FinancialCompliancePage(): JSX.Element {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-5 w-5 text-green-500" />
-                      <span className="font-medium text-neutral-900 dark:text-neutral-100">PCI DSS Requirements</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        PCI DSS Requirements
+                      </span>
                     </div>
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {pciCompliant}/{pciQuery.data?.length || 0} compliant
@@ -527,7 +547,9 @@ function FinancialCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Sarbanes-Oxley Controls</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Sarbanes-Oxley Controls
+              </h3>
               <Button variant="secondary" size="sm">
                 <Eye className="h-4 w-4 mr-2" />
                 Run Control Test
@@ -537,11 +559,18 @@ function FinancialCompliancePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {soxQuery.data?.map((control) => (
-                <div key={control.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                <div
+                  key={control.id}
+                  className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">{control.requirement}</p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">{control.section}</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {control.requirement}
+                      </p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        {control.section}
+                      </p>
                     </div>
                     <Badge variant={STATUS_VARIANTS[control.status]}>
                       {control.status}
@@ -636,7 +665,9 @@ function FinancialCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">PCI DSS Requirements</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                PCI DSS Requirements
+              </h3>
               <Button variant="secondary" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 SAQ Assessment
@@ -654,7 +685,9 @@ function FinancialCompliancePage(): JSX.Element {
                 'Maintain an Information Security Policy',
               ].map((category) => (
                 <div key={category}>
-                  <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-3">{category}</h4>
+                  <h4 className="font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+                    {category}
+                  </h4>
                   <div className="space-y-2">
                     {pciQuery.data
                       ?.filter((r) => r.category === category)
@@ -664,7 +697,9 @@ function FinancialCompliancePage(): JSX.Element {
                           className="flex items-center justify-between p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg"
                         >
                           <div>
-                            <p className="text-sm text-neutral-900 dark:text-neutral-100">{requirement.requirement}</p>
+                            <p className="text-sm text-neutral-900 dark:text-neutral-100">
+                              {requirement.requirement}
+                            </p>
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">
                               Last validated:{' '}
                               {requirement.lastValidated

@@ -74,7 +74,9 @@ function DealCard({ deal, onClick }: DealCardProps): JSX.Element {
         {deal.name}
       </h4>
 
-      <div className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{deal.clientName}</div>
+      <div className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+        {deal.clientName}
+      </div>
 
       {deal.pipelineValue && (
         <div className="flex items-center gap-2 mb-2">
@@ -130,7 +132,9 @@ function PipelineColumn({
     <div className="flex-shrink-0 w-80 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">{stage.label}</h3>
+          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
+            {stage.label}
+          </h3>
           <Badge className="bg-primary-100 text-primary-700">
             {deals.length}
           </Badge>
@@ -321,7 +325,10 @@ export function PipelinePage(): JSX.Element {
           <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-12 text-center">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp size={32} className="text-neutral-400 dark:text-neutral-500" />
+                <TrendingUp
+                  size={32}
+                  className="text-neutral-400 dark:text-neutral-500"
+                />
               </div>
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                 No deals in pipeline yet

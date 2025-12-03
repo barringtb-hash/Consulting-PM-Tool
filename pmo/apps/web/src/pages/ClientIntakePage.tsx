@@ -111,7 +111,9 @@ function ProgressIndicator({
                       ) : (
                         <span
                           className={`text-sm font-semibold ${
-                            isCurrent ? 'text-primary-600 dark:text-primary-400' : 'text-neutral-500 dark:text-neutral-400'
+                            isCurrent
+                              ? 'text-primary-600 dark:text-primary-400'
+                              : 'text-neutral-500 dark:text-neutral-400'
                           }`}
                         >
                           {index + 1}

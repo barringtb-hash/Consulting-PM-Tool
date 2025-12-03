@@ -120,7 +120,7 @@ function MarketingContentPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Marketing & Content"
         description="Create and manage marketing content from your projects and meetings"
@@ -201,12 +201,12 @@ function MarketingContentPage(): JSX.Element {
               </Select>
             </div>
             <div className="mt-4">
-              <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={includeArchived}
                   onChange={(e) => setIncludeArchived(e.target.checked)}
-                  className="rounded border-neutral-300"
+                  className="rounded border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900/50"
                 />
                 Include archived content
               </label>
@@ -220,7 +220,7 @@ function MarketingContentPage(): JSX.Element {
             {contentsQuery.isLoading ? (
               <Card>
                 <CardBody>
-                  <p className="text-center text-neutral-500">
+                  <p className="text-center text-neutral-500 dark:text-neutral-400">
                     Loading content...
                   </p>
                 </CardBody>
@@ -228,7 +228,7 @@ function MarketingContentPage(): JSX.Element {
             ) : contents.length === 0 ? (
               <Card>
                 <CardBody>
-                  <p className="text-center text-neutral-500">
+                  <p className="text-center text-neutral-500 dark:text-neutral-400">
                     No marketing content found. Create your first content to get
                     started!
                   </p>
@@ -249,7 +249,7 @@ function MarketingContentPage(): JSX.Element {
                           </span>
                           <div>
                             <h3
-                              className="text-lg font-semibold text-neutral-900 cursor-pointer hover:text-primary-600"
+                              className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"
                               onClick={() => handleViewDetail(content)}
                             >
                               {content.name}
@@ -269,11 +269,11 @@ function MarketingContentPage(): JSX.Element {
                           </div>
                         </div>
                         {content.summary && (
-                          <p className="text-sm text-neutral-600 mt-2 line-clamp-2">
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2 line-clamp-2">
                             {content.summary}
                           </p>
                         )}
-                        <div className="flex items-center gap-4 mt-3 text-sm text-neutral-500">
+                        <div className="flex items-center gap-4 mt-3 text-sm text-neutral-500 dark:text-neutral-400">
                           {content.client && (
                             <span>Client: {content.client.name}</span>
                           )}
@@ -292,7 +292,7 @@ function MarketingContentPage(): JSX.Element {
                             {content.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className="px-2 py-1 text-xs bg-neutral-100 text-neutral-700 rounded"
+                                className="px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded"
                               >
                                 #{tag}
                               </span>

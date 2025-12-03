@@ -303,7 +303,7 @@ function SafetyMonitorPage(): JSX.Element {
 
       {/* Tabs */}
       {selectedConfigId && (
-        <div className="border-b border-gray-200">
+        <div className="border-b border-neutral-200 dark:border-neutral-700">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: HardHat },
@@ -316,8 +316,8 @@ function SafetyMonitorPage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -335,8 +335,10 @@ function SafetyMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">OSHA Logging</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    OSHA Logging
+                  </p>
+                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.oshaLoggingEnabled ? 'Enabled' : 'Disabled'}
                   </p>
                 </div>
@@ -348,8 +350,10 @@ function SafetyMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Auto Incident Report</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Auto Incident Report
+                  </p>
+                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.autoIncidentReporting
                       ? 'Enabled'
                       : 'Disabled'}
@@ -363,8 +367,10 @@ function SafetyMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Training Tracking</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Training Tracking
+                  </p>
+                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.trainingTrackingEnabled
                       ? 'Enabled'
                       : 'Disabled'}
@@ -378,8 +384,10 @@ function SafetyMonitorPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Checklist Frequency</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Checklist Frequency
+                  </p>
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.checklistFrequencyDays} days
                   </p>
                 </div>
@@ -404,11 +412,11 @@ function SafetyMonitorPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {checklistsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading checklists...
               </div>
             ) : checklistsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No checklists configured. Create your first safety checklist.
               </div>
             ) : (
@@ -416,22 +424,24 @@ function SafetyMonitorPage(): JSX.Element {
                 {checklistsQuery.data?.map((checklist) => (
                   <div
                     key={checklist.id}
-                    className="border rounded-lg p-4 flex items-center justify-between"
+                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-4">
-                      <ClipboardCheck className="h-6 w-6 text-gray-400" />
+                      <ClipboardCheck className="h-6 w-6 text-neutral-400 dark:text-neutral-500" />
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium">{checklist.name}</p>
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {checklist.name}
+                          </p>
                           {checklist.isRequired && (
                             <Badge variant="secondary">Required</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
                           {checklist.category} • {checklist.itemCount} items
                         </p>
                         {checklist.lastCompletedAt && (
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500">
                             Last completed:{' '}
                             {new Date(
                               checklist.lastCompletedAt,
@@ -442,12 +452,14 @@ function SafetyMonitorPage(): JSX.Element {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-2xl font-bold">
+                        <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                           {checklist.completionRate}%
                         </p>
-                        <p className="text-xs text-gray-500">Completion</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          Completion
+                        </p>
                       </div>
-                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                      <div className="w-20 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${
                             checklist.completionRate >= 80
@@ -482,17 +494,20 @@ function SafetyMonitorPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {incidentsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading incidents...
               </div>
             ) : incidentsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No incidents reported. Your safety record is clean.
               </div>
             ) : (
               <div className="space-y-4">
                 {incidentsQuery.data?.map((incident) => (
-                  <div key={incident.id} className="border rounded-lg p-4">
+                  <div
+                    key={incident.id}
+                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                  >
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2">
@@ -503,17 +518,19 @@ function SafetyMonitorPage(): JSX.Element {
                           >
                             {incident.severity}
                           </Badge>
-                          <span className="font-medium">{incident.type}</span>
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {incident.type}
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                           {incident.description}
                         </p>
                         {incident.location && (
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                             Location: {incident.location}
                           </p>
                         )}
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                           Reported:{' '}
                           {new Date(incident.reportedAt).toLocaleString()}
                         </p>
@@ -554,43 +571,43 @@ function SafetyMonitorPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {trainingQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading training records...
               </div>
             ) : trainingQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No training records. Add training requirements to track
                 compliance.
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Course
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Employee
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Due Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Expires
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                     {trainingQuery.data?.map((record) => (
                       <tr key={record.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
                           {record.courseName}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                           {record.employeeName}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -612,12 +629,12 @@ function SafetyMonitorPage(): JSX.Element {
                             </Badge>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
                           {record.dueDate
                             ? new Date(record.dueDate).toLocaleDateString()
                             : '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
                           {record.expiresAt
                             ? new Date(record.expiresAt).toLocaleDateString()
                             : 'Never'}
@@ -634,9 +651,9 @@ function SafetyMonitorPage(): JSX.Element {
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
               Create Safety Monitor Configuration
             </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
@@ -667,7 +684,7 @@ function SafetyMonitorPage(): JSX.Element {
               </Select>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="oshaLoggingEnabled"
@@ -677,7 +694,7 @@ function SafetyMonitorPage(): JSX.Element {
                     Enable OSHA 300 Log Management
                   </span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="autoIncidentReporting"
@@ -687,7 +704,7 @@ function SafetyMonitorPage(): JSX.Element {
                     Enable Automatic Incident Reporting
                   </span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="trainingTrackingEnabled"

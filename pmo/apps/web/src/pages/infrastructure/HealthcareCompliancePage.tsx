@@ -356,11 +356,15 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">HIPAA Controls</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  HIPAA Controls
+                </p>
                 <p className="text-2xl font-bold text-green-600">
                   {compliantControls}/{totalControls}
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Compliant</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Compliant
+                </p>
               </div>
               <Shield className="h-8 w-8 text-green-500" />
             </div>
@@ -371,11 +375,15 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">BAA Agreements</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  BAA Agreements
+                </p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {activeBaas}/{baaQuery.data?.length || 0}
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Active</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Active
+                </p>
               </div>
               <FileCheck className="h-8 w-8 text-blue-500" />
             </div>
@@ -386,13 +394,17 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Security Assessments</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Security Assessments
+                </p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {assessmentsQuery.data?.filter(
                     (a) => a.status === 'completed',
                   ).length || 0}
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Completed YTD</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Completed YTD
+                </p>
               </div>
               <Eye className="h-8 w-8 text-purple-500" />
             </div>
@@ -403,7 +415,9 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Training Compliance</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Training Compliance
+                </p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {completedTraining}/{trainingQuery.data?.length || 0}
                 </p>
@@ -477,7 +491,11 @@ function HealthcareCompliancePage(): JSX.Element {
                     className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-600 dark:text-neutral-400'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-600 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
@@ -509,9 +527,14 @@ function HealthcareCompliancePage(): JSX.Element {
                   { category: 'Physical Safeguards', compliant: 3, total: 3 },
                   { category: 'Technical Safeguards', compliant: 4, total: 4 },
                 ].map((item, idx) => (
-                  <div key={idx} className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                  <div
+                    key={idx}
+                    className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg"
+                  >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{item.category}</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {item.category}
+                      </span>
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">
                         {item.compliant}/{item.total}
                       </span>
@@ -573,7 +596,9 @@ function HealthcareCompliancePage(): JSX.Element {
                           className="flex items-center justify-between p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg"
                         >
                           <div>
-                            <p className="font-medium text-neutral-900 dark:text-neutral-100">{control.requirement}</p>
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {control.requirement}
+                            </p>
                             <p className="text-sm text-neutral-600 dark:text-neutral-400">
                               Last audit:{' '}
                               {control.lastAudit
@@ -672,7 +697,9 @@ function HealthcareCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Security Assessments</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Security Assessments
+              </h3>
               <Button variant="secondary" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 Schedule Assessment
@@ -682,10 +709,15 @@ function HealthcareCompliancePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {assessmentsQuery.data?.map((assessment, idx) => (
-                <div key={idx} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                <div
+                  key={idx}
+                  className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">{assessment.type}</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {assessment.type}
+                      </p>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         {new Date(assessment.date).toLocaleDateString()}
                       </p>
@@ -703,13 +735,17 @@ function HealthcareCompliancePage(): JSX.Element {
                   {assessment.status === 'completed' && (
                     <div className="flex gap-4 text-sm">
                       <span>
-                        <span className="text-neutral-600 dark:text-neutral-400">Findings:</span>{' '}
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          Findings:
+                        </span>{' '}
                         <span className="font-medium text-neutral-900 dark:text-neutral-100">
                           {assessment.findings}
                         </span>
                       </span>
                       <span>
-                        <span className="text-neutral-600 dark:text-neutral-400">Critical:</span>{' '}
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          Critical:
+                        </span>{' '}
                         <span
                           className={`font-medium ${assessment.criticalFindings > 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`}
                         >
@@ -730,7 +766,9 @@ function HealthcareCompliancePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">HIPAA Training Records</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                HIPAA Training Records
+              </h3>
               <Button variant="secondary" size="sm">
                 <Users className="h-4 w-4 mr-2" />
                 Assign Training

@@ -362,7 +362,7 @@ function IntakePage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Client Intake"
         description="Automated client intake with smart forms and compliance management"
@@ -426,7 +426,7 @@ function IntakePage(): JSX.Element {
 
         {/* Tab Navigation */}
         {selectedConfig && (
-          <div className="flex gap-2 border-b border-neutral-200">
+          <div className="flex gap-2 border-b border-neutral-200 dark:border-neutral-700">
             {[
               { id: 'forms', label: 'Forms', icon: ClipboardList },
               {
@@ -442,14 +442,14 @@ function IntakePage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
                   activeTab === id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-neutral-600 hover:text-neutral-900'
+                    ? 'border-primary-500 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
                 }`}
               >
                 <Icon className="w-4 h-4" />
                 {label}
                 {badge !== undefined && badge > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-100 text-primary-700 rounded-full">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 rounded-full">
                     {badge}
                   </span>
                 )}
@@ -463,8 +463,8 @@ function IntakePage(): JSX.Element {
           <Card>
             <CardBody>
               <div className="text-center py-8">
-                <ClipboardList className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                <p className="text-neutral-600">
+                <ClipboardList className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mx-auto mb-4" />
+                <p className="text-neutral-600 dark:text-neutral-400">
                   Select an intake configuration to manage forms and
                   submissions, or create a new one.
                 </p>
@@ -486,7 +486,7 @@ function IntakePage(): JSX.Element {
                 {formsQuery.isLoading ? (
                   <Card>
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         Loading forms...
                       </p>
                     </CardBody>
@@ -495,8 +495,8 @@ function IntakePage(): JSX.Element {
                   <Card>
                     <CardBody>
                       <div className="text-center py-8">
-                        <FileText className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                        <p className="text-neutral-600">
+                        <FileText className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mx-auto mb-4" />
+                        <p className="text-neutral-600 dark:text-neutral-400">
                           No intake forms created yet. Create your first form to
                           start collecting client information.
                         </p>
@@ -513,11 +513,11 @@ function IntakePage(): JSX.Element {
                         <CardBody>
                           <div className="flex items-start justify-between mb-3">
                             <div>
-                              <h3 className="font-semibold text-lg">
+                              <h3 className="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
                                 {form.name}
                               </h3>
                               {form.description && (
-                                <p className="text-sm text-neutral-600 mt-1">
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                                   {form.description}
                                 </p>
                               )}
@@ -529,7 +529,7 @@ function IntakePage(): JSX.Element {
                             </Badge>
                           </div>
 
-                          <div className="flex items-center gap-4 text-sm text-neutral-500 mb-4">
+                          <div className="flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400 mb-4">
                             <span>
                               {form._count?.submissions ?? 0} submissions
                             </span>
@@ -604,7 +604,7 @@ function IntakePage(): JSX.Element {
                 {submissionsQuery.isLoading ? (
                   <Card>
                     <CardBody>
-                      <p className="text-center text-neutral-500">
+                      <p className="text-center text-neutral-500 dark:text-neutral-400">
                         Loading submissions...
                       </p>
                     </CardBody>
@@ -613,8 +613,8 @@ function IntakePage(): JSX.Element {
                   <Card>
                     <CardBody>
                       <div className="text-center py-8">
-                        <Users className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                        <p className="text-neutral-600">
+                        <Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mx-auto mb-4" />
+                        <p className="text-neutral-600 dark:text-neutral-400">
                           No submissions found.
                         </p>
                       </div>
@@ -630,7 +630,7 @@ function IntakePage(): JSX.Element {
                         <div className="flex items-start justify-between">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">
+                              <span className="font-medium text-neutral-900 dark:text-neutral-100">
                                 {submission.submitterName ||
                                   submission.submitterEmail ||
                                   'Anonymous'}
@@ -645,10 +645,10 @@ function IntakePage(): JSX.Element {
                                 {submission.status.replace('_', ' ')}
                               </Badge>
                             </div>
-                            <p className="text-sm text-neutral-600">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
                               Form: {submission.form?.name}
                             </p>
-                            <div className="flex items-center gap-4 text-xs text-neutral-500 mt-2">
+                            <div className="flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400 mt-2">
                               {submission.submittedAt && (
                                 <span className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
@@ -733,12 +733,12 @@ function IntakePage(): JSX.Element {
                   </CardHeader>
                   <CardBody>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                        <div className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
                           {selectedConfig.enableDocumentCollection ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : (
-                            <AlertCircle className="w-5 h-5 text-neutral-400" />
+                            <AlertCircle className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
                           )}
                           <span>Document Collection</span>
                         </div>
@@ -754,12 +754,12 @@ function IntakePage(): JSX.Element {
                             : 'Disabled'}
                         </Badge>
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                        <div className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
                           {selectedConfig.enableComplianceChecks ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : (
-                            <AlertCircle className="w-5 h-5 text-neutral-400" />
+                            <AlertCircle className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
                           )}
                           <span>Compliance Checks</span>
                         </div>
@@ -775,12 +775,12 @@ function IntakePage(): JSX.Element {
                             : 'Disabled'}
                         </Badge>
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                        <div className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
                           {selectedConfig.enableESignature ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : (
-                            <AlertCircle className="w-5 h-5 text-neutral-400" />
+                            <AlertCircle className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
                           )}
                           <span>E-Signatures</span>
                         </div>
@@ -806,33 +806,37 @@ function IntakePage(): JSX.Element {
                   </CardHeader>
                   <CardBody>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-neutral-50 rounded-lg">
-                        <p className="text-2xl font-bold text-primary-600">
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                           {selectedConfig._count?.forms ?? 0}
                         </p>
-                        <p className="text-sm text-neutral-600">Active Forms</p>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Active Forms
+                        </p>
                       </div>
-                      <div className="p-4 bg-neutral-50 rounded-lg">
-                        <p className="text-2xl font-bold text-primary-600">
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                           {selectedConfig._count?.submissions ?? 0}
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Total Submissions
                         </p>
                       </div>
-                      <div className="p-4 bg-neutral-50 rounded-lg">
-                        <p className="text-2xl font-bold text-orange-600">
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                           {pendingSubmissions}
                         </p>
-                        <p className="text-sm text-neutral-600">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           Pending Review
                         </p>
                       </div>
-                      <div className="p-4 bg-neutral-50 rounded-lg">
-                        <p className="text-2xl font-bold text-primary-600">
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                           {selectedConfig._count?.workflows ?? 0}
                         </p>
-                        <p className="text-sm text-neutral-600">Workflows</p>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Workflows
+                        </p>
                       </div>
                     </div>
                   </CardBody>
@@ -845,10 +849,10 @@ function IntakePage(): JSX.Element {
 
       {/* Create Config Modal */}
       {showCreateConfigModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <h2 className="text-xl font-semibold">
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                 New Intake Configuration
               </h2>
             </CardHeader>
@@ -872,7 +876,7 @@ function IntakePage(): JSX.Element {
                   <option value="OTHER">Other</option>
                 </Select>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                     <input
                       type="checkbox"
                       name="enableDocumentCollection"
@@ -880,7 +884,7 @@ function IntakePage(): JSX.Element {
                     />
                     <span className="text-sm">Enable Document Collection</span>
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                     <input
                       type="checkbox"
                       name="enableComplianceChecks"
@@ -888,7 +892,7 @@ function IntakePage(): JSX.Element {
                     />
                     <span className="text-sm">Enable Compliance Checks</span>
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                     <input
                       type="checkbox"
                       name="enableESignature"
@@ -920,10 +924,12 @@ function IntakePage(): JSX.Element {
 
       {/* Create Form Modal */}
       {showCreateFormModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <h2 className="text-xl font-semibold">Create Intake Form</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                Create Intake Form
+              </h2>
             </CardHeader>
             <CardBody>
               <form onSubmit={handleCreateForm} className="space-y-4">
@@ -934,13 +940,13 @@ function IntakePage(): JSX.Element {
                   placeholder="e.g., New Client Intake"
                 />
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                     Description
                   </label>
                   <textarea
                     name="description"
                     rows={3}
-                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 px-3 py-2 text-sm"
                     placeholder="Optional description for the form..."
                   />
                 </div>

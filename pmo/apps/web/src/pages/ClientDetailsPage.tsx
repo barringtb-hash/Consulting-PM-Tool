@@ -112,7 +112,9 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
       </CardHeader>
       <CardBody>
         {contactsQuery.isLoading && (
-          <p className="text-neutral-600 dark:text-neutral-400">Loading contacts…</p>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Loading contacts…
+          </p>
         )}
         {contactsQuery.error && (
           <p role="alert" className="text-danger-600">
@@ -125,7 +127,9 @@ function ContactList({ clientId }: { clientId: number }): JSX.Element {
         {!contactsQuery.isLoading && !contactsQuery.error && (
           <>
             {contactsQuery.data && contactsQuery.data.length === 0 ? (
-              <p className="text-neutral-600 dark:text-neutral-400">{EMPTY_STATES.noContacts}</p>
+              <p className="text-neutral-600 dark:text-neutral-400">
+                {EMPTY_STATES.noContacts}
+              </p>
             ) : (
               <div className="space-y-4">
                 {contactsQuery.data?.map((contact) => (

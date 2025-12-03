@@ -330,11 +330,15 @@ function IotInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Gateways</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Gateways
+                </p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {onlineGateways}/{gatewaysQuery.data?.length || 0}
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Online</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Online
+                </p>
               </div>
               <Wifi className="h-8 w-8 text-blue-500" />
             </div>
@@ -345,8 +349,12 @@ function IotInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Connected Devices</p>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{totalDevices}</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Connected Devices
+                </p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {totalDevices}
+                </p>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
                   {activeSensors} sensors active
                 </p>
@@ -360,11 +368,15 @@ function IotInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Data Throughput</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Data Throughput
+                </p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {(pipelineQuery.data?.[0]?.throughput || 0).toLocaleString()}
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">messages/sec</p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  messages/sec
+                </p>
               </div>
               <Activity className="h-8 w-8 text-green-500" />
             </div>
@@ -375,7 +387,9 @@ function IotInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Alerts (24h)</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Alerts (24h)
+                </p>
                 <p className="text-2xl font-bold text-orange-500">
                   {alertsQuery.data?.reduce(
                     (sum, a) => sum + a.triggeredCount24h,
@@ -444,7 +458,11 @@ function IotInfrastructurePage(): JSX.Element {
                     className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                   >
                     <span
-                      className={item.done ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-500 dark:text-neutral-400'}
+                      className={
+                        item.done
+                          ? 'text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-500 dark:text-neutral-400'
+                      }
                     >
                       {item.label}
                     </span>
@@ -461,7 +479,9 @@ function IotInfrastructurePage(): JSX.Element {
 
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Supported Protocols</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Supported Protocols
+              </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
@@ -502,7 +522,9 @@ function IotInfrastructurePage(): JSX.Element {
                     className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
                   >
                     <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">{protocol.name}</p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {protocol.name}
+                      </p>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         {protocol.description}
                       </p>
@@ -527,7 +549,9 @@ function IotInfrastructurePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">IoT Gateways</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                IoT Gateways
+              </h3>
               <Button variant="secondary" size="sm">
                 <Wifi className="h-4 w-4 mr-2" />
                 Add Gateway
@@ -537,14 +561,19 @@ function IotInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {gatewaysQuery.data?.map((gateway) => (
-                <div key={gateway.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                <div
+                  key={gateway.id}
+                  className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-3 h-3 rounded-full ${STATUS_COLORS[gateway.status]}`}
                       />
                       <div>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">{gateway.name}</p>
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {gateway.name}
+                        </p>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
                           {gateway.location}
                         </p>
@@ -564,17 +593,25 @@ function IotInfrastructurePage(): JSX.Element {
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="text-neutral-600 dark:text-neutral-400">Devices</p>
+                      <p className="text-neutral-600 dark:text-neutral-400">
+                        Devices
+                      </p>
                       <p className="font-semibold text-neutral-900 dark:text-neutral-100">
                         {gateway.connectedDevices}
                       </p>
                     </div>
                     <div>
-                      <p className="text-neutral-600 dark:text-neutral-400">Protocol</p>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">{gateway.protocol}</p>
+                      <p className="text-neutral-600 dark:text-neutral-400">
+                        Protocol
+                      </p>
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {gateway.protocol}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-neutral-600 dark:text-neutral-400">Last Heartbeat</p>
+                      <p className="text-neutral-600 dark:text-neutral-400">
+                        Last Heartbeat
+                      </p>
                       <p className="font-medium text-neutral-900 dark:text-neutral-100">
                         {new Date(gateway.lastHeartbeat).toLocaleTimeString()}
                       </p>
@@ -592,7 +629,9 @@ function IotInfrastructurePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Connected Sensors</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Connected Sensors
+              </h3>
               <Button variant="secondary" size="sm">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -638,7 +677,9 @@ function IotInfrastructurePage(): JSX.Element {
                           {sensor.type === 'Pressure' && (
                             <Gauge className="h-4 w-4 text-purple-400 mr-2" />
                           )}
-                          <span className="font-medium text-neutral-900 dark:text-neutral-100">{sensor.name}</span>
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {sensor.name}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
@@ -678,7 +719,9 @@ function IotInfrastructurePage(): JSX.Element {
                             {sensor.batteryLevel}%
                           </span>
                         ) : (
-                          <span className="text-neutral-500 dark:text-neutral-400">Wired</span>
+                          <span className="text-neutral-500 dark:text-neutral-400">
+                            Wired
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -695,16 +738,23 @@ function IotInfrastructurePage(): JSX.Element {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Data Pipeline Status</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Data Pipeline Status
+              </h3>
             </CardHeader>
             <CardBody>
               <div className="space-y-4">
                 {pipelineQuery.data?.map((pipeline, idx) => (
-                  <div key={idx} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                  <div
+                    key={idx}
+                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <Server className="h-5 w-5 text-blue-500" />
-                        <span className="font-medium text-neutral-900 dark:text-neutral-100">{pipeline.name}</span>
+                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {pipeline.name}
+                        </span>
                       </div>
                       <Badge
                         variant={
@@ -719,17 +769,25 @@ function IotInfrastructurePage(): JSX.Element {
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <p className="text-neutral-600 dark:text-neutral-400">Throughput</p>
+                        <p className="text-neutral-600 dark:text-neutral-400">
+                          Throughput
+                        </p>
                         <p className="font-semibold text-neutral-900 dark:text-neutral-100">
                           {pipeline.throughput.toLocaleString()} msg/s
                         </p>
                       </div>
                       <div>
-                        <p className="text-neutral-600 dark:text-neutral-400">Latency</p>
-                        <p className="font-semibold text-neutral-900 dark:text-neutral-100">{pipeline.latency}ms</p>
+                        <p className="text-neutral-600 dark:text-neutral-400">
+                          Latency
+                        </p>
+                        <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                          {pipeline.latency}ms
+                        </p>
                       </div>
                       <div>
-                        <p className="text-neutral-600 dark:text-neutral-400">Processed (24h)</p>
+                        <p className="text-neutral-600 dark:text-neutral-400">
+                          Processed (24h)
+                        </p>
                         <p className="font-semibold text-neutral-900 dark:text-neutral-100">
                           {pipeline.messagesProcessed24h.toLocaleString()}
                         </p>
@@ -748,7 +806,9 @@ function IotInfrastructurePage(): JSX.Element {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Alert Configurations</h3>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Alert Configurations
+              </h3>
               <Button variant="secondary" size="sm">
                 <Zap className="h-4 w-4 mr-2" />
                 New Alert Rule
@@ -758,7 +818,10 @@ function IotInfrastructurePage(): JSX.Element {
           <CardBody>
             <div className="space-y-4">
               {alertsQuery.data?.map((alert) => (
-                <div key={alert.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                <div
+                  key={alert.id}
+                  className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <AlertTriangle
@@ -772,7 +835,9 @@ function IotInfrastructurePage(): JSX.Element {
                                 : 'text-neutral-400'
                         }`}
                       />
-                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{alert.name}</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {alert.name}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={SEVERITY_VARIANTS[alert.severity]}>

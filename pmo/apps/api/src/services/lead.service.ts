@@ -203,7 +203,7 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
 
       if (!projectOwnerId) {
         throw new Error(
-          'Project owner not specified. Please provide an ownerId or ensure the lead has an assigned owner.'
+          'Project owner not specified. Please provide an ownerId or ensure the lead has an assigned owner.',
         );
       }
 

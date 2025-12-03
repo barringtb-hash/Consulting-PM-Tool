@@ -389,7 +389,7 @@ function LeadScoringPage(): JSX.Element {
 
       {/* Tabs */}
       {selectedConfigId && (
-        <div className="border-b border-gray-200">
+        <div className="border-b border-neutral-200 dark:border-neutral-700">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: Target },
@@ -402,8 +402,8 @@ function LeadScoringPage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -421,7 +421,9 @@ function LeadScoringPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Hot Threshold</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Hot Threshold
+                  </p>
                   <p className="text-2xl font-bold text-red-500">
                     {selectedConfig.hotThreshold}+
                   </p>
@@ -434,7 +436,9 @@ function LeadScoringPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Warm Threshold</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Warm Threshold
+                  </p>
                   <p className="text-2xl font-bold text-orange-500">
                     {selectedConfig.warmThreshold}+
                   </p>
@@ -447,7 +451,9 @@ function LeadScoringPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Cold Threshold</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Cold Threshold
+                  </p>
                   <p className="text-2xl font-bold text-blue-500">
                     {selectedConfig.coldThreshold}+
                   </p>
@@ -460,7 +466,9 @@ function LeadScoringPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">CRM Sync</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    CRM Sync
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.crmSyncEnabled
                       ? selectedConfig.crmType || 'Enabled'
@@ -492,55 +500,55 @@ function LeadScoringPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {leadsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading leads...
               </div>
             ) : leadsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No leads found. Add your first lead to get started.
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Lead
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Company
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Score
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Level
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Conversion %
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                     {leadsQuery.data?.map((lead) => (
                       <tr key={lead.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                             {lead.name || '-'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-neutral-600 dark:text-neutral-400">
                             {lead.email}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {lead.company || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                            <div className="w-16 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2 mr-2">
                               <div
                                 className={`h-2 rounded-full ${
                                   lead.score >= 80
@@ -572,7 +580,7 @@ function LeadScoringPage(): JSX.Element {
                             </Badge>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {lead.conversionProbability !== null
                             ? `${Math.round(lead.conversionProbability * 100)}%`
                             : '-'}
@@ -612,17 +620,20 @@ function LeadScoringPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {sequencesQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading sequences...
               </div>
             ) : sequencesQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No sequences found. Create your first nurture sequence.
               </div>
             ) : (
               <div className="space-y-4">
                 {sequencesQuery.data?.map((sequence) => (
-                  <div key={sequence.id} className="border rounded-lg p-4">
+                  <div
+                    key={sequence.id}
+                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                  >
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{sequence.name}</h4>
@@ -637,19 +648,25 @@ function LeadScoringPage(): JSX.Element {
                           <div className="text-lg font-semibold">
                             {sequence.totalEnrollments}
                           </div>
-                          <div className="text-gray-500">Enrolled</div>
+                          <div className="text-neutral-500 dark:text-neutral-400">
+                            Enrolled
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-semibold">
                             {sequence.totalCompletions}
                           </div>
-                          <div className="text-gray-500">Completed</div>
+                          <div className="text-neutral-500 dark:text-neutral-400">
+                            Completed
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-semibold text-green-600">
                             {sequence.totalConversions}
                           </div>
-                          <div className="text-gray-500">Conversions</div>
+                          <div className="text-neutral-500 dark:text-neutral-400">
+                            Conversions
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -676,7 +693,7 @@ function LeadScoringPage(): JSX.Element {
                       {SCORE_LEVEL_ICONS[item.level]}
                       <span className="text-sm font-medium">{item.level}</span>
                     </div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-4">
+                    <div className="flex-1 bg-neutral-200 dark:bg-neutral-700 rounded-full h-4">
                       <div
                         className={`h-4 rounded-full ${
                           item.level === 'HOT'
@@ -707,23 +724,29 @@ function LeadScoringPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-center p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                   <div className="text-3xl font-bold">
                     {analyticsQuery.data.summary.totalLeads}
                   </div>
-                  <div className="text-sm text-gray-500">Total Leads</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Total Leads
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-3xl font-bold text-red-600">
+                <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                  <div className="text-3xl font-bold text-red-600 dark:text-red-400">
                     {analyticsQuery.data.summary.hotLeads}
                   </div>
-                  <div className="text-sm text-gray-500">Hot Leads</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Hot Leads
+                  </div>
                 </div>
-                <div className="col-span-2 text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600">
+                <div className="col-span-2 text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                     {analyticsQuery.data.summary.hotLeadPercentage.toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-500">Hot Lead Rate</div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Hot Lead Rate
+                  </div>
                 </div>
               </div>
             </CardBody>
@@ -734,7 +757,7 @@ function LeadScoringPage(): JSX.Element {
       {/* Create Configuration Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-4">
               Create Lead Scoring Configuration
             </h2>
@@ -828,7 +851,7 @@ function LeadScoringPage(): JSX.Element {
       {/* Add Lead Modal */}
       {showAddLeadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-4">Add New Lead</h2>
             <form onSubmit={handleAddLead} className="space-y-4">
               <Input

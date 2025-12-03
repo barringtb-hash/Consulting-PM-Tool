@@ -310,7 +310,7 @@ function DocumentAnalyzerPage(): JSX.Element {
 
       {/* Tabs */}
       {selectedConfigId && (
-        <div className="border-b border-gray-200">
+        <div className="border-b border-neutral-200 dark:border-neutral-700">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: FileSearch },
@@ -323,8 +323,8 @@ function DocumentAnalyzerPage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -342,7 +342,9 @@ function DocumentAnalyzerPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">OCR</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    OCR
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.enableOCR ? 'Enabled' : 'Disabled'}
                   </p>
@@ -355,7 +357,9 @@ function DocumentAnalyzerPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">NER</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    NER
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.enableNER ? 'Enabled' : 'Disabled'}
                   </p>
@@ -368,7 +372,9 @@ function DocumentAnalyzerPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Compliance</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Compliance
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.enableCompliance ? 'Enabled' : 'Disabled'}
                   </p>
@@ -381,7 +387,9 @@ function DocumentAnalyzerPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Retention</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Retention
+                  </p>
                   <p className="text-lg font-semibold">
                     {selectedConfig.retentionDays} days
                   </p>
@@ -418,48 +426,48 @@ function DocumentAnalyzerPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {documentsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading documents...
               </div>
             ) : documentsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No documents found. Upload a document to get started.
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Filename
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Format
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Type
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Compliance
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                     {documentsQuery.data?.map((doc) => (
                       <tr key={doc.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
                           {doc.filename}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {doc.format}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {doc.documentType || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -498,7 +506,7 @@ function DocumentAnalyzerPage(): JSX.Element {
       {/* Create Configuration Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-4">
               Create Document Analyzer Configuration
             </h2>

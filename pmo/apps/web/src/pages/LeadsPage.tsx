@@ -154,11 +154,17 @@ function LeadDetailPanel({
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <User size={16} className="text-neutral-400 dark:text-neutral-500" />
+                <User
+                  size={16}
+                  className="text-neutral-400 dark:text-neutral-500"
+                />
                 <span>{lead.name || 'No name'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Mail size={16} className="text-neutral-400 dark:text-neutral-500" />
+                <Mail
+                  size={16}
+                  className="text-neutral-400 dark:text-neutral-500"
+                />
                 <a
                   href={`mailto:${lead.email}`}
                   className="text-primary-600 hover:underline"
@@ -168,7 +174,10 @@ function LeadDetailPanel({
               </div>
               {lead.company && (
                 <div className="flex items-center gap-2">
-                  <Building2 size={16} className="text-neutral-400 dark:text-neutral-500" />
+                  <Building2
+                    size={16}
+                    className="text-neutral-400 dark:text-neutral-500"
+                  />
                   <span>{lead.company}</span>
                 </div>
               )}
@@ -182,19 +191,25 @@ function LeadDetailPanel({
             </h3>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="text-neutral-500 dark:text-neutral-400">Source: </span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Source:{' '}
+                </span>
                 <span className="font-medium">
                   {formatLeadSource(lead.source)}
                 </span>
               </div>
               <div>
-                <span className="text-neutral-500 dark:text-neutral-400">Interest: </span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Interest:{' '}
+                </span>
                 <span className="font-medium">
                   {formatServiceInterest(lead.serviceInterest)}
                 </span>
               </div>
               <div>
-                <span className="text-neutral-500 dark:text-neutral-400">Created: </span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Created:{' '}
+                </span>
                 <span>{formatDate(lead.createdAt)}</span>
               </div>
             </div>
@@ -367,25 +382,33 @@ export function LeadsPage(): JSX.Element {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">Total Leads</div>
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
+              Total Leads
+            </div>
             <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
               {stats.total}
             </div>
           </div>
           <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">New</div>
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
+              New
+            </div>
             <div className="text-2xl font-bold text-blue-600">
               {stats.newLeads}
             </div>
           </div>
           <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">Contacted</div>
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
+              Contacted
+            </div>
             <div className="text-2xl font-bold text-yellow-600">
               {stats.contacted}
             </div>
           </div>
           <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">Qualified</div>
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
+              Qualified
+            </div>
             <div className="text-2xl font-bold text-green-600">
               {stats.qualified}
             </div>
@@ -501,7 +524,9 @@ export function LeadsPage(): JSX.Element {
         {/* Filters */}
         <section className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Filters</h2>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Filters
+            </h2>
             {activeFilterCount > 0 && (
               <Button variant="subtle" size="sm" onClick={clearFilters}>
                 Clear filters ({activeFilterCount})

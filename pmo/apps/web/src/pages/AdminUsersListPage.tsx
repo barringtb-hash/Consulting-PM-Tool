@@ -127,7 +127,10 @@ export function AdminUsersListPage() {
                     </thead>
                     <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                       {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
+                        <tr
+                          key={user.id}
+                          className="hover:bg-neutral-50 dark:hover:bg-neutral-700"
+                        >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
                             {user.name}
                           </td>

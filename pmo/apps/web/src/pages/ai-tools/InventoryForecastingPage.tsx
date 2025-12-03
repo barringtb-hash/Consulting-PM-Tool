@@ -276,7 +276,7 @@ function InventoryForecastingPage(): JSX.Element {
 
       {/* Tabs */}
       {selectedConfigId && (
-        <div className="border-b border-gray-200">
+        <div className="border-b border-neutral-200 dark:border-neutral-700">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: TrendingUp },
@@ -289,8 +289,8 @@ function InventoryForecastingPage(): JSX.Element {
                 onClick={() => setActiveTab(id as typeof activeTab)}
                 className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -308,8 +308,10 @@ function InventoryForecastingPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Forecast Horizon</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Forecast Horizon
+                  </p>
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.forecastHorizonDays} days
                   </p>
                 </div>
@@ -321,8 +323,10 @@ function InventoryForecastingPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Seasonality</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Seasonality
+                  </p>
+                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.seasonalityEnabled ? 'Enabled' : 'Disabled'}
                   </p>
                 </div>
@@ -334,8 +338,10 @@ function InventoryForecastingPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Auto Reorder</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Auto Reorder
+                  </p>
+                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     {selectedConfig.autoReorderEnabled ? 'Enabled' : 'Disabled'}
                   </p>
                 </div>
@@ -347,7 +353,9 @@ function InventoryForecastingPage(): JSX.Element {
             <CardBody>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Alert Threshold</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Alert Threshold
+                  </p>
                   <p className="text-2xl font-bold text-orange-500">
                     {selectedConfig.alertThreshold}%
                   </p>
@@ -373,11 +381,11 @@ function InventoryForecastingPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {locationsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading locations...
               </div>
             ) : locationsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No locations configured. Add your first location to get started.
               </div>
             ) : (
@@ -385,13 +393,15 @@ function InventoryForecastingPage(): JSX.Element {
                 {locationsQuery.data?.map((location) => (
                   <div
                     key={location.id}
-                    className="border rounded-lg p-4 flex items-center justify-between"
+                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-gray-400" />
+                      <MapPin className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                       <div>
-                        <p className="font-medium">{location.name}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {location.name}
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
                           {location.address || 'No address'}
                         </p>
                       </div>
@@ -421,59 +431,59 @@ function InventoryForecastingPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {productsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading products...
               </div>
             ) : productsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No products configured. Add your first product to get started.
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         SKU
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Current Stock
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Reorder Point
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Lead Time
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                     {productsQuery.data?.map((product) => (
                       <tr key={product.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-900 dark:text-neutral-100">
                           {product.sku}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                           {product.name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <span
                             className={
                               product.currentStock <= product.reorderPoint
-                                ? 'text-red-600 font-medium'
-                                : ''
+                                ? 'text-red-600 dark:text-red-400 font-medium'
+                                : 'text-neutral-900 dark:text-neutral-100'
                             }
                           >
                             {product.currentStock}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                           {product.reorderPoint}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                           {product.leadTimeDays} days
                         </td>
                       </tr>
@@ -506,11 +516,11 @@ function InventoryForecastingPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {alertsQuery.isLoading ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 Loading alerts...
               </div>
             ) : alertsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 No active alerts. Your inventory levels are healthy.
               </div>
             ) : (
@@ -518,7 +528,7 @@ function InventoryForecastingPage(): JSX.Element {
                 {alertsQuery.data?.map((alert) => (
                   <div
                     key={alert.id}
-                    className={`border rounded-lg p-4 ${alert.isResolved ? 'bg-gray-50' : ''}`}
+                    className={`border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 ${alert.isResolved ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -532,11 +542,13 @@ function InventoryForecastingPage(): JSX.Element {
                           }`}
                         />
                         <div>
-                          <p className="font-medium">{alert.type}</p>
-                          <p className="text-sm text-gray-600">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {alert.type}
+                          </p>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
                             {alert.message}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
                             {new Date(alert.createdAt).toLocaleString()}
                           </p>
                         </div>
@@ -562,9 +574,9 @@ function InventoryForecastingPage(): JSX.Element {
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
               Create Inventory Forecasting Configuration
             </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
@@ -606,7 +618,7 @@ function InventoryForecastingPage(): JSX.Element {
               </Select>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="seasonalityEnabled"
@@ -614,7 +626,7 @@ function InventoryForecastingPage(): JSX.Element {
                   />
                   <span className="text-sm">Enable Seasonality Detection</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="autoReorderEnabled"
