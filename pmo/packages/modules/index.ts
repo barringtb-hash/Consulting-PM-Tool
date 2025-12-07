@@ -89,6 +89,8 @@ export interface ModuleDefinition {
   apiPrefixes?: string[];
   /** Description of the module */
   description: string;
+  /** Whether to show this module in navigation sidebar (defaults to true) */
+  showInNavigation?: boolean;
 }
 
 /**
@@ -220,6 +222,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/mcp'],
     description:
       'AI-powered assistant with MCP integration for natural language CRM queries, meeting briefs, and task automation',
+    showInNavigation: false, // AI Assistant is accessed via floating button, not navigation
   },
 
   // ============ PHASE 1 AI TOOL MODULES ============
@@ -700,10 +703,15 @@ export function getNavigationItems(enabledModules: ModuleId[]): Array<{
 }> {
   const enabledDefs = getEnabledModuleDefinitions(enabledModules);
 
+  // Filter to only modules that should show in navigation (default true)
+  const navigationDefs = enabledDefs.filter(
+    (module) => module.showInNavigation !== false,
+  );
+
   // Group by navGroup
   const grouped = new Map<NavGroup, ModuleDefinition[]>();
 
-  for (const module of enabledDefs) {
+  for (const module of navigationDefs) {
     const existing = grouped.get(module.navGroup) || [];
     existing.push(module);
     grouped.set(module.navGroup, existing);
