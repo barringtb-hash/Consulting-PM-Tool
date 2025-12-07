@@ -2,8 +2,12 @@
 
 This workspace hosts the AI Consulting PMO web shell.
 
-- Start development server: `npm run dev --workspace pmo-web`.
-- Lint the source (configured as `eslint src --ext .ts,.tsx`): `npm run lint --workspace pmo-web`.
+> **AI Assistants**: For comprehensive documentation including architecture patterns, code conventions, and common tasks, see [../../CLAUDE.md](../../CLAUDE.md).
+
+## Quick Start
+
+- Start development server: `npm run dev --workspace pmo-web` (from `/pmo`)
+- Lint the source: `npm run lint --workspace pmo-web`
 - After running the Prisma seed from `/pmo`, sign in with `admin@pmo.test` / `AdminDemo123!` (or the demo consultant accounts listed in the root README) to explore the flows end-to-end.
 
 ## Environment
