@@ -96,16 +96,25 @@ export const createAsset = async (ownerId: number, data: AssetCreateInput) => {
   });
 };
 
-export const updateAsset = async (id: number, data: AssetUpdateInput) => {
+export const updateAsset = async (
+  id: number,
+  requesterId: number,
+  data: AssetUpdateInput,
+) => {
   const existing = await prisma.aIAsset.findUnique({ where: { id } });
 
   if (!existing || existing.archived) {
-    return null;
+    return { error: 'not_found' as const };
+  }
+
+  // Only the creator can update the asset
+  if (existing.createdById !== requesterId) {
+    return { error: 'forbidden' as const };
   }
 
   const { content, ...rest } = data;
 
-  return prisma.aIAsset.update({
+  const asset = await prisma.aIAsset.update({
     where: { id },
     data: {
       ...rest,
@@ -114,35 +123,53 @@ export const updateAsset = async (id: number, data: AssetUpdateInput) => {
       tags: data.tags ?? undefined,
     },
   });
+
+  return { asset };
 };
 
-export const archiveAsset = async (id: number) => {
+export const archiveAsset = async (id: number, requesterId: number) => {
   const existing = await prisma.aIAsset.findUnique({ where: { id } });
 
   if (!existing || existing.archived) {
-    return null;
+    return { error: 'not_found' as const };
   }
 
-  return prisma.aIAsset.update({
+  // Only the creator can archive the asset
+  if (existing.createdById !== requesterId) {
+    return { error: 'forbidden' as const };
+  }
+
+  const asset = await prisma.aIAsset.update({
     where: { id },
     data: { archived: true },
   });
+
+  return { asset };
 };
 
 export const cloneAsset = async (
   id: number,
-  ownerId: number,
+  requesterId: number,
   overrides: AssetCloneInput,
 ) => {
   const source = await prisma.aIAsset.findUnique({ where: { id } });
 
   if (!source || source.archived) {
-    return null;
+    return { error: 'not_found' as const };
+  }
+
+  // Users can clone:
+  // 1. Their own assets
+  // 2. Template assets (public templates)
+  const canClone = source.createdById === requesterId || source.isTemplate;
+
+  if (!canClone) {
+    return { error: 'forbidden' as const };
   }
 
   const name = overrides.name ?? `${source.name} (Copy)`;
 
-  return prisma.aIAsset.create({
+  const asset = await prisma.aIAsset.create({
     data: {
       name,
       type: source.type,
@@ -151,9 +178,11 @@ export const cloneAsset = async (
       tags: overrides.tags ?? source.tags,
       isTemplate: overrides.isTemplate ?? false,
       clientId: overrides.clientId ?? source.clientId ?? null,
-      createdById: ownerId,
+      createdById: requesterId,
     },
   });
+
+  return { asset };
 };
 
 export const listAssetsForProject = async (
