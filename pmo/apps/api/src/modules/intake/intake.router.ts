@@ -8,6 +8,13 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import {
+  hasClientAccess,
+  getAccessibleClientIds,
+  getClientIdFromIntakeConfig,
+  getClientIdFromIntakeForm,
+  getClientIdFromIntakeSubmission,
+} from '../../auth/client-auth.helper';
 import * as intakeService from './intake.service';
 
 const router = Router();
@@ -161,8 +168,33 @@ router.get(
       return;
     }
 
-    const configs = await intakeService.listIntakeConfigs({ clientId });
-    res.json({ configs });
+    // Authorization: If filtering by clientId, check access to that client
+    if (clientId) {
+      const canAccess = await hasClientAccess(req.userId, clientId);
+      if (!canAccess) {
+        res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+        return;
+      }
+      const configs = await intakeService.listIntakeConfigs({ clientId });
+      res.json({ configs });
+    } else {
+      // No clientId filter - only show configs for clients the user can access
+      const accessibleClientIds = await getAccessibleClientIds(req.userId);
+      if (accessibleClientIds === null) {
+        // Admin - show all
+        const configs = await intakeService.listIntakeConfigs({});
+        res.json({ configs });
+      } else if (accessibleClientIds.length === 0) {
+        // No access to any clients
+        res.json({ configs: [] });
+      } else {
+        // Filter to accessible clients
+        const configs = await intakeService.listIntakeConfigs({
+          clientIds: accessibleClientIds,
+        });
+        res.json({ configs });
+      }
+    }
   },
 );
 
@@ -181,6 +213,13 @@ router.get(
     const clientId = Number(req.params.clientId);
     if (Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    // Authorization: Check user has access to this client
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -204,6 +243,13 @@ router.post(
     const clientId = Number(req.params.clientId);
     if (Number.isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
+      return;
+    }
+
+    // Authorization: Check user has access to this client
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -251,6 +297,13 @@ router.patch(
       return;
     }
 
+    // Authorization: Check user has access to this client
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      return;
+    }
+
     const parsed = configSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       res
@@ -289,6 +342,18 @@ router.get(
       return;
     }
 
+    // Authorization: Check user has access to the client owning this config
+    const clientId = await getClientIdFromIntakeConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      return;
+    }
+
     const status = req.query.status as
       | 'DRAFT'
       | 'PUBLISHED'
@@ -315,6 +380,18 @@ router.post(
     const configId = Number(req.params.configId);
     if (Number.isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization: Check user has access to the client owning this config
+    const clientId = await getClientIdFromIntakeConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -349,6 +426,18 @@ router.get(
       return;
     }
 
+    // Authorization: Check user has access to the client owning this form
+    const clientId = await getClientIdFromIntakeForm(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Form not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      return;
+    }
+
     const form = await intakeService.getForm(id);
     if (!form) {
       res.status(404).json({ error: 'Form not found' });
@@ -374,6 +463,18 @@ router.patch(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid form ID' });
+      return;
+    }
+
+    // Authorization: Check user has access to the client owning this form
+    const clientId = await getClientIdFromIntakeForm(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Form not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -408,6 +509,18 @@ router.post(
       return;
     }
 
+    // Authorization: Check user has access to the client owning this form
+    const clientId = await getClientIdFromIntakeForm(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Form not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      return;
+    }
+
     const form = await intakeService.publishForm(id);
     res.json({ form });
   },
@@ -428,6 +541,18 @@ router.delete(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid form ID' });
+      return;
+    }
+
+    // Authorization: Check user has access to the client owning this form
+    const clientId = await getClientIdFromIntakeForm(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Form not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 

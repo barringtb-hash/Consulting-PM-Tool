@@ -3,6 +3,10 @@ import { Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
 import {
+  hasLeadAccess,
+  getLeadAccessFilter,
+} from '../auth/client-auth.helper';
+import {
   convertLead,
   createLead,
   deleteLead,
@@ -20,9 +24,14 @@ const router = Router();
 
 router.use(requireAuth);
 
-// List all leads
+// List all leads (filtered by user's access)
 router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const { search, source, status, ownerUserId } = req.query;
 
     const parsedSource =
@@ -49,11 +58,15 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
+    // Authorization: Get the access filter for this user
+    const accessFilter = await getLeadAccessFilter(req.userId);
+
     const leads = await listLeads({
       search: typeof search === 'string' ? search : undefined,
       source: parsedSource,
       status: parsedStatus,
       ownerUserId: parsedOwnerId,
+      accessFilter, // Pass the access filter to scope results
     });
 
     res.json({ leads });
@@ -66,10 +79,22 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
 // Get single lead
 router.get('/:id', async (req: AuthenticatedRequest, res) => {
   try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const leadId = Number(req.params.id);
 
     if (Number.isNaN(leadId)) {
       res.status(400).json({ error: 'Invalid lead id' });
+      return;
+    }
+
+    // Authorization: Check user has access to this lead
+    const canAccess = await hasLeadAccess(req.userId, leadId);
+    if (!canAccess) {
+      res.status(404).json({ error: 'Lead not found' }); // Use 404 to not reveal existence
       return;
     }
 
@@ -110,10 +135,22 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
 // Update lead
 router.put('/:id', async (req: AuthenticatedRequest, res) => {
   try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const leadId = Number(req.params.id);
 
     if (Number.isNaN(leadId)) {
       res.status(400).json({ error: 'Invalid lead id' });
+      return;
+    }
+
+    // Authorization: Check user has access to this lead
+    const canAccess = await hasLeadAccess(req.userId, leadId);
+    if (!canAccess) {
+      res.status(404).json({ error: 'Lead not found' });
       return;
     }
 
@@ -143,10 +180,22 @@ router.put('/:id', async (req: AuthenticatedRequest, res) => {
 // Convert lead to client/contact/project
 router.post('/:id/convert', async (req: AuthenticatedRequest, res) => {
   try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const leadId = Number(req.params.id);
 
     if (Number.isNaN(leadId)) {
       res.status(400).json({ error: 'Invalid lead id' });
+      return;
+    }
+
+    // Authorization: Check user has access to this lead
+    const canAccess = await hasLeadAccess(req.userId, leadId);
+    if (!canAccess) {
+      res.status(404).json({ error: 'Lead not found' });
       return;
     }
 
@@ -173,10 +222,22 @@ router.post('/:id/convert', async (req: AuthenticatedRequest, res) => {
 // Delete lead
 router.delete('/:id', async (req: AuthenticatedRequest, res) => {
   try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const leadId = Number(req.params.id);
 
     if (Number.isNaN(leadId)) {
       res.status(400).json({ error: 'Invalid lead id' });
+      return;
+    }
+
+    // Authorization: Check user has access to this lead
+    const canAccess = await hasLeadAccess(req.userId, leadId);
+    if (!canAccess) {
+      res.status(404).json({ error: 'Lead not found' });
       return;
     }
 
