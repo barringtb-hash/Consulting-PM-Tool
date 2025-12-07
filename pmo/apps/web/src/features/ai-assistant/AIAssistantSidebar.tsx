@@ -244,44 +244,6 @@ export function AIAssistantSidebar(): JSX.Element {
                       ) : (
                         <p className="text-sm">{message.content}</p>
                       )}
-
-                      {/* Show tool calls if any */}
-                      {message.toolCalls && message.toolCalls.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-600">
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                            Tools used:
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {message.toolCalls.map((tc, i) => (
-                              <span
-                                key={i}
-                                className="text-xs px-2 py-0.5 bg-neutral-200 dark:bg-neutral-600 rounded"
-                              >
-                                {tc.tool}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Show sources if any */}
-                      {message.sources && message.sources.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-600">
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                            Sources:
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {message.sources.slice(0, 5).map((source, i) => (
-                              <span
-                                key={i}
-                                className="text-xs px-2 py-0.5 bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 rounded"
-                              >
-                                {source.type}: {source.name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
