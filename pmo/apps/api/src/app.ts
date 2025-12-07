@@ -167,10 +167,10 @@ export function createApp(): express.Express {
   }
 
   // ============ MCP INTEGRATION MODULE ============
-  // MCP routes for AI-powered queries and tool execution
-  if (isModuleEnabled('mcp')) {
-    app.use('/api/mcp', requireModule('mcp'), mcpRouter);
-  }
+  // MCP routes are ALWAYS registered to ensure proper error messages.
+  // The requireModule middleware handles runtime access control and returns
+  // informative "module not available" errors instead of generic 404s.
+  app.use('/api/mcp', requireModule('mcp'), mcpRouter);
 
   // ============ AI TOOL MODULES ============
   // AI Tool routes are ALWAYS registered to ensure proper error messages.
