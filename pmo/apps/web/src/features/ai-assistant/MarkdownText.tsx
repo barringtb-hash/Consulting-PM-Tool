@@ -27,7 +27,10 @@ export function MarkdownText({
   const flushList = () => {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`list-${listKey++}`} className="list-disc list-inside space-y-1 my-2">
+        <ul
+          key={`list-${listKey++}`}
+          className="list-disc list-inside space-y-1 my-2"
+        >
           {listItems.map((item, i) => (
             <li key={i} className="text-sm">
               {renderInlineMarkdown(item)}
