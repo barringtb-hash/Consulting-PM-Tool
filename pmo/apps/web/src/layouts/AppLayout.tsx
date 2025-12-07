@@ -16,23 +16,21 @@ export interface AppLayoutProps {
 
 /**
  * AI Assistant Toggle Button
+ * Hidden when the chatbot window is open
  */
 function AIAssistantToggle(): JSX.Element | null {
   const { toggle, isOpen } = useAIAssistant();
   const { isModuleEnabled } = useModules();
 
-  if (!isModuleEnabled('mcp')) {
+  // Hide the toggle button when chatbot is open or module is disabled
+  if (!isModuleEnabled('mcp') || isOpen) {
     return null;
   }
 
   return (
     <button
       onClick={toggle}
-      className={`fixed bottom-6 right-6 z-30 p-4 rounded-full shadow-lg transition-all duration-200 ${
-        isOpen
-          ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
-          : 'bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600'
-      }`}
+      className="fixed bottom-6 right-6 z-30 p-4 rounded-full shadow-lg transition-all duration-200 bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600"
       title="AI Assistant"
     >
       <Bot className="w-6 h-6" />
