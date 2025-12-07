@@ -1,6 +1,10 @@
 import { Priority, TaskStatus } from '@prisma/client';
 import { z } from 'zod';
 
+// Input length limits for security (prevents resource exhaustion)
+const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 5000;
+
 const nullableDate = z.preprocess(
   (value) => (value === null ? null : value),
   z.coerce.date().nullable(),
@@ -25,8 +29,8 @@ const taskPriorityEnum =
 
 export const taskCreateSchema = z.object({
   projectId: z.number().int().positive(),
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
+  title: z.string().min(1, 'Title is required').max(MAX_TITLE_LENGTH),
+  description: z.string().max(MAX_DESCRIPTION_LENGTH).optional(),
   status: z.nativeEnum(taskStatusEnum).optional(),
   priority: z.nativeEnum(taskPriorityEnum).optional(),
   dueDate: z.coerce.date().optional(),

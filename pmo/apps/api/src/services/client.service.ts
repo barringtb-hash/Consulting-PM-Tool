@@ -6,11 +6,29 @@ import {
   ClientUpdateInput,
 } from '../validation/client.schema';
 
+// Maximum search string length to prevent resource exhaustion
+const MAX_SEARCH_LENGTH = 200;
+// Default and maximum pagination limits
+const DEFAULT_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 100;
+
 export interface ListClientsParams {
   search?: string;
   companySize?: CompanySize;
   aiMaturity?: AiMaturity;
   includeArchived?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export const listClients = async ({
@@ -18,7 +36,11 @@ export const listClients = async ({
   companySize,
   aiMaturity,
   includeArchived = false,
-}: ListClientsParams) => {
+  page = 1,
+  limit = DEFAULT_PAGE_SIZE,
+}: ListClientsParams): Promise<
+  PaginatedResult<Awaited<ReturnType<typeof prisma.client.findMany>>[0]>
+> => {
   const where: Prisma.ClientWhereInput = {
     companySize,
     aiMaturity,
@@ -26,8 +48,10 @@ export const listClients = async ({
   };
 
   if (search) {
+    // Limit search string length to prevent resource exhaustion attacks
+    const sanitizedSearch = search.slice(0, MAX_SEARCH_LENGTH);
     const searchFilter: Prisma.StringFilter = {
-      contains: search,
+      contains: sanitizedSearch,
       mode: 'insensitive',
     };
     where.OR = [
@@ -37,50 +61,96 @@ export const listClients = async ({
     ];
   }
 
-  return prisma.client.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-  });
+  // Enforce pagination limits
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(Math.max(1, limit), MAX_PAGE_SIZE);
+  const skip = (safePage - 1) * safeLimit;
+
+  // Get total count and paginated data in parallel
+  const [total, data] = await Promise.all([
+    prisma.client.count({ where }),
+    prisma.client.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: safeLimit,
+      skip,
+    }),
+  ]);
+
+  return {
+    data,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+    },
+  };
 };
 
 export const createClient = async (data: ClientCreateInput) =>
   prisma.client.create({ data });
 
+/**
+ * Update a client by ID using atomic operation.
+ * Returns null if client not found (Prisma P2025 error).
+ */
 export const updateClient = async (id: number, data: ClientUpdateInput) => {
-  const existing = await prisma.client.findUnique({ where: { id } });
-
-  if (!existing) {
-    return null;
+  try {
+    return await prisma.client.update({
+      where: { id },
+      data,
+    });
+  } catch (error) {
+    // P2025: Record not found
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return null;
+    }
+    throw error;
   }
-
-  return prisma.client.update({
-    where: { id },
-    data,
-  });
 };
 
+/**
+ * Archive (soft delete) a client by ID using atomic operation.
+ * Returns null if client not found.
+ */
 export const archiveClient = async (id: number) => {
-  const existing = await prisma.client.findUnique({ where: { id } });
-
-  if (!existing) {
-    return null;
+  try {
+    return await prisma.client.update({
+      where: { id },
+      data: { archived: true },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return null;
+    }
+    throw error;
   }
-
-  return prisma.client.update({
-    where: { id },
-    data: { archived: true },
-  });
 };
 
+/**
+ * Hard delete a client by ID.
+ * Returns null if client not found.
+ * Note: This will cascade delete related contacts due to schema relations.
+ */
 export const deleteClient = async (id: number) => {
-  const existing = await prisma.client.findUnique({ where: { id } });
-
-  if (!existing) {
-    return null;
+  try {
+    return await prisma.client.delete({
+      where: { id },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return null;
+    }
+    throw error;
   }
-
-  return prisma.client.update({
-    where: { id },
-    data: { archived: true },
-  });
 };

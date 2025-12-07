@@ -5,12 +5,26 @@ import { comparePassword } from './password';
 import { signToken } from './jwt';
 import { AuthenticatedRequest, optionalAuth } from './auth.middleware';
 import { buildAuthCookieOptions } from './cookies';
+import { createRateLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
 const cookieOptions = buildAuthCookieOptions();
 
-router.post('/auth/login', async (req, res) => {
+// Rate limit login attempts: 5 attempts per 15 minutes per IP
+// This prevents brute-force attacks while allowing legitimate retry attempts
+const loginRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 5,
+  message: 'Too many login attempts. Please try again in 15 minutes.',
+});
+
+// Pre-computed dummy hash for timing attack prevention
+// This hash is used when user doesn't exist to ensure consistent response time
+const DUMMY_PASSWORD_HASH =
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+
+router.post('/auth/login', loginRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body as {
       email?: string;
@@ -24,14 +38,13 @@ router.post('/auth/login', async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user) {
-      res.status(401).json({ error: 'Invalid credentials' });
-      return;
-    }
+    // Always perform password comparison to prevent timing attacks
+    // If user doesn't exist, compare against dummy hash to maintain consistent timing
+    const hashToCompare = user?.passwordHash || DUMMY_PASSWORD_HASH;
+    const isValidPassword = await comparePassword(password, hashToCompare);
 
-    const isValidPassword = await comparePassword(password, user.passwordHash);
-
-    if (!isValidPassword) {
+    // Check both conditions: user must exist AND password must be valid
+    if (!user || !isValidPassword) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }

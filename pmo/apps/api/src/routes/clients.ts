@@ -20,7 +20,8 @@ router.use(requireAuth);
 
 router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
-    const { search, companySize, aiMaturity, archived } = req.query;
+    const { search, companySize, aiMaturity, archived, page, limit } =
+      req.query;
 
     const parsedCompanySize =
       typeof companySize === 'string' &&
@@ -42,16 +43,27 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
+    // Parse pagination parameters
+    const parsedPage =
+      typeof page === 'string' ? Math.max(1, parseInt(page, 10) || 1) : 1;
+    const parsedLimit =
+      typeof limit === 'string' ? parseInt(limit, 10) || 50 : 50;
+
     const includeArchived = archived === 'true';
 
-    const clients = await listClients({
+    const result = await listClients({
       search: typeof search === 'string' ? search : undefined,
       companySize: parsedCompanySize,
       aiMaturity: parsedAiMaturity,
       includeArchived,
+      page: parsedPage,
+      limit: parsedLimit,
     });
 
-    res.json({ clients });
+    res.json({
+      clients: result.data,
+      pagination: result.pagination,
+    });
   } catch (error) {
     console.error('List clients error:', error);
     res.status(500).json({ error: 'Failed to list clients' });
