@@ -4,8 +4,8 @@
  * A sliding sidebar panel for AI-powered CRM queries
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bot, Loader2, User, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { X, Send, Bot, Loader2, User, AlertCircle, GripVertical } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useAIAssistant } from './AIAssistantContext';
 import { useAIQuery, type AIQueryResponse } from '../../api/hooks';
@@ -21,12 +21,34 @@ interface Message {
   isError?: boolean;
 }
 
+// Min and max width constraints for the sidebar
+const MIN_WIDTH = 280;
+const MAX_WIDTH = 800;
+const DEFAULT_WIDTH = 400;
+const STORAGE_KEY = 'ai-assistant-width';
+
+// Get initial width from localStorage or default
+const getInitialWidth = (): number => {
+  if (typeof window === 'undefined') return DEFAULT_WIDTH;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    const parsed = parseInt(stored, 10);
+    if (!isNaN(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
+      return parsed;
+    }
+  }
+  return DEFAULT_WIDTH;
+};
+
 export function AIAssistantSidebar(): JSX.Element | null {
   const { isOpen, close, clientId, projectId } = useAIAssistant();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [width, setWidth] = useState(getInitialWidth);
+  const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const aiQuery = useAIQuery();
 
@@ -41,6 +63,51 @@ export function AIAssistantSidebar(): JSX.Element | null {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
+
+  // Handle resize mouse events
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing) return;
+      e.preventDefault();
+
+      // Calculate new width based on mouse position from right edge
+      const newWidth = window.innerWidth - e.clientX;
+      const clampedWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, newWidth));
+      setWidth(clampedWidth);
+    },
+    [isResizing],
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (isResizing) {
+      setIsResizing(false);
+      // Save width to localStorage
+      localStorage.setItem(STORAGE_KEY, width.toString());
+    }
+  }, [isResizing, width]);
+
+  // Add/remove mouse event listeners for resizing
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      // Prevent text selection while resizing
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'ew-resize';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
 
   // Core function to send a message
   const sendMessage = async (messageText: string) => {
@@ -134,7 +201,21 @@ export function AIAssistantSidebar(): JSX.Element | null {
   }
 
   return (
-    <div className="flex flex-col h-full w-full sm:w-80 md:w-96 lg:w-[400px] xl:w-[440px] 2xl:w-[480px] bg-white dark:bg-neutral-800 shadow-xl flex-shrink-0 border-l border-neutral-200 dark:border-neutral-700 animate-slide-in-right">
+    <div
+      ref={sidebarRef}
+      className={`relative flex flex-col h-full bg-white dark:bg-neutral-800 shadow-xl flex-shrink-0 border-l border-neutral-200 dark:border-neutral-700 ${isResizing ? '' : 'animate-slide-in-right'}`}
+      style={{ width: `${width}px`, minWidth: `${MIN_WIDTH}px`, maxWidth: `${MAX_WIDTH}px` }}
+    >
+      {/* Resize Handle */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-primary-500/50 active:bg-primary-500 transition-colors group z-10"
+        onMouseDown={startResizing}
+      >
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <GripVertical className="w-3 h-3 text-neutral-400" />
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
         <div className="flex items-center gap-2">
