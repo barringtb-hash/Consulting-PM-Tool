@@ -66,6 +66,8 @@ export interface MCPResource {
 export interface AIQueryRequest {
   /** Natural language query */
   query: string;
+  /** User ID for ownership filtering */
+  userId?: number;
   /** Optional context filters */
   context?: {
     clientId?: number;

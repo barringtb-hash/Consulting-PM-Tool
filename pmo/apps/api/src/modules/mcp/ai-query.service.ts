@@ -161,6 +161,11 @@ export async function processAIQuery(
         const functionName = toolCall.function.name;
         const functionArgs = JSON.parse(toolCall.function.arguments);
 
+        // Inject userId for ownership filtering if provided
+        if (request.userId) {
+          functionArgs._userId = request.userId;
+        }
+
         // Execute the tool
         const result = await mcpClient.callTool(functionName, functionArgs);
 
@@ -321,8 +326,11 @@ function extractSources(
 export async function executeDirectQuery(
   toolName: string,
   args: Record<string, unknown>,
+  userId?: number,
 ): Promise<unknown> {
-  const result = await mcpClient.callTool(toolName, args);
+  // Inject userId for ownership filtering if provided
+  const argsWithUser = userId ? { ...args, _userId: userId } : args;
+  const result = await mcpClient.callTool(toolName, argsWithUser);
 
   if (result.isError) {
     throw new Error(result.content[0]?.text || 'Tool execution failed');
