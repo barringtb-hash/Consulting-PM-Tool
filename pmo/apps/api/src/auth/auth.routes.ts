@@ -13,9 +13,11 @@ const cookieOptions = buildAuthCookieOptions();
 
 // Rate limit login attempts: 5 attempts per 15 minutes per IP
 // This prevents brute-force attacks while allowing legitimate retry attempts
+// In test environment, use a higher limit to avoid blocking test suites
+const isTestEnv = process.env.NODE_ENV === 'test';
 const loginRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 5,
+  maxRequests: isTestEnv ? 1000 : 5,
   message: 'Too many login attempts. Please try again in 15 minutes.',
 });
 
