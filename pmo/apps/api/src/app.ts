@@ -33,6 +33,8 @@ import complianceMonitorRouter from './modules/compliance-monitor/compliance-mon
 import predictiveMaintenanceRouter from './modules/predictive-maintenance/predictive-maintenance.router';
 import revenueManagementRouter from './modules/revenue-management/revenue-management.router';
 import safetyMonitorRouter from './modules/safety-monitor/safety-monitor.router';
+// MCP Integration
+import mcpRouter from './modules/mcp/mcp.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -162,6 +164,12 @@ export function createApp(): express.Express {
   // Admin module (user management)
   if (isModuleEnabled('admin')) {
     app.use('/api/users', requireModule('admin'), usersRouter);
+  }
+
+  // ============ MCP INTEGRATION MODULE ============
+  // MCP routes for AI-powered queries and tool execution
+  if (isModuleEnabled('mcp')) {
+    app.use('/api/mcp', requireModule('mcp'), mcpRouter);
   }
 
   // ============ AI TOOL MODULES ============

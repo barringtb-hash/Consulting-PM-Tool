@@ -120,6 +120,11 @@ router.post('/assets', async (req: AuthenticatedRequest, res) => {
 });
 
 router.patch('/assets/:id', async (req: AuthenticatedRequest, res) => {
+  if (!req.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
   const assetId = Number(req.params.id);
 
   if (Number.isNaN(assetId)) {
@@ -136,17 +141,27 @@ router.patch('/assets/:id', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const updated = await updateAsset(assetId, parsed.data);
+  const result = await updateAsset(assetId, req.userId, parsed.data);
 
-  if (!updated) {
+  if (result.error === 'not_found') {
     res.status(404).json({ error: 'Asset not found' });
     return;
   }
 
-  res.json({ asset: updated });
+  if (result.error === 'forbidden') {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  res.json({ asset: result.asset });
 });
 
 router.delete('/assets/:id', async (req: AuthenticatedRequest, res) => {
+  if (!req.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
   const assetId = Number(req.params.id);
 
   if (Number.isNaN(assetId)) {
@@ -154,10 +169,15 @@ router.delete('/assets/:id', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const archivedAsset = await archiveAsset(assetId);
+  const result = await archiveAsset(assetId, req.userId);
 
-  if (!archivedAsset) {
+  if (result.error === 'not_found') {
     res.status(404).json({ error: 'Asset not found' });
+    return;
+  }
+
+  if (result.error === 'forbidden') {
+    res.status(403).json({ error: 'Forbidden' });
     return;
   }
 
@@ -186,14 +206,19 @@ router.post('/assets/:id/clone', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const cloned = await cloneAsset(assetId, req.userId, parsed.data);
+  const result = await cloneAsset(assetId, req.userId, parsed.data);
 
-  if (!cloned) {
+  if (result.error === 'not_found') {
     res.status(404).json({ error: 'Asset not found' });
     return;
   }
 
-  res.status(201).json({ asset: cloned });
+  if (result.error === 'forbidden') {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  res.status(201).json({ asset: result.asset });
 });
 
 router.get(
