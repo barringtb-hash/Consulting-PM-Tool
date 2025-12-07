@@ -24,6 +24,8 @@ export type ModuleId =
   | 'leads'
   | 'pipeline'
   | 'admin'
+  // MCP Integration module
+  | 'mcp'
   // Phase 1 AI Tool modules
   | 'chatbot'
   | 'productDescriptions'
@@ -205,6 +207,19 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/users', '/api/admin'],
     description:
       'User administration, module configuration, and access control',
+  },
+
+  // ============ MCP INTEGRATION MODULE ============
+  mcp: {
+    id: 'mcp',
+    label: 'AI Assistant',
+    navGroup: 'aiTools',
+    path: '/ai-assistant',
+    icon: 'Bot',
+    isCore: false,
+    apiPrefixes: ['/api/mcp'],
+    description:
+      'AI-powered assistant with MCP integration for natural language CRM queries, meeting briefs, and task automation',
   },
 
   // ============ PHASE 1 AI TOOL MODULES ============
@@ -564,6 +579,8 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'leads',
   'pipeline',
   'admin',
+  // MCP Integration
+  'mcp',
   // Phase 1 AI Tools
   'chatbot',
   'productDescriptions',

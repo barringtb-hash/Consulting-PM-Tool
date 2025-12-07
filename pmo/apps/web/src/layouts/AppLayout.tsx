@@ -1,14 +1,51 @@
 import React, { useState } from 'react';
+import { Bot } from 'lucide-react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import MobileMenu from './MobileMenu';
+import {
+  AIAssistantProvider,
+  AIAssistantSidebar,
+  useAIAssistant,
+} from '../features/ai-assistant';
+import { useModules } from '../modules';
 
 export interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-export function AppLayout({ children }: AppLayoutProps): JSX.Element {
+/**
+ * AI Assistant Toggle Button
+ */
+function AIAssistantToggle(): JSX.Element | null {
+  const { toggle, isOpen } = useAIAssistant();
+  const { isModuleEnabled } = useModules();
+
+  if (!isModuleEnabled('mcp')) {
+    return null;
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className={`fixed bottom-6 right-6 z-30 p-4 rounded-full shadow-lg transition-all duration-200 ${
+        isOpen
+          ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
+          : 'bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600'
+      }`}
+      title="AI Assistant"
+    >
+      <Bot className="w-6 h-6" />
+    </button>
+  );
+}
+
+/**
+ * Inner layout component that has access to AI Assistant context
+ */
+function AppLayoutInner({ children }: AppLayoutProps): JSX.Element {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isModuleEnabled } = useModules();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
@@ -35,7 +72,23 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
           {children}
         </main>
       </div>
+
+      {/* AI Assistant */}
+      {isModuleEnabled('mcp') && (
+        <>
+          <AIAssistantSidebar />
+          <AIAssistantToggle />
+        </>
+      )}
     </div>
+  );
+}
+
+export function AppLayout({ children }: AppLayoutProps): JSX.Element {
+  return (
+    <AIAssistantProvider>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </AIAssistantProvider>
   );
 }
 

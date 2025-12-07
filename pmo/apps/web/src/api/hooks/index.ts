@@ -300,3 +300,29 @@ export type {
   PublishingConnection,
   UpdatePublishingConnectionInput,
 } from './publishing';
+
+// ============================================================================
+// MCP Module
+// ============================================================================
+
+export {
+  useAIQuery,
+  useExecuteTool,
+  useMCPTools,
+  useMCPResources,
+  useMCPServers,
+  useAtRiskProjects,
+  useRecentMeetings,
+  useMeetingBrief,
+} from './mcp';
+export type {
+  AIQueryRequest,
+  AIQueryResponse,
+  ExecuteToolRequest,
+  MCPTool,
+  MCPResource,
+  MCPServerInfo,
+  AtRiskProject,
+  RecentMeeting,
+  MeetingBrief,
+} from './mcp';

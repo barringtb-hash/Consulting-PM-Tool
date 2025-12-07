@@ -181,6 +181,21 @@ export const queryKeys = {
     connections: (clientId: number) =>
       [...queryKeys.publishing.all, 'connections', clientId] as const,
   },
+
+  // ---------------------------------------------------------------------------
+  // MCP Module
+  // ---------------------------------------------------------------------------
+  mcp: {
+    all: ['mcp'] as const,
+    tools: () => [...queryKeys.mcp.all, 'tools'] as const,
+    resources: () => [...queryKeys.mcp.all, 'resources'] as const,
+    servers: () => [...queryKeys.mcp.all, 'servers'] as const,
+    atRiskProjects: () => [...queryKeys.mcp.all, 'at-risk'] as const,
+    recentMeetings: (days?: number) =>
+      [...queryKeys.mcp.all, 'recent-meetings', days] as const,
+    meetingBrief: (clientId: number) =>
+      [...queryKeys.mcp.all, 'meeting-brief', clientId] as const,
+  },
 } as const;
 
 // ============================================================================

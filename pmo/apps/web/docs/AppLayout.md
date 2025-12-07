@@ -176,35 +176,35 @@ The application uses Tailwind CSS class-based dark mode (`darkMode: 'class'`). W
 
 The neutral color scale uses cool Slate tones (configured in `tailwind.config.js`):
 
-| Token | Light Mode | Dark Mode |
-|-------|------------|-----------|
-| Page background | `bg-neutral-50` | `dark:bg-neutral-900` |
-| Card/container | `bg-white` | `dark:bg-neutral-800` |
-| Card border | `border-neutral-200` | `dark:border-neutral-700` |
-| Input background | `bg-white` | `dark:bg-neutral-900/50` |
-| Input border | `border-neutral-300` | `dark:border-neutral-600` |
+| Token            | Light Mode           | Dark Mode                 |
+| ---------------- | -------------------- | ------------------------- |
+| Page background  | `bg-neutral-50`      | `dark:bg-neutral-900`     |
+| Card/container   | `bg-white`           | `dark:bg-neutral-800`     |
+| Card border      | `border-neutral-200` | `dark:border-neutral-700` |
+| Input background | `bg-white`           | `dark:bg-neutral-900/50`  |
+| Input border     | `border-neutral-300` | `dark:border-neutral-600` |
 
 ### Text Colors
 
-| Purpose | Light Mode | Dark Mode |
-|---------|------------|-----------|
-| Primary text | `text-neutral-900` | `dark:text-neutral-100` |
+| Purpose        | Light Mode         | Dark Mode               |
+| -------------- | ------------------ | ----------------------- |
+| Primary text   | `text-neutral-900` | `dark:text-neutral-100` |
 | Secondary text | `text-neutral-600` | `dark:text-neutral-400` |
 | Muted/tertiary | `text-neutral-500` | `dark:text-neutral-400` |
-| Labels | `text-neutral-700` | `dark:text-neutral-300` |
-| Disabled | `text-neutral-400` | `dark:text-neutral-500` |
+| Labels         | `text-neutral-700` | `dark:text-neutral-300` |
+| Disabled       | `text-neutral-400` | `dark:text-neutral-500` |
 
 ### Interactive Elements
 
 ```tsx
 // Buttons (secondary/ghost)
-className="hover:bg-neutral-100 dark:hover:bg-neutral-700"
+className = 'hover:bg-neutral-100 dark:hover:bg-neutral-700';
 
 // Table rows
-className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+className = 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50';
 
 // Active/selected states
-className="bg-primary-50 dark:bg-primary-900/30"
+className = 'bg-primary-50 dark:bg-primary-900/30';
 ```
 
 ### Tables
@@ -262,7 +262,7 @@ Standard shadows are invisible on dark backgrounds. Use the custom dark mode sha
 
 ```tsx
 // Instead of just shadow-sm
-className="shadow-sm dark:shadow-dark-sm"
+className = 'shadow-sm dark:shadow-dark-sm';
 
 // Available utilities: shadow-dark-sm, shadow-dark-md, shadow-dark-lg, shadow-dark-elevated
 ```
@@ -273,20 +273,20 @@ Keep semantic colors but adjust for dark mode contrast:
 
 ```tsx
 // Success
-className="text-green-600 dark:text-green-500"
-className="bg-green-100 dark:bg-green-900/30"
+className = 'text-green-600 dark:text-green-500';
+className = 'bg-green-100 dark:bg-green-900/30';
 
 // Warning
-className="text-orange-600 dark:text-orange-500"
-className="bg-orange-100 dark:bg-orange-900/30"
+className = 'text-orange-600 dark:text-orange-500';
+className = 'bg-orange-100 dark:bg-orange-900/30';
 
 // Error
-className="text-red-600 dark:text-red-500"
-className="bg-red-100 dark:bg-red-900/30"
+className = 'text-red-600 dark:text-red-500';
+className = 'bg-red-100 dark:bg-red-900/30';
 
 // Info
-className="text-blue-600 dark:text-blue-500"
-className="bg-blue-100 dark:bg-blue-900/30"
+className = 'text-blue-600 dark:text-blue-500';
+className = 'bg-blue-100 dark:bg-blue-900/30';
 ```
 
 ### Page Template
@@ -297,10 +297,7 @@ When creating a new page, use this template structure:
 function NewPage() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 space-y-6">
-      <PageHeader
-        title="Page Title"
-        description="Page description"
-      />
+      <PageHeader title="Page Title" description="Page description" />
 
       {/* Card container */}
       <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
