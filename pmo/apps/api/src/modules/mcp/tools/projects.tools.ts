@@ -205,10 +205,12 @@ const queryProjectsSchema = z.object({
   healthStatus: z.enum(['ON_TRACK', 'AT_RISK', 'OFF_TRACK']).optional(),
   search: z.string().optional(),
   limit: z.number().min(1).max(100).optional().default(20),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const getProjectSchema = z.object({
   projectId: z.number(),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const queryTasksSchema = z.object({
@@ -217,6 +219,7 @@ const queryTasksSchema = z.object({
   priority: z.enum(['P0', 'P1', 'P2']).optional(),
   ownerId: z.number().optional(),
   limit: z.number().min(1).max(100).optional().default(50),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const createTaskSchema = z.object({
@@ -231,6 +234,7 @@ const createTaskSchema = z.object({
   ownerId: z.number(),
   milestoneId: z.number().optional(),
   dueDate: z.string().optional(),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const updateTaskSchema = z.object({
@@ -240,10 +244,12 @@ const updateTaskSchema = z.object({
   priority: z.enum(['P0', 'P1', 'P2']).optional(),
   status: z.enum(['BACKLOG', 'IN_PROGRESS', 'BLOCKED', 'DONE']).optional(),
   ownerId: z.number().optional(),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const atRiskProjectsSchema = z.object({
   limit: z.number().min(1).max(50).optional().default(10),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 /**
@@ -263,6 +269,8 @@ export async function executeProjectTool(
         const projects = await prisma.project.findMany({
           where: {
             AND: [
+              // Filter by owner if userId is provided
+              parsed._userId ? { ownerId: parsed._userId } : {},
               parsed.clientId ? { clientId: parsed.clientId } : {},
               parsed.status ? { status: parsed.status } : {},
               parsed.healthStatus ? { healthStatus: parsed.healthStatus } : {},
@@ -351,6 +359,14 @@ export async function executeProjectTool(
           };
         }
 
+        // Check ownership if userId is provided
+        if (parsed._userId && project.ownerId !== parsed._userId) {
+          return {
+            content: [{ type: 'text', text: 'Project not found' }],
+            isError: true,
+          };
+        }
+
         return {
           content: [
             {
@@ -366,6 +382,8 @@ export async function executeProjectTool(
         const tasks = await prisma.task.findMany({
           where: {
             AND: [
+              // Filter by project owner if userId is provided
+              parsed._userId ? { project: { ownerId: parsed._userId } } : {},
               parsed.projectId ? { projectId: parsed.projectId } : {},
               parsed.status ? { status: parsed.status } : {},
               parsed.priority ? { priority: parsed.priority } : {},
@@ -411,6 +429,21 @@ export async function executeProjectTool(
 
       case 'create_task': {
         const parsed = createTaskSchema.parse(args);
+
+        // Verify project ownership if userId is provided
+        if (parsed._userId) {
+          const project = await prisma.project.findUnique({
+            where: { id: parsed.projectId },
+            select: { ownerId: true },
+          });
+          if (!project || project.ownerId !== parsed._userId) {
+            return {
+              content: [{ type: 'text', text: 'Project not found' }],
+              isError: true,
+            };
+          }
+        }
+
         const task = await prisma.task.create({
           data: {
             title: parsed.title,
@@ -444,7 +477,21 @@ export async function executeProjectTool(
 
       case 'update_task': {
         const parsed = updateTaskSchema.parse(args);
-        const { taskId, ...updateData } = parsed;
+        const { taskId, _userId, ...updateData } = parsed;
+
+        // Verify task/project ownership if userId is provided
+        if (_userId) {
+          const existingTask = await prisma.task.findUnique({
+            where: { id: taskId },
+            include: { project: { select: { ownerId: true } } },
+          });
+          if (!existingTask || existingTask.project.ownerId !== _userId) {
+            return {
+              content: [{ type: 'text', text: 'Task not found' }],
+              isError: true,
+            };
+          }
+        }
 
         const task = await prisma.task.update({
           where: { id: taskId },
@@ -473,6 +520,8 @@ export async function executeProjectTool(
         const parsed = atRiskProjectsSchema.parse(args);
         const projects = await prisma.project.findMany({
           where: {
+            // Filter by owner if userId is provided
+            ...(parsed._userId ? { ownerId: parsed._userId } : {}),
             healthStatus: { in: ['AT_RISK', 'OFF_TRACK'] },
             status: { in: ['PLANNING', 'IN_PROGRESS'] },
           },

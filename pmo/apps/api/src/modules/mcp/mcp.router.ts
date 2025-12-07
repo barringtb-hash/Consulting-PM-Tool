@@ -75,7 +75,10 @@ router.post(
     }
 
     try {
-      const result = await processAIQuery(parsed.data);
+      const result = await processAIQuery({
+        ...parsed.data,
+        userId: req.userId,
+      });
       res.json(result);
     } catch (error) {
       console.error('AI Query error:', error);
@@ -113,6 +116,7 @@ router.post(
       const result = await executeDirectQuery(
         parsed.data.tool,
         parsed.data.arguments,
+        req.userId,
       );
       res.json({ result });
     } catch (error) {
@@ -299,9 +303,11 @@ router.get(
     }
 
     try {
-      const result = await executeDirectQuery('get_at_risk_projects', {
-        limit: 10,
-      });
+      const result = await executeDirectQuery(
+        'get_at_risk_projects',
+        { limit: 10 },
+        req.userId,
+      );
       res.json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -325,10 +331,11 @@ router.get(
 
     try {
       const days = Number(req.query.days) || 7;
-      const result = await executeDirectQuery('get_recent_meetings', {
-        days,
-        limit: 20,
-      });
+      const result = await executeDirectQuery(
+        'get_recent_meetings',
+        { days, limit: 20 },
+        req.userId,
+      );
       res.json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -357,9 +364,11 @@ router.get(
     }
 
     try {
-      const result = await executeDirectQuery('prepare_meeting_brief', {
-        clientId,
-      });
+      const result = await executeDirectQuery(
+        'prepare_meeting_brief',
+        { clientId },
+        req.userId,
+      );
       res.json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';

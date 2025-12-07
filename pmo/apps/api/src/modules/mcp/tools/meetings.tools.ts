@@ -186,10 +186,12 @@ const queryMeetingsSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   limit: z.number().min(1).max(100).optional().default(20),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const getMeetingSchema = z.object({
   meetingId: z.number(),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const createMeetingSchema = z.object({
@@ -202,6 +204,7 @@ const createMeetingSchema = z.object({
   decisions: z.string().optional(),
   risks: z.string().optional(),
   attendees: z.array(z.string()).optional().default([]),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const updateMeetingSchema = z.object({
@@ -210,15 +213,18 @@ const updateMeetingSchema = z.object({
   notes: z.string().optional(),
   decisions: z.string().optional(),
   risks: z.string().optional(),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const recentMeetingsSchema = z.object({
   days: z.number().min(1).max(90).optional().default(7),
   limit: z.number().min(1).max(50).optional().default(10),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 const meetingBriefSchema = z.object({
   clientId: z.number(),
+  _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
 /**
@@ -239,6 +245,8 @@ export async function executeMeetingTool(
         const meetings = await prisma.meeting.findMany({
           where: {
             AND: [
+              // Filter by project owner if userId is provided
+              parsed._userId ? { project: { ownerId: parsed._userId } } : {},
               parsed.projectId ? { projectId: parsed.projectId } : {},
               parsed.clientId ? { project: { clientId: parsed.clientId } } : {},
               parsed.category ? { category: parsed.category } : {},
@@ -296,6 +304,7 @@ export async function executeMeetingTool(
               select: {
                 id: true,
                 name: true,
+                ownerId: true,
                 client: { select: { id: true, name: true } },
               },
             },
@@ -303,6 +312,14 @@ export async function executeMeetingTool(
         });
 
         if (!meeting) {
+          return {
+            content: [{ type: 'text', text: 'Meeting not found' }],
+            isError: true,
+          };
+        }
+
+        // Check project ownership if userId is provided
+        if (parsed._userId && meeting.project.ownerId !== parsed._userId) {
           return {
             content: [{ type: 'text', text: 'Meeting not found' }],
             isError: true,
@@ -321,6 +338,21 @@ export async function executeMeetingTool(
 
       case 'create_meeting': {
         const parsed = createMeetingSchema.parse(args);
+
+        // Verify project ownership if userId is provided
+        if (parsed._userId) {
+          const project = await prisma.project.findUnique({
+            where: { id: parsed.projectId },
+            select: { ownerId: true },
+          });
+          if (!project || project.ownerId !== parsed._userId) {
+            return {
+              content: [{ type: 'text', text: 'Project not found' }],
+              isError: true,
+            };
+          }
+        }
+
         const meeting = await prisma.meeting.create({
           data: {
             title: parsed.title,
@@ -356,7 +388,21 @@ export async function executeMeetingTool(
 
       case 'update_meeting': {
         const parsed = updateMeetingSchema.parse(args);
-        const { meetingId, ...updateData } = parsed;
+        const { meetingId, _userId, ...updateData } = parsed;
+
+        // Verify meeting/project ownership if userId is provided
+        if (_userId) {
+          const existingMeeting = await prisma.meeting.findUnique({
+            where: { id: meetingId },
+            include: { project: { select: { ownerId: true } } },
+          });
+          if (!existingMeeting || existingMeeting.project.ownerId !== _userId) {
+            return {
+              content: [{ type: 'text', text: 'Meeting not found' }],
+              isError: true,
+            };
+          }
+        }
 
         const meeting = await prisma.meeting.update({
           where: { id: meetingId },
@@ -390,6 +436,8 @@ export async function executeMeetingTool(
         const meetings = await prisma.meeting.findMany({
           where: {
             date: { gte: startDate },
+            // Filter by project owner if userId is provided
+            ...(parsed._userId ? { project: { ownerId: parsed._userId } } : {}),
           },
           take: parsed.limit,
           orderBy: { date: 'desc' },
@@ -453,11 +501,13 @@ export async function executeMeetingTool(
           };
         }
 
-        // Get active projects
+        // Get active projects (filter by owner if userId is provided)
         const projects = await prisma.project.findMany({
           where: {
             clientId: parsed.clientId,
             status: { in: ['PLANNING', 'IN_PROGRESS'] },
+            // Filter by owner if userId is provided
+            ...(parsed._userId ? { ownerId: parsed._userId } : {}),
           },
           include: {
             _count: {
