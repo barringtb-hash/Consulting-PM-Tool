@@ -2,10 +2,7 @@ import { LeadSource, LeadStatus } from '@prisma/client';
 import { Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
-import {
-  hasLeadAccess,
-  getLeadAccessFilter,
-} from '../auth/client-auth.helper';
+import { hasLeadAccess, getLeadAccessFilter } from '../auth/client-auth.helper';
 import {
   convertLead,
   createLead,

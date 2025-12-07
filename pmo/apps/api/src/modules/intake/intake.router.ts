@@ -13,7 +13,6 @@ import {
   getAccessibleClientIds,
   getClientIdFromIntakeConfig,
   getClientIdFromIntakeForm,
-  getClientIdFromIntakeSubmission,
 } from '../../auth/client-auth.helper';
 import * as intakeService from './intake.service';
 
@@ -172,7 +171,9 @@ router.get(
     if (clientId) {
       const canAccess = await hasClientAccess(req.userId, clientId);
       if (!canAccess) {
-        res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+        res
+          .status(403)
+          .json({ error: 'Forbidden: Access denied to this client' });
         return;
       }
       const configs = await intakeService.listIntakeConfigs({ clientId });
@@ -219,7 +220,9 @@ router.get(
     // Authorization: Check user has access to this client
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -249,7 +252,9 @@ router.post(
     // Authorization: Check user has access to this client
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -300,7 +305,9 @@ router.patch(
     // Authorization: Check user has access to this client
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -350,7 +357,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -391,7 +400,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -434,7 +445,9 @@ router.get(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -474,7 +487,9 @@ router.patch(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -517,7 +532,9 @@ router.post(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 
@@ -552,7 +569,9 @@ router.delete(
     }
     const canAccess = await hasClientAccess(req.userId, clientId);
     if (!canAccess) {
-      res.status(403).json({ error: 'Forbidden: Access denied to this client' });
+      res
+        .status(403)
+        .json({ error: 'Forbidden: Access denied to this client' });
       return;
     }
 

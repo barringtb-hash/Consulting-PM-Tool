@@ -44,7 +44,6 @@ function AIAssistantToggle(): JSX.Element | null {
 function AppLayoutInner({ children }: AppLayoutProps): JSX.Element {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isModuleEnabled } = useModules();
-  const { isOpen: isAIAssistantOpen } = useAIAssistant();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);

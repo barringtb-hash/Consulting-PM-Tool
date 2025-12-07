@@ -5,7 +5,15 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Bot, Loader2, User, AlertCircle, GripVertical } from 'lucide-react';
+import {
+  X,
+  Send,
+  Bot,
+  Loader2,
+  User,
+  AlertCircle,
+  GripVertical,
+} from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useAIAssistant } from './AIAssistantContext';
 import { useAIQuery, type AIQueryResponse } from '../../api/hooks';
@@ -204,7 +212,11 @@ export function AIAssistantSidebar(): JSX.Element | null {
     <div
       ref={sidebarRef}
       className={`relative flex flex-col h-full bg-white dark:bg-neutral-800 shadow-xl flex-shrink-0 border-l border-neutral-200 dark:border-neutral-700 ${isResizing ? '' : 'animate-slide-in-right'}`}
-      style={{ width: `${width}px`, minWidth: `${MIN_WIDTH}px`, maxWidth: `${MAX_WIDTH}px` }}
+      style={{
+        width: `${width}px`,
+        minWidth: `${MIN_WIDTH}px`,
+        maxWidth: `${MAX_WIDTH}px`,
+      }}
     >
       {/* Resize Handle */}
       <div
