@@ -1,5 +1,7 @@
 # AGENT.md – AI Agent Guide for the AI Consulting PMO Platform
 
+> **Note**: For comprehensive AI assistant documentation including architecture patterns, code conventions, key file references, and common tasks, see [../CLAUDE.md](../CLAUDE.md).
+
 ## 1. Purpose
 
 This file describes how automated coding agents, AI assistants, and human contributors should work with this repository.
@@ -10,13 +12,14 @@ The goal is to:
 - Keep behavior consistent with the product requirements and Implementation Codex.
 - Avoid breaking local development, CI, or deployment.
 
-Whenever you work on this repo as an agent, read this file **and** the implementation spec before making substantial changes.
+Whenever you work on this repo as an agent, read [CLAUDE.md](../CLAUDE.md) first, then this file and the implementation spec before making substantial changes.
 
-Recommended companion docs (if present in the repo):
+Recommended companion docs:
 
-- `AI_Consulting_PMO_Implementation_Codex.md` or `IMPLEMENTATION_CODEX.md`
-- `deploy-notes-render-vercel.md`
-- `prisma/schema.prisma`
+- [CLAUDE.md](../CLAUDE.md) - Comprehensive onboarding guide for AI assistants
+- `AI_Consulting_PMO_Implementation_Codex.md` - Technical architecture
+- `deploy-notes-render-vercel.md` - Deployment guide
+- `prisma/schema.prisma` - Database schema
 
 ---
 

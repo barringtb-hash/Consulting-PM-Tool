@@ -1,6 +1,10 @@
 # AI Consulting PMO Platform
 
-The AI Consulting PMO Platform is a monorepo for a React + TypeScript frontend and a Node.js + TypeScript API that together deliver a lightweight PMO tailored to solo AI consultants. Dive into the product requirements and technical plan in [Docs/ai-consulting-pmo-product-requirements.md](Docs/ai-consulting-pmo-product-requirements.md) and [Docs/AI_Consulting_PMO_Implementation_Codex.md](Docs/AI_Consulting_PMO_Implementation_Codex.md).
+The AI Consulting PMO Platform is a monorepo for a React + TypeScript frontend and a Node.js + TypeScript API that together deliver a lightweight PMO tailored to solo AI consultants.
+
+> **AI Assistants**: See [CLAUDE.md](CLAUDE.md) for comprehensive onboarding documentation including architecture patterns, code conventions, and common tasks.
+
+Dive into the product requirements and technical plan in [Docs/ai-consulting-pmo-product-requirements.md](Docs/ai-consulting-pmo-product-requirements.md) and [Docs/AI_Consulting_PMO_Implementation_Codex.md](Docs/AI_Consulting_PMO_Implementation_Codex.md).
 
 ## Monorepo layout
 The `pmo` directory is an npm workspace with the following structure:
@@ -134,8 +138,7 @@ Tests check for WCAG 2.1 Level AA compliance on key pages. See [pmo/docs/accessi
 
 All tests run automatically in GitHub Actions on every push and pull request:
 
-1. **lint-test** job: Linting, unit tests, build
-2. **e2e** job: E2E tests with Playwright
+1. **foundation-check** job: Linting, API unit tests, build (with PostgreSQL service)
 
 ## Deployment & Environments
 
@@ -169,6 +172,10 @@ See [Quickstart](#quickstart) section above.
 
 ## Documentation
 
+### For AI Assistants
+
+- **[CLAUDE.md](CLAUDE.md)** - Comprehensive onboarding guide with architecture, conventions, and common tasks
+
 ### For Developers
 
 - **Testing**:
@@ -183,10 +190,11 @@ See [Quickstart](#quickstart) section above.
 
 - **Implementation**:
   - [M8 Hardening Notes](pmo/docs/m8-hardening-notes.md) - Production readiness implementation
-  - [AI Coding Notes](Docs/ai-coding-notes.md) - Quick reference for AI assistants
+  - [AI Coding Notes](Docs/ai-coding-notes.md) - Legacy quick reference (see CLAUDE.md for comprehensive guide)
   - [Product Requirements](Docs/ai-consulting-pmo-product-requirements.md) - Feature specifications
   - [Implementation Codex](Docs/AI_Consulting_PMO_Implementation_Codex.md) - Technical architecture
+  - [Module System](Docs/MODULES.md) - Feature module configuration
 
-For fast onboarding tips, see `Docs/ai-coding-notes.md`, which summarizes key entry points, required env vars, and common commands for both apps.
+For fast onboarding, start with [CLAUDE.md](CLAUDE.md) which covers architecture patterns, code conventions, and common development tasks.
 
-For architecture, data model, and feature scope details, refer to the linked product requirements and implementation codex in the `Docs` directory.
+For product scope and feature specifications, refer to the product requirements and implementation codex in the `Docs` directory.
