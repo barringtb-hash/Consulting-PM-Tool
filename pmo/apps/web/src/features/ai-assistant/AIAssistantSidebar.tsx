@@ -9,6 +9,7 @@ import { X, Send, Bot, Loader2, User, AlertCircle } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useAIAssistant } from './AIAssistantContext';
 import { useAIQuery, type AIQueryResponse } from '../../api/hooks';
+import { MarkdownText } from './MarkdownText';
 
 interface Message {
   id: string;
@@ -238,7 +239,11 @@ export function AIAssistantSidebar(): JSX.Element {
                     </span>
                   ) : (
                     <>
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      {message.role === 'assistant' ? (
+                        <MarkdownText content={message.content} />
+                      ) : (
+                        <p className="text-sm">{message.content}</p>
+                      )}
 
                       {/* Show tool calls if any */}
                       {message.toolCalls && message.toolCalls.length > 0 && (
