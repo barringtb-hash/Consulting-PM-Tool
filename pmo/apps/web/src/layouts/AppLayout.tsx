@@ -46,6 +46,7 @@ function AIAssistantToggle(): JSX.Element | null {
 function AppLayoutInner({ children }: AppLayoutProps): JSX.Element {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isModuleEnabled } = useModules();
+  const { isOpen: isAIAssistantOpen } = useAIAssistant();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
@@ -65,15 +66,15 @@ function AppLayoutInner({ children }: AppLayoutProps): JSX.Element {
       {/* Mobile Menu */}
       <MobileMenu isOpen={isMobileMenuOpen} onClose={closeMobileMenu} />
 
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Main Content Area - shrinks when AI Assistant is open */}
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0 transition-all duration-300 ease-in-out">
         <TopBar onMenuClick={toggleMobileMenu} />
         <main className="flex-1 overflow-y-auto bg-neutral-50 dark:bg-neutral-900">
           {children}
         </main>
       </div>
 
-      {/* AI Assistant */}
+      {/* AI Assistant - integrated into flex layout, pushes main content */}
       {isModuleEnabled('mcp') && (
         <>
           <AIAssistantSidebar />
