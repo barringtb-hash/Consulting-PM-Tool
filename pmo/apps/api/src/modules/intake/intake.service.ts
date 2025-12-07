@@ -101,9 +101,20 @@ export async function getIntakeConfig(clientId: number) {
   });
 }
 
-export async function listIntakeConfigs(filters?: { clientId?: number }) {
+export async function listIntakeConfigs(filters?: {
+  clientId?: number;
+  clientIds?: number[];
+}) {
+  let whereClause: Prisma.IntakeConfigWhereInput | undefined;
+
+  if (filters?.clientId) {
+    whereClause = { clientId: filters.clientId };
+  } else if (filters?.clientIds && filters.clientIds.length > 0) {
+    whereClause = { clientId: { in: filters.clientIds } };
+  }
+
   return prisma.intakeConfig.findMany({
-    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    where: whereClause,
     include: {
       client: { select: { id: true, name: true, industry: true } },
       _count: { select: { forms: true, submissions: true } },

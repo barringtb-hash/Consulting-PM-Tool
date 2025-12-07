@@ -13,6 +13,7 @@ export interface ListLeadsParams {
   source?: LeadSource;
   status?: LeadStatus;
   ownerUserId?: number;
+  accessFilter?: { OR: Array<Record<string, unknown>> } | Record<string, never>;
 }
 
 export const listLeads = async ({
@@ -20,6 +21,7 @@ export const listLeads = async ({
   source,
   status,
   ownerUserId,
+  accessFilter,
 }: ListLeadsParams) => {
   const where: Prisma.InboundLeadWhereInput = {
     source,
@@ -27,17 +29,34 @@ export const listLeads = async ({
     ownerUserId,
   };
 
+  // Apply access filter (authorization scoping)
+  if (accessFilter && 'OR' in accessFilter) {
+    where.AND = [accessFilter];
+  }
+
   if (search) {
     const searchFilter: Prisma.StringFilter = {
       contains: search,
       mode: 'insensitive',
     };
-    where.OR = [
-      { name: searchFilter },
-      { email: searchFilter },
-      { company: searchFilter },
-      { message: searchFilter },
-    ];
+    // If there's already an AND from access filter, add search to it
+    if (where.AND) {
+      (where.AND as Prisma.InboundLeadWhereInput[]).push({
+        OR: [
+          { name: searchFilter },
+          { email: searchFilter },
+          { company: searchFilter },
+          { message: searchFilter },
+        ],
+      });
+    } else {
+      where.OR = [
+        { name: searchFilter },
+        { email: searchFilter },
+        { company: searchFilter },
+        { message: searchFilter },
+      ];
+    }
   }
 
   return prisma.inboundLead.findMany({

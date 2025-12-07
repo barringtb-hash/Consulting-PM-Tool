@@ -351,3 +351,123 @@ export async function getClientIdFromSafetyMonitorConfig(
   });
   return config?.clientId ?? null;
 }
+
+// ============ INTAKE MODULE ============
+
+/**
+ * Get the client ID from an intake config
+ */
+export async function getClientIdFromIntakeConfig(
+  configId: number,
+): Promise<number | null> {
+  const config = await prisma.intakeConfig.findUnique({
+    where: { id: configId },
+    select: { clientId: true },
+  });
+  return config?.clientId ?? null;
+}
+
+/**
+ * Get the client ID from an intake form
+ */
+export async function getClientIdFromIntakeForm(
+  formId: number,
+): Promise<number | null> {
+  const form = await prisma.intakeForm.findUnique({
+    where: { id: formId },
+    select: { config: { select: { clientId: true } } },
+  });
+  return form?.config?.clientId ?? null;
+}
+
+/**
+ * Get the client ID from an intake submission
+ */
+export async function getClientIdFromIntakeSubmission(
+  submissionId: number,
+): Promise<number | null> {
+  const submission = await prisma.intakeSubmission.findUnique({
+    where: { id: submissionId },
+    select: { form: { select: { config: { select: { clientId: true } } } } },
+  });
+  return submission?.form?.config?.clientId ?? null;
+}
+
+// ============ LEAD MANAGEMENT ============
+
+/**
+ * Check if a user has access to a lead
+ * User has access if they are:
+ * 1. An admin, OR
+ * 2. The owner of the lead, OR
+ * 3. Have access to the client the lead is associated with
+ */
+export async function hasLeadAccess(
+  userId: number,
+  leadId: number,
+): Promise<boolean> {
+  // First check if user is an admin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (user?.role === 'ADMIN') {
+    return true;
+  }
+
+  // Get the lead with owner and client info
+  const lead = await prisma.inboundLead.findUnique({
+    where: { id: leadId },
+    select: { ownerUserId: true, clientId: true },
+  });
+
+  if (!lead) {
+    return false;
+  }
+
+  // Check if user is the owner
+  if (lead.ownerUserId === userId) {
+    return true;
+  }
+
+  // Check if user has access via client relationship
+  if (lead.clientId) {
+    return hasClientAccess(userId, lead.clientId);
+  }
+
+  return false;
+}
+
+/**
+ * Get leads accessible to a user
+ * Returns a Prisma where clause filter for leads the user can access
+ */
+export async function getLeadAccessFilter(
+  userId: number,
+): Promise<{ OR: Array<Record<string, unknown>> } | Record<string, never>> {
+  // Check if user is an admin - they can access all leads
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (user?.role === 'ADMIN') {
+    // No filter needed - admin can see all
+    return {};
+  }
+
+  // Get all client IDs the user has access to
+  const accessibleClientIds = await getAccessibleClientIds(userId);
+
+  // Build OR filter: owned leads OR leads for accessible clients
+  const filters: Array<Record<string, unknown>> = [
+    { ownerUserId: userId }, // Leads owned by this user
+  ];
+
+  if (accessibleClientIds && accessibleClientIds.length > 0) {
+    filters.push({ clientId: { in: accessibleClientIds } }); // Leads for accessible clients
+  }
+
+  return { OR: filters };
+}
