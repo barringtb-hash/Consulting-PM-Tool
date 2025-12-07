@@ -122,7 +122,8 @@ describe('clients routes', () => {
     const deleteResponse = await agent.delete(`/api/clients/${clientId}`);
     expect(deleteResponse.status).toBe(204);
 
+    // Verify hard delete - record should no longer exist
     const stored = await prisma.client.findUnique({ where: { id: clientId } });
-    expect(stored?.archived).toBe(true);
+    expect(stored).toBeNull();
   });
 });

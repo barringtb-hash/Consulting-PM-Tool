@@ -1,6 +1,9 @@
 import { ProjectStatus } from '@prisma/client';
 import { z } from 'zod';
 
+// Input length limits for security (prevents resource exhaustion)
+const MAX_NAME_LENGTH = 200;
+
 const projectDatesRefinement = (
   data: { startDate?: Date; endDate?: Date },
   ctx: z.RefinementCtx,
@@ -17,7 +20,7 @@ const projectDatesRefinement = (
 export const projectCreateSchema = z
   .object({
     clientId: z.number().int().positive(),
-    name: z.string().min(1, 'Name is required'),
+    name: z.string().min(1, 'Name is required').max(MAX_NAME_LENGTH),
     status: z.nativeEnum(ProjectStatus).optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),

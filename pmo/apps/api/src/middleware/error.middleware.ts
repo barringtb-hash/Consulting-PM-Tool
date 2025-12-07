@@ -31,11 +31,11 @@ export const errorHandler = (
     return;
   }
 
-  // Handle Prisma errors
+  // Handle Prisma errors - log details server-side only, don't expose to clients
   if (err.name === 'PrismaClientKnownRequestError') {
+    console.error('Prisma known request error:', err.message);
     res.status(400).json({
       error: 'Database operation failed',
-      details: err.message,
     });
     return;
   }
@@ -48,16 +48,15 @@ export const errorHandler = (
     console.error('Database connection error:', err.message);
     res.status(503).json({
       error: 'Database connection unavailable',
-      details: 'Please try again later',
     });
     return;
   }
 
   // Handle Prisma validation errors
   if (err.name === 'PrismaClientValidationError') {
+    console.error('Prisma validation error:', err.message);
     res.status(400).json({
-      error: 'Invalid database query',
-      details: err.message,
+      error: 'Invalid request',
     });
     return;
   }

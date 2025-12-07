@@ -59,11 +59,12 @@ export function requireModule(moduleId: ModuleId) {
       }
       next();
     } catch (error) {
-      // If database check fails, fall back to static config for resilience
-      console.error(
-        'Module guard database check failed, using static config:',
-        error,
-      );
+      // Fail closed on database errors for security
+      // This prevents potentially exposing modules that should be disabled
+      // when the database configuration cannot be verified
+      console.error('Module guard database check failed:', error);
+
+      // Check static config first - if module is disabled there, definitely deny
       if (!isModuleEnabled(moduleId)) {
         res.status(404).json({
           error: 'Not Found',
@@ -71,7 +72,13 @@ export function requireModule(moduleId: ModuleId) {
         });
         return;
       }
-      next();
+
+      // Module is enabled in static config but database check failed
+      // Return 503 to indicate temporary unavailability rather than granting access
+      res.status(503).json({
+        error: 'Service Temporarily Unavailable',
+        message: 'Unable to verify feature access. Please try again later.',
+      });
     }
   };
 }

@@ -44,7 +44,7 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
       return;
     }
 
-    const { clientId, status } = req.query;
+    const { clientId, status, page, limit } = req.query;
     const parsedClientId =
       typeof clientId === 'string' && clientId.length > 0
         ? Number(clientId)
@@ -66,13 +66,24 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
       return;
     }
 
-    const projects = await listProjects({
+    // Parse pagination parameters
+    const parsedPage =
+      typeof page === 'string' ? Math.max(1, parseInt(page, 10) || 1) : 1;
+    const parsedLimit =
+      typeof limit === 'string' ? parseInt(limit, 10) || 50 : 50;
+
+    const result = await listProjects({
       ownerId: req.userId,
       clientId: parsedClientId,
       status: parsedStatus,
+      page: parsedPage,
+      limit: parsedLimit,
     });
 
-    res.json({ projects });
+    res.json({
+      projects: result.data,
+      pagination: result.pagination,
+    });
   } catch (error) {
     console.error('List projects error:', error);
     res.status(500).json({ error: 'Failed to list projects' });
