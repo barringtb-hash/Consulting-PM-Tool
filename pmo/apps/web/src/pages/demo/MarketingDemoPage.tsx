@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { PageHeader } from '../../ui/PageHeader';
-import { Card, CardBody, CardHeader, CardTitle, CardFooter } from '../../ui/Card';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Badge } from '../../ui/Badge';
@@ -144,7 +150,9 @@ function ContentGeneratorDemo(): JSX.Element {
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     if (contentType === 'social') {
-      setGeneratedContent(SAMPLE_CONTENT.social[platform] || SAMPLE_CONTENT.social.linkedin);
+      setGeneratedContent(
+        SAMPLE_CONTENT.social[platform] || SAMPLE_CONTENT.social.linkedin,
+      );
     } else if (contentType === 'email') {
       setGeneratedContent(
         `Subject: ${SAMPLE_CONTENT.email.subject}\n\n${SAMPLE_CONTENT.email.body}`,
@@ -302,7 +310,11 @@ function ContentGeneratorDemo(): JSX.Element {
                 Generated Content
               </span>
               <div className="flex gap-2">
-                <Button size="sm" variant="secondary" onClick={handleRegenerate}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleRegenerate}
+                >
                   <RefreshCw className="w-4 h-4 mr-1" />
                   Regenerate
                 </Button>
@@ -401,7 +413,7 @@ function BrandVoiceDemo(): JSX.Element {
             Brand Voice Preview
           </h4>
           <p className="text-sm text-violet-700 dark:text-violet-400">
-            "{brandName}" content will be written in a{' '}
+            &quot;{brandName}&quot; content will be written in a{' '}
             <strong>{voiceTraits.join(', ').toLowerCase()}</strong> tone,
             ensuring consistency across all marketing channels.
           </p>
@@ -420,21 +432,15 @@ function ContentCalendarDemo(): JSX.Element {
   const scheduledContent = [
     {
       day: 'Mon',
-      items: [
-        { type: 'Blog', title: 'AI Trends 2024', status: 'Published' },
-      ],
+      items: [{ type: 'Blog', title: 'AI Trends 2024', status: 'Published' }],
     },
     {
       day: 'Tue',
-      items: [
-        { type: 'Social', title: 'LinkedIn Post', status: 'Scheduled' },
-      ],
+      items: [{ type: 'Social', title: 'LinkedIn Post', status: 'Scheduled' }],
     },
     {
       day: 'Wed',
-      items: [
-        { type: 'Email', title: 'Newsletter', status: 'Draft' },
-      ],
+      items: [{ type: 'Email', title: 'Newsletter', status: 'Draft' }],
     },
     {
       day: 'Thu',
@@ -445,17 +451,19 @@ function ContentCalendarDemo(): JSX.Element {
     },
     {
       day: 'Fri',
-      items: [
-        { type: 'Blog', title: 'Case Study', status: 'Draft' },
-      ],
+      items: [{ type: 'Blog', title: 'Case Study', status: 'Draft' }],
     },
   ];
 
   const statusColors: Record<string, string> = {
-    Published: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    Scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    Draft: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300',
-    'In Review': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    Published:
+      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    Scheduled:
+      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    Draft:
+      'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300',
+    'In Review':
+      'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   };
 
   return (
@@ -468,7 +476,7 @@ function ContentCalendarDemo(): JSX.Element {
           <div>
             <CardTitle>Content Calendar</CardTitle>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              This week's content schedule
+              This week&apos;s content schedule
             </p>
           </div>
         </div>
@@ -493,7 +501,9 @@ function ContentCalendarDemo(): JSX.Element {
                       {item.title}
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-neutral-500">{item.type}</span>
+                      <span className="text-xs text-neutral-500">
+                        {item.type}
+                      </span>
                       <span
                         className={`text-xs px-1.5 py-0.5 rounded ${statusColors[item.status]}`}
                       >
@@ -524,7 +534,12 @@ function ContentCalendarDemo(): JSX.Element {
 function AnalyticsDemo(): JSX.Element {
   const metrics = [
     { label: 'Content Created', value: '47', change: '+12%', icon: FileText },
-    { label: 'Engagement Rate', value: '4.8%', change: '+0.6%', icon: TrendingUp },
+    {
+      label: 'Engagement Rate',
+      value: '4.8%',
+      change: '+0.6%',
+      icon: TrendingUp,
+    },
     { label: 'Time Saved', value: '23h', change: '+8h', icon: Clock },
     { label: 'ROI', value: '340%', change: '+45%', icon: Target },
   ];
@@ -580,7 +595,9 @@ function RepurposeDemo(): JSX.Element {
   const [sourceContent, setSourceContent] = useState(
     'Our AI chatbot solution helped TechCorp reduce support tickets by 60% and improve customer satisfaction scores to 92%.',
   );
-  const [repurposedContent, setRepurposedContent] = useState<Record<string, string>>({});
+  const [repurposedContent, setRepurposedContent] = useState<
+    Record<string, string>
+  >({});
   const [isRepurposing, setIsRepurposing] = useState(false);
 
   const handleRepurpose = async () => {
@@ -588,9 +605,9 @@ function RepurposeDemo(): JSX.Element {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setRepurposedContent({
       twitter:
-        "60% fewer support tickets. 92% customer satisfaction. That's what happens when AI meets customer service. See how TechCorp did it. #AI #CX",
+        '60% fewer support tickets. 92% customer satisfaction. That\'s what happens when AI meets customer service. See how TechCorp did it. #AI #CX',
       linkedin:
-        "Case Study: How TechCorp Transformed Customer Support with AI\n\nResults speak for themselves:\n- 60% reduction in support tickets\n- 92% customer satisfaction score\n\nThe future of customer service is here.",
+        'Case Study: How TechCorp Transformed Customer Support with AI\n\nResults speak for themselves:\n- 60% reduction in support tickets\n- 92% customer satisfaction score\n\nThe future of customer service is here.',
       email_subject: 'How TechCorp Cut Support Tickets by 60%',
       blog_title: 'TechCorp Case Study: AI-Powered Customer Service Success',
     });
@@ -741,9 +758,9 @@ export default function MarketingDemoPage(): JSX.Element {
                   Create Marketing Content 10x Faster
                 </h2>
                 <p className="text-pink-100 max-w-xl">
-                  Our AI-powered marketing suite helps you generate, schedule, and
-                  analyze content across all channels. Train it on your brand voice
-                  for consistent messaging.
+                  Our AI-powered marketing suite helps you generate, schedule,
+                  and analyze content across all channels. Train it on your
+                  brand voice for consistent messaging.
                 </p>
               </div>
               <div className="hidden lg:flex items-center gap-4">
@@ -784,8 +801,8 @@ export default function MarketingDemoPage(): JSX.Element {
               Ready to Supercharge Your Marketing?
             </h2>
             <p className="text-primary-100 mb-6 max-w-2xl mx-auto">
-              Join hundreds of businesses using AI to create better content faster.
-              Start your free trial today.
+              Join hundreds of businesses using AI to create better content
+              faster. Start your free trial today.
             </p>
             <div className="flex justify-center gap-4">
               <Button

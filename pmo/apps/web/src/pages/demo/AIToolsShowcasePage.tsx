@@ -105,7 +105,12 @@ const AI_TOOLS: AITool[] = [
       'Timezone handling',
       'Rescheduling workflows',
     ],
-    industries: ['Healthcare', 'Professional Services', 'Beauty & Wellness', 'Education'],
+    industries: [
+      'Healthcare',
+      'Professional Services',
+      'Beauty & Wellness',
+      'Education',
+    ],
     path: '/ai-tools/scheduling',
     moduleId: 'scheduling',
     color: 'bg-violet-500',
@@ -199,8 +204,7 @@ const AI_TOOLS: AITool[] = [
     path: '/ai-tools/lead-scoring',
     moduleId: 'leadScoring',
     color: 'bg-rose-500',
-    demoScenario:
-      'See how AI scores and prioritizes leads for your sales team',
+    demoScenario: 'See how AI scores and prioritizes leads for your sales team',
   },
   {
     id: 'prior-auth',
@@ -333,8 +337,7 @@ const AI_TOOLS: AITool[] = [
     path: '/ai-tools/safety-monitor',
     moduleId: 'safetyMonitor',
     color: 'bg-yellow-500',
-    demoScenario:
-      'Complete a safety checklist and view compliance analytics',
+    demoScenario: 'Complete a safety checklist and view compliance analytics',
   },
 ];
 
@@ -546,7 +549,11 @@ export default function AIToolsShowcasePage(): JSX.Element {
                   size="sm"
                   variant={selectedPhase === 1 ? 'primary' : 'secondary'}
                   onClick={() => setSelectedPhase(1)}
-                  className={selectedPhase === 1 ? '' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'}
+                  className={
+                    selectedPhase === 1
+                      ? ''
+                      : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                  }
                 >
                   <Zap className="w-4 h-4 mr-1" />
                   Phase 1 ({phase1Tools.length})
@@ -555,7 +562,11 @@ export default function AIToolsShowcasePage(): JSX.Element {
                   size="sm"
                   variant={selectedPhase === 2 ? 'primary' : 'secondary'}
                   onClick={() => setSelectedPhase(2)}
-                  className={selectedPhase === 2 ? '' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}
+                  className={
+                    selectedPhase === 2
+                      ? ''
+                      : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                  }
                 >
                   <Brain className="w-4 h-4 mr-1" />
                   Phase 2 ({phase2Tools.length})
@@ -564,7 +575,11 @@ export default function AIToolsShowcasePage(): JSX.Element {
                   size="sm"
                   variant={selectedPhase === 3 ? 'primary' : 'secondary'}
                   onClick={() => setSelectedPhase(3)}
-                  className={selectedPhase === 3 ? '' : 'hover:bg-orange-50 dark:hover:bg-orange-900/20'}
+                  className={
+                    selectedPhase === 3
+                      ? ''
+                      : 'hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                  }
                 >
                   <TrendingUp className="w-4 h-4 mr-1" />
                   Phase 3 ({phase3Tools.length})
@@ -607,12 +622,20 @@ export default function AIToolsShowcasePage(): JSX.Element {
             </p>
             <div className="flex justify-center gap-4">
               <Link to="/client-intake">
-                <Button variant="secondary" size="lg" className="bg-white text-primary-600 hover:bg-primary-50">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="bg-white text-primary-600 hover:bg-primary-50"
+                >
                   Schedule a Consultation
                 </Button>
               </Link>
               <Link to="/demo/marketing">
-                <Button variant="secondary" size="lg" className="bg-primary-400 text-white border-white/30 hover:bg-primary-300">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="bg-primary-400 text-white border-white/30 hover:bg-primary-300"
+                >
                   View Marketing Demo
                 </Button>
               </Link>
