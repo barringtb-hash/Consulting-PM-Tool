@@ -517,9 +517,8 @@ function ProductDescriptionsPage(): JSX.Element {
                             </dd>
                           </div>
                         )}
-                        {(
-                          selectedProduct.attributes as { brand?: string }
-                        )?.brand && (
+                        {(selectedProduct.attributes as { brand?: string })
+                          ?.brand && (
                           <div>
                             <dt className="text-neutral-500">Brand</dt>
                             <dd className="font-medium">
