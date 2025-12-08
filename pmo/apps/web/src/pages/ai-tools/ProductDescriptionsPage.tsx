@@ -31,13 +31,12 @@ import {
 interface ProductDescConfig {
   id: number;
   clientId: number;
-  name: string;
-  defaultTone: string;
-  defaultLength: string;
-  includeSEO: boolean;
-  includeKeywords: boolean;
+  defaultTone: string | null;
+  defaultLength: string | null;
+  enableSEO: boolean;
+  targetKeywords: string[];
   client?: { id: number; name: string };
-  _count?: { products: number; templates: number };
+  _count?: { products: number };
 }
 
 interface Product {
@@ -45,10 +44,10 @@ interface Product {
   name: string;
   sku: string | null;
   category: string | null;
-  brand: string | null;
-  baseDescription: string | null;
-  features: string[];
-  specifications: Record<string, unknown> | null;
+  subcategory: string | null;
+  attributes: Record<string, unknown> | null;
+  imageUrls: string[];
+  sourceDescription: string | null;
   descriptions?: ProductDescription[];
 }
 
@@ -312,9 +311,10 @@ function ProductDescriptionsPage(): JSX.Element {
     createConfigMutation.mutate({
       clientId: Number(formData.get('clientId')),
       data: {
-        name: formData.get('name') as string,
-        defaultTone: formData.get('defaultTone') as string,
-        defaultLength: formData.get('defaultLength') as string,
+        defaultTone: (formData.get('defaultTone') as string) || undefined,
+        defaultLength:
+          (formData.get('defaultLength') as 'short' | 'medium' | 'long') ||
+          undefined,
       },
     });
   };
@@ -322,18 +322,25 @@ function ProductDescriptionsPage(): JSX.Element {
   const handleCreateProduct = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const brand = (formData.get('brand') as string) || undefined;
+    const featuresRaw = formData.get('features') as string;
+    const features = featuresRaw
+      ? featuresRaw
+          .split('\n')
+          .map((f) => f.trim())
+          .filter(Boolean)
+      : [];
+
     createProductMutation.mutate({
       configId: selectedConfigId!,
       data: {
         name: formData.get('name') as string,
-        sku: (formData.get('sku') as string) || null,
-        category: (formData.get('category') as string) || null,
-        brand: (formData.get('brand') as string) || null,
-        baseDescription: (formData.get('baseDescription') as string) || null,
-        features: (formData.get('features') as string)
-          .split('\n')
-          .map((f) => f.trim())
-          .filter(Boolean),
+        sku: (formData.get('sku') as string) || undefined,
+        category: (formData.get('category') as string) || undefined,
+        sourceDescription:
+          (formData.get('sourceDescription') as string) || undefined,
+        attributes:
+          brand || features.length > 0 ? { brand, features } : undefined,
       },
     });
   };
@@ -381,8 +388,7 @@ function ProductDescriptionsPage(): JSX.Element {
                 <option value="">Select a configuration...</option>
                 {filteredConfigs.map((config) => (
                   <option key={config.id} value={config.id}>
-                    {config.name}{' '}
-                    {config.client ? `(${config.client.name})` : ''}
+                    {config.client?.name || `Config #${config.id}`}
                   </option>
                 ))}
               </Select>
@@ -511,27 +517,42 @@ function ProductDescriptionsPage(): JSX.Element {
                             </dd>
                           </div>
                         )}
-                        {selectedProduct.brand && (
+                        {(selectedProduct.attributes as { brand?: string })
+                          ?.brand && (
                           <div>
                             <dt className="text-neutral-500">Brand</dt>
                             <dd className="font-medium">
-                              {selectedProduct.brand}
+                              {
+                                (
+                                  selectedProduct.attributes as {
+                                    brand?: string;
+                                  }
+                                ).brand
+                              }
                             </dd>
                           </div>
                         )}
                       </dl>
-                      {selectedProduct.features.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-sm text-neutral-500 mb-2">
-                            Features
-                          </p>
-                          <ul className="list-disc list-inside text-sm space-y-1">
-                            {selectedProduct.features.map((feature, idx) => (
-                              <li key={idx}>{feature}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {selectedProduct.attributes &&
+                        (selectedProduct.attributes as { features?: string[] })
+                          .features &&
+                        (selectedProduct.attributes as { features?: string[] })
+                          .features!.length > 0 && (
+                          <div className="mt-4">
+                            <p className="text-sm text-neutral-500 mb-2">
+                              Features
+                            </p>
+                            <ul className="list-disc list-inside text-sm space-y-1">
+                              {(
+                                selectedProduct.attributes as {
+                                  features?: string[];
+                                }
+                              ).features!.map((feature, idx) => (
+                                <li key={idx}>{feature}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                     </CardBody>
                   </Card>
 
@@ -679,19 +700,15 @@ function ProductDescriptionsPage(): JSX.Element {
                     </option>
                   ))}
                 </Select>
-                <Input
-                  label="Configuration Name"
-                  name="name"
-                  required
-                  placeholder="e.g., E-commerce Products"
-                />
                 <Select label="Default Tone" name="defaultTone">
+                  <option value="">Select a tone...</option>
                   <option value="professional">Professional</option>
                   <option value="casual">Casual</option>
                   <option value="enthusiastic">Enthusiastic</option>
                   <option value="luxury">Luxury</option>
                 </Select>
                 <Select label="Default Length" name="defaultLength">
+                  <option value="">Select a length...</option>
                   <option value="short">Short</option>
                   <option value="medium">Medium</option>
                   <option value="long">Long</option>
@@ -743,10 +760,10 @@ function ProductDescriptionsPage(): JSX.Element {
                 />
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Base Description
+                    Source Description
                   </label>
                   <textarea
-                    name="baseDescription"
+                    name="sourceDescription"
                     rows={3}
                     className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Original product description..."
