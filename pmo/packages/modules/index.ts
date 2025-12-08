@@ -49,7 +49,10 @@ export type ModuleId =
   // Compliance modules (COMP.1, COMP.2, COMP.3)
   | 'healthcareCompliance'
   | 'financialCompliance'
-  | 'generalCompliance';
+  | 'generalCompliance'
+  // Demo modules
+  | 'demoAITools'
+  | 'demoMarketing';
 
 /**
  * Navigation group identifiers
@@ -63,7 +66,8 @@ export type NavGroup =
   | 'aiTools'
   | 'infrastructure'
   | 'compliance'
-  | 'admin';
+  | 'admin'
+  | 'demo';
 
 /**
  * Module definition with metadata
@@ -549,6 +553,30 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/compliance/general'],
     description: 'COMP.3 - GDPR and CCPA privacy compliance implementation',
   },
+
+  // ============ DEMO MODULES ============
+  demoAITools: {
+    id: 'demoAITools',
+    label: 'AI Tools Showcase',
+    navGroup: 'demo',
+    path: '/demo/ai-tools',
+    icon: 'Sparkles',
+    isCore: false,
+    apiPrefixes: [],
+    description:
+      'Interactive showcase of all 13 AI tools with descriptions, features, and live demos',
+  },
+  demoMarketing: {
+    id: 'demoMarketing',
+    label: 'Marketing Demo',
+    navGroup: 'demo',
+    path: '/demo/marketing',
+    icon: 'Presentation',
+    isCore: false,
+    apiPrefixes: [],
+    description:
+      'Interactive demo of AI-powered marketing content generation, scheduling, and analytics',
+  },
 };
 
 /**
@@ -559,14 +587,15 @@ export const NAV_GROUP_CONFIG: Record<
   { label: string; order: number }
 > = {
   overview: { label: '', order: 1 }, // No header for overview
-  clients: { label: 'Clients', order: 2 },
-  projects: { label: 'Projects', order: 3 },
-  marketing: { label: 'Marketing', order: 4 },
-  sales: { label: 'Sales', order: 5 },
-  aiTools: { label: 'AI Tools', order: 6 },
-  infrastructure: { label: 'Infrastructure', order: 7 },
-  compliance: { label: 'Compliance', order: 8 },
-  admin: { label: 'Admin', order: 9 },
+  demo: { label: 'Demos', order: 2 }, // Demo section at top for visibility
+  clients: { label: 'Clients', order: 3 },
+  projects: { label: 'Projects', order: 4 },
+  marketing: { label: 'Marketing', order: 5 },
+  sales: { label: 'Sales', order: 6 },
+  aiTools: { label: 'AI Tools', order: 7 },
+  infrastructure: { label: 'Infrastructure', order: 8 },
+  compliance: { label: 'Compliance', order: 9 },
+  admin: { label: 'Admin', order: 10 },
 };
 
 /**
@@ -608,6 +637,9 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'healthcareCompliance',
   'financialCompliance',
   'generalCompliance',
+  // Demo modules
+  'demoAITools',
+  'demoMarketing',
 ];
 
 /**

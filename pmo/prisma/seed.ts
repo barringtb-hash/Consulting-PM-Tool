@@ -12,6 +12,10 @@ import {
   ProjectHealthStatus,
   TaskStatus,
   UserRole,
+  ContentType,
+  ContentStatus,
+  ContentChannel,
+  CampaignStatus,
 } from '@prisma/client';
 
 if (!process.env.DATABASE_URL) {
@@ -492,6 +496,263 @@ const brandProfileSeeds = [
   },
 ];
 
+// Demo marketing content for showcasing the marketing tools
+const marketingContentSeeds = [
+  // Published content
+  {
+    name: 'AI Consulting Success: 60% Support Cost Reduction',
+    type: ContentType.LINKEDIN_POST,
+    channel: ContentChannel.LINKEDIN,
+    status: ContentStatus.PUBLISHED,
+    clientName: 'Launchpad Consulting Partners',
+    createdByEmail: 'avery.chen@pmo.test',
+    summary: 'Case study highlighting AI chatbot implementation results',
+    content: {
+      body: `Digital transformation isn't just a buzzword - it's the key to staying competitive.
+
+Our latest case study shows how one client achieved:
+• 60% reduction in support tickets
+• 45% faster response times
+• 92% customer satisfaction scores
+
+The secret? AI-powered automation that enhances, not replaces, human connection.
+
+Want to learn how AI can transform your business? Drop a comment below or visit our website.
+
+#DigitalTransformation #AI #CustomerSuccess #Innovation`,
+    },
+    tags: ['case-study', 'ai', 'customer-success', 'digital-transformation'],
+    publishedAt: new Date('2024-01-20'),
+  },
+  {
+    name: '5 Ways AI is Revolutionizing Customer Service',
+    type: ContentType.BLOG_POST,
+    channel: ContentChannel.WEB,
+    status: ContentStatus.PUBLISHED,
+    clientName: 'Launchpad Consulting Partners',
+    createdByEmail: 'priya.desai@pmo.test',
+    summary: 'Comprehensive guide to AI in customer service',
+    content: {
+      title: '5 Ways AI is Revolutionizing Customer Service in 2024',
+      body: `## Introduction
+The customer service landscape is evolving rapidly, and AI is at the forefront of this transformation.
+
+## 1. 24/7 Intelligent Support
+Modern AI chatbots don't just answer FAQs - they understand context, sentiment, and can handle complex inquiries around the clock.
+
+## 2. Predictive Customer Insights
+AI analyzes patterns to predict customer needs before they even reach out, enabling proactive support.
+
+## 3. Seamless Human-AI Collaboration
+The best AI systems know when to escalate to human agents, ensuring customers always get the right level of support.
+
+## 4. Personalized Experiences at Scale
+AI enables hyper-personalization for every customer interaction, regardless of volume.
+
+## 5. Continuous Learning and Improvement
+Machine learning algorithms constantly improve from every interaction, making your support better over time.
+
+## Conclusion
+The future of customer service isn't about replacing humans with machines - it's about empowering teams to deliver exceptional experiences.`,
+      metaDescription:
+        'Discover how AI is transforming customer service with 24/7 support, predictive insights, and personalized experiences.',
+    },
+    tags: ['ai', 'customer-service', 'thought-leadership', 'guide'],
+    publishedAt: new Date('2024-01-15'),
+  },
+  // Scheduled content
+  {
+    name: 'Manufacturing AI: Predictive Maintenance ROI',
+    type: ContentType.LINKEDIN_POST,
+    channel: ContentChannel.LINKEDIN,
+    status: ContentStatus.READY,
+    clientName: 'Launchpad Consulting Partners',
+    projectName: 'Predictive Maintenance Rollout',
+    createdByEmail: 'avery.chen@pmo.test',
+    summary: 'Sharing insights from our predictive maintenance project',
+    content: {
+      body: `Predictive maintenance isn't science fiction - it's saving manufacturers millions.
+
+Here's what our latest implementation achieved:
+📊 35% reduction in unplanned downtime
+💰 $2.1M annual savings in maintenance costs
+🔧 42% fewer emergency repairs
+
+The key? Combining IoT sensor data with ML models that learn from your specific equipment patterns.
+
+Ready to stop reactive maintenance and start predicting failures before they happen?
+
+#Manufacturing #AI #PredictiveMaintenance #Industry40`,
+    },
+    tags: ['manufacturing', 'predictive-maintenance', 'iot', 'case-study'],
+    scheduledFor: new Date('2024-02-20'),
+  },
+  {
+    name: 'Healthcare AI: Patient Intake Automation',
+    type: ContentType.CASE_STUDY,
+    channel: ContentChannel.WEB,
+    status: ContentStatus.READY,
+    clientName: 'Launchpad Consulting Partners',
+    projectName: 'AI Intake Modernization',
+    createdByEmail: 'priya.desai@pmo.test',
+    summary: 'Detailed case study on healthcare AI implementation',
+    content: {
+      title: 'How Brightside Health Reduced Patient Intake Time by 70%',
+      sections: [
+        {
+          heading: 'The Challenge',
+          content:
+            'Manual intake processes were causing delays and frustrating patients.',
+        },
+        {
+          heading: 'The Solution',
+          content:
+            'AI-powered intake forms with intelligent document analysis.',
+        },
+        {
+          heading: 'The Results',
+          content:
+            '70% faster intake, 85% patient satisfaction, zero compliance issues.',
+        },
+      ],
+    },
+    tags: ['healthcare', 'patient-intake', 'automation', 'case-study'],
+    scheduledFor: new Date('2024-02-25'),
+  },
+  // Draft content
+  {
+    name: 'Q1 2024 AI Consulting Newsletter',
+    type: ContentType.NEWSLETTER,
+    channel: ContentChannel.EMAIL,
+    status: ContentStatus.DRAFT,
+    clientName: 'Launchpad Consulting Partners',
+    createdByEmail: 'marco.silva@pmo.test',
+    summary: 'Monthly newsletter showcasing AI trends and company updates',
+    content: {
+      subject: 'AI Insights: What We Learned in Q1 2024',
+      sections: [
+        {
+          title: 'Featured Case Study',
+          content: 'How we helped a manufacturing client save $2M annually',
+        },
+        {
+          title: 'Industry Trends',
+          content: 'The rise of specialized AI assistants',
+        },
+        { title: 'Tips & Tricks', content: 'Getting started with AI chatbots' },
+      ],
+    },
+    tags: ['newsletter', 'quarterly-update', 'trends'],
+  },
+  {
+    name: 'Twitter Thread: AI Implementation Tips',
+    type: ContentType.TWITTER_POST,
+    channel: ContentChannel.TWITTER,
+    status: ContentStatus.DRAFT,
+    clientName: 'Launchpad Consulting Partners',
+    createdByEmail: 'avery.chen@pmo.test',
+    summary: 'Thread sharing practical AI implementation advice',
+    content: {
+      thread: [
+        '🧵 Thread: 10 lessons from implementing AI across 50+ companies. (1/11)',
+        '1. Start small. Pick ONE process, perfect it, then scale. (2/11)',
+        '2. Data quality > model complexity. Clean data beats fancy algorithms. (3/11)',
+        '3. Involve end users from day 1. The best tech fails without adoption. (4/11)',
+        '4. Set realistic expectations. AI is powerful, not magic. (5/11)',
+        '5. Plan for maintenance. Models drift. Build monitoring from the start. (6/11)',
+      ],
+    },
+    tags: ['tips', 'ai-implementation', 'thread', 'advice'],
+  },
+  // In Review content
+  {
+    name: 'Email Campaign: AI Readiness Assessment',
+    type: ContentType.EMAIL_TEMPLATE,
+    channel: ContentChannel.EMAIL,
+    status: ContentStatus.IN_REVIEW,
+    clientName: 'Launchpad Consulting Partners',
+    createdByEmail: 'priya.desai@pmo.test',
+    summary: 'Lead nurture email offering free AI readiness assessment',
+    content: {
+      subject: 'Is Your Business Ready for AI? Free Assessment Inside',
+      preheader: 'Discover your AI readiness score in 5 minutes',
+      body: `Hi {{FirstName}},
+
+Are you wondering if your business is ready to leverage AI?
+
+Take our free 5-minute AI Readiness Assessment and get:
+✅ Your personalized AI readiness score
+✅ Identification of quick-win opportunities
+✅ Custom recommendations for your industry
+
+No sales pitch. Just actionable insights.
+
+[Take the Assessment →]
+
+Best,
+The Launchpad Team`,
+    },
+    tags: ['email', 'lead-nurture', 'assessment', 'marketing'],
+  },
+  // Ideas
+  {
+    name: 'Webinar: AI for Small Business',
+    type: ContentType.VIDEO_SCRIPT,
+    channel: ContentChannel.WEB,
+    status: ContentStatus.IDEA,
+    clientName: 'Launchpad Consulting Partners',
+    createdByEmail: 'marco.silva@pmo.test',
+    summary: 'Webinar concept targeting small business owners',
+    content: {
+      concept:
+        'Live webinar showing small businesses how to leverage AI without a big budget',
+      targetAudience: 'Small business owners with 10-50 employees',
+      proposedTopics: [
+        'Free and low-cost AI tools',
+        'Automating customer service on a budget',
+        'AI-powered marketing for small teams',
+      ],
+    },
+    tags: ['webinar', 'small-business', 'idea', 'video'],
+  },
+];
+
+// Demo campaigns
+const campaignSeeds = [
+  {
+    name: 'Q1 2024 Thought Leadership',
+    description:
+      'Establish Launchpad as the go-to AI consulting firm through thought leadership content',
+    clientName: 'Launchpad Consulting Partners',
+    status: CampaignStatus.ACTIVE,
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-03-31'),
+    tags: ['thought-leadership', 'q1-2024', 'brand-awareness'],
+    goals: {
+      linkedinFollowers: 500,
+      websiteTraffic: 10000,
+      leadGeneration: 50,
+    },
+    createdByEmail: 'avery.chen@pmo.test',
+  },
+  {
+    name: 'Manufacturing AI Solutions Launch',
+    description:
+      'Launch campaign for predictive maintenance and industrial AI solutions',
+    clientName: 'Launchpad Consulting Partners',
+    status: CampaignStatus.PLANNING,
+    startDate: new Date('2024-02-15'),
+    endDate: new Date('2024-05-15'),
+    tags: ['manufacturing', 'product-launch', 'lead-gen'],
+    goals: {
+      qualifiedLeads: 25,
+      demoRequests: 15,
+      pipelineValue: 500000,
+    },
+    createdByEmail: 'priya.desai@pmo.test',
+  },
+];
+
 async function main() {
   const bcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
 
@@ -961,6 +1222,122 @@ async function main() {
           },
         });
       }
+    }
+  }
+
+  // Seed campaigns first (so we can link content to them)
+  const campaignMap = new Map<string, number>();
+  for (const campaignSeed of campaignSeeds) {
+    const clientId = clientMap.get(campaignSeed.clientName);
+    if (!clientId) {
+      throw new Error(
+        `Client ${campaignSeed.clientName} not found for campaign seeding.`,
+      );
+    }
+
+    const createdById = userMap.get(campaignSeed.createdByEmail);
+    if (!createdById) {
+      throw new Error(
+        `Creator ${campaignSeed.createdByEmail} not found for campaign seeding.`,
+      );
+    }
+
+    const existingCampaign = await prisma.campaign.findFirst({
+      where: { name: campaignSeed.name, clientId },
+    });
+
+    const campaign = existingCampaign
+      ? await prisma.campaign.update({
+          where: { id: existingCampaign.id },
+          data: {
+            description: campaignSeed.description,
+            status: campaignSeed.status,
+            startDate: campaignSeed.startDate,
+            endDate: campaignSeed.endDate,
+            tags: campaignSeed.tags,
+            goals: campaignSeed.goals,
+            createdById,
+            archived: false,
+          },
+        })
+      : await prisma.campaign.create({
+          data: {
+            clientId,
+            name: campaignSeed.name,
+            description: campaignSeed.description,
+            status: campaignSeed.status,
+            startDate: campaignSeed.startDate,
+            endDate: campaignSeed.endDate,
+            tags: campaignSeed.tags,
+            goals: campaignSeed.goals,
+            createdById,
+          },
+        });
+
+    campaignMap.set(campaign.name, campaign.id);
+  }
+
+  // Seed marketing content
+  for (const contentSeed of marketingContentSeeds) {
+    const clientId = clientMap.get(contentSeed.clientName);
+    if (!clientId) {
+      throw new Error(
+        `Client ${contentSeed.clientName} not found for marketing content seeding.`,
+      );
+    }
+
+    const createdById = contentSeed.createdByEmail
+      ? userMap.get(contentSeed.createdByEmail)
+      : undefined;
+
+    // Find project ID if specified
+    let projectId: number | undefined;
+    if (contentSeed.projectName) {
+      const projectKey = `${contentSeed.clientName}::${contentSeed.projectName}`;
+      const project = projectMap.get(projectKey);
+      if (project) {
+        projectId = project.id;
+      }
+    }
+
+    const existingContent = await prisma.marketingContent.findFirst({
+      where: { name: contentSeed.name, clientId },
+    });
+
+    if (existingContent) {
+      await prisma.marketingContent.update({
+        where: { id: existingContent.id },
+        data: {
+          type: contentSeed.type,
+          channel: contentSeed.channel,
+          status: contentSeed.status,
+          content: contentSeed.content,
+          summary: contentSeed.summary,
+          tags: contentSeed.tags ?? [],
+          projectId,
+          createdById,
+          publishedAt: contentSeed.publishedAt,
+          scheduledFor: contentSeed.scheduledFor,
+          archived: false,
+        },
+      });
+    } else {
+      await prisma.marketingContent.create({
+        data: {
+          clientId,
+          name: contentSeed.name,
+          type: contentSeed.type,
+          channel: contentSeed.channel,
+          status: contentSeed.status,
+          content: contentSeed.content,
+          summary: contentSeed.summary,
+          tags: contentSeed.tags ?? [],
+          projectId,
+          createdById,
+          publishedAt: contentSeed.publishedAt,
+          scheduledFor: contentSeed.scheduledFor,
+        },
+      });
     }
   }
 }
