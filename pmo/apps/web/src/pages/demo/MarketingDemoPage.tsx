@@ -605,7 +605,7 @@ function RepurposeDemo(): JSX.Element {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setRepurposedContent({
       twitter:
-        '60% fewer support tickets. 92% customer satisfaction. That\'s what happens when AI meets customer service. See how TechCorp did it. #AI #CX',
+        "60% fewer support tickets. 92% customer satisfaction. That's what happens when AI meets customer service. See how TechCorp did it. #AI #CX",
       linkedin:
         'Case Study: How TechCorp Transformed Customer Support with AI\n\nResults speak for themselves:\n- 60% reduction in support tickets\n- 92% customer satisfaction score\n\nThe future of customer service is here.',
       email_subject: 'How TechCorp Cut Support Tickets by 60%',
