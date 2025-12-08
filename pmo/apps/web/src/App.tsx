@@ -99,6 +99,12 @@ const GeneralCompliancePage = lazy(
   () => import('./pages/infrastructure/GeneralCompliancePage'),
 );
 
+// Demo pages
+const AIToolsShowcasePage = lazy(
+  () => import('./pages/demo/AIToolsShowcasePage'),
+);
+const MarketingDemoPage = lazy(() => import('./pages/demo/MarketingDemoPage'));
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -463,6 +469,30 @@ function App(): JSX.Element {
                 element={
                   <LazyPage>
                     <GeneralCompliancePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Demo AI Tools Showcase */}
+            {isModuleEnabled('demoAITools') && (
+              <Route
+                path="/demo/ai-tools"
+                element={
+                  <LazyPage>
+                    <AIToolsShowcasePage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* Demo Marketing Page */}
+            {isModuleEnabled('demoMarketing') && (
+              <Route
+                path="/demo/marketing"
+                element={
+                  <LazyPage>
+                    <MarketingDemoPage />
                   </LazyPage>
                 }
               />

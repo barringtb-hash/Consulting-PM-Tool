@@ -10,6 +10,8 @@ import {
   TrendingUp,
   UserCheck,
   UserCog,
+  Sparkles,
+  Presentation,
   LucideIcon,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
@@ -28,6 +30,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   TrendingUp,
   UserCheck,
   UserCog,
+  Sparkles,
+  Presentation,
 };
 
 /**
