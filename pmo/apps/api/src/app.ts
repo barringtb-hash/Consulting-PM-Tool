@@ -19,6 +19,9 @@ import publishingRouter from './modules/publishing/publishing.router';
 import featureFlagsRouter from './modules/feature-flags/feature-flags.router';
 import userPreferencesRouter from './modules/user-preferences/user-preferences.router';
 import chatbotRouter from './modules/chatbot/chatbot.router';
+import chatbotWidgetRouter from './modules/chatbot/widget/widget.router';
+import chatbotWebhookRouter from './modules/chatbot/webhooks/webhook.router';
+import chatbotChannelRouter from './modules/chatbot/channels/channel.router';
 import productDescriptionRouter from './modules/product-descriptions/product-description.router';
 import schedulingRouter from './modules/scheduling/scheduling.router';
 import intakeRouter from './modules/intake/intake.router';
@@ -44,10 +47,29 @@ import { isModuleEnabled, logEnabledModules } from './modules/module-config';
 import { requireModule } from './middleware/module-guard.middleware';
 
 /**
+ * Check if a request path is a public chatbot widget path.
+ * These paths need permissive CORS for embedding on customer websites.
+ */
+function isWidgetPath(path: string): boolean {
+  // Widget script, widget config, and public conversation endpoints
+  // Also includes channel webhook endpoints for external services
+  const widgetPatterns = [
+    /^\/api\/chatbot\/widget\//,
+    /^\/api\/chatbot\/embed\//,
+    /^\/api\/chatbot\/\d+\/conversations$/,
+    /^\/api\/chatbot\/conversations\/[^/]+\/messages$/,
+    /^\/api\/chatbot\/conversations\/[^/]+$/,
+    /^\/api\/chatbot\/\d+\/webhooks\//, // Channel webhooks (Twilio, Slack, etc.)
+  ];
+  return widgetPatterns.some((pattern) => pattern.test(path));
+}
+
+/**
  * Build CORS origin configuration that supports:
  * 1. Single origin: CORS_ORIGIN=https://example.com
  * 2. Multiple origins: CORS_ORIGIN=https://example.com,https://staging.example.com
  * 3. Vercel preview URLs: Automatically allows *.vercel.app subdomains if any Vercel URL is in the list
+ * 4. Widget paths: Allow any origin for chatbot widget embedding
  */
 function buildCorsOrigin(): cors.CorsOptions['origin'] {
   const corsOrigin = env.corsOrigin;
@@ -104,23 +126,35 @@ export function createApp(): express.Express {
   // Log enabled modules at startup
   logEnabledModules();
 
-  // CORS configuration for cross-origin cookie authentication
-  // Supports multiple origins and Vercel preview deployments
+  // CORS configuration for cross-origin requests
+  // Supports multiple origins, Vercel preview deployments, and widget embedding
   // Explicitly allows Authorization header for Safari ITP fallback authentication
-  app.use(
-    cors({
-      origin: buildCorsOrigin(),
-      credentials: true,
-      // Explicitly allow Authorization header for Safari ITP fallback
-      // Safari's ITP may block cookies, so we use Authorization header as fallback
-      // Content-Type is needed for JSON requests
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      // Allow browser to read these headers from responses
-      exposedHeaders: ['Content-Type'],
-      // Cache preflight response for 24 hours to reduce OPTIONS requests
-      maxAge: 86400,
-    }),
-  );
+  app.use((req, res, next) => {
+    // For widget paths, use permissive CORS (allow any origin)
+    if (isWidgetPath(req.path)) {
+      cors({
+        origin: true, // Allow any origin for widget paths
+        credentials: false, // Widgets don't need credentials
+        allowedHeaders: ['Content-Type'],
+        exposedHeaders: ['Content-Type'],
+        maxAge: 86400,
+      })(req, res, next);
+    } else {
+      // Standard CORS for API routes
+      cors({
+        origin: buildCorsOrigin(),
+        credentials: true,
+        // Explicitly allow Authorization header for Safari ITP fallback
+        // Safari's ITP may block cookies, so we use Authorization header as fallback
+        // Content-Type is needed for JSON requests
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        // Allow browser to read these headers from responses
+        exposedHeaders: ['Content-Type'],
+        // Cache preflight response for 24 hours to reduce OPTIONS requests
+        maxAge: 86400,
+      })(req, res, next);
+    }
+  });
   app.use(express.json());
   app.use(cookieParser());
 
@@ -181,6 +215,14 @@ export function createApp(): express.Express {
 
   // Phase 1 AI Tools
   // AI Chatbot module (Tool 1.1) - customer service chatbot
+  // Widget routes are public (for embedding on external websites)
+  app.use('/api', chatbotWidgetRouter);
+  // Channel webhook routes are public (for receiving messages from Twilio, Slack, etc.)
+  // Channel management routes require auth
+  app.use('/api', chatbotChannelRouter);
+  // Webhook routes require auth and module to be enabled
+  app.use('/api', requireModule('chatbot'), chatbotWebhookRouter);
+  // Main chatbot routes require module to be enabled
   app.use('/api', requireModule('chatbot'), chatbotRouter);
 
   // Product Description Generator module (Tool 1.2)

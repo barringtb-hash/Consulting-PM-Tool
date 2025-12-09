@@ -19,6 +19,10 @@ import {
   Prisma,
 } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  dispatchWebhookEvent,
+  WEBHOOK_EVENTS,
+} from './webhooks/webhook.service';
 
 // ============================================================================
 // TYPES
@@ -148,6 +152,15 @@ export async function createConversation(
     });
   }
 
+  // Dispatch webhook event for conversation started
+  dispatchWebhookEvent(chatbotConfigId, WEBHOOK_EVENTS.CONVERSATION_STARTED, {
+    conversationId: conversation.id,
+    sessionId: conversation.sessionId,
+    channel: conversation.channel,
+    customerEmail: conversation.customerEmail,
+    customerName: conversation.customerName,
+  }).catch((err) => console.error('Webhook dispatch error:', err));
+
   return conversation;
 }
 
@@ -200,7 +213,7 @@ export async function updateConversationStatus(
     satisfactionFeedback?: string;
   },
 ) {
-  return prisma.chatConversation.update({
+  const conversation = await prisma.chatConversation.update({
     where: { sessionId },
     data: {
       status,
@@ -209,6 +222,48 @@ export async function updateConversationStatus(
       ...additionalData,
     },
   });
+
+  // Dispatch webhook events based on status change
+  if (status === 'ESCALATED') {
+    dispatchWebhookEvent(
+      conversation.chatbotConfigId,
+      WEBHOOK_EVENTS.CONVERSATION_ESCALATED,
+      {
+        conversationId: conversation.id,
+        sessionId: conversation.sessionId,
+        escalationReason: additionalData?.escalationReason,
+        escalatedToAgentId: additionalData?.escalatedToAgentId,
+      },
+    ).catch((err) => console.error('Webhook dispatch error:', err));
+  } else if (status === 'CLOSED' || status === 'RESOLVED') {
+    dispatchWebhookEvent(
+      conversation.chatbotConfigId,
+      WEBHOOK_EVENTS.CONVERSATION_ENDED,
+      {
+        conversationId: conversation.id,
+        sessionId: conversation.sessionId,
+        status,
+        satisfactionRating: additionalData?.satisfactionRating,
+        satisfactionFeedback: additionalData?.satisfactionFeedback,
+      },
+    ).catch((err) => console.error('Webhook dispatch error:', err));
+  }
+
+  // Dispatch customer rating event if provided
+  if (additionalData?.satisfactionRating !== undefined) {
+    dispatchWebhookEvent(
+      conversation.chatbotConfigId,
+      WEBHOOK_EVENTS.CUSTOMER_RATING,
+      {
+        conversationId: conversation.id,
+        sessionId: conversation.sessionId,
+        rating: additionalData.satisfactionRating,
+        feedback: additionalData.satisfactionFeedback,
+      },
+    ).catch((err) => console.error('Webhook dispatch error:', err));
+  }
+
+  return conversation;
 }
 
 // ============================================================================
@@ -250,6 +305,23 @@ export async function processCustomerMessage(
     },
   });
 
+  // Dispatch webhook for message received
+  dispatchWebhookEvent(
+    conversation.chatbotConfigId,
+    WEBHOOK_EVENTS.MESSAGE_RECEIVED,
+    {
+      conversationId: conversation.id,
+      sessionId: conversation.sessionId,
+      messageId: customerMessage.id,
+      content: input.content,
+      intent: intentResult.intent,
+      intentConfidence: intentResult.confidence,
+      sentiment,
+      customerEmail: input.customerEmail,
+      customerName: input.customerName,
+    },
+  ).catch((err) => console.error('Webhook dispatch error:', err));
+
   // Generate bot response
   const botResponse = await generateBotResponse(
     conversation,
@@ -258,7 +330,7 @@ export async function processCustomerMessage(
   );
 
   // Save bot response
-  await prisma.chatMessage.create({
+  const botMessage = await prisma.chatMessage.create({
     data: {
       conversationId: conversation.id,
       sender: 'BOT',
@@ -266,6 +338,20 @@ export async function processCustomerMessage(
       suggestedActions: botResponse.suggestedActions as Prisma.InputJsonValue,
     },
   });
+
+  // Dispatch webhook for message sent
+  dispatchWebhookEvent(
+    conversation.chatbotConfigId,
+    WEBHOOK_EVENTS.MESSAGE_SENT,
+    {
+      conversationId: conversation.id,
+      sessionId: conversation.sessionId,
+      messageId: botMessage.id,
+      content: botResponse.content,
+      suggestedActions: botResponse.suggestedActions,
+      shouldEscalate: botResponse.shouldEscalate,
+    },
+  ).catch((err) => console.error('Webhook dispatch error:', err));
 
   // Handle escalation if needed
   if (botResponse.shouldEscalate) {

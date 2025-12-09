@@ -650,6 +650,8 @@ enum ChatChannel {
   WHATSAPP
   INSTAGRAM_DM
   EMAIL
+  SLACK
+  TEAMS
 }
 
 enum ConversationStatus {
@@ -706,6 +708,17 @@ model ChatbotConfig {
   zendeskApiKey       String?
   freshdeskApiKey     String?
 
+  // Widget customization settings
+  widgetPosition      String    @default("bottom-right") // bottom-right, bottom-left
+  widgetPrimaryColor  String    @default("#3B82F6")      // Primary brand color
+  widgetTextColor     String    @default("#FFFFFF")      // Text color on primary
+  widgetBubbleIcon    String    @default("chat")         // chat, message, support, custom
+  widgetTitle         String?                            // Custom title in header
+  widgetSubtitle      String?                            // Subtitle text
+  widgetAvatarUrl     String?                            // Bot avatar image URL
+  widgetAllowedDomains String?                           // Comma-separated allowed domains
+  widgetCustomCss     String?                            // Custom CSS overrides
+
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -713,8 +726,94 @@ model ChatbotConfig {
   client              Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   conversations       ChatConversation[]
   knowledgeBase       KnowledgeBaseItem[]
+  webhooks            WebhookConfig[]
+  channelConfigs      ChannelConfig[]
 
   @@index([clientId, isActive])
+}
+
+/**
+ * WebhookConfig - Webhook endpoints for real-time event notifications
+ */
+model WebhookConfig {
+  id              Int       @id @default(autoincrement())
+  chatbotConfigId Int
+  name            String    // Friendly name for the webhook
+  url             String    // Target URL
+  secret          String    // HMAC signing secret
+  events          String[]  // Array of event types to subscribe to
+  isActive        Boolean   @default(true)
+
+  // Retry configuration
+  maxRetries      Int       @default(3)
+  retryDelayMs    Int       @default(1000)
+  timeoutMs       Int       @default(30000)
+
+  // Metadata
+  lastTriggeredAt DateTime?
+  failureCount    Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  chatbotConfig   ChatbotConfig @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
+  deliveryLogs    WebhookDeliveryLog[]
+
+  @@index([chatbotConfigId, isActive])
+}
+
+/**
+ * WebhookDeliveryLog - Log of webhook delivery attempts
+ */
+model WebhookDeliveryLog {
+  id            Int       @id @default(autoincrement())
+  webhookId     Int
+  event         String    // Event type that triggered this
+  payload       Json      // The payload that was sent
+
+  // Delivery status
+  statusCode    Int?      // HTTP response status
+  responseBody  String?   // Response body (truncated)
+  errorMessage  String?   // Error message if failed
+
+  // Timing
+  deliveredAt   DateTime?
+  durationMs    Int?      // How long the request took
+  attempt       Int       @default(1) // Which attempt this was
+
+  createdAt     DateTime  @default(now())
+
+  webhook       WebhookConfig @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, createdAt])
+}
+
+/**
+ * ChannelConfig - Multi-channel messaging configuration (Twilio, Slack, etc.)
+ */
+model ChannelConfig {
+  id              Int       @id @default(autoincrement())
+  chatbotConfigId Int
+  channel         String    // twilio_sms, twilio_whatsapp, slack, teams
+  name            String    // Friendly name
+
+  // Encrypted credentials and settings
+  credentials     Json      // API keys, tokens (encrypted at rest)
+  settings        Json?     // Channel-specific settings
+
+  // Phone number or channel identifier
+  identifier      String?   // e.g., +1234567890 for SMS, channel ID for Slack
+
+  isActive        Boolean   @default(true)
+  isVerified      Boolean   @default(false) // Whether credentials are verified
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  chatbotConfig   ChatbotConfig @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([chatbotConfigId, channel])
+  @@index([chatbotConfigId, isActive])
 }
 
 /**

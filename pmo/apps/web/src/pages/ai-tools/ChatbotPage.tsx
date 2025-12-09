@@ -4,7 +4,7 @@
  * Tool 1.1: Customer Service Chatbot configuration, conversations, and analytics
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
@@ -47,7 +47,52 @@ import {
   Tag,
   AlertCircle,
   CheckCircle,
+  Code,
+  Globe,
+  Copy,
+  Check,
+  Palette,
 } from 'lucide-react';
+
+// Helpers for API URL and clipboard
+function getApiBaseUrl(): string {
+  // Use environment variable in production, fallback for development
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    // Remove trailing /api if present to get the base origin
+    return envUrl.replace(/\/api\/?$/, '');
+  }
+  // Fallback for local development
+  if (typeof window !== 'undefined') {
+    return window.location.origin.replace(':5173', ':3001');
+  }
+  return '';
+}
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.clipboard) {
+    // Fallback for older browsers or SSR
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Types
 interface ChatbotConfig {
@@ -61,6 +106,16 @@ interface ChatbotConfig {
   enableFAQ: boolean;
   enableHumanHandoff: boolean;
   isActive: boolean;
+  // Widget customization fields
+  widgetPosition: string;
+  widgetPrimaryColor: string;
+  widgetTextColor: string;
+  widgetBubbleIcon: string;
+  widgetTitle: string | null;
+  widgetSubtitle: string | null;
+  widgetAvatarUrl: string | null;
+  widgetAllowedDomains: string | null;
+  widgetCustomCss: string | null;
   client?: { id: number; name: string };
   _count?: { conversations: number; knowledgeBase: number };
 }
@@ -409,8 +464,32 @@ function ChatbotPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'conversations' | 'knowledge' | 'analytics' | 'test'
+    | 'overview'
+    | 'conversations'
+    | 'knowledge'
+    | 'analytics'
+    | 'test'
+    | 'integrate'
   >('overview');
+  const [embedCopied, setEmbedCopied] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState<string | null>(null);
+
+  // Memoize API base URL for embed snippets
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+
+  // Safe clipboard copy handler
+  const handleCopyToClipboard = useCallback(
+    async (text: string, successMessage: string) => {
+      const success = await copyToClipboard(text);
+      if (success) {
+        showToast(successMessage, 'success');
+      } else {
+        showToast('Failed to copy to clipboard', 'error');
+      }
+      return success;
+    },
+    [showToast],
+  );
 
   // Test chat state
   const [testSessionId, setTestSessionId] = useState<string | null>(null);
@@ -838,6 +917,7 @@ function ChatbotPage(): JSX.Element {
               },
               { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+              { id: 'integrate', label: 'Website Integration', icon: Code },
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -2049,6 +2129,511 @@ function ChatbotPage(): JSX.Element {
                 )}
               </div>
             )}
+
+            {/* Website Integration Tab */}
+            {activeTab === 'integrate' && (
+              <div className="space-y-6">
+                {/* Embed Code Section */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between w-full">
+                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                        <Code className="w-5 h-5" />
+                        Embed Code
+                      </h3>
+                      <button
+                        onClick={() => setShowInfoModal('embed')}
+                        className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                        title="Installation instructions"
+                      >
+                        <HelpCircle className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Add this script tag to your website to embed the chatbot.
+                      Place it just before the closing{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        {'</body>'}
+                      </code>{' '}
+                      tag.
+                    </p>
+
+                    <div className="relative">
+                      <pre className="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm">
+                        <code>{`<script src="${apiBaseUrl}/api/chatbot/widget/${selectedConfig.id}.js"></script>`}</code>
+                      </pre>
+                      <Button
+                        size="sm"
+                        variant={embedCopied ? 'primary' : 'secondary'}
+                        className="absolute top-2 right-2"
+                        onClick={async () => {
+                          const success = await handleCopyToClipboard(
+                            `<script src="${apiBaseUrl}/api/chatbot/widget/${selectedConfig.id}.js"></script>`,
+                            'Embed code copied to clipboard!',
+                          );
+                          if (success) {
+                            setEmbedCopied(true);
+                            setTimeout(() => setEmbedCopied(false), 2000);
+                          }
+                        }}
+                      >
+                        {embedCopied ? (
+                          <>
+                            <Check className="w-4 h-4 mr-1" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-1" /> Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+                      <h4 className="font-medium text-primary-800 dark:text-primary-200 flex items-center gap-2 mb-2">
+                        <Globe className="w-4 h-4" />
+                        Quick Start Guide
+                      </h4>
+                      <ol className="list-decimal list-inside text-sm text-primary-700 dark:text-primary-300 space-y-1">
+                        <li>Copy the embed code above</li>
+                        <li>
+                          Paste it into your website&apos;s HTML, before the
+                          closing{' '}
+                          <code className="bg-primary-100 dark:bg-primary-800 px-1 py-0.5 rounded">
+                            {'</body>'}
+                          </code>{' '}
+                          tag
+                        </li>
+                        <li>
+                          The chat widget will appear in the{' '}
+                          {selectedConfig.widgetPosition === 'bottom-left'
+                            ? 'bottom-left'
+                            : 'bottom-right'}{' '}
+                          corner
+                        </li>
+                        <li>
+                          Customize the appearance below to match your brand
+                        </li>
+                      </ol>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Widget Customization Section */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Palette className="w-5 h-5" />
+                      Widget Appearance
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-6">
+                    {/* Color Settings */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Primary Color
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={
+                              selectedConfig.widgetPrimaryColor || '#3B82F6'
+                            }
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetPrimaryColor: e.target.value,
+                              });
+                            }}
+                            className="w-12 h-10 rounded border border-neutral-300 dark:border-neutral-600 cursor-pointer"
+                          />
+                          <Input
+                            value={
+                              selectedConfig.widgetPrimaryColor || '#3B82F6'
+                            }
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetPrimaryColor: e.target.value,
+                              });
+                            }}
+                            placeholder="#3B82F6"
+                            className="flex-1"
+                          />
+                        </div>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          Used for the chat bubble, header, and buttons
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Text Color
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={selectedConfig.widgetTextColor || '#FFFFFF'}
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetTextColor: e.target.value,
+                              });
+                            }}
+                            className="w-12 h-10 rounded border border-neutral-300 dark:border-neutral-600 cursor-pointer"
+                          />
+                          <Input
+                            value={selectedConfig.widgetTextColor || '#FFFFFF'}
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetTextColor: e.target.value,
+                              });
+                            }}
+                            placeholder="#FFFFFF"
+                            className="flex-1"
+                          />
+                        </div>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          Text color on primary elements
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Position and Icon */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Widget Position
+                        </label>
+                        <Select
+                          value={
+                            selectedConfig.widgetPosition || 'bottom-right'
+                          }
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetPosition: e.target.value,
+                            });
+                          }}
+                        >
+                          <option value="bottom-right">Bottom Right</option>
+                          <option value="bottom-left">Bottom Left</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Bubble Icon
+                        </label>
+                        <Select
+                          value={selectedConfig.widgetBubbleIcon || 'chat'}
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetBubbleIcon: e.target.value,
+                            });
+                          }}
+                        >
+                          <option value="chat">Chat Bubble</option>
+                          <option value="message">Message</option>
+                          <option value="support">Support</option>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Title and Subtitle */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Widget Title
+                        </label>
+                        <Input
+                          value={selectedConfig.widgetTitle || ''}
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetTitle: e.target.value || null,
+                            });
+                          }}
+                          placeholder={selectedConfig.name}
+                        />
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          Leave blank to use chatbot name
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Subtitle
+                        </label>
+                        <Input
+                          value={selectedConfig.widgetSubtitle || ''}
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetSubtitle: e.target.value || null,
+                            });
+                          }}
+                          placeholder="e.g., We typically reply within minutes"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Avatar URL */}
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Bot Avatar URL
+                      </label>
+                      <Input
+                        value={selectedConfig.widgetAvatarUrl || ''}
+                        onChange={(e) => {
+                          updateConfigMutation.mutate({
+                            widgetAvatarUrl: e.target.value || null,
+                          });
+                        }}
+                        placeholder="https://example.com/avatar.png"
+                      />
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                        Optional: Custom avatar image for the bot (recommended:
+                        80x80px)
+                      </p>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Domain Restrictions */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Globe className="w-5 h-5" />
+                      Domain Restrictions
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Optionally restrict which domains can use this chatbot
+                      widget. Leave blank to allow all domains.
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Allowed Domains
+                      </label>
+                      <Input
+                        value={selectedConfig.widgetAllowedDomains || ''}
+                        onChange={(e) => {
+                          updateConfigMutation.mutate({
+                            widgetAllowedDomains: e.target.value || null,
+                          });
+                        }}
+                        placeholder="example.com, app.example.com"
+                      />
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                        Comma-separated list of domains. Use * to allow all
+                        domains.
+                      </p>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Advanced: Custom CSS */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Code className="w-5 h-5" />
+                      Advanced: Custom CSS
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Add custom CSS to further customize the widget appearance.
+                      Use the{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        .pmo-chatbot-*
+                      </code>{' '}
+                      class prefix.
+                    </p>
+                    <textarea
+                      value={selectedConfig.widgetCustomCss || ''}
+                      onChange={(e) => {
+                        updateConfigMutation.mutate({
+                          widgetCustomCss: e.target.value || null,
+                        });
+                      }}
+                      placeholder=".pmo-chatbot-bubble { /* custom styles */ }"
+                      rows={4}
+                      className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900/50 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
+                    />
+                  </CardBody>
+                </Card>
+
+                {/* Iframe Embed Section */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between w-full">
+                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                        <Globe className="w-5 h-5" />
+                        Iframe Embed
+                      </h3>
+                      <button
+                        onClick={() => setShowInfoModal('iframe')}
+                        className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                        title="Installation instructions"
+                      >
+                        <HelpCircle className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Embed a full-page chat window using an iframe. Great for
+                      support pages or dedicated chat sections.
+                    </p>
+
+                    <div className="relative">
+                      <pre className="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm">
+                        <code>{`<iframe
+  src="${apiBaseUrl}/api/chatbot/embed/${selectedConfig.id}?theme=light"
+  width="400"
+  height="600"
+  frameborder="0"
+  style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"
+></iframe>`}</code>
+                      </pre>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-2"
+                        onClick={() =>
+                          handleCopyToClipboard(
+                            `<iframe src="${apiBaseUrl}/api/chatbot/embed/${selectedConfig.id}?theme=light" width="400" height="600" frameborder="0" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></iframe>`,
+                            'Iframe code copied!',
+                          )
+                        }
+                      >
+                        <Copy className="w-4 h-4 mr-1" /> Copy
+                      </Button>
+                    </div>
+
+                    <div className="flex gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <span className="font-medium">Theme options:</span>
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">
+                        ?theme=light
+                      </code>
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">
+                        ?theme=dark
+                      </code>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Alternative Integration Methods */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      Alternative Integration Methods
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* API Integration */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
+                          REST API
+                          <Badge variant="success" size="sm">
+                            Available
+                          </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('rest-api')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Build a custom chat interface using our API endpoints.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
+                          <div>
+                            POST /api/chatbot/{selectedConfig.id}/conversations
+                          </div>
+                          <div>
+                            POST /api/chatbot/conversations/:sessionId/messages
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Webhooks */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
+                          Webhooks
+                          <Badge variant="success" size="sm">
+                            Available
+                          </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('webhooks')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Receive real-time events when conversations happen.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
+                          <div>conversation.started</div>
+                          <div>message.received / message.sent</div>
+                        </div>
+                      </div>
+
+                      {/* React Component */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
+                          React Component
+                          <Badge variant="success" size="sm">
+                            Available
+                          </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('react')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Use our npm package for React applications.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
+                          npm install @pmo/chatbot-widget
+                        </div>
+                      </div>
+
+                      {/* WordPress Plugin */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
+                          WordPress Plugin
+                          <Badge variant="success" size="sm">
+                            Available
+                          </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('wordpress')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          One-click installation for WordPress sites.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
+                          Search &quot;PMO Chatbot&quot; in WP plugins
+                        </div>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -2322,6 +2907,381 @@ function ChatbotPage(): JSX.Element {
                   </Button>
                 </div>
               </form>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* Integration Info Modal */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  {showInfoModal === 'embed' && 'Embed Code Installation'}
+                  {showInfoModal === 'iframe' && 'Iframe Embed Installation'}
+                  {showInfoModal === 'rest-api' && 'REST API Integration'}
+                  {showInfoModal === 'webhooks' && 'Webhooks Setup'}
+                  {showInfoModal === 'react' && 'React Component Installation'}
+                  {showInfoModal === 'wordpress' &&
+                    'WordPress Plugin Installation'}
+                </h2>
+                <button
+                  onClick={() => setShowInfoModal(null)}
+                  className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              {showInfoModal === 'embed' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    The embed code adds a floating chat widget to your website.
+                    Follow these steps:
+                  </p>
+                  <ol className="list-decimal list-inside space-y-3 text-neutral-700 dark:text-neutral-300">
+                    <li>
+                      <strong>Copy the embed code</strong> from the Website
+                      Integration tab
+                    </li>
+                    <li>
+                      <strong>Open your website&apos;s HTML</strong> file or
+                      template
+                    </li>
+                    <li>
+                      <strong>Paste the script tag</strong> just before the
+                      closing{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        {'</body>'}
+                      </code>{' '}
+                      tag
+                    </li>
+                    <li>
+                      <strong>Save and deploy</strong> your website
+                    </li>
+                  </ol>
+                  <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+                    <h4 className="font-medium text-primary-800 dark:text-primary-200 mb-2">
+                      Customization Options
+                    </h4>
+                    <p className="text-sm text-primary-700 dark:text-primary-300">
+                      Use the Widget Customization section to change colors,
+                      position, icon, and add custom CSS. Changes apply
+                      automatically to all embedded widgets.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'iframe' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    The iframe embed displays a full chat window on a dedicated
+                    page or section. Ideal for support pages.
+                  </p>
+                  <ol className="list-decimal list-inside space-y-3 text-neutral-700 dark:text-neutral-300">
+                    <li>
+                      <strong>Copy the iframe code</strong> from the Iframe
+                      Embed section
+                    </li>
+                    <li>
+                      <strong>Paste it</strong> where you want the chat window
+                      to appear
+                    </li>
+                    <li>
+                      <strong>Adjust dimensions</strong> by modifying the width
+                      and height attributes
+                    </li>
+                    <li>
+                      <strong>Choose a theme</strong> by adding{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        ?theme=light
+                      </code>{' '}
+                      or{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        ?theme=dark
+                      </code>{' '}
+                      to the URL
+                    </li>
+                  </ol>
+                </>
+              )}
+
+              {showInfoModal === 'rest-api' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Build a completely custom chat interface using our REST API
+                    endpoints.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        1. Start a conversation
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`POST /api/chatbot/{configId}/conversations
+Content-Type: application/json
+
+{
+  "customerEmail": "user@example.com",
+  "customerName": "John Doe"
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        2. Send messages
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`POST /api/chatbot/conversations/{sessionId}/messages
+Content-Type: application/json
+
+{
+  "content": "Hello, I need help!"
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        3. Get conversation history
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`GET /api/chatbot/conversations/{sessionId}`}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'webhooks' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Receive real-time notifications when chat events occur.
+                    Perfect for integrating with CRMs, ticketing systems, or
+                    custom workflows.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Setup Steps
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-2 text-neutral-700 dark:text-neutral-300">
+                        <li>
+                          Create a webhook endpoint on your server to receive
+                          POST requests
+                        </li>
+                        <li>
+                          Go to Settings → Webhooks in your chatbot
+                          configuration
+                        </li>
+                        <li>
+                          Add your endpoint URL and select the events to
+                          subscribe to
+                        </li>
+                        <li>
+                          Use the provided secret to verify webhook signatures
+                        </li>
+                      </ol>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Available Events
+                      </h4>
+                      <ul className="space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            conversation.started
+                          </code>{' '}
+                          - New conversation created
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            conversation.ended
+                          </code>{' '}
+                          - Conversation closed
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            conversation.escalated
+                          </code>{' '}
+                          - Transferred to human agent
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            message.received
+                          </code>{' '}
+                          - Customer sent a message
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            message.sent
+                          </code>{' '}
+                          - Bot responded
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            customer.rating
+                          </code>{' '}
+                          - Customer provided feedback
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'react' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Use our React npm package for seamless integration in React
+                    applications.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        1. Install the package
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>npm install @pmo/chatbot-widget</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        2. Use the ChatWidget component (floating bubble)
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`import { ChatWidget } from '@pmo/chatbot-widget';
+
+function App() {
+  return (
+    <ChatWidget
+      configId={${selectedConfig?.id || 1}}
+      apiBaseUrl="${apiBaseUrl}/api"
+      position="bottom-right"
+      primaryColor="#3B82F6"
+    />
+  );
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        3. Or use the ChatWindow component (embedded)
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`import { ChatWindow } from '@pmo/chatbot-widget';
+
+function SupportPage() {
+  return (
+    <ChatWindow
+      configId={${selectedConfig?.id || 1}}
+      apiBaseUrl="${apiBaseUrl}/api"
+      className="h-[600px]"
+    />
+  );
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        4. Use the hook for programmatic control
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`import { useChatbot } from '@pmo/chatbot-widget';
+
+function MyComponent() {
+  const { messages, sendMessage, isLoading } = useChatbot({
+    configId: ${selectedConfig?.id || 1},
+    apiBaseUrl: '${apiBaseUrl}/api',
+  });
+  // Build your custom UI...
+}`}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'wordpress' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Add the chatbot to your WordPress site with our easy-to-use
+                    plugin.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Installation Methods
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100 mb-1">
+                            Option 1: WordPress Plugin Directory
+                          </p>
+                          <ol className="list-decimal list-inside text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+                            <li>
+                              Go to Plugins → Add New in your WordPress admin
+                            </li>
+                            <li>Search for &quot;PMO Chatbot&quot;</li>
+                            <li>Click Install Now, then Activate</li>
+                          </ol>
+                        </div>
+                        <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100 mb-1">
+                            Option 2: Manual Upload
+                          </p>
+                          <ol className="list-decimal list-inside text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+                            <li>Download the plugin ZIP file</li>
+                            <li>Go to Plugins → Add New → Upload Plugin</li>
+                            <li>Choose the ZIP file and click Install Now</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Configuration
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-2 text-neutral-700 dark:text-neutral-300">
+                        <li>Go to Settings → PMO Chatbot in WordPress admin</li>
+                        <li>
+                          Enter your API URL:{' '}
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                            {apiBaseUrl}/api
+                          </code>
+                        </li>
+                        <li>
+                          Enter your Config ID:{' '}
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                            {selectedConfig?.id || '1'}
+                          </code>
+                        </li>
+                        <li>
+                          Save changes - the chatbot will appear on all pages
+                        </li>
+                      </ol>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Shortcode Usage
+                      </h4>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                        Embed the chat window in specific pages or posts:
+                      </p>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`[pmo_chatbot width="100%" height="500px" theme="light"]`}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={() => setShowInfoModal(null)}>Close</Button>
+              </div>
             </CardBody>
           </Card>
         </div>
