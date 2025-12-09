@@ -477,6 +477,9 @@ function ChatbotPage(): JSX.Element {
   // Memoize API base URL for embed snippets
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
+  // Toast notifications (moved before callbacks that use it)
+  const { showToast } = useToast();
+
   // Safe clipboard copy handler
   const handleCopyToClipboard = useCallback(
     async (text: string, successMessage: string) => {
@@ -589,7 +592,6 @@ function ChatbotPage(): JSX.Element {
     [sessionStats?.startTime],
   );
 
-  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   // Queries
