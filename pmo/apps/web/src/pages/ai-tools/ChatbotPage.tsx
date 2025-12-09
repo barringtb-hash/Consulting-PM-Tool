@@ -47,6 +47,11 @@ import {
   Tag,
   AlertCircle,
   CheckCircle,
+  Code,
+  Globe,
+  Copy,
+  Check,
+  Palette,
 } from 'lucide-react';
 
 // Types
@@ -61,6 +66,16 @@ interface ChatbotConfig {
   enableFAQ: boolean;
   enableHumanHandoff: boolean;
   isActive: boolean;
+  // Widget customization fields
+  widgetPosition: string;
+  widgetPrimaryColor: string;
+  widgetTextColor: string;
+  widgetBubbleIcon: string;
+  widgetTitle: string | null;
+  widgetSubtitle: string | null;
+  widgetAvatarUrl: string | null;
+  widgetAllowedDomains: string | null;
+  widgetCustomCss: string | null;
   client?: { id: number; name: string };
   _count?: { conversations: number; knowledgeBase: number };
 }
@@ -409,8 +424,9 @@ function ChatbotPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'conversations' | 'knowledge' | 'analytics' | 'test'
+    'overview' | 'conversations' | 'knowledge' | 'analytics' | 'test' | 'integrate'
   >('overview');
+  const [embedCopied, setEmbedCopied] = useState(false);
 
   // Test chat state
   const [testSessionId, setTestSessionId] = useState<string | null>(null);
@@ -838,6 +854,7 @@ function ChatbotPage(): JSX.Element {
               },
               { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+              { id: 'integrate', label: 'Website Integration', icon: Code },
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -2047,6 +2064,362 @@ function ChatbotPage(): JSX.Element {
                     </CardBody>
                   </Card>
                 )}
+              </div>
+            )}
+
+            {/* Website Integration Tab */}
+            {activeTab === 'integrate' && (
+              <div className="space-y-6">
+                {/* Embed Code Section */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Code className="w-5 h-5" />
+                      Embed Code
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Add this script tag to your website to embed the chatbot. Place it just before the closing{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">{'</body>'}</code> tag.
+                    </p>
+
+                    <div className="relative">
+                      <pre className="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm">
+                        <code>{`<script src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/widget/${selectedConfig.id}.js"></script>`}</code>
+                      </pre>
+                      <Button
+                        size="sm"
+                        variant={embedCopied ? 'primary' : 'secondary'}
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            `<script src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/widget/${selectedConfig.id}.js"></script>`
+                          );
+                          setEmbedCopied(true);
+                          setTimeout(() => setEmbedCopied(false), 2000);
+                          showToast('Embed code copied to clipboard!', 'success');
+                        }}
+                      >
+                        {embedCopied ? (
+                          <>
+                            <Check className="w-4 h-4 mr-1" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-1" /> Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+                      <h4 className="font-medium text-primary-800 dark:text-primary-200 flex items-center gap-2 mb-2">
+                        <Globe className="w-4 h-4" />
+                        Quick Start Guide
+                      </h4>
+                      <ol className="list-decimal list-inside text-sm text-primary-700 dark:text-primary-300 space-y-1">
+                        <li>Copy the embed code above</li>
+                        <li>Paste it into your website&apos;s HTML, before the closing <code className="bg-primary-100 dark:bg-primary-800 px-1 py-0.5 rounded">{'</body>'}</code> tag</li>
+                        <li>The chat widget will appear in the {selectedConfig.widgetPosition === 'bottom-left' ? 'bottom-left' : 'bottom-right'} corner</li>
+                        <li>Customize the appearance below to match your brand</li>
+                      </ol>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Widget Customization Section */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Palette className="w-5 h-5" />
+                      Widget Appearance
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-6">
+                    {/* Color Settings */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Primary Color
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={selectedConfig.widgetPrimaryColor || '#3B82F6'}
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetPrimaryColor: e.target.value,
+                              });
+                            }}
+                            className="w-12 h-10 rounded border border-neutral-300 dark:border-neutral-600 cursor-pointer"
+                          />
+                          <Input
+                            value={selectedConfig.widgetPrimaryColor || '#3B82F6'}
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetPrimaryColor: e.target.value,
+                              });
+                            }}
+                            placeholder="#3B82F6"
+                            className="flex-1"
+                          />
+                        </div>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          Used for the chat bubble, header, and buttons
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Text Color
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={selectedConfig.widgetTextColor || '#FFFFFF'}
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetTextColor: e.target.value,
+                              });
+                            }}
+                            className="w-12 h-10 rounded border border-neutral-300 dark:border-neutral-600 cursor-pointer"
+                          />
+                          <Input
+                            value={selectedConfig.widgetTextColor || '#FFFFFF'}
+                            onChange={(e) => {
+                              updateConfigMutation.mutate({
+                                widgetTextColor: e.target.value,
+                              });
+                            }}
+                            placeholder="#FFFFFF"
+                            className="flex-1"
+                          />
+                        </div>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          Text color on primary elements
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Position and Icon */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Widget Position
+                        </label>
+                        <Select
+                          value={selectedConfig.widgetPosition || 'bottom-right'}
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetPosition: e.target.value,
+                            });
+                          }}
+                        >
+                          <option value="bottom-right">Bottom Right</option>
+                          <option value="bottom-left">Bottom Left</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Bubble Icon
+                        </label>
+                        <Select
+                          value={selectedConfig.widgetBubbleIcon || 'chat'}
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetBubbleIcon: e.target.value,
+                            });
+                          }}
+                        >
+                          <option value="chat">Chat Bubble</option>
+                          <option value="message">Message</option>
+                          <option value="support">Support</option>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Title and Subtitle */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Widget Title
+                        </label>
+                        <Input
+                          value={selectedConfig.widgetTitle || ''}
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetTitle: e.target.value || null,
+                            });
+                          }}
+                          placeholder={selectedConfig.name}
+                        />
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          Leave blank to use chatbot name
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Subtitle
+                        </label>
+                        <Input
+                          value={selectedConfig.widgetSubtitle || ''}
+                          onChange={(e) => {
+                            updateConfigMutation.mutate({
+                              widgetSubtitle: e.target.value || null,
+                            });
+                          }}
+                          placeholder="e.g., We typically reply within minutes"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Avatar URL */}
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Bot Avatar URL
+                      </label>
+                      <Input
+                        value={selectedConfig.widgetAvatarUrl || ''}
+                        onChange={(e) => {
+                          updateConfigMutation.mutate({
+                            widgetAvatarUrl: e.target.value || null,
+                          });
+                        }}
+                        placeholder="https://example.com/avatar.png"
+                      />
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                        Optional: Custom avatar image for the bot (recommended: 80x80px)
+                      </p>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Domain Restrictions */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Globe className="w-5 h-5" />
+                      Domain Restrictions
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Optionally restrict which domains can use this chatbot widget. Leave blank to allow all domains.
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Allowed Domains
+                      </label>
+                      <Input
+                        value={selectedConfig.widgetAllowedDomains || ''}
+                        onChange={(e) => {
+                          updateConfigMutation.mutate({
+                            widgetAllowedDomains: e.target.value || null,
+                          });
+                        }}
+                        placeholder="example.com, app.example.com"
+                      />
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                        Comma-separated list of domains. Use * to allow all domains.
+                      </p>
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Advanced: Custom CSS */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Code className="w-5 h-5" />
+                      Advanced: Custom CSS
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Add custom CSS to further customize the widget appearance. Use the <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">.pmo-chatbot-*</code> class prefix.
+                    </p>
+                    <textarea
+                      value={selectedConfig.widgetCustomCss || ''}
+                      onChange={(e) => {
+                        updateConfigMutation.mutate({
+                          widgetCustomCss: e.target.value || null,
+                        });
+                      }}
+                      placeholder=".pmo-chatbot-bubble { /* custom styles */ }"
+                      rows={4}
+                      className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900/50 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
+                    />
+                  </CardBody>
+                </Card>
+
+                {/* Alternative Integration Methods */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      Alternative Integration Methods
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* API Integration */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          REST API
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Build a custom chat interface using our API endpoints.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
+                          <div>POST /api/chatbot/{selectedConfig.id}/conversations</div>
+                          <div>POST /api/chatbot/conversations/:sessionId/messages</div>
+                        </div>
+                      </div>
+
+                      {/* React Component */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          React Component (Coming Soon)
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Use our npm package for React applications.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono opacity-50">
+                          npm install @pmo/chatbot-widget
+                        </div>
+                      </div>
+
+                      {/* Iframe Embed */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Iframe Embed (Coming Soon)
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Embed a full chat window in an iframe.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono opacity-50">
+                          {'<iframe src="..."></iframe>'}
+                        </div>
+                      </div>
+
+                      {/* Webhook Integration */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                          Webhook (Coming Soon)
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Receive real-time conversation events via webhooks.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono opacity-50">
+                          POST your-server.com/webhook
+                        </div>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
               </div>
             )}
           </>

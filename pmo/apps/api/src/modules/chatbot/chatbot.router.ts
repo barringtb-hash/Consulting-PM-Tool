@@ -26,6 +26,16 @@ const chatbotConfigSchema = z.object({
   enableHumanHandoff: z.boolean().optional(),
   channelSettings: z.record(z.string(), z.unknown()).optional(),
   businessHours: z.record(z.string(), z.unknown()).optional(),
+  // Widget customization fields
+  widgetPosition: z.enum(['bottom-right', 'bottom-left']).optional(),
+  widgetPrimaryColor: z.string().max(20).optional(),
+  widgetTextColor: z.string().max(20).optional(),
+  widgetBubbleIcon: z.enum(['chat', 'message', 'support']).optional(),
+  widgetTitle: z.string().max(100).nullable().optional(),
+  widgetSubtitle: z.string().max(200).nullable().optional(),
+  widgetAvatarUrl: z.string().max(500).nullable().optional(),
+  widgetAllowedDomains: z.string().max(1000).nullable().optional(),
+  widgetCustomCss: z.string().max(5000).nullable().optional(),
 });
 
 const conversationCreateSchema = z.object({

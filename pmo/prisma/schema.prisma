@@ -706,6 +706,17 @@ model ChatbotConfig {
   zendeskApiKey       String?
   freshdeskApiKey     String?
 
+  // Widget customization settings
+  widgetPosition      String    @default("bottom-right") // bottom-right, bottom-left
+  widgetPrimaryColor  String    @default("#3B82F6")      // Primary brand color
+  widgetTextColor     String    @default("#FFFFFF")      // Text color on primary
+  widgetBubbleIcon    String    @default("chat")         // chat, message, support, custom
+  widgetTitle         String?                            // Custom title in header
+  widgetSubtitle      String?                            // Subtitle text
+  widgetAvatarUrl     String?                            // Bot avatar image URL
+  widgetAllowedDomains String?                           // Comma-separated allowed domains
+  widgetCustomCss     String?                            // Custom CSS overrides
+
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
