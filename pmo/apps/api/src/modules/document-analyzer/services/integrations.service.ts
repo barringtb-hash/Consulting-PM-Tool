@@ -6,7 +6,7 @@
  * DocuSign, and cloud storage providers.
  */
 
-import { IntegrationType } from '@prisma/client';
+import { IntegrationType, Prisma } from '@prisma/client';
 import { prisma } from '../../../prisma/client';
 
 // ============================================================================
@@ -492,13 +492,13 @@ export async function upsertIntegration(
       where: { id: existing.id },
       data: {
         name,
-        credentials: credentials as unknown as Record<string, unknown>,
+        credentials: credentials as unknown as Prisma.InputJsonValue,
         accessToken: credentials.accessToken,
         refreshToken: credentials.refreshToken,
         tokenExpiresAt: credentials.tokenExpiresAt,
         webhookUrl: credentials.webhookUrl,
         webhookSecret: credentials.webhookSecret,
-        settings: settings as unknown as Record<string, unknown>,
+        settings: settings as unknown as Prisma.InputJsonValue,
         updatedAt: new Date(),
       },
     });
@@ -509,13 +509,13 @@ export async function upsertIntegration(
       configId,
       integrationType,
       name,
-      credentials: credentials as unknown as Record<string, unknown>,
+      credentials: credentials as unknown as Prisma.InputJsonValue,
       accessToken: credentials.accessToken,
       refreshToken: credentials.refreshToken,
       tokenExpiresAt: credentials.tokenExpiresAt,
       webhookUrl: credentials.webhookUrl,
       webhookSecret: credentials.webhookSecret,
-      settings: settings as unknown as Record<string, unknown>,
+      settings: settings as unknown as Prisma.InputJsonValue,
     },
   });
 }
