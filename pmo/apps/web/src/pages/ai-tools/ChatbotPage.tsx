@@ -432,6 +432,7 @@ function ChatbotPage(): JSX.Element {
     | 'integrate'
   >('overview');
   const [embedCopied, setEmbedCopied] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState<string | null>(null);
 
   // Test chat state
   const [testSessionId, setTestSessionId] = useState<string | null>(null);
@@ -2078,10 +2079,19 @@ function ChatbotPage(): JSX.Element {
                 {/* Embed Code Section */}
                 <Card>
                   <CardHeader>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                      <Code className="w-5 h-5" />
-                      Embed Code
-                    </h3>
+                    <div className="flex items-center justify-between w-full">
+                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                        <Code className="w-5 h-5" />
+                        Embed Code
+                      </h3>
+                      <button
+                        onClick={() => setShowInfoModal('embed')}
+                        className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                        title="Installation instructions"
+                      >
+                        <HelpCircle className="w-5 h-5" />
+                      </button>
+                    </div>
                   </CardHeader>
                   <CardBody className="space-y-4">
                     <p className="text-neutral-600 dark:text-neutral-400">
@@ -2399,10 +2409,19 @@ function ChatbotPage(): JSX.Element {
                 {/* Iframe Embed Section */}
                 <Card>
                   <CardHeader>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                      <Globe className="w-5 h-5" />
-                      Iframe Embed
-                    </h3>
+                    <div className="flex items-center justify-between w-full">
+                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                        <Globe className="w-5 h-5" />
+                        Iframe Embed
+                      </h3>
+                      <button
+                        onClick={() => setShowInfoModal('iframe')}
+                        className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                        title="Installation instructions"
+                      >
+                        <HelpCircle className="w-5 h-5" />
+                      </button>
+                    </div>
                   </CardHeader>
                   <CardBody className="space-y-4">
                     <p className="text-neutral-600 dark:text-neutral-400">
@@ -2464,6 +2483,13 @@ function ChatbotPage(): JSX.Element {
                           <Badge variant="success" size="sm">
                             Available
                           </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('rest-api')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Build a custom chat interface using our API endpoints.
@@ -2485,6 +2511,13 @@ function ChatbotPage(): JSX.Element {
                           <Badge variant="success" size="sm">
                             Available
                           </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('webhooks')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Receive real-time events when conversations happen.
@@ -2502,6 +2535,13 @@ function ChatbotPage(): JSX.Element {
                           <Badge variant="success" size="sm">
                             Available
                           </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('react')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Use our npm package for React applications.
@@ -2518,6 +2558,13 @@ function ChatbotPage(): JSX.Element {
                           <Badge variant="success" size="sm">
                             Available
                           </Badge>
+                          <button
+                            onClick={() => setShowInfoModal('wordpress')}
+                            className="ml-auto text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                            title="Installation instructions"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           One-click installation for WordPress sites.
@@ -2804,6 +2851,314 @@ function ChatbotPage(): JSX.Element {
                   </Button>
                 </div>
               </form>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* Integration Info Modal */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  {showInfoModal === 'embed' && 'Embed Code Installation'}
+                  {showInfoModal === 'iframe' && 'Iframe Embed Installation'}
+                  {showInfoModal === 'rest-api' && 'REST API Integration'}
+                  {showInfoModal === 'webhooks' && 'Webhooks Setup'}
+                  {showInfoModal === 'react' && 'React Component Installation'}
+                  {showInfoModal === 'wordpress' && 'WordPress Plugin Installation'}
+                </h2>
+                <button
+                  onClick={() => setShowInfoModal(null)}
+                  className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              {showInfoModal === 'embed' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    The embed code adds a floating chat widget to your website. Follow these steps:
+                  </p>
+                  <ol className="list-decimal list-inside space-y-3 text-neutral-700 dark:text-neutral-300">
+                    <li>
+                      <strong>Copy the embed code</strong> from the Website Integration tab
+                    </li>
+                    <li>
+                      <strong>Open your website&apos;s HTML</strong> file or template
+                    </li>
+                    <li>
+                      <strong>Paste the script tag</strong> just before the closing{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        {'</body>'}
+                      </code>{' '}
+                      tag
+                    </li>
+                    <li>
+                      <strong>Save and deploy</strong> your website
+                    </li>
+                  </ol>
+                  <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+                    <h4 className="font-medium text-primary-800 dark:text-primary-200 mb-2">
+                      Customization Options
+                    </h4>
+                    <p className="text-sm text-primary-700 dark:text-primary-300">
+                      Use the Widget Customization section to change colors, position, icon, and add custom CSS. Changes apply automatically to all embedded widgets.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'iframe' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    The iframe embed displays a full chat window on a dedicated page or section. Ideal for support pages.
+                  </p>
+                  <ol className="list-decimal list-inside space-y-3 text-neutral-700 dark:text-neutral-300">
+                    <li>
+                      <strong>Copy the iframe code</strong> from the Iframe Embed section
+                    </li>
+                    <li>
+                      <strong>Paste it</strong> where you want the chat window to appear
+                    </li>
+                    <li>
+                      <strong>Adjust dimensions</strong> by modifying the width and height attributes
+                    </li>
+                    <li>
+                      <strong>Choose a theme</strong> by adding <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">?theme=light</code> or <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">?theme=dark</code> to the URL
+                    </li>
+                  </ol>
+                </>
+              )}
+
+              {showInfoModal === 'rest-api' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Build a completely custom chat interface using our REST API endpoints.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        1. Start a conversation
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`POST /api/chatbot/{configId}/conversations
+Content-Type: application/json
+
+{
+  "customerEmail": "user@example.com",
+  "customerName": "John Doe"
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        2. Send messages
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`POST /api/chatbot/conversations/{sessionId}/messages
+Content-Type: application/json
+
+{
+  "content": "Hello, I need help!"
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        3. Get conversation history
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`GET /api/chatbot/conversations/{sessionId}`}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'webhooks' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Receive real-time notifications when chat events occur. Perfect for integrating with CRMs, ticketing systems, or custom workflows.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Setup Steps
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-2 text-neutral-700 dark:text-neutral-300">
+                        <li>Create a webhook endpoint on your server to receive POST requests</li>
+                        <li>Go to Settings → Webhooks in your chatbot configuration</li>
+                        <li>Add your endpoint URL and select the events to subscribe to</li>
+                        <li>Use the provided secret to verify webhook signatures</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Available Events
+                      </h4>
+                      <ul className="space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
+                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">conversation.started</code> - New conversation created</li>
+                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">conversation.ended</code> - Conversation closed</li>
+                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">conversation.escalated</code> - Transferred to human agent</li>
+                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">message.received</code> - Customer sent a message</li>
+                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">message.sent</code> - Bot responded</li>
+                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">customer.rating</code> - Customer provided feedback</li>
+                      </ul>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'react' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Use our React npm package for seamless integration in React applications.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        1. Install the package
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>npm install @pmo/chatbot-widget</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        2. Use the ChatWidget component (floating bubble)
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`import { ChatWidget } from '@pmo/chatbot-widget';
+
+function App() {
+  return (
+    <ChatWidget
+      configId={${selectedConfig?.id || 1}}
+      apiBaseUrl="${window.location.origin.replace(':5173', ':3001')}/api"
+      position="bottom-right"
+      primaryColor="#3B82F6"
+    />
+  );
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        3. Or use the ChatWindow component (embedded)
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`import { ChatWindow } from '@pmo/chatbot-widget';
+
+function SupportPage() {
+  return (
+    <ChatWindow
+      configId={${selectedConfig?.id || 1}}
+      apiBaseUrl="${window.location.origin.replace(':5173', ':3001')}/api"
+      className="h-[600px]"
+    />
+  );
+}`}</code>
+                      </pre>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        4. Use the hook for programmatic control
+                      </h4>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`import { useChatbot } from '@pmo/chatbot-widget';
+
+function MyComponent() {
+  const { messages, sendMessage, isLoading } = useChatbot({
+    configId: ${selectedConfig?.id || 1},
+    apiBaseUrl: '${window.location.origin.replace(':5173', ':3001')}/api',
+  });
+  // Build your custom UI...
+}`}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showInfoModal === 'wordpress' && (
+                <>
+                  <p className="text-neutral-600 dark:text-neutral-400">
+                    Add the chatbot to your WordPress site with our easy-to-use plugin.
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Installation Methods
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100 mb-1">
+                            Option 1: WordPress Plugin Directory
+                          </p>
+                          <ol className="list-decimal list-inside text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+                            <li>Go to Plugins → Add New in your WordPress admin</li>
+                            <li>Search for &quot;PMO Chatbot&quot;</li>
+                            <li>Click Install Now, then Activate</li>
+                          </ol>
+                        </div>
+                        <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3">
+                          <p className="font-medium text-neutral-900 dark:text-neutral-100 mb-1">
+                            Option 2: Manual Upload
+                          </p>
+                          <ol className="list-decimal list-inside text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
+                            <li>Download the plugin ZIP file</li>
+                            <li>Go to Plugins → Add New → Upload Plugin</li>
+                            <li>Choose the ZIP file and click Install Now</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Configuration
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-2 text-neutral-700 dark:text-neutral-300">
+                        <li>Go to Settings → PMO Chatbot in WordPress admin</li>
+                        <li>
+                          Enter your API URL:{' '}
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                            {window.location.origin.replace(':5173', ':3001')}/api
+                          </code>
+                        </li>
+                        <li>
+                          Enter your Config ID:{' '}
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                            {selectedConfig?.id || '1'}
+                          </code>
+                        </li>
+                        <li>Save changes - the chatbot will appear on all pages</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        Shortcode Usage
+                      </h4>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                        Embed the chat window in specific pages or posts:
+                      </p>
+                      <pre className="bg-neutral-900 text-neutral-100 p-3 rounded-lg text-sm overflow-x-auto">
+                        <code>{`[pmo_chatbot width="100%" height="500px" theme="light"]`}</code>
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={() => setShowInfoModal(null)}>
+                  Close
+                </Button>
+              </div>
             </CardBody>
           </Card>
         </div>
