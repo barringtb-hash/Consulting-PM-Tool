@@ -251,13 +251,10 @@ function LeadScoringPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lead-scoring-configs'] });
       setShowCreateModal(false);
-      showToast({
-        message: 'Lead Scoring configuration created',
-        variant: 'success',
-      });
+      showToast('Lead Scoring configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
@@ -267,10 +264,10 @@ function LeadScoringPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scored-leads'] });
       setShowAddLeadModal(false);
-      showToast({ message: 'Lead added and scored', variant: 'success' });
+      showToast('Lead added and scored', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
@@ -278,10 +275,10 @@ function LeadScoringPage(): JSX.Element {
     mutationFn: rescoreLead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scored-leads'] });
-      showToast({ message: 'Lead rescored', variant: 'success' });
+      showToast('Lead rescored', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 

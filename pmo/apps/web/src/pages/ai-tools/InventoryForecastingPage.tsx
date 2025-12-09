@@ -203,13 +203,10 @@ function InventoryForecastingPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-configs'] });
       setShowCreateModal(false);
-      showToast({
-        message: 'Inventory Forecasting configuration created',
-        variant: 'success',
-      });
+      showToast('Inventory Forecasting configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 

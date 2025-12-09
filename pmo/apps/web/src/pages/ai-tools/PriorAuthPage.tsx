@@ -239,13 +239,10 @@ function PriorAuthPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prior-auth-configs'] });
       setShowCreateModal(false);
-      showToast({
-        message: 'Prior Auth configuration created',
-        variant: 'success',
-      });
+      showToast('Prior Auth configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
@@ -253,10 +250,10 @@ function PriorAuthPage(): JSX.Element {
     mutationFn: submitPARequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pa-requests'] });
-      showToast({ message: 'PA request submitted', variant: 'success' });
+      showToast('PA request submitted', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
@@ -265,16 +262,13 @@ function PriorAuthPage(): JSX.Element {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['pa-requests'] });
       if (data.statusChanged) {
-        showToast({
-          message: `Status updated to ${data.currentStatus}`,
-          variant: 'success',
-        });
+        showToast(`Status updated to ${data.currentStatus}`, 'success');
       } else {
-        showToast({ message: 'No status change', variant: 'neutral' });
+        showToast('No status change', 'info');
       }
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 

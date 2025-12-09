@@ -220,13 +220,10 @@ function ComplianceMonitorPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['compliance-configs'] });
       setShowCreateModal(false);
-      showToast({
-        message: 'Compliance Monitor configuration created',
-        variant: 'success',
-      });
+      showToast('Compliance Monitor configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 

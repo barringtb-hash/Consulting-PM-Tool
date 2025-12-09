@@ -235,13 +235,10 @@ function PredictiveMaintenancePage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-configs'] });
       setShowCreateModal(false);
-      showToast({
-        message: 'Predictive Maintenance configuration created',
-        variant: 'success',
-      });
+      showToast('Predictive Maintenance configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 

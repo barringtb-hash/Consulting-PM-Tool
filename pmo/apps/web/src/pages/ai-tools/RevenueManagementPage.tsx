@@ -203,13 +203,10 @@ function RevenueManagementPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['revenue-configs'] });
       setShowCreateModal(false);
-      showToast({
-        message: 'Revenue Management configuration created',
-        variant: 'success',
-      });
+      showToast('Revenue Management configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 

@@ -217,13 +217,10 @@ function ContentGeneratorPage(): JSX.Element {
         queryKey: ['content-generator-configs'],
       });
       setShowCreateModal(false);
-      showToast({
-        message: 'Content Generator configuration created',
-        variant: 'success',
-      });
+      showToast('Content Generator configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
@@ -238,13 +235,10 @@ function ContentGeneratorPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['generated-contents'] });
       setShowGenerateModal(false);
-      showToast({
-        message: 'Content generated successfully',
-        variant: 'success',
-      });
+      showToast('Content generated successfully', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 

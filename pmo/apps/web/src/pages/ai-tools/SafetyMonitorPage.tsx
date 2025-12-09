@@ -230,13 +230,10 @@ function SafetyMonitorPage(): JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['safety-configs'] });
       setShowCreateModal(false);
-      showToast({
-        message: 'Safety Monitor configuration created',
-        variant: 'success',
-      });
+      showToast('Safety Monitor configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
