@@ -15,6 +15,19 @@ const port = env.port;
 
 const server = app.listen(Number(port), () => {
   console.log(`API server listening on port ${port}`);
+
+  // Log CORS configuration for debugging
+  const corsOrigin = env.corsOrigin;
+  if (corsOrigin) {
+    const origins = corsOrigin.split(',').map((o) => o.trim());
+    const hasVercel = origins.some((o) => o.includes('.vercel.app'));
+    console.log('CORS configuration:', {
+      allowedOrigins: origins,
+      vercelPreviewsEnabled: hasVercel,
+    });
+  } else {
+    console.log('CORS configuration: All origins allowed (development mode)');
+  }
 });
 
 // Handle unhandled promise rejections

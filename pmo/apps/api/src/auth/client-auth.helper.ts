@@ -161,6 +161,19 @@ export async function getClientIdFromBatchJob(
 }
 
 /**
+ * Get the client ID from a document integration
+ */
+export async function getClientIdFromDocumentIntegration(
+  integrationId: number,
+): Promise<number | null> {
+  const integration = await prisma.documentIntegration.findUnique({
+    where: { id: integrationId },
+    select: { config: { select: { clientId: true } } },
+  });
+  return integration?.config?.clientId ?? null;
+}
+
+/**
  * Get the client ID from generated content
  */
 export async function getClientIdFromGeneratedContent(

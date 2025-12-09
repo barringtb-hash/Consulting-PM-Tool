@@ -110,7 +110,15 @@ function buildCorsOrigin(): cors.CorsOptions['origin'] {
       return;
     }
 
-    // Origin not allowed
+    // Origin not allowed - log for debugging
+    console.warn('CORS blocked origin:', {
+      requestedOrigin: origin,
+      allowedOrigins,
+      hasVercelOrigin,
+      hint: hasVercelOrigin
+        ? 'Origin does not match any allowed origins or .vercel.app pattern'
+        : 'Add a .vercel.app URL to CORS_ORIGIN to allow Vercel preview deployments',
+    });
     callback(new Error('Not allowed by CORS'));
   };
 }

@@ -1905,18 +1905,83 @@ enum ComplianceLevel {
   NOT_APPLICABLE
 }
 
+// Universal document categories (highest demand)
+enum DocumentCategory {
+  INVOICE
+  CONTRACT
+  COMPLIANCE
+  HEALTHCARE
+  LEGAL
+  FINANCIAL
+  REAL_ESTATE
+  MANUFACTURING
+  GENERAL
+  OTHER
+}
+
+// Target industries for specialized templates
+enum IndustryType {
+  HEALTHCARE
+  LEGAL
+  FINANCIAL_SERVICES
+  REAL_ESTATE
+  MANUFACTURING
+  RETAIL
+  PROFESSIONAL_SERVICES
+  TECHNOLOGY
+  CONSTRUCTION
+  EDUCATION
+  GOVERNMENT
+  NONPROFIT
+  OTHER
+}
+
+// Integration types for external systems
+enum IntegrationType {
+  QUICKBOOKS
+  XERO
+  SALESFORCE
+  DOCUSIGN
+  GOOGLE_DRIVE
+  SHAREPOINT
+  DROPBOX
+  SLACK
+  WEBHOOK
+  API
+}
+
+// Workflow routing action types
+enum WorkflowActionType {
+  ROUTE_TO_USER
+  ROUTE_TO_DEPARTMENT
+  SEND_NOTIFICATION
+  TRIGGER_INTEGRATION
+  MARK_FOR_REVIEW
+  AUTO_APPROVE
+  ESCALATE
+}
+
 /**
  * DocumentAnalyzerConfig - Configuration for smart document analysis per client
  */
 model DocumentAnalyzerConfig {
-  id                    Int       @id @default(autoincrement())
-  clientId              Int       @unique
+  id                    Int           @id @default(autoincrement())
+  clientId              Int           @unique
+
+  // Industry configuration for specialized templates
+  industryType          IndustryType  @default(OTHER)
+  enabledCategories     DocumentCategory[] @default([GENERAL])
 
   // Analysis settings
   enableOCR             Boolean   @default(true)
   enableNER             Boolean   @default(true)
   enableCompliance      Boolean   @default(true)
   enableVersionCompare  Boolean   @default(false)
+  enableAutoClassification Boolean @default(true)
+  enableAutoRouting     Boolean   @default(false)
+
+  // Classification confidence threshold (0-1)
+  classificationThreshold Float   @default(0.85)
 
   // Default extraction fields (JSON: [{ name, type, required }])
   defaultExtractionFields Json?
@@ -1930,6 +1995,7 @@ model DocumentAnalyzerConfig {
   // Integration credentials
   googleVisionApiKey    String?
   azureFormRecognizerKey String?
+  openaiApiKey          String?
 
   isActive              Boolean   @default(true)
   createdAt             DateTime  @default(now())
@@ -1939,8 +2005,12 @@ model DocumentAnalyzerConfig {
   analyzedDocuments     AnalyzedDocument[]
   extractionTemplates   ExtractionTemplate[]
   batchJobs             DocumentBatchJob[]
+  workflows             DocumentWorkflow[]
+  integrations          DocumentIntegration[]
+  processingMetrics     ProcessingMetrics[]
 
   @@index([clientId, isActive])
+  @@index([industryType])
 }
 
 /**
@@ -1976,12 +2046,34 @@ model AnalyzedDocument {
   // Compliance results
   complianceStatus    ComplianceLevel?
   complianceFlags     Json?             // [{ ruleId, status, message, location }]
+  riskScore           Float?            // 0-100 risk score
 
-  // Classification
-  documentType        String?
+  // Classification (enhanced)
+  documentType        String?           // Specific type (e.g., "INVOICE_AP", "CONTRACT_NDA")
   documentTypeConfidence Float?
-  category            String?
+  category            DocumentCategory? // High-level category
+  industryCategory    String?           // Industry-specific sub-category
   tags                String[]          @default([])
+
+  // Routing and workflow
+  assignedTo          Int?              // User ID for routing
+  assignedDepartment  String?
+  workflowStatus      String?           // Custom workflow status
+  priority            String?           @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  dueDate             DateTime?
+
+  // Financial document fields (for invoices, etc.)
+  totalAmount         Float?
+  currency            String?
+  vendorName          String?
+  invoiceNumber       String?
+  paymentTerms        String?
+
+  // Contract-specific fields
+  contractParties     String[]          @default([])
+  effectiveDate       DateTime?
+  expirationDate      DateTime?
+  autoRenewal         Boolean?
 
   // Audit trail
   auditLog            Json?             // [{ action, userId, timestamp, details }]
@@ -1990,8 +2082,17 @@ model AnalyzedDocument {
   previousVersionId   Int?
   changesSummary      Json?
 
+  // Integration sync status
+  syncedToIntegrations Json?            // [{ integrationType, syncedAt, externalId }]
+
   // Error tracking
   errorMessage        String?
+  retryCount          Int               @default(0)
+  lastRetryAt         DateTime?
+
+  // Processing metrics
+  queuedAt            DateTime?
+  processingStartedAt DateTime?
 
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
@@ -2000,38 +2101,66 @@ model AnalyzedDocument {
 
   @@index([configId, status])
   @@index([configId, documentType])
+  @@index([configId, category])
+  @@index([assignedTo, status])
   @@index([createdAt(sort: Desc)])
+  @@index([priority, status])
 }
 
 /**
  * ExtractionTemplate - Templates for custom field extraction
+ * Includes both built-in industry templates and custom user templates
  */
 model ExtractionTemplate {
   id                Int                   @id @default(autoincrement())
-  configId          Int
+  configId          Int?                  // Null for built-in templates
 
   name              String
   description       String?
 
-  // Document type this template applies to
-  documentType      String?
+  // Template categorization
+  category          DocumentCategory      @default(GENERAL)
+  industryType      IndustryType?         // Which industry this template is designed for
+  documentType      String?               // Specific document type (e.g., "CMS-1500", "W-9", "NDA")
 
-  // Extraction rules (JSON: [{ fieldName, type, pattern, location, required }])
+  // Template source
+  isBuiltIn         Boolean               @default(false) // System-provided templates
+  isPublic          Boolean               @default(false) // Can be used by all clients
+
+  // Extraction rules (JSON: [{ fieldName, type, pattern, location, required, validation }])
   extractionRules   Json
+
+  // Field definitions (JSON: detailed field metadata)
+  // { fields: [{ name, label, type, required, validation, helpText }] }
+  fieldDefinitions  Json?
+
+  // Compliance rules specific to this template
+  complianceRules   Json?
 
   // ML model settings
   useMLExtraction   Boolean               @default(true)
   mlModelId         String?
+  confidenceThreshold Float               @default(0.8)
+
+  // Template versioning
+  version           String                @default("1.0.0")
+  previousVersionId Int?
+
+  // Usage stats (for built-in templates)
+  usageCount        Int                   @default(0)
+  successRate       Float?
 
   isDefault         Boolean               @default(false)
   isActive          Boolean               @default(true)
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
-  config            DocumentAnalyzerConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  config            DocumentAnalyzerConfig? @relation(fields: [configId], references: [id], onDelete: Cascade)
 
   @@index([configId, documentType])
   @@index([configId, isActive])
+  @@index([category, industryType])
+  @@index([isBuiltIn, isActive])
 }
 
 /**
@@ -2067,6 +2196,182 @@ model DocumentBatchJob {
 
   @@index([configId, status])
   @@index([status, createdAt(sort: Desc)])
+}
+
+/**
+ * DocumentWorkflow - Rules for automatic document routing and processing
+ */
+model DocumentWorkflow {
+  id                Int                   @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  description       String?
+  isActive          Boolean               @default(true)
+  priority          Int                   @default(0)  // Higher priority rules evaluated first
+
+  // Trigger conditions (JSON: { conditions: [{ field, operator, value }], logic: 'AND'|'OR' })
+  // Example: { conditions: [{ field: 'category', operator: 'equals', value: 'INVOICE' }] }
+  triggerConditions Json
+
+  // Actions to perform when triggered (JSON: [{ type, config }])
+  // Example: [{ type: 'ROUTE_TO_USER', config: { userId: 123 } }]
+  actions           Json
+
+  // Document categories this workflow applies to
+  categories        DocumentCategory[]    @default([])
+  documentTypes     String[]              @default([])
+
+  // Notification settings
+  notifyOnTrigger   Boolean               @default(false)
+  notificationEmails String[]             @default([])
+
+  // Execution stats
+  executionCount    Int                   @default(0)
+  lastExecutedAt    DateTime?
+
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  config            DocumentAnalyzerConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, isActive])
+  @@index([categories])
+}
+
+/**
+ * DocumentIntegration - External system connections for document sync
+ */
+model DocumentIntegration {
+  id                Int                   @id @default(autoincrement())
+  configId          Int
+
+  name              String
+  integrationType   IntegrationType
+  isActive          Boolean               @default(true)
+
+  // Connection credentials (encrypted)
+  credentials       Json?                 // { apiKey, clientId, clientSecret, etc. }
+  accessToken       String?
+  refreshToken      String?
+  tokenExpiresAt    DateTime?
+
+  // Integration settings
+  settings          Json?                 // { syncFrequency, filterCategories, autoSync, etc. }
+
+  // Webhook configuration (for incoming data)
+  webhookUrl        String?
+  webhookSecret     String?
+
+  // Sync configuration
+  syncDirection     String                @default("EXPORT") // EXPORT, IMPORT, BIDIRECTIONAL
+  lastSyncAt        DateTime?
+  lastSyncStatus    String?               // SUCCESS, FAILED, PARTIAL
+  lastSyncError     String?
+
+  // Mapping rules (JSON: how fields map to external system)
+  fieldMappings     Json?
+
+  // Stats
+  documentsExported Int                   @default(0)
+  documentsImported Int                   @default(0)
+
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  config            DocumentAnalyzerConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, integrationType])
+  @@index([configId, isActive])
+  @@index([integrationType])
+}
+
+/**
+ * ProcessingMetrics - Analytics and ROI tracking for document processing
+ */
+model ProcessingMetrics {
+  id                Int                   @id @default(autoincrement())
+  configId          Int
+
+  // Time period
+  periodStart       DateTime
+  periodEnd         DateTime
+  periodType        String                @default("DAILY") // DAILY, WEEKLY, MONTHLY
+
+  // Volume metrics
+  documentsProcessed Int                  @default(0)
+  documentsSuccessful Int                 @default(0)
+  documentsFailed   Int                   @default(0)
+  documentsManualReview Int               @default(0)
+
+  // Category breakdown (JSON: { category: count })
+  categoryBreakdown Json?
+
+  // Processing time metrics (in milliseconds)
+  totalProcessingTime Int                 @default(0)
+  avgProcessingTime Float?
+  minProcessingTime Int?
+  maxProcessingTime Int?
+
+  // Accuracy metrics
+  avgConfidence     Float?
+  fieldsExtracted   Int                   @default(0)
+  fieldsVerified    Int                   @default(0)
+
+  // Compliance metrics
+  compliancePassRate Float?
+  complianceWarnings Int                  @default(0)
+  complianceFailures Int                  @default(0)
+
+  // ROI metrics (estimated)
+  estimatedTimeSaved Int?                 // Minutes saved vs manual processing
+  estimatedCostSaved Float?               // Dollar amount saved
+
+  // Integration sync metrics
+  integrationSyncs  Int                   @default(0)
+  integrationErrors Int                   @default(0)
+
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  config            DocumentAnalyzerConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, periodStart, periodType])
+  @@index([configId, periodType])
+  @@index([periodStart, periodEnd])
+}
+
+/**
+ * ComplianceRuleSet - Pre-built and custom compliance rule sets
+ */
+model ComplianceRuleSet {
+  id                Int                   @id @default(autoincrement())
+
+  name              String
+  description       String?
+  code              String                @unique // e.g., "HIPAA", "SOC2", "GDPR", "AML"
+
+  // Which industries/categories this applies to
+  industries        IndustryType[]        @default([])
+  categories        DocumentCategory[]    @default([])
+
+  // Rules definition (JSON: [{ ruleId, name, description, pattern, requiredFields, severity }])
+  rules             Json
+
+  // Metadata
+  isBuiltIn         Boolean               @default(false)
+  isActive          Boolean               @default(true)
+  version           String                @default("1.0.0")
+
+  // Usage tracking
+  adoptionCount     Int                   @default(0)
+
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([code])
+  @@index([industries])
+  @@index([isBuiltIn, isActive])
 }
 
 // ============================================================================
