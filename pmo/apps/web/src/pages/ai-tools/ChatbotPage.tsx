@@ -2868,7 +2868,8 @@ function ChatbotPage(): JSX.Element {
                   {showInfoModal === 'rest-api' && 'REST API Integration'}
                   {showInfoModal === 'webhooks' && 'Webhooks Setup'}
                   {showInfoModal === 'react' && 'React Component Installation'}
-                  {showInfoModal === 'wordpress' && 'WordPress Plugin Installation'}
+                  {showInfoModal === 'wordpress' &&
+                    'WordPress Plugin Installation'}
                 </h2>
                 <button
                   onClick={() => setShowInfoModal(null)}
@@ -2882,17 +2883,21 @@ function ChatbotPage(): JSX.Element {
               {showInfoModal === 'embed' && (
                 <>
                   <p className="text-neutral-600 dark:text-neutral-400">
-                    The embed code adds a floating chat widget to your website. Follow these steps:
+                    The embed code adds a floating chat widget to your website.
+                    Follow these steps:
                   </p>
                   <ol className="list-decimal list-inside space-y-3 text-neutral-700 dark:text-neutral-300">
                     <li>
-                      <strong>Copy the embed code</strong> from the Website Integration tab
+                      <strong>Copy the embed code</strong> from the Website
+                      Integration tab
                     </li>
                     <li>
-                      <strong>Open your website&apos;s HTML</strong> file or template
+                      <strong>Open your website&apos;s HTML</strong> file or
+                      template
                     </li>
                     <li>
-                      <strong>Paste the script tag</strong> just before the closing{' '}
+                      <strong>Paste the script tag</strong> just before the
+                      closing{' '}
                       <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
                         {'</body>'}
                       </code>{' '}
@@ -2907,7 +2912,9 @@ function ChatbotPage(): JSX.Element {
                       Customization Options
                     </h4>
                     <p className="text-sm text-primary-700 dark:text-primary-300">
-                      Use the Widget Customization section to change colors, position, icon, and add custom CSS. Changes apply automatically to all embedded widgets.
+                      Use the Widget Customization section to change colors,
+                      position, icon, and add custom CSS. Changes apply
+                      automatically to all embedded widgets.
                     </p>
                   </div>
                 </>
@@ -2916,20 +2923,32 @@ function ChatbotPage(): JSX.Element {
               {showInfoModal === 'iframe' && (
                 <>
                   <p className="text-neutral-600 dark:text-neutral-400">
-                    The iframe embed displays a full chat window on a dedicated page or section. Ideal for support pages.
+                    The iframe embed displays a full chat window on a dedicated
+                    page or section. Ideal for support pages.
                   </p>
                   <ol className="list-decimal list-inside space-y-3 text-neutral-700 dark:text-neutral-300">
                     <li>
-                      <strong>Copy the iframe code</strong> from the Iframe Embed section
+                      <strong>Copy the iframe code</strong> from the Iframe
+                      Embed section
                     </li>
                     <li>
-                      <strong>Paste it</strong> where you want the chat window to appear
+                      <strong>Paste it</strong> where you want the chat window
+                      to appear
                     </li>
                     <li>
-                      <strong>Adjust dimensions</strong> by modifying the width and height attributes
+                      <strong>Adjust dimensions</strong> by modifying the width
+                      and height attributes
                     </li>
                     <li>
-                      <strong>Choose a theme</strong> by adding <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">?theme=light</code> or <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">?theme=dark</code> to the URL
+                      <strong>Choose a theme</strong> by adding{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        ?theme=light
+                      </code>{' '}
+                      or{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        ?theme=dark
+                      </code>{' '}
+                      to the URL
                     </li>
                   </ol>
                 </>
@@ -2938,7 +2957,8 @@ function ChatbotPage(): JSX.Element {
               {showInfoModal === 'rest-api' && (
                 <>
                   <p className="text-neutral-600 dark:text-neutral-400">
-                    Build a completely custom chat interface using our REST API endpoints.
+                    Build a completely custom chat interface using our REST API
+                    endpoints.
                   </p>
                   <div className="space-y-4">
                     <div>
@@ -2983,7 +3003,9 @@ Content-Type: application/json
               {showInfoModal === 'webhooks' && (
                 <>
                   <p className="text-neutral-600 dark:text-neutral-400">
-                    Receive real-time notifications when chat events occur. Perfect for integrating with CRMs, ticketing systems, or custom workflows.
+                    Receive real-time notifications when chat events occur.
+                    Perfect for integrating with CRMs, ticketing systems, or
+                    custom workflows.
                   </p>
                   <div className="space-y-4">
                     <div>
@@ -2991,10 +3013,21 @@ Content-Type: application/json
                         Setup Steps
                       </h4>
                       <ol className="list-decimal list-inside space-y-2 text-neutral-700 dark:text-neutral-300">
-                        <li>Create a webhook endpoint on your server to receive POST requests</li>
-                        <li>Go to Settings → Webhooks in your chatbot configuration</li>
-                        <li>Add your endpoint URL and select the events to subscribe to</li>
-                        <li>Use the provided secret to verify webhook signatures</li>
+                        <li>
+                          Create a webhook endpoint on your server to receive
+                          POST requests
+                        </li>
+                        <li>
+                          Go to Settings → Webhooks in your chatbot
+                          configuration
+                        </li>
+                        <li>
+                          Add your endpoint URL and select the events to
+                          subscribe to
+                        </li>
+                        <li>
+                          Use the provided secret to verify webhook signatures
+                        </li>
                       </ol>
                     </div>
                     <div>
@@ -3002,12 +3035,42 @@ Content-Type: application/json
                         Available Events
                       </h4>
                       <ul className="space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
-                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">conversation.started</code> - New conversation created</li>
-                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">conversation.ended</code> - Conversation closed</li>
-                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">conversation.escalated</code> - Transferred to human agent</li>
-                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">message.received</code> - Customer sent a message</li>
-                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">message.sent</code> - Bot responded</li>
-                        <li><code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">customer.rating</code> - Customer provided feedback</li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            conversation.started
+                          </code>{' '}
+                          - New conversation created
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            conversation.ended
+                          </code>{' '}
+                          - Conversation closed
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            conversation.escalated
+                          </code>{' '}
+                          - Transferred to human agent
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            message.received
+                          </code>{' '}
+                          - Customer sent a message
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            message.sent
+                          </code>{' '}
+                          - Bot responded
+                        </li>
+                        <li>
+                          <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                            customer.rating
+                          </code>{' '}
+                          - Customer provided feedback
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -3017,7 +3080,8 @@ Content-Type: application/json
               {showInfoModal === 'react' && (
                 <>
                   <p className="text-neutral-600 dark:text-neutral-400">
-                    Use our React npm package for seamless integration in React applications.
+                    Use our React npm package for seamless integration in React
+                    applications.
                   </p>
                   <div className="space-y-4">
                     <div>
@@ -3088,7 +3152,8 @@ function MyComponent() {
               {showInfoModal === 'wordpress' && (
                 <>
                   <p className="text-neutral-600 dark:text-neutral-400">
-                    Add the chatbot to your WordPress site with our easy-to-use plugin.
+                    Add the chatbot to your WordPress site with our easy-to-use
+                    plugin.
                   </p>
                   <div className="space-y-4">
                     <div>
@@ -3101,7 +3166,9 @@ function MyComponent() {
                             Option 1: WordPress Plugin Directory
                           </p>
                           <ol className="list-decimal list-inside text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                            <li>Go to Plugins → Add New in your WordPress admin</li>
+                            <li>
+                              Go to Plugins → Add New in your WordPress admin
+                            </li>
                             <li>Search for &quot;PMO Chatbot&quot;</li>
                             <li>Click Install Now, then Activate</li>
                           </ol>
@@ -3127,7 +3194,8 @@ function MyComponent() {
                         <li>
                           Enter your API URL:{' '}
                           <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
-                            {window.location.origin.replace(':5173', ':3001')}/api
+                            {window.location.origin.replace(':5173', ':3001')}
+                            /api
                           </code>
                         </li>
                         <li>
@@ -3136,7 +3204,9 @@ function MyComponent() {
                             {selectedConfig?.id || '1'}
                           </code>
                         </li>
-                        <li>Save changes - the chatbot will appear on all pages</li>
+                        <li>
+                          Save changes - the chatbot will appear on all pages
+                        </li>
                       </ol>
                     </div>
                     <div>
@@ -3155,9 +3225,7 @@ function MyComponent() {
               )}
 
               <div className="flex justify-end pt-4 border-t">
-                <Button onClick={() => setShowInfoModal(null)}>
-                  Close
-                </Button>
+                <Button onClick={() => setShowInfoModal(null)}>Close</Button>
               </div>
             </CardBody>
           </Card>
