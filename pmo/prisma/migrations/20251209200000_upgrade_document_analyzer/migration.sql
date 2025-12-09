@@ -1,64 +1,157 @@
--- Document Analyzer Upgrade Migration
--- Adds industry-specific templates, classification, routing, integrations, and analytics
+-- Document Analyzer Migration
+-- Creates Document Analyzer tables with industry-specific templates, classification, routing, integrations, and analytics
 
--- Create new enums
+-- ============================================================================
+-- ENUMS
+-- ============================================================================
+
+CREATE TYPE "DocumentFormat" AS ENUM ('PDF', 'DOCX', 'DOC', 'XLSX', 'XLS', 'PNG', 'JPG', 'TIFF', 'HTML', 'TXT', 'CSV', 'JSON', 'XML', 'OTHER');
+CREATE TYPE "AnalysisStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'NEEDS_REVIEW');
+CREATE TYPE "ComplianceLevel" AS ENUM ('PASS', 'WARNING', 'FAIL');
+CREATE TYPE "BatchJobStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED');
 CREATE TYPE "DocumentCategory" AS ENUM ('INVOICE', 'CONTRACT', 'COMPLIANCE', 'HEALTHCARE', 'LEGAL', 'FINANCIAL', 'REAL_ESTATE', 'MANUFACTURING', 'GENERAL', 'OTHER');
 CREATE TYPE "IndustryType" AS ENUM ('HEALTHCARE', 'LEGAL', 'FINANCIAL_SERVICES', 'REAL_ESTATE', 'MANUFACTURING', 'RETAIL', 'PROFESSIONAL_SERVICES', 'TECHNOLOGY', 'CONSTRUCTION', 'EDUCATION', 'GOVERNMENT', 'NONPROFIT', 'OTHER');
 CREATE TYPE "IntegrationType" AS ENUM ('QUICKBOOKS', 'XERO', 'SALESFORCE', 'DOCUSIGN', 'GOOGLE_DRIVE', 'SHAREPOINT', 'DROPBOX', 'SLACK', 'WEBHOOK', 'API');
 CREATE TYPE "WorkflowActionType" AS ENUM ('ROUTE_TO_USER', 'ROUTE_TO_DEPARTMENT', 'SEND_NOTIFICATION', 'TRIGGER_INTEGRATION', 'MARK_FOR_REVIEW', 'AUTO_APPROVE', 'ESCALATE');
 
--- Add new columns to DocumentAnalyzerConfig
-ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN "industryType" "IndustryType" NOT NULL DEFAULT 'OTHER';
-ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN "enabledCategories" "DocumentCategory"[] DEFAULT ARRAY['GENERAL']::"DocumentCategory"[];
-ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN "enableAutoClassification" BOOLEAN NOT NULL DEFAULT true;
-ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN "enableAutoRouting" BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN "classificationThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0.85;
-ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN "openaiApiKey" TEXT;
+-- ============================================================================
+-- BASE TABLES
+-- ============================================================================
 
--- Add new columns to AnalyzedDocument
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "riskScore" DOUBLE PRECISION;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "industryCategory" TEXT;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "assignedTo" INTEGER;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "assignedDepartment" TEXT;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "workflowStatus" TEXT;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "priority" TEXT DEFAULT 'NORMAL';
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "dueDate" TIMESTAMP(3);
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "totalAmount" DOUBLE PRECISION;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "currency" TEXT;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "vendorName" TEXT;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "invoiceNumber" TEXT;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "paymentTerms" TEXT;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "contractParties" TEXT[] DEFAULT ARRAY[]::TEXT[];
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "effectiveDate" TIMESTAMP(3);
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "expirationDate" TIMESTAMP(3);
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "autoRenewal" BOOLEAN;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "syncedToIntegrations" JSONB;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "retryCount" INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "lastRetryAt" TIMESTAMP(3);
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "queuedAt" TIMESTAMP(3);
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "processingStartedAt" TIMESTAMP(3);
+-- DocumentAnalyzerConfig
+CREATE TABLE "DocumentAnalyzerConfig" (
+    "id" SERIAL NOT NULL,
+    "clientId" INTEGER NOT NULL,
+    "industryType" "IndustryType" NOT NULL DEFAULT 'OTHER',
+    "enabledCategories" "DocumentCategory"[] DEFAULT ARRAY['GENERAL']::"DocumentCategory"[],
+    "enableOCR" BOOLEAN NOT NULL DEFAULT true,
+    "enableNER" BOOLEAN NOT NULL DEFAULT true,
+    "enableCompliance" BOOLEAN NOT NULL DEFAULT true,
+    "enableVersionCompare" BOOLEAN NOT NULL DEFAULT false,
+    "enableAutoClassification" BOOLEAN NOT NULL DEFAULT true,
+    "enableAutoRouting" BOOLEAN NOT NULL DEFAULT false,
+    "classificationThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0.85,
+    "defaultExtractionFields" JSONB,
+    "complianceRules" JSONB,
+    "retentionDays" INTEGER NOT NULL DEFAULT 365,
+    "googleVisionApiKey" TEXT,
+    "azureFormRecognizerKey" TEXT,
+    "openaiApiKey" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
--- Change category column type in AnalyzedDocument (was String, now enum)
-ALTER TABLE "AnalyzedDocument" DROP COLUMN IF EXISTS "category";
-ALTER TABLE "AnalyzedDocument" ADD COLUMN "category" "DocumentCategory";
+    CONSTRAINT "DocumentAnalyzerConfig_pkey" PRIMARY KEY ("id")
+);
 
--- Add new columns to ExtractionTemplate
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "category" "DocumentCategory" NOT NULL DEFAULT 'GENERAL';
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "industryType" "IndustryType";
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "isBuiltIn" BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "isPublic" BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "fieldDefinitions" JSONB;
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "complianceRules" JSONB;
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "confidenceThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0.8;
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "version" TEXT NOT NULL DEFAULT '1.0.0';
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "previousVersionId" INTEGER;
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "usageCount" INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE "ExtractionTemplate" ADD COLUMN "successRate" DOUBLE PRECISION;
+-- AnalyzedDocument
+CREATE TABLE "AnalyzedDocument" (
+    "id" SERIAL NOT NULL,
+    "configId" INTEGER NOT NULL,
+    "filename" TEXT NOT NULL,
+    "originalUrl" TEXT NOT NULL,
+    "mimeType" TEXT NOT NULL,
+    "sizeBytes" INTEGER NOT NULL,
+    "format" "DocumentFormat" NOT NULL,
+    "status" "AnalysisStatus" NOT NULL DEFAULT 'PENDING',
+    "analyzedAt" TIMESTAMP(3),
+    "analysisTimeMs" INTEGER,
+    "ocrText" TEXT,
+    "ocrConfidence" DOUBLE PRECISION,
+    "pageCount" INTEGER,
+    "extractedFields" JSONB,
+    "namedEntities" JSONB,
+    "complianceStatus" "ComplianceLevel",
+    "complianceFlags" JSONB,
+    "riskScore" DOUBLE PRECISION,
+    "documentType" TEXT,
+    "documentTypeConfidence" DOUBLE PRECISION,
+    "category" "DocumentCategory",
+    "industryCategory" TEXT,
+    "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "assignedTo" INTEGER,
+    "assignedDepartment" TEXT,
+    "workflowStatus" TEXT,
+    "priority" TEXT DEFAULT 'NORMAL',
+    "dueDate" TIMESTAMP(3),
+    "totalAmount" DOUBLE PRECISION,
+    "currency" TEXT,
+    "vendorName" TEXT,
+    "invoiceNumber" TEXT,
+    "paymentTerms" TEXT,
+    "contractParties" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "effectiveDate" TIMESTAMP(3),
+    "expirationDate" TIMESTAMP(3),
+    "autoRenewal" BOOLEAN,
+    "syncedToIntegrations" JSONB,
+    "retryCount" INTEGER NOT NULL DEFAULT 0,
+    "lastRetryAt" TIMESTAMP(3),
+    "queuedAt" TIMESTAMP(3),
+    "processingStartedAt" TIMESTAMP(3),
+    "errorMessage" TEXT,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
--- Make configId optional for built-in templates
-ALTER TABLE "ExtractionTemplate" ALTER COLUMN "configId" DROP NOT NULL;
+    CONSTRAINT "AnalyzedDocument_pkey" PRIMARY KEY ("id")
+);
 
--- Create DocumentWorkflow table
+-- ExtractionTemplate
+CREATE TABLE "ExtractionTemplate" (
+    "id" SERIAL NOT NULL,
+    "configId" INTEGER,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "documentType" TEXT NOT NULL,
+    "category" "DocumentCategory" NOT NULL DEFAULT 'GENERAL',
+    "industryType" "IndustryType",
+    "isBuiltIn" BOOLEAN NOT NULL DEFAULT false,
+    "isPublic" BOOLEAN NOT NULL DEFAULT false,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "extractionRules" JSONB NOT NULL,
+    "fieldDefinitions" JSONB,
+    "complianceRules" JSONB,
+    "validationRules" JSONB,
+    "confidenceThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0.8,
+    "version" TEXT NOT NULL DEFAULT '1.0.0',
+    "previousVersionId" INTEGER,
+    "usageCount" INTEGER NOT NULL DEFAULT 0,
+    "successRate" DOUBLE PRECISION,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ExtractionTemplate_pkey" PRIMARY KEY ("id")
+);
+
+-- DocumentBatchJob
+CREATE TABLE "DocumentBatchJob" (
+    "id" SERIAL NOT NULL,
+    "configId" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "status" "BatchJobStatus" NOT NULL DEFAULT 'PENDING',
+    "totalDocuments" INTEGER NOT NULL DEFAULT 0,
+    "processedDocuments" INTEGER NOT NULL DEFAULT 0,
+    "successfulDocuments" INTEGER NOT NULL DEFAULT 0,
+    "failedDocuments" INTEGER NOT NULL DEFAULT 0,
+    "sourceFolder" TEXT,
+    "destinationFolder" TEXT,
+    "extractionTemplateId" INTEGER,
+    "settings" JSONB,
+    "errorLog" JSONB,
+    "startedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DocumentBatchJob_pkey" PRIMARY KEY ("id")
+);
+
+-- ============================================================================
+-- NEW TABLES FOR UPGRADE
+-- ============================================================================
+
+-- DocumentWorkflow
 CREATE TABLE "DocumentWorkflow" (
     "id" SERIAL NOT NULL,
     "configId" INTEGER NOT NULL,
@@ -80,7 +173,7 @@ CREATE TABLE "DocumentWorkflow" (
     CONSTRAINT "DocumentWorkflow_pkey" PRIMARY KEY ("id")
 );
 
--- Create DocumentIntegration table
+-- DocumentIntegration
 CREATE TABLE "DocumentIntegration" (
     "id" SERIAL NOT NULL,
     "configId" INTEGER NOT NULL,
@@ -107,7 +200,7 @@ CREATE TABLE "DocumentIntegration" (
     CONSTRAINT "DocumentIntegration_pkey" PRIMARY KEY ("id")
 );
 
--- Create ProcessingMetrics table
+-- ProcessingMetrics
 CREATE TABLE "ProcessingMetrics" (
     "id" SERIAL NOT NULL,
     "configId" INTEGER NOT NULL,
@@ -139,7 +232,7 @@ CREATE TABLE "ProcessingMetrics" (
     CONSTRAINT "ProcessingMetrics_pkey" PRIMARY KEY ("id")
 );
 
--- Create ComplianceRuleSet table
+-- ComplianceRuleSet
 CREATE TABLE "ComplianceRuleSet" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
@@ -158,23 +251,42 @@ CREATE TABLE "ComplianceRuleSet" (
     CONSTRAINT "ComplianceRuleSet_pkey" PRIMARY KEY ("id")
 );
 
--- Add foreign keys
+-- ============================================================================
+-- FOREIGN KEYS
+-- ============================================================================
+
+ALTER TABLE "DocumentAnalyzerConfig" ADD CONSTRAINT "DocumentAnalyzerConfig_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AnalyzedDocument" ADD CONSTRAINT "AnalyzedDocument_configId_fkey" FOREIGN KEY ("configId") REFERENCES "DocumentAnalyzerConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ExtractionTemplate" ADD CONSTRAINT "ExtractionTemplate_configId_fkey" FOREIGN KEY ("configId") REFERENCES "DocumentAnalyzerConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "DocumentBatchJob" ADD CONSTRAINT "DocumentBatchJob_configId_fkey" FOREIGN KEY ("configId") REFERENCES "DocumentAnalyzerConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "DocumentBatchJob" ADD CONSTRAINT "DocumentBatchJob_extractionTemplateId_fkey" FOREIGN KEY ("extractionTemplateId") REFERENCES "ExtractionTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "DocumentWorkflow" ADD CONSTRAINT "DocumentWorkflow_configId_fkey" FOREIGN KEY ("configId") REFERENCES "DocumentAnalyzerConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "DocumentIntegration" ADD CONSTRAINT "DocumentIntegration_configId_fkey" FOREIGN KEY ("configId") REFERENCES "DocumentAnalyzerConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ProcessingMetrics" ADD CONSTRAINT "ProcessingMetrics_configId_fkey" FOREIGN KEY ("configId") REFERENCES "DocumentAnalyzerConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Add unique constraints
+-- ============================================================================
+-- UNIQUE CONSTRAINTS
+-- ============================================================================
+
+CREATE UNIQUE INDEX "DocumentAnalyzerConfig_clientId_key" ON "DocumentAnalyzerConfig"("clientId");
 CREATE UNIQUE INDEX "DocumentIntegration_configId_integrationType_key" ON "DocumentIntegration"("configId", "integrationType");
 CREATE UNIQUE INDEX "ProcessingMetrics_configId_periodStart_periodType_key" ON "ProcessingMetrics"("configId", "periodStart", "periodType");
 CREATE UNIQUE INDEX "ComplianceRuleSet_code_key" ON "ComplianceRuleSet"("code");
 
--- Add indexes
+-- ============================================================================
+-- INDEXES
+-- ============================================================================
+
+CREATE INDEX "DocumentAnalyzerConfig_clientId_isActive_idx" ON "DocumentAnalyzerConfig"("clientId", "isActive");
 CREATE INDEX "DocumentAnalyzerConfig_industryType_idx" ON "DocumentAnalyzerConfig"("industryType");
+CREATE INDEX "AnalyzedDocument_configId_status_idx" ON "AnalyzedDocument"("configId", "status");
 CREATE INDEX "AnalyzedDocument_configId_category_idx" ON "AnalyzedDocument"("configId", "category");
 CREATE INDEX "AnalyzedDocument_assignedTo_status_idx" ON "AnalyzedDocument"("assignedTo", "status");
 CREATE INDEX "AnalyzedDocument_priority_status_idx" ON "AnalyzedDocument"("priority", "status");
+CREATE INDEX "ExtractionTemplate_configId_isActive_idx" ON "ExtractionTemplate"("configId", "isActive");
 CREATE INDEX "ExtractionTemplate_category_industryType_idx" ON "ExtractionTemplate"("category", "industryType");
 CREATE INDEX "ExtractionTemplate_isBuiltIn_isActive_idx" ON "ExtractionTemplate"("isBuiltIn", "isActive");
+CREATE INDEX "DocumentBatchJob_configId_status_idx" ON "DocumentBatchJob"("configId", "status");
 CREATE INDEX "DocumentWorkflow_configId_isActive_idx" ON "DocumentWorkflow"("configId", "isActive");
 CREATE INDEX "DocumentWorkflow_categories_idx" ON "DocumentWorkflow"("categories");
 CREATE INDEX "DocumentIntegration_configId_isActive_idx" ON "DocumentIntegration"("configId", "isActive");
