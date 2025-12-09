@@ -840,7 +840,6 @@ const campaignSeeds = [
     status: CampaignStatus.ACTIVE,
     startDate: new Date('2024-01-01'),
     endDate: new Date('2024-03-31'),
-    tags: ['thought-leadership', 'q1-2024', 'brand-awareness'],
     goals: {
       linkedinFollowers: 500,
       websiteTraffic: 10000,
@@ -856,7 +855,6 @@ const campaignSeeds = [
     status: CampaignStatus.PLANNING,
     startDate: new Date('2024-02-15'),
     endDate: new Date('2024-05-15'),
-    tags: ['manufacturing', 'product-launch', 'lead-gen'],
     goals: {
       qualifiedLeads: 25,
       demoRequests: 15,
@@ -1367,7 +1365,6 @@ async function main() {
             status: campaignSeed.status,
             startDate: campaignSeed.startDate,
             endDate: campaignSeed.endDate,
-            tags: campaignSeed.tags,
             goals: campaignSeed.goals,
             createdById,
             archived: false,
@@ -1381,7 +1378,6 @@ async function main() {
             status: campaignSeed.status,
             startDate: campaignSeed.startDate,
             endDate: campaignSeed.endDate,
-            tags: campaignSeed.tags,
             goals: campaignSeed.goals,
             createdById,
           },
