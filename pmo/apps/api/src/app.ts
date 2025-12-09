@@ -20,6 +20,7 @@ import featureFlagsRouter from './modules/feature-flags/feature-flags.router';
 import userPreferencesRouter from './modules/user-preferences/user-preferences.router';
 import chatbotRouter from './modules/chatbot/chatbot.router';
 import chatbotWidgetRouter from './modules/chatbot/widget/widget.router';
+import chatbotWebhookRouter from './modules/chatbot/webhooks/webhook.router';
 import productDescriptionRouter from './modules/product-descriptions/product-description.router';
 import schedulingRouter from './modules/scheduling/scheduling.router';
 import intakeRouter from './modules/intake/intake.router';
@@ -212,6 +213,8 @@ export function createApp(): express.Express {
   // AI Chatbot module (Tool 1.1) - customer service chatbot
   // Widget routes are public (for embedding on external websites)
   app.use('/api', chatbotWidgetRouter);
+  // Webhook routes require auth and module to be enabled
+  app.use('/api', requireModule('chatbot'), chatbotWebhookRouter);
   // Main chatbot routes require module to be enabled
   app.use('/api', requireModule('chatbot'), chatbotRouter);
 

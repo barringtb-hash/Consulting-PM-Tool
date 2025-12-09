@@ -2355,6 +2355,52 @@ function ChatbotPage(): JSX.Element {
                   </CardBody>
                 </Card>
 
+                {/* Iframe Embed Section */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Globe className="w-5 h-5" />
+                      Iframe Embed
+                    </h3>
+                  </CardHeader>
+                  <CardBody className="space-y-4">
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      Embed a full-page chat window using an iframe. Great for support pages or dedicated chat sections.
+                    </p>
+
+                    <div className="relative">
+                      <pre className="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm">
+                        <code>{`<iframe
+  src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/embed/${selectedConfig.id}?theme=light"
+  width="400"
+  height="600"
+  frameborder="0"
+  style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"
+></iframe>`}</code>
+                      </pre>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            `<iframe src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/embed/${selectedConfig.id}?theme=light" width="400" height="600" frameborder="0" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></iframe>`
+                          );
+                          showToast('Iframe code copied!', 'success');
+                        }}
+                      >
+                        <Copy className="w-4 h-4 mr-1" /> Copy
+                      </Button>
+                    </div>
+
+                    <div className="flex gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <span className="font-medium">Theme options:</span>
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">?theme=light</code>
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">?theme=dark</code>
+                    </div>
+                  </CardBody>
+                </Card>
+
                 {/* Alternative Integration Methods */}
                 <Card>
                   <CardHeader>
@@ -2367,8 +2413,9 @@ function ChatbotPage(): JSX.Element {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* API Integration */}
                       <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
                           REST API
+                          <Badge variant="success" size="sm">Available</Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Build a custom chat interface using our API endpoints.
@@ -2379,10 +2426,26 @@ function ChatbotPage(): JSX.Element {
                         </div>
                       </div>
 
-                      {/* React Component */}
+                      {/* Webhooks */}
                       <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
-                          React Component (Coming Soon)
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
+                          Webhooks
+                          <Badge variant="success" size="sm">Available</Badge>
+                        </h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                          Receive real-time events when conversations happen.
+                        </p>
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
+                          <div>conversation.started</div>
+                          <div>message.received / message.sent</div>
+                        </div>
+                      </div>
+
+                      {/* React Component */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 opacity-75">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
+                          React Component
+                          <Badge variant="neutral" size="sm">Coming Soon</Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Use our npm package for React applications.
@@ -2392,29 +2455,17 @@ function ChatbotPage(): JSX.Element {
                         </div>
                       </div>
 
-                      {/* Iframe Embed */}
-                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
-                          Iframe Embed (Coming Soon)
+                      {/* WordPress Plugin */}
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 opacity-75">
+                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
+                          WordPress Plugin
+                          <Badge variant="neutral" size="sm">Coming Soon</Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                          Embed a full chat window in an iframe.
+                          One-click installation for WordPress sites.
                         </p>
                         <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono opacity-50">
-                          {'<iframe src="..."></iframe>'}
-                        </div>
-                      </div>
-
-                      {/* Webhook Integration */}
-                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                        <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
-                          Webhook (Coming Soon)
-                        </h4>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                          Receive real-time conversation events via webhooks.
-                        </p>
-                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono opacity-50">
-                          POST your-server.com/webhook
+                          Search &quot;PMO Chatbot&quot; in WP plugins
                         </div>
                       </div>
                     </div>
