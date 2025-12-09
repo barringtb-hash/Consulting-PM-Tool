@@ -650,6 +650,8 @@ enum ChatChannel {
   WHATSAPP
   INSTAGRAM_DM
   EMAIL
+  SLACK
+  TEAMS
 }
 
 enum ConversationStatus {

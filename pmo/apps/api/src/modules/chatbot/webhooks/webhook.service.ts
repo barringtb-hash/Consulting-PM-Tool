@@ -6,7 +6,7 @@
  */
 
 import crypto from 'crypto';
-import { PrismaClient, WebhookConfig } from '@prisma/client';
+import { Prisma, PrismaClient, WebhookConfig } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -247,7 +247,7 @@ async function deliverWebhook(
       data: {
         webhookId: webhook.id,
         event: payload.event,
-        payload: payload as unknown as Record<string, unknown>,
+        payload: payload as unknown as Prisma.InputJsonValue,
         statusCode: response.status,
         responseBody: responseBody.slice(0, 1000), // Truncate
         deliveredAt: new Date(),
@@ -281,7 +281,7 @@ async function deliverWebhook(
       data: {
         webhookId: webhook.id,
         event: payload.event,
-        payload: payload as unknown as Record<string, unknown>,
+        payload: payload as unknown as Prisma.InputJsonValue,
         errorMessage,
         durationMs,
         attempt,

@@ -4,7 +4,12 @@
  * Manages channel configurations and provides CRUD operations.
  */
 
-import { PrismaClient, ChannelConfig, ChatChannel } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  ChannelConfig,
+  ChatChannel,
+} from '@prisma/client';
 import { ChannelCredentials, ChannelSettings } from './channel.types';
 import { channelManager } from './channel-manager';
 
@@ -63,8 +68,8 @@ export async function createChannel(
       chatbotConfigId,
       channel: input.channel,
       name: input.name,
-      credentials: input.credentials as unknown as Record<string, unknown>,
-      settings: (input.settings as unknown as Record<string, unknown>) || {},
+      credentials: input.credentials as unknown as Prisma.InputJsonValue,
+      settings: (input.settings as unknown as Prisma.InputJsonValue) || {},
       identifier: input.identifier,
       isVerified: true, // Credentials validated above
     },
@@ -103,11 +108,11 @@ export async function updateChannel(
     data: {
       ...(input.name && { name: input.name }),
       ...(input.credentials && {
-        credentials: input.credentials as unknown as Record<string, unknown>,
+        credentials: input.credentials as unknown as Prisma.InputJsonValue,
         isVerified: true,
       }),
       ...(input.settings && {
-        settings: input.settings as unknown as Record<string, unknown>,
+        settings: input.settings as unknown as Prisma.InputJsonValue,
       }),
       ...(input.identifier !== undefined && { identifier: input.identifier }),
       ...(input.isActive !== undefined && { isActive: input.isActive }),
@@ -258,7 +263,7 @@ export async function getChannelStatus(chatbotConfigId: number): Promise<
     'WHATSAPP',
     'SLACK',
     'TEAMS',
-    'MESSENGER',
+    'FACEBOOK_MESSENGER',
     'EMAIL',
   ];
 
