@@ -11,6 +11,9 @@ pmo/apps/*/dist/
 .env
 pmo/apps/*/.env
 
+# MCP configuration (contains API keys)
+.mcp.json
+
 # Playwright
 pmo/e2e/.auth/
 pmo/test-results/
