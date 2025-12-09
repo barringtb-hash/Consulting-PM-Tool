@@ -24,17 +24,20 @@ export interface SummaryCardProps {
 }
 
 const variantStyles: Record<SummaryCardVariant, string> = {
-  default: 'border-neutral-200',
-  primary: 'border-primary-200 bg-primary-50/30',
-  warning: 'border-warning-200 bg-warning-50/30',
-  danger: 'border-danger-200 bg-danger-50/30',
+  default: 'border-neutral-200 dark:border-neutral-700',
+  primary:
+    'border-primary-200 bg-primary-50/30 dark:border-primary-700 dark:bg-primary-900/30',
+  warning:
+    'border-warning-200 bg-warning-50/30 dark:border-warning-700 dark:bg-warning-900/30',
+  danger:
+    'border-danger-200 bg-danger-50/30 dark:border-danger-700 dark:bg-danger-900/30',
 };
 
 const valueColors: Record<SummaryCardVariant, string> = {
-  default: 'text-neutral-900',
-  primary: 'text-primary-700',
-  warning: 'text-warning-700',
-  danger: 'text-danger-700',
+  default: 'text-neutral-900 dark:text-neutral-100',
+  primary: 'text-primary-700 dark:text-primary-400',
+  warning: 'text-warning-700 dark:text-warning-400',
+  danger: 'text-danger-700 dark:text-danger-400',
 };
 
 export function SummaryCard({
