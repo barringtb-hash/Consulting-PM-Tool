@@ -2496,33 +2496,33 @@ function ChatbotPage(): JSX.Element {
                       </div>
 
                       {/* React Component */}
-                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 opacity-75">
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                         <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
                           React Component
-                          <Badge variant="neutral" size="sm">
-                            Coming Soon
+                          <Badge variant="success" size="sm">
+                            Available
                           </Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Use our npm package for React applications.
                         </p>
-                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono opacity-50">
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
                           npm install @pmo/chatbot-widget
                         </div>
                       </div>
 
                       {/* WordPress Plugin */}
-                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 opacity-75">
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                         <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
                           WordPress Plugin
-                          <Badge variant="neutral" size="sm">
-                            Coming Soon
+                          <Badge variant="success" size="sm">
+                            Available
                           </Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           One-click installation for WordPress sites.
                         </p>
-                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono opacity-50">
+                        <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
                           Search &quot;PMO Chatbot&quot; in WP plugins
                         </div>
                       </div>
