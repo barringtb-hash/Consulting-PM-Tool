@@ -1,0 +1,47 @@
+{
+  "name": "@pmo/chatbot-widget",
+  "version": "1.0.0",
+  "description": "React components for embedding PMO Chatbot in your application",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-dom": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "react",
+    "chatbot",
+    "widget",
+    "ai",
+    "customer-service",
+    "pmo"
+  ],
+  "author": "PMO Platform",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/pmo-chatbot-widget"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/pmo-chatbot-widget/issues"
+  },
+  "homepage": "https://github.com/your-org/pmo-chatbot-widget#readme"
+}

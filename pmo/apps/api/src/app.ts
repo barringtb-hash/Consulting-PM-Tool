@@ -21,6 +21,7 @@ import userPreferencesRouter from './modules/user-preferences/user-preferences.r
 import chatbotRouter from './modules/chatbot/chatbot.router';
 import chatbotWidgetRouter from './modules/chatbot/widget/widget.router';
 import chatbotWebhookRouter from './modules/chatbot/webhooks/webhook.router';
+import chatbotChannelRouter from './modules/chatbot/channels/channel.router';
 import productDescriptionRouter from './modules/product-descriptions/product-description.router';
 import schedulingRouter from './modules/scheduling/scheduling.router';
 import intakeRouter from './modules/intake/intake.router';
@@ -51,11 +52,14 @@ import { requireModule } from './middleware/module-guard.middleware';
  */
 function isWidgetPath(path: string): boolean {
   // Widget script, widget config, and public conversation endpoints
+  // Also includes channel webhook endpoints for external services
   const widgetPatterns = [
     /^\/api\/chatbot\/widget\//,
+    /^\/api\/chatbot\/embed\//,
     /^\/api\/chatbot\/\d+\/conversations$/,
     /^\/api\/chatbot\/conversations\/[^/]+\/messages$/,
     /^\/api\/chatbot\/conversations\/[^/]+$/,
+    /^\/api\/chatbot\/\d+\/webhooks\//, // Channel webhooks (Twilio, Slack, etc.)
   ];
   return widgetPatterns.some((pattern) => pattern.test(path));
 }
@@ -213,6 +217,9 @@ export function createApp(): express.Express {
   // AI Chatbot module (Tool 1.1) - customer service chatbot
   // Widget routes are public (for embedding on external websites)
   app.use('/api', chatbotWidgetRouter);
+  // Channel webhook routes are public (for receiving messages from Twilio, Slack, etc.)
+  // Channel management routes require auth
+  app.use('/api', chatbotChannelRouter);
   // Webhook routes require auth and module to be enabled
   app.use('/api', requireModule('chatbot'), chatbotWebhookRouter);
   // Main chatbot routes require module to be enabled
