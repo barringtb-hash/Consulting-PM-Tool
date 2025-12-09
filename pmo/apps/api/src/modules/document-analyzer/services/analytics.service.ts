@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '../../../prisma/client';
-import { DocumentCategory, AnalysisStatus, ComplianceLevel } from '@prisma/client';
+import { DocumentCategory, AnalysisStatus } from '@prisma/client';
 
 // ============================================================================
 // TYPES
@@ -132,15 +132,20 @@ export async function getProcessingStats(
   const total = documents.length;
   const successful = documents.filter((d) => d.status === 'COMPLETED').length;
   const failed = documents.filter((d) => d.status === 'FAILED').length;
-  const pending = documents.filter((d) => d.status === 'PENDING' || d.status === 'PROCESSING').length;
-  const manualReview = documents.filter((d) => d.status === 'NEEDS_REVIEW').length;
+  const pending = documents.filter(
+    (d) => d.status === 'PENDING' || d.status === 'PROCESSING',
+  ).length;
+  const manualReview = documents.filter(
+    (d) => d.status === 'NEEDS_REVIEW',
+  ).length;
 
   const processingTimes = documents
     .filter((d) => d.analysisTimeMs !== null)
     .map((d) => d.analysisTimeMs as number);
 
   const totalTime = processingTimes.reduce((sum, t) => sum + t, 0);
-  const avgTime = processingTimes.length > 0 ? totalTime / processingTimes.length : 0;
+  const avgTime =
+    processingTimes.length > 0 ? totalTime / processingTimes.length : 0;
 
   return {
     totalDocuments: total,
@@ -177,12 +182,15 @@ export async function getCategoryStats(
     },
   });
 
-  const categoryMap = new Map<DocumentCategory, {
-    count: number;
-    confidenceSum: number;
-    timeSum: number;
-    timeCount: number;
-  }>();
+  const categoryMap = new Map<
+    DocumentCategory,
+    {
+      count: number;
+      confidenceSum: number;
+      timeSum: number;
+      timeCount: number;
+    }
+  >();
 
   for (const doc of documents) {
     const category = doc.category || 'GENERAL';
@@ -214,7 +222,8 @@ export async function getCategoryStats(
       count: data.count,
       percentage: total > 0 ? (data.count / total) * 100 : 0,
       avgConfidence: data.count > 0 ? data.confidenceSum / data.count : 0,
-      avgProcessingTimeMs: data.timeCount > 0 ? data.timeSum / data.timeCount : 0,
+      avgProcessingTimeMs:
+        data.timeCount > 0 ? data.timeSum / data.timeCount : 0,
     });
   }
 
@@ -273,7 +282,10 @@ export async function getComplianceStats(
     if (doc.complianceFlags && Array.isArray(doc.complianceFlags)) {
       for (const flag of doc.complianceFlags as Array<{ ruleName: string }>) {
         if (flag.ruleName) {
-          issueCounter.set(flag.ruleName, (issueCounter.get(flag.ruleName) || 0) + 1);
+          issueCounter.set(
+            flag.ruleName,
+            (issueCounter.get(flag.ruleName) || 0) + 1,
+          );
         }
       }
     }
@@ -322,7 +334,8 @@ export async function calculateROI(
 
   for (const doc of documents) {
     const category = doc.category || 'GENERAL';
-    const manualTime = MANUAL_PROCESSING_TIME[category] || MANUAL_PROCESSING_TIME.GENERAL;
+    const manualTime =
+      MANUAL_PROCESSING_TIME[category] || MANUAL_PROCESSING_TIME.GENERAL;
     totalManualMinutes += manualTime;
 
     if (doc.analysisTimeMs) {
@@ -332,24 +345,25 @@ export async function calculateROI(
 
   const actualMinutes = totalActualMs / (1000 * 60);
   const timeSaved = totalManualMinutes - actualMinutes;
-  const timeSavingsPercentage = totalManualMinutes > 0
-    ? (timeSaved / totalManualMinutes) * 100
-    : 0;
+  const timeSavingsPercentage =
+    totalManualMinutes > 0 ? (timeSaved / totalManualMinutes) * 100 : 0;
 
   // Cost calculations
   const manualCost = (totalManualMinutes / 60) * HOURLY_PROCESSING_COST;
   const automatedCost = 0; // Assuming minimal API costs for now
   const costSaved = manualCost - automatedCost;
 
-  const costPerDocument = documents.length > 0
-    ? automatedCost / documents.length
-    : 0;
+  const costPerDocument =
+    documents.length > 0 ? automatedCost / documents.length : 0;
 
   // ROI calculation: (Savings - Investment) / Investment * 100
   // For simplicity, we consider investment as the automated processing cost
-  const roi = automatedCost > 0
-    ? ((costSaved - automatedCost) / automatedCost) * 100
-    : (costSaved > 0 ? 100 : 0);
+  const roi =
+    automatedCost > 0
+      ? ((costSaved - automatedCost) / automatedCost) * 100
+      : costSaved > 0
+        ? 100
+        : 0;
 
   return {
     documentsProcessed: documents.length,
@@ -402,7 +416,9 @@ export async function getTrendData(
     documentsProcessed.push(documents.length);
 
     const successful = documents.filter((d) => d.status === 'COMPLETED').length;
-    successRate.push(documents.length > 0 ? (successful / documents.length) * 100 : 0);
+    successRate.push(
+      documents.length > 0 ? (successful / documents.length) * 100 : 0,
+    );
 
     const times = documents
       .filter((d) => d.analysisTimeMs !== null)
@@ -458,14 +474,15 @@ export async function getDashboardData(
   configId: number,
   period: AnalyticsPeriod,
 ): Promise<DashboardData> {
-  const [processing, categories, compliance, roi, trends, recentActivity] = await Promise.all([
-    getProcessingStats(configId, period),
-    getCategoryStats(configId, period),
-    getComplianceStats(configId, period),
-    calculateROI(configId, period),
-    getTrendData(configId, period),
-    getRecentActivity(configId),
-  ]);
+  const [processing, categories, compliance, roi, trends, recentActivity] =
+    await Promise.all([
+      getProcessingStats(configId, period),
+      getCategoryStats(configId, period),
+      getComplianceStats(configId, period),
+      calculateROI(configId, period),
+      getTrendData(configId, period),
+      getRecentActivity(configId),
+    ]);
 
   return {
     period,
@@ -514,9 +531,11 @@ export async function recordProcessingMetrics(
       categoryBreakdown,
       totalProcessingTime: processing.totalProcessingTimeMs,
       avgProcessingTime: processing.avgProcessingTimeMs,
-      avgConfidence: categories.length > 0
-        ? categories.reduce((sum, c) => sum + c.avgConfidence, 0) / categories.length
-        : null,
+      avgConfidence:
+        categories.length > 0
+          ? categories.reduce((sum, c) => sum + c.avgConfidence, 0) /
+            categories.length
+          : null,
       compliancePassRate: compliance.passRate,
       complianceWarnings: compliance.warningCount,
       complianceFailures: compliance.failCount,
@@ -536,9 +555,11 @@ export async function recordProcessingMetrics(
       categoryBreakdown,
       totalProcessingTime: processing.totalProcessingTimeMs,
       avgProcessingTime: processing.avgProcessingTimeMs,
-      avgConfidence: categories.length > 0
-        ? categories.reduce((sum, c) => sum + c.avgConfidence, 0) / categories.length
-        : null,
+      avgConfidence:
+        categories.length > 0
+          ? categories.reduce((sum, c) => sum + c.avgConfidence, 0) /
+            categories.length
+          : null,
       compliancePassRate: compliance.passRate,
       complianceWarnings: compliance.warningCount,
       complianceFailures: compliance.failCount,
@@ -576,7 +597,10 @@ function formatDateLabel(
 ): string {
   switch (periodType) {
     case 'DAILY':
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
     case 'WEEKLY':
       return `Week ${getWeekNumber(date)}`;
     case 'MONTHLY':
@@ -591,7 +615,9 @@ function formatDateLabel(
 }
 
 function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const d = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  );
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
@@ -613,26 +639,28 @@ export function createPeriod(
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
       break;
-    case 'WEEKLY':
+    case 'WEEKLY': {
       const day = start.getDay();
       start.setDate(start.getDate() - day);
       start.setHours(0, 0, 0, 0);
       end.setDate(start.getDate() + 6);
       end.setHours(23, 59, 59, 999);
       break;
+    }
     case 'MONTHLY':
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
       end.setMonth(end.getMonth() + 1, 0);
       end.setHours(23, 59, 59, 999);
       break;
-    case 'QUARTERLY':
+    case 'QUARTERLY': {
       const quarter = Math.floor(start.getMonth() / 3);
       start.setMonth(quarter * 3, 1);
       start.setHours(0, 0, 0, 0);
       end.setMonth((quarter + 1) * 3, 0);
       end.setHours(23, 59, 59, 999);
       break;
+    }
     case 'YEARLY':
       start.setMonth(0, 1);
       start.setHours(0, 0, 0, 0);

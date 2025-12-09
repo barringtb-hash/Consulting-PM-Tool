@@ -5,7 +5,11 @@
  * multiple industries and regulatory frameworks.
  */
 
-import { DocumentCategory, IndustryType, ComplianceLevel } from '@prisma/client';
+import {
+  DocumentCategory,
+  IndustryType,
+  ComplianceLevel,
+} from '@prisma/client';
 
 // ============================================================================
 // TYPES
@@ -15,7 +19,12 @@ export interface ComplianceRule {
   ruleId: string;
   name: string;
   description: string;
-  category: 'required_field' | 'pattern_match' | 'value_validation' | 'pii_detection' | 'risk_indicator';
+  category:
+    | 'required_field'
+    | 'pattern_match'
+    | 'value_validation'
+    | 'pii_detection'
+    | 'risk_indicator';
   severity: ComplianceLevel;
   // For required field checks
   requiredFields?: string[];
@@ -70,7 +79,8 @@ export interface ComplianceFlag {
 export const HIPAA_RULESET: ComplianceRuleSet = {
   code: 'HIPAA',
   name: 'HIPAA Compliance',
-  description: 'Health Insurance Portability and Accountability Act compliance rules for healthcare documents',
+  description:
+    'Health Insurance Portability and Accountability Act compliance rules for healthcare documents',
   version: '1.0.0',
   industries: ['HEALTHCARE'],
   categories: ['HEALTHCARE', 'COMPLIANCE'],
@@ -82,7 +92,8 @@ export const HIPAA_RULESET: ComplianceRuleSet = {
       category: 'pii_detection',
       severity: 'WARNING',
       pattern: '\\b\\d{3}[-\\s]?\\d{2}[-\\s]?\\d{4}\\b',
-      remediationHint: 'Ensure SSN is properly protected or redacted if not necessary',
+      remediationHint:
+        'Ensure SSN is properly protected or redacted if not necessary',
     },
     {
       ruleId: 'HIPAA_002',
@@ -179,7 +190,8 @@ export const SOC2_RULESET: ComplianceRuleSet = {
 export const GDPR_RULESET: ComplianceRuleSet = {
   code: 'GDPR',
   name: 'GDPR Compliance',
-  description: 'General Data Protection Regulation compliance rules for EU data',
+  description:
+    'General Data Protection Regulation compliance rules for EU data',
   version: '1.0.0',
   industries: ['TECHNOLOGY', 'FINANCIAL_SERVICES', 'RETAIL', 'HEALTHCARE'],
   categories: ['COMPLIANCE', 'CONTRACT'],
@@ -339,7 +351,8 @@ export const CONTRACT_COMPLIANCE_RULESET: ComplianceRuleSet = {
       severity: 'WARNING',
       pattern: '(auto.?renew|automatic\\s*renewal|evergreen)',
       patternFlags: 'i',
-      remediationHint: 'Review auto-renewal terms and cancellation requirements',
+      remediationHint:
+        'Review auto-renewal terms and cancellation requirements',
     },
     {
       ruleId: 'CTR_003',
@@ -468,7 +481,10 @@ export const BUILT_IN_RULESETS: ComplianceRuleSet[] = [
  */
 export function runComplianceCheck(
   text: string,
-  extractedFields: Record<string, { value: string | number; confidence: number }>,
+  extractedFields: Record<
+    string,
+    { value: string | number; confidence: number }
+  >,
   ruleSets: ComplianceRuleSet[],
 ): ComplianceCheckResult {
   const flags: ComplianceFlag[] = [];
@@ -515,7 +531,8 @@ export function runComplianceCheck(
   }
 
   // Calculate score (0-100)
-  const score = totalRules > 0 ? Math.round((passedRules / totalRules) * 100) : 100;
+  const score =
+    totalRules > 0 ? Math.round((passedRules / totalRules) * 100) : 100;
 
   return {
     status,
@@ -534,7 +551,10 @@ export function runComplianceCheck(
 function evaluateRule(
   rule: ComplianceRule,
   text: string,
-  extractedFields: Record<string, { value: string | number; confidence: number }>,
+  extractedFields: Record<
+    string,
+    { value: string | number; confidence: number }
+  >,
 ): { passed: boolean; message: string; location?: string; fieldName?: string } {
   switch (rule.category) {
     case 'required_field':
@@ -559,7 +579,10 @@ function evaluateRule(
 
 function evaluateRequiredField(
   rule: ComplianceRule,
-  extractedFields: Record<string, { value: string | number; confidence: number }>,
+  extractedFields: Record<
+    string,
+    { value: string | number; confidence: number }
+  >,
 ): { passed: boolean; message: string; fieldName?: string } {
   if (!rule.requiredFields) {
     return { passed: true, message: 'No required fields specified' };
@@ -606,14 +629,17 @@ function evaluatePatternMatch(
     }
 
     return { passed: true, message: 'Pattern not found' };
-  } catch (e) {
+  } catch (_e) {
     return { passed: true, message: 'Invalid pattern' };
   }
 }
 
 function evaluateValueValidation(
   rule: ComplianceRule,
-  extractedFields: Record<string, { value: string | number; confidence: number }>,
+  extractedFields: Record<
+    string,
+    { value: string | number; confidence: number }
+  >,
 ): { passed: boolean; message: string; fieldName?: string } {
   if (!rule.fieldName || !rule.validation) {
     return { passed: true, message: 'No validation specified' };
@@ -624,7 +650,10 @@ function evaluateValueValidation(
     return { passed: true, message: 'Field not present' };
   }
 
-  const value = typeof field.value === 'number' ? field.value : parseFloat(String(field.value).replace(/[^0-9.-]/g, ''));
+  const value =
+    typeof field.value === 'number'
+      ? field.value
+      : parseFloat(String(field.value).replace(/[^0-9.-]/g, ''));
 
   if (isNaN(value)) {
     return { passed: true, message: 'Value not numeric' };
@@ -651,7 +680,7 @@ function evaluateValueValidation(
       }
       break;
 
-    case 'range':
+    case 'range': {
       const [min, max] = rule.validation.value as number[];
       if (value < min || value > max) {
         return {
@@ -661,6 +690,7 @@ function evaluateValueValidation(
         };
       }
       break;
+    }
   }
 
   return { passed: true, message: 'Validation passed' };
@@ -686,15 +716,18 @@ function evaluatePIIDetection(
     }
 
     return { passed: true, message: 'No PII detected' };
-  } catch (e) {
+  } catch (_e) {
     return { passed: true, message: 'Invalid pattern' };
   }
 }
 
 function evaluateRiskIndicator(
   rule: ComplianceRule,
-  text: string,
-  extractedFields: Record<string, { value: string | number; confidence: number }>,
+  _text: string,
+  _extractedFields: Record<
+    string,
+    { value: string | number; confidence: number }
+  >,
 ): { passed: boolean; message: string } {
   // Risk indicators are contextual and typically flagged for human review
   // This is a placeholder for more sophisticated risk analysis
@@ -713,7 +746,8 @@ export function getApplicableRuleSets(
 ): ComplianceRuleSet[] {
   return BUILT_IN_RULESETS.filter((ruleSet) => {
     const categoryMatch = ruleSet.categories.includes(category);
-    const industryMatch = !industryType || ruleSet.industries.includes(industryType);
+    const industryMatch =
+      !industryType || ruleSet.industries.includes(industryType);
     return categoryMatch || industryMatch;
   });
 }

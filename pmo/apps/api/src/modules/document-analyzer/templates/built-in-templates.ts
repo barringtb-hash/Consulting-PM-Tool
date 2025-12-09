@@ -15,7 +15,14 @@ import { DocumentCategory, IndustryType } from '@prisma/client';
 export interface FieldDefinition {
   name: string;
   label: string;
-  type: 'string' | 'number' | 'date' | 'currency' | 'boolean' | 'array' | 'object';
+  type:
+    | 'string'
+    | 'number'
+    | 'date'
+    | 'currency'
+    | 'boolean'
+    | 'array'
+    | 'object';
   required: boolean;
   validation?: {
     pattern?: string;
@@ -65,7 +72,8 @@ export interface BuiltInTemplate {
 
 export const INVOICE_AP_TEMPLATE: BuiltInTemplate = {
   name: 'Accounts Payable Invoice',
-  description: 'Standard accounts payable invoice extraction for vendor bills, purchase invoices, and supplier statements',
+  description:
+    'Standard accounts payable invoice extraction for vendor bills, purchase invoices, and supplier statements',
   category: 'INVOICE',
   documentType: 'INVOICE_AP',
   version: '1.0.0',
@@ -177,7 +185,13 @@ export const INVOICE_AP_TEMPLATE: BuiltInTemplate = {
       type: 'currency',
       required: true,
       helpText: 'Final amount due',
-      extractionHints: ['Total:', 'Amount Due:', 'Total Due:', 'Balance Due:', 'Grand Total:'],
+      extractionHints: [
+        'Total:',
+        'Amount Due:',
+        'Total Due:',
+        'Balance Due:',
+        'Grand Total:',
+      ],
     },
     {
       name: 'currency',
@@ -203,16 +217,71 @@ export const INVOICE_AP_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'vendorName', type: 'string', required: true, aiPrompt: 'Extract the vendor/seller company name from the invoice header' },
-    { fieldName: 'invoiceNumber', type: 'string', required: true, pattern: '(INV|Invoice|Bill|#)[\\s#:-]*([A-Z0-9-]+)', aiPrompt: 'Find the unique invoice number or identifier' },
-    { fieldName: 'invoiceDate', type: 'date', required: true, aiPrompt: 'Extract the invoice issue date' },
-    { fieldName: 'dueDate', type: 'date', required: false, aiPrompt: 'Extract the payment due date if present' },
-    { fieldName: 'poNumber', type: 'string', required: false, pattern: '(PO|P\\.O\\.|Purchase Order)[\\s#:-]*([A-Z0-9-]+)', aiPrompt: 'Extract the purchase order reference if present' },
-    { fieldName: 'lineItems', type: 'array', required: true, aiPrompt: 'Extract all line items with description, quantity, unit price, and total' },
-    { fieldName: 'subtotal', type: 'currency', required: false, aiPrompt: 'Extract the subtotal before tax' },
-    { fieldName: 'taxAmount', type: 'currency', required: false, aiPrompt: 'Extract the total tax amount' },
-    { fieldName: 'totalAmount', type: 'currency', required: true, aiPrompt: 'Extract the final total amount due' },
-    { fieldName: 'paymentTerms', type: 'string', required: false, pattern: '(Net\\s*\\d+|Due\\s+on\\s+Receipt|COD)', aiPrompt: 'Extract payment terms' },
+    {
+      fieldName: 'vendorName',
+      type: 'string',
+      required: true,
+      aiPrompt:
+        'Extract the vendor/seller company name from the invoice header',
+    },
+    {
+      fieldName: 'invoiceNumber',
+      type: 'string',
+      required: true,
+      pattern: '(INV|Invoice|Bill|#)[\\s#:-]*([A-Z0-9-]+)',
+      aiPrompt: 'Find the unique invoice number or identifier',
+    },
+    {
+      fieldName: 'invoiceDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract the invoice issue date',
+    },
+    {
+      fieldName: 'dueDate',
+      type: 'date',
+      required: false,
+      aiPrompt: 'Extract the payment due date if present',
+    },
+    {
+      fieldName: 'poNumber',
+      type: 'string',
+      required: false,
+      pattern: '(PO|P\\.O\\.|Purchase Order)[\\s#:-]*([A-Z0-9-]+)',
+      aiPrompt: 'Extract the purchase order reference if present',
+    },
+    {
+      fieldName: 'lineItems',
+      type: 'array',
+      required: true,
+      aiPrompt:
+        'Extract all line items with description, quantity, unit price, and total',
+    },
+    {
+      fieldName: 'subtotal',
+      type: 'currency',
+      required: false,
+      aiPrompt: 'Extract the subtotal before tax',
+    },
+    {
+      fieldName: 'taxAmount',
+      type: 'currency',
+      required: false,
+      aiPrompt: 'Extract the total tax amount',
+    },
+    {
+      fieldName: 'totalAmount',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract the final total amount due',
+    },
+    {
+      fieldName: 'paymentTerms',
+      type: 'string',
+      required: false,
+      pattern: '(Net\\s*\\d+|Due\\s+on\\s+Receipt|COD)',
+      aiPrompt: 'Extract payment terms',
+    },
   ],
   complianceRules: [
     {
@@ -248,7 +317,8 @@ export const INVOICE_AP_TEMPLATE: BuiltInTemplate = {
 
 export const INVOICE_AR_TEMPLATE: BuiltInTemplate = {
   name: 'Accounts Receivable Invoice',
-  description: 'Customer invoice extraction for billing, sales invoices, and receivables',
+  description:
+    'Customer invoice extraction for billing, sales invoices, and receivables',
   category: 'INVOICE',
   documentType: 'INVOICE_AR',
   version: '1.0.0',
@@ -342,11 +412,36 @@ export const INVOICE_AR_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'customerName', type: 'string', required: true, aiPrompt: 'Extract the customer/client name from the Bill To section' },
-    { fieldName: 'invoiceNumber', type: 'string', required: true, aiPrompt: 'Extract the invoice number' },
-    { fieldName: 'invoiceDate', type: 'date', required: true, aiPrompt: 'Extract the invoice date' },
-    { fieldName: 'lineItems', type: 'array', required: true, aiPrompt: 'Extract all billable items with details' },
-    { fieldName: 'totalAmount', type: 'currency', required: true, aiPrompt: 'Extract the total amount' },
+    {
+      fieldName: 'customerName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the customer/client name from the Bill To section',
+    },
+    {
+      fieldName: 'invoiceNumber',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the invoice number',
+    },
+    {
+      fieldName: 'invoiceDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract the invoice date',
+    },
+    {
+      fieldName: 'lineItems',
+      type: 'array',
+      required: true,
+      aiPrompt: 'Extract all billable items with details',
+    },
+    {
+      fieldName: 'totalAmount',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract the total amount',
+    },
   ],
   complianceRules: [
     {
@@ -369,7 +464,7 @@ export const CONTRACT_NDA_TEMPLATE: BuiltInTemplate = {
   category: 'CONTRACT',
   documentType: 'CONTRACT_NDA',
   version: '1.0.0',
-  confidenceThreshold: 0.80,
+  confidenceThreshold: 0.8,
   fieldDefinitions: [
     {
       name: 'disclosingParty',
@@ -436,11 +531,36 @@ export const CONTRACT_NDA_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'disclosingParty', type: 'string', required: true, aiPrompt: 'Identify the disclosing party in the NDA' },
-    { fieldName: 'receivingParty', type: 'string', required: true, aiPrompt: 'Identify the receiving party in the NDA' },
-    { fieldName: 'effectiveDate', type: 'date', required: true, aiPrompt: 'Extract the effective date of the agreement' },
-    { fieldName: 'confidentialityPeriod', type: 'string', required: false, aiPrompt: 'Extract the duration of confidentiality obligations' },
-    { fieldName: 'governingLaw', type: 'string', required: false, aiPrompt: 'Identify the governing law jurisdiction' },
+    {
+      fieldName: 'disclosingParty',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Identify the disclosing party in the NDA',
+    },
+    {
+      fieldName: 'receivingParty',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Identify the receiving party in the NDA',
+    },
+    {
+      fieldName: 'effectiveDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract the effective date of the agreement',
+    },
+    {
+      fieldName: 'confidentialityPeriod',
+      type: 'string',
+      required: false,
+      aiPrompt: 'Extract the duration of confidentiality obligations',
+    },
+    {
+      fieldName: 'governingLaw',
+      type: 'string',
+      required: false,
+      aiPrompt: 'Identify the governing law jurisdiction',
+    },
   ],
   complianceRules: [
     {
@@ -462,11 +582,12 @@ export const CONTRACT_NDA_TEMPLATE: BuiltInTemplate = {
 
 export const CONTRACT_SERVICE_TEMPLATE: BuiltInTemplate = {
   name: 'Service Agreement',
-  description: 'Master service agreement, consulting agreement, or professional services contract',
+  description:
+    'Master service agreement, consulting agreement, or professional services contract',
   category: 'CONTRACT',
   documentType: 'CONTRACT_SERVICE',
   version: '1.0.0',
-  confidenceThreshold: 0.80,
+  confidenceThreshold: 0.8,
   fieldDefinitions: [
     {
       name: 'clientName',
@@ -582,15 +703,60 @@ export const CONTRACT_SERVICE_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'clientName', type: 'string', required: true, aiPrompt: 'Extract the client/customer name from the contract' },
-    { fieldName: 'providerName', type: 'string', required: true, aiPrompt: 'Extract the service provider/vendor name' },
-    { fieldName: 'effectiveDate', type: 'date', required: true, aiPrompt: 'Extract the contract effective/start date' },
-    { fieldName: 'termEndDate', type: 'date', required: false, aiPrompt: 'Extract the contract end date or term' },
-    { fieldName: 'contractValue', type: 'currency', required: false, aiPrompt: 'Extract the total contract value or pricing' },
-    { fieldName: 'paymentTerms', type: 'string', required: false, aiPrompt: 'Extract payment terms and schedule' },
-    { fieldName: 'terminationClause', type: 'string', required: false, aiPrompt: 'Extract termination conditions and notice requirements' },
-    { fieldName: 'autoRenewal', type: 'boolean', required: false, aiPrompt: 'Determine if contract has auto-renewal provisions' },
-    { fieldName: 'liabilityLimit', type: 'currency', required: false, aiPrompt: 'Extract any liability cap or limitation' },
+    {
+      fieldName: 'clientName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the client/customer name from the contract',
+    },
+    {
+      fieldName: 'providerName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the service provider/vendor name',
+    },
+    {
+      fieldName: 'effectiveDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract the contract effective/start date',
+    },
+    {
+      fieldName: 'termEndDate',
+      type: 'date',
+      required: false,
+      aiPrompt: 'Extract the contract end date or term',
+    },
+    {
+      fieldName: 'contractValue',
+      type: 'currency',
+      required: false,
+      aiPrompt: 'Extract the total contract value or pricing',
+    },
+    {
+      fieldName: 'paymentTerms',
+      type: 'string',
+      required: false,
+      aiPrompt: 'Extract payment terms and schedule',
+    },
+    {
+      fieldName: 'terminationClause',
+      type: 'string',
+      required: false,
+      aiPrompt: 'Extract termination conditions and notice requirements',
+    },
+    {
+      fieldName: 'autoRenewal',
+      type: 'boolean',
+      required: false,
+      aiPrompt: 'Determine if contract has auto-renewal provisions',
+    },
+    {
+      fieldName: 'liabilityLimit',
+      type: 'currency',
+      required: false,
+      aiPrompt: 'Extract any liability cap or limitation',
+    },
   ],
   complianceRules: [
     {
@@ -623,7 +789,7 @@ export const CONTRACT_EMPLOYMENT_TEMPLATE: BuiltInTemplate = {
   category: 'CONTRACT',
   documentType: 'CONTRACT_EMPLOYMENT',
   version: '1.0.0',
-  confidenceThreshold: 0.80,
+  confidenceThreshold: 0.8,
   fieldDefinitions: [
     {
       name: 'employeeName',
@@ -711,12 +877,42 @@ export const CONTRACT_EMPLOYMENT_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'employeeName', type: 'string', required: true, aiPrompt: 'Extract the employee name' },
-    { fieldName: 'employerName', type: 'string', required: true, aiPrompt: 'Extract the employer company name' },
-    { fieldName: 'jobTitle', type: 'string', required: true, aiPrompt: 'Extract the job title or position' },
-    { fieldName: 'startDate', type: 'date', required: true, aiPrompt: 'Extract the employment start date' },
-    { fieldName: 'salary', type: 'currency', required: false, aiPrompt: 'Extract the salary or compensation amount' },
-    { fieldName: 'nonCompete', type: 'boolean', required: false, aiPrompt: 'Determine if there is a non-compete clause' },
+    {
+      fieldName: 'employeeName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the employee name',
+    },
+    {
+      fieldName: 'employerName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the employer company name',
+    },
+    {
+      fieldName: 'jobTitle',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the job title or position',
+    },
+    {
+      fieldName: 'startDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract the employment start date',
+    },
+    {
+      fieldName: 'salary',
+      type: 'currency',
+      required: false,
+      aiPrompt: 'Extract the salary or compensation amount',
+    },
+    {
+      fieldName: 'nonCompete',
+      type: 'boolean',
+      required: false,
+      aiPrompt: 'Determine if there is a non-compete clause',
+    },
   ],
   complianceRules: [
     {
@@ -746,7 +942,7 @@ export const COMPLIANCE_W9_TEMPLATE: BuiltInTemplate = {
   category: 'COMPLIANCE',
   documentType: 'FORM_W9',
   version: '1.0.0',
-  confidenceThreshold: 0.90,
+  confidenceThreshold: 0.9,
   fieldDefinitions: [
     {
       name: 'name',
@@ -822,12 +1018,42 @@ export const COMPLIANCE_W9_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'name', type: 'string', required: true, aiPrompt: 'Extract the name from line 1' },
-    { fieldName: 'businessName', type: 'string', required: false, aiPrompt: 'Extract business name from line 2 if present' },
-    { fieldName: 'taxClassification', type: 'string', required: true, aiPrompt: 'Identify the checked tax classification' },
-    { fieldName: 'address', type: 'string', required: true, aiPrompt: 'Extract the street address' },
-    { fieldName: 'ssn', type: 'string', required: false, aiPrompt: 'Extract SSN from Part I (mask all but last 4 digits)' },
-    { fieldName: 'ein', type: 'string', required: false, aiPrompt: 'Extract EIN from Part I' },
+    {
+      fieldName: 'name',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the name from line 1',
+    },
+    {
+      fieldName: 'businessName',
+      type: 'string',
+      required: false,
+      aiPrompt: 'Extract business name from line 2 if present',
+    },
+    {
+      fieldName: 'taxClassification',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Identify the checked tax classification',
+    },
+    {
+      fieldName: 'address',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the street address',
+    },
+    {
+      fieldName: 'ssn',
+      type: 'string',
+      required: false,
+      aiPrompt: 'Extract SSN from Part I (mask all but last 4 digits)',
+    },
+    {
+      fieldName: 'ein',
+      type: 'string',
+      required: false,
+      aiPrompt: 'Extract EIN from Part I',
+    },
   ],
   complianceRules: [
     {
@@ -852,7 +1078,8 @@ export const COMPLIANCE_W9_TEMPLATE: BuiltInTemplate = {
 
 export const HEALTHCARE_CMS1500_TEMPLATE: BuiltInTemplate = {
   name: 'CMS-1500 Health Insurance Claim',
-  description: 'Standard health insurance claim form used by physicians and suppliers',
+  description:
+    'Standard health insurance claim form used by physicians and suppliers',
   category: 'HEALTHCARE',
   industryType: 'HEALTHCARE',
   documentType: 'FORM_CMS1500',
@@ -967,13 +1194,48 @@ export const HEALTHCARE_CMS1500_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'patientName', type: 'string', required: true, aiPrompt: 'Extract patient name from box 2' },
-    { fieldName: 'patientDOB', type: 'date', required: true, aiPrompt: 'Extract patient date of birth from box 3' },
-    { fieldName: 'insuredIDNumber', type: 'string', required: true, aiPrompt: 'Extract insured ID from box 1a' },
-    { fieldName: 'diagnosisCodes', type: 'array', required: true, aiPrompt: 'Extract all ICD-10 codes from box 21' },
-    { fieldName: 'procedureCodes', type: 'array', required: true, aiPrompt: 'Extract all CPT codes from box 24' },
-    { fieldName: 'charges', type: 'currency', required: true, aiPrompt: 'Extract total charges from box 28' },
-    { fieldName: 'providerNPI', type: 'string', required: true, aiPrompt: 'Extract NPI from box 33a' },
+    {
+      fieldName: 'patientName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract patient name from box 2',
+    },
+    {
+      fieldName: 'patientDOB',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract patient date of birth from box 3',
+    },
+    {
+      fieldName: 'insuredIDNumber',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract insured ID from box 1a',
+    },
+    {
+      fieldName: 'diagnosisCodes',
+      type: 'array',
+      required: true,
+      aiPrompt: 'Extract all ICD-10 codes from box 21',
+    },
+    {
+      fieldName: 'procedureCodes',
+      type: 'array',
+      required: true,
+      aiPrompt: 'Extract all CPT codes from box 24',
+    },
+    {
+      fieldName: 'charges',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract total charges from box 28',
+    },
+    {
+      fieldName: 'providerNPI',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract NPI from box 33a',
+    },
   ],
   complianceRules: [
     {
@@ -1116,11 +1378,36 @@ export const HEALTHCARE_EOB_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'patientName', type: 'string', required: true, aiPrompt: 'Extract the patient name' },
-    { fieldName: 'claimNumber', type: 'string', required: true, aiPrompt: 'Extract the claim reference number' },
-    { fieldName: 'billedAmount', type: 'currency', required: true, aiPrompt: 'Extract the billed/charged amount' },
-    { fieldName: 'paidAmount', type: 'currency', required: true, aiPrompt: 'Extract the amount paid by insurance' },
-    { fieldName: 'patientResponsibility', type: 'currency', required: true, aiPrompt: 'Extract what the patient owes' },
+    {
+      fieldName: 'patientName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the patient name',
+    },
+    {
+      fieldName: 'claimNumber',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the claim reference number',
+    },
+    {
+      fieldName: 'billedAmount',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract the billed/charged amount',
+    },
+    {
+      fieldName: 'paidAmount',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract the amount paid by insurance',
+    },
+    {
+      fieldName: 'patientResponsibility',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract what the patient owes',
+    },
   ],
   complianceRules: [
     {
@@ -1150,7 +1437,7 @@ export const LEGAL_COURT_FILING_TEMPLATE: BuiltInTemplate = {
   industryType: 'LEGAL',
   documentType: 'COURT_FILING',
   version: '1.0.0',
-  confidenceThreshold: 0.80,
+  confidenceThreshold: 0.8,
   fieldDefinitions: [
     {
       name: 'caseNumber',
@@ -1224,12 +1511,42 @@ export const LEGAL_COURT_FILING_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'caseNumber', type: 'string', required: true, aiPrompt: 'Extract the case/docket number' },
-    { fieldName: 'court', type: 'string', required: true, aiPrompt: 'Identify the court and jurisdiction' },
-    { fieldName: 'filingType', type: 'string', required: true, aiPrompt: 'Determine the type of filing' },
-    { fieldName: 'plaintiff', type: 'string', required: true, aiPrompt: 'Extract plaintiff name(s)' },
-    { fieldName: 'defendant', type: 'string', required: true, aiPrompt: 'Extract defendant name(s)' },
-    { fieldName: 'deadlines', type: 'array', required: false, aiPrompt: 'Extract any deadlines or important dates' },
+    {
+      fieldName: 'caseNumber',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the case/docket number',
+    },
+    {
+      fieldName: 'court',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Identify the court and jurisdiction',
+    },
+    {
+      fieldName: 'filingType',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Determine the type of filing',
+    },
+    {
+      fieldName: 'plaintiff',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract plaintiff name(s)',
+    },
+    {
+      fieldName: 'defendant',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract defendant name(s)',
+    },
+    {
+      fieldName: 'deadlines',
+      type: 'array',
+      required: false,
+      aiPrompt: 'Extract any deadlines or important dates',
+    },
   ],
   complianceRules: [
     {
@@ -1333,10 +1650,30 @@ export const FINANCIAL_LOAN_APP_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'applicantName', type: 'string', required: true, aiPrompt: 'Extract the applicant name' },
-    { fieldName: 'annualIncome', type: 'currency', required: true, aiPrompt: 'Extract annual income' },
-    { fieldName: 'loanAmount', type: 'currency', required: true, aiPrompt: 'Extract requested loan amount' },
-    { fieldName: 'loanPurpose', type: 'string', required: true, aiPrompt: 'Extract the purpose of the loan' },
+    {
+      fieldName: 'applicantName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the applicant name',
+    },
+    {
+      fieldName: 'annualIncome',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract annual income',
+    },
+    {
+      fieldName: 'loanAmount',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract requested loan amount',
+    },
+    {
+      fieldName: 'loanPurpose',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the purpose of the loan',
+    },
   ],
   complianceRules: [
     {
@@ -1430,11 +1767,36 @@ export const FINANCIAL_BANK_STATEMENT_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'accountHolder', type: 'string', required: true, aiPrompt: 'Extract the account holder name' },
-    { fieldName: 'accountNumber', type: 'string', required: true, aiPrompt: 'Extract account number (mask if full)' },
-    { fieldName: 'bankName', type: 'string', required: true, aiPrompt: 'Extract the bank name' },
-    { fieldName: 'openingBalance', type: 'currency', required: true, aiPrompt: 'Extract opening/beginning balance' },
-    { fieldName: 'closingBalance', type: 'currency', required: true, aiPrompt: 'Extract closing/ending balance' },
+    {
+      fieldName: 'accountHolder',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the account holder name',
+    },
+    {
+      fieldName: 'accountNumber',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract account number (mask if full)',
+    },
+    {
+      fieldName: 'bankName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the bank name',
+    },
+    {
+      fieldName: 'openingBalance',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract opening/beginning balance',
+    },
+    {
+      fieldName: 'closingBalance',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract closing/ending balance',
+    },
   ],
   complianceRules: [
     {
@@ -1546,13 +1908,48 @@ export const REAL_ESTATE_LEASE_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'landlordName', type: 'string', required: true, aiPrompt: 'Extract landlord/lessor name' },
-    { fieldName: 'tenantName', type: 'string', required: true, aiPrompt: 'Extract tenant/lessee name(s)' },
-    { fieldName: 'propertyAddress', type: 'string', required: true, aiPrompt: 'Extract the property address' },
-    { fieldName: 'leaseStartDate', type: 'date', required: true, aiPrompt: 'Extract lease start/commencement date' },
-    { fieldName: 'leaseEndDate', type: 'date', required: true, aiPrompt: 'Extract lease end/termination date' },
-    { fieldName: 'monthlyRent', type: 'currency', required: true, aiPrompt: 'Extract monthly rent amount' },
-    { fieldName: 'securityDeposit', type: 'currency', required: true, aiPrompt: 'Extract security deposit amount' },
+    {
+      fieldName: 'landlordName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract landlord/lessor name',
+    },
+    {
+      fieldName: 'tenantName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract tenant/lessee name(s)',
+    },
+    {
+      fieldName: 'propertyAddress',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract the property address',
+    },
+    {
+      fieldName: 'leaseStartDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract lease start/commencement date',
+    },
+    {
+      fieldName: 'leaseEndDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract lease end/termination date',
+    },
+    {
+      fieldName: 'monthlyRent',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract monthly rent amount',
+    },
+    {
+      fieldName: 'securityDeposit',
+      type: 'currency',
+      required: true,
+      aiPrompt: 'Extract security deposit amount',
+    },
   ],
   complianceRules: [
     {
@@ -1657,11 +2054,36 @@ export const MANUFACTURING_WORK_ORDER_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'workOrderNumber', type: 'string', required: true, aiPrompt: 'Extract work order number' },
-    { fieldName: 'customerName', type: 'string', required: true, aiPrompt: 'Extract customer name' },
-    { fieldName: 'dueDate', type: 'date', required: true, aiPrompt: 'Extract due/completion date' },
-    { fieldName: 'productName', type: 'string', required: true, aiPrompt: 'Extract product name' },
-    { fieldName: 'quantity', type: 'number', required: true, aiPrompt: 'Extract quantity to produce' },
+    {
+      fieldName: 'workOrderNumber',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract work order number',
+    },
+    {
+      fieldName: 'customerName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract customer name',
+    },
+    {
+      fieldName: 'dueDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract due/completion date',
+    },
+    {
+      fieldName: 'productName',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract product name',
+    },
+    {
+      fieldName: 'quantity',
+      type: 'number',
+      required: true,
+      aiPrompt: 'Extract quantity to produce',
+    },
   ],
   complianceRules: [
     {
@@ -1762,11 +2184,36 @@ export const MANUFACTURING_QUALITY_INSPECTION_TEMPLATE: BuiltInTemplate = {
     },
   ],
   extractionRules: [
-    { fieldName: 'inspectionNumber', type: 'string', required: true, aiPrompt: 'Extract inspection report number' },
-    { fieldName: 'inspectionDate', type: 'date', required: true, aiPrompt: 'Extract inspection date' },
-    { fieldName: 'inspector', type: 'string', required: true, aiPrompt: 'Extract inspector name' },
-    { fieldName: 'overallResult', type: 'string', required: true, aiPrompt: 'Extract overall pass/fail result' },
-    { fieldName: 'defects', type: 'array', required: false, aiPrompt: 'Extract list of defects found' },
+    {
+      fieldName: 'inspectionNumber',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract inspection report number',
+    },
+    {
+      fieldName: 'inspectionDate',
+      type: 'date',
+      required: true,
+      aiPrompt: 'Extract inspection date',
+    },
+    {
+      fieldName: 'inspector',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract inspector name',
+    },
+    {
+      fieldName: 'overallResult',
+      type: 'string',
+      required: true,
+      aiPrompt: 'Extract overall pass/fail result',
+    },
+    {
+      fieldName: 'defects',
+      type: 'array',
+      required: false,
+      aiPrompt: 'Extract list of defects found',
+    },
   ],
   complianceRules: [
     {
@@ -1816,16 +2263,22 @@ export const BUILT_IN_TEMPLATES: BuiltInTemplate[] = [
 ];
 
 // Helper function to get templates by category
-export function getTemplatesByCategory(category: DocumentCategory): BuiltInTemplate[] {
-  return BUILT_IN_TEMPLATES.filter(t => t.category === category);
+export function getTemplatesByCategory(
+  category: DocumentCategory,
+): BuiltInTemplate[] {
+  return BUILT_IN_TEMPLATES.filter((t) => t.category === category);
 }
 
 // Helper function to get templates by industry
-export function getTemplatesByIndustry(industry: IndustryType): BuiltInTemplate[] {
-  return BUILT_IN_TEMPLATES.filter(t => t.industryType === industry);
+export function getTemplatesByIndustry(
+  industry: IndustryType,
+): BuiltInTemplate[] {
+  return BUILT_IN_TEMPLATES.filter((t) => t.industryType === industry);
 }
 
 // Helper function to get a specific template by document type
-export function getTemplateByDocumentType(documentType: string): BuiltInTemplate | undefined {
-  return BUILT_IN_TEMPLATES.find(t => t.documentType === documentType);
+export function getTemplateByDocumentType(
+  documentType: string,
+): BuiltInTemplate | undefined {
+  return BUILT_IN_TEMPLATES.find((t) => t.documentType === documentType);
 }

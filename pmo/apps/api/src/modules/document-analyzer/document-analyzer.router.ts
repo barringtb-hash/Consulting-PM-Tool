@@ -6,7 +6,12 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { Prisma, DocumentCategory, IndustryType, IntegrationType } from '@prisma/client';
+import {
+  Prisma,
+  DocumentCategory,
+  IndustryType,
+  IntegrationType,
+} from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as documentAnalyzerService from './document-analyzer.service';
 import {
@@ -35,13 +40,16 @@ import {
 } from './services/compliance.service';
 import {
   getAllIntegrationConfigs,
-  getIntegrationConfig,
+  getIntegrationConfig as _getIntegrationConfig,
   upsertIntegration,
   getIntegrations,
   deleteIntegration,
   testIntegration,
   syncDocumentToIntegration,
 } from './services/integrations.service';
+
+// Re-export for potential future use
+void _getIntegrationConfig;
 import {
   getDashboardData,
   getProcessingStats,
@@ -1023,7 +1031,10 @@ router.get(
 router.get(
   '/document-analyzer/templates/library/:documentType',
   requireAuth,
-  async (req: AuthenticatedRequest<{ documentType: string }>, res: Response) => {
+  async (
+    req: AuthenticatedRequest<{ documentType: string }>,
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -1056,12 +1067,13 @@ router.post(
       return;
     }
 
-    const { text, industryHint, enabledCategories, minConfidence } = req.body as {
-      text: string;
-      industryHint?: IndustryType;
-      enabledCategories?: DocumentCategory[];
-      minConfidence?: number;
-    };
+    const { text, industryHint, enabledCategories, minConfidence } =
+      req.body as {
+        text: string;
+        industryHint?: IndustryType;
+        enabledCategories?: DocumentCategory[];
+        minConfidence?: number;
+      };
 
     if (!text) {
       res.status(400).json({ error: 'Text is required for classification' });
@@ -1075,7 +1087,10 @@ router.post(
         minConfidence,
       });
 
-      const suggestedTemplate = getBestTemplateForClassification(result, industryHint);
+      const suggestedTemplate = getBestTemplateForClassification(
+        result,
+        industryHint,
+      );
 
       res.json({
         classification: result,
@@ -1113,10 +1128,7 @@ router.get(
     let rulesets = BUILT_IN_RULESETS;
 
     if (category || industry) {
-      rulesets = getApplicableRuleSets(
-        category || 'GENERAL',
-        industry,
-      );
+      rulesets = getApplicableRuleSets(category || 'GENERAL', industry);
     }
 
     res.json({ rulesets });
@@ -1136,13 +1148,17 @@ router.post(
       return;
     }
 
-    const { text, extractedFields, category, industryType, rulesetCodes } = req.body as {
-      text: string;
-      extractedFields: Record<string, { value: string | number; confidence: number }>;
-      category?: DocumentCategory;
-      industryType?: IndustryType;
-      rulesetCodes?: string[];
-    };
+    const { text, extractedFields, category, industryType, rulesetCodes } =
+      req.body as {
+        text: string;
+        extractedFields: Record<
+          string,
+          { value: string | number; confidence: number }
+        >;
+        category?: DocumentCategory;
+        industryType?: IndustryType;
+        rulesetCodes?: string[];
+      };
 
     if (!text || !extractedFields) {
       res.status(400).json({ error: 'Text and extractedFields are required' });
@@ -1152,7 +1168,9 @@ router.post(
     // Get applicable rule sets
     let ruleSets = BUILT_IN_RULESETS;
     if (rulesetCodes && rulesetCodes.length > 0) {
-      ruleSets = BUILT_IN_RULESETS.filter((rs) => rulesetCodes.includes(rs.code));
+      ruleSets = BUILT_IN_RULESETS.filter((rs) =>
+        rulesetCodes.includes(rs.code),
+      );
     } else if (category || industryType) {
       ruleSets = getApplicableRuleSets(category || 'GENERAL', industryType);
     }
@@ -1346,7 +1364,9 @@ router.post(
       return;
     }
 
-    const { documentData } = req.body as { documentData: Record<string, unknown> };
+    const { documentData } = req.body as {
+      documentData: Record<string, unknown>;
+    };
     if (!documentData) {
       res.status(400).json({ error: 'documentData is required' });
       return;
@@ -1392,7 +1412,13 @@ router.get(
       return;
     }
 
-    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY') || 'MONTHLY';
+    const periodType =
+      (req.query.period as
+        | 'DAILY'
+        | 'WEEKLY'
+        | 'MONTHLY'
+        | 'QUARTERLY'
+        | 'YEARLY') || 'MONTHLY';
     const period = createPeriod(periodType);
 
     const dashboard = await getDashboardData(configId, period);
@@ -1431,7 +1457,8 @@ router.get(
       return;
     }
 
-    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const periodType =
+      (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
     const period = createPeriod(periodType);
 
     const stats = await getProcessingStats(configId, period);
@@ -1470,7 +1497,8 @@ router.get(
       return;
     }
 
-    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const periodType =
+      (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
     const period = createPeriod(periodType);
 
     const categories = await getCategoryStats(configId, period);
@@ -1509,7 +1537,8 @@ router.get(
       return;
     }
 
-    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const periodType =
+      (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
     const period = createPeriod(periodType);
 
     const compliance = await getComplianceStats(configId, period);
@@ -1548,7 +1577,8 @@ router.get(
       return;
     }
 
-    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const periodType =
+      (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
     const period = createPeriod(periodType);
 
     const roi = await calculateROI(configId, period);
@@ -1587,7 +1617,8 @@ router.get(
       return;
     }
 
-    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const periodType =
+      (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
     const dataPoints = Number(req.query.points) || 7;
     const period = createPeriod(periodType);
 
@@ -1664,7 +1695,8 @@ router.get(
       return;
     }
 
-    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'DAILY';
+    const periodType =
+      (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'DAILY';
     const limit = Number(req.query.limit) || 30;
 
     const history = await getHistoricalMetrics(configId, periodType, limit);

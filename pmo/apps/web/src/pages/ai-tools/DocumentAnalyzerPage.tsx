@@ -21,7 +21,6 @@ import { useClients } from '../../api/queries';
 import {
   Plus,
   FileSearch,
-  Settings,
   Upload,
   RefreshCw,
   FileText,
@@ -76,7 +75,12 @@ interface BuiltInTemplate {
   category: string;
   industryType: string | null;
   documentType: string;
-  fieldDefinitions: Array<{ name: string; label: string; type: string; required: boolean }>;
+  fieldDefinitions: Array<{
+    name: string;
+    label: string;
+    type: string;
+    required: boolean;
+  }>;
   confidenceThreshold: number;
 }
 
@@ -165,10 +169,17 @@ const INDUSTRY_TYPES = [
 ];
 
 // API functions
-async function fetchDocumentAnalyzerConfigs(): Promise<DocumentAnalyzerConfig[]> {
-  const res = await fetch(buildApiUrl('/document-analyzer/configs'), buildOptions());
+async function fetchDocumentAnalyzerConfigs(): Promise<
+  DocumentAnalyzerConfig[]
+> {
+  const res = await fetch(
+    buildApiUrl('/document-analyzer/configs'),
+    buildOptions(),
+  );
   if (!res.ok) {
-    const error = new Error('Failed to fetch document analyzer configs') as ApiError;
+    const error = new Error(
+      'Failed to fetch document analyzer configs',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
@@ -176,7 +187,10 @@ async function fetchDocumentAnalyzerConfigs(): Promise<DocumentAnalyzerConfig[]>
   return data.configs || [];
 }
 
-async function fetchDocuments(configId: number, status?: string): Promise<AnalyzedDocument[]> {
+async function fetchDocuments(
+  configId: number,
+  status?: string,
+): Promise<AnalyzedDocument[]> {
   const params = new URLSearchParams();
   if (status) params.append('status', status);
   const res = await fetch(
@@ -197,7 +211,10 @@ async function fetchTemplateLibrary(): Promise<{
   categories: string[];
   industries: string[];
 }> {
-  const res = await fetch(buildApiUrl('/document-analyzer/templates/library'), buildOptions());
+  const res = await fetch(
+    buildApiUrl('/document-analyzer/templates/library'),
+    buildOptions(),
+  );
   if (!res.ok) {
     const error = new Error('Failed to fetch template library') as ApiError;
     error.status = res.status;
@@ -220,9 +237,14 @@ async function fetchIntegrations(configId: number): Promise<Integration[]> {
   return data.integrations || [];
 }
 
-async function fetchDashboard(configId: number, period: string): Promise<DashboardData> {
+async function fetchDashboard(
+  configId: number,
+  period: string,
+): Promise<DashboardData> {
   const res = await fetch(
-    buildApiUrl(`/document-analyzer/${configId}/analytics/dashboard?period=${period}`),
+    buildApiUrl(
+      `/document-analyzer/${configId}/analytics/dashboard?period=${period}`,
+    ),
     buildOptions(),
   );
   if (!res.ok) {
@@ -246,7 +268,9 @@ async function createDocumentAnalyzerConfig(
     }),
   );
   if (!res.ok) {
-    const error = new Error('Failed to create document analyzer config') as ApiError;
+    const error = new Error(
+      'Failed to create document analyzer config',
+    ) as ApiError;
     error.status = res.status;
     throw error;
   }
@@ -318,12 +342,19 @@ function DocumentAnalyzerPage(): JSX.Element {
 
   // Mutations
   const createConfigMutation = useMutation({
-    mutationFn: (data: { clientId: number; config: Partial<DocumentAnalyzerConfig> }) =>
-      createDocumentAnalyzerConfig(data.clientId, data.config),
+    mutationFn: (data: {
+      clientId: number;
+      config: Partial<DocumentAnalyzerConfig>;
+    }) => createDocumentAnalyzerConfig(data.clientId, data.config),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['document-analyzer-configs'] });
+      queryClient.invalidateQueries({
+        queryKey: ['document-analyzer-configs'],
+      });
       setShowCreateModal(false);
-      showToast({ message: 'Document Analyzer configuration created', variant: 'success' });
+      showToast({
+        message: 'Document Analyzer configuration created',
+        variant: 'success',
+      });
     },
     onError: (error: Error) => {
       showToast({ message: error.message, variant: 'error' });
@@ -360,8 +391,10 @@ function DocumentAnalyzerPage(): JSX.Element {
         enableNER: formData.get('enableNER') === 'on',
         enableCompliance: formData.get('enableCompliance') === 'on',
         enableVersionCompare: formData.get('enableVersionCompare') === 'on',
-        enableAutoClassification: formData.get('enableAutoClassification') === 'on',
-        retentionDays: parseInt(formData.get('retentionDays') as string, 10) || 365,
+        enableAutoClassification:
+          formData.get('enableAutoClassification') === 'on',
+        retentionDays:
+          parseInt(formData.get('retentionDays') as string, 10) || 365,
       },
     });
   };
@@ -369,7 +402,9 @@ function DocumentAnalyzerPage(): JSX.Element {
   const filteredTemplates = useMemo(() => {
     if (!templatesQuery.data?.templates) return [];
     if (!templateCategory) return templatesQuery.data.templates;
-    return templatesQuery.data.templates.filter((t) => t.category === templateCategory);
+    return templatesQuery.data.templates.filter(
+      (t) => t.category === templateCategory,
+    );
   }, [templatesQuery.data, templateCategory]);
 
   const tabs = [
@@ -403,13 +438,16 @@ function DocumentAnalyzerPage(): JSX.Element {
                 label="Select Configuration"
                 value={selectedConfigId?.toString() || ''}
                 onChange={(e) =>
-                  setSelectedConfigId(e.target.value ? parseInt(e.target.value, 10) : null)
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
                 }
               >
                 <option value="">Select a configuration...</option>
                 {configsQuery.data?.map((config) => (
                   <option key={config.id} value={config.id}>
-                    {config.client?.name || `Config ${config.id}`} ({config.industryType})
+                    {config.client?.name || `Config ${config.id}`} (
+                    {config.industryType})
                   </option>
                 ))}
               </Select>
@@ -480,8 +518,12 @@ function DocumentAnalyzerPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Industry</p>
-                    <p className="text-lg font-semibold">{selectedConfig.industryType}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Industry
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.industryType}
+                    </p>
                   </div>
                   <Building2 className="h-8 w-8 text-purple-500" />
                 </div>
@@ -491,9 +533,13 @@ function DocumentAnalyzerPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Auto-Classify</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Auto-Classify
+                    </p>
                     <p className="text-lg font-semibold">
-                      {selectedConfig.enableAutoClassification ? 'Enabled' : 'Disabled'}
+                      {selectedConfig.enableAutoClassification
+                        ? 'Enabled'
+                        : 'Disabled'}
                     </p>
                   </div>
                   <Zap className="h-8 w-8 text-yellow-500" />
@@ -504,7 +550,9 @@ function DocumentAnalyzerPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Compliance</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Compliance
+                    </p>
                     <p className="text-lg font-semibold">
                       {selectedConfig.enableCompliance ? 'Enabled' : 'Disabled'}
                     </p>
@@ -517,8 +565,12 @@ function DocumentAnalyzerPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Retention</p>
-                    <p className="text-lg font-semibold">{selectedConfig.retentionDays} days</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Retention
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.retentionDays} days
+                    </p>
                   </div>
                   <Clock className="h-8 w-8 text-blue-500" />
                 </div>
@@ -535,25 +587,39 @@ function DocumentAnalyzerPage(): JSX.Element {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span>OCR (Optical Character Recognition)</span>
-                    <Badge variant={selectedConfig.enableOCR ? 'success' : 'neutral'}>
+                    <Badge
+                      variant={selectedConfig.enableOCR ? 'success' : 'neutral'}
+                    >
                       {selectedConfig.enableOCR ? 'On' : 'Off'}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Named Entity Recognition (NER)</span>
-                    <Badge variant={selectedConfig.enableNER ? 'success' : 'neutral'}>
+                    <Badge
+                      variant={selectedConfig.enableNER ? 'success' : 'neutral'}
+                    >
                       {selectedConfig.enableNER ? 'On' : 'Off'}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Version Comparison</span>
-                    <Badge variant={selectedConfig.enableVersionCompare ? 'success' : 'neutral'}>
+                    <Badge
+                      variant={
+                        selectedConfig.enableVersionCompare
+                          ? 'success'
+                          : 'neutral'
+                      }
+                    >
                       {selectedConfig.enableVersionCompare ? 'On' : 'Off'}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Auto-Routing</span>
-                    <Badge variant={selectedConfig.enableAutoRouting ? 'success' : 'neutral'}>
+                    <Badge
+                      variant={
+                        selectedConfig.enableAutoRouting ? 'success' : 'neutral'
+                      }
+                    >
                       {selectedConfig.enableAutoRouting ? 'On' : 'Off'}
                     </Badge>
                   </div>
@@ -570,12 +636,17 @@ function DocumentAnalyzerPage(): JSX.Element {
                   <div className="flex justify-between items-center">
                     <span>Classification Threshold</span>
                     <span className="font-mono">
-                      {Math.round(selectedConfig.classificationThreshold * 100)}%
+                      {Math.round(selectedConfig.classificationThreshold * 100)}
+                      %
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Status</span>
-                    <Badge variant={selectedConfig.isActive ? 'success' : 'secondary'}>
+                    <Badge
+                      variant={
+                        selectedConfig.isActive ? 'success' : 'secondary'
+                      }
+                    >
                       {selectedConfig.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
@@ -599,7 +670,11 @@ function DocumentAnalyzerPage(): JSX.Element {
               <div className="flex gap-2">
                 <Button
                   variant="secondary"
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ['analyzed-documents'] })}
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['analyzed-documents'],
+                    })
+                  }
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -612,7 +687,9 @@ function DocumentAnalyzerPage(): JSX.Element {
           </CardHeader>
           <CardBody>
             {documentsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500">Loading documents...</div>
+              <div className="text-center py-8 text-neutral-500">
+                Loading documents...
+              </div>
             ) : documentsQuery.data?.length === 0 ? (
               <div className="text-center py-8 text-neutral-500">
                 No documents found. Upload a document to get started.
@@ -664,13 +741,16 @@ function DocumentAnalyzerPage(): JSX.Element {
                           {doc.documentType || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={STATUS_VARIANTS[doc.status] || 'neutral'}>
+                          <Badge
+                            variant={STATUS_VARIANTS[doc.status] || 'neutral'}
+                          >
                             {doc.status}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-1">
-                            {doc.complianceStatus && COMPLIANCE_ICONS[doc.complianceStatus]}
+                            {doc.complianceStatus &&
+                              COMPLIANCE_ICONS[doc.complianceStatus]}
                             {doc.riskScore !== null && (
                               <span className="text-xs text-neutral-500">
                                 ({Math.round(doc.riskScore)}%)
@@ -679,7 +759,9 @@ function DocumentAnalyzerPage(): JSX.Element {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                          {doc.totalAmount ? `$${doc.totalAmount.toLocaleString()}` : '-'}
+                          {doc.totalAmount
+                            ? `$${doc.totalAmount.toLocaleString()}`
+                            : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {doc.status === 'PENDING' && (
@@ -725,7 +807,9 @@ function DocumentAnalyzerPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {templatesQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500">Loading templates...</div>
+                <div className="text-center py-8 text-neutral-500">
+                  Loading templates...
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredTemplates.map((template) => (
@@ -738,7 +822,9 @@ function DocumentAnalyzerPage(): JSX.Element {
                           <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
                             {template.name}
                           </h4>
-                          <p className="text-sm text-neutral-500 mt-1">{template.description}</p>
+                          <p className="text-sm text-neutral-500 mt-1">
+                            {template.description}
+                          </p>
                         </div>
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${CATEGORY_COLORS[template.category] || CATEGORY_COLORS.GENERAL}`}
@@ -748,8 +834,13 @@ function DocumentAnalyzerPage(): JSX.Element {
                       </div>
                       <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
                         <span>{template.fieldDefinitions.length} fields</span>
-                        {template.industryType && <span>{template.industryType}</span>}
-                        <span>{Math.round(template.confidenceThreshold * 100)}% threshold</span>
+                        {template.industryType && (
+                          <span>{template.industryType}</span>
+                        )}
+                        <span>
+                          {Math.round(template.confidenceThreshold * 100)}%
+                          threshold
+                        </span>
                       </div>
                       <div className="mt-3 flex gap-2">
                         <Button size="sm" variant="secondary">
@@ -772,7 +863,9 @@ function DocumentAnalyzerPage(): JSX.Element {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Connected Integrations</h3>
+                <h3 className="text-lg font-semibold">
+                  Connected Integrations
+                </h3>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Integration
@@ -781,7 +874,9 @@ function DocumentAnalyzerPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {integrationsQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500">Loading integrations...</div>
+                <div className="text-center py-8 text-neutral-500">
+                  Loading integrations...
+                </div>
               ) : integrationsQuery.data?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500">
                   <Plug className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -796,15 +891,23 @@ function DocumentAnalyzerPage(): JSX.Element {
                     <div key={integration.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold">{integration.name}</h4>
-                        <Badge variant={integration.isActive ? 'success' : 'neutral'}>
+                        <Badge
+                          variant={integration.isActive ? 'success' : 'neutral'}
+                        >
                           {integration.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-neutral-500 mt-1">{integration.integrationType}</p>
+                      <p className="text-sm text-neutral-500 mt-1">
+                        {integration.integrationType}
+                      </p>
                       {integration.lastSyncAt && (
                         <p className="text-xs text-neutral-400 mt-2">
-                          Last sync: {new Date(integration.lastSyncAt).toLocaleDateString()}
-                          {integration.lastSyncStatus && ` (${integration.lastSyncStatus})`}
+                          Last sync:{' '}
+                          {new Date(
+                            integration.lastSyncAt,
+                          ).toLocaleDateString()}
+                          {integration.lastSyncStatus &&
+                            ` (${integration.lastSyncStatus})`}
                         </p>
                       )}
                       <div className="mt-3 flex gap-2">
@@ -828,27 +931,35 @@ function DocumentAnalyzerPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {['QuickBooks', 'Xero', 'Salesforce', 'DocuSign', 'Google Drive', 'SharePoint', 'Dropbox', 'Slack', 'Webhook'].map(
-                  (name) => (
-                    <button
-                      key={name}
-                      className="border rounded-lg p-4 text-center hover:border-blue-500 transition-colors"
-                    >
-                      <div className="text-2xl mb-2">
-                        {name === 'QuickBooks' && '📊'}
-                        {name === 'Xero' && '📈'}
-                        {name === 'Salesforce' && '☁️'}
-                        {name === 'DocuSign' && '✍️'}
-                        {name === 'Google Drive' && '📁'}
-                        {name === 'SharePoint' && '📂'}
-                        {name === 'Dropbox' && '📦'}
-                        {name === 'Slack' && '💬'}
-                        {name === 'Webhook' && '🔗'}
-                      </div>
-                      <span className="text-sm font-medium">{name}</span>
-                    </button>
-                  ),
-                )}
+                {[
+                  'QuickBooks',
+                  'Xero',
+                  'Salesforce',
+                  'DocuSign',
+                  'Google Drive',
+                  'SharePoint',
+                  'Dropbox',
+                  'Slack',
+                  'Webhook',
+                ].map((name) => (
+                  <button
+                    key={name}
+                    className="border rounded-lg p-4 text-center hover:border-blue-500 transition-colors"
+                  >
+                    <div className="text-2xl mb-2">
+                      {name === 'QuickBooks' && '📊'}
+                      {name === 'Xero' && '📈'}
+                      {name === 'Salesforce' && '☁️'}
+                      {name === 'DocuSign' && '✍️'}
+                      {name === 'Google Drive' && '📁'}
+                      {name === 'SharePoint' && '📂'}
+                      {name === 'Dropbox' && '📦'}
+                      {name === 'Slack' && '💬'}
+                      {name === 'Webhook' && '🔗'}
+                    </div>
+                    <span className="text-sm font-medium">{name}</span>
+                  </button>
+                ))}
               </div>
             </CardBody>
           </Card>
@@ -859,7 +970,9 @@ function DocumentAnalyzerPage(): JSX.Element {
       {selectedConfigId && activeTab === 'analytics' && (
         <div className="space-y-6">
           {dashboardQuery.isLoading ? (
-            <div className="text-center py-8 text-neutral-500">Loading analytics...</div>
+            <div className="text-center py-8 text-neutral-500">
+              Loading analytics...
+            </div>
           ) : dashboardQuery.data ? (
             <>
               {/* ROI Metrics */}
@@ -868,7 +981,9 @@ function DocumentAnalyzerPage(): JSX.Element {
                   <CardBody>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-neutral-500">Documents Processed</p>
+                        <p className="text-sm text-neutral-500">
+                          Documents Processed
+                        </p>
                         <p className="text-2xl font-bold">
                           {dashboardQuery.data.roi.documentsProcessed}
                         </p>
@@ -883,10 +998,14 @@ function DocumentAnalyzerPage(): JSX.Element {
                       <div>
                         <p className="text-sm text-neutral-500">Time Saved</p>
                         <p className="text-2xl font-bold">
-                          {Math.round(dashboardQuery.data.roi.timeSavedMinutes)} min
+                          {Math.round(dashboardQuery.data.roi.timeSavedMinutes)}{' '}
+                          min
                         </p>
                         <p className="text-xs text-green-500">
-                          {Math.round(dashboardQuery.data.roi.timeSavingsPercentage)}% faster
+                          {Math.round(
+                            dashboardQuery.data.roi.timeSavingsPercentage,
+                          )}
+                          % faster
                         </p>
                       </div>
                       <TrendingUp className="h-8 w-8 text-green-500" />
@@ -897,9 +1016,14 @@ function DocumentAnalyzerPage(): JSX.Element {
                   <CardBody>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-neutral-500">Est. Cost Saved</p>
+                        <p className="text-sm text-neutral-500">
+                          Est. Cost Saved
+                        </p>
                         <p className="text-2xl font-bold">
-                          ${Math.round(dashboardQuery.data.roi.estimatedCostSaved).toLocaleString()}
+                          $
+                          {Math.round(
+                            dashboardQuery.data.roi.estimatedCostSaved,
+                          ).toLocaleString()}
                         </p>
                       </div>
                       <DollarSign className="h-8 w-8 text-yellow-500" />
@@ -912,7 +1036,10 @@ function DocumentAnalyzerPage(): JSX.Element {
                       <div>
                         <p className="text-sm text-neutral-500">Success Rate</p>
                         <p className="text-2xl font-bold">
-                          {Math.round(dashboardQuery.data.processing.successRate)}%
+                          {Math.round(
+                            dashboardQuery.data.processing.successRate,
+                          )}
+                          %
                         </p>
                       </div>
                       <CheckCircle className="h-8 w-8 text-green-500" />
@@ -950,7 +1077,10 @@ function DocumentAnalyzerPage(): JSX.Element {
                       <div className="flex justify-between">
                         <span>Avg Processing Time</span>
                         <span className="font-semibold">
-                          {Math.round(dashboardQuery.data.processing.avgProcessingTimeMs)}ms
+                          {Math.round(
+                            dashboardQuery.data.processing.avgProcessingTimeMs,
+                          )}
+                          ms
                         </span>
                       </div>
                     </div>
@@ -965,13 +1095,17 @@ function DocumentAnalyzerPage(): JSX.Element {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" /> Pass
+                          <CheckCircle className="h-4 w-4 text-green-500" />{' '}
+                          Pass
                         </span>
-                        <span className="font-semibold">{dashboardQuery.data.compliance.passCount}</span>
+                        <span className="font-semibold">
+                          {dashboardQuery.data.compliance.passCount}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" /> Warning
+                          <AlertTriangle className="h-4 w-4 text-yellow-500" />{' '}
+                          Warning
                         </span>
                         <span className="font-semibold">
                           {dashboardQuery.data.compliance.warningCount}
@@ -981,7 +1115,9 @@ function DocumentAnalyzerPage(): JSX.Element {
                         <span className="flex items-center gap-2">
                           <XCircle className="h-4 w-4 text-red-500" /> Fail
                         </span>
-                        <span className="font-semibold">{dashboardQuery.data.compliance.failCount}</span>
+                        <span className="font-semibold">
+                          {dashboardQuery.data.compliance.failCount}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Pass Rate</span>
@@ -1002,14 +1138,19 @@ function DocumentAnalyzerPage(): JSX.Element {
                 <CardBody>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {dashboardQuery.data.categories.map((cat) => (
-                      <div key={cat.category} className="text-center p-4 border rounded-lg">
+                      <div
+                        key={cat.category}
+                        className="text-center p-4 border rounded-lg"
+                      >
                         <span
                           className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${CATEGORY_COLORS[cat.category] || CATEGORY_COLORS.GENERAL}`}
                         >
                           {cat.category}
                         </span>
                         <p className="text-2xl font-bold mt-2">{cat.count}</p>
-                        <p className="text-xs text-neutral-500">{Math.round(cat.percentage)}%</p>
+                        <p className="text-xs text-neutral-500">
+                          {Math.round(cat.percentage)}%
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -1040,7 +1181,10 @@ function DocumentAnalyzerPage(): JSX.Element {
                           )}
                         </div>
                         <div className="flex items-center gap-3">
-                          <Badge variant={STATUS_VARIANTS[item.status] || 'neutral'} className="text-xs">
+                          <Badge
+                            variant={STATUS_VARIANTS[item.status] || 'neutral'}
+                            className="text-xs"
+                          >
                             {item.status}
                           </Badge>
                           {item.processedAt && (
@@ -1057,7 +1201,8 @@ function DocumentAnalyzerPage(): JSX.Element {
             </>
           ) : (
             <div className="text-center py-8 text-neutral-500">
-              No analytics data available. Process some documents to see metrics.
+              No analytics data available. Process some documents to see
+              metrics.
             </div>
           )}
         </div>
@@ -1067,7 +1212,9 @@ function DocumentAnalyzerPage(): JSX.Element {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-4">Create Document Analyzer Configuration</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              Create Document Analyzer Configuration
+            </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
               <Select
                 label="Client"
@@ -1084,7 +1231,11 @@ function DocumentAnalyzerPage(): JSX.Element {
                 ))}
               </Select>
 
-              <Select label="Industry Type" name="industryType" defaultValue="OTHER">
+              <Select
+                label="Industry Type"
+                name="industryType"
+                defaultValue="OTHER"
+              >
                 {INDUSTRY_TYPES.map((industry) => (
                   <option key={industry} value={industry}>
                     {industry.replace(/_/g, ' ')}
@@ -1097,18 +1248,30 @@ function DocumentAnalyzerPage(): JSX.Element {
                 <div className="space-y-2">
                   <label className="flex items-center gap-2">
                     <input type="checkbox" name="enableOCR" defaultChecked />
-                    <span className="text-sm">Enable OCR for scanned documents</span>
+                    <span className="text-sm">
+                      Enable OCR for scanned documents
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input type="checkbox" name="enableNER" defaultChecked />
-                    <span className="text-sm">Enable Named Entity Recognition</span>
+                    <span className="text-sm">
+                      Enable Named Entity Recognition
+                    </span>
                   </label>
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" name="enableCompliance" defaultChecked />
+                    <input
+                      type="checkbox"
+                      name="enableCompliance"
+                      defaultChecked
+                    />
                     <span className="text-sm">Enable Compliance Checking</span>
                   </label>
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" name="enableAutoClassification" defaultChecked />
+                    <input
+                      type="checkbox"
+                      name="enableAutoClassification"
+                      defaultChecked
+                    />
                     <span className="text-sm">Enable Auto-Classification</span>
                   </label>
                   <label className="flex items-center gap-2">
@@ -1128,7 +1291,11 @@ function DocumentAnalyzerPage(): JSX.Element {
               />
 
               <div className="flex gap-2 justify-end pt-4">
-                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createConfigMutation.isPending}>

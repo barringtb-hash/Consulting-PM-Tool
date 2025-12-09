@@ -26,7 +26,13 @@ export interface IntegrationConfig {
 }
 
 export interface IntegrationAction {
-  action: 'export_invoice' | 'export_document' | 'sync_contacts' | 'send_notification' | 'request_signature' | 'upload_file';
+  action:
+    | 'export_invoice'
+    | 'export_document'
+    | 'sync_contacts'
+    | 'send_notification'
+    | 'request_signature'
+    | 'upload_file';
   label: string;
   description: string;
   requiredFields: string[];
@@ -68,7 +74,8 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
   QUICKBOOKS: {
     integrationType: 'QUICKBOOKS',
     name: 'QuickBooks Online',
-    description: 'Sync invoices and bills with QuickBooks Online accounting software',
+    description:
+      'Sync invoices and bills with QuickBooks Online accounting software',
     authType: 'oauth2',
     oauthScopes: ['com.intuit.quickbooks.accounting'],
     requiredFields: ['clientId', 'clientSecret'],
@@ -77,8 +84,14 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
       {
         action: 'export_invoice',
         label: 'Export Invoice to QuickBooks',
-        description: 'Create a bill or invoice in QuickBooks from analyzed document',
-        requiredFields: ['vendorName', 'invoiceNumber', 'totalAmount', 'invoiceDate'],
+        description:
+          'Create a bill or invoice in QuickBooks from analyzed document',
+        requiredFields: [
+          'vendorName',
+          'invoiceNumber',
+          'totalAmount',
+          'invoiceDate',
+        ],
         supportedCategories: ['INVOICE'],
       },
       {
@@ -90,10 +103,26 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
       },
     ],
     fieldMappings: [
-      { sourceField: 'vendorName', targetField: 'VendorRef.name', transformer: 'string' },
-      { sourceField: 'invoiceNumber', targetField: 'DocNumber', transformer: 'string' },
-      { sourceField: 'totalAmount', targetField: 'TotalAmt', transformer: 'number' },
-      { sourceField: 'invoiceDate', targetField: 'TxnDate', transformer: 'date' },
+      {
+        sourceField: 'vendorName',
+        targetField: 'VendorRef.name',
+        transformer: 'string',
+      },
+      {
+        sourceField: 'invoiceNumber',
+        targetField: 'DocNumber',
+        transformer: 'string',
+      },
+      {
+        sourceField: 'totalAmount',
+        targetField: 'TotalAmt',
+        transformer: 'number',
+      },
+      {
+        sourceField: 'invoiceDate',
+        targetField: 'TxnDate',
+        transformer: 'date',
+      },
       { sourceField: 'dueDate', targetField: 'DueDate', transformer: 'date' },
       { sourceField: 'lineItems', targetField: 'Line', transformer: 'custom' },
     ],
@@ -117,9 +146,21 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
       },
     ],
     fieldMappings: [
-      { sourceField: 'vendorName', targetField: 'Contact.Name', transformer: 'string' },
-      { sourceField: 'invoiceNumber', targetField: 'InvoiceNumber', transformer: 'string' },
-      { sourceField: 'totalAmount', targetField: 'Total', transformer: 'number' },
+      {
+        sourceField: 'vendorName',
+        targetField: 'Contact.Name',
+        transformer: 'string',
+      },
+      {
+        sourceField: 'invoiceNumber',
+        targetField: 'InvoiceNumber',
+        transformer: 'string',
+      },
+      {
+        sourceField: 'totalAmount',
+        targetField: 'Total',
+        transformer: 'number',
+      },
       { sourceField: 'invoiceDate', targetField: 'Date', transformer: 'date' },
       { sourceField: 'dueDate', targetField: 'DueDate', transformer: 'date' },
     ],
@@ -150,10 +191,26 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
       },
     ],
     fieldMappings: [
-      { sourceField: 'customerName', targetField: 'Name', transformer: 'string' },
-      { sourceField: 'contractValue', targetField: 'Amount', transformer: 'currency' },
-      { sourceField: 'effectiveDate', targetField: 'ContractStartDate', transformer: 'date' },
-      { sourceField: 'expirationDate', targetField: 'ContractEndDate', transformer: 'date' },
+      {
+        sourceField: 'customerName',
+        targetField: 'Name',
+        transformer: 'string',
+      },
+      {
+        sourceField: 'contractValue',
+        targetField: 'Amount',
+        transformer: 'currency',
+      },
+      {
+        sourceField: 'effectiveDate',
+        targetField: 'ContractStartDate',
+        transformer: 'date',
+      },
+      {
+        sourceField: 'expirationDate',
+        targetField: 'ContractEndDate',
+        transformer: 'date',
+      },
     ],
   },
 
@@ -175,8 +232,16 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
       },
     ],
     fieldMappings: [
-      { sourceField: 'contractParties', targetField: 'recipients', transformer: 'custom' },
-      { sourceField: 'filename', targetField: 'documentName', transformer: 'string' },
+      {
+        sourceField: 'contractParties',
+        targetField: 'recipients',
+        transformer: 'custom',
+      },
+      {
+        sourceField: 'filename',
+        targetField: 'documentName',
+        transformer: 'string',
+      },
     ],
   },
 
@@ -194,19 +259,35 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
         label: 'Upload to Google Drive',
         description: 'Upload analyzed document to Google Drive',
         requiredFields: [],
-        supportedCategories: ['INVOICE', 'CONTRACT', 'COMPLIANCE', 'HEALTHCARE', 'LEGAL', 'FINANCIAL', 'REAL_ESTATE', 'MANUFACTURING', 'GENERAL', 'OTHER'],
+        supportedCategories: [
+          'INVOICE',
+          'CONTRACT',
+          'COMPLIANCE',
+          'HEALTHCARE',
+          'LEGAL',
+          'FINANCIAL',
+          'REAL_ESTATE',
+          'MANUFACTURING',
+          'GENERAL',
+          'OTHER',
+        ],
       },
     ],
     fieldMappings: [
       { sourceField: 'filename', targetField: 'name', transformer: 'string' },
-      { sourceField: 'category', targetField: 'folderPath', transformer: 'string' },
+      {
+        sourceField: 'category',
+        targetField: 'folderPath',
+        transformer: 'string',
+      },
     ],
   },
 
   SHAREPOINT: {
     integrationType: 'SHAREPOINT',
     name: 'Microsoft SharePoint',
-    description: 'Sync documents with SharePoint for enterprise document management',
+    description:
+      'Sync documents with SharePoint for enterprise document management',
     authType: 'oauth2',
     oauthScopes: ['Sites.ReadWrite.All', 'Files.ReadWrite.All'],
     requiredFields: ['clientId', 'clientSecret', 'tenantId', 'siteId'],
@@ -217,7 +298,18 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
         label: 'Upload to SharePoint',
         description: 'Upload analyzed document to SharePoint',
         requiredFields: [],
-        supportedCategories: ['INVOICE', 'CONTRACT', 'COMPLIANCE', 'HEALTHCARE', 'LEGAL', 'FINANCIAL', 'REAL_ESTATE', 'MANUFACTURING', 'GENERAL', 'OTHER'],
+        supportedCategories: [
+          'INVOICE',
+          'CONTRACT',
+          'COMPLIANCE',
+          'HEALTHCARE',
+          'LEGAL',
+          'FINANCIAL',
+          'REAL_ESTATE',
+          'MANUFACTURING',
+          'GENERAL',
+          'OTHER',
+        ],
       },
     ],
     fieldMappings: [
@@ -240,7 +332,18 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
         label: 'Upload to Dropbox',
         description: 'Upload analyzed document to Dropbox',
         requiredFields: [],
-        supportedCategories: ['INVOICE', 'CONTRACT', 'COMPLIANCE', 'HEALTHCARE', 'LEGAL', 'FINANCIAL', 'REAL_ESTATE', 'MANUFACTURING', 'GENERAL', 'OTHER'],
+        supportedCategories: [
+          'INVOICE',
+          'CONTRACT',
+          'COMPLIANCE',
+          'HEALTHCARE',
+          'LEGAL',
+          'FINANCIAL',
+          'REAL_ESTATE',
+          'MANUFACTURING',
+          'GENERAL',
+          'OTHER',
+        ],
       },
     ],
     fieldMappings: [
@@ -262,12 +365,27 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
         label: 'Send Slack Notification',
         description: 'Send notification about document processing to Slack',
         requiredFields: [],
-        supportedCategories: ['INVOICE', 'CONTRACT', 'COMPLIANCE', 'HEALTHCARE', 'LEGAL', 'FINANCIAL', 'REAL_ESTATE', 'MANUFACTURING', 'GENERAL', 'OTHER'],
+        supportedCategories: [
+          'INVOICE',
+          'CONTRACT',
+          'COMPLIANCE',
+          'HEALTHCARE',
+          'LEGAL',
+          'FINANCIAL',
+          'REAL_ESTATE',
+          'MANUFACTURING',
+          'GENERAL',
+          'OTHER',
+        ],
       },
     ],
     fieldMappings: [
       { sourceField: 'filename', targetField: 'text', transformer: 'string' },
-      { sourceField: 'documentType', targetField: 'blocks[0].text', transformer: 'string' },
+      {
+        sourceField: 'documentType',
+        targetField: 'blocks[0].text',
+        transformer: 'string',
+      },
     ],
   },
 
@@ -284,7 +402,18 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
         label: 'Send to Webhook',
         description: 'POST document data to custom webhook',
         requiredFields: [],
-        supportedCategories: ['INVOICE', 'CONTRACT', 'COMPLIANCE', 'HEALTHCARE', 'LEGAL', 'FINANCIAL', 'REAL_ESTATE', 'MANUFACTURING', 'GENERAL', 'OTHER'],
+        supportedCategories: [
+          'INVOICE',
+          'CONTRACT',
+          'COMPLIANCE',
+          'HEALTHCARE',
+          'LEGAL',
+          'FINANCIAL',
+          'REAL_ESTATE',
+          'MANUFACTURING',
+          'GENERAL',
+          'OTHER',
+        ],
       },
     ],
     fieldMappings: [],
@@ -303,7 +432,18 @@ export const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
         label: 'Send to API',
         description: 'Send document data to custom API endpoint',
         requiredFields: [],
-        supportedCategories: ['INVOICE', 'CONTRACT', 'COMPLIANCE', 'HEALTHCARE', 'LEGAL', 'FINANCIAL', 'REAL_ESTATE', 'MANUFACTURING', 'GENERAL', 'OTHER'],
+        supportedCategories: [
+          'INVOICE',
+          'CONTRACT',
+          'COMPLIANCE',
+          'HEALTHCARE',
+          'LEGAL',
+          'FINANCIAL',
+          'REAL_ESTATE',
+          'MANUFACTURING',
+          'GENERAL',
+          'OTHER',
+        ],
       },
     ],
     fieldMappings: [],
@@ -705,7 +845,10 @@ async function syncToSlack(
             { type: 'mrkdwn', text: `*File:*\n${filename}` },
             { type: 'mrkdwn', text: `*Category:*\n${category}` },
             { type: 'mrkdwn', text: `*Status:*\n${status}` },
-            { type: 'mrkdwn', text: `*Confidence:*\n${Math.round((confidence as number) * 100)}%` },
+            {
+              type: 'mrkdwn',
+              text: `*Confidence:*\n${Math.round((confidence as number) * 100)}%`,
+            },
           ],
         },
       ],
@@ -760,9 +903,10 @@ export function getOAuthAuthorizationUrl(
     case 'GOOGLE_DRIVE':
       return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${credentials.clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&access_type=offline&prompt=consent`;
 
-    case 'SHAREPOINT':
+    case 'SHAREPOINT': {
       const tenantId = credentials.additionalConfig?.tenantId || 'common';
       return `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?client_id=${credentials.clientId}&response_type=code&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+    }
 
     case 'DROPBOX':
       return `https://www.dropbox.com/oauth2/authorize?client_id=${credentials.clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;

@@ -12,7 +12,6 @@ import {
   BUILT_IN_TEMPLATES,
   BuiltInTemplate,
   getTemplatesByCategory,
-  getTemplatesByIndustry,
 } from '../templates/built-in-templates';
 
 // ============================================================================
@@ -158,11 +157,18 @@ const CATEGORY_PATTERNS: Record<DocumentCategory, RegExp[]> = {
 const DOCUMENT_TYPE_PATTERNS: Record<string, RegExp[]> = {
   // Invoices
   INVOICE_AP: [/vendor|supplier|bill\s*from/i, /accounts?\s*payable/i],
-  INVOICE_AR: [/customer|client|bill\s*to|sold\s*to/i, /accounts?\s*receivable/i],
+  INVOICE_AR: [
+    /customer|client|bill\s*to|sold\s*to/i,
+    /accounts?\s*receivable/i,
+  ],
   // Contracts
   CONTRACT_NDA: [/non.?disclosure|confidentiality\s*agreement|nda/i],
-  CONTRACT_SERVICE: [/service\s*agreement|msa|master\s*service|consulting\s*agreement/i],
-  CONTRACT_EMPLOYMENT: [/employment\s*(agreement|contract)|offer\s*letter|job\s*offer/i],
+  CONTRACT_SERVICE: [
+    /service\s*agreement|msa|master\s*service|consulting\s*agreement/i,
+  ],
+  CONTRACT_EMPLOYMENT: [
+    /employment\s*(agreement|contract)|offer\s*letter|job\s*offer/i,
+  ],
   // Compliance
   FORM_W9: [/form\s*w.?9|request\s*for\s*taxpayer/i],
   // Healthcare
@@ -194,9 +200,12 @@ export async function classifyDocument(
   const {
     industryHint,
     enabledCategories,
-    minConfidence = 0.5,
+    minConfidence: _minConfidence = 0.5,
     maxAlternatives = 3,
   } = options;
+
+  // minConfidence can be used for filtering results in future enhancements
+  void _minConfidence;
 
   // Try pattern-based classification first (fast)
   const patternResult = classifyByPatterns(text, enabledCategories);
@@ -205,7 +214,10 @@ export async function classifyDocument(
   if (patternResult.confidence >= 0.8) {
     return {
       ...patternResult,
-      alternativeMatches: patternResult.alternativeMatches.slice(0, maxAlternatives),
+      alternativeMatches: patternResult.alternativeMatches.slice(
+        0,
+        maxAlternatives,
+      ),
     };
   }
 
@@ -224,7 +236,8 @@ export async function classifyDocument(
           (alt, idx, arr) =>
             arr.findIndex(
               (a) =>
-                a.category === alt.category && a.documentType === alt.documentType,
+                a.category === alt.category &&
+                a.documentType === alt.documentType,
             ) === idx,
         )
         .slice(0, maxAlternatives),
@@ -233,7 +246,10 @@ export async function classifyDocument(
 
   return {
     ...patternResult,
-    alternativeMatches: patternResult.alternativeMatches.slice(0, maxAlternatives),
+    alternativeMatches: patternResult.alternativeMatches.slice(
+      0,
+      maxAlternatives,
+    ),
   };
 }
 
@@ -305,7 +321,11 @@ function classifyByPatterns(
   for (const [docType, score] of typeScores.entries()) {
     // Make sure document type matches the category
     const template = BUILT_IN_TEMPLATES.find((t) => t.documentType === docType);
-    if (template && template.category === bestCategory && score > bestDocTypeScore) {
+    if (
+      template &&
+      template.category === bestCategory &&
+      score > bestDocTypeScore
+    ) {
       bestDocType = docType;
       bestDocTypeScore = score;
     }
@@ -314,7 +334,9 @@ function classifyByPatterns(
   // Find matching template
   let suggestedTemplateId: string | undefined;
   if (bestDocType) {
-    const template = BUILT_IN_TEMPLATES.find((t) => t.documentType === bestDocType);
+    const template = BUILT_IN_TEMPLATES.find(
+      (t) => t.documentType === bestDocType,
+    );
     if (template) {
       suggestedTemplateId = template.documentType;
     }
@@ -326,7 +348,10 @@ function classifyByPatterns(
 
   for (const [category, score] of sortedScores.slice(1, 4)) {
     const categoryTemplates = getTemplatesByCategory(category);
-    const defaultType = categoryTemplates.length > 0 ? categoryTemplates[0].documentType : 'UNKNOWN';
+    const defaultType =
+      categoryTemplates.length > 0
+        ? categoryTemplates[0].documentType
+        : 'UNKNOWN';
 
     alternatives.push({
       category,
@@ -446,7 +471,11 @@ Respond with JSON only:
       confidence: parsed.confidence,
       suggestedTemplateId: template?.documentType,
       alternativeMatches: (parsed.alternativeMatches || []).map(
-        (alt: { category: string; documentType: string; confidence: number }) => ({
+        (alt: {
+          category: string;
+          documentType: string;
+          confidence: number;
+        }) => ({
           category: alt.category as DocumentCategory,
           documentType: alt.documentType,
           confidence: alt.confidence,
@@ -510,9 +539,7 @@ export function isConfidentClassification(
 /**
  * Get classification statistics for a batch of results
  */
-export function getClassificationStats(
-  results: ClassificationResult[],
-): {
+export function getClassificationStats(results: ClassificationResult[]): {
   totalDocuments: number;
   byCategory: Record<string, number>;
   byDocumentType: Record<string, number>;
