@@ -17,7 +17,7 @@
     "prepare": "node ./scripts/install-husky.mjs || echo \"[husky] prepare failed, skipping\""
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": [
@@ -27,6 +27,10 @@
       "eslint --max-warnings=0 --no-error-on-unmatched-pattern"
     ]
   },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "tsx": "^4.20.6"
+  },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
     "@eslint/js": "^9.39.1",
@@ -35,7 +39,6 @@
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",
     "axe-core": "^4.11.0",
-    "bcryptjs": "^3.0.3",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
@@ -45,7 +48,6 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
-    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4"
   }
