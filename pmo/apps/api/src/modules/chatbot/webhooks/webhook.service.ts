@@ -20,7 +20,8 @@ export const WEBHOOK_EVENTS = {
   CUSTOMER_RATING: 'customer.rating',
 } as const;
 
-export type WebhookEventType = (typeof WEBHOOK_EVENTS)[keyof typeof WEBHOOK_EVENTS];
+export type WebhookEventType =
+  (typeof WEBHOOK_EVENTS)[keyof typeof WEBHOOK_EVENTS];
 
 export interface WebhookPayload {
   event: WebhookEventType;

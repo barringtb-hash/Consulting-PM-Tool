@@ -340,14 +340,18 @@ export async function processCustomerMessage(
   });
 
   // Dispatch webhook for message sent
-  dispatchWebhookEvent(conversation.chatbotConfigId, WEBHOOK_EVENTS.MESSAGE_SENT, {
-    conversationId: conversation.id,
-    sessionId: conversation.sessionId,
-    messageId: botMessage.id,
-    content: botResponse.content,
-    suggestedActions: botResponse.suggestedActions,
-    shouldEscalate: botResponse.shouldEscalate,
-  }).catch((err) => console.error('Webhook dispatch error:', err));
+  dispatchWebhookEvent(
+    conversation.chatbotConfigId,
+    WEBHOOK_EVENTS.MESSAGE_SENT,
+    {
+      conversationId: conversation.id,
+      sessionId: conversation.sessionId,
+      messageId: botMessage.id,
+      content: botResponse.content,
+      suggestedActions: botResponse.suggestedActions,
+      shouldEscalate: botResponse.shouldEscalate,
+    },
+  ).catch((err) => console.error('Webhook dispatch error:', err));
 
   // Handle escalation if needed
   if (botResponse.shouldEscalate) {

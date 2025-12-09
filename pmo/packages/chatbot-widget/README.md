@@ -123,34 +123,34 @@ function CustomChat() {
 
 ### ChatWidget Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `apiUrl` | `string` | required | Your PMO API base URL |
-| `configId` | `number` | required | Chatbot configuration ID |
-| `position` | `'bottom-right' \| 'bottom-left'` | `'bottom-right'` | Widget position |
-| `primaryColor` | `string` | `'#3B82F6'` | Primary brand color |
-| `textColor` | `string` | `'#ffffff'` | Text color on primary |
-| `theme` | `'light' \| 'dark'` | `'light'` | Color theme |
-| `defaultOpen` | `boolean` | `false` | Start with chat open |
-| `welcomeMessage` | `string` | `'Hi! How can I help...'` | Initial bot message |
-| `zIndex` | `number` | `999999` | CSS z-index |
-| `onOpen` | `() => void` | - | Called when chat opens |
-| `onClose` | `() => void` | - | Called when chat closes |
-| `onMessageSent` | `(message: string) => void` | - | Called when user sends |
-| `onMessageReceived` | `(message: ChatMessage) => void` | - | Called when bot responds |
+| Prop                | Type                              | Default                   | Description              |
+| ------------------- | --------------------------------- | ------------------------- | ------------------------ |
+| `apiUrl`            | `string`                          | required                  | Your PMO API base URL    |
+| `configId`          | `number`                          | required                  | Chatbot configuration ID |
+| `position`          | `'bottom-right' \| 'bottom-left'` | `'bottom-right'`          | Widget position          |
+| `primaryColor`      | `string`                          | `'#3B82F6'`               | Primary brand color      |
+| `textColor`         | `string`                          | `'#ffffff'`               | Text color on primary    |
+| `theme`             | `'light' \| 'dark'`               | `'light'`                 | Color theme              |
+| `defaultOpen`       | `boolean`                         | `false`                   | Start with chat open     |
+| `welcomeMessage`    | `string`                          | `'Hi! How can I help...'` | Initial bot message      |
+| `zIndex`            | `number`                          | `999999`                  | CSS z-index              |
+| `onOpen`            | `() => void`                      | -                         | Called when chat opens   |
+| `onClose`           | `() => void`                      | -                         | Called when chat closes  |
+| `onMessageSent`     | `(message: string) => void`       | -                         | Called when user sends   |
+| `onMessageReceived` | `(message: ChatMessage) => void`  | -                         | Called when bot responds |
 
 ### ChatWindow Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `apiUrl` | `string` | required | Your PMO API base URL |
-| `configId` | `number` | required | Chatbot configuration ID |
-| `width` | `string \| number` | `'100%'` | Window width |
-| `height` | `string \| number` | `'500px'` | Window height |
-| `theme` | `'light' \| 'dark'` | `'light'` | Color theme |
-| `welcomeMessage` | `string` | `'Hi! How can I help...'` | Initial bot message |
-| `onMessageSent` | `(message: string) => void` | - | Called when user sends |
-| `onMessageReceived` | `(message: ChatMessage) => void` | - | Called when bot responds |
+| Prop                | Type                             | Default                   | Description              |
+| ------------------- | -------------------------------- | ------------------------- | ------------------------ |
+| `apiUrl`            | `string`                         | required                  | Your PMO API base URL    |
+| `configId`          | `number`                         | required                  | Chatbot configuration ID |
+| `width`             | `string \| number`               | `'100%'`                  | Window width             |
+| `height`            | `string \| number`               | `'500px'`                 | Window height            |
+| `theme`             | `'light' \| 'dark'`              | `'light'`                 | Color theme              |
+| `welcomeMessage`    | `string`                         | `'Hi! How can I help...'` | Initial bot message      |
+| `onMessageSent`     | `(message: string) => void`      | -                         | Called when user sends   |
+| `onMessageReceived` | `(message: ChatMessage) => void` | -                         | Called when bot responds |
 
 ### useChatbot Hook
 

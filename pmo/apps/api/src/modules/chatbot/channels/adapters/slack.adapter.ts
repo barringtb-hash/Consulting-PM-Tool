@@ -153,16 +153,18 @@ export class SlackAdapter extends BaseChannelAdapter {
       if (message.suggestedActions && message.suggestedActions.length > 0) {
         blocks.push({
           type: 'actions',
-          elements: message.suggestedActions.slice(0, 5).map((action, index) => ({
-            type: 'button',
-            text: {
-              type: 'plain_text',
-              text: action.label,
-              emoji: true,
-            },
-            action_id: `action_${index}_${action.action}`,
-            value: JSON.stringify(action.payload || {}),
-          })),
+          elements: message.suggestedActions
+            .slice(0, 5)
+            .map((action, index) => ({
+              type: 'button',
+              text: {
+                type: 'plain_text',
+                text: action.label,
+                emoji: true,
+              },
+              action_id: `action_${index}_${action.action}`,
+              value: JSON.stringify(action.payload || {}),
+            })),
         });
       }
 

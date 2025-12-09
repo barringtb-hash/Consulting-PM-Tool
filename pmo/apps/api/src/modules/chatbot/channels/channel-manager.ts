@@ -9,7 +9,6 @@ import {
   ChannelAdapter,
   ChannelCredentials,
   DeliveryResult,
-  IncomingMessage,
   OutgoingMessage,
 } from './channel.types';
 import { smsAdapter, whatsAppAdapter } from './adapters/twilio.adapter';

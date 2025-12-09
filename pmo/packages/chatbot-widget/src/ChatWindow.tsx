@@ -20,7 +20,7 @@ export function ChatWindow({
   height = '500px',
   theme = 'light',
   className = '',
-  welcomeMessage = "Hi! How can I help you today?",
+  welcomeMessage = 'Hi! How can I help you today?',
   onMessageSent,
   onMessageReceived,
 }: ChatWindowProps) {
@@ -91,7 +91,8 @@ export function ChatWindow({
       borderRadius: '16px',
       overflow: 'hidden',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      fontFamily:
+        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     },
     header: {
       padding: '16px 20px',
@@ -280,7 +281,9 @@ export function ChatWindow({
             }}
           >
             <div style={styles.messageAvatar}>🤖</div>
-            <div style={{ ...styles.messageContent, ...styles.messageContentBot }}>
+            <div
+              style={{ ...styles.messageContent, ...styles.messageContentBot }}
+            >
               {welcomeMessage}
             </div>
           </div>
@@ -291,7 +294,9 @@ export function ChatWindow({
         {isLoading && (
           <div style={styles.message}>
             <div style={styles.messageAvatar}>🤖</div>
-            <div style={{ ...styles.messageContent, ...styles.messageContentBot }}>
+            <div
+              style={{ ...styles.messageContent, ...styles.messageContentBot }}
+            >
               <div style={styles.typing}>
                 <div style={{ ...styles.typingDot, animationDelay: '0s' }} />
                 <div style={{ ...styles.typingDot, animationDelay: '0.2s' }} />

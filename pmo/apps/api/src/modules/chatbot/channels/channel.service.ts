@@ -44,7 +44,9 @@ export async function createChannel(
   });
 
   if (existing) {
-    throw new Error(`Channel ${input.channel} already configured for this chatbot`);
+    throw new Error(
+      `Channel ${input.channel} already configured for this chatbot`,
+    );
   }
 
   // Validate credentials with the appropriate adapter
@@ -125,7 +127,9 @@ export async function deleteChannel(channelId: number): Promise<void> {
 /**
  * Get all channels for a chatbot
  */
-export async function getChannels(chatbotConfigId: number): Promise<ChannelConfig[]> {
+export async function getChannels(
+  chatbotConfigId: number,
+): Promise<ChannelConfig[]> {
   return prisma.channelConfig.findMany({
     where: { chatbotConfigId },
     orderBy: { createdAt: 'desc' },
@@ -192,13 +196,17 @@ export async function testChannel(
 
   const adapter = channelManager.getAdapter(config.channel as ChatChannel);
   if (!adapter) {
-    return { success: false, error: `No adapter available for ${config.channel}` };
+    return {
+      success: false,
+      error: `No adapter available for ${config.channel}`,
+    };
   }
 
   const result = await adapter.sendMessage(
     {
       recipientIdentifier: testRecipient,
-      content: 'This is a test message from PMO Chatbot. If you received this, your channel is configured correctly!',
+      content:
+        'This is a test message from PMO Chatbot. If you received this, your channel is configured correctly!',
     },
     config.credentials as ChannelCredentials,
   );
@@ -244,7 +252,15 @@ export async function getChannelStatus(chatbotConfigId: number): Promise<
     name?: string;
   }>
 > {
-  const SUPPORTED = ['WEB', 'SMS', 'WHATSAPP', 'SLACK', 'TEAMS', 'MESSENGER', 'EMAIL'];
+  const SUPPORTED = [
+    'WEB',
+    'SMS',
+    'WHATSAPP',
+    'SLACK',
+    'TEAMS',
+    'MESSENGER',
+    'EMAIL',
+  ];
 
   const configured = await prisma.channelConfig.findMany({
     where: { chatbotConfigId },
@@ -256,9 +272,7 @@ export async function getChannelStatus(chatbotConfigId: number): Promise<
     },
   });
 
-  const configuredMap = new Map(
-    configured.map((c) => [c.channel, c]),
-  );
+  const configuredMap = new Map(configured.map((c) => [c.channel, c]));
 
   return SUPPORTED.map((channel) => {
     const config = configuredMap.get(channel);

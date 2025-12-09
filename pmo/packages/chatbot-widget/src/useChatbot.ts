@@ -20,7 +20,7 @@ export function useChatbot(options: UseChatbotOptions): UseChatbotReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [suggestedActions, setSuggestedActions] = useState<SuggestedAction[]>(
-    []
+    [],
   );
 
   const baseUrl = apiUrl.replace(/\/$/, '');
@@ -48,7 +48,7 @@ export function useChatbot(options: UseChatbotOptions): UseChatbotReturn {
             customerName: customerInfo?.name,
             customerPhone: customerInfo?.phone,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -101,7 +101,7 @@ export function useChatbot(options: UseChatbotOptions): UseChatbotReturn {
               customerEmail: customerInfo?.email,
               customerName: customerInfo?.name,
             }),
-          }
+          },
         );
 
         if (!response.ok) {
@@ -134,7 +134,7 @@ export function useChatbot(options: UseChatbotOptions): UseChatbotReturn {
         setIsLoading(false);
       }
     },
-    [baseUrl, sessionId, isLoading, customerInfo]
+    [baseUrl, sessionId, isLoading, customerInfo],
   );
 
   /**

@@ -111,7 +111,8 @@ router.get(
         apiBaseUrl,
         name: config.name,
         welcomeMessage:
-          config.welcomeMessage || `Hi! I'm ${config.name}. How can I help you today?`,
+          config.welcomeMessage ||
+          `Hi! I'm ${config.name}. How can I help you today?`,
         position: config.widgetPosition || 'bottom-right',
         primaryColor: config.widgetPrimaryColor || '#3B82F6',
         textColor: config.widgetTextColor || '#FFFFFF',
@@ -264,7 +265,8 @@ router.get(
         configId: config.id,
         apiBaseUrl,
         name: config.name,
-        welcomeMessage: config.welcomeMessage || `Hi! How can I help you today?`,
+        welcomeMessage:
+          config.welcomeMessage || `Hi! How can I help you today?`,
         title: config.widgetTitle || config.name,
         subtitle: config.widgetSubtitle,
         avatarUrl: config.widgetAvatarUrl,
@@ -280,7 +282,7 @@ router.get(
       res.set({
         'Content-Type': 'text/html; charset=utf-8',
         'X-Frame-Options': 'ALLOWALL',
-        'Content-Security-Policy': "frame-ancestors *",
+        'Content-Security-Policy': 'frame-ancestors *',
       });
 
       res.send(html);
@@ -688,7 +690,7 @@ function extractDomain(url: string): string {
     return parsed.hostname.toLowerCase();
   } catch {
     // If URL parsing fails, try to extract domain manually
-    const match = url.match(/(?:https?:\/\/)?([^\/\:]+)/i);
+    const match = url.match(/(?:https?:\/\/)?([^/:]+)/i);
     return match ? match[1].toLowerCase() : '';
   }
 }

@@ -30,7 +30,7 @@ export function ChatWidget({
   onMessageReceived,
   className = '',
   zIndex = 999999,
-  welcomeMessage = "Hi! How can I help you today?",
+  welcomeMessage = 'Hi! How can I help you today?',
 }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 

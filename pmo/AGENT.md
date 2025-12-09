@@ -22,11 +22,13 @@ pmo/
 ### Before You Start
 
 1. Install dependencies from this directory:
+
    ```bash
    npm install
    ```
 
 2. Set up environment variables:
+
    ```bash
    cp ../Docs/api.env.example apps/api/.env
    cp apps/web/.env.example apps/web/.env

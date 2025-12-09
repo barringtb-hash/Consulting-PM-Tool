@@ -7,7 +7,10 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { AuthenticatedRequest, requireAuth } from '../../../auth/auth.middleware';
+import {
+  AuthenticatedRequest,
+  requireAuth,
+} from '../../../auth/auth.middleware';
 import * as webhookService from './webhook.service';
 import { WEBHOOK_EVENTS } from './webhook.service';
 
@@ -285,10 +288,12 @@ function getEventDescription(event: string): string {
   const descriptions: Record<string, string> = {
     'conversation.started': 'Triggered when a new conversation begins',
     'conversation.ended': 'Triggered when a conversation is closed',
-    'conversation.escalated': 'Triggered when a conversation is escalated to a human agent',
+    'conversation.escalated':
+      'Triggered when a conversation is escalated to a human agent',
     'message.received': 'Triggered when a customer sends a message',
     'message.sent': 'Triggered when the bot sends a response',
-    'customer.rating': 'Triggered when a customer submits a satisfaction rating',
+    'customer.rating':
+      'Triggered when a customer submits a satisfaction rating',
   };
   return descriptions[event] || 'No description available';
 }

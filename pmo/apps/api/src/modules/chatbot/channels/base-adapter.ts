@@ -32,7 +32,9 @@ export abstract class BaseChannelAdapter implements ChannelAdapter {
     credentials: ChannelCredentials,
   ): Promise<DeliveryResult>;
 
-  abstract validateCredentials(credentials: ChannelCredentials): Promise<boolean>;
+  abstract validateCredentials(
+    credentials: ChannelCredentials,
+  ): Promise<boolean>;
 
   /**
    * Helper to create a successful delivery result

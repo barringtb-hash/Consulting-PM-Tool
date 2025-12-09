@@ -110,7 +110,9 @@ export class TwilioAdapter extends BaseChannelAdapter {
       : twilioCredentials.phoneNumber || twilioCredentials.messagingServiceSid;
 
     if (!from) {
-      return this.failureResult('No phone number or messaging service configured');
+      return this.failureResult(
+        'No phone number or messaging service configured',
+      );
     }
 
     try {
@@ -143,7 +145,9 @@ export class TwilioAdapter extends BaseChannelAdapter {
 
       if (!response.ok) {
         const errorData = await response.json();
-        return this.failureResult(errorData.message || 'Failed to send message');
+        return this.failureResult(
+          errorData.message || 'Failed to send message',
+        );
       }
 
       const result = await response.json();

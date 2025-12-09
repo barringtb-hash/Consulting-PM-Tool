@@ -424,7 +424,12 @@ function ChatbotPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'conversations' | 'knowledge' | 'analytics' | 'test' | 'integrate'
+    | 'overview'
+    | 'conversations'
+    | 'knowledge'
+    | 'analytics'
+    | 'test'
+    | 'integrate'
   >('overview');
   const [embedCopied, setEmbedCopied] = useState(false);
 
@@ -2080,8 +2085,12 @@ function ChatbotPage(): JSX.Element {
                   </CardHeader>
                   <CardBody className="space-y-4">
                     <p className="text-neutral-600 dark:text-neutral-400">
-                      Add this script tag to your website to embed the chatbot. Place it just before the closing{' '}
-                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">{'</body>'}</code> tag.
+                      Add this script tag to your website to embed the chatbot.
+                      Place it just before the closing{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        {'</body>'}
+                      </code>{' '}
+                      tag.
                     </p>
 
                     <div className="relative">
@@ -2094,11 +2103,14 @@ function ChatbotPage(): JSX.Element {
                         className="absolute top-2 right-2"
                         onClick={() => {
                           navigator.clipboard.writeText(
-                            `<script src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/widget/${selectedConfig.id}.js"></script>`
+                            `<script src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/widget/${selectedConfig.id}.js"></script>`,
                           );
                           setEmbedCopied(true);
                           setTimeout(() => setEmbedCopied(false), 2000);
-                          showToast('Embed code copied to clipboard!', 'success');
+                          showToast(
+                            'Embed code copied to clipboard!',
+                            'success',
+                          );
                         }}
                       >
                         {embedCopied ? (
@@ -2120,9 +2132,24 @@ function ChatbotPage(): JSX.Element {
                       </h4>
                       <ol className="list-decimal list-inside text-sm text-primary-700 dark:text-primary-300 space-y-1">
                         <li>Copy the embed code above</li>
-                        <li>Paste it into your website&apos;s HTML, before the closing <code className="bg-primary-100 dark:bg-primary-800 px-1 py-0.5 rounded">{'</body>'}</code> tag</li>
-                        <li>The chat widget will appear in the {selectedConfig.widgetPosition === 'bottom-left' ? 'bottom-left' : 'bottom-right'} corner</li>
-                        <li>Customize the appearance below to match your brand</li>
+                        <li>
+                          Paste it into your website&apos;s HTML, before the
+                          closing{' '}
+                          <code className="bg-primary-100 dark:bg-primary-800 px-1 py-0.5 rounded">
+                            {'</body>'}
+                          </code>{' '}
+                          tag
+                        </li>
+                        <li>
+                          The chat widget will appear in the{' '}
+                          {selectedConfig.widgetPosition === 'bottom-left'
+                            ? 'bottom-left'
+                            : 'bottom-right'}{' '}
+                          corner
+                        </li>
+                        <li>
+                          Customize the appearance below to match your brand
+                        </li>
                       </ol>
                     </div>
                   </CardBody>
@@ -2146,7 +2173,9 @@ function ChatbotPage(): JSX.Element {
                         <div className="flex gap-2">
                           <input
                             type="color"
-                            value={selectedConfig.widgetPrimaryColor || '#3B82F6'}
+                            value={
+                              selectedConfig.widgetPrimaryColor || '#3B82F6'
+                            }
                             onChange={(e) => {
                               updateConfigMutation.mutate({
                                 widgetPrimaryColor: e.target.value,
@@ -2155,7 +2184,9 @@ function ChatbotPage(): JSX.Element {
                             className="w-12 h-10 rounded border border-neutral-300 dark:border-neutral-600 cursor-pointer"
                           />
                           <Input
-                            value={selectedConfig.widgetPrimaryColor || '#3B82F6'}
+                            value={
+                              selectedConfig.widgetPrimaryColor || '#3B82F6'
+                            }
                             onChange={(e) => {
                               updateConfigMutation.mutate({
                                 widgetPrimaryColor: e.target.value,
@@ -2209,7 +2240,9 @@ function ChatbotPage(): JSX.Element {
                           Widget Position
                         </label>
                         <Select
-                          value={selectedConfig.widgetPosition || 'bottom-right'}
+                          value={
+                            selectedConfig.widgetPosition || 'bottom-right'
+                          }
                           onChange={(e) => {
                             updateConfigMutation.mutate({
                               widgetPosition: e.target.value,
@@ -2291,7 +2324,8 @@ function ChatbotPage(): JSX.Element {
                         placeholder="https://example.com/avatar.png"
                       />
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                        Optional: Custom avatar image for the bot (recommended: 80x80px)
+                        Optional: Custom avatar image for the bot (recommended:
+                        80x80px)
                       </p>
                     </div>
                   </CardBody>
@@ -2307,7 +2341,8 @@ function ChatbotPage(): JSX.Element {
                   </CardHeader>
                   <CardBody className="space-y-4">
                     <p className="text-neutral-600 dark:text-neutral-400">
-                      Optionally restrict which domains can use this chatbot widget. Leave blank to allow all domains.
+                      Optionally restrict which domains can use this chatbot
+                      widget. Leave blank to allow all domains.
                     </p>
                     <div>
                       <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
@@ -2323,7 +2358,8 @@ function ChatbotPage(): JSX.Element {
                         placeholder="example.com, app.example.com"
                       />
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                        Comma-separated list of domains. Use * to allow all domains.
+                        Comma-separated list of domains. Use * to allow all
+                        domains.
                       </p>
                     </div>
                   </CardBody>
@@ -2339,7 +2375,12 @@ function ChatbotPage(): JSX.Element {
                   </CardHeader>
                   <CardBody className="space-y-4">
                     <p className="text-neutral-600 dark:text-neutral-400">
-                      Add custom CSS to further customize the widget appearance. Use the <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">.pmo-chatbot-*</code> class prefix.
+                      Add custom CSS to further customize the widget appearance.
+                      Use the{' '}
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
+                        .pmo-chatbot-*
+                      </code>{' '}
+                      class prefix.
                     </p>
                     <textarea
                       value={selectedConfig.widgetCustomCss || ''}
@@ -2365,7 +2406,8 @@ function ChatbotPage(): JSX.Element {
                   </CardHeader>
                   <CardBody className="space-y-4">
                     <p className="text-neutral-600 dark:text-neutral-400">
-                      Embed a full-page chat window using an iframe. Great for support pages or dedicated chat sections.
+                      Embed a full-page chat window using an iframe. Great for
+                      support pages or dedicated chat sections.
                     </p>
 
                     <div className="relative">
@@ -2384,7 +2426,7 @@ function ChatbotPage(): JSX.Element {
                         className="absolute top-2 right-2"
                         onClick={() => {
                           navigator.clipboard.writeText(
-                            `<iframe src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/embed/${selectedConfig.id}?theme=light" width="400" height="600" frameborder="0" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></iframe>`
+                            `<iframe src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/embed/${selectedConfig.id}?theme=light" width="400" height="600" frameborder="0" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></iframe>`,
                           );
                           showToast('Iframe code copied!', 'success');
                         }}
@@ -2395,8 +2437,12 @@ function ChatbotPage(): JSX.Element {
 
                     <div className="flex gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                       <span className="font-medium">Theme options:</span>
-                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">?theme=light</code>
-                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">?theme=dark</code>
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">
+                        ?theme=light
+                      </code>
+                      <code className="bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded">
+                        ?theme=dark
+                      </code>
                     </div>
                   </CardBody>
                 </Card>
@@ -2415,14 +2461,20 @@ function ChatbotPage(): JSX.Element {
                       <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                         <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
                           REST API
-                          <Badge variant="success" size="sm">Available</Badge>
+                          <Badge variant="success" size="sm">
+                            Available
+                          </Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Build a custom chat interface using our API endpoints.
                         </p>
                         <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-xs font-mono">
-                          <div>POST /api/chatbot/{selectedConfig.id}/conversations</div>
-                          <div>POST /api/chatbot/conversations/:sessionId/messages</div>
+                          <div>
+                            POST /api/chatbot/{selectedConfig.id}/conversations
+                          </div>
+                          <div>
+                            POST /api/chatbot/conversations/:sessionId/messages
+                          </div>
                         </div>
                       </div>
 
@@ -2430,7 +2482,9 @@ function ChatbotPage(): JSX.Element {
                       <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                         <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
                           Webhooks
-                          <Badge variant="success" size="sm">Available</Badge>
+                          <Badge variant="success" size="sm">
+                            Available
+                          </Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Receive real-time events when conversations happen.
@@ -2445,7 +2499,9 @@ function ChatbotPage(): JSX.Element {
                       <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 opacity-75">
                         <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
                           React Component
-                          <Badge variant="neutral" size="sm">Coming Soon</Badge>
+                          <Badge variant="neutral" size="sm">
+                            Coming Soon
+                          </Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           Use our npm package for React applications.
@@ -2459,7 +2515,9 @@ function ChatbotPage(): JSX.Element {
                       <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 opacity-75">
                         <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 flex items-center gap-2">
                           WordPress Plugin
-                          <Badge variant="neutral" size="sm">Coming Soon</Badge>
+                          <Badge variant="neutral" size="sm">
+                            Coming Soon
+                          </Badge>
                         </h4>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
                           One-click installation for WordPress sites.

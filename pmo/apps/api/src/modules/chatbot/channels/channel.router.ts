@@ -32,7 +32,8 @@ router.get(
     } catch (error) {
       console.error('Error fetching channels:', error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : 'Failed to fetch channels',
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch channels',
       });
     }
   },
@@ -52,7 +53,8 @@ router.get(
     } catch (error) {
       console.error('Error fetching channel status:', error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : 'Failed to fetch status',
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch status',
       });
     }
   },
@@ -87,7 +89,8 @@ router.post(
     } catch (error) {
       console.error('Error creating channel:', error);
       res.status(400).json({
-        error: error instanceof Error ? error.message : 'Failed to create channel',
+        error:
+          error instanceof Error ? error.message : 'Failed to create channel',
       });
     }
   },
@@ -116,7 +119,8 @@ router.patch(
     } catch (error) {
       console.error('Error updating channel:', error);
       res.status(400).json({
-        error: error instanceof Error ? error.message : 'Failed to update channel',
+        error:
+          error instanceof Error ? error.message : 'Failed to update channel',
       });
     }
   },
@@ -136,7 +140,8 @@ router.delete(
     } catch (error) {
       console.error('Error deleting channel:', error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : 'Failed to delete channel',
+        error:
+          error instanceof Error ? error.message : 'Failed to delete channel',
       });
     }
   },
@@ -162,7 +167,8 @@ router.post(
     } catch (error) {
       console.error('Error testing channel:', error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : 'Failed to test channel',
+        error:
+          error instanceof Error ? error.message : 'Failed to test channel',
       });
     }
   },
@@ -322,7 +328,9 @@ router.post(
       const channel = req.params.channel.toUpperCase() as ChatChannel;
 
       if (!channelManager.isSupported(channel)) {
-        return res.status(400).json({ error: `Unsupported channel: ${channel}` });
+        return res
+          .status(400)
+          .json({ error: `Unsupported channel: ${channel}` });
       }
 
       const signature =
@@ -343,7 +351,8 @@ router.post(
     } catch (error) {
       console.error('Generic webhook error:', error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : 'Webhook processing failed',
+        error:
+          error instanceof Error ? error.message : 'Webhook processing failed',
       });
     }
   },
