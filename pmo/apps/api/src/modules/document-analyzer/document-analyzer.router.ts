@@ -21,6 +21,7 @@ import {
   getClientIdFromAnalyzedDocument,
   getClientIdFromExtractionTemplate,
   getClientIdFromBatchJob,
+  getClientIdFromDocumentIntegration,
 } from '../../auth/client-auth.helper';
 import {
   BUILT_IN_TEMPLATES,
@@ -1311,6 +1312,24 @@ router.post(
       return;
     }
 
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid integration ID' });
+      return;
+    }
+
+    // Authorization check - verify user has access to the integration's client
+    const clientId = await getClientIdFromDocumentIntegration(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Integration not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
     const { integrationType, credentials } = req.body as {
       integrationType: IntegrationType;
       credentials: Record<string, string>;
@@ -1340,6 +1359,18 @@ router.delete(
       return;
     }
 
+    // Authorization check - verify user has access to the integration's client
+    const clientId = await getClientIdFromDocumentIntegration(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Integration not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
     await deleteIntegration(id);
     res.status(204).send();
   },
@@ -1361,6 +1392,18 @@ router.post(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid integration ID' });
+      return;
+    }
+
+    // Authorization check - verify user has access to the integration's client
+    const clientId = await getClientIdFromDocumentIntegration(id);
+    if (!clientId) {
+      res.status(404).json({ error: 'Integration not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
       return;
     }
 
