@@ -351,13 +351,10 @@ function DocumentAnalyzerPage(): JSX.Element {
         queryKey: ['document-analyzer-configs'],
       });
       setShowCreateModal(false);
-      showToast({
-        message: 'Document Analyzer configuration created',
-        variant: 'success',
-      });
+      showToast('Document Analyzer configuration created', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
@@ -365,10 +362,10 @@ function DocumentAnalyzerPage(): JSX.Element {
     mutationFn: analyzeDocument,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analyzed-documents'] });
-      showToast({ message: 'Document analysis started', variant: 'success' });
+      showToast('Document analysis started', 'success');
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      showToast(error.message, 'error');
     },
   });
 
