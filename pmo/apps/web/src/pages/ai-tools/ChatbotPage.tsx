@@ -4,7 +4,7 @@
  * Tool 1.1: Customer Service Chatbot configuration, conversations, and analytics
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
@@ -53,6 +53,46 @@ import {
   Check,
   Palette,
 } from 'lucide-react';
+
+// Helpers for API URL and clipboard
+function getApiBaseUrl(): string {
+  // Use environment variable in production, fallback for development
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    // Remove trailing /api if present to get the base origin
+    return envUrl.replace(/\/api\/?$/, '');
+  }
+  // Fallback for local development
+  if (typeof window !== 'undefined') {
+    return window.location.origin.replace(':5173', ':3001');
+  }
+  return '';
+}
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.clipboard) {
+    // Fallback for older browsers or SSR
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Types
 interface ChatbotConfig {
@@ -433,6 +473,23 @@ function ChatbotPage(): JSX.Element {
   >('overview');
   const [embedCopied, setEmbedCopied] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState<string | null>(null);
+
+  // Memoize API base URL for embed snippets
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+
+  // Safe clipboard copy handler
+  const handleCopyToClipboard = useCallback(
+    async (text: string, successMessage: string) => {
+      const success = await copyToClipboard(text);
+      if (success) {
+        showToast(successMessage, 'success');
+      } else {
+        showToast('Failed to copy to clipboard', 'error');
+      }
+      return success;
+    },
+    [showToast],
+  );
 
   // Test chat state
   const [testSessionId, setTestSessionId] = useState<string | null>(null);
@@ -2105,22 +2162,21 @@ function ChatbotPage(): JSX.Element {
 
                     <div className="relative">
                       <pre className="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm">
-                        <code>{`<script src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/widget/${selectedConfig.id}.js"></script>`}</code>
+                        <code>{`<script src="${apiBaseUrl}/api/chatbot/widget/${selectedConfig.id}.js"></script>`}</code>
                       </pre>
                       <Button
                         size="sm"
                         variant={embedCopied ? 'primary' : 'secondary'}
                         className="absolute top-2 right-2"
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            `<script src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/widget/${selectedConfig.id}.js"></script>`,
-                          );
-                          setEmbedCopied(true);
-                          setTimeout(() => setEmbedCopied(false), 2000);
-                          showToast(
+                        onClick={async () => {
+                          const success = await handleCopyToClipboard(
+                            `<script src="${apiBaseUrl}/api/chatbot/widget/${selectedConfig.id}.js"></script>`,
                             'Embed code copied to clipboard!',
-                            'success',
                           );
+                          if (success) {
+                            setEmbedCopied(true);
+                            setTimeout(() => setEmbedCopied(false), 2000);
+                          }
                         }}
                       >
                         {embedCopied ? (
@@ -2432,7 +2488,7 @@ function ChatbotPage(): JSX.Element {
                     <div className="relative">
                       <pre className="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm">
                         <code>{`<iframe
-  src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/embed/${selectedConfig.id}?theme=light"
+  src="${apiBaseUrl}/api/chatbot/embed/${selectedConfig.id}?theme=light"
   width="400"
   height="600"
   frameborder="0"
@@ -2443,12 +2499,12 @@ function ChatbotPage(): JSX.Element {
                         size="sm"
                         variant="secondary"
                         className="absolute top-2 right-2"
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            `<iframe src="${window.location.origin.replace(':5173', ':3001')}/api/chatbot/embed/${selectedConfig.id}?theme=light" width="400" height="600" frameborder="0" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></iframe>`,
-                          );
-                          showToast('Iframe code copied!', 'success');
-                        }}
+                        onClick={() =>
+                          handleCopyToClipboard(
+                            `<iframe src="${apiBaseUrl}/api/chatbot/embed/${selectedConfig.id}?theme=light" width="400" height="600" frameborder="0" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></iframe>`,
+                            'Iframe code copied!',
+                          )
+                        }
                       >
                         <Copy className="w-4 h-4 mr-1" /> Copy
                       </Button>
@@ -3103,7 +3159,7 @@ function App() {
   return (
     <ChatWidget
       configId={${selectedConfig?.id || 1}}
-      apiBaseUrl="${window.location.origin.replace(':5173', ':3001')}/api"
+      apiBaseUrl="${apiBaseUrl}/api"
       position="bottom-right"
       primaryColor="#3B82F6"
     />
@@ -3122,7 +3178,7 @@ function SupportPage() {
   return (
     <ChatWindow
       configId={${selectedConfig?.id || 1}}
-      apiBaseUrl="${window.location.origin.replace(':5173', ':3001')}/api"
+      apiBaseUrl="${apiBaseUrl}/api"
       className="h-[600px]"
     />
   );
@@ -3139,7 +3195,7 @@ function SupportPage() {
 function MyComponent() {
   const { messages, sendMessage, isLoading } = useChatbot({
     configId: ${selectedConfig?.id || 1},
-    apiBaseUrl: '${window.location.origin.replace(':5173', ':3001')}/api',
+    apiBaseUrl: '${apiBaseUrl}/api',
   });
   // Build your custom UI...
 }`}</code>
@@ -3194,8 +3250,7 @@ function MyComponent() {
                         <li>
                           Enter your API URL:{' '}
                           <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-sm">
-                            {window.location.origin.replace(':5173', ':3001')}
-                            /api
+                            {apiBaseUrl}/api
                           </code>
                         </li>
                         <li>
