@@ -6,7 +6,7 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { Prisma } from '@prisma/client';
+import { Prisma, DocumentCategory, IndustryType, IntegrationType } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as documentAnalyzerService from './document-analyzer.service';
 import {
@@ -17,6 +17,42 @@ import {
   getClientIdFromExtractionTemplate,
   getClientIdFromBatchJob,
 } from '../../auth/client-auth.helper';
+import {
+  BUILT_IN_TEMPLATES,
+  getTemplatesByCategory,
+  getTemplatesByIndustry,
+  getTemplateByDocumentType,
+} from './templates/built-in-templates';
+import {
+  classifyDocument,
+  getBestTemplateForClassification,
+} from './services/classification.service';
+import {
+  runComplianceCheck,
+  getApplicableRuleSets,
+  calculateRiskScore,
+  BUILT_IN_RULESETS,
+} from './services/compliance.service';
+import {
+  getAllIntegrationConfigs,
+  getIntegrationConfig,
+  upsertIntegration,
+  getIntegrations,
+  deleteIntegration,
+  testIntegration,
+  syncDocumentToIntegration,
+} from './services/integrations.service';
+import {
+  getDashboardData,
+  getProcessingStats,
+  getCategoryStats,
+  getComplianceStats,
+  calculateROI,
+  getTrendData,
+  getRecentActivity,
+  getHistoricalMetrics,
+  createPeriod,
+} from './services/analytics.service';
 
 const router = Router();
 
@@ -935,6 +971,704 @@ router.get(
     }
 
     res.json({ job });
+  },
+);
+
+// ============================================================================
+// TEMPLATE LIBRARY ROUTES (Built-in Templates)
+// ============================================================================
+
+/**
+ * GET /api/document-analyzer/templates/library
+ * Get all built-in extraction templates
+ */
+router.get(
+  '/document-analyzer/templates/library',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const category = req.query.category as DocumentCategory | undefined;
+    const industry = req.query.industry as IndustryType | undefined;
+    const documentType = req.query.documentType as string | undefined;
+
+    let templates = BUILT_IN_TEMPLATES;
+
+    if (category) {
+      templates = getTemplatesByCategory(category);
+    } else if (industry) {
+      templates = getTemplatesByIndustry(industry);
+    }
+
+    if (documentType) {
+      const template = getTemplateByDocumentType(documentType);
+      templates = template ? [template] : [];
+    }
+
+    res.json({
+      templates,
+      categories: Object.values(DocumentCategory),
+      industries: Object.values(IndustryType),
+    });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/templates/library/:documentType
+ * Get a specific built-in template
+ */
+router.get(
+  '/document-analyzer/templates/library/:documentType',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ documentType: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const template = getTemplateByDocumentType(req.params.documentType);
+    if (!template) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+
+    res.json({ template });
+  },
+);
+
+// ============================================================================
+// CLASSIFICATION ROUTES
+// ============================================================================
+
+/**
+ * POST /api/document-analyzer/classify
+ * Classify a document based on its text content
+ */
+router.post(
+  '/document-analyzer/classify',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { text, industryHint, enabledCategories, minConfidence } = req.body as {
+      text: string;
+      industryHint?: IndustryType;
+      enabledCategories?: DocumentCategory[];
+      minConfidence?: number;
+    };
+
+    if (!text) {
+      res.status(400).json({ error: 'Text is required for classification' });
+      return;
+    }
+
+    try {
+      const result = await classifyDocument(text, {
+        industryHint,
+        enabledCategories,
+        minConfidence,
+      });
+
+      const suggestedTemplate = getBestTemplateForClassification(result, industryHint);
+
+      res.json({
+        classification: result,
+        suggestedTemplate,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Classification failed',
+        message: (error as Error).message,
+      });
+    }
+  },
+);
+
+// ============================================================================
+// COMPLIANCE ROUTES
+// ============================================================================
+
+/**
+ * GET /api/document-analyzer/compliance/rulesets
+ * Get available compliance rule sets
+ */
+router.get(
+  '/document-analyzer/compliance/rulesets',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const category = req.query.category as DocumentCategory | undefined;
+    const industry = req.query.industry as IndustryType | undefined;
+
+    let rulesets = BUILT_IN_RULESETS;
+
+    if (category || industry) {
+      rulesets = getApplicableRuleSets(
+        category || 'GENERAL',
+        industry,
+      );
+    }
+
+    res.json({ rulesets });
+  },
+);
+
+/**
+ * POST /api/document-analyzer/compliance/check
+ * Run compliance check on document data
+ */
+router.post(
+  '/document-analyzer/compliance/check',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { text, extractedFields, category, industryType, rulesetCodes } = req.body as {
+      text: string;
+      extractedFields: Record<string, { value: string | number; confidence: number }>;
+      category?: DocumentCategory;
+      industryType?: IndustryType;
+      rulesetCodes?: string[];
+    };
+
+    if (!text || !extractedFields) {
+      res.status(400).json({ error: 'Text and extractedFields are required' });
+      return;
+    }
+
+    // Get applicable rule sets
+    let ruleSets = BUILT_IN_RULESETS;
+    if (rulesetCodes && rulesetCodes.length > 0) {
+      ruleSets = BUILT_IN_RULESETS.filter((rs) => rulesetCodes.includes(rs.code));
+    } else if (category || industryType) {
+      ruleSets = getApplicableRuleSets(category || 'GENERAL', industryType);
+    }
+
+    const result = runComplianceCheck(text, extractedFields, ruleSets);
+    const riskScore = calculateRiskScore(result);
+
+    res.json({
+      compliance: result,
+      riskScore,
+    });
+  },
+);
+
+// ============================================================================
+// INTEGRATION ROUTES
+// ============================================================================
+
+/**
+ * GET /api/document-analyzer/integrations/available
+ * Get all available integration types and their configurations
+ */
+router.get(
+  '/document-analyzer/integrations/available',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configs = getAllIntegrationConfigs();
+    res.json({ integrations: configs });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/integrations
+ * Get integrations for a config
+ */
+router.get(
+  '/document-analyzer/:configId/integrations',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const integrations = await getIntegrations(configId);
+    res.json({ integrations });
+  },
+);
+
+/**
+ * POST /api/document-analyzer/:configId/integrations
+ * Create or update an integration
+ */
+router.post(
+  '/document-analyzer/:configId/integrations',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const { integrationType, name, credentials, settings } = req.body as {
+      integrationType: IntegrationType;
+      name: string;
+      credentials: Record<string, string>;
+      settings?: Record<string, unknown>;
+    };
+
+    if (!integrationType || !name) {
+      res.status(400).json({ error: 'integrationType and name are required' });
+      return;
+    }
+
+    const integration = await upsertIntegration(
+      configId,
+      integrationType,
+      name,
+      credentials,
+      settings,
+    );
+
+    res.status(201).json({ integration });
+  },
+);
+
+/**
+ * POST /api/document-analyzer/integrations/:id/test
+ * Test an integration connection
+ */
+router.post(
+  '/document-analyzer/integrations/:id/test',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { integrationType, credentials } = req.body as {
+      integrationType: IntegrationType;
+      credentials: Record<string, string>;
+    };
+
+    const result = await testIntegration(integrationType, credentials);
+    res.json(result);
+  },
+);
+
+/**
+ * DELETE /api/document-analyzer/integrations/:id
+ * Delete an integration
+ */
+router.delete(
+  '/document-analyzer/integrations/:id',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid integration ID' });
+      return;
+    }
+
+    await deleteIntegration(id);
+    res.status(204).send();
+  },
+);
+
+/**
+ * POST /api/document-analyzer/integrations/:id/sync
+ * Sync a document to an integration
+ */
+router.post(
+  '/document-analyzer/integrations/:id/sync',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid integration ID' });
+      return;
+    }
+
+    const { documentData } = req.body as { documentData: Record<string, unknown> };
+    if (!documentData) {
+      res.status(400).json({ error: 'documentData is required' });
+      return;
+    }
+
+    const result = await syncDocumentToIntegration(id, documentData);
+    res.json(result);
+  },
+);
+
+// ============================================================================
+// ANALYTICS ROUTES
+// ============================================================================
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/dashboard
+ * Get complete dashboard data
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/dashboard',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY') || 'MONTHLY';
+    const period = createPeriod(periodType);
+
+    const dashboard = await getDashboardData(configId, period);
+    res.json({ dashboard });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/processing
+ * Get processing statistics
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/processing',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const period = createPeriod(periodType);
+
+    const stats = await getProcessingStats(configId, period);
+    res.json({ stats });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/categories
+ * Get category breakdown
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/categories',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const period = createPeriod(periodType);
+
+    const categories = await getCategoryStats(configId, period);
+    res.json({ categories });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/compliance
+ * Get compliance statistics
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/compliance',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const period = createPeriod(periodType);
+
+    const compliance = await getComplianceStats(configId, period);
+    res.json({ compliance });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/roi
+ * Get ROI metrics
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/roi',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const period = createPeriod(periodType);
+
+    const roi = await calculateROI(configId, period);
+    res.json({ roi });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/trends
+ * Get trend data for charts
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/trends',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'MONTHLY';
+    const dataPoints = Number(req.query.points) || 7;
+    const period = createPeriod(periodType);
+
+    const trends = await getTrendData(configId, period, dataPoints);
+    res.json({ trends });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/activity
+ * Get recent activity
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/activity',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const limit = Number(req.query.limit) || 10;
+    const activity = await getRecentActivity(configId, limit);
+    res.json({ activity });
+  },
+);
+
+/**
+ * GET /api/document-analyzer/:configId/analytics/history
+ * Get historical metrics
+ */
+router.get(
+  '/document-analyzer/:configId/analytics/history',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromDocumentAnalyzerConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const periodType = (req.query.period as 'DAILY' | 'WEEKLY' | 'MONTHLY') || 'DAILY';
+    const limit = Number(req.query.limit) || 30;
+
+    const history = await getHistoricalMetrics(configId, periodType, limit);
+    res.json({ history });
   },
 );
 
