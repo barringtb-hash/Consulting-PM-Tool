@@ -233,11 +233,23 @@ router.post(
       return;
     }
 
-    const conversation = await chatbotService.createConversation(
-      configId,
-      parsed.data,
-    );
-    res.status(201).json({ conversation });
+    try {
+      const conversation = await chatbotService.createConversation(
+        configId,
+        parsed.data,
+      );
+      res.status(201).json({ conversation });
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      if (
+        error instanceof Error &&
+        error.message.includes('Foreign key constraint')
+      ) {
+        res.status(404).json({ error: 'Chatbot configuration not found' });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to create conversation' });
+    }
   },
 );
 
@@ -250,13 +262,18 @@ router.get(
   async (req: AuthenticatedRequest<{ sessionId: string }>, res: Response) => {
     const { sessionId } = req.params;
 
-    const conversation = await chatbotService.getConversation(sessionId);
-    if (!conversation) {
-      res.status(404).json({ error: 'Conversation not found' });
-      return;
-    }
+    try {
+      const conversation = await chatbotService.getConversation(sessionId);
+      if (!conversation) {
+        res.status(404).json({ error: 'Conversation not found' });
+        return;
+      }
 
-    res.json({ conversation });
+      res.json({ conversation });
+    } catch (error) {
+      console.error('Failed to fetch conversation:', error);
+      res.status(500).json({ error: 'Failed to fetch conversation' });
+    }
   },
 );
 
