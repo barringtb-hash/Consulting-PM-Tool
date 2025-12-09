@@ -127,6 +127,111 @@ const clients = [
 ];
 
 const projectSeeds = [
+  // Admin-owned project for demo purposes
+  {
+    name: 'AI Strategy Roadmap',
+    clientName: 'Launchpad Consulting Partners',
+    ownerEmail: 'admin@pmo.test',
+    status: ProjectStatus.IN_PROGRESS,
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-06-30'),
+    healthStatus: ProjectHealthStatus.ON_TRACK,
+    statusSummary:
+      'Q1 thought leadership campaign launched successfully. Content pipeline healthy with 8 pieces in various stages.',
+    statusUpdatedAt: new Date('2024-02-15'),
+    meetings: [
+      {
+        title: 'Q1 Marketing Planning',
+        date: new Date('2024-01-10'),
+        time: '10:00 AM ET',
+        attendees: ['Testing Admin', 'Marketing Team'],
+        notes:
+          'Outlined Q1 content strategy focusing on AI thought leadership and case studies.',
+        decisions: 'Prioritize LinkedIn and blog content for B2B audience.',
+        risks: 'Content production capacity may limit output.',
+      },
+      {
+        title: 'Content Performance Review',
+        date: new Date('2024-02-01'),
+        time: '02:00 PM ET',
+        attendees: ['Testing Admin', 'Analytics Team'],
+        notes:
+          'Reviewed January content performance. LinkedIn posts averaging 500+ impressions.',
+        decisions:
+          'Double down on case study content based on engagement data.',
+        risks: 'Need more client testimonials for case studies.',
+      },
+    ],
+    milestones: [
+      {
+        name: 'Q1 Content Launch',
+        description: 'Publish initial batch of thought leadership content.',
+        status: MilestoneStatus.COMPLETED,
+        dueDate: new Date('2024-01-31'),
+        tasks: [
+          {
+            title: 'Publish AI customer service blog post',
+            description: 'Final review and publish the flagship blog post.',
+            status: TaskStatus.DONE,
+            priority: Priority.P1,
+            dueDate: new Date('2024-01-15'),
+          },
+          {
+            title: 'Schedule LinkedIn campaign',
+            description: 'Set up LinkedIn posts for Q1 with scheduling tool.',
+            status: TaskStatus.DONE,
+            priority: Priority.P1,
+            dueDate: new Date('2024-01-20'),
+          },
+        ],
+      },
+      {
+        name: 'Case Study Development',
+        description: 'Develop detailed case studies from client projects.',
+        status: MilestoneStatus.IN_PROGRESS,
+        dueDate: new Date('2024-03-15'),
+        tasks: [
+          {
+            title: 'Draft manufacturing case study',
+            description:
+              'Write case study based on predictive maintenance project.',
+            status: TaskStatus.IN_PROGRESS,
+            priority: Priority.P1,
+            dueDate: new Date('2024-02-28'),
+          },
+          {
+            title: 'Client approval for healthcare case study',
+            description:
+              'Get sign-off from Brightside Health for public case study.',
+            status: TaskStatus.BACKLOG,
+            priority: Priority.P2,
+            dueDate: new Date('2024-03-10'),
+          },
+        ],
+      },
+      {
+        name: 'Q2 Campaign Planning',
+        description: 'Plan manufacturing-focused campaign for Q2.',
+        status: MilestoneStatus.NOT_STARTED,
+        dueDate: new Date('2024-04-01'),
+        tasks: [],
+      },
+    ],
+    tasks: [
+      {
+        title: 'Review content calendar',
+        description: 'Weekly review of upcoming content and deadlines.',
+        status: TaskStatus.IN_PROGRESS,
+        priority: Priority.P2,
+      },
+      {
+        title: 'Update brand guidelines',
+        description: 'Refresh brand guidelines with new color palette.',
+        status: TaskStatus.BACKLOG,
+        priority: Priority.P3,
+      },
+    ],
+  },
   {
     name: 'Predictive Maintenance Rollout',
     clientName: 'Acme Manufacturing',
@@ -497,6 +602,8 @@ const brandProfileSeeds = [
 ];
 
 // Demo marketing content for showcasing the marketing tools
+// All content is created by admin and linked to the AI Strategy Roadmap project
+// so it's visible when logged in as the admin user
 const marketingContentSeeds = [
   // Published content
   {
@@ -505,7 +612,8 @@ const marketingContentSeeds = [
     channel: ContentChannel.LINKEDIN,
     status: ContentStatus.PUBLISHED,
     clientName: 'Launchpad Consulting Partners',
-    createdByEmail: 'avery.chen@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Case study highlighting AI chatbot implementation results',
     content: {
       body: `Digital transformation isn't just a buzzword - it's the key to staying competitive.
@@ -530,7 +638,8 @@ Want to learn how AI can transform your business? Drop a comment below or visit 
     channel: ContentChannel.WEB,
     status: ContentStatus.PUBLISHED,
     clientName: 'Launchpad Consulting Partners',
-    createdByEmail: 'priya.desai@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Comprehensive guide to AI in customer service',
     content: {
       title: '5 Ways AI is Revolutionizing Customer Service in 2024',
@@ -567,8 +676,8 @@ The future of customer service isn't about replacing humans with machines - it's
     channel: ContentChannel.LINKEDIN,
     status: ContentStatus.READY,
     clientName: 'Launchpad Consulting Partners',
-    projectName: 'Predictive Maintenance Rollout',
-    createdByEmail: 'avery.chen@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Sharing insights from our predictive maintenance project',
     content: {
       body: `Predictive maintenance isn't science fiction - it's saving manufacturers millions.
@@ -593,8 +702,8 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     channel: ContentChannel.WEB,
     status: ContentStatus.READY,
     clientName: 'Launchpad Consulting Partners',
-    projectName: 'AI Intake Modernization',
-    createdByEmail: 'priya.desai@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Detailed case study on healthcare AI implementation',
     content: {
       title: 'How Brightside Health Reduced Patient Intake Time by 70%',
@@ -626,7 +735,8 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     channel: ContentChannel.EMAIL,
     status: ContentStatus.DRAFT,
     clientName: 'Launchpad Consulting Partners',
-    createdByEmail: 'marco.silva@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Monthly newsletter showcasing AI trends and company updates',
     content: {
       subject: 'AI Insights: What We Learned in Q1 2024',
@@ -650,7 +760,8 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     channel: ContentChannel.TWITTER,
     status: ContentStatus.DRAFT,
     clientName: 'Launchpad Consulting Partners',
-    createdByEmail: 'avery.chen@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Thread sharing practical AI implementation advice',
     content: {
       thread: [
@@ -671,7 +782,8 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     channel: ContentChannel.EMAIL,
     status: ContentStatus.IN_REVIEW,
     clientName: 'Launchpad Consulting Partners',
-    createdByEmail: 'priya.desai@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Lead nurture email offering free AI readiness assessment',
     content: {
       subject: 'Is Your Business Ready for AI? Free Assessment Inside',
@@ -701,7 +813,8 @@ The Launchpad Team`,
     channel: ContentChannel.WEB,
     status: ContentStatus.IDEA,
     clientName: 'Launchpad Consulting Partners',
-    createdByEmail: 'marco.silva@pmo.test',
+    projectName: 'AI Strategy Roadmap',
+    createdByEmail: 'admin@pmo.test',
     summary: 'Webinar concept targeting small business owners',
     content: {
       concept:
@@ -717,7 +830,7 @@ The Launchpad Team`,
   },
 ];
 
-// Demo campaigns
+// Demo campaigns - created by admin for visibility
 const campaignSeeds = [
   {
     name: 'Q1 2024 Thought Leadership',
@@ -733,7 +846,7 @@ const campaignSeeds = [
       websiteTraffic: 10000,
       leadGeneration: 50,
     },
-    createdByEmail: 'avery.chen@pmo.test',
+    createdByEmail: 'admin@pmo.test',
   },
   {
     name: 'Manufacturing AI Solutions Launch',
@@ -749,7 +862,7 @@ const campaignSeeds = [
       demoRequests: 15,
       pipelineValue: 500000,
     },
-    createdByEmail: 'priya.desai@pmo.test',
+    createdByEmail: 'admin@pmo.test',
   },
 ];
 
