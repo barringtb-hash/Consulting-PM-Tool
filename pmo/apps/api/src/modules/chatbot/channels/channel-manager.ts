@@ -87,7 +87,8 @@ class ChannelManager {
       return { success: false, error: 'Channel not configured or inactive' };
     }
 
-    const credentials = channelConfig.credentials as ChannelCredentials;
+    const credentials =
+      channelConfig.credentials as unknown as ChannelCredentials;
 
     // Verify webhook signature if provided
     if (signature) {
@@ -179,7 +180,8 @@ class ChannelManager {
       };
     }
 
-    const credentials = channelConfig.credentials as ChannelCredentials;
+    const credentials =
+      channelConfig.credentials as unknown as ChannelCredentials;
     return adapter.sendMessage(message, credentials);
   }
 

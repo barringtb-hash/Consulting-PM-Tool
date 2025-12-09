@@ -213,7 +213,7 @@ export async function testChannel(
       content:
         'This is a test message from PMO Chatbot. If you received this, your channel is configured correctly!',
     },
-    config.credentials as ChannelCredentials,
+    config.credentials as unknown as ChannelCredentials,
   );
 
   return {
