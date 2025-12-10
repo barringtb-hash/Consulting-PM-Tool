@@ -54,16 +54,22 @@ These modules can be enabled/disabled per customer:
 | `leads` | Leads | None | Lead capture and management | `/sales/leads` |
 | `pipeline` | Pipeline | leads | Sales pipeline visualization | `/sales/pipeline` |
 | `admin` | Admin | None | User & module administration | `/admin/users`, `/admin/modules` |
+| `chatbot` | AI Chatbot | clients | Customer service chatbot with multi-channel support | `/ai-tools/chatbot` |
+| `documentAnalyzer` | Document Analyzer | clients | Smart document analysis with OCR and extraction | `/ai-tools/document-analyzer` |
+
+> **AI Tools Documentation**: For detailed information on configuring and extending the AI Chatbot and Document Analyzer, see [AI-Tools.md](AI-Tools.md).
 
 ### Module Dependencies
 
 When you enable a module, its dependencies are automatically enabled:
 
 ```
-marketing → requires → clients, projects
-pipeline  → requires → leads
-tasks     → requires → projects (core)
-projects  → requires → clients (core)
+marketing        → requires → clients, projects
+pipeline         → requires → leads
+tasks            → requires → projects (core)
+projects         → requires → clients (core)
+chatbot          → requires → clients
+documentAnalyzer → requires → clients
 ```
 
 ---
@@ -93,7 +99,10 @@ VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
 | Basic CRM | `dashboard,tasks,clients,projects` |
 | Sales-focused | `dashboard,tasks,clients,projects,leads,pipeline` |
 | Marketing Agency | `dashboard,tasks,clients,projects,marketing,assets` |
-| Full Platform | `dashboard,tasks,clients,projects,assets,marketing,leads,pipeline,admin` |
+| Customer Service | `dashboard,tasks,clients,projects,chatbot` |
+| Document Processing | `dashboard,tasks,clients,projects,documentAnalyzer` |
+| AI-Enabled Full | `dashboard,tasks,clients,projects,chatbot,documentAnalyzer,assets` |
+| Full Platform | `dashboard,tasks,clients,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer` |
 
 ### Method 2: Admin UI (Per-Tenant)
 
