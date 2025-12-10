@@ -1099,11 +1099,22 @@ function ChatbotPage(): JSX.Element {
                             size="sm"
                             disabled={isTestLoading}
                             onClick={async () => {
-                              if (!selectedConfigId) return;
+                              if (!selectedConfigId) {
+                                showToast(
+                                  'Please select a chatbot configuration first',
+                                  'error',
+                                );
+                                return;
+                              }
                               setIsTestLoading(true);
                               try {
                                 const conv =
                                   await startTestConversation(selectedConfigId);
+                                if (!conv || !conv.sessionId) {
+                                  throw new Error(
+                                    'Invalid response from server - missing session ID',
+                                  );
+                                }
                                 setTestSessionId(conv.sessionId);
                                 const fullConv = await getTestConversation(
                                   conv.sessionId,
@@ -1119,6 +1130,10 @@ function ChatbotPage(): JSX.Element {
                                   'success',
                                 );
                               } catch (error) {
+                                console.error(
+                                  'Failed to start test conversation:',
+                                  error,
+                                );
                                 showToast(
                                   error instanceof Error
                                     ? error.message
