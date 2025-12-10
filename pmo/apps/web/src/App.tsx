@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import ClientsPage from './pages/ClientsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import ClientIntakePage from './pages/ClientIntakePage';
+import ProjectsPage from './pages/ProjectsPage';
 import ProjectSetupPage from './pages/ProjectSetupPage';
 import ProjectDashboardPage from './pages/ProjectDashboardPage';
 import LoginPage from './pages/LoginPage';
@@ -164,6 +165,7 @@ function App(): JSX.Element {
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
             <Route path="/client-intake" element={<ClientIntakePage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/new" element={<ProjectSetupPage />} />
             <Route path="/projects/:id" element={<ProjectDashboardPage />} />
             <Route path="/meetings/:id" element={<MeetingDetailPage />} />
