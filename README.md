@@ -11,8 +11,10 @@ The `pmo` directory is an npm workspace with the following structure:
 
 - `pmo/apps/web`: Vite-powered React + TypeScript SPA frontend
 - `pmo/apps/api`: Express + TypeScript API server
+  - Includes AI Tools: Customer Service Chatbot & Smart Document Analyzer
 - `pmo/prisma`: Prisma schema and database assets
-- `pmo/packages`: Shared packages (types, UI, and utilities)
+- `pmo/packages`: Shared packages (types, UI, chatbot-widget)
+  - `@pmo/chatbot-widget`: Embeddable chatbot widget NPM package
 - `.github/workflows`: Continuous integration definitions
 
 ## Quickstart
@@ -194,6 +196,11 @@ See [Quickstart](#quickstart) section above.
   - [Product Requirements](Docs/ai-consulting-pmo-product-requirements.md) - Feature specifications
   - [Implementation Codex](Docs/AI_Consulting_PMO_Implementation_Codex.md) - Technical architecture
   - [Module System](Docs/MODULES.md) - Feature module configuration
+
+- **AI Tools**:
+  - [AI Tools Documentation](Docs/AI-Tools.md) - Comprehensive guide for AI Chatbot & Document Analyzer
+    - Chatbot: Intent detection, multi-channel support, webhooks, embeddable widget
+    - Document Analyzer: OCR, field extraction, compliance checking, integrations
 
 For fast onboarding, start with [CLAUDE.md](CLAUDE.md) which covers architecture patterns, code conventions, and common development tasks.
 

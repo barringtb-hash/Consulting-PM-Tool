@@ -73,6 +73,8 @@ Consulting-PM-Tool/
 │   │       │   ├── config/       # Environment configuration
 │   │       │   ├── middleware/   # Express middleware (error, rate-limit, module-guard)
 │   │       │   ├── modules/      # Feature modules (AI tools, MCP, marketing, etc.)
+│   │       │   │   ├── chatbot/          # AI Chatbot (Tool 1.1)
+│   │       │   │   └── document-analyzer/ # Smart Document Analyzer (Tool 2.1)
 │   │       │   ├── prisma/       # Prisma client configuration
 │   │       │   ├── routes/       # Core API routes
 │   │       │   ├── services/     # Business logic services
@@ -88,7 +90,8 @@ Consulting-PM-Tool/
 │   │   ├── seed.ts               # Seed script for test data
 │   │   └── migrations/           # Database migrations
 │   │
-│   ├── packages/                 # Shared packages (currently placeholder)
+│   ├── packages/                 # Shared packages
+│   │   └── chatbot-widget/       # @pmo/chatbot-widget NPM package for embedding
 │   ├── docs/                     # Internal documentation
 │   ├── e2e/                      # Playwright E2E tests
 │   ├── eslint.config.mjs         # ESLint configuration
@@ -99,6 +102,7 @@ Consulting-PM-Tool/
 │   ├── ai-coding-notes.md        # Quick reference for AI assistants
 │   ├── ai-consulting-pmo-product-requirements.md  # Product specs
 │   ├── AI_Consulting_PMO_Implementation_Codex.md  # Technical architecture
+│   ├── AI-Tools.md               # AI Chatbot & Document Analyzer documentation
 │   ├── deploy-notes-render-vercel.md              # Deployment guide
 │   └── MODULES.md                # Module system documentation
 │
@@ -201,6 +205,22 @@ Key models in `pmo/prisma/schema.prisma`:
 - **Campaign**: Marketing campaigns with multiple content pieces
 - **InboundLead**: Sales pipeline leads
 
+**AI Chatbot Models** (Tool 1.1):
+- **ChatbotConfig**: Per-client chatbot configuration with widget customization
+- **ChatConversation**: Conversation sessions with customer info and status
+- **ChatMessage**: Individual messages with intent detection and sentiment
+- **KnowledgeBaseItem**: FAQ entries for automated responses
+- **WebhookConfig**: Webhook endpoints for real-time event notifications
+- **ChannelConfig**: Multi-channel messaging (SMS, WhatsApp, Slack)
+- **ChatAnalytics**: Daily aggregated analytics
+
+**Document Analyzer Models** (Tool 2.1):
+- **DocumentAnalyzerConfig**: Per-client document analysis configuration
+- **AnalyzedDocument**: Uploaded documents with extraction results
+- **ExtractionTemplate**: Custom field extraction templates
+- **DocumentIntegration**: External system integrations
+- **BatchJob**: Batch processing jobs for multiple documents
+
 ## Code Conventions
 
 ### TypeScript
@@ -245,7 +265,15 @@ NODE_ENV=development
 CORS_ORIGIN="http://localhost:5173"
 
 # Module flags (optional)
-PMO_MODULES="assets,marketing,leads,admin,mcp"
+PMO_MODULES="assets,marketing,leads,admin,mcp,chatbot,documentAnalyzer"
+
+# AI Tools - OpenAI Integration (optional, enables AI features)
+OPENAI_API_KEY="sk-your-openai-api-key"
+
+# AI Tools - Channel Integrations (optional)
+TWILIO_ACCOUNT_SID="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+TWILIO_AUTH_TOKEN="your_auth_token"
+SLACK_BOT_TOKEN="xoxb-your-slack-bot-token"
 ```
 
 ### Web (`pmo/apps/web/.env`)
@@ -312,6 +340,22 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | ESLint config | `pmo/eslint.config.mjs` |
 | CI workflow | `.github/workflows/ci.yml` |
 
+**AI Tools Files**:
+
+| Purpose | File Path |
+|---------|-----------|
+| Chatbot router | `pmo/apps/api/src/modules/chatbot/chatbot.router.ts` |
+| Chatbot service | `pmo/apps/api/src/modules/chatbot/chatbot.service.ts` |
+| Chatbot widget router | `pmo/apps/api/src/modules/chatbot/widget/widget.router.ts` |
+| Chatbot webhooks | `pmo/apps/api/src/modules/chatbot/webhooks/webhook.service.ts` |
+| Chatbot channels | `pmo/apps/api/src/modules/chatbot/channels/` |
+| Chatbot page (UI) | `pmo/apps/web/src/pages/ai-tools/ChatbotPage.tsx` |
+| Widget package | `pmo/packages/chatbot-widget/` |
+| Doc analyzer router | `pmo/apps/api/src/modules/document-analyzer/document-analyzer.router.ts` |
+| Doc analyzer service | `pmo/apps/api/src/modules/document-analyzer/document-analyzer.service.ts` |
+| Doc analyzer templates | `pmo/apps/api/src/modules/document-analyzer/templates/built-in-templates.ts` |
+| Doc analyzer page (UI) | `pmo/apps/web/src/pages/ai-tools/DocumentAnalyzerPage.tsx` |
+
 ## Common Tasks
 
 ### Adding a New API Route
@@ -333,8 +377,17 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 ### Enabling a Module
 Set `PMO_MODULES` environment variable with comma-separated module names:
 ```bash
-PMO_MODULES="assets,marketing,leads,admin,mcp,chatbot"
+PMO_MODULES="assets,marketing,leads,admin,mcp,chatbot,documentAnalyzer"
 ```
+
+### Working with AI Tools
+For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI-Tools.md](Docs/AI-Tools.md).
+
+**Quick start for AI Tools:**
+1. Enable modules: Add `chatbot` and/or `documentAnalyzer` to `PMO_MODULES`
+2. Set `OPENAI_API_KEY` for AI-powered features (optional - falls back to rule-based)
+3. Access UI at `/ai-tools/chatbot` or `/ai-tools/document-analyzer`
+4. Configure per-client via the Client detail page
 
 ## Troubleshooting
 
@@ -364,5 +417,6 @@ PMO_MODULES="assets,marketing,leads,admin,mcp,chatbot"
 - [Implementation Codex](Docs/AI_Consulting_PMO_Implementation_Codex.md)
 - [AI Coding Notes](Docs/ai-coding-notes.md)
 - [Module System](Docs/MODULES.md)
+- [AI Tools (Chatbot & Document Analyzer)](Docs/AI-Tools.md)
 - [Deployment Guide](Docs/deploy-notes-render-vercel.md)
 - [E2E Test Coverage](pmo/docs/e2e-coverage.md)
