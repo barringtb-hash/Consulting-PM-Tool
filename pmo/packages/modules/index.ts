@@ -24,6 +24,8 @@ export type ModuleId =
   | 'leads'
   | 'pipeline'
   | 'admin'
+  // Customer Success Platform
+  | 'customerSuccess'
   // MCP Integration module
   | 'mcp'
   // Phase 1 AI Tool modules
@@ -61,6 +63,7 @@ export type NavGroup =
   | 'overview'
   | 'clients'
   | 'projects'
+  | 'customerSuccess'
   | 'marketing'
   | 'sales'
   | 'aiTools'
@@ -213,6 +216,34 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/users', '/api/admin'],
     description:
       'User administration, module configuration, and access control',
+  },
+
+  // ============ CUSTOMER SUCCESS PLATFORM ============
+  customerSuccess: {
+    id: 'customerSuccess',
+    label: 'Customer Success',
+    navGroup: 'customerSuccess',
+    path: '/customer-success',
+    additionalPaths: [
+      '/customer-success/health',
+      '/customer-success/ctas',
+      '/customer-success/success-plans',
+      '/customer-success/playbooks',
+      '/customer-success/analytics',
+      '/customer-success/client/:clientId',
+    ],
+    icon: 'HeartHandshake',
+    isCore: false,
+    dependencies: ['clients', 'projects'],
+    apiPrefixes: [
+      '/api/customer-success',
+      '/api/health-scores',
+      '/api/ctas',
+      '/api/success-plans',
+      '/api/playbooks',
+    ],
+    description:
+      'Customer Success Platform with health scoring, CTAs, success plans, playbooks, and analytics - inspired by Gainsight',
   },
 
   // ============ MCP INTEGRATION MODULE ============
@@ -590,12 +621,13 @@ export const NAV_GROUP_CONFIG: Record<
   demo: { label: 'Demos', order: 2 }, // Demo section at top for visibility
   clients: { label: 'Clients', order: 3 },
   projects: { label: 'Projects', order: 4 },
-  marketing: { label: 'Marketing', order: 5 },
-  sales: { label: 'Sales', order: 6 },
-  aiTools: { label: 'AI Tools', order: 7 },
-  infrastructure: { label: 'Infrastructure', order: 8 },
-  compliance: { label: 'Compliance', order: 9 },
-  admin: { label: 'Admin', order: 10 },
+  customerSuccess: { label: 'Customer Success', order: 5 },
+  marketing: { label: 'Marketing', order: 6 },
+  sales: { label: 'Sales', order: 7 },
+  aiTools: { label: 'AI Tools', order: 8 },
+  infrastructure: { label: 'Infrastructure', order: 9 },
+  compliance: { label: 'Compliance', order: 10 },
+  admin: { label: 'Admin', order: 11 },
 };
 
 /**
@@ -611,6 +643,8 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'leads',
   'pipeline',
   'admin',
+  // Customer Success Platform
+  'customerSuccess',
   // MCP Integration
   'mcp',
   // Phase 1 AI Tools

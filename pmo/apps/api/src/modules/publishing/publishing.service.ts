@@ -5,16 +5,50 @@ import {
 } from '../../types/marketing';
 
 /**
+ * Verify user has access to a client (via owned projects or admin role)
+ */
+async function verifyClientAccess(
+  clientId: number,
+  userId: number,
+): Promise<boolean> {
+  // Check if user is an admin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (user?.role === 'ADMIN') {
+    return true;
+  }
+
+  // Check if user owns any project for this client
+  const project = await prisma.project.findFirst({
+    where: {
+      clientId,
+      ownerId: userId,
+    },
+    select: { id: true },
+  });
+
+  return !!project;
+}
+
+/**
  * Get all publishing connections for a client
  */
 export const getPublishingConnections = async (
   clientId: number,
-
-  _ownerId: number,
+  ownerId: number,
 ) => {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client) {
     return { error: 'client_not_found' as const };
+  }
+
+  // Verify user has access to this client
+  const hasAccess = await verifyClientAccess(clientId, ownerId);
+  if (!hasAccess) {
+    return { error: 'forbidden' as const };
   }
 
   const connections = await prisma.publishingConnection.findMany({
@@ -34,7 +68,7 @@ export const getPublishingConnections = async (
  * Create a publishing connection
  */
 export const createPublishingConnection = async (
-  _ownerId: number,
+  ownerId: number,
   input: CreatePublishingConnectionInput,
 ) => {
   const client = await prisma.client.findUnique({
@@ -42,6 +76,12 @@ export const createPublishingConnection = async (
   });
   if (!client) {
     return { error: 'client_not_found' as const };
+  }
+
+  // Verify user has access to this client
+  const hasAccess = await verifyClientAccess(input.clientId, ownerId);
+  if (!hasAccess) {
+    return { error: 'forbidden' as const };
   }
 
   // Check for duplicate connection
@@ -75,7 +115,7 @@ export const createPublishingConnection = async (
  */
 export const updatePublishingConnection = async (
   id: number,
-  _ownerId: number,
+  ownerId: number,
   input: UpdatePublishingConnectionInput,
 ) => {
   const existing = await prisma.publishingConnection.findUnique({
@@ -83,6 +123,12 @@ export const updatePublishingConnection = async (
   });
   if (!existing) {
     return { error: 'not_found' as const };
+  }
+
+  // Verify user has access to the connection's client
+  const hasAccess = await verifyClientAccess(existing.clientId, ownerId);
+  if (!hasAccess) {
+    return { error: 'forbidden' as const };
   }
 
   const connection = await prisma.publishingConnection.update({
@@ -103,14 +149,19 @@ export const updatePublishingConnection = async (
  */
 export const deletePublishingConnection = async (
   id: number,
-
-  _ownerId: number,
+  ownerId: number,
 ) => {
   const existing = await prisma.publishingConnection.findUnique({
     where: { id },
   });
   if (!existing) {
     return { error: 'not_found' as const };
+  }
+
+  // Verify user has access to the connection's client
+  const hasAccess = await verifyClientAccess(existing.clientId, ownerId);
+  if (!hasAccess) {
+    return { error: 'forbidden' as const };
   }
 
   await prisma.publishingConnection.delete({

@@ -38,6 +38,8 @@ import revenueManagementRouter from './modules/revenue-management/revenue-manage
 import safetyMonitorRouter from './modules/safety-monitor/safety-monitor.router';
 // MCP Integration
 import mcpRouter from './modules/mcp/mcp.router';
+// Customer Success Platform
+import customerSuccessRouter from './modules/customer-success/customer-success.router';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -269,6 +271,16 @@ export function createApp(): express.Express {
   // The requireModule middleware handles runtime access control and returns
   // informative "module not available" errors instead of generic 404s.
   app.use('/api/mcp', requireModule('mcp'), mcpRouter);
+
+  // ============ CUSTOMER SUCCESS PLATFORM ============
+  // Customer Success routes - Gainsight-inspired CS platform for SMB
+  if (isModuleEnabled('customerSuccess')) {
+    app.use(
+      '/api/customer-success',
+      requireModule('customerSuccess'),
+      customerSuccessRouter,
+    );
+  }
 
   // ============ AI TOOL MODULES ============
   // AI Tool routes are ALWAYS registered to ensure proper error messages.
