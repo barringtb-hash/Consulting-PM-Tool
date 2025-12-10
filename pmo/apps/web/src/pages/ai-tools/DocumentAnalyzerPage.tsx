@@ -290,11 +290,38 @@ async function analyzeDocument(documentId: number): Promise<void> {
   }
 }
 
+async function uploadDocument(
+  configId: number,
+  data: {
+    filename: string;
+    originalUrl: string;
+    mimeType: string;
+    sizeBytes: number;
+    format: string;
+  },
+): Promise<AnalyzedDocument> {
+  const res = await fetch(
+    buildApiUrl(`/document-analyzer/${configId}/documents`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to upload document') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.document;
+}
+
 function DocumentAnalyzerPage(): JSX.Element {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'overview' | 'documents' | 'templates' | 'integrations' | 'analytics'
   >('overview');
@@ -369,11 +396,38 @@ function DocumentAnalyzerPage(): JSX.Element {
     },
   });
 
+  const uploadMutation = useMutation({
+    mutationFn: (data: {
+      configId: number;
+      filename: string;
+      originalUrl: string;
+      mimeType: string;
+      sizeBytes: number;
+      format: string;
+    }) =>
+      uploadDocument(data.configId, {
+        filename: data.filename,
+        originalUrl: data.originalUrl,
+        mimeType: data.mimeType,
+        sizeBytes: data.sizeBytes,
+        format: data.format,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['analyzed-documents'] });
+      setShowUploadModal(false);
+      showToast('Document uploaded successfully', 'success');
+    },
+    onError: (error: Error) => {
+      showToast(error.message, 'error');
+    },
+  });
+
   // Redirect to login on 401 errors
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(clientsQuery.error);
   useRedirectOnUnauthorized(createConfigMutation.error);
   useRedirectOnUnauthorized(analyzeMutation.error);
+  useRedirectOnUnauthorized(uploadMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -393,6 +447,27 @@ function DocumentAnalyzerPage(): JSX.Element {
         retentionDays:
           parseInt(formData.get('retentionDays') as string, 10) || 365,
       },
+    });
+  };
+
+  const handleUploadDocument = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedConfigId) return;
+
+    const formData = new FormData(e.currentTarget);
+    const filename = formData.get('filename') as string;
+    const originalUrl = formData.get('originalUrl') as string;
+    const mimeType = formData.get('mimeType') as string;
+    const sizeBytes = parseInt(formData.get('sizeBytes') as string, 10) || 0;
+    const format = formData.get('format') as string;
+
+    uploadMutation.mutate({
+      configId: selectedConfigId,
+      filename,
+      originalUrl,
+      mimeType,
+      sizeBytes,
+      format,
     });
   };
 
@@ -675,7 +750,7 @@ function DocumentAnalyzerPage(): JSX.Element {
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
-                <Button>
+                <Button onClick={() => setShowUploadModal(true)}>
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Document
                 </Button>
@@ -1297,6 +1372,71 @@ function DocumentAnalyzerPage(): JSX.Element {
                 </Button>
                 <Button type="submit" disabled={createConfigMutation.isPending}>
                   {createConfigMutation.isPending ? 'Creating...' : 'Create'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Document Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
+            <form onSubmit={handleUploadDocument} className="space-y-4">
+              <Input
+                label="Filename"
+                name="filename"
+                placeholder="document.pdf"
+                required
+              />
+
+              <Input
+                label="Document URL"
+                name="originalUrl"
+                type="url"
+                placeholder="https://example.com/document.pdf"
+                required
+              />
+
+              <Select label="Format" name="format" required>
+                <option value="PDF">PDF</option>
+                <option value="WORD">Word Document</option>
+                <option value="EXCEL">Excel Spreadsheet</option>
+                <option value="IMAGE">Image</option>
+                <option value="SCANNED">Scanned Document</option>
+                <option value="TEXT">Text File</option>
+                <option value="OTHER">Other</option>
+              </Select>
+
+              <Input
+                label="MIME Type"
+                name="mimeType"
+                placeholder="application/pdf"
+                defaultValue="application/pdf"
+                required
+              />
+
+              <Input
+                label="File Size (bytes)"
+                name="sizeBytes"
+                type="number"
+                placeholder="1024"
+                defaultValue={0}
+                min={0}
+              />
+
+              <div className="flex gap-2 justify-end pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowUploadModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={uploadMutation.isPending}>
+                  {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
                 </Button>
               </div>
             </form>
