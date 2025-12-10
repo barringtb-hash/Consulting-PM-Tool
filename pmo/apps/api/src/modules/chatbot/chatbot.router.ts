@@ -4,7 +4,7 @@
  * API endpoints for chatbot configuration, conversations, and analytics
  */
 
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Prisma, ConversationStatus } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
@@ -324,7 +324,11 @@ router.get(
  */
 router.post(
   '/chatbot/conversations/:sessionId/messages',
-  async (req: AuthenticatedRequest<{ sessionId: string }>, res: Response) => {
+  async (
+    req: AuthenticatedRequest<{ sessionId: string }>,
+    res: Response,
+    next: NextFunction,
+  ) => {
     const { sessionId } = req.params;
 
     const parsed = messageSchema.safeParse(req.body);
@@ -346,7 +350,7 @@ router.post(
         res.status(404).json({ error: 'Conversation not found' });
         return;
       }
-      throw error;
+      next(error);
     }
   },
 );
