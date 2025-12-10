@@ -62,6 +62,12 @@ router.get(
         res.status(404).json({ error: 'Client not found' });
         return;
       }
+      if (result.error === 'forbidden') {
+        res
+          .status(403)
+          .json({ error: 'You do not have access to this client' });
+        return;
+      }
     }
 
     res.json({ connections: result.connections });
@@ -103,6 +109,12 @@ router.post(
     if ('error' in result) {
       if (result.error === 'client_not_found') {
         res.status(404).json({ error: 'Client not found' });
+        return;
+      }
+      if (result.error === 'forbidden') {
+        res
+          .status(403)
+          .json({ error: 'You do not have access to this client' });
         return;
       }
       if (result.error === 'already_exists') {
@@ -155,6 +167,12 @@ router.patch(
         res.status(404).json({ error: 'Publishing connection not found' });
         return;
       }
+      if (result.error === 'forbidden') {
+        res.status(403).json({
+          error: 'You do not have access to this publishing connection',
+        });
+        return;
+      }
     }
 
     res.json({ connection: result.connection });
@@ -184,6 +202,12 @@ router.delete(
     if ('error' in result) {
       if (result.error === 'not_found') {
         res.status(404).json({ error: 'Publishing connection not found' });
+        return;
+      }
+      if (result.error === 'forbidden') {
+        res.status(403).json({
+          error: 'You do not have access to this publishing connection',
+        });
         return;
       }
     }
