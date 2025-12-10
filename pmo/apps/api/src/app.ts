@@ -56,12 +56,44 @@ function isWidgetPath(path: string): boolean {
   const widgetPatterns = [
     /^\/api\/chatbot\/widget\//,
     /^\/api\/chatbot\/embed\//,
-    /^\/api\/chatbot\/\d+\/conversations$/,
-    /^\/api\/chatbot\/conversations\/[^/]+\/messages$/,
-    /^\/api\/chatbot\/conversations\/[^/]+$/,
     /^\/api\/chatbot\/\d+\/webhooks\//, // Channel webhooks (Twilio, Slack, etc.)
   ];
   return widgetPatterns.some((pattern) => pattern.test(path));
+}
+
+/**
+ * Check if a request path is a chatbot conversation path.
+ * These paths can be accessed both from the dashboard (with credentials)
+ * and from embedded widgets (without credentials).
+ */
+function isConversationPath(path: string): boolean {
+  const conversationPatterns = [
+    /^\/api\/chatbot\/\d+\/conversations$/,
+    /^\/api\/chatbot\/conversations\/[^/]+\/messages$/,
+    /^\/api\/chatbot\/conversations\/[^/]+$/,
+  ];
+  return conversationPatterns.some((pattern) => pattern.test(path));
+}
+
+/**
+ * Check if an origin is an allowed (first-party) origin
+ */
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true; // No origin (server-to-server, curl, etc.)
+
+  const corsOrigin = env.corsOrigin;
+  if (!corsOrigin) return true; // No CORS restriction in dev
+
+  const allowedOrigins = corsOrigin.split(',').map((o) => o.trim());
+
+  // Check exact match
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Check Vercel preview URLs if configured
+  const hasVercelOrigin = allowedOrigins.some((o) => o.includes('.vercel.app'));
+  if (hasVercelOrigin && origin.endsWith('.vercel.app')) return true;
+
+  return false;
 }
 
 /**
@@ -138,7 +170,9 @@ export function createApp(): express.Express {
   // Supports multiple origins, Vercel preview deployments, and widget embedding
   // Explicitly allows Authorization header for Safari ITP fallback authentication
   app.use((req, res, next) => {
-    // For widget paths, use permissive CORS (allow any origin)
+    const origin = req.get('Origin');
+
+    // For widget paths (scripts, embeds, webhooks), use permissive CORS
     if (isWidgetPath(req.path)) {
       cors({
         origin: true, // Allow any origin for widget paths
@@ -147,6 +181,28 @@ export function createApp(): express.Express {
         exposedHeaders: ['Content-Type'],
         maxAge: 86400,
       })(req, res, next);
+    } else if (isConversationPath(req.path)) {
+      // Conversation paths can be accessed from both dashboard and widgets
+      // Use credentials if request is from allowed origin, otherwise allow any origin
+      if (isAllowedOrigin(origin)) {
+        // Request from dashboard - use credentialed CORS
+        cors({
+          origin: buildCorsOrigin(),
+          credentials: true,
+          allowedHeaders: ['Content-Type', 'Authorization'],
+          exposedHeaders: ['Content-Type'],
+          maxAge: 86400,
+        })(req, res, next);
+      } else {
+        // Request from third-party widget - use permissive CORS without credentials
+        cors({
+          origin: true,
+          credentials: false,
+          allowedHeaders: ['Content-Type'],
+          exposedHeaders: ['Content-Type'],
+          maxAge: 86400,
+        })(req, res, next);
+      }
     } else {
       // Standard CORS for API routes
       cors({
