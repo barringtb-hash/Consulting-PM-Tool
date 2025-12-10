@@ -496,15 +496,29 @@ export async function getCTASummary(ownerId?: number): Promise<{
 }
 
 /**
+ * Cockpit view response matching frontend CockpitView interface
+ */
+export interface CockpitViewResponse {
+  overdueCTAs: CTAWithRelations[];
+  todayCTAs: CTAWithRelations[];
+  upcomingCTAs: CTAWithRelations[];
+  summary: {
+    total: number;
+    open: number;
+    inProgress: number;
+    completed: number;
+    overdue: number;
+    byType: Record<string, number>;
+    byPriority: Record<string, number>;
+  };
+}
+
+/**
  * Get Cockpit view (prioritized CTAs for daily workflow)
  */
-export async function getCockpit(ownerId: number): Promise<{
-  critical: CTAWithRelations[];
-  overdue: CTAWithRelations[];
-  dueToday: CTAWithRelations[];
-  dueThisWeek: CTAWithRelations[];
-  snoozedReady: CTAWithRelations[];
-}> {
+export async function getCockpit(
+  ownerId: number,
+): Promise<CockpitViewResponse> {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tomorrow = new Date(today);
@@ -523,71 +537,106 @@ export async function getCockpit(ownerId: number): Promise<{
     },
   };
 
-  const [critical, overdue, dueToday, dueThisWeek, snoozedReady] =
-    await Promise.all([
-      // Critical priority CTAs
-      prisma.cTA.findMany({
-        where: {
-          ownerId,
-          priority: 'CRITICAL',
-          status: { in: ['OPEN', 'IN_PROGRESS'] },
-        },
-        include: includeRelations,
-        orderBy: { dueDate: 'asc' },
-        take: 10,
-      }),
-      // Overdue CTAs
-      prisma.cTA.findMany({
-        where: {
-          ownerId,
-          status: { in: ['OPEN', 'IN_PROGRESS'] },
-          dueDate: { lt: today },
-        },
-        include: includeRelations,
-        orderBy: { dueDate: 'asc' },
-        take: 10,
-      }),
-      // Due today
-      prisma.cTA.findMany({
-        where: {
-          ownerId,
-          status: { in: ['OPEN', 'IN_PROGRESS'] },
-          dueDate: { gte: today, lt: tomorrow },
-        },
-        include: includeRelations,
-        orderBy: { priority: 'asc' },
-        take: 10,
-      }),
-      // Due this week
-      prisma.cTA.findMany({
-        where: {
-          ownerId,
-          status: { in: ['OPEN', 'IN_PROGRESS'] },
-          dueDate: { gte: tomorrow, lt: weekEnd },
-        },
-        include: includeRelations,
-        orderBy: [{ priority: 'asc' }, { dueDate: 'asc' }],
-        take: 10,
-      }),
-      // Snoozed CTAs that are ready to resume
-      prisma.cTA.findMany({
-        where: {
-          ownerId,
-          status: 'SNOOZED',
-          snoozeUntil: { lte: now },
-        },
-        include: includeRelations,
-        orderBy: { snoozeUntil: 'asc' },
-        take: 5,
-      }),
-    ]);
+  const [
+    overdueCTAs,
+    todayCTAs,
+    upcomingCTAs,
+    openCount,
+    inProgressCount,
+    completedCount,
+    overdueCount,
+    ctasByType,
+    ctasByPriority,
+  ] = await Promise.all([
+    // Overdue CTAs
+    prisma.cTA.findMany({
+      where: {
+        ownerId,
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+        dueDate: { lt: today },
+      },
+      include: includeRelations,
+      orderBy: [{ priority: 'asc' }, { dueDate: 'asc' }],
+      take: 20,
+    }),
+    // Due today
+    prisma.cTA.findMany({
+      where: {
+        ownerId,
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+        dueDate: { gte: today, lt: tomorrow },
+      },
+      include: includeRelations,
+      orderBy: { priority: 'asc' },
+      take: 20,
+    }),
+    // Due this week (upcoming)
+    prisma.cTA.findMany({
+      where: {
+        ownerId,
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+        dueDate: { gte: tomorrow, lt: weekEnd },
+      },
+      include: includeRelations,
+      orderBy: [{ priority: 'asc' }, { dueDate: 'asc' }],
+      take: 20,
+    }),
+    // Summary counts
+    prisma.cTA.count({
+      where: { ownerId, status: 'OPEN' },
+    }),
+    prisma.cTA.count({
+      where: { ownerId, status: 'IN_PROGRESS' },
+    }),
+    prisma.cTA.count({
+      where: { ownerId, status: 'COMPLETED' },
+    }),
+    prisma.cTA.count({
+      where: {
+        ownerId,
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+        dueDate: { lt: today },
+      },
+    }),
+    // Group by type
+    prisma.cTA.groupBy({
+      by: ['type'],
+      where: { ownerId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      _count: true,
+    }),
+    // Group by priority
+    prisma.cTA.groupBy({
+      by: ['priority'],
+      where: { ownerId, status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      _count: true,
+    }),
+  ]);
+
+  // Build byType record
+  const byType: Record<string, number> = {};
+  for (const item of ctasByType) {
+    byType[item.type] = item._count;
+  }
+
+  // Build byPriority record
+  const byPriority: Record<string, number> = {};
+  for (const item of ctasByPriority) {
+    byPriority[item.priority] = item._count;
+  }
 
   return {
-    critical: critical as unknown as CTAWithRelations[],
-    overdue: overdue as unknown as CTAWithRelations[],
-    dueToday: dueToday as unknown as CTAWithRelations[],
-    dueThisWeek: dueThisWeek as unknown as CTAWithRelations[],
-    snoozedReady: snoozedReady as unknown as CTAWithRelations[],
+    overdueCTAs: overdueCTAs as unknown as CTAWithRelations[],
+    todayCTAs: todayCTAs as unknown as CTAWithRelations[],
+    upcomingCTAs: upcomingCTAs as unknown as CTAWithRelations[],
+    summary: {
+      total: openCount + inProgressCount,
+      open: openCount,
+      inProgress: inProgressCount,
+      completed: completedCount,
+      overdue: overdueCount,
+      byType,
+      byPriority,
+    },
   };
 }
 
