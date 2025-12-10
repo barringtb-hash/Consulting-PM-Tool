@@ -7,12 +7,14 @@
 
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { Priority } from '@prisma/client';
+import { Priority, EngagementLevel, CSActivityType } from '@prisma/client';
 import { requireAuth, AuthenticatedRequest } from '../../auth/auth.middleware';
 import * as healthScoreService from './health-score.service';
 import * as ctaService from './cta.service';
 import * as playbookService from './playbook.service';
 import * as successPlanService from './success-plan.service';
+import * as engagementService from './engagement.service';
+import * as analyticsService from './analytics.service';
 
 const router = Router();
 
@@ -1048,6 +1050,387 @@ router.delete(
     } catch (error) {
       console.error('Error deleting task:', error);
       res.status(500).json({ error: 'Failed to delete task' });
+    }
+  },
+);
+
+// =============================================================================
+// ENGAGEMENT ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/customer-success/engagement/contacts
+ * List contact engagements with filtering
+ */
+router.get(
+  '/engagement/contacts',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        clientId,
+        engagementLevel,
+        isChampion,
+        isDecisionMaker,
+        limit,
+        offset,
+      } = req.query;
+
+      const result = await engagementService.listContactEngagements({
+        clientId: clientId ? parseInt(clientId as string) : undefined,
+        engagementLevel: engagementLevel as EngagementLevel | undefined,
+        isChampion:
+          isChampion === 'true'
+            ? true
+            : isChampion === 'false'
+              ? false
+              : undefined,
+        isDecisionMaker:
+          isDecisionMaker === 'true'
+            ? true
+            : isDecisionMaker === 'false'
+              ? false
+              : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error listing contact engagements:', error);
+      res.status(500).json({ error: 'Failed to list contact engagements' });
+    }
+  },
+);
+
+/**
+ * GET /api/customer-success/engagement/client/:clientId/summary
+ * Get engagement summary for a client
+ */
+router.get(
+  '/engagement/client/:clientId/summary',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const summary =
+        await engagementService.getClientEngagementSummary(clientId);
+      res.json(summary);
+    } catch (error) {
+      console.error('Error getting engagement summary:', error);
+      res.status(500).json({ error: 'Failed to get engagement summary' });
+    }
+  },
+);
+
+/**
+ * GET /api/customer-success/engagement/contact/:contactId
+ * Get engagement for a specific contact
+ */
+router.get(
+  '/engagement/contact/:contactId',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const engagement =
+        await engagementService.getOrCreateContactEngagement(contactId);
+      res.json(engagement);
+    } catch (error) {
+      console.error('Error getting contact engagement:', error);
+      res.status(500).json({ error: 'Failed to get contact engagement' });
+    }
+  },
+);
+
+/**
+ * PATCH /api/customer-success/engagement/contact/:contactId
+ * Update contact engagement
+ */
+router.patch(
+  '/engagement/contact/:contactId',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const { isChampion, isDecisionMaker, notes } = req.body as {
+        isChampion?: boolean;
+        isDecisionMaker?: boolean;
+        notes?: string;
+      };
+
+      const engagement = await engagementService.updateContactEngagement(
+        contactId,
+        {
+          isChampion,
+          isDecisionMaker,
+          notes,
+        },
+      );
+
+      res.json(engagement);
+    } catch (error) {
+      console.error('Error updating contact engagement:', error);
+      res.status(500).json({ error: 'Failed to update contact engagement' });
+    }
+  },
+);
+
+/**
+ * POST /api/customer-success/engagement/contact/:contactId/champion
+ * Set champion status for a contact
+ */
+router.post(
+  '/engagement/contact/:contactId/champion',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const { isChampion } = req.body as { isChampion: boolean };
+
+      await engagementService.setChampionStatus(contactId, isChampion);
+      res.json({ message: 'Champion status updated' });
+    } catch (error) {
+      console.error('Error setting champion status:', error);
+      res.status(500).json({ error: 'Failed to set champion status' });
+    }
+  },
+);
+
+/**
+ * POST /api/customer-success/engagement/contact/:contactId/decision-maker
+ * Set decision maker status for a contact
+ */
+router.post(
+  '/engagement/contact/:contactId/decision-maker',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const { isDecisionMaker } = req.body as { isDecisionMaker: boolean };
+
+      await engagementService.setDecisionMakerStatus(
+        contactId,
+        isDecisionMaker,
+      );
+      res.json({ message: 'Decision maker status updated' });
+    } catch (error) {
+      console.error('Error setting decision maker status:', error);
+      res.status(500).json({ error: 'Failed to set decision maker status' });
+    }
+  },
+);
+
+/**
+ * POST /api/customer-success/engagement/interaction
+ * Record an interaction with a contact
+ */
+router.post(
+  '/engagement/interaction',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { contactId } = req.body as {
+        contactId: number;
+      };
+
+      if (!contactId) {
+        return res.status(400).json({ error: 'Contact ID is required' });
+      }
+
+      await engagementService.recordInteraction(contactId);
+      res.json({ message: 'Interaction recorded' });
+    } catch (error) {
+      console.error('Error recording interaction:', error);
+      res.status(500).json({ error: 'Failed to record interaction' });
+    }
+  },
+);
+
+/**
+ * GET /api/customer-success/activity/client/:clientId
+ * Get activity timeline for a client
+ */
+router.get(
+  '/activity/client/:clientId',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const { projectId, contactId, limit, offset } = req.query;
+
+      const result = await engagementService.getActivityTimeline(clientId, {
+        projectId: projectId ? parseInt(projectId as string) : undefined,
+        contactId: contactId ? parseInt(contactId as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error getting activity timeline:', error);
+      res.status(500).json({ error: 'Failed to get activity timeline' });
+    }
+  },
+);
+
+/**
+ * POST /api/customer-success/activity
+ * Log a customer success activity
+ */
+router.post(
+  '/activity',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const {
+        clientId,
+        projectId,
+        contactId,
+        activityType,
+        title,
+        description,
+        metadata,
+        sentiment,
+        sentimentScore,
+      } = req.body as {
+        clientId: number;
+        projectId?: number;
+        contactId?: number;
+        activityType: string;
+        title: string;
+        description?: string;
+        metadata?: Record<string, unknown>;
+        sentiment?: string;
+        sentimentScore?: number;
+      };
+
+      if (!clientId || !activityType || !title) {
+        return res
+          .status(400)
+          .json({ error: 'Client ID, activity type, and title are required' });
+      }
+
+      // Validate activity type
+      if (
+        !Object.values(CSActivityType).includes(activityType as CSActivityType)
+      ) {
+        return res.status(400).json({ error: 'Invalid activity type' });
+      }
+
+      const result = await engagementService.logActivity({
+        clientId,
+        projectId,
+        contactId,
+        userId: req.userId!,
+        activityType: activityType as CSActivityType,
+        title,
+        description,
+        metadata,
+        sentiment,
+        sentimentScore,
+      });
+
+      res.status(201).json(result);
+    } catch (error) {
+      console.error('Error logging activity:', error);
+      res.status(500).json({ error: 'Failed to log activity' });
+    }
+  },
+);
+
+// =============================================================================
+// ANALYTICS ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/customer-success/analytics/dashboard
+ * Get dashboard summary metrics
+ */
+router.get(
+  '/analytics/dashboard',
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const summary = await analyticsService.getDashboardSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error('Error getting dashboard summary:', error);
+      res.status(500).json({ error: 'Failed to get dashboard summary' });
+    }
+  },
+);
+
+/**
+ * GET /api/customer-success/analytics/portfolio
+ * Get portfolio analytics
+ */
+router.get(
+  '/analytics/portfolio',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const days = req.query.days ? parseInt(req.query.days as string) : 30;
+      const analytics = await analyticsService.getPortfolioAnalytics(days);
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error getting portfolio analytics:', error);
+      res.status(500).json({ error: 'Failed to get portfolio analytics' });
+    }
+  },
+);
+
+/**
+ * GET /api/customer-success/analytics/ctas
+ * Get CTA analytics
+ */
+router.get(
+  '/analytics/ctas',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const days = req.query.days ? parseInt(req.query.days as string) : 30;
+      const analytics = await analyticsService.getCTAAnalytics(days);
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error getting CTA analytics:', error);
+      res.status(500).json({ error: 'Failed to get CTA analytics' });
+    }
+  },
+);
+
+/**
+ * GET /api/customer-success/analytics/csm-performance
+ * Get CSM performance metrics
+ */
+router.get(
+  '/analytics/csm-performance',
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const metrics = await analyticsService.getCSMPerformanceMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error getting CSM performance metrics:', error);
+      res.status(500).json({ error: 'Failed to get CSM performance metrics' });
+    }
+  },
+);
+
+/**
+ * GET /api/customer-success/analytics/time-to-value
+ * Get time-to-value metrics
+ */
+router.get(
+  '/analytics/time-to-value',
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      const metrics = await analyticsService.getTimeToValueMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error getting time-to-value metrics:', error);
+      res.status(500).json({ error: 'Failed to get time-to-value metrics' });
     }
   },
 );

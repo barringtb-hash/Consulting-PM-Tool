@@ -109,6 +109,9 @@ const MarketingDemoPage = lazy(() => import('./pages/demo/MarketingDemoPage'));
 const CustomerSuccessDashboardPage = lazy(
   () => import('./pages/customer-success/CustomerSuccessDashboardPage'),
 );
+const CustomerSuccessAnalyticsPage = lazy(
+  () => import('./pages/customer-success/CustomerSuccessAnalyticsPage'),
+);
 
 /**
  * Loading fallback for lazy-loaded pages
@@ -519,6 +522,14 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <CustomerSuccessDashboardPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/customer-success/analytics"
+                  element={
+                    <LazyPage>
+                      <CustomerSuccessAnalyticsPage />
                     </LazyPage>
                   }
                 />

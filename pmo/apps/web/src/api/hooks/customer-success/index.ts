@@ -15,6 +15,8 @@ import type {
   CreateCTAInput,
   UpdateCTAInput,
   CreatePlaybookInput,
+  EngagementListFilters,
+  ActivityLogInput,
 } from '../../customer-success';
 
 // =============================================================================
@@ -286,5 +288,179 @@ export function useDeleteSuccessPlan() {
         queryKey: queryKeys.customerSuccess.successPlans.all(),
       });
     },
+  });
+}
+
+// =============================================================================
+// ENGAGEMENT HOOKS
+// =============================================================================
+
+export function useContactEngagements(filters?: EngagementListFilters) {
+  return useQuery({
+    queryKey: ['customerSuccess', 'engagements', 'list', filters],
+    queryFn: () => customerSuccessApi.listContactEngagements(filters),
+  });
+}
+
+export function useClientEngagementSummary(clientId: number) {
+  return useQuery({
+    queryKey: ['customerSuccess', 'engagements', 'client', clientId, 'summary'],
+    queryFn: () => customerSuccessApi.getClientEngagementSummary(clientId),
+    enabled: !!clientId,
+  });
+}
+
+export function useContactEngagement(contactId: number) {
+  return useQuery({
+    queryKey: ['customerSuccess', 'engagements', 'contact', contactId],
+    queryFn: () => customerSuccessApi.getContactEngagement(contactId),
+    enabled: !!contactId,
+  });
+}
+
+export function useUpdateContactEngagement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      contactId,
+      input,
+    }: {
+      contactId: number;
+      input: Parameters<typeof customerSuccessApi.updateContactEngagement>[1];
+    }) => customerSuccessApi.updateContactEngagement(contactId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['customerSuccess', 'engagements'],
+      });
+    },
+  });
+}
+
+export function useSetChampionStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      contactId,
+      isChampion,
+    }: {
+      contactId: number;
+      isChampion: boolean;
+    }) => customerSuccessApi.setChampionStatus(contactId, isChampion),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['customerSuccess', 'engagements'],
+      });
+    },
+  });
+}
+
+export function useSetDecisionMakerStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      contactId,
+      isDecisionMaker,
+    }: {
+      contactId: number;
+      isDecisionMaker: boolean;
+    }) => customerSuccessApi.setDecisionMakerStatus(contactId, isDecisionMaker),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['customerSuccess', 'engagements'],
+      });
+    },
+  });
+}
+
+export function useRecordInteraction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (contactId: number) =>
+      customerSuccessApi.recordInteraction(contactId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['customerSuccess', 'engagements'],
+      });
+    },
+  });
+}
+
+// =============================================================================
+// ACTIVITY HOOKS
+// =============================================================================
+
+export function useActivityTimeline(
+  clientId: number,
+  options?: {
+    projectId?: number;
+    contactId?: number;
+    limit?: number;
+    offset?: number;
+  },
+) {
+  return useQuery({
+    queryKey: ['customerSuccess', 'activity', 'client', clientId, options],
+    queryFn: () => customerSuccessApi.getActivityTimeline(clientId, options),
+    enabled: !!clientId,
+  });
+}
+
+export function useLogActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ActivityLogInput) =>
+      customerSuccessApi.logActivity(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['customerSuccess', 'activity'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['customerSuccess', 'engagements'],
+      });
+    },
+  });
+}
+
+// =============================================================================
+// ANALYTICS HOOKS
+// =============================================================================
+
+export function useDashboardSummary() {
+  return useQuery({
+    queryKey: ['customerSuccess', 'analytics', 'dashboard'],
+    queryFn: () => customerSuccessApi.getDashboardSummary(),
+  });
+}
+
+export function usePortfolioAnalytics(days?: number) {
+  return useQuery({
+    queryKey: ['customerSuccess', 'analytics', 'portfolio', days],
+    queryFn: () => customerSuccessApi.getPortfolioAnalytics(days),
+  });
+}
+
+export function useCTAAnalytics(days?: number) {
+  return useQuery({
+    queryKey: ['customerSuccess', 'analytics', 'ctas', days],
+    queryFn: () => customerSuccessApi.getCTAAnalytics(days),
+  });
+}
+
+export function useCSMPerformanceMetrics() {
+  return useQuery({
+    queryKey: ['customerSuccess', 'analytics', 'csm-performance'],
+    queryFn: () => customerSuccessApi.getCSMPerformanceMetrics(),
+  });
+}
+
+export function useTimeToValueMetrics() {
+  return useQuery({
+    queryKey: ['customerSuccess', 'analytics', 'time-to-value'],
+    queryFn: () => customerSuccessApi.getTimeToValueMetrics(),
   });
 }

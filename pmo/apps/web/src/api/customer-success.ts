@@ -12,6 +12,9 @@ const HEALTH_SCORES_PATH = buildApiUrl('/customer-success/health-scores');
 const CTAS_PATH = buildApiUrl('/customer-success/ctas');
 const PLAYBOOKS_PATH = buildApiUrl('/customer-success/playbooks');
 const SUCCESS_PLANS_PATH = buildApiUrl('/customer-success/success-plans');
+const ENGAGEMENT_PATH = buildApiUrl('/customer-success/engagement');
+const ANALYTICS_PATH = buildApiUrl('/customer-success/analytics');
+const ACTIVITY_PATH = buildApiUrl('/customer-success/activity');
 
 // =============================================================================
 // TYPES
@@ -564,4 +567,365 @@ export async function deleteSuccessPlan(id: number): Promise<void> {
   if (!res.ok) {
     throw new Error('Failed to delete success plan');
   }
+}
+
+// =============================================================================
+// ENGAGEMENT TYPES
+// =============================================================================
+
+export type EngagementLevel =
+  | 'CHAMPION'
+  | 'ENGAGED'
+  | 'NEUTRAL'
+  | 'DISENGAGED'
+  | 'AT_RISK';
+
+export type CSActivityType =
+  | 'MEETING'
+  | 'EMAIL_SENT'
+  | 'EMAIL_RECEIVED'
+  | 'CALL'
+  | 'SUPPORT_TICKET'
+  | 'PRODUCT_USAGE'
+  | 'NPS_RESPONSE'
+  | 'CSAT_RESPONSE'
+  | 'MILESTONE_COMPLETED'
+  | 'DOCUMENT_SHARED'
+  | 'NOTE'
+  | 'CTA_CREATED'
+  | 'CTA_COMPLETED'
+  | 'RENEWAL'
+  | 'EXPANSION'
+  | 'CONTRACTION';
+
+export interface ContactEngagement {
+  id: number;
+  contact: { id: number; name: string; email: string; role: string | null };
+  engagementLevel: EngagementLevel;
+  lastContactDate: string | null;
+  isChampion: boolean;
+  isDecisionMaker: boolean;
+  meetingAttendance: number | null;
+  responseTime: number | null;
+}
+
+export interface EngagementSummary {
+  totalContacts: number;
+  champions: number;
+  decisionMakers: number;
+  engaged: number;
+  neutral: number;
+  disengaged: number;
+  atRisk: number;
+  avgMeetingAttendance: number;
+  avgResponseTime: number;
+}
+
+export interface EngagementListFilters {
+  clientId?: number;
+  engagementLevel?: EngagementLevel;
+  isChampion?: boolean;
+  isDecisionMaker?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ActivityLog {
+  id: number;
+  activityType: CSActivityType;
+  title: string;
+  description: string | null;
+  activityDate: string;
+  contact: { id: number; name: string } | null;
+  user: { id: number; name: string } | null;
+  sentiment: string | null;
+}
+
+export interface ActivityLogInput {
+  clientId: number;
+  projectId?: number;
+  contactId?: number;
+  activityType: CSActivityType;
+  title: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+  sentiment?: string;
+  sentimentScore?: number;
+}
+
+// =============================================================================
+// ANALYTICS TYPES
+// =============================================================================
+
+export interface PortfolioAnalytics {
+  healthDistribution: {
+    healthy: number;
+    atRisk: number;
+    critical: number;
+  };
+  healthTrend: Array<{
+    date: string;
+    avgScore: number;
+    healthyCount: number;
+    atRiskCount: number;
+    criticalCount: number;
+  }>;
+  churnRiskAnalysis: {
+    highRisk: number;
+    mediumRisk: number;
+    lowRisk: number;
+    avgChurnRisk: number;
+  };
+  expansionOpportunities: number;
+}
+
+export interface CTAAnalytics {
+  totalCTAs: number;
+  byStatus: Record<string, number>;
+  byType: Record<string, number>;
+  byPriority: Record<string, number>;
+  overdueCount: number;
+  avgResolutionTime: number;
+  completionRate: number;
+  trendsLast30Days: Array<{
+    date: string;
+    created: number;
+    completed: number;
+  }>;
+}
+
+export interface CSMPerformanceMetrics {
+  userId: number;
+  userName: string;
+  totalClients: number;
+  avgHealthScore: number;
+  ctasCompleted: number;
+  ctasOverdue: number;
+  successPlansActive: number;
+  meetingsLast30Days: number;
+}
+
+export interface TimeToValueMetrics {
+  avgOnboardingDays: number;
+  avgFirstValueDays: number;
+  avgTimeToHealthy: number;
+  onboardingFunnel: Array<{
+    stage: string;
+    count: number;
+    avgDays: number;
+  }>;
+}
+
+export interface DashboardSummary {
+  portfolioHealth: {
+    avgScore: number;
+    trend: 'up' | 'down' | 'stable';
+    trendPercent: number;
+  };
+  ctaMetrics: {
+    open: number;
+    overdue: number;
+    completedThisWeek: number;
+  };
+  engagementMetrics: {
+    totalContacts: number;
+    champions: number;
+    recentInteractions: number;
+  };
+  renewalMetrics: {
+    upcomingRenewals: number;
+    atRiskRenewals: number;
+  };
+}
+
+// =============================================================================
+// ENGAGEMENT API
+// =============================================================================
+
+export async function listContactEngagements(
+  filters?: EngagementListFilters,
+): Promise<{ data: ContactEngagement[]; total: number }> {
+  const params = new URLSearchParams();
+  if (filters?.clientId) params.set('clientId', String(filters.clientId));
+  if (filters?.engagementLevel)
+    params.set('engagementLevel', filters.engagementLevel);
+  if (filters?.isChampion !== undefined)
+    params.set('isChampion', String(filters.isChampion));
+  if (filters?.isDecisionMaker !== undefined)
+    params.set('isDecisionMaker', String(filters.isDecisionMaker));
+  if (filters?.limit !== undefined) params.set('limit', String(filters.limit));
+  if (filters?.offset !== undefined)
+    params.set('offset', String(filters.offset));
+
+  const query = params.toString();
+  const url = `${ENGAGEMENT_PATH}/contacts${query ? `?${query}` : ''}`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function getClientEngagementSummary(
+  clientId: number,
+): Promise<EngagementSummary> {
+  const url = `${ENGAGEMENT_PATH}/client/${clientId}/summary`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function getContactEngagement(
+  contactId: number,
+): Promise<ContactEngagement> {
+  const url = `${ENGAGEMENT_PATH}/contact/${contactId}`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function updateContactEngagement(
+  contactId: number,
+  input: {
+    lastContactDate?: string;
+    meetingAttendance?: number;
+    responseTime?: number;
+    engagementLevel?: EngagementLevel;
+    isChampion?: boolean;
+    isDecisionMaker?: boolean;
+    notes?: string;
+  },
+): Promise<ContactEngagement> {
+  const url = `${ENGAGEMENT_PATH}/contact/${contactId}`;
+  const res = await fetch(
+    url,
+    buildOptions({
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  );
+  return handleResponse(res);
+}
+
+export async function setChampionStatus(
+  contactId: number,
+  isChampion: boolean,
+): Promise<void> {
+  const url = `${ENGAGEMENT_PATH}/contact/${contactId}/champion`;
+  const res = await fetch(
+    url,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({ isChampion }),
+    }),
+  );
+  if (!res.ok) {
+    throw new Error('Failed to set champion status');
+  }
+}
+
+export async function setDecisionMakerStatus(
+  contactId: number,
+  isDecisionMaker: boolean,
+): Promise<void> {
+  const url = `${ENGAGEMENT_PATH}/contact/${contactId}/decision-maker`;
+  const res = await fetch(
+    url,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({ isDecisionMaker }),
+    }),
+  );
+  if (!res.ok) {
+    throw new Error('Failed to set decision maker status');
+  }
+}
+
+export async function recordInteraction(contactId: number): Promise<void> {
+  const url = `${ENGAGEMENT_PATH}/interaction`;
+  const res = await fetch(
+    url,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({ contactId }),
+    }),
+  );
+  if (!res.ok) {
+    throw new Error('Failed to record interaction');
+  }
+}
+
+// =============================================================================
+// ACTIVITY API
+// =============================================================================
+
+export async function getActivityTimeline(
+  clientId: number,
+  options?: {
+    projectId?: number;
+    contactId?: number;
+    limit?: number;
+    offset?: number;
+  },
+): Promise<{ data: ActivityLog[]; total: number }> {
+  const params = new URLSearchParams();
+  if (options?.projectId) params.set('projectId', String(options.projectId));
+  if (options?.contactId) params.set('contactId', String(options.contactId));
+  if (options?.limit !== undefined) params.set('limit', String(options.limit));
+  if (options?.offset !== undefined)
+    params.set('offset', String(options.offset));
+
+  const query = params.toString();
+  const url = `${ACTIVITY_PATH}/client/${clientId}${query ? `?${query}` : ''}`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function logActivity(
+  input: ActivityLogInput,
+): Promise<{ id: number }> {
+  const url = ACTIVITY_PATH;
+  const res = await fetch(
+    url,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  );
+  return handleResponse(res);
+}
+
+// =============================================================================
+// ANALYTICS API
+// =============================================================================
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const url = `${ANALYTICS_PATH}/dashboard`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function getPortfolioAnalytics(
+  days?: number,
+): Promise<PortfolioAnalytics> {
+  const params = days ? `?days=${days}` : '';
+  const url = `${ANALYTICS_PATH}/portfolio${params}`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function getCTAAnalytics(days?: number): Promise<CTAAnalytics> {
+  const params = days ? `?days=${days}` : '';
+  const url = `${ANALYTICS_PATH}/ctas${params}`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function getCSMPerformanceMetrics(): Promise<
+  CSMPerformanceMetrics[]
+> {
+  const url = `${ANALYTICS_PATH}/csm-performance`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
+}
+
+export async function getTimeToValueMetrics(): Promise<TimeToValueMetrics> {
+  const url = `${ANALYTICS_PATH}/time-to-value`;
+  const res = await fetch(url, buildOptions());
+  return handleResponse(res);
 }
