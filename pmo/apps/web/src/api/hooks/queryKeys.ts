@@ -196,6 +196,94 @@ export const queryKeys = {
     meetingBrief: (clientId: number) =>
       [...queryKeys.mcp.all, 'meeting-brief', clientId] as const,
   },
+
+  // ---------------------------------------------------------------------------
+  // Customer Success Module
+  // ---------------------------------------------------------------------------
+  customerSuccess: {
+    all: ['customerSuccess'] as const,
+    // Health Scores
+    healthScores: {
+      all: () => [...queryKeys.customerSuccess.all, 'healthScores'] as const,
+      list: (filters?: Record<string, unknown>) =>
+        [
+          ...queryKeys.customerSuccess.healthScores.all(),
+          'list',
+          filters,
+        ] as const,
+      summary: () =>
+        [...queryKeys.customerSuccess.healthScores.all(), 'summary'] as const,
+      client: (clientId: number, projectId?: number) =>
+        [
+          ...queryKeys.customerSuccess.healthScores.all(),
+          'client',
+          clientId,
+          projectId,
+        ] as const,
+      history: (clientId: number, projectId?: number, days?: number) =>
+        [
+          ...queryKeys.customerSuccess.healthScores.all(),
+          'history',
+          clientId,
+          projectId,
+          days,
+        ] as const,
+    },
+    // CTAs
+    ctas: {
+      all: () => [...queryKeys.customerSuccess.all, 'ctas'] as const,
+      list: (filters?: Record<string, unknown>) =>
+        [...queryKeys.customerSuccess.ctas.all(), 'list', filters] as const,
+      cockpit: () =>
+        [...queryKeys.customerSuccess.ctas.all(), 'cockpit'] as const,
+      summary: (all?: boolean) =>
+        [...queryKeys.customerSuccess.ctas.all(), 'summary', all] as const,
+      detail: (id: number) =>
+        [...queryKeys.customerSuccess.ctas.all(), 'detail', id] as const,
+    },
+    // Playbooks
+    playbooks: {
+      all: () => [...queryKeys.customerSuccess.all, 'playbooks'] as const,
+      list: (filters?: Record<string, unknown>) =>
+        [
+          ...queryKeys.customerSuccess.playbooks.all(),
+          'list',
+          filters,
+        ] as const,
+      detail: (id: number) =>
+        [...queryKeys.customerSuccess.playbooks.all(), 'detail', id] as const,
+      categories: () =>
+        [...queryKeys.customerSuccess.playbooks.all(), 'categories'] as const,
+      popular: (limit?: number) =>
+        [
+          ...queryKeys.customerSuccess.playbooks.all(),
+          'popular',
+          limit,
+        ] as const,
+    },
+    // Success Plans
+    successPlans: {
+      all: () => [...queryKeys.customerSuccess.all, 'successPlans'] as const,
+      list: (filters?: Record<string, unknown>) =>
+        [
+          ...queryKeys.customerSuccess.successPlans.all(),
+          'list',
+          filters,
+        ] as const,
+      detail: (id: number) =>
+        [
+          ...queryKeys.customerSuccess.successPlans.all(),
+          'detail',
+          id,
+        ] as const,
+      summary: (ownerId?: number) =>
+        [
+          ...queryKeys.customerSuccess.successPlans.all(),
+          'summary',
+          ownerId,
+        ] as const,
+    },
+  },
 } as const;
 
 // ============================================================================

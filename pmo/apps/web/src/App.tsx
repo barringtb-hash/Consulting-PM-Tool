@@ -105,6 +105,11 @@ const AIToolsShowcasePage = lazy(
 );
 const MarketingDemoPage = lazy(() => import('./pages/demo/MarketingDemoPage'));
 
+// Customer Success pages
+const CustomerSuccessDashboardPage = lazy(
+  () => import('./pages/customer-success/CustomerSuccessDashboardPage'),
+);
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -496,6 +501,28 @@ function App(): JSX.Element {
                   </LazyPage>
                 }
               />
+            )}
+
+            {/* Customer Success module */}
+            {isModuleEnabled('customerSuccess') && (
+              <>
+                <Route
+                  path="/customer-success"
+                  element={
+                    <LazyPage>
+                      <CustomerSuccessDashboardPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/customer-success/dashboard"
+                  element={
+                    <LazyPage>
+                      <CustomerSuccessDashboardPage />
+                    </LazyPage>
+                  }
+                />
+              </>
             )}
           </Route>
         </Route>
