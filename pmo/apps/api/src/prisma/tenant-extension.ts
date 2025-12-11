@@ -137,7 +137,7 @@ export function createTenantExtension() {
 
         async create({ model, args, query }) {
           if (needsTenantFiltering(model) && hasTenantContext()) {
-            args.data = { ...args.data, tenantId: getTenantId() };
+            (args.data as Record<string, unknown>).tenantId = getTenantId();
           }
           return query(args);
         },
@@ -189,8 +189,8 @@ export function createTenantExtension() {
         async upsert({ model, args, query }) {
           if (needsTenantFiltering(model) && hasTenantContext()) {
             const tenantId = getTenantId();
-            args.where = { ...args.where, tenantId };
-            args.create = { ...args.create, tenantId };
+            (args.where as Record<string, unknown>).tenantId = tenantId;
+            (args.create as Record<string, unknown>).tenantId = tenantId;
             // update doesn't need tenantId as where already filters
           }
           return query(args);

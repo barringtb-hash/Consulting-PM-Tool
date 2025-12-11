@@ -62,7 +62,7 @@ const createActivitySchema = z.object({
   priority: activityPriorityEnum.optional(),
   externalId: z.string().max(200).optional(),
   externalSource: z.string().max(100).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateActivitySchema = createActivitySchema.partial().extend({

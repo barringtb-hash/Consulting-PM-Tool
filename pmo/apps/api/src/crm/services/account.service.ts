@@ -323,8 +323,6 @@ export async function updateAccount(id: number, input: UpdateAccountInput) {
       tags: input.tags,
       customFields: input.customFields as Prisma.InputJsonValue,
       archived: input.archived,
-      archivedAt: input.archived ? new Date() : null,
-      lastEngagedAt: new Date(),
     },
     include: {
       owner: {
@@ -344,7 +342,6 @@ export async function archiveAccount(id: number) {
     where: { id, tenantId },
     data: {
       archived: true,
-      archivedAt: new Date(),
     },
   });
 }
@@ -359,7 +356,6 @@ export async function restoreAccount(id: number) {
     where: { id, tenantId },
     data: {
       archived: false,
-      archivedAt: null,
     },
   });
 }
@@ -550,13 +546,17 @@ export async function getAccountStats() {
       GROUP BY health_category
     `,
 
-      // Recently engaged
+      // Recently engaged - count accounts with recent activities
       prisma.account.count({
         where: {
           tenantId,
           archived: false,
-          lastEngagedAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+          activities: {
+            some: {
+              createdAt: {
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+              },
+            },
           },
         },
       }),

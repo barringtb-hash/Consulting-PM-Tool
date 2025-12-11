@@ -388,7 +388,7 @@ export async function moveOpportunityStage(
         fromStageId: current.stageId,
         toStageId: newStageId,
         changedById,
-        durationMinutes,
+        duration: durationMinutes,
       },
     });
 
@@ -401,11 +401,10 @@ export async function moveOpportunityStage(
     // Update status based on stage type
     if (newStage.type === 'WON') {
       updateData.status = 'WON';
-      updateData.closedAt = new Date();
       updateData.actualCloseDate = new Date();
     } else if (newStage.type === 'LOST') {
       updateData.status = 'LOST';
-      updateData.closedAt = new Date();
+      updateData.actualCloseDate = new Date();
     } else {
       updateData.status = 'OPEN';
     }
