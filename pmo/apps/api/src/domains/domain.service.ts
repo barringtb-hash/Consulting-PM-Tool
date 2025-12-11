@@ -343,7 +343,6 @@ export async function provisionSsl(domainId: string): Promise<{
       where: { id: domainId },
       data: {
         sslStatus: 'ACTIVE',
-        sslExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days
       },
     });
 
@@ -369,12 +368,11 @@ export async function provisionSsl(domainId: string): Promise<{
  */
 export async function checkSslStatus(domainId: string): Promise<{
   status: SslStatus;
-  expiresAt?: Date;
   message: string;
 }> {
   const domain = await prisma.tenantDomain.findUnique({
     where: { id: domainId },
-    select: { sslStatus: true, sslExpiresAt: true },
+    select: { sslStatus: true },
   });
 
   if (!domain) {
@@ -382,30 +380,6 @@ export async function checkSslStatus(domainId: string): Promise<{
   }
 
   const status = domain.sslStatus as SslStatus;
-  const expiresAt = domain.sslExpiresAt || undefined;
-
-  // Check if certificate is expired or expiring soon
-  if (status === 'ACTIVE' && expiresAt) {
-    const daysUntilExpiry = Math.ceil(
-      (expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-    );
-
-    if (daysUntilExpiry <= 0) {
-      return {
-        status: 'EXPIRED',
-        expiresAt,
-        message: 'SSL certificate has expired',
-      };
-    }
-
-    if (daysUntilExpiry <= 30) {
-      return {
-        status: 'ACTIVE',
-        expiresAt,
-        message: `SSL certificate expires in ${daysUntilExpiry} days`,
-      };
-    }
-  }
 
   const messages: Record<SslStatus, string> = {
     PENDING: 'SSL certificate not yet provisioned',
@@ -417,7 +391,6 @@ export async function checkSslStatus(domainId: string): Promise<{
 
   return {
     status,
-    expiresAt,
     message: messages[status],
   };
 }

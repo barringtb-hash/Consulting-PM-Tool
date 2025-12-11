@@ -6,7 +6,7 @@
  * tracked through a customizable pipeline.
  */
 
-import { Prisma } from '@prisma/client';
+import { Prisma, CRMLeadSource } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { getTenantId } from '../../tenant/tenant.context';
 
@@ -101,9 +101,7 @@ export async function createOpportunity(input: CreateOpportunityInput) {
         weightedAmount,
         currency: input.currency || 'USD',
         expectedCloseDate: input.expectedCloseDate,
-        leadSource: input.leadSource as
-          | Prisma.EnumCRMLeadSourceNullableFilter
-          | undefined,
+        leadSource: input.leadSource as CRMLeadSource | undefined,
         campaignId: input.campaignId,
         ownerId: input.ownerId,
         tags: input.tags || [],
@@ -182,9 +180,8 @@ export async function getOpportunityById(id: number) {
           },
         },
       },
-      lineItems: true,
       stageHistory: {
-        orderBy: { createdAt: 'desc' },
+        orderBy: { changedAt: 'desc' },
         take: 10,
         include: {
           fromStage: { select: { id: true, name: true } },
@@ -330,9 +327,7 @@ export async function updateOpportunity(
       weightedAmount,
       currency: input.currency,
       expectedCloseDate: input.expectedCloseDate,
-      leadSource: input.leadSource as
-        | Prisma.EnumCRMLeadSourceNullableFilter
-        | undefined,
+      leadSource: input.leadSource as CRMLeadSource | undefined,
       campaignId: input.campaignId,
       ownerId: input.ownerId,
       tags: input.tags,
@@ -368,7 +363,7 @@ export async function moveOpportunityStage(
     }
 
     // Get new stage to check type
-    const newStage = await tx.pipelineStage.findUnique({
+    const newStage = await tx.salesPipelineStage.findUnique({
       where: { id: newStageId },
     });
 
@@ -394,7 +389,7 @@ export async function moveOpportunityStage(
 
     // Update opportunity
     const updateData: Prisma.OpportunityUpdateInput = {
-      stageId: newStageId,
+      stage: { connect: { id: newStageId } },
       probability: newStage.probability,
     };
 
@@ -628,7 +623,7 @@ export async function getPipelineStats(pipelineId?: number) {
 
   // Get stage names
   const stageIds = byStage.map((s) => s.stageId);
-  const stages = await prisma.pipelineStage.findMany({
+  const stages = await prisma.salesPipelineStage.findMany({
     where: { id: { in: stageIds } },
     select: { id: true, name: true, color: true, order: true },
   });
@@ -637,13 +632,16 @@ export async function getPipelineStats(pipelineId?: number) {
 
   return {
     byStage: byStage
-      .map((s) => ({
-        stage: stageMap.get(s.stageId),
-        count: s._count,
-        totalAmount: s._sum.amount,
-        weightedAmount: s._sum.weightedAmount,
-      }))
-      .sort((a, b) => (a.stage?.order || 0) - (b.stage?.order || 0)),
+      .map((s) => {
+        const stage = stageMap.get(s.stageId);
+        return {
+          stage,
+          count: s._count,
+          totalAmount: s._sum.amount,
+          weightedAmount: s._sum.weightedAmount,
+        };
+      })
+      .sort((a, b) => (a.stage?.order ?? 0) - (b.stage?.order ?? 0)),
     totalValue: totalValue._sum.amount,
     weightedValue: weightedValue._sum.weightedAmount,
     avgDealSize: avgDealSize._avg.amount,

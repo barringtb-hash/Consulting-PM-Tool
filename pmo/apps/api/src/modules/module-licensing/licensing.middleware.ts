@@ -109,12 +109,14 @@ export function enforceUsageLimit(
 export function trackUsage() {
   return async (req: Request, res: Response, next: NextFunction) => {
     // Store original end function
-    const originalEnd = res.end;
+    const originalEnd = res.end.bind(res);
 
     // Override end to track usage on successful responses
-    res.end = function (
-      this: Response,
-      ...args: Parameters<typeof originalEnd>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (res.end as any) = function (
+      chunk?: unknown,
+      encodingOrCb?: BufferEncoding | (() => void),
+      cb?: () => void,
     ) {
       // Only track on successful responses
       if (res.statusCode >= 200 && res.statusCode < 300 && req.usageTracking) {
@@ -134,8 +136,14 @@ export function trackUsage() {
         }
       }
 
-      // Call original end
-      return originalEnd.apply(this, args);
+      // Call original end with proper arguments
+      if (typeof encodingOrCb === 'function') {
+        return originalEnd(chunk, encodingOrCb);
+      }
+      if (encodingOrCb !== undefined) {
+        return originalEnd(chunk, encodingOrCb, cb);
+      }
+      return originalEnd(chunk, cb);
     };
 
     next();

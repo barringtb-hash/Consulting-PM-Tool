@@ -489,15 +489,20 @@ export async function updateSyncSettings(
     select: { syncSettings: true },
   });
 
-  const currentSettings = (integration?.syncSettings as SyncSettings) || {};
+  const currentSettings =
+    (integration?.syncSettings as unknown as SyncSettings) || {};
+
+  const mergedSettings = {
+    ...currentSettings,
+    ...settings,
+  };
 
   await prisma.integration.update({
     where: { id: integrationId },
     data: {
-      syncSettings: {
-        ...currentSettings,
-        ...settings,
-      },
+      syncSettings: mergedSettings as unknown as Parameters<
+        typeof prisma.integration.update
+      >[0]['data']['syncSettings'],
     },
   });
 }

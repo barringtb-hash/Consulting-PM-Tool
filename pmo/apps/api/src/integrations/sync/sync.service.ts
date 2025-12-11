@@ -141,7 +141,8 @@ async function executeInboundSync(
     select: { fieldMappings: true, lastSyncAt: true },
   });
 
-  const fieldMappings = (integration?.fieldMappings as EntityMapping[]) || [];
+  const fieldMappings =
+    (integration?.fieldMappings as unknown as EntityMapping[]) || [];
   const entityMapping = fieldMappings.find(
     (m) => m.sourceEntity === entityType,
   );
@@ -321,13 +322,13 @@ async function upsertLocalRecord(
         },
       });
     } else {
-      // Create new contact
-      await prisma.cRMContact.create({
+      // Create new contact - using 'as unknown' for dynamic field mapping
+      await (prisma.cRMContact.create as (args: unknown) => Promise<unknown>)({
         data: {
           tenantId,
           ...localData,
           externalId: JSON.stringify({ [provider]: externalId }),
-        } as Record<string, unknown>,
+        },
       });
     }
   } else if (entityType === 'accounts') {
@@ -337,12 +338,13 @@ async function upsertLocalRecord(
         data: localData,
       });
     } else {
-      await prisma.account.create({
+      // Create new account - using 'as unknown' for dynamic field mapping
+      await (prisma.account.create as (args: unknown) => Promise<unknown>)({
         data: {
           tenantId,
           ...localData,
           ownerId: 1, // Default owner - should be configurable
-        } as Record<string, unknown>,
+        },
       });
     }
   }
@@ -372,7 +374,8 @@ async function executeOutboundSync(
     select: { fieldMappings: true },
   });
 
-  const fieldMappings = (integration?.fieldMappings as EntityMapping[]) || [];
+  const fieldMappings =
+    (integration?.fieldMappings as unknown as EntityMapping[]) || [];
   const entityMapping = fieldMappings.find(
     (m) => m.destinationEntity === entityType,
   );
@@ -781,20 +784,13 @@ export async function getSyncHistory(
     },
   });
 
-  return logs.map(
-    (log: {
-      id: string;
-      integrationId: string;
-      direction: string;
-      entityType: string;
-      status: string;
-      startedAt: Date;
-      completedAt: Date | null;
-      errorMessage: string | null;
-    }) => ({
-      ...log,
-      completedAt: log.completedAt || undefined,
-      errorMessage: log.errorMessage || undefined,
-    }),
-  );
+  return logs.map((log) => ({
+    id: log.id,
+    direction: log.direction,
+    entityType: log.entityType,
+    status: log.status,
+    startedAt: log.startedAt,
+    completedAt: log.completedAt || undefined,
+    errorMessage: log.errorMessage || undefined,
+  }));
 }
