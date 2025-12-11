@@ -216,6 +216,7 @@ model User {
   ownedActivities         CRMActivity[]             @relation("ActivityOwner")
   createdActivities       CRMActivity[]             @relation("ActivityCreator")
   notifications           Notification[]
+  savedReports            SavedReport[]
 }
 
 model Client {
