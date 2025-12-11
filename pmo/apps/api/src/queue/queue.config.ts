@@ -10,11 +10,16 @@
  */
 
 import { Queue, QueueEvents } from 'bullmq';
-import { redis } from '../cache/redis.client';
+import { redis, redisBullMQ } from '../cache/redis.client';
 
-// Queue connection options
+// Queue connection options for regular queues
 const connection = {
   connection: redis,
+};
+
+// Queue connection options for QueueEvents (requires maxRetriesPerRequest: null)
+const eventsConnection = {
+  connection: redisBullMQ,
 };
 
 // Default job options
@@ -111,17 +116,23 @@ export const analyticsQueue = new Queue('analytics', {
 
 export const documentQueueEvents = new QueueEvents(
   'document-processing',
-  connection,
+  eventsConnection,
 );
-export const emailQueueEvents = new QueueEvents('email-sending', connection);
+export const emailQueueEvents = new QueueEvents(
+  'email-sending',
+  eventsConnection,
+);
 export const webhookQueueEvents = new QueueEvents(
   'webhook-delivery',
-  connection,
+  eventsConnection,
 );
-export const syncQueueEvents = new QueueEvents('integration-sync', connection);
+export const syncQueueEvents = new QueueEvents(
+  'integration-sync',
+  eventsConnection,
+);
 export const notificationQueueEvents = new QueueEvents(
   'notifications',
-  connection,
+  eventsConnection,
 );
 
 // ============================================================================

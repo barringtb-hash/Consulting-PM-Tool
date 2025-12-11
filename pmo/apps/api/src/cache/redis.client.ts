@@ -78,6 +78,35 @@ export const redis: Redis = createRedisClient();
 export const redisSubscriber: Redis = createRedisClient();
 
 /**
+ * Create Redis client for BullMQ blocking operations.
+ * BullMQ QueueEvents requires maxRetriesPerRequest: null for blocking commands.
+ */
+function createBullMQRedisClient(): Redis {
+  const client = new Redis(env.redisUrl, {
+    maxRetriesPerRequest: null, // Required for BullMQ blocking operations
+    retryStrategy: (times) => {
+      if (times > MAX_RECONNECT_ATTEMPTS) {
+        console.error('Redis (BullMQ): Max reconnection attempts reached');
+        return null;
+      }
+      return Math.min(times * 100, 3000);
+    },
+    lazyConnect: true,
+    enableReadyCheck: true,
+    connectTimeout: 10000,
+  });
+
+  client.on('error', (err) => {
+    console.error('Redis (BullMQ): Connection error:', err.message);
+  });
+
+  return client;
+}
+
+// BullMQ client for queue event listeners (requires maxRetriesPerRequest: null)
+export const redisBullMQ: Redis = createBullMQRedisClient();
+
+/**
  * Check if Redis is connected and ready.
  */
 export function isRedisConnected(): boolean {
