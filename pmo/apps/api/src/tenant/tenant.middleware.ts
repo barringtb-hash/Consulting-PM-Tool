@@ -9,7 +9,7 @@
  * 4. Header: X-Tenant-ID for service-to-service calls
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { tenantStorage } from './tenant.context';
 import { prisma } from '../prisma/client';
 import { env } from '../config/env';
@@ -98,7 +98,12 @@ export async function tenantMiddleware(
 ): Promise<void> {
   try {
     let tenantSlug: string | null = null;
-    let tenant: { id: string; slug: string; plan: string; status: string } | null = null;
+    let tenant: {
+      id: string;
+      slug: string;
+      plan: string;
+      status: string;
+    } | null = null;
 
     // 1. Try to extract from subdomain
     tenantSlug = extractSubdomain(req.hostname);
@@ -152,7 +157,8 @@ export async function tenantMiddleware(
     if (!tenant || !tenantSlug) {
       res.status(400).json({
         error: 'Tenant not found',
-        message: 'Unable to determine tenant from request. Please check your URL or authentication.',
+        message:
+          'Unable to determine tenant from request. Please check your URL or authentication.',
       });
       return;
     }

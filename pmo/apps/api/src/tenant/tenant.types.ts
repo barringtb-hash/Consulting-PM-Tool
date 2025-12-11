@@ -19,7 +19,7 @@ export interface TenantUserContext extends TenantContext {
 
 export interface CreateTenantInput {
   name: string;
-  slug: string;
+  slug?: string; // Optional - will be generated from name if not provided
   plan?: TenantPlan;
   billingEmail?: string;
   settings?: Record<string, unknown>;
@@ -34,16 +34,16 @@ export interface UpdateTenantInput {
 }
 
 export interface TenantBrandingInput {
-  logoUrl?: string;
-  logoLightUrl?: string;
-  faviconUrl?: string;
+  logoUrl?: string | null;
+  logoLightUrl?: string | null;
+  faviconUrl?: string | null;
   primaryColor?: string;
   secondaryColor?: string;
   accentColor?: string;
   fontFamily?: string;
-  customCss?: string;
-  emailLogoUrl?: string;
-  emailFooterText?: string;
+  customCss?: string | null;
+  emailLogoUrl?: string | null;
+  emailFooterText?: string | null;
 }
 
 export interface TenantDomainInput {

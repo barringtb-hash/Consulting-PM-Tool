@@ -14,7 +14,7 @@ import { env } from '../config/env';
 
 // Connection state tracking
 let isConnected = false;
-let connectionAttempts = 0;
+let _connectionAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
 /**
@@ -24,13 +24,15 @@ function createRedisClient(): Redis {
   const client = new Redis(env.redisUrl, {
     maxRetriesPerRequest: 3,
     retryStrategy: (times) => {
-      connectionAttempts = times;
+      _connectionAttempts = times;
       if (times > MAX_RECONNECT_ATTEMPTS) {
         console.error('Redis: Max reconnection attempts reached, giving up');
         return null; // Stop retrying
       }
       const delay = Math.min(times * 100, 3000);
-      console.log(`Redis: Reconnection attempt ${times}, retrying in ${delay}ms`);
+      console.log(
+        `Redis: Reconnection attempt ${times}, retrying in ${delay}ms`,
+      );
       return delay;
     },
     lazyConnect: true,
@@ -44,7 +46,7 @@ function createRedisClient(): Redis {
 
   client.on('ready', () => {
     isConnected = true;
-    connectionAttempts = 0;
+    _connectionAttempts = 0;
     console.log('Redis: Connected and ready');
   });
 
@@ -74,6 +76,35 @@ export const redis: Redis = createRedisClient();
 
 // Subscriber client for pub/sub (requires separate connection)
 export const redisSubscriber: Redis = createRedisClient();
+
+/**
+ * Create Redis client for BullMQ blocking operations.
+ * BullMQ QueueEvents requires maxRetriesPerRequest: null for blocking commands.
+ */
+function createBullMQRedisClient(): Redis {
+  const client = new Redis(env.redisUrl, {
+    maxRetriesPerRequest: null, // Required for BullMQ blocking operations
+    retryStrategy: (times) => {
+      if (times > MAX_RECONNECT_ATTEMPTS) {
+        console.error('Redis (BullMQ): Max reconnection attempts reached');
+        return null;
+      }
+      return Math.min(times * 100, 3000);
+    },
+    lazyConnect: true,
+    enableReadyCheck: true,
+    connectTimeout: 10000,
+  });
+
+  client.on('error', (err) => {
+    console.error('Redis (BullMQ): Connection error:', err.message);
+  });
+
+  return client;
+}
+
+// BullMQ client for queue event listeners (requires maxRetriesPerRequest: null)
+export const redisBullMQ: Redis = createBullMQRedisClient();
 
 /**
  * Check if Redis is connected and ready.

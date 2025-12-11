@@ -81,9 +81,10 @@ export async function createOpportunity(input: CreateOpportunityInput) {
   const tenantId = getTenantId();
 
   // Calculate weighted amount
-  const weightedAmount = input.amount && input.probability
-    ? (input.amount * input.probability) / 100
-    : null;
+  const weightedAmount =
+    input.amount && input.probability
+      ? (input.amount * input.probability) / 100
+      : null;
 
   return prisma.$transaction(async (tx) => {
     // Create opportunity
@@ -100,7 +101,9 @@ export async function createOpportunity(input: CreateOpportunityInput) {
         weightedAmount,
         currency: input.currency || 'USD',
         expectedCloseDate: input.expectedCloseDate,
-        leadSource: input.leadSource as Prisma.EnumCRMLeadSourceNullableFilter | undefined,
+        leadSource: input.leadSource as
+          | Prisma.EnumCRMLeadSourceNullableFilter
+          | undefined,
         campaignId: input.campaignId,
         ownerId: input.ownerId,
         tags: input.tags || [],
@@ -292,7 +295,10 @@ export async function listOpportunities(
 /**
  * Update an opportunity.
  */
-export async function updateOpportunity(id: number, input: UpdateOpportunityInput) {
+export async function updateOpportunity(
+  id: number,
+  input: UpdateOpportunityInput,
+) {
   const tenantId = getTenantId();
 
   // Calculate weighted amount if amount or probability changed
@@ -304,7 +310,8 @@ export async function updateOpportunity(id: number, input: UpdateOpportunityInpu
     });
 
     if (current) {
-      const amount = input.amount ?? Number(current.amount) ?? 0;
+      const amount =
+        input.amount ?? (current.amount !== null ? Number(current.amount) : 0);
       const probability = input.probability ?? current.probability ?? 0;
       weightedAmount = (amount * probability) / 100;
     }
@@ -323,7 +330,9 @@ export async function updateOpportunity(id: number, input: UpdateOpportunityInpu
       weightedAmount,
       currency: input.currency,
       expectedCloseDate: input.expectedCloseDate,
-      leadSource: input.leadSource as Prisma.EnumCRMLeadSourceNullableFilter | undefined,
+      leadSource: input.leadSource as
+        | Prisma.EnumCRMLeadSourceNullableFilter
+        | undefined,
       campaignId: input.campaignId,
       ownerId: input.ownerId,
       tags: input.tags,
@@ -408,7 +417,8 @@ export async function moveOpportunityStage(
     });
 
     if (opportunity?.amount) {
-      updateData.weightedAmount = (Number(opportunity.amount) * newStage.probability) / 100;
+      updateData.weightedAmount =
+        (Number(opportunity.amount) * newStage.probability) / 100;
     }
 
     return tx.opportunity.update({
@@ -586,12 +596,7 @@ export async function getPipelineStats(pipelineId?: number) {
     where.pipelineId = pipelineId;
   }
 
-  const [
-    byStage,
-    totalValue,
-    weightedValue,
-    avgDealSize,
-  ] = await Promise.all([
+  const [byStage, totalValue, weightedValue, avgDealSize] = await Promise.all([
     // By stage
     prisma.opportunity.groupBy({
       by: ['stageId'],
@@ -632,12 +637,14 @@ export async function getPipelineStats(pipelineId?: number) {
   const stageMap = new Map(stages.map((s) => [s.id, s]));
 
   return {
-    byStage: byStage.map((s) => ({
-      stage: stageMap.get(s.stageId),
-      count: s._count,
-      totalAmount: s._sum.amount,
-      weightedAmount: s._sum.weightedAmount,
-    })).sort((a, b) => (a.stage?.order || 0) - (b.stage?.order || 0)),
+    byStage: byStage
+      .map((s) => ({
+        stage: stageMap.get(s.stageId),
+        count: s._count,
+        totalAmount: s._sum.amount,
+        weightedAmount: s._sum.weightedAmount,
+      }))
+      .sort((a, b) => (a.stage?.order || 0) - (b.stage?.order || 0)),
     totalValue: totalValue._sum.amount,
     weightedValue: weightedValue._sum.weightedAmount,
     avgDealSize: avgDealSize._avg.amount,

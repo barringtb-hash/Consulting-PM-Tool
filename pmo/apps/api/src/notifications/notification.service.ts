@@ -8,7 +8,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma/client';
 import { getTenantId } from '../tenant/tenant.context';
-import { emitToUser, emitToTenantUser } from '../websocket/websocket.server';
+import { emitToTenantUser } from '../websocket/websocket.server';
 import { addNotificationJob } from '../queue/queue.config';
 
 // ============================================================================
@@ -214,10 +214,7 @@ export async function listNotifications(
   }
 
   // Exclude expired notifications
-  where.OR = [
-    { expiresAt: null },
-    { expiresAt: { gt: new Date() } },
-  ];
+  where.OR = [{ expiresAt: null }, { expiresAt: { gt: new Date() } }];
 
   const [notifications, total] = await Promise.all([
     prisma.notification.findMany({
@@ -251,10 +248,7 @@ export async function getUnreadCount(userId: number) {
       tenantId,
       userId,
       read: false,
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } },
-      ],
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     },
   });
 }

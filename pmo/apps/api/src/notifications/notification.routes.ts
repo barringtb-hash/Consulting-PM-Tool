@@ -7,8 +7,11 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import * as notificationService from './notification.service';
-import { requireAuth, type AuthenticatedRequest } from '../auth/auth.middleware';
-import { requireTenant, type TenantRequest } from '../tenant/tenant.middleware';
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from '../auth/auth.middleware';
+import { requireTenant } from '../tenant/tenant.middleware';
 
 const router = Router();
 
@@ -39,29 +42,25 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const parsed = listNotificationsSchema.safeParse(req.query);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const { page, limit, type, ...filters } = parsed.data;
-
-      const result = await notificationService.listNotifications(
-        req.userId!,
-        {
-          ...filters,
-          type: type
-            ? (type.split(',') as notificationService.NotificationType[])
-            : undefined,
-        },
-        { page, limit },
-      );
-
-      res.json(result);
-    } catch (error) {
-      throw error;
+    const parsed = listNotificationsSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
     }
+
+    const { page, limit, type, ...filters } = parsed.data;
+
+    const result = await notificationService.listNotifications(
+      req.userId!,
+      {
+        ...filters,
+        type: type
+          ? (type.split(',') as notificationService.NotificationType[])
+          : undefined,
+      },
+      { page, limit },
+    );
+
+    res.json(result);
   },
 );
 
@@ -74,12 +73,8 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const count = await notificationService.getUnreadCount(req.userId!);
-      res.json({ data: { count } });
-    } catch (error) {
-      throw error;
-    }
+    const count = await notificationService.getUnreadCount(req.userId!);
+    res.json({ data: { count } });
   },
 );
 
@@ -92,21 +87,17 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid notification ID' });
-      }
-
-      const notification = await notificationService.getNotificationById(id);
-      if (!notification) {
-        return res.status(404).json({ error: 'Notification not found' });
-      }
-
-      res.json({ data: notification });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid notification ID' });
     }
+
+    const notification = await notificationService.getNotificationById(id);
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json({ data: notification });
   },
 );
 
@@ -119,17 +110,13 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid notification ID' });
-      }
-
-      const notification = await notificationService.markAsRead(id, req.userId!);
-      res.json({ data: notification });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid notification ID' });
     }
+
+    const notification = await notificationService.markAsRead(id, req.userId!);
+    res.json({ data: notification });
   },
 );
 
@@ -142,12 +129,8 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const result = await notificationService.markAllAsRead(req.userId!);
-      res.json({ data: { count: result.count } });
-    } catch (error) {
-      throw error;
-    }
+    const result = await notificationService.markAllAsRead(req.userId!);
+    res.json({ data: { count: result.count } });
   },
 );
 
@@ -160,17 +143,13 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid notification ID' });
-      }
-
-      await notificationService.deleteNotification(id, req.userId!);
-      res.status(204).send();
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid notification ID' });
     }
+
+    await notificationService.deleteNotification(id, req.userId!);
+    res.status(204).send();
   },
 );
 
@@ -183,12 +162,10 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const result = await notificationService.deleteReadNotifications(req.userId!);
-      res.json({ data: { count: result.count } });
-    } catch (error) {
-      throw error;
-    }
+    const result = await notificationService.deleteReadNotifications(
+      req.userId!,
+    );
+    res.json({ data: { count: result.count } });
   },
 );
 

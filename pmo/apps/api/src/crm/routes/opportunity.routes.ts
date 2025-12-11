@@ -7,8 +7,14 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import * as opportunityService from '../services/opportunity.service';
-import { requireAuth, type AuthenticatedRequest } from '../../auth/auth.middleware';
-import { requireTenant, type TenantRequest } from '../../tenant/tenant.middleware';
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from '../../auth/auth.middleware';
+import {
+  requireTenant,
+  type TenantRequest,
+} from '../../tenant/tenant.middleware';
 
 const router = Router();
 
@@ -84,26 +90,22 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const parsed = listOpportunitiesSchema.safeParse(req.query);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const { page, limit, sortBy, sortOrder, tags, ...filters } = parsed.data;
-
-      const result = await opportunityService.listOpportunities(
-        {
-          ...filters,
-          tags: tags ? tags.split(',').map((t) => t.trim()) : undefined,
-        },
-        { page, limit, sortBy, sortOrder },
-      );
-
-      res.json(result);
-    } catch (error) {
-      throw error;
+    const parsed = listOpportunitiesSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
     }
+
+    const { page, limit, sortBy, sortOrder, tags, ...filters } = parsed.data;
+
+    const result = await opportunityService.listOpportunities(
+      {
+        ...filters,
+        tags: tags ? tags.split(',').map((t) => t.trim()) : undefined,
+      },
+      { page, limit, sortBy, sortOrder },
+    );
+
+    res.json(result);
   },
 );
 
@@ -116,21 +118,17 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const parsed = createOpportunitySchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const opportunity = await opportunityService.createOpportunity({
-        ...parsed.data,
-        ownerId: req.userId!,
-      });
-
-      res.status(201).json({ data: opportunity });
-    } catch (error) {
-      throw error;
+    const parsed = createOpportunitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
     }
+
+    const opportunity = await opportunityService.createOpportunity({
+      ...parsed.data,
+      ownerId: req.userId!,
+    });
+
+    res.status(201).json({ data: opportunity });
   },
 );
 
@@ -143,16 +141,12 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const pipelineId = req.query.pipelineId
-        ? parseInt(req.query.pipelineId as string, 10)
-        : undefined;
+    const pipelineId = req.query.pipelineId
+      ? parseInt(req.query.pipelineId as string, 10)
+      : undefined;
 
-      const stats = await opportunityService.getPipelineStats(pipelineId);
-      res.json({ data: stats });
-    } catch (error) {
-      throw error;
-    }
+    const stats = await opportunityService.getPipelineStats(pipelineId);
+    res.json({ data: stats });
   },
 );
 
@@ -165,13 +159,10 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const days = parseInt(req.query.days as string, 10) || 30;
-      const opportunities = await opportunityService.getOpportunitiesClosingSoon(days);
-      res.json({ data: opportunities });
-    } catch (error) {
-      throw error;
-    }
+    const days = parseInt(req.query.days as string, 10) || 30;
+    const opportunities =
+      await opportunityService.getOpportunitiesClosingSoon(days);
+    res.json({ data: opportunities });
   },
 );
 
@@ -184,21 +175,17 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid opportunity ID' });
-      }
-
-      const opportunity = await opportunityService.getOpportunityById(id);
-      if (!opportunity) {
-        return res.status(404).json({ error: 'Opportunity not found' });
-      }
-
-      res.json({ data: opportunity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
+
+    const opportunity = await opportunityService.getOpportunityById(id);
+    if (!opportunity) {
+      return res.status(404).json({ error: 'Opportunity not found' });
+    }
+
+    res.json({ data: opportunity });
   },
 );
 
@@ -211,22 +198,21 @@ router.put(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid opportunity ID' });
-      }
-
-      const parsed = updateOpportunitySchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const opportunity = await opportunityService.updateOpportunity(id, parsed.data);
-      res.json({ data: opportunity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
+
+    const parsed = updateOpportunitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const opportunity = await opportunityService.updateOpportunity(
+      id,
+      parsed.data,
+    );
+    res.json({ data: opportunity });
   },
 );
 
@@ -239,17 +225,13 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid opportunity ID' });
-      }
-
-      await opportunityService.deleteOpportunity(id);
-      res.status(204).send();
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
+
+    await opportunityService.deleteOpportunity(id);
+    res.status(204).send();
   },
 );
 
@@ -262,26 +244,22 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid opportunity ID' });
-      }
-
-      const parsed = moveStageSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const opportunity = await opportunityService.moveOpportunityStage(
-        id,
-        parsed.data.stageId,
-        req.userId!,
-      );
-      res.json({ data: opportunity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
+
+    const parsed = moveStageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const opportunity = await opportunityService.moveOpportunityStage(
+      id,
+      parsed.data.stageId,
+      req.userId!,
+    );
+    res.json({ data: opportunity });
   },
 );
 
@@ -294,17 +272,16 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid opportunity ID' });
-      }
-
-      const opportunity = await opportunityService.markOpportunityWon(id, req.userId!);
-      res.json({ data: opportunity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
+
+    const opportunity = await opportunityService.markOpportunityWon(
+      id,
+      req.userId!,
+    );
+    res.json({ data: opportunity });
   },
 );
 
@@ -317,28 +294,24 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid opportunity ID' });
-      }
-
-      const parsed = markLostSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const opportunity = await opportunityService.markOpportunityLost(
-        id,
-        req.userId!,
-        parsed.data.lostReason,
-        parsed.data.lostReasonDetail,
-        parsed.data.competitorId,
-      );
-      res.json({ data: opportunity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
+
+    const parsed = markLostSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const opportunity = await opportunityService.markOpportunityLost(
+      id,
+      req.userId!,
+      parsed.data.lostReason,
+      parsed.data.lostReasonDetail,
+      parsed.data.competitorId,
+    );
+    res.json({ data: opportunity });
   },
 );
 
@@ -351,27 +324,23 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const opportunityId = parseInt(req.params.id, 10);
-      if (isNaN(opportunityId)) {
-        return res.status(400).json({ error: 'Invalid opportunity ID' });
-      }
-
-      const parsed = addContactSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const result = await opportunityService.addContactToOpportunity(
-        opportunityId,
-        parsed.data.contactId,
-        parsed.data.role,
-        parsed.data.isPrimary,
-      );
-      res.status(201).json({ data: result });
-    } catch (error) {
-      throw error;
+    const opportunityId = parseInt(req.params.id, 10);
+    if (isNaN(opportunityId)) {
+      return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
+
+    const parsed = addContactSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const result = await opportunityService.addContactToOpportunity(
+      opportunityId,
+      parsed.data.contactId,
+      parsed.data.role,
+      parsed.data.isPrimary,
+    );
+    res.status(201).json({ data: result });
   },
 );
 
@@ -384,19 +353,18 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const opportunityId = parseInt(req.params.id, 10);
-      const contactId = parseInt(req.params.contactId, 10);
+    const opportunityId = parseInt(req.params.id, 10);
+    const contactId = parseInt(req.params.contactId, 10);
 
-      if (isNaN(opportunityId) || isNaN(contactId)) {
-        return res.status(400).json({ error: 'Invalid ID' });
-      }
-
-      await opportunityService.removeContactFromOpportunity(opportunityId, contactId);
-      res.status(204).send();
-    } catch (error) {
-      throw error;
+    if (isNaN(opportunityId) || isNaN(contactId)) {
+      return res.status(400).json({ error: 'Invalid ID' });
     }
+
+    await opportunityService.removeContactFromOpportunity(
+      opportunityId,
+      contactId,
+    );
+    res.status(204).send();
   },
 );
 

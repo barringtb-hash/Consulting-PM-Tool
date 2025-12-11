@@ -29,12 +29,7 @@ const DEFAULT_TENANT = {
 };
 
 // Default modules to enable
-const DEFAULT_MODULES = [
-  'pmo',
-  'crm',
-  'chatbot',
-  'documentAnalyzer',
-];
+const DEFAULT_MODULES = ['pmo', 'crm', 'chatbot', 'documentAnalyzer'];
 
 async function main() {
   console.log('Starting multi-tenant migration...\n');
@@ -84,11 +79,41 @@ async function main() {
   // Create pipeline stages
   const stages = [
     { name: 'Lead', order: 1, probability: 10, type: 'OPEN', color: '#6B7280' },
-    { name: 'Qualified', order: 2, probability: 25, type: 'OPEN', color: '#3B82F6' },
-    { name: 'Proposal', order: 3, probability: 50, type: 'OPEN', color: '#8B5CF6' },
-    { name: 'Negotiation', order: 4, probability: 75, type: 'OPEN', color: '#F59E0B' },
-    { name: 'Closed Won', order: 5, probability: 100, type: 'WON', color: '#10B981' },
-    { name: 'Closed Lost', order: 6, probability: 0, type: 'LOST', color: '#EF4444' },
+    {
+      name: 'Qualified',
+      order: 2,
+      probability: 25,
+      type: 'OPEN',
+      color: '#3B82F6',
+    },
+    {
+      name: 'Proposal',
+      order: 3,
+      probability: 50,
+      type: 'OPEN',
+      color: '#8B5CF6',
+    },
+    {
+      name: 'Negotiation',
+      order: 4,
+      probability: 75,
+      type: 'OPEN',
+      color: '#F59E0B',
+    },
+    {
+      name: 'Closed Won',
+      order: 5,
+      probability: 100,
+      type: 'WON',
+      color: '#10B981',
+    },
+    {
+      name: 'Closed Lost',
+      order: 6,
+      probability: 0,
+      type: 'LOST',
+      color: '#EF4444',
+    },
   ];
 
   for (const stage of stages) {
@@ -185,12 +210,16 @@ async function main() {
           });
         }
 
-        console.log(`  Migrated client: ${client.name} (${client.contacts.length} contacts)`);
+        console.log(
+          `  Migrated client: ${client.name} (${client.contacts.length} contacts)`,
+        );
       }
     }
   } catch (error) {
     console.log('  Account model not yet available or migration error');
-    console.log('  Client -> Account migration will be done after schema update');
+    console.log(
+      '  Client -> Account migration will be done after schema update',
+    );
   }
 
   console.log('\nMigration completed successfully!');

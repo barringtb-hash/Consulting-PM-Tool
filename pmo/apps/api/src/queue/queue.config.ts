@@ -9,13 +9,17 @@
  * - Notifications
  */
 
-import { Queue, Worker, Job, QueueEvents } from 'bullmq';
-import { redis } from '../cache/redis.client';
-import { env } from '../config/env';
+import { Queue, QueueEvents } from 'bullmq';
+import { redis, redisBullMQ } from '../cache/redis.client';
 
-// Queue connection options
+// Queue connection options for regular queues
 const connection = {
   connection: redis,
+};
+
+// Queue connection options for QueueEvents (requires maxRetriesPerRequest: null)
+const eventsConnection = {
+  connection: redisBullMQ,
 };
 
 // Default job options
@@ -110,11 +114,26 @@ export const analyticsQueue = new Queue('analytics', {
 // QUEUE EVENTS
 // ============================================================================
 
-export const documentQueueEvents = new QueueEvents('document-processing', connection);
-export const emailQueueEvents = new QueueEvents('email-sending', connection);
-export const webhookQueueEvents = new QueueEvents('webhook-delivery', connection);
-export const syncQueueEvents = new QueueEvents('integration-sync', connection);
-export const notificationQueueEvents = new QueueEvents('notifications', connection);
+export const documentQueueEvents = new QueueEvents(
+  'document-processing',
+  eventsConnection,
+);
+export const emailQueueEvents = new QueueEvents(
+  'email-sending',
+  eventsConnection,
+);
+export const webhookQueueEvents = new QueueEvents(
+  'webhook-delivery',
+  eventsConnection,
+);
+export const syncQueueEvents = new QueueEvents(
+  'integration-sync',
+  eventsConnection,
+);
+export const notificationQueueEvents = new QueueEvents(
+  'notifications',
+  eventsConnection,
+);
 
 // ============================================================================
 // JOB TYPE DEFINITIONS
@@ -179,7 +198,10 @@ export interface AnalyticsJobData {
 /**
  * Add a document processing job.
  */
-export async function addDocumentJob(data: DocumentJobData, options?: { priority?: number }) {
+export async function addDocumentJob(
+  data: DocumentJobData,
+  options?: { priority?: number },
+) {
   return documentQueue.add('process-document', data, {
     priority: options?.priority,
     jobId: `doc-${data.documentId}-${data.operation}`,
@@ -205,7 +227,10 @@ export async function addWebhookJob(data: WebhookJobData) {
 /**
  * Add an integration sync job.
  */
-export async function addSyncJob(data: SyncJobData, options?: { delay?: number }) {
+export async function addSyncJob(
+  data: SyncJobData,
+  options?: { delay?: number },
+) {
   return syncQueue.add('sync', data, {
     delay: options?.delay,
     jobId: data.fullSync

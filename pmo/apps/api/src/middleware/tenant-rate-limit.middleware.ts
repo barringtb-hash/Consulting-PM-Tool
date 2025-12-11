@@ -27,8 +27,8 @@ setInterval(() => {
 }, 60000); // Every minute
 
 interface RateLimitOptions {
-  windowMs?: number;        // Time window in milliseconds
-  max?: number;             // Max requests per window (overrides plan-based limits)
+  windowMs?: number; // Time window in milliseconds
+  max?: number; // Max requests per window (overrides plan-based limits)
   keyGenerator?: (req: Request) => string;
   skipFailedRequests?: boolean;
   skipSuccessfulRequests?: boolean;
@@ -139,7 +139,8 @@ export function tenantRateLimit(options: RateLimitOptions = {}) {
       const key = keyGenerator(req);
 
       // Determine max requests (custom > plan-based > default)
-      const maxRequests = options.max ||
+      const maxRequests =
+        options.max ||
         getRateLimitForPlan(req.tenantContext?.tenantPlan) ||
         RATE_LIMITS.STARTER;
 

@@ -19,9 +19,21 @@ export interface CreateAccountInput {
   website?: string;
   phone?: string;
   parentAccountId?: number;
-  type?: 'PROSPECT' | 'CUSTOMER' | 'PARTNER' | 'COMPETITOR' | 'CHURNED' | 'OTHER';
+  type?:
+    | 'PROSPECT'
+    | 'CUSTOMER'
+    | 'PARTNER'
+    | 'COMPETITOR'
+    | 'CHURNED'
+    | 'OTHER';
   industry?: string;
-  employeeCount?: 'SOLO' | 'MICRO' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'ENTERPRISE';
+  employeeCount?:
+    | 'SOLO'
+    | 'MICRO'
+    | 'SMALL'
+    | 'MEDIUM'
+    | 'LARGE'
+    | 'ENTERPRISE';
   annualRevenue?: number;
   billingAddress?: {
     street?: string;
@@ -47,9 +59,21 @@ export interface UpdateAccountInput {
   website?: string;
   phone?: string;
   parentAccountId?: number | null;
-  type?: 'PROSPECT' | 'CUSTOMER' | 'PARTNER' | 'COMPETITOR' | 'CHURNED' | 'OTHER';
+  type?:
+    | 'PROSPECT'
+    | 'CUSTOMER'
+    | 'PARTNER'
+    | 'COMPETITOR'
+    | 'CHURNED'
+    | 'OTHER';
   industry?: string;
-  employeeCount?: 'SOLO' | 'MICRO' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'ENTERPRISE';
+  employeeCount?:
+    | 'SOLO'
+    | 'MICRO'
+    | 'SMALL'
+    | 'MEDIUM'
+    | 'LARGE'
+    | 'ENTERPRISE';
   annualRevenue?: number;
   billingAddress?: {
     street?: string;
@@ -218,7 +242,10 @@ export async function listAccounts(
     where.ownerId = filters.ownerId;
   }
 
-  if (filters.healthScoreMin !== undefined || filters.healthScoreMax !== undefined) {
+  if (
+    filters.healthScoreMin !== undefined ||
+    filters.healthScoreMax !== undefined
+  ) {
     where.healthScore = {
       gte: filters.healthScoreMin,
       lte: filters.healthScoreMax,
@@ -494,26 +521,22 @@ export async function mergeAccounts(
 export async function getAccountStats() {
   const tenantId = getTenantId();
 
-  const [
-    totalAccounts,
-    byType,
-    byHealthScore,
-    recentlyEngaged,
-  ] = await Promise.all([
-    // Total accounts
-    prisma.account.count({
-      where: { tenantId, archived: false },
-    }),
+  const [totalAccounts, byType, byHealthScore, recentlyEngaged] =
+    await Promise.all([
+      // Total accounts
+      prisma.account.count({
+        where: { tenantId, archived: false },
+      }),
 
-    // By type
-    prisma.account.groupBy({
-      by: ['type'],
-      where: { tenantId, archived: false },
-      _count: true,
-    }),
+      // By type
+      prisma.account.groupBy({
+        by: ['type'],
+        where: { tenantId, archived: false },
+        _count: true,
+      }),
 
-    // By health score ranges
-    prisma.$queryRaw`
+      // By health score ranges
+      prisma.$queryRaw`
       SELECT
         CASE
           WHEN "healthScore" >= 80 THEN 'healthy'
@@ -527,17 +550,17 @@ export async function getAccountStats() {
       GROUP BY health_category
     `,
 
-    // Recently engaged
-    prisma.account.count({
-      where: {
-        tenantId,
-        archived: false,
-        lastEngagedAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+      // Recently engaged
+      prisma.account.count({
+        where: {
+          tenantId,
+          archived: false,
+          lastEngagedAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+          },
         },
-      },
-    }),
-  ]);
+      }),
+    ]);
 
   return {
     total: totalAccounts,
