@@ -40,6 +40,14 @@ import safetyMonitorRouter from './modules/safety-monitor/safety-monitor.router'
 import mcpRouter from './modules/mcp/mcp.router';
 // Customer Success Platform
 import customerSuccessRouter from './modules/customer-success/customer-success.router';
+// CRM Routes
+import accountRouter from './crm/routes/account.routes';
+import opportunityRouter from './crm/routes/opportunity.routes';
+import activityRouter from './crm/routes/activity.routes';
+// Tenant Routes
+import tenantRouter from './tenant/tenant.routes';
+// Notification Routes
+import notificationRouter from './notifications/notification.routes';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -236,6 +244,19 @@ export function createApp(): express.Express {
   app.use('/api', featureFlagsRouter); // Module discovery & feature flags API
   app.use('/api/user', userPreferencesRouter); // User preferences API
   app.use(healthRouter);
+
+  // ============ TENANT ROUTES ============
+  // Multi-tenant management routes
+  app.use('/api', tenantRouter);
+
+  // ============ NOTIFICATION ROUTES ============
+  app.use('/api/notifications', notificationRouter);
+
+  // ============ CRM ROUTES ============
+  // CRM module routes for accounts, opportunities, and activities
+  app.use('/api/crm/accounts', accountRouter);
+  app.use('/api/crm/opportunities', opportunityRouter);
+  app.use('/api/crm/activities', activityRouter);
 
   // ============ TOGGLEABLE MODULE ROUTES ============
   // Routes are conditionally registered AND protected by requireModule middleware
