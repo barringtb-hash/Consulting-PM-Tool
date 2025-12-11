@@ -6013,17 +6013,17 @@ model Pipeline {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  stages        PipelineStage[]
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stages        SalesPipelineStage[]
   opportunities Opportunity[]
 
   @@index([tenantId, isDefault])
 }
 
 /**
- * PipelineStage - Stage within a pipeline
+ * SalesPipelineStage - Stage within a sales pipeline
  */
-model PipelineStage {
+model SalesPipelineStage {
   id         Int @id @default(autoincrement())
   pipelineId Int
 
@@ -6087,7 +6087,7 @@ model Opportunity {
   tenant       Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   account      Account                   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   pipeline     Pipeline?                 @relation(fields: [pipelineId], references: [id], onDelete: SetNull)
-  stage        PipelineStage             @relation(fields: [stageId], references: [id])
+  stage        SalesPipelineStage        @relation(fields: [stageId], references: [id])
   owner        User                      @relation(fields: [ownerId], references: [id])
   contacts     OpportunityContact[]
   stageHistory OpportunityStageHistory[]
@@ -6133,10 +6133,10 @@ model OpportunityStageHistory {
   duration Int? // Time in previous stage (minutes)
   notes    String?
 
-  opportunity Opportunity    @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  fromStage   PipelineStage? @relation("FromStage", fields: [fromStageId], references: [id], onDelete: SetNull)
-  toStage     PipelineStage  @relation("ToStage", fields: [toStageId], references: [id])
-  changedBy   User           @relation(fields: [changedById], references: [id])
+  opportunity Opportunity         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  fromStage   SalesPipelineStage? @relation("FromStage", fields: [fromStageId], references: [id], onDelete: SetNull)
+  toStage     SalesPipelineStage  @relation("ToStage", fields: [toStageId], references: [id])
+  changedBy   User                @relation(fields: [changedById], references: [id])
 
   @@index([opportunityId, changedAt(sort: Desc)])
 }
