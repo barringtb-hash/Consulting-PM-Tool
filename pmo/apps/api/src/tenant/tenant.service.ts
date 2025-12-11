@@ -46,7 +46,10 @@ function generateVerifyToken(): string {
 /**
  * Create a new tenant with default pipeline.
  */
-export async function createTenant(input: CreateTenantInput, ownerUserId: number) {
+export async function createTenant(
+  input: CreateTenantInput,
+  ownerUserId: number,
+) {
   // Generate slug if not provided
   const slug = input.slug || generateSlug(input.name);
 
@@ -91,12 +94,48 @@ export async function createTenant(input: CreateTenantInput, ownerUserId: number
         isDefault: true,
         stages: {
           create: [
-            { name: 'Lead', order: 1, probability: 10, type: 'OPEN', color: '#6B7280' },
-            { name: 'Qualified', order: 2, probability: 25, type: 'OPEN', color: '#3B82F6' },
-            { name: 'Proposal', order: 3, probability: 50, type: 'OPEN', color: '#8B5CF6' },
-            { name: 'Negotiation', order: 4, probability: 75, type: 'OPEN', color: '#F59E0B' },
-            { name: 'Closed Won', order: 5, probability: 100, type: 'WON', color: '#10B981' },
-            { name: 'Closed Lost', order: 6, probability: 0, type: 'LOST', color: '#EF4444' },
+            {
+              name: 'Lead',
+              order: 1,
+              probability: 10,
+              type: 'OPEN',
+              color: '#6B7280',
+            },
+            {
+              name: 'Qualified',
+              order: 2,
+              probability: 25,
+              type: 'OPEN',
+              color: '#3B82F6',
+            },
+            {
+              name: 'Proposal',
+              order: 3,
+              probability: 50,
+              type: 'OPEN',
+              color: '#8B5CF6',
+            },
+            {
+              name: 'Negotiation',
+              order: 4,
+              probability: 75,
+              type: 'OPEN',
+              color: '#F59E0B',
+            },
+            {
+              name: 'Closed Won',
+              order: 5,
+              probability: 100,
+              type: 'WON',
+              color: '#10B981',
+            },
+            {
+              name: 'Closed Lost',
+              order: 6,
+              probability: 0,
+              type: 'LOST',
+              color: '#EF4444',
+            },
           ],
         },
       },

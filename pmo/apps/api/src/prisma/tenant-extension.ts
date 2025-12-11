@@ -102,7 +102,11 @@ export function createTenantExtension() {
             // For findUnique, we can't easily modify the where clause
             // Instead, we'll verify the result belongs to the tenant
             const result = await query(args);
-            if (result && 'tenantId' in result && result.tenantId !== getTenantId()) {
+            if (
+              result &&
+              'tenantId' in result &&
+              result.tenantId !== getTenantId()
+            ) {
               return null; // Return null if tenant doesn't match
             }
             return result;
@@ -213,7 +217,9 @@ export async function verifyTenantOwnership(
 
   try {
     // Dynamic lookup based on model
-    const record = await (prisma as Record<string, unknown>)[model.toLowerCase()]?.findUnique?.({
+    const record = await (prisma as Record<string, unknown>)[
+      model.toLowerCase()
+    ]?.findUnique?.({
       where: { id },
       select: { tenantId: true },
     });

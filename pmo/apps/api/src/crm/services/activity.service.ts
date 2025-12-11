@@ -132,7 +132,9 @@ export async function createActivity(input: CreateActivityInput) {
       owner: { select: { id: true, name: true, email: true } },
       createdBy: { select: { id: true, name: true } },
       account: { select: { id: true, name: true } },
-      contact: { select: { id: true, firstName: true, lastName: true, email: true } },
+      contact: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
       opportunity: { select: { id: true, name: true } },
     },
   });
@@ -492,50 +494,45 @@ export async function getActivityStats(
     };
   }
 
-  const [
-    totalCount,
-    byType,
-    byStatus,
-    completedThisWeek,
-    overdueCount,
-  ] = await Promise.all([
-    // Total count
-    prisma.cRMActivity.count({ where }),
+  const [totalCount, byType, byStatus, completedThisWeek, overdueCount] =
+    await Promise.all([
+      // Total count
+      prisma.cRMActivity.count({ where }),
 
-    // By type
-    prisma.cRMActivity.groupBy({
-      by: ['type'],
-      where,
-      _count: true,
-    }),
+      // By type
+      prisma.cRMActivity.groupBy({
+        by: ['type'],
+        where,
+        _count: true,
+      }),
 
-    // By status
-    prisma.cRMActivity.groupBy({
-      by: ['status'],
-      where,
-      _count: true,
-    }),
+      // By status
+      prisma.cRMActivity.groupBy({
+        by: ['status'],
+        where,
+        _count: true,
+      }),
 
-    // Completed this week
-    prisma.cRMActivity.count({
-      where: {
-        ...where,
-        status: 'COMPLETED',
-        completedAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      // Completed this week
+      prisma.cRMActivity.count({
+        where: {
+          ...where,
+          status: 'COMPLETED',
+          completedAt: {
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          },
         },
-      },
-    }),
+      }),
 
-    // Overdue
-    prisma.cRMActivity.count({
-      where: {
-        ...where,
-        status: { in: ['PLANNED', 'IN_PROGRESS'] },
-        dueAt: { lt: new Date() },
-      },
-    }),
-  ]);
+      // Overdue
+      prisma.cRMActivity.count({
+        where: {
+          ...where,
+          status: { in: ['PLANNED', 'IN_PROGRESS'] },
+          dueAt: { lt: new Date() },
+        },
+      }),
+    ]);
 
   return {
     total: totalCount,

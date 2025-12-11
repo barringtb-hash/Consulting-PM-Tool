@@ -14,7 +14,7 @@ import { env } from '../config/env';
 
 // Connection state tracking
 let isConnected = false;
-let connectionAttempts = 0;
+let _connectionAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
 /**
@@ -24,13 +24,15 @@ function createRedisClient(): Redis {
   const client = new Redis(env.redisUrl, {
     maxRetriesPerRequest: 3,
     retryStrategy: (times) => {
-      connectionAttempts = times;
+      _connectionAttempts = times;
       if (times > MAX_RECONNECT_ATTEMPTS) {
         console.error('Redis: Max reconnection attempts reached, giving up');
         return null; // Stop retrying
       }
       const delay = Math.min(times * 100, 3000);
-      console.log(`Redis: Reconnection attempt ${times}, retrying in ${delay}ms`);
+      console.log(
+        `Redis: Reconnection attempt ${times}, retrying in ${delay}ms`,
+      );
       return delay;
     },
     lazyConnect: true,
@@ -44,7 +46,7 @@ function createRedisClient(): Redis {
 
   client.on('ready', () => {
     isConnected = true;
-    connectionAttempts = 0;
+    _connectionAttempts = 0;
     console.log('Redis: Connected and ready');
   });
 

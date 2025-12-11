@@ -7,8 +7,14 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import * as activityService from '../services/activity.service';
-import { requireAuth, type AuthenticatedRequest } from '../../auth/auth.middleware';
-import { requireTenant, type TenantRequest } from '../../tenant/tenant.middleware';
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from '../../auth/auth.middleware';
+import {
+  requireTenant,
+  type TenantRequest,
+} from '../../tenant/tenant.middleware';
 
 const router = Router();
 
@@ -17,12 +23,26 @@ const router = Router();
 // ============================================================================
 
 const activityTypeEnum = z.enum([
-  'CALL', 'EMAIL', 'MEETING', 'TASK', 'NOTE', 'SMS',
-  'LINKEDIN_MESSAGE', 'CHAT', 'DEMO', 'PROPOSAL', 'CONTRACT', 'OTHER',
+  'CALL',
+  'EMAIL',
+  'MEETING',
+  'TASK',
+  'NOTE',
+  'SMS',
+  'LINKEDIN_MESSAGE',
+  'CHAT',
+  'DEMO',
+  'PROPOSAL',
+  'CONTRACT',
+  'OTHER',
 ]);
 
 const activityStatusEnum = z.enum([
-  'PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW',
+  'PLANNED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+  'NO_SHOW',
 ]);
 
 const activityPriorityEnum = z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
@@ -104,31 +124,28 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const parsed = listActivitiesSchema.safeParse(req.query);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const { page, limit, sortBy, sortOrder, type, status, ...filters } = parsed.data;
-
-      const result = await activityService.listActivities(
-        {
-          ...filters,
-          type: type
-            ? (type.split(',') as activityService.ActivityType[])
-            : undefined,
-          status: status
-            ? (status.split(',') as activityService.ActivityStatus[])
-            : undefined,
-        },
-        { page, limit, sortBy, sortOrder },
-      );
-
-      res.json(result);
-    } catch (error) {
-      throw error;
+    const parsed = listActivitiesSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
     }
+
+    const { page, limit, sortBy, sortOrder, type, status, ...filters } =
+      parsed.data;
+
+    const result = await activityService.listActivities(
+      {
+        ...filters,
+        type: type
+          ? (type.split(',') as activityService.ActivityType[])
+          : undefined,
+        status: status
+          ? (status.split(',') as activityService.ActivityStatus[])
+          : undefined,
+      },
+      { page, limit, sortBy, sortOrder },
+    );
+
+    res.json(result);
   },
 );
 
@@ -141,22 +158,18 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const parsed = createActivitySchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const activity = await activityService.createActivity({
-        ...parsed.data,
-        ownerId: req.userId!,
-        createdById: req.userId!,
-      });
-
-      res.status(201).json({ data: activity });
-    } catch (error) {
-      throw error;
+    const parsed = createActivitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
     }
+
+    const activity = await activityService.createActivity({
+      ...parsed.data,
+      ownerId: req.userId!,
+      createdById: req.userId!,
+    });
+
+    res.status(201).json({ data: activity });
   },
 );
 
@@ -169,18 +182,14 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const limit = parseInt(req.query.limit as string, 10) || 10;
-      const days = parseInt(req.query.days as string, 10) || 7;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const days = parseInt(req.query.days as string, 10) || 7;
 
-      const activities = await activityService.getMyUpcomingActivities(
-        req.userId!,
-        { limit, days },
-      );
-      res.json({ data: activities });
-    } catch (error) {
-      throw error;
-    }
+    const activities = await activityService.getMyUpcomingActivities(
+      req.userId!,
+      { limit, days },
+    );
+    res.json({ data: activities });
   },
 );
 
@@ -193,17 +202,13 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const limit = parseInt(req.query.limit as string, 10) || 10;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
 
-      const activities = await activityService.getMyOverdueActivities(
-        req.userId!,
-        { limit },
-      );
-      res.json({ data: activities });
-    } catch (error) {
-      throw error;
-    }
+    const activities = await activityService.getMyOverdueActivities(
+      req.userId!,
+      { limit },
+    );
+    res.json({ data: activities });
   },
 );
 
@@ -216,26 +221,22 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.query.userId
-        ? parseInt(req.query.userId as string, 10)
-        : req.userId;
-      const dateFrom = req.query.dateFrom
-        ? new Date(req.query.dateFrom as string)
-        : undefined;
-      const dateTo = req.query.dateTo
-        ? new Date(req.query.dateTo as string)
-        : undefined;
+    const userId = req.query.userId
+      ? parseInt(req.query.userId as string, 10)
+      : req.userId;
+    const dateFrom = req.query.dateFrom
+      ? new Date(req.query.dateFrom as string)
+      : undefined;
+    const dateTo = req.query.dateTo
+      ? new Date(req.query.dateTo as string)
+      : undefined;
 
-      const stats = await activityService.getActivityStats({
-        userId,
-        dateFrom,
-        dateTo,
-      });
-      res.json({ data: stats });
-    } catch (error) {
-      throw error;
-    }
+    const stats = await activityService.getActivityStats({
+      userId,
+      dateFrom,
+      dateTo,
+    });
+    res.json({ data: stats });
   },
 );
 
@@ -248,21 +249,17 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid activity ID' });
-      }
-
-      const activity = await activityService.getActivityById(id);
-      if (!activity) {
-        return res.status(404).json({ error: 'Activity not found' });
-      }
-
-      res.json({ data: activity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid activity ID' });
     }
+
+    const activity = await activityService.getActivityById(id);
+    if (!activity) {
+      return res.status(404).json({ error: 'Activity not found' });
+    }
+
+    res.json({ data: activity });
   },
 );
 
@@ -275,22 +272,18 @@ router.put(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid activity ID' });
-      }
-
-      const parsed = updateActivitySchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const activity = await activityService.updateActivity(id, parsed.data);
-      res.json({ data: activity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid activity ID' });
     }
+
+    const parsed = updateActivitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const activity = await activityService.updateActivity(id, parsed.data);
+    res.json({ data: activity });
   },
 );
 
@@ -303,17 +296,13 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid activity ID' });
-      }
-
-      await activityService.deleteActivity(id);
-      res.status(204).send();
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid activity ID' });
     }
+
+    await activityService.deleteActivity(id);
+    res.status(204).send();
   },
 );
 
@@ -326,22 +315,21 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid activity ID' });
-      }
-
-      const parsed = completeActivitySchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const activity = await activityService.completeActivity(id, parsed.data.outcome);
-      res.json({ data: activity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid activity ID' });
     }
+
+    const parsed = completeActivitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const activity = await activityService.completeActivity(
+      id,
+      parsed.data.outcome,
+    );
+    res.json({ data: activity });
   },
 );
 
@@ -354,17 +342,13 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const id = parseInt(req.params.id, 10);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: 'Invalid activity ID' });
-      }
-
-      const activity = await activityService.cancelActivity(id);
-      res.json({ data: activity });
-    } catch (error) {
-      throw error;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid activity ID' });
     }
+
+    const activity = await activityService.cancelActivity(id);
+    res.json({ data: activity });
   },
 );
 
@@ -381,21 +365,17 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const parsed = logCallSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const activity = await activityService.logCall(
-        parsed.data.accountId,
-        req.userId!,
-        parsed.data,
-      );
-      res.status(201).json({ data: activity });
-    } catch (error) {
-      throw error;
+    const parsed = logCallSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
     }
+
+    const activity = await activityService.logCall(
+      parsed.data.accountId,
+      req.userId!,
+      parsed.data,
+    );
+    res.status(201).json({ data: activity });
   },
 );
 
@@ -408,26 +388,22 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const parsed = logNoteSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ errors: parsed.error.flatten() });
-      }
-
-      const activity = await activityService.logNote(
-        parsed.data.accountId,
-        req.userId!,
-        parsed.data.description,
-        {
-          contactId: parsed.data.contactId,
-          opportunityId: parsed.data.opportunityId,
-          subject: parsed.data.subject,
-        },
-      );
-      res.status(201).json({ data: activity });
-    } catch (error) {
-      throw error;
+    const parsed = logNoteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
     }
+
+    const activity = await activityService.logNote(
+      parsed.data.accountId,
+      req.userId!,
+      parsed.data.description,
+      {
+        contactId: parsed.data.contactId,
+        opportunityId: parsed.data.opportunityId,
+        subject: parsed.data.subject,
+      },
+    );
+    res.status(201).json({ data: activity });
   },
 );
 
@@ -440,29 +416,32 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    try {
-      const entityType = req.params.entityType as 'account' | 'contact' | 'opportunity';
-      const entityId = parseInt(req.params.entityId, 10);
+    const entityType = req.params.entityType as
+      | 'account'
+      | 'contact'
+      | 'opportunity';
+    const entityId = parseInt(req.params.entityId, 10);
 
-      if (!['account', 'contact', 'opportunity'].includes(entityType)) {
-        return res.status(400).json({ error: 'Invalid entity type' });
-      }
+    if (!['account', 'contact', 'opportunity'].includes(entityType)) {
+      return res.status(400).json({ error: 'Invalid entity type' });
+    }
 
-      if (isNaN(entityId)) {
-        return res.status(400).json({ error: 'Invalid entity ID' });
-      }
+    if (isNaN(entityId)) {
+      return res.status(400).json({ error: 'Invalid entity ID' });
+    }
 
-      const limit = parseInt(req.query.limit as string, 10) || 20;
-      const offset = parseInt(req.query.offset as string, 10) || 0;
+    const limit = parseInt(req.query.limit as string, 10) || 20;
+    const offset = parseInt(req.query.offset as string, 10) || 0;
 
-      const timeline = await activityService.getEntityTimeline(entityType, entityId, {
+    const timeline = await activityService.getEntityTimeline(
+      entityType,
+      entityId,
+      {
         limit,
         offset,
-      });
-      res.json({ data: timeline });
-    } catch (error) {
-      throw error;
-    }
+      },
+    );
+    res.json({ data: timeline });
   },
 );
 

@@ -35,7 +35,8 @@ let io: Server | null = null;
 const ROOM = {
   tenant: (tenantId: string) => `tenant:${tenantId}`,
   user: (userId: number) => `user:${userId}`,
-  tenantUser: (tenantId: string, userId: number) => `tenant:${tenantId}:user:${userId}`,
+  tenantUser: (tenantId: string, userId: number) =>
+    `tenant:${tenantId}:user:${userId}`,
   entity: (tenantId: string, entityType: string, entityId: number) =>
     `tenant:${tenantId}:${entityType}:${entityId}`,
 };
@@ -91,14 +92,16 @@ export function initWebSocketServer(httpServer: HttpServer): Server {
       socket.tenantPlan = tenantUser.tenant.plan as TenantPlan;
 
       next();
-    } catch (error) {
+    } catch (_error) {
       next(new Error('Invalid token'));
     }
   });
 
   // Connection handler
   io.on('connection', (socket: AuthenticatedSocket) => {
-    console.log(`WebSocket: User ${socket.userId} connected from tenant ${socket.tenantId}`);
+    console.log(
+      `WebSocket: User ${socket.userId} connected from tenant ${socket.tenantId}`,
+    );
 
     // Join rooms
     if (socket.tenantId && socket.userId) {
@@ -110,20 +113,33 @@ export function initWebSocketServer(httpServer: HttpServer): Server {
     // Handle subscription to entity updates
     socket.on('subscribe', (data: { entityType: string; entityId: number }) => {
       if (socket.tenantId) {
-        const room = ROOM.entity(socket.tenantId, data.entityType, data.entityId);
+        const room = ROOM.entity(
+          socket.tenantId,
+          data.entityType,
+          data.entityId,
+        );
         socket.join(room);
         console.log(`WebSocket: User ${socket.userId} subscribed to ${room}`);
       }
     });
 
     // Handle unsubscription
-    socket.on('unsubscribe', (data: { entityType: string; entityId: number }) => {
-      if (socket.tenantId) {
-        const room = ROOM.entity(socket.tenantId, data.entityType, data.entityId);
-        socket.leave(room);
-        console.log(`WebSocket: User ${socket.userId} unsubscribed from ${room}`);
-      }
-    });
+    socket.on(
+      'unsubscribe',
+      (data: { entityType: string; entityId: number }) => {
+        if (socket.tenantId) {
+          const room = ROOM.entity(
+            socket.tenantId,
+            data.entityType,
+            data.entityId,
+          );
+          socket.leave(room);
+          console.log(
+            `WebSocket: User ${socket.userId} unsubscribed from ${room}`,
+          );
+        }
+      },
+    );
 
     // Handle presence updates
     socket.on('presence', (data: { status: string }) => {
@@ -219,7 +235,9 @@ export async function getConnectedCount(): Promise<number> {
 /**
  * Get connected sockets in a tenant.
  */
-export async function getTenantConnectedCount(tenantId: string): Promise<number> {
+export async function getTenantConnectedCount(
+  tenantId: string,
+): Promise<number> {
   if (!io) return 0;
   const sockets = await io.in(ROOM.tenant(tenantId)).fetchSockets();
   return sockets.length;
