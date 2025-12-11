@@ -1,18 +1,44 @@
-# AI Consulting PMO Platform
+# AI CRM Platform
 
-The AI Consulting PMO Platform is a monorepo for a React + TypeScript frontend and a Node.js + TypeScript API that together deliver a lightweight PMO tailored to solo AI consultants.
+A comprehensive multi-tenant CRM SaaS platform with AI-powered modules, evolved from a consulting PMO tool. Built with a React + TypeScript frontend and a Node.js + TypeScript API.
 
 > **AI Assistants**: See [CLAUDE.md](CLAUDE.md) for comprehensive onboarding documentation including architecture patterns, code conventions, and common tasks.
 
-Dive into the product requirements and technical plan in [Docs/ai-consulting-pmo-product-requirements.md](Docs/ai-consulting-pmo-product-requirements.md) and [Docs/AI_Consulting_PMO_Implementation_Codex.md](Docs/AI_Consulting_PMO_Implementation_Codex.md).
+## Key Features
+
+### Core CRM
+- **Accounts**: Company management with hierarchy support, health scores, and engagement tracking
+- **Contacts**: Lifecycle management (Lead → MQL → SQL → Customer) with lead scoring
+- **Opportunities**: Sales pipeline with customizable stages, weighted forecasting, and stage history
+- **Pipelines**: Kanban-style sales pipeline visualization
+- **Activities**: Unified timeline for calls, emails, meetings, tasks, and notes
+
+### AI Tools (Premium Add-ons)
+- **AI Chatbot**: Customer-facing chatbot with intent detection, multi-channel support, and webhooks
+- **Document Analyzer**: OCR, field extraction, compliance checking, and integrations
+
+### PMO Module (Optional)
+- Project management with templates
+- Task management with Kanban boards
+- Milestone tracking
+- Meeting notes with action item extraction
+
+### Architecture Highlights
+- Multi-tenant with row-level isolation
+- Modular feature system (enable/disable modules via environment)
+- Comprehensive API with filtering, pagination, and analytics
+
+For detailed documentation see [Docs/CRM-TRANSFORMATION-PLAN.md](Docs/CRM-TRANSFORMATION-PLAN.md) and [Docs/AI-Tools.md](Docs/AI-Tools.md).
 
 ## Monorepo layout
 The `pmo` directory is an npm workspace with the following structure:
 
 - `pmo/apps/web`: Vite-powered React + TypeScript SPA frontend
 - `pmo/apps/api`: Express + TypeScript API server
-  - Includes AI Tools: Customer Service Chatbot & Smart Document Analyzer
-- `pmo/prisma`: Prisma schema and database assets
+  - `src/crm/`: CRM module (Accounts, Opportunities, Activities)
+  - `src/modules/chatbot/`: AI Chatbot module
+  - `src/modules/document-analyzer/`: Document Analyzer module
+- `pmo/prisma`: Prisma schema and database assets (CRM + PMO models)
 - `pmo/packages`: Shared packages (types, UI, chatbot-widget)
   - `@pmo/chatbot-widget`: Embeddable chatbot widget NPM package
 - `.github/workflows`: Continuous integration definitions
@@ -115,8 +141,9 @@ npm run test:e2e:ui
 
 **Coverage**: ~57 test cases covering:
 - Authentication & authorization
-- Clients & contacts management
-- Projects creation and management
+- CRM: Accounts, opportunities, pipelines, activities
+- Clients & contacts management (PMO)
+- Projects creation and management (PMO)
 - Tasks & milestones (Kanban workflow)
 - Meetings with task creation
 - AI Assets library and linking
@@ -180,6 +207,10 @@ See [Quickstart](#quickstart) section above.
 
 ### For Developers
 
+- **CRM & Architecture**:
+  - [CRM Transformation Plan](Docs/CRM-TRANSFORMATION-PLAN.md) - CRM architecture and implementation plan
+  - [Module System](Docs/MODULES.md) - Feature module configuration
+
 - **Testing**:
   - [E2E Test Coverage](pmo/docs/e2e-coverage.md) - Comprehensive E2E test documentation
   - [Accessibility Report](pmo/docs/accessibility-report-m8.md) - Accessibility testing guide
@@ -193,9 +224,8 @@ See [Quickstart](#quickstart) section above.
 - **Implementation**:
   - [M8 Hardening Notes](pmo/docs/m8-hardening-notes.md) - Production readiness implementation
   - [AI Coding Notes](Docs/ai-coding-notes.md) - Legacy quick reference (see CLAUDE.md for comprehensive guide)
-  - [Product Requirements](Docs/ai-consulting-pmo-product-requirements.md) - Feature specifications
+  - [Product Requirements](Docs/ai-consulting-pmo-product-requirements.md) - Original PMO feature specifications
   - [Implementation Codex](Docs/AI_Consulting_PMO_Implementation_Codex.md) - Technical architecture
-  - [Module System](Docs/MODULES.md) - Feature module configuration
 
 - **AI Tools**:
   - [AI Tools Documentation](Docs/AI-Tools.md) - Comprehensive guide for AI Chatbot & Document Analyzer
@@ -203,5 +233,3 @@ See [Quickstart](#quickstart) section above.
     - Document Analyzer: OCR, field extraction, compliance checking, integrations
 
 For fast onboarding, start with [CLAUDE.md](CLAUDE.md) which covers architecture patterns, code conventions, and common development tasks.
-
-For product scope and feature specifications, refer to the product requirements and implementation codex in the `Docs` directory.
