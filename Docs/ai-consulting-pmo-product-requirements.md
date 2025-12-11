@@ -1,11 +1,13 @@
 # AI Consulting PMO Platform – Product Requirements & Technical Spec (MVP)
 
+> **Note**: This document describes the original PMO (Project Management Office) features. The platform has since been transformed into a comprehensive **AI CRM Platform** with full CRM capabilities including Accounts, Opportunities, Pipelines, and Activities. See [CRM-TRANSFORMATION-PLAN.md](CRM-TRANSFORMATION-PLAN.md) for the CRM architecture and features.
+
 ## 1. Document Info
 
-- **Product Name (Working):** AI Consulting PMO Platform (internal-only)
+- **Product Name (Current):** AI CRM Platform (evolved from AI Consulting PMO Platform)
 - **Owner:** [Your Name]
-- **Version:** 0.1 (MVP)
-- **Last Updated:** YYYY-MM-DD
+- **Version:** 2.0 (CRM + PMO)
+- **Last Updated:** 2025-12-11
 
 ---
 
@@ -629,12 +631,14 @@ Base URL: `/api`
 
 ---
 
-## 14. Out of Scope (MVP)
+## 14. Out of Scope (Original MVP)
+
+> **Note**: Many of these features have been implemented in the CRM transformation. See [CRM-TRANSFORMATION-PLAN.md](CRM-TRANSFORMATION-PLAN.md).
 
 - Client-facing portal
 - Automated time tracking / invoicing
-- Full AI assistant features (summarization, suggestion)
-- Third-party integrations (email, calendar, Slack/Teams)
-- Multi-tenant SaaS capabilities
+- Full AI assistant features (summarization, suggestion) - **Partially implemented**: AI Chatbot & Document Analyzer
+- Third-party integrations (email, calendar, Slack/Teams) - **Partially implemented**: Multi-channel chatbot support
+- Multi-tenant SaaS capabilities - **Implemented**: Full multi-tenant architecture with row-level isolation
 
 ---

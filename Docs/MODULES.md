@@ -1,6 +1,8 @@
 # Module & Feature Flag System
 
-The AI Consulting PMO platform supports a comprehensive modular architecture that allows you to enable/disable features on a per-customer or per-deployment basis.
+The AI CRM Platform supports a comprehensive modular architecture that allows you to enable/disable features on a per-customer or per-deployment basis. The platform has evolved from a PMO tool to include full CRM capabilities.
+
+> **Note**: For detailed CRM architecture, see [CRM-TRANSFORMATION-PLAN.md](CRM-TRANSFORMATION-PLAN.md).
 
 ## Table of Contents
 
@@ -40,8 +42,26 @@ These modules cannot be disabled as they form the foundation of the platform:
 |-----------|-------|-------------|--------|
 | `dashboard` | Dashboard | Main dashboard with metrics | `/dashboard` |
 | `tasks` | Tasks | Personal task management | `/tasks` |
-| `clients` | Clients | Client management | `/clients`, `/clients/:id` |
-| `projects` | Projects | Project management | `/projects/:id` |
+| `clients` | Clients | Client management (PMO) | `/clients`, `/clients/:id` |
+| `projects` | Projects | Project management (PMO) | `/projects/:id` |
+
+### CRM Modules
+
+The CRM module provides full customer relationship management capabilities:
+
+| Module ID | Label | Description | Routes |
+|-----------|-------|-------------|--------|
+| `crm` | CRM | Core CRM functionality | `/crm/*` |
+| `accounts` | Accounts | Company/organization management with hierarchy | `/crm/accounts`, `/crm/accounts/:id` |
+| `opportunities` | Opportunities | Sales pipeline and deal management | `/crm/opportunities`, `/crm/opportunities/:id` |
+| `activities` | Activities | Unified activity timeline (calls, emails, meetings) | `/crm/activities` |
+| `pipeline` | Pipeline | Sales pipeline visualization (Kanban) | `/sales/pipeline` |
+
+**CRM API Endpoints:**
+- `GET/POST /api/crm/accounts` - Account management
+- `GET/POST /api/crm/opportunities` - Opportunity management
+- `GET/POST /api/crm/activities` - Activity management
+- `GET /api/crm/opportunities/pipeline-stats` - Pipeline analytics
 
 ### Toggleable Modules
 
@@ -96,13 +116,15 @@ VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
 
 | Customer Type | Configuration |
 |---------------|---------------|
-| Basic CRM | `dashboard,tasks,clients,projects` |
+| CRM Only | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline` |
+| CRM + Sales | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,leads` |
+| PMO Only (Legacy) | `dashboard,tasks,clients,projects` |
 | Sales-focused | `dashboard,tasks,clients,projects,leads,pipeline` |
 | Marketing Agency | `dashboard,tasks,clients,projects,marketing,assets` |
 | Customer Service | `dashboard,tasks,clients,projects,chatbot` |
 | Document Processing | `dashboard,tasks,clients,projects,documentAnalyzer` |
-| AI-Enabled Full | `dashboard,tasks,clients,projects,chatbot,documentAnalyzer,assets` |
-| Full Platform | `dashboard,tasks,clients,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer` |
+| AI-Enabled CRM | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,chatbot,documentAnalyzer` |
+| Full Platform | `dashboard,tasks,crm,accounts,opportunities,activities,clients,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer` |
 
 ### Method 2: Admin UI (Per-Tenant)
 

@@ -1,10 +1,34 @@
 # CLAUDE.md
 
-This document provides a comprehensive guide for AI assistants working with the AI Consulting PMO Platform codebase.
+This document provides a comprehensive guide for AI assistants working with the AI CRM Platform codebase.
 
 ## Project Overview
 
-The AI Consulting PMO Platform is a full-stack monorepo application designed for solo AI consultants to manage clients, projects, tasks, meetings, and marketing content. It consists of a React + TypeScript frontend and a Node.js + Express + TypeScript API backend.
+The AI CRM Platform is a full-stack monorepo application that has evolved from a consulting PMO tool into a comprehensive multi-tenant CRM SaaS platform with AI-powered modules. It consists of a React + TypeScript frontend and a Node.js + Express + TypeScript API backend.
+
+### Platform Capabilities
+
+**Core CRM Features:**
+- **Accounts**: Company/organization management with hierarchy support, health scores, and engagement tracking
+- **CRM Contacts**: Contact lifecycle management (Lead → MQL → SQL → Customer) with lead scoring
+- **Opportunities**: Sales pipeline management with customizable stages, weighted forecasting, and stage history
+- **Pipelines**: Customizable sales pipelines with Kanban visualization
+- **Activities**: Unified timeline for calls, emails, meetings, tasks, notes, and more
+
+**Multi-Tenant Architecture:**
+- Row-level tenant isolation via `tenantId` on all models
+- Tenant context propagation through AsyncLocalStorage
+- Prisma middleware for automatic tenant filtering
+
+**PMO Module** (Original Features):
+- Project management with templates
+- Task management with Kanban boards
+- Milestone tracking
+- Meeting notes with action item extraction
+
+**AI Tools** (Premium Add-ons):
+- AI Chatbot with multi-channel support
+- Smart Document Analyzer with OCR and field extraction
 
 ## Quick Reference
 
@@ -71,6 +95,16 @@ Consulting-PM-Tool/
 │   │       ├── src/
 │   │       │   ├── auth/         # Authentication (JWT, cookies, middleware)
 │   │       │   ├── config/       # Environment configuration
+│   │       │   ├── crm/          # CRM module (Accounts, Opportunities, Activities)
+│   │       │   │   ├── services/         # CRM business logic
+│   │       │   │   │   ├── account.service.ts
+│   │       │   │   │   ├── opportunity.service.ts
+│   │       │   │   │   └── activity.service.ts
+│   │       │   │   ├── routes/           # CRM API routes
+│   │       │   │   │   ├── account.routes.ts
+│   │       │   │   │   ├── opportunity.routes.ts
+│   │       │   │   │   └── activity.routes.ts
+│   │       │   │   └── index.ts          # CRM module exports
 │   │       │   ├── middleware/   # Express middleware (error, rate-limit, module-guard)
 │   │       │   ├── modules/      # Feature modules (AI tools, MCP, marketing, etc.)
 │   │       │   │   ├── chatbot/          # AI Chatbot (Tool 1.1)
@@ -100,9 +134,10 @@ Consulting-PM-Tool/
 │
 ├── Docs/                         # Project documentation
 │   ├── ai-coding-notes.md        # Quick reference for AI assistants
-│   ├── ai-consulting-pmo-product-requirements.md  # Product specs
+│   ├── ai-consulting-pmo-product-requirements.md  # Original PMO product specs
 │   ├── AI_Consulting_PMO_Implementation_Codex.md  # Technical architecture
 │   ├── AI-Tools.md               # AI Chatbot & Document Analyzer documentation
+│   ├── CRM-TRANSFORMATION-PLAN.md # CRM transformation architecture & implementation plan
 │   ├── deploy-notes-render-vercel.md              # Deployment guide
 │   └── MODULES.md                # Module system documentation
 │
@@ -193,9 +228,39 @@ Consulting-PM-Tool/
 ### Database Models (Prisma)
 
 Key models in `pmo/prisma/schema.prisma`:
+
+**CRM Core Models:**
+- **Account**: Company/organization with hierarchy support, health scores, engagement tracking, billing/shipping addresses
+  - Supports parent/child relationships for account hierarchies
+  - Types: PROSPECT, CUSTOMER, PARTNER, COMPETITOR, CHURNED, OTHER
+  - Relations: contacts, opportunities, activities, child accounts
+- **CRMContact**: CRM-specific contact with lifecycle management
+  - Lifecycle stages: LEAD, MQL, SQL, OPPORTUNITY, CUSTOMER, EVANGELIST, CHURNED
+  - Lead scoring, source tracking, communication preferences
+  - LinkedIn/Twitter integration
+- **Pipeline**: Customizable sales pipelines with stages
+  - Default pipeline created per tenant
+  - Configurable stage order and probabilities
+- **SalesPipelineStage**: Individual pipeline stages
+  - Stage types: OPEN, WON, LOST
+  - Probability and color coding
+  - Rotten days tracking for stale deals
+- **Opportunity**: Deals/potential revenue
+  - Weighted amount calculation (amount × probability)
+  - Stage history tracking
+  - Expected/actual close dates
+  - Lost reason tracking
+- **OpportunityContact**: Junction table for opportunity contacts with roles
+- **OpportunityStageHistory**: Audit trail for opportunity stage changes
+- **CRMActivity**: Unified activity timeline
+  - Types: CALL, EMAIL, MEETING, TASK, NOTE, SMS, LINKEDIN_MESSAGE, CHAT, DEMO, PROPOSAL, CONTRACT, OTHER
+  - Status: PLANNED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+  - Links to accounts, contacts, and opportunities
+
+**PMO Models (Original):**
 - **User**: Consultants/admins with role-based access
 - **Client**: Client companies with industry, size, AI maturity
-- **Contact**: Client contacts (cascade delete with client)
+- **Contact**: Project-related client contacts (cascade delete with client)
 - **Project**: Projects linked to clients with status tracking
 - **Task**: Kanban-style tasks with status, priority, assignee
 - **Milestone**: Project milestones with status tracking
@@ -356,6 +421,19 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Doc analyzer templates | `pmo/apps/api/src/modules/document-analyzer/templates/built-in-templates.ts` |
 | Doc analyzer page (UI) | `pmo/apps/web/src/pages/ai-tools/DocumentAnalyzerPage.tsx` |
 
+**CRM Files:**
+
+| Purpose | File Path |
+|---------|-----------|
+| Account service | `pmo/apps/api/src/crm/services/account.service.ts` |
+| Account routes | `pmo/apps/api/src/crm/routes/account.routes.ts` |
+| Opportunity service | `pmo/apps/api/src/crm/services/opportunity.service.ts` |
+| Opportunity routes | `pmo/apps/api/src/crm/routes/opportunity.routes.ts` |
+| Activity service | `pmo/apps/api/src/crm/services/activity.service.ts` |
+| Activity routes | `pmo/apps/api/src/crm/routes/activity.routes.ts` |
+| CRM module exports | `pmo/apps/api/src/crm/index.ts` |
+| Pipeline page (UI) | `pmo/apps/web/src/pages/PipelinePage.tsx` |
+
 ## Common Tasks
 
 ### Adding a New API Route
@@ -389,6 +467,44 @@ For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI
 3. Access UI at `/ai-tools/chatbot` or `/ai-tools/document-analyzer`
 4. Configure per-client via the Client detail page
 
+### Working with CRM Features
+For the comprehensive CRM transformation plan, see [Docs/CRM-TRANSFORMATION-PLAN.md](Docs/CRM-TRANSFORMATION-PLAN.md).
+
+**CRM API Endpoints:**
+
+| Resource | Endpoints |
+|----------|-----------|
+| **Accounts** | `GET/POST /api/crm/accounts`, `GET/PUT/DELETE /api/crm/accounts/:id` |
+| | `GET /api/crm/accounts/stats` - Account statistics |
+| | `POST /api/crm/accounts/:id/archive` - Soft delete |
+| | `POST /api/crm/accounts/:id/restore` - Restore archived |
+| | `GET /api/crm/accounts/:id/hierarchy` - Account hierarchy |
+| | `GET /api/crm/accounts/:id/timeline` - Activity timeline |
+| | `POST /api/crm/accounts/:id/merge` - Merge accounts |
+| **Opportunities** | `GET/POST /api/crm/opportunities`, `GET/PUT/DELETE /api/crm/opportunities/:id` |
+| | `GET /api/crm/opportunities/pipeline-stats` - Pipeline statistics |
+| | `GET /api/crm/opportunities/closing-soon` - Deals closing soon |
+| | `POST /api/crm/opportunities/:id/stage` - Move to stage |
+| | `POST /api/crm/opportunities/:id/won` - Mark as won |
+| | `POST /api/crm/opportunities/:id/lost` - Mark as lost |
+| | `POST/DELETE /api/crm/opportunities/:id/contacts/:contactId` - Manage contacts |
+| **Activities** | `GET/POST /api/crm/activities`, `GET/PUT/DELETE /api/crm/activities/:id` |
+| | `GET /api/crm/activities/my/upcoming` - User's upcoming activities |
+| | `GET /api/crm/activities/my/overdue` - User's overdue activities |
+| | `GET /api/crm/activities/stats` - Activity statistics |
+| | `POST /api/crm/activities/:id/complete` - Complete activity |
+| | `POST /api/crm/activities/:id/cancel` - Cancel activity |
+| | `POST /api/crm/activities/log/call` - Quick log call |
+| | `POST /api/crm/activities/log/note` - Quick log note |
+
+**Key CRM Features:**
+- **Account Hierarchy**: Support for parent/child account relationships
+- **Health Scoring**: 0-100 health score with engagement tracking
+- **Pipeline Management**: Customizable stages with probability and weighted forecasting
+- **Stage History**: Full audit trail of opportunity stage changes with duration tracking
+- **Activity Timeline**: Unified view of all interactions across accounts, contacts, and opportunities
+- **Merge Accounts**: Combine duplicate accounts (moves all contacts, opportunities, activities)
+
 ## Troubleshooting
 
 ### Common Issues
@@ -413,10 +529,11 @@ For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI
 
 ## Documentation Links
 
-- [Product Requirements](Docs/ai-consulting-pmo-product-requirements.md)
-- [Implementation Codex](Docs/AI_Consulting_PMO_Implementation_Codex.md)
-- [AI Coding Notes](Docs/ai-coding-notes.md)
-- [Module System](Docs/MODULES.md)
-- [AI Tools (Chatbot & Document Analyzer)](Docs/AI-Tools.md)
-- [Deployment Guide](Docs/deploy-notes-render-vercel.md)
-- [E2E Test Coverage](pmo/docs/e2e-coverage.md)
+- [CRM Transformation Plan](Docs/CRM-TRANSFORMATION-PLAN.md) - Comprehensive CRM architecture and implementation plan
+- [Product Requirements](Docs/ai-consulting-pmo-product-requirements.md) - Original PMO product specs
+- [Implementation Codex](Docs/AI_Consulting_PMO_Implementation_Codex.md) - Technical architecture
+- [AI Coding Notes](Docs/ai-coding-notes.md) - Legacy quick reference
+- [Module System](Docs/MODULES.md) - Feature module configuration
+- [AI Tools (Chatbot & Document Analyzer)](Docs/AI-Tools.md) - AI tools documentation
+- [Deployment Guide](Docs/deploy-notes-render-vercel.md) - Render + Vercel deployment
+- [E2E Test Coverage](pmo/docs/e2e-coverage.md) - End-to-end test documentation
