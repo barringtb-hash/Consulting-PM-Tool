@@ -9,7 +9,6 @@ import type {
   ReportConfig,
   ReportColumn,
   ReportFilter,
-  ExportOptions,
 } from '../analytics/analytics.types';
 
 // ============================================================================
@@ -77,7 +76,7 @@ async function queryOpportunities(
   columns: ReportColumn[],
   sortBy?: { column: string; direction: 'ASC' | 'DESC' },
 ) {
-  const select = buildSelectClause(columns);
+  const _select = buildSelectClause(columns);
 
   const opportunities = await prisma.opportunity.findMany({
     where: whereClause,

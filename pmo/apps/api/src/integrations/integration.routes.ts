@@ -193,7 +193,7 @@ router.post(
  * GET /api/integrations/callback
  * OAuth callback handler.
  */
-router.get('/integrations/callback', async (req, res, next) => {
+router.get('/integrations/callback', async (req, res, _next) => {
   try {
     const { code, state, error } = req.query;
 
@@ -463,12 +463,6 @@ router.get(
         return res.status(404).json({ error: 'Integration not found' });
       }
 
-      // Get integration with field mappings from database
-      const fullIntegration = await oauthService.getIntegrationByProvider(
-        tenantId,
-        provider,
-      );
-
       res.json({
         data: {
           provider,
@@ -511,7 +505,7 @@ router.put(
  */
 router.post('/integrations/webhooks', async (req, res, next) => {
   try {
-    const { provider, event, data, signature } = req.body;
+    const { provider, event } = req.body;
 
     // Validate webhook signature
     // Implementation depends on provider

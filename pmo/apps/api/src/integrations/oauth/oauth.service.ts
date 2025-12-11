@@ -22,7 +22,6 @@ import type {
 // Encryption settings
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
-const AUTH_TAG_LENGTH = 16;
 
 // ============================================================================
 // CREDENTIAL ENCRYPTION
@@ -333,7 +332,7 @@ export async function updateIntegrationCredentials(
  */
 export async function disconnectIntegration(
   integrationId: number,
-  tenantId: string,
+  _tenantId: string,
 ): Promise<void> {
   await prisma.integration.update({
     where: { id: integrationId },

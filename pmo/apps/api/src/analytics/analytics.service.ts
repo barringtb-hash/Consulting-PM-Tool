@@ -133,7 +133,7 @@ export async function getSalesDashboard(
 /**
  * Get pipeline metrics.
  */
-async function getPipelineMetrics(tenantId: string, dateRange: DateRange) {
+async function getPipelineMetrics(tenantId: string, _dateRange: DateRange) {
   const opportunities = await prisma.opportunity.findMany({
     where: {
       tenantId,
@@ -546,8 +546,6 @@ export async function getTeamDashboard(
     where: { tenantId },
     include: { user: true },
   });
-
-  const userIds = tenantUsers.map((tu) => tu.userId);
 
   // Leaderboard - deals won and revenue
   const leaderboardData: TeamDashboardData['leaderboard'] = [];

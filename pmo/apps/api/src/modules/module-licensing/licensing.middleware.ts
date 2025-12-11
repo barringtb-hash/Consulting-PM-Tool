@@ -166,6 +166,7 @@ export function withModuleLicensing(
 
 // Extend Express Request type to include usage tracking
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       usageTracking?: {

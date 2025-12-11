@@ -211,7 +211,7 @@ export function generateExcelXml(
 function formatExcelValue(
   value: unknown,
   type: string,
-  dateFormat: string,
+  _dateFormat: string,
 ): { type: string; formattedValue: string } {
   if (value === null || value === undefined) {
     return { type: 'String', formattedValue: '' };

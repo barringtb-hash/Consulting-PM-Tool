@@ -9,7 +9,6 @@ import { prisma } from '../../prisma/client';
 import { getValidAccessToken } from '../oauth/oauth.service';
 import type {
   IntegrationProvider,
-  SyncDirection,
   SyncStatus,
   SyncJobInput,
   EntityMapping,
@@ -295,7 +294,7 @@ async function upsertLocalRecord(
   externalData: Record<string, unknown>,
   fieldMappings: FieldMapping[],
   provider: IntegrationProvider,
-  integrationId: number,
+  _integrationId: number,
 ): Promise<void> {
   // Transform external data to local format
   const localData = transformRecord(externalData, fieldMappings);
@@ -618,10 +617,10 @@ function getExternalId(
  * Find existing record by external ID.
  */
 async function findExistingRecord(
-  tenantId: string,
-  entityType: string,
-  provider: IntegrationProvider,
-  externalId: string,
+  _tenantId: string,
+  _entityType: string,
+  _provider: IntegrationProvider,
+  _externalId: string,
 ): Promise<{ id: number } | null> {
   // This would need to be customized based on how external IDs are stored
   // For now, return null (always create new)

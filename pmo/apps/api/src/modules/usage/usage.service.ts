@@ -241,7 +241,6 @@ export async function getModuleUsageStats(
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
   // Get current and previous period usage
   const [currentSummary, previousSummary] = await Promise.all([
@@ -511,7 +510,7 @@ export async function generateUsageReport(
     userId?: number;
   }>;
 }> {
-  const { tenantId, moduleId, period, startDate, endDate, groupBy } = options;
+  const { tenantId, moduleId, period, startDate, endDate } = options;
 
   const whereClause: Record<string, unknown> = {
     tenantId,
@@ -595,10 +594,11 @@ export function getCurrentPeriodStart(period: UsagePeriod): Date {
   switch (period) {
     case 'DAILY':
       return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    case 'WEEKLY':
+    case 'WEEKLY': {
       const day = now.getDay();
       const diff = now.getDate() - day;
       return new Date(now.getFullYear(), now.getMonth(), diff);
+    }
     case 'MONTHLY':
       return new Date(now.getFullYear(), now.getMonth(), 1);
   }
