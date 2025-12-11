@@ -1,6 +1,13 @@
 # AI Consulting PMO Platform – Implementation Codex (Condensed)
 
-This Markdown file is a build-ready implementation plan for the **AI Consulting PMO Platform** MVP.  
+> **Note**: This document describes the original PMO implementation plan. The platform has since evolved into a comprehensive **AI CRM Platform** with:
+> - **CRM Core**: Accounts, CRM Contacts, Opportunities, Pipelines, Activities
+> - **Multi-Tenant Architecture**: Row-level tenant isolation
+> - **AI Tools**: Chatbot and Document Analyzer modules
+>
+> For the current CRM architecture, see [CRM-TRANSFORMATION-PLAN.md](CRM-TRANSFORMATION-PLAN.md). The PMO features (Epics E1-E7 below) remain available as an optional module.
+
+This Markdown file is a build-ready implementation plan for the **AI Consulting PMO Platform** MVP.
 It translates your product requirements into an actionable technical blueprint for a React + Node + Postgres stack.
 
 ---

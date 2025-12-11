@@ -1,8 +1,10 @@
-# AI Coding Notes for the PMO Monorepo
+# AI Coding Notes for the AI CRM Platform
 
 A quick-reference guide for AI contributors working in this repository.
 
-> **Note**: For comprehensive documentation including architecture patterns, code conventions, key file references, and common tasks, see [../CLAUDE.md](../CLAUDE.md).
+> **Note**: For comprehensive documentation including CRM features, architecture patterns, code conventions, key file references, and common tasks, see [../CLAUDE.md](../CLAUDE.md).
+>
+> For CRM architecture details, see [CRM-TRANSFORMATION-PLAN.md](CRM-TRANSFORMATION-PLAN.md).
 
 ## Quick Start
 
@@ -68,6 +70,15 @@ VITE_API_BASE_URL="http://localhost:3001/api"
 
 ## Database Models (Key Entities)
 
+**CRM Core Models:**
+- **Account**: Company/organization with hierarchy, health scores, engagement tracking
+- **CRMContact**: CRM contacts with lifecycle management (Lead → MQL → SQL → Customer)
+- **Pipeline**: Customizable sales pipelines with stages
+- **SalesPipelineStage**: Individual pipeline stages with probability
+- **Opportunity**: Deals with weighted forecasting and stage history
+- **CRMActivity**: Unified timeline (calls, emails, meetings, tasks, notes)
+
+**PMO Models:**
 - **User**: Consultants/admins with role-based access
 - **Client**: Companies with industry, size, AI maturity
 - **Contact**: Client contacts (cascade delete)
@@ -91,7 +102,9 @@ See [MODULES.md](MODULES.md) for full module documentation.
 ## Additional Resources
 
 - [CLAUDE.md](../CLAUDE.md) - Comprehensive AI assistant guide
+- [CRM Transformation Plan](CRM-TRANSFORMATION-PLAN.md) - CRM architecture and implementation
 - [pmo/AGENT.md](../pmo/AGENT.md) - Contributor guide
-- [Product Requirements](ai-consulting-pmo-product-requirements.md)
-- [Implementation Codex](AI_Consulting_PMO_Implementation_Codex.md)
-- [Module System](MODULES.md)
+- [AI Tools Documentation](AI-Tools.md) - Chatbot and Document Analyzer
+- [Product Requirements](ai-consulting-pmo-product-requirements.md) - Original PMO specs
+- [Implementation Codex](AI_Consulting_PMO_Implementation_Codex.md) - Original PMO implementation
+- [Module System](MODULES.md) - Feature module configuration
