@@ -37,8 +37,16 @@ router.post(
   async (req, res, next) => {
     try {
       const { tenantId } = getTenantContext();
+      const body = req.body as {
+        moduleId?: string;
+        eventType?: string;
+        quantity?: number;
+        entityType?: string;
+        entityId?: number;
+        metadata?: Record<string, unknown>;
+      };
       const { moduleId, eventType, quantity, entityType, entityId, metadata } =
-        req.body;
+        body;
 
       if (!moduleId || !eventType) {
         return res.status(400).json({
@@ -51,7 +59,7 @@ router.post(
         moduleId,
         eventType,
         quantity: quantity || 1,
-        userId: req.userId,
+        userId: (req as unknown as { userId?: number }).userId,
         entityType,
         entityId,
         metadata,
@@ -75,7 +83,8 @@ router.post(
   async (req, res, next) => {
     try {
       const { tenantId } = getTenantContext();
-      const { events } = req.body;
+      const body = req.body as { events?: Array<Record<string, unknown>> };
+      const { events } = body;
 
       if (!Array.isArray(events) || events.length === 0) {
         return res.status(400).json({
@@ -83,13 +92,15 @@ router.post(
         });
       }
 
+      const userId = (req as unknown as { userId?: number }).userId;
+
       await usageService.trackUsageBulk(
         events.map((e: Record<string, unknown>) => ({
           tenantId,
           moduleId: e.moduleId as string,
           eventType: e.eventType as string,
           quantity: (e.quantity as number) || 1,
-          userId: req.userId,
+          userId,
           entityType: e.entityType as string | undefined,
           entityId: e.entityId as number | undefined,
           metadata: e.metadata as Record<string, unknown> | undefined,

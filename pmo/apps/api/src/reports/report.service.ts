@@ -11,6 +11,15 @@ import type {
   ReportFilter,
 } from '../analytics/analytics.types';
 
+// Type for JSON fields compatible with Prisma
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 // ============================================================================
 // REPORT GENERATION
 // ============================================================================
@@ -88,7 +97,7 @@ async function queryOpportunities(
       weightedAmount: true,
       status: true,
       expectedCloseDate: true,
-      closedAt: true,
+      actualCloseDate: true,
       leadSource: true,
       createdAt: true,
       account: { select: { id: true, name: true } },
@@ -101,7 +110,7 @@ async function queryOpportunities(
     take: 1000,
   });
 
-  return opportunities.map((opp) => ({
+  return opportunities.map((opp: (typeof opportunities)[number]) => ({
     id: opp.id,
     name: opp.name,
     amount: opp.amount,
@@ -109,7 +118,7 @@ async function queryOpportunities(
     weightedAmount: opp.weightedAmount,
     status: opp.status,
     expectedCloseDate: opp.expectedCloseDate,
-    closedAt: opp.closedAt,
+    actualCloseDate: opp.actualCloseDate,
     leadSource: opp.leadSource,
     createdAt: opp.createdAt,
     accountName: opp.account?.name,
@@ -142,7 +151,7 @@ async function queryAccounts(
       churnRisk: true,
       createdAt: true,
       owner: { select: { id: true, name: true } },
-      _count: { select: { opportunities: true, contacts: true } },
+      _count: { select: { opportunities: true, crmContacts: true } },
     },
     orderBy: sortBy
       ? { [sortBy.column]: sortBy.direction.toLowerCase() }
@@ -150,7 +159,7 @@ async function queryAccounts(
     take: 1000,
   });
 
-  return accounts.map((acc) => ({
+  return accounts.map((acc: (typeof accounts)[number]) => ({
     id: acc.id,
     name: acc.name,
     type: acc.type,
@@ -165,7 +174,7 @@ async function queryAccounts(
     createdAt: acc.createdAt,
     ownerName: acc.owner?.name,
     opportunityCount: acc._count.opportunities,
-    contactCount: acc._count.contacts,
+    contactCount: acc._count.crmContacts,
   }));
 }
 
@@ -197,7 +206,7 @@ async function queryContacts(
     take: 1000,
   });
 
-  return contacts.map((contact) => ({
+  return contacts.map((contact: (typeof contacts)[number]) => ({
     id: contact.id,
     firstName: contact.firstName,
     lastName: contact.lastName,
@@ -228,7 +237,7 @@ async function queryActivities(
       subject: true,
       status: true,
       priority: true,
-      dueDate: true,
+      dueAt: true,
       completedAt: true,
       createdAt: true,
       account: { select: { id: true, name: true } },
@@ -242,13 +251,13 @@ async function queryActivities(
     take: 1000,
   });
 
-  return activities.map((activity) => ({
+  return activities.map((activity: (typeof activities)[number]) => ({
     id: activity.id,
     type: activity.type,
     subject: activity.subject,
     status: activity.status,
     priority: activity.priority,
-    dueDate: activity.dueDate,
+    dueAt: activity.dueAt,
     completedAt: activity.completedAt,
     createdAt: activity.createdAt,
     accountName: activity.account?.name,
@@ -272,6 +281,14 @@ export async function saveReport(
   userId: number,
   config: Omit<ReportConfig, 'id'>,
 ): Promise<ReportConfig> {
+  const reportConfig = {
+    columns: config.columns,
+    filters: config.filters,
+    sortBy: config.sortBy,
+    groupBy: config.groupBy,
+    schedule: config.schedule,
+  } as JsonValue;
+
   const report = await prisma.savedReport.create({
     data: {
       tenantId,
@@ -280,13 +297,7 @@ export async function saveReport(
       description: config.description,
       type: config.type,
       entity: config.entity,
-      config: {
-        columns: config.columns,
-        filters: config.filters,
-        sortBy: config.sortBy,
-        groupBy: config.groupBy,
-        schedule: config.schedule,
-      },
+      config: reportConfig,
     },
   });
 
@@ -308,7 +319,7 @@ export async function getSavedReports(tenantId: string) {
     },
   });
 
-  return reports.map((r) => ({
+  return reports.map((r: (typeof reports)[number]) => ({
     id: r.id.toString(),
     name: r.name,
     description: r.description,
