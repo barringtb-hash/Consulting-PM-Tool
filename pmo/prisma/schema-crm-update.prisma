@@ -1,0 +1,934 @@
+// ============================================================================
+// CRM TRANSFORMATION - NEW MODELS & ENUMS
+// This file contains the new models and enums to be added to schema.prisma
+// ============================================================================
+
+// ============================================================================
+// MULTI-TENANCY ENUMS
+// ============================================================================
+
+enum TenantPlan {
+  TRIAL
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum TenantRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum SslStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  EXPIRED
+  FAILED
+}
+
+enum ModuleTier {
+  TRIAL
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+// ============================================================================
+// CRM ENUMS
+// ============================================================================
+
+enum AccountType {
+  PROSPECT
+  CUSTOMER
+  PARTNER
+  COMPETITOR
+  CHURNED
+  OTHER
+}
+
+enum EmployeeCount {
+  SOLO       // 1
+  MICRO      // 2-10
+  SMALL      // 11-50
+  MEDIUM     // 51-200
+  LARGE      // 201-1000
+  ENTERPRISE // 1000+
+}
+
+enum ContactLifecycle {
+  LEAD
+  MQL           // Marketing Qualified Lead
+  SQL           // Sales Qualified Lead
+  OPPORTUNITY
+  CUSTOMER
+  EVANGELIST
+  CHURNED
+}
+
+enum CRMLeadSource {
+  WEBSITE
+  REFERRAL
+  SOCIAL_MEDIA
+  EMAIL_CAMPAIGN
+  PAID_AD
+  EVENT
+  COLD_OUTREACH
+  PARTNER
+  OTHER
+}
+
+enum PreferredChannel {
+  EMAIL
+  PHONE
+  SMS
+  LINKEDIN
+  OTHER
+}
+
+enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum StageType {
+  OPEN
+  WON
+  LOST
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  NOTE
+  SMS
+  LINKEDIN_MESSAGE
+  CHAT
+  DEMO
+  PROPOSAL
+  CONTRACT
+  OTHER
+}
+
+enum ActivityStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ActivityPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ============================================================================
+// NOTIFICATION ENUMS
+// ============================================================================
+
+enum NotificationType {
+  // Opportunity Events
+  DEAL_ASSIGNED
+  DEAL_STAGE_CHANGED
+  DEAL_WON
+  DEAL_LOST
+  DEAL_STALE
+  DEAL_CLOSE_DATE_APPROACHING
+
+  // Activity Events
+  TASK_ASSIGNED
+  TASK_DUE
+  TASK_OVERDUE
+  MEETING_REMINDER
+  MENTION
+
+  // Account Events
+  ACCOUNT_HEALTH_DROPPED
+  ACCOUNT_ASSIGNED
+
+  // System Events
+  INTEGRATION_ERROR
+  USAGE_LIMIT_WARNING
+  USAGE_LIMIT_REACHED
+
+  // AI Events
+  AI_INSIGHT
+  LEAD_SCORE_CHANGED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SLACK
+  SMS
+  BROWSER_PUSH
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ============================================================================
+// INTEGRATION ENUMS
+// ============================================================================
+
+enum IntegrationProvider {
+  // Email
+  GMAIL
+  OUTLOOK
+
+  // Calendar
+  GOOGLE_CALENDAR
+  OUTLOOK_CALENDAR
+
+  // CRM
+  SALESFORCE
+  HUBSPOT
+  PIPEDRIVE
+
+  // Communication
+  SLACK
+  TEAMS
+
+  // Automation
+  ZAPIER
+  MAKE
+
+  // Other
+  CUSTOM_WEBHOOK
+}
+
+enum IntegrationStatus {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  ERROR
+  EXPIRED
+}
+
+enum SyncDirection {
+  INBOUND   // External -> CRM
+  OUTBOUND  // CRM -> External
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+// ============================================================================
+// USAGE METERING ENUMS
+// ============================================================================
+
+enum UsagePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+// ============================================================================
+// MULTI-TENANCY MODELS
+// ============================================================================
+
+model Tenant {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique  // Used for subdomain: {slug}.yourcrm.com
+
+  // Subscription
+  plan            TenantPlan @default(STARTER)
+  planStartedAt   DateTime?
+  planExpiresAt   DateTime?
+  billingEmail    String?
+  stripeCustomerId String?  @unique
+
+  // Settings
+  settings        Json?     // Default settings for the tenant
+
+  // Status
+  status          TenantStatus @default(ACTIVE)
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  users           TenantUser[]
+  branding        TenantBranding?
+  modules         TenantModule[]
+  domains         TenantDomain[]
+
+  // All tenant-scoped data
+  accounts        Account[]
+  crmContacts     CRMContact[]
+  opportunities   Opportunity[]
+  activities      CRMActivity[]
+  pipelines       Pipeline[]
+  notifications   Notification[]
+  integrations    Integration[]
+  usageEvents     UsageEvent[]
+  usageSummaries  UsageSummary[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+model TenantUser {
+  id          String    @id @default(cuid())
+
+  tenantId    String
+  userId      Int
+
+  role        TenantRole @default(MEMBER)
+  permissions Json?     // Fine-grained permissions
+
+  invitedAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+}
+
+model TenantBranding {
+  id              String  @id @default(cuid())
+  tenantId        String  @unique
+
+  // Visual Identity
+  logoUrl         String?
+  logoLightUrl    String? // For dark backgrounds
+  faviconUrl      String?
+
+  // Colors (hex values)
+  primaryColor    String  @default("#3B82F6")
+  secondaryColor  String  @default("#1E40AF")
+  accentColor     String  @default("#10B981")
+
+  // Typography
+  fontFamily      String  @default("Inter")
+
+  // Advanced
+  customCss       String? @db.Text
+
+  // Email Templates
+  emailLogoUrl    String?
+  emailFooterText String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model TenantDomain {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  domain      String    @unique  // e.g., "crm.acmecorp.com"
+  isPrimary   Boolean   @default(false)
+
+  // Verification
+  verified    Boolean   @default(false)
+  verifyToken String?   // DNS TXT record for verification
+  verifiedAt  DateTime?
+
+  // SSL
+  sslStatus   SslStatus @default(PENDING)
+  sslExpiresAt DateTime?
+
+  createdAt   DateTime  @default(now())
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([domain])
+}
+
+model TenantModule {
+  id          String    @id @default(cuid())
+  tenantId    String
+  moduleId    String    // e.g., "pmo", "chatbot", "documentAnalyzer"
+
+  enabled     Boolean   @default(false)
+  tier        ModuleTier @default(BASIC)
+
+  // Usage Tracking
+  usageLimits Json?     // { apiCalls: 1000, documents: 100 }
+  currentUsage Json?    // { apiCalls: 450, documents: 23 }
+  usageResetAt DateTime?
+
+  // Trial
+  trialEndsAt DateTime?
+
+  // Settings
+  settings    Json?     // Module-specific configuration
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, moduleId])
+  @@index([moduleId])
+}
+
+// ============================================================================
+// CRM CORE MODELS
+// ============================================================================
+
+model Account {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+
+  // Basic Info
+  name            String
+  website         String?
+  phone           String?
+
+  // Hierarchy
+  parentAccountId Int?
+
+  // Classification
+  type            AccountType @default(PROSPECT)
+  industry        String?
+  employeeCount   EmployeeCount?
+  annualRevenue   Decimal?  @db.Decimal(15, 2)
+
+  // Address
+  billingAddress  Json?     // { street, city, state, postalCode, country }
+  shippingAddress Json?
+
+  // Health & Engagement (AI-calculated)
+  healthScore     Int?      // 0-100
+  engagementScore Int?      // 0-100
+  churnRisk       Float?    // 0-1
+  lastEngagedAt   DateTime?
+
+  // Ownership
+  ownerId         Int
+
+  // Metadata
+  tags            String[]
+  customFields    Json?
+
+  // Status
+  archived        Boolean   @default(false)
+  archivedAt      DateTime?
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentAccount   Account?  @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
+  childAccounts   Account[] @relation("AccountHierarchy")
+  owner           User      @relation("AccountOwner", fields: [ownerId], references: [id])
+
+  crmContacts     CRMContact[]
+  opportunities   Opportunity[]
+  activities      CRMActivity[]
+  competitorDeals Opportunity[] @relation("OpportunityCompetitor")
+
+  @@index([tenantId, type])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, healthScore])
+  @@index([tenantId, archived])
+}
+
+model CRMContact {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  accountId       Int?
+
+  // Basic Info
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  mobile          String?
+  jobTitle        String?
+  department      String?
+
+  // Lifecycle
+  lifecycle       ContactLifecycle @default(LEAD)
+  leadSource      CRMLeadSource?
+
+  // Scoring (AI-calculated)
+  score           Int?      // 0-100 lead score
+  scoreUpdatedAt  DateTime?
+
+  // Communication
+  preferredChannel PreferredChannel @default(EMAIL)
+  doNotCall       Boolean   @default(false)
+  doNotEmail      Boolean   @default(false)
+
+  // Social
+  linkedinUrl     String?
+  twitterHandle   String?
+
+  // Address
+  mailingAddress  Json?
+
+  // Engagement Tracking
+  lastContactedAt DateTime?
+  lastRespondedAt DateTime?
+  emailsReceived  Int       @default(0)
+  emailsOpened    Int       @default(0)
+  emailsClicked   Int       @default(0)
+
+  // Ownership
+  ownerId         Int?
+
+  // Metadata
+  tags            String[]
+  customFields    Json?
+  notes           String?   @db.Text
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account         Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  owner           User?     @relation("CRMContactOwner", fields: [ownerId], references: [id])
+
+  activities      CRMActivity[]
+  opportunities   OpportunityContact[]
+
+  @@unique([tenantId, accountId, email])
+  @@index([tenantId, lifecycle])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, score(sort: Desc)])
+  @@index([email])
+}
+
+model Pipeline {
+  id          Int       @id @default(autoincrement())
+  tenantId    String
+
+  name        String
+  description String?
+  isDefault   Boolean   @default(false)
+
+  // Settings
+  rotDecayDays Int?     // Days before opportunity is marked stale
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stages      PipelineStage[]
+  opportunities Opportunity[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isDefault])
+}
+
+model PipelineStage {
+  id          Int       @id @default(autoincrement())
+  pipelineId  Int
+
+  name        String
+  order       Int       // Display order
+  probability Int       // Default probability for this stage (0-100)
+
+  // Stage Type
+  type        StageType @default(OPEN)
+
+  // Visual
+  color       String    @default("#3B82F6")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  pipeline    Pipeline  @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+  fromTransitions OpportunityStageHistory[] @relation("FromStage")
+  toTransitions OpportunityStageHistory[] @relation("ToStage")
+
+  @@unique([pipelineId, name])
+  @@index([pipelineId, order])
+}
+
+model Opportunity {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  accountId       Int
+
+  // Basic Info
+  name            String
+  description     String?   @db.Text
+
+  // Pipeline
+  pipelineId      Int?      // Custom pipeline (null = default)
+  stageId         Int       // Current stage
+
+  // Value
+  amount          Decimal?  @db.Decimal(15, 2)
+  probability     Int?      // 0-100
+  weightedAmount  Decimal?  @db.Decimal(15, 2) // amount * probability
+
+  // Currency
+  currency        String    @default("USD")
+
+  // Timeline
+  expectedCloseDate DateTime?
+  actualCloseDate DateTime?
+
+  // Outcome
+  status          OpportunityStatus @default(OPEN)
+  lostReason      String?
+  lostReasonDetail String?  @db.Text
+  competitorId    Int?      // Reference to competitor Account
+
+  // Source
+  leadSource      CRMLeadSource?
+  campaignId      Int?
+
+  // Ownership
+  ownerId         Int
+
+  // Metadata
+  tags            String[]
+  customFields    Json?
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  closedAt        DateTime?
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account         Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  stage           PipelineStage @relation(fields: [stageId], references: [id])
+  pipeline        Pipeline? @relation(fields: [pipelineId], references: [id])
+  owner           User      @relation("OpportunityOwner", fields: [ownerId], references: [id])
+  competitor      Account?  @relation("OpportunityCompetitor", fields: [competitorId], references: [id])
+
+  contacts        OpportunityContact[]
+  activities      CRMActivity[]
+  lineItems       OpportunityLineItem[]
+  stageHistory    OpportunityStageHistory[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, stageId])
+  @@index([tenantId, expectedCloseDate])
+  @@index([tenantId, accountId])
+}
+
+model OpportunityContact {
+  id            Int       @id @default(autoincrement())
+  opportunityId Int
+  contactId     Int
+
+  role          String?   // Decision Maker, Influencer, Champion, etc.
+  isPrimary     Boolean   @default(false)
+
+  createdAt     DateTime  @default(now())
+
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  contact       CRMContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([opportunityId, contactId])
+}
+
+model OpportunityLineItem {
+  id            Int       @id @default(autoincrement())
+  opportunityId Int
+
+  // Product info
+  productName   String
+  productCode   String?
+
+  // Pricing
+  quantity      Int       @default(1)
+  unitPrice     Decimal   @db.Decimal(15, 2)
+  discount      Decimal?  @db.Decimal(5, 2) // Percentage
+  totalPrice    Decimal   @db.Decimal(15, 2)
+
+  // Description
+  description   String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@index([opportunityId])
+}
+
+model OpportunityStageHistory {
+  id            Int       @id @default(autoincrement())
+  opportunityId Int
+
+  fromStageId   Int?
+  toStageId     Int
+  changedById   Int
+
+  // Duration in previous stage (minutes)
+  durationMinutes Int?
+
+  createdAt     DateTime  @default(now())
+
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  fromStage     PipelineStage? @relation("FromStage", fields: [fromStageId], references: [id])
+  toStage       PipelineStage @relation("ToStage", fields: [toStageId], references: [id])
+  changedBy     User      @relation(fields: [changedById], references: [id])
+
+  @@index([opportunityId, createdAt])
+}
+
+model CRMActivity {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+
+  // Type
+  type            ActivityType
+
+  // Polymorphic Relations
+  accountId       Int?
+  contactId       Int?
+  opportunityId   Int?
+
+  // Content
+  subject         String?
+  description     String?   @db.Text
+  outcome         String?   @db.Text
+
+  // Scheduling
+  scheduledAt     DateTime?
+  dueAt           DateTime?
+  completedAt     DateTime?
+  duration        Int?      // Duration in minutes
+
+  // Status
+  status          ActivityStatus @default(PLANNED)
+  priority        ActivityPriority @default(NORMAL)
+
+  // External References
+  externalId      String?   // ID from external system (calendar event, email thread)
+  externalSource  String?   // e.g., "google_calendar", "gmail", "outlook"
+
+  // Ownership
+  ownerId         Int
+  createdById     Int
+
+  // Metadata
+  metadata        Json?     // Type-specific data (call recording URL, email headers, etc.)
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account         Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  contact         CRMContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  owner           User      @relation("CRMActivityOwner", fields: [ownerId], references: [id])
+  createdBy       User      @relation("CRMActivityCreatedBy", fields: [createdById], references: [id])
+
+  @@index([tenantId, type])
+  @@index([tenantId, accountId, createdAt(sort: Desc)])
+  @@index([tenantId, contactId, createdAt(sort: Desc)])
+  @@index([tenantId, opportunityId, createdAt(sort: Desc)])
+  @@index([tenantId, ownerId, status])
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, dueAt])
+}
+
+// ============================================================================
+// NOTIFICATION MODEL
+// ============================================================================
+
+model Notification {
+  id          Int       @id @default(autoincrement())
+  tenantId    String
+  userId      Int
+
+  // Content
+  type        NotificationType
+  title       String
+  message     String
+  actionUrl   String?
+
+  // Reference
+  entityType  String?   // "opportunity", "activity", "account"
+  entityId    Int?
+
+  // Status
+  read        Boolean   @default(false)
+  readAt      DateTime?
+
+  // Delivery
+  channels    NotificationChannel[]
+  deliveredAt DateTime?
+
+  // Priority
+  priority    NotificationPriority @default(NORMAL)
+
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, read])
+  @@index([tenantId, userId, createdAt(sort: Desc)])
+}
+
+// ============================================================================
+// INTEGRATION MODELS
+// ============================================================================
+
+model Integration {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+
+  provider        IntegrationProvider
+  name            String    // User-defined name
+
+  // Connection
+  status          IntegrationStatus @default(DISCONNECTED)
+  credentials     Json?     // Encrypted OAuth tokens, API keys
+
+  // Configuration
+  syncSettings    Json?     // What to sync, direction, frequency
+  fieldMappings   Json?     // Field mapping configuration
+
+  // Sync Status
+  lastSyncAt      DateTime?
+  lastSyncStatus  String?
+  lastSyncError   String?
+  nextSyncAt      DateTime?
+
+  // Webhook
+  webhookUrl      String?
+  webhookSecret   String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  syncLogs        SyncLog[]
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, status])
+}
+
+model SyncLog {
+  id              Int       @id @default(autoincrement())
+  integrationId   Int
+
+  direction       SyncDirection
+  entityType      String    // "contact", "opportunity", "activity"
+  entityId        Int?
+  externalId      String?
+
+  status          SyncStatus
+  errorMessage    String?
+
+  payload         Json?     // What was synced (for debugging)
+
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, status])
+  @@index([integrationId, entityType, entityId])
+}
+
+// ============================================================================
+// USAGE METERING MODELS
+// ============================================================================
+
+model UsageEvent {
+  id          BigInt    @id @default(autoincrement())
+  tenantId    String
+  moduleId    String
+
+  eventType   String    // "api_call", "document_processed", "ai_tokens"
+  quantity    Int       @default(1)
+
+  // Context
+  userId      Int?
+  entityType  String?
+  entityId    Int?
+
+  metadata    Json?     // Additional context
+
+  createdAt   DateTime  @default(now())
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, moduleId, createdAt])
+  @@index([tenantId, createdAt])
+}
+
+model UsageSummary {
+  id          Int       @id @default(autoincrement())
+  tenantId    String
+  moduleId    String
+
+  period      UsagePeriod
+  periodStart DateTime
+  periodEnd   DateTime
+
+  // Aggregated Metrics
+  totalEvents Int       @default(0)
+  totalQuantity Int     @default(0)
+
+  // Breakdown by event type
+  breakdown   Json?     // { api_call: 500, document_processed: 25 }
+
+  // Billing
+  estimatedCost Decimal? @db.Decimal(10, 2)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, moduleId, period, periodStart])
+  @@index([tenantId, periodStart])
+}
+
+// ============================================================================
+// USER MODEL ADDITIONS (to be added to existing User model)
+// ============================================================================
+// Add these relations to the existing User model:
+//
+// tenants             TenantUser[]
+// ownedAccounts       Account[]       @relation("AccountOwner")
+// ownedCRMContacts    CRMContact[]    @relation("CRMContactOwner")
+// ownedOpportunities  Opportunity[]   @relation("OpportunityOwner")
+// ownedCRMActivities  CRMActivity[]   @relation("CRMActivityOwner")
+// createdCRMActivities CRMActivity[]  @relation("CRMActivityCreatedBy")
+// stageChanges        OpportunityStageHistory[]
+// notifications       Notification[]

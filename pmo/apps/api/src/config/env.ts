@@ -52,6 +52,17 @@ export const env = {
   // CORS_ORIGIN: Frontend URL for cross-origin cookie authentication
   // When set, enables cross-origin cookie settings (sameSite='none', secure=true)
   corsOrigin: process.env.CORS_ORIGIN,
+
+  // Multi-tenancy configuration
+  multiTenantEnabled: process.env.MULTI_TENANT_ENABLED !== 'false',
+  defaultTenantSlug: process.env.DEFAULT_TENANT_SLUG ?? 'default',
+  tenantDomains: process.env.TENANT_DOMAINS ?? 'localhost',
+
+  // Redis configuration
+  redisUrl: process.env.REDIS_URL ?? '',
+
+  // WebSocket configuration
+  wsEnabled: process.env.WS_ENABLED === 'true',
 };
 
 export default env;
