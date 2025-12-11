@@ -1,6 +1,37 @@
 # Render Deployment Configuration
 
-## Current Issue: Failed Migration
+## IMPORTANT: Correct Render Configuration
+
+For the build to work correctly, Render must be configured with the correct root directory.
+
+### Current Issue: Build Fails with "Cannot find module '@prisma/client'"
+
+This error occurs when Render's Root Directory is set to `pmo/apps/api` instead of `pmo`. When running from `apps/api` directly, npm and Prisma install dependencies to different locations, causing TypeScript to fail.
+
+### Solution: Update Render Settings
+
+1. Go to **Render Dashboard** → Your API Service → **Settings** → **Build & Deploy**
+
+2. Update the following settings:
+   - **Root Directory**: `pmo` (NOT `pmo/apps/api`)
+   - **Build Command**: `bash scripts/render-build.sh`
+   - **Start Command**: `cd apps/api && npm run start`
+
+3. Click **Save Changes** and trigger a manual deploy
+
+### Alternative: If You Must Use apps/api as Root Directory
+
+If you can't change the root directory, use this build command instead:
+
+```bash
+cd ../.. && npm install && cd apps/api && npx prisma generate && npx prisma migrate deploy && npm run build
+```
+
+This navigates to the workspace root for npm install, ensuring proper dependency hoisting.
+
+---
+
+## Previous Issue: Failed Migration
 
 The migration `20251123211300_add_marketing_content_enhancements` failed in the production database and needs to be resolved.
 
