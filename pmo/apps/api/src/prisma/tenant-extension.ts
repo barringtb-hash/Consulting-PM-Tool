@@ -217,9 +217,23 @@ export async function verifyTenantOwnership(
 
   try {
     // Dynamic lookup based on model
-    const record = await (prisma as Record<string, unknown>)[
+    // We need to use type assertion because Prisma client models are dynamically accessed
+    type PrismaModel = {
+      findUnique: (args: {
+        where: { id: number | string };
+        select: { tenantId: boolean };
+      }) => Promise<{ tenantId: string } | null>;
+    };
+
+    const modelDelegate = (prisma as unknown as Record<string, PrismaModel>)[
       model.toLowerCase()
-    ]?.findUnique?.({
+    ];
+
+    if (!modelDelegate?.findUnique) {
+      return false;
+    }
+
+    const record = await modelDelegate.findUnique({
       where: { id },
       select: { tenantId: true },
     });
