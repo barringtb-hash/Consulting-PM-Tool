@@ -5,15 +5,18 @@ echo "Starting Render build process..."
 echo "Current directory: $(pwd)"
 echo ""
 
+# Save starting directory as absolute path
+START_DIR="$(pwd)"
+
 # Determine if we're in the workspace root (pmo) or apps/api
 if [ -f "package.json" ] && grep -q "ai-consulting-pmo-monorepo" package.json 2>/dev/null; then
     echo "Running from workspace root (pmo/)"
-    WORKSPACE_ROOT="."
-    API_DIR="apps/api"
+    WORKSPACE_ROOT="$START_DIR"
+    API_DIR="$START_DIR/apps/api"
 elif [ -f "package.json" ] && grep -q "pmo-api" package.json 2>/dev/null; then
     echo "WARNING: Running from apps/api - navigating to workspace root"
-    WORKSPACE_ROOT="../.."
-    API_DIR="."
+    WORKSPACE_ROOT="$(cd ../.. && pwd)"
+    API_DIR="$START_DIR"
     cd "$WORKSPACE_ROOT"
     echo "Changed to: $(pwd)"
 else
@@ -32,23 +35,19 @@ echo ""
 echo "Generating Prisma client..."
 cd "$API_DIR"
 npx prisma generate
-if [ "$API_DIR" != "." ]; then
-    cd "$WORKSPACE_ROOT"
-fi
+cd "$WORKSPACE_ROOT"
 echo "Prisma client generated"
 echo ""
 
 # Step 3: Run smart migration deployment (handles failed migrations)
 echo "Deploying database migrations..."
 cd "$API_DIR"
-if [ -f "../../scripts/deploy-migrations.sh" ]; then
-    bash ../../scripts/deploy-migrations.sh
+if [ -f "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" ]; then
+    bash "$WORKSPACE_ROOT/scripts/deploy-migrations.sh"
 else
     npx prisma migrate deploy
 fi
-if [ "$API_DIR" != "." ]; then
-    cd "$WORKSPACE_ROOT"
-fi
+cd "$WORKSPACE_ROOT"
 echo "Migrations deployed"
 echo ""
 

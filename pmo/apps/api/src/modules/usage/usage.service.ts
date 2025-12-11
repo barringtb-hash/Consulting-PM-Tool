@@ -15,6 +15,15 @@ import type {
   UsageTrendPoint,
 } from './usage.types';
 
+// Type for JSON fields compatible with Prisma
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 // ============================================================================
 // USAGE EVENT TRACKING
 // ============================================================================
@@ -32,17 +41,9 @@ export async function trackUsage(params: UsageEventInput): Promise<void> {
       userId: params.userId,
       entityType: params.entityType,
       entityId: params.entityId,
-      metadata: params.metadata,
+      metadata: params.metadata as JsonValue | undefined,
     },
   });
-
-  // Update tenant module current usage
-  await updateModuleCurrentUsage(
-    params.tenantId,
-    params.moduleId,
-    params.eventType,
-    params.quantity || 1,
-  );
 
   // Check usage limits and trigger alerts if needed
   await checkUsageLimitsAndNotify(params.tenantId, params.moduleId);
@@ -63,57 +64,8 @@ export async function trackUsageBulk(events: UsageEventInput[]): Promise<void> {
       userId: e.userId,
       entityType: e.entityType,
       entityId: e.entityId,
-      metadata: e.metadata,
+      metadata: e.metadata as JsonValue | undefined,
     })),
-  });
-
-  // Group by tenant+module and update usage
-  const grouped = new Map<string, number>();
-  for (const event of events) {
-    const key = `${event.tenantId}:${event.moduleId}:${event.eventType}`;
-    grouped.set(key, (grouped.get(key) || 0) + (event.quantity || 1));
-  }
-
-  for (const [key, quantity] of grouped.entries()) {
-    const [tenantId, moduleId, eventType] = key.split(':');
-    await updateModuleCurrentUsage(tenantId, moduleId, eventType, quantity);
-  }
-}
-
-/**
- * Update module's current usage counter.
- */
-async function updateModuleCurrentUsage(
-  tenantId: string,
-  moduleId: string,
-  eventType: string,
-  quantity: number,
-): Promise<void> {
-  const tenantModule = await prisma.tenantModule.findUnique({
-    where: {
-      tenantId_moduleId: {
-        tenantId,
-        moduleId,
-      },
-    },
-  });
-
-  if (!tenantModule) return;
-
-  const currentUsage =
-    (tenantModule.currentUsage as Record<string, number>) || {};
-  currentUsage[eventType] = (currentUsage[eventType] || 0) + quantity;
-
-  await prisma.tenantModule.update({
-    where: {
-      tenantId_moduleId: {
-        tenantId,
-        moduleId,
-      },
-    },
-    data: {
-      currentUsage,
-    },
   });
 }
 
@@ -404,8 +356,26 @@ async function checkUsageLimitsAndNotify(
 
   const usageLimits =
     (tenantModule.usageLimits as Record<string, number>) || {};
-  const currentUsage =
-    (tenantModule.currentUsage as Record<string, number>) || {};
+
+  // No limits configured
+  if (Object.keys(usageLimits).length === 0) return;
+
+  // Calculate current usage from events in the current month
+  const periodStart = getCurrentPeriodStart('MONTHLY');
+  const usageEvents = await prisma.usageEvent.groupBy({
+    by: ['eventType'],
+    where: {
+      tenantId,
+      moduleId,
+      createdAt: { gte: periodStart },
+    },
+    _sum: { quantity: true },
+  });
+
+  const currentUsage: Record<string, number> = {};
+  for (const event of usageEvents) {
+    currentUsage[event.eventType] = event._sum.quantity || 0;
+  }
 
   for (const [key, limit] of Object.entries(usageLimits)) {
     if (limit === -1) continue; // Unlimited
@@ -550,13 +520,21 @@ export async function generateUsageReport(
 
   return {
     summary: summaries,
-    details: events.map((e) => ({
-      date: e.createdAt.toISOString(),
-      moduleId: e.moduleId,
-      eventType: e.eventType,
-      quantity: e.quantity,
-      userId: e.userId || undefined,
-    })),
+    details: events.map(
+      (e: {
+        createdAt: Date;
+        moduleId: string;
+        eventType: string;
+        quantity: number;
+        userId: number | null;
+      }) => ({
+        date: e.createdAt.toISOString(),
+        moduleId: e.moduleId,
+        eventType: e.eventType,
+        quantity: e.quantity,
+        userId: e.userId || undefined,
+      }),
+    ),
   };
 }
 
