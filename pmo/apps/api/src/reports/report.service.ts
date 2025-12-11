@@ -11,15 +11,6 @@ import type {
   ReportFilter,
 } from '../analytics/analytics.types';
 
-// Type for JSON fields compatible with Prisma
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
 // ============================================================================
 // REPORT GENERATION
 // ============================================================================
@@ -281,13 +272,26 @@ export async function saveReport(
   userId: number,
   config: Omit<ReportConfig, 'id'>,
 ): Promise<ReportConfig> {
-  const reportConfig = {
+  // Build config object, filtering out undefined values for JSON compatibility
+  const reportConfig: Record<string, unknown> = {
     columns: config.columns,
     filters: config.filters,
-    sortBy: config.sortBy,
-    groupBy: config.groupBy,
-    schedule: config.schedule,
-  } as JsonValue;
+  };
+
+  if (config.sortBy !== undefined) {
+    reportConfig.sortBy = config.sortBy;
+  }
+  if (config.groupBy !== undefined) {
+    reportConfig.groupBy = config.groupBy;
+  }
+  if (config.schedule !== undefined) {
+    reportConfig.schedule = config.schedule;
+  }
+
+  // Type for config field using Prisma's inferred type
+  type ConfigField = Parameters<
+    typeof prisma.savedReport.create
+  >[0]['data']['config'];
 
   const report = await prisma.savedReport.create({
     data: {
@@ -297,7 +301,7 @@ export async function saveReport(
       description: config.description,
       type: config.type,
       entity: config.entity,
-      config: reportConfig,
+      config: reportConfig as ConfigField,
     },
   });
 

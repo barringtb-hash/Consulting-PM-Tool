@@ -136,8 +136,23 @@ export async function getModuleStatus(
 
   const usageLimits =
     (tenantModule.usageLimits as Record<string, number>) || {};
-  const currentUsage =
-    (tenantModule.currentUsage as Record<string, number>) || {};
+
+  // Calculate current usage from UsageEvent table for the current month
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const usageEvents = await prisma.usageEvent.groupBy({
+    by: ['eventType'],
+    where: {
+      tenantId,
+      moduleId,
+      createdAt: { gte: periodStart },
+    },
+    _sum: { quantity: true },
+  });
+
+  const currentUsage: Record<string, number> = {};
+  for (const event of usageEvents) {
+    currentUsage[event.eventType] = event._sum.quantity || 0;
+  }
 
   // Calculate usage percentages and warnings
   const usagePercentage: Record<string, number> = {};
@@ -241,7 +256,6 @@ export async function activateModule(
       enabled: true,
       tier: startTrial ? 'TRIAL' : tier,
       usageLimits: defaultLimits,
-      currentUsage: {},
       trialEndsAt,
     },
     update: {
@@ -367,11 +381,24 @@ export async function checkUsageLimit(
 
   const usageLimits =
     (tenantModule.usageLimits as Record<string, number>) || {};
-  const currentUsage =
-    (tenantModule.currentUsage as Record<string, number>) || {};
 
+  // Calculate current usage from UsageEvent table
+  const periodStart = new Date();
+  periodStart.setDate(1);
+  periodStart.setHours(0, 0, 0, 0);
+
+  const usageResult = await prisma.usageEvent.aggregate({
+    where: {
+      tenantId,
+      moduleId,
+      eventType: limitKey,
+      createdAt: { gte: periodStart },
+    },
+    _sum: { quantity: true },
+  });
+
+  const used = usageResult._sum.quantity || 0;
   const limit = usageLimits[limitKey];
-  const used = currentUsage[limitKey] || 0;
 
   // -1 means unlimited
   if (limit === -1) {
@@ -405,6 +432,7 @@ export async function checkUsageLimit(
 
 /**
  * Increment usage counter for a module.
+ * Creates a UsageEvent record to track the usage.
  */
 export async function incrementUsage(
   tenantId: string,
@@ -412,6 +440,7 @@ export async function incrementUsage(
   usageKey: string,
   quantity: number = 1,
 ): Promise<void> {
+  // Verify module exists and is enabled
   const tenantModule = await prisma.tenantModule.findUnique({
     where: {
       tenantId_moduleId: {
@@ -421,55 +450,55 @@ export async function incrementUsage(
     },
   });
 
-  if (!tenantModule) return;
+  if (!tenantModule || !tenantModule.enabled) return;
 
-  const currentUsage =
-    (tenantModule.currentUsage as Record<string, number>) || {};
-  currentUsage[usageKey] = (currentUsage[usageKey] || 0) + quantity;
-
-  await prisma.tenantModule.update({
-    where: {
-      tenantId_moduleId: {
-        tenantId,
-        moduleId,
-      },
-    },
+  // Create a usage event to track the usage
+  await prisma.usageEvent.create({
     data: {
-      currentUsage,
+      tenantId,
+      moduleId,
+      eventType: usageKey,
+      quantity,
     },
   });
 }
 
 /**
  * Reset usage counters for a module (typically called at billing cycle reset).
+ * Deletes usage events for the module in the current period.
  */
 export async function resetModuleUsage(
   tenantId: string,
   moduleId: string,
 ): Promise<void> {
-  await prisma.tenantModule.update({
+  const periodStart = new Date();
+  periodStart.setDate(1);
+  periodStart.setHours(0, 0, 0, 0);
+
+  // Delete usage events for this module in the current period
+  await prisma.usageEvent.deleteMany({
     where: {
-      tenantId_moduleId: {
-        tenantId,
-        moduleId,
-      },
-    },
-    data: {
-      currentUsage: {},
-      usageResetAt: new Date(),
+      tenantId,
+      moduleId,
+      createdAt: { gte: periodStart },
     },
   });
 }
 
 /**
  * Reset all module usage counters for a tenant.
+ * Deletes all usage events for the tenant in the current period.
  */
 export async function resetAllModuleUsage(tenantId: string): Promise<void> {
-  await prisma.tenantModule.updateMany({
-    where: { tenantId },
-    data: {
-      currentUsage: {},
-      usageResetAt: new Date(),
+  const periodStart = new Date();
+  periodStart.setDate(1);
+  periodStart.setHours(0, 0, 0, 0);
+
+  // Delete all usage events for this tenant in the current period
+  await prisma.usageEvent.deleteMany({
+    where: {
+      tenantId,
+      createdAt: { gte: periodStart },
     },
   });
 }

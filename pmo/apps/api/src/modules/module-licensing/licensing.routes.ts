@@ -26,7 +26,7 @@ const activateModuleSchema = z.object({
     .default('BASIC'),
   startTrial: z.boolean().optional(),
   trialDays: z.number().min(1).max(90).optional(),
-  customLimits: z.record(z.number()).optional(),
+  customLimits: z.record(z.string(), z.number()).optional(),
 });
 
 // ============================================================================
@@ -236,7 +236,8 @@ router.post(
     try {
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
-      const { trialDays } = req.body;
+      const body = req.body as { trialDays?: number };
+      const trialDays = body.trialDays;
 
       const status = await licensingService.startModuleTrial(
         tenantId,
@@ -263,7 +264,8 @@ router.post(
     try {
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
-      const { tier } = req.body;
+      const body = req.body as { tier?: string };
+      const tier = body.tier;
 
       if (!tier || !['BASIC', 'PREMIUM', 'ENTERPRISE'].includes(tier)) {
         return res.status(400).json({
@@ -275,7 +277,7 @@ router.post(
       const status = await licensingService.upgradeModuleTier(
         tenantId,
         moduleId,
-        tier,
+        tier as 'BASIC' | 'PREMIUM' | 'ENTERPRISE',
       );
 
       res.json({ data: status });

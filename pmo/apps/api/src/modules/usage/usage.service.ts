@@ -15,15 +15,6 @@ import type {
   UsageTrendPoint,
 } from './usage.types';
 
-// Type for JSON fields compatible with Prisma
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
 // ============================================================================
 // USAGE EVENT TRACKING
 // ============================================================================
@@ -41,7 +32,10 @@ export async function trackUsage(params: UsageEventInput): Promise<void> {
       userId: params.userId,
       entityType: params.entityType,
       entityId: params.entityId,
-      metadata: params.metadata as JsonValue | undefined,
+      // Cast metadata to satisfy Prisma's InputJsonValue type
+      metadata: params.metadata as Parameters<
+        typeof prisma.usageEvent.create
+      >[0]['data']['metadata'],
     },
   });
 
@@ -55,17 +49,20 @@ export async function trackUsage(params: UsageEventInput): Promise<void> {
 export async function trackUsageBulk(events: UsageEventInput[]): Promise<void> {
   if (events.length === 0) return;
 
+  // Use type coercion through unknown for Prisma's JSON field compatibility
+  const data = events.map((e) => ({
+    tenantId: e.tenantId,
+    moduleId: e.moduleId,
+    eventType: e.eventType,
+    quantity: e.quantity || 1,
+    userId: e.userId,
+    entityType: e.entityType,
+    entityId: e.entityId,
+    metadata: e.metadata,
+  })) as unknown;
+
   await prisma.usageEvent.createMany({
-    data: events.map((e) => ({
-      tenantId: e.tenantId,
-      moduleId: e.moduleId,
-      eventType: e.eventType,
-      quantity: e.quantity || 1,
-      userId: e.userId,
-      entityType: e.entityType,
-      entityId: e.entityId,
-      metadata: e.metadata as JsonValue | undefined,
-    })),
+    data: data as Parameters<typeof prisma.usageEvent.createMany>[0]['data'],
   });
 }
 
