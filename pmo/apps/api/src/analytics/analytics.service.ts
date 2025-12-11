@@ -145,11 +145,11 @@ async function getPipelineMetrics(tenantId: string, _dateRange: DateRange) {
   });
 
   const total = opportunities.reduce(
-    (sum: number, opp) => sum + (opp.amount || 0),
+    (sum: number, opp) => sum + Number(opp.amount ?? 0),
     0,
   );
   const weighted = opportunities.reduce(
-    (sum: number, opp) => sum + (opp.weightedAmount || 0),
+    (sum: number, opp) => sum + Number(opp.weightedAmount ?? 0),
     0,
   );
 
@@ -159,7 +159,7 @@ async function getPipelineMetrics(tenantId: string, _dateRange: DateRange) {
     const stageName = opp.stage?.name || 'Unknown';
     const current = byStage.get(stageName) || { count: 0, value: 0 };
     current.count += 1;
-    current.value += opp.amount || 0;
+    current.value += Number(opp.amount ?? 0);
     byStage.set(stageName, current);
   }
 
@@ -185,14 +185,14 @@ async function getDealMetrics(tenantId: string, dateRange: DateRange) {
       where: {
         tenantId,
         status: 'WON',
-        closedAt: { gte: dateRange.start, lte: dateRange.end },
+        actualCloseDate: { gte: dateRange.start, lte: dateRange.end },
       },
     }),
     prisma.opportunity.count({
       where: {
         tenantId,
         status: 'LOST',
-        closedAt: { gte: dateRange.start, lte: dateRange.end },
+        actualCloseDate: { gte: dateRange.start, lte: dateRange.end },
       },
     }),
   ]);
@@ -201,14 +201,14 @@ async function getDealMetrics(tenantId: string, dateRange: DateRange) {
     where: {
       tenantId,
       status: 'WON',
-      closedAt: { gte: dateRange.start, lte: dateRange.end },
+      actualCloseDate: { gte: dateRange.start, lte: dateRange.end },
     },
     select: { amount: true },
   });
 
   const avgDealSize =
     wonDeals.length > 0
-      ? wonDeals.reduce((sum: number, d) => sum + (d.amount || 0), 0) /
+      ? wonDeals.reduce((sum: number, d) => sum + Number(d.amount ?? 0), 0) /
         wonDeals.length
       : 0;
 
@@ -296,7 +296,7 @@ async function getSalesTrends(tenantId: string, dateRange: DateRange) {
       where: {
         tenantId,
         status: 'WON',
-        closedAt: { gte: date, lt: nextDate },
+        actualCloseDate: { gte: date, lt: nextDate },
       },
     });
 
@@ -305,14 +305,20 @@ async function getSalesTrends(tenantId: string, dateRange: DateRange) {
       where: {
         tenantId,
         status: 'WON',
-        closedAt: { gte: date, lt: nextDate },
+        actualCloseDate: { gte: date, lt: nextDate },
       },
       _sum: { amount: true },
     });
 
-    pipelineHistory.push({ date, value: pipelineValue._sum.amount || 0 });
+    pipelineHistory.push({
+      date,
+      value: Number(pipelineValue._sum?.amount ?? 0),
+    });
     dealsClosedHistory.push({ date, value: dealsClosedThatDay });
-    revenueHistory.push({ date, value: revenueThatDay._sum.amount || 0 });
+    revenueHistory.push({
+      date,
+      value: Number(revenueThatDay._sum?.amount ?? 0),
+    });
   }
 
   return {
@@ -354,14 +360,14 @@ export async function getActivityDashboard(
       where: {
         tenantId,
         status: { in: ['PLANNED', 'IN_PROGRESS'] },
-        dueDate: { lt: now },
+        dueAt: { lt: now },
       },
     }),
     prisma.cRMActivity.count({
       where: {
         tenantId,
         status: 'PLANNED',
-        dueDate: { gte: now },
+        dueAt: { gte: now },
       },
     }),
   ]);
@@ -557,7 +563,7 @@ export async function getTeamDashboard(
           tenantId,
           ownerId: tu.userId,
           status: 'WON',
-          closedAt: { gte: dateRange.start, lte: dateRange.end },
+          actualCloseDate: { gte: dateRange.start, lte: dateRange.end },
         },
       }),
       prisma.opportunity.aggregate({
@@ -565,7 +571,7 @@ export async function getTeamDashboard(
           tenantId,
           ownerId: tu.userId,
           status: 'WON',
-          closedAt: { gte: dateRange.start, lte: dateRange.end },
+          actualCloseDate: { gte: dateRange.start, lte: dateRange.end },
         },
         _sum: { amount: true },
       }),
@@ -580,7 +586,7 @@ export async function getTeamDashboard(
         where: {
           tenantId,
           ownerId: tu.userId,
-          closedAt: { gte: dateRange.start, lte: dateRange.end },
+          actualCloseDate: { gte: dateRange.start, lte: dateRange.end },
         },
       }),
     ]);
@@ -589,7 +595,7 @@ export async function getTeamDashboard(
       userId: tu.userId,
       userName: tu.user.name || 'Unknown',
       dealsWon,
-      revenue: revenue._sum.amount || 0,
+      revenue: Number(revenue._sum?.amount ?? 0),
       activities,
       winRate: totalDeals > 0 ? (dealsWon / totalDeals) * 100 : 0,
     });
@@ -653,12 +659,21 @@ export async function getMetricValue(
         return prisma.opportunity.count({ where });
       }
       if (field) {
-        const result = await prisma.opportunity.aggregate({
-          where,
-          _sum: aggregation === 'SUM' ? { [field]: true } : undefined,
-          _avg: aggregation === 'AVG' ? { [field]: true } : undefined,
-        } as Record<string, unknown>);
-        return (result._sum?.[field] || result._avg?.[field] || 0) as number;
+        // Handle specific aggregate fields for opportunities
+        if (aggregation === 'SUM' && field === 'amount') {
+          const result = await prisma.opportunity.aggregate({
+            where,
+            _sum: { amount: true },
+          });
+          return Number(result._sum?.amount ?? 0);
+        }
+        if (aggregation === 'AVG' && field === 'amount') {
+          const result = await prisma.opportunity.aggregate({
+            where,
+            _avg: { amount: true },
+          });
+          return Number(result._avg?.amount ?? 0);
+        }
       }
       return 0;
 

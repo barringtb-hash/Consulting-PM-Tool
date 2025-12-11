@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '../../prisma/client';
+import { Prisma } from '@prisma/client';
 import type {
   UsageEventInput,
   UsageSummary,
@@ -49,7 +50,7 @@ export async function trackUsage(params: UsageEventInput): Promise<void> {
 export async function trackUsageBulk(events: UsageEventInput[]): Promise<void> {
   if (events.length === 0) return;
 
-  // Use type coercion through unknown for Prisma's JSON field compatibility
+  // Map events to Prisma-compatible format
   const data = events.map((e) => ({
     tenantId: e.tenantId,
     moduleId: e.moduleId,
@@ -58,12 +59,10 @@ export async function trackUsageBulk(events: UsageEventInput[]): Promise<void> {
     userId: e.userId,
     entityType: e.entityType,
     entityId: e.entityId,
-    metadata: e.metadata,
-  })) as unknown;
+    metadata: e.metadata as Prisma.InputJsonValue | undefined,
+  }));
 
-  await prisma.usageEvent.createMany({
-    data: data as Parameters<typeof prisma.usageEvent.createMany>[0]['data'],
-  });
+  await prisma.usageEvent.createMany({ data });
 }
 
 // ============================================================================

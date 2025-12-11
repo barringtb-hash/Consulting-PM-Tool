@@ -82,7 +82,7 @@ router.post(
       // Get verification instructions
       const instructions = domainService.getDnsVerificationInstructions(
         newDomain.domain,
-        newDomain.verifyToken,
+        newDomain.verifyToken || '',
       );
 
       res.status(201).json({
@@ -190,7 +190,7 @@ router.get(
 
       const instructions = domainService.getDnsVerificationInstructions(
         domain.domain,
-        domain.verifyToken,
+        domain.verifyToken || '',
       );
 
       res.json({ data: instructions });
