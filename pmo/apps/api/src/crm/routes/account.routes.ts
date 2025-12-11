@@ -24,17 +24,17 @@ const router = Router();
 
 const createAccountSchema = z.object({
   name: z.string().min(1).max(200),
-  website: z.string().url().optional().nullable(),
-  phone: z.string().max(50).optional().nullable(),
-  parentAccountId: z.number().int().positive().optional().nullable(),
+  website: z.string().url().optional(),
+  phone: z.string().max(50).optional(),
+  parentAccountId: z.number().int().positive().optional(),
   type: z
     .enum(['PROSPECT', 'CUSTOMER', 'PARTNER', 'COMPETITOR', 'CHURNED', 'OTHER'])
     .optional(),
-  industry: z.string().max(100).optional().nullable(),
+  industry: z.string().max(100).optional(),
   employeeCount: z
     .enum(['SOLO', 'MICRO', 'SMALL', 'MEDIUM', 'LARGE', 'ENTERPRISE'])
     .optional(),
-  annualRevenue: z.number().positive().optional().nullable(),
+  annualRevenue: z.number().positive().optional(),
   billingAddress: z
     .object({
       street: z.string().optional(),
@@ -43,8 +43,7 @@ const createAccountSchema = z.object({
       postalCode: z.string().optional(),
       country: z.string().optional(),
     })
-    .optional()
-    .nullable(),
+    .optional(),
   shippingAddress: z
     .object({
       street: z.string().optional(),
@@ -53,10 +52,9 @@ const createAccountSchema = z.object({
       postalCode: z.string().optional(),
       country: z.string().optional(),
     })
-    .optional()
-    .nullable(),
+    .optional(),
   tags: z.array(z.string()).optional(),
-  customFields: z.record(z.unknown()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateAccountSchema = createAccountSchema.partial().extend({

@@ -35,7 +35,7 @@ const createOpportunitySchema = z.object({
   leadSource: z.string().optional(),
   campaignId: z.number().int().positive().optional(),
   tags: z.array(z.string()).optional(),
-  customFields: z.record(z.unknown()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
   contactIds: z.array(z.number().int().positive()).optional(),
 });
 
