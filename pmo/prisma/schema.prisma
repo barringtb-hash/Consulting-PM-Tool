@@ -5803,6 +5803,11 @@ model Tenant {
   pipelines     Pipeline[]
   activities    CRMActivity[]
   notifications Notification[]
+  // CRM Phase 3-6 relations
+  integrations   Integration[]
+  usageEvents    UsageEvent[]
+  usageSummaries UsageSummary[]
+  savedReports   SavedReport[]
 
   @@index([slug])
   @@index([status])
@@ -6228,4 +6233,197 @@ model Notification {
 
   @@index([tenantId, userId, read])
   @@index([userId, createdAt(sort: Desc)])
+}
+
+// ============================================================================
+// CRM PHASE 3-6: INTEGRATION HUB
+// ============================================================================
+
+enum IntegrationProvider {
+  GMAIL
+  OUTLOOK
+  GOOGLE_CALENDAR
+  OUTLOOK_CALENDAR
+  SALESFORCE
+  HUBSPOT
+  PIPEDRIVE
+  SLACK
+  TEAMS
+  ZAPIER
+  MAKE
+  CUSTOM_WEBHOOK
+}
+
+enum IntegrationStatus {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  ERROR
+  EXPIRED
+}
+
+enum SyncDirection {
+  INBOUND
+  OUTBOUND
+  BIDIRECTIONAL
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+/**
+ * Integration - External system connections
+ */
+model Integration {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+
+  provider IntegrationProvider
+  name     String
+
+  status      IntegrationStatus @default(DISCONNECTED)
+  credentials String? // Encrypted OAuth tokens, API keys
+
+  syncSettings  Json? // What to sync, direction, frequency
+  fieldMappings Json? // Field mapping configuration
+
+  lastSyncAt     DateTime?
+  lastSyncStatus String?
+  lastSyncError  String?
+  nextSyncAt     DateTime?
+
+  webhookUrl    String?
+  webhookSecret String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  syncLogs SyncLog[]
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, status])
+}
+
+/**
+ * SyncLog - Integration sync history
+ */
+model SyncLog {
+  id            Int    @id @default(autoincrement())
+  integrationId Int
+
+  direction  SyncDirection
+  entityType String
+  entityId   Int?
+  externalId String?
+
+  status       SyncStatus
+  errorMessage String?
+
+  payload Json?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, status])
+  @@index([integrationId, entityType, entityId])
+}
+
+// ============================================================================
+// CRM PHASE 3-6: USAGE METERING
+// ============================================================================
+
+enum UsagePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+/**
+ * UsageEvent - Individual usage events for tracking
+ */
+model UsageEvent {
+  id       BigInt @id @default(autoincrement())
+  tenantId String
+  moduleId String
+
+  eventType String
+  quantity  Int    @default(1)
+
+  userId     Int?
+  entityType String?
+  entityId   Int?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, moduleId, createdAt])
+  @@index([tenantId, createdAt])
+}
+
+/**
+ * UsageSummary - Aggregated usage for billing periods
+ */
+model UsageSummary {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+  moduleId String
+
+  period      UsagePeriod
+  periodStart DateTime
+  periodEnd   DateTime
+
+  totalEvents   Int @default(0)
+  totalQuantity Int @default(0)
+
+  breakdown Json?
+
+  estimatedCost Decimal? @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, moduleId, period, periodStart])
+  @@index([tenantId, periodStart])
+}
+
+// ============================================================================
+// CRM PHASE 3-6: ANALYTICS & REPORTING
+// ============================================================================
+
+/**
+ * SavedReport - Custom report configurations
+ */
+model SavedReport {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+
+  name        String
+  description String?
+  type        String @default("CUSTOM")
+  entity      String
+
+  config Json // columns, filters, sortBy, groupBy, schedule
+
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdById], references: [id])
+
+  @@index([tenantId, createdById])
+  @@index([tenantId, entity])
 }

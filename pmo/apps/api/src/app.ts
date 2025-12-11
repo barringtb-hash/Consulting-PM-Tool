@@ -48,6 +48,13 @@ import activityRouter from './crm/routes/activity.routes';
 import tenantRouter from './tenant/tenant.routes';
 // Notification Routes
 import notificationRouter from './notifications/notification.routes';
+// CRM Phase 3-6 Routes
+import { licensingRouter } from './modules/module-licensing';
+import { usageRouter } from './modules/usage';
+import { integrationRouter } from './integrations';
+import { brandingRouter } from './branding';
+import { domainRouter } from './domains';
+import { analyticsRouter } from './analytics';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -257,6 +264,25 @@ export function createApp(): express.Express {
   app.use('/api/crm/accounts', accountRouter);
   app.use('/api/crm/opportunities', opportunityRouter);
   app.use('/api/crm/activities', activityRouter);
+
+  // ============ CRM PLATFORM ROUTES (Phase 3-6) ============
+  // Module licensing and feature gating
+  app.use('/api', licensingRouter);
+
+  // Usage metering and tracking
+  app.use('/api', usageRouter);
+
+  // Integration hub (OAuth, sync engine)
+  app.use('/api', integrationRouter);
+
+  // White-label branding
+  app.use('/api', brandingRouter);
+
+  // Custom domain management
+  app.use('/api', domainRouter);
+
+  // Analytics and reporting
+  app.use('/api', analyticsRouter);
 
   // ============ TOGGLEABLE MODULE ROUTES ============
   // Routes are conditionally registered AND protected by requireModule middleware
