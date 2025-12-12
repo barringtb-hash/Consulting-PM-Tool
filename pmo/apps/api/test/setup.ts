@@ -61,19 +61,6 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  // Clean CRM tables first (due to foreign key constraints)
-  await prismaClient.cRMActivity.deleteMany();
-  await prismaClient.opportunityStageHistory.deleteMany();
-  await prismaClient.opportunityContact.deleteMany();
-  await prismaClient.opportunity.deleteMany();
-  await prismaClient.salesPipelineStage.deleteMany();
-  await prismaClient.pipeline.deleteMany();
-  await prismaClient.cRMContact.deleteMany();
-  await prismaClient.account.deleteMany();
-  await prismaClient.tenantUser.deleteMany();
-  await prismaClient.tenant.deleteMany();
-
-  // Clean legacy PMO tables
   await prismaClient.contact.deleteMany();
   await prismaClient.client.deleteMany();
   await prismaClient.user.deleteMany();
