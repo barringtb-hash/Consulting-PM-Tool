@@ -13,13 +13,12 @@ import {
  * Maps legacy LeadSource enum to CRM LeadSource for Opportunity creation
  */
 const LEAD_SOURCE_TO_CRM: Record<LeadSource, CRMLeadSource> = {
-  [LeadSource.WEBSITE]: CRMLeadSource.WEBSITE,
   [LeadSource.WEBSITE_CONTACT]: CRMLeadSource.WEBSITE,
+  [LeadSource.WEBSITE_DOWNLOAD]: CRMLeadSource.WEBSITE,
   [LeadSource.REFERRAL]: CRMLeadSource.REFERRAL,
-  [LeadSource.LINKEDIN]: CRMLeadSource.SOCIAL_MEDIA,
-  [LeadSource.CONFERENCE]: CRMLeadSource.EVENT,
-  [LeadSource.DIRECT]: CRMLeadSource.OUTBOUND,
-  [LeadSource.PARTNER]: CRMLeadSource.PARTNER,
+  [LeadSource.LINKEDIN]: CRMLeadSource.LINKEDIN,
+  [LeadSource.OUTBOUND]: CRMLeadSource.OUTBOUND,
+  [LeadSource.EVENT]: CRMLeadSource.EVENT,
   [LeadSource.OTHER]: CRMLeadSource.OTHER,
 };
 

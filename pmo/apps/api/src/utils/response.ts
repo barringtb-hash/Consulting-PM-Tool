@@ -15,15 +15,9 @@
 
 import { Response } from 'express';
 
-/**
- * Pagination metadata for list responses.
- */
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+// Import PaginationMeta from pagination.ts to avoid duplicate exports
+import type { PaginationMeta } from './pagination';
+export type { PaginationMeta };
 
 /**
  * Standard API error object.
