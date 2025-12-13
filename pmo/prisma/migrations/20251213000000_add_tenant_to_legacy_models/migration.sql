@@ -15,7 +15,6 @@ CREATE INDEX "Client_tenantId_idx" ON "Client"("tenantId");
 CREATE INDEX "Contact_tenantId_idx" ON "Contact"("tenantId");
 CREATE INDEX "Project_tenantId_idx" ON "Project"("tenantId");
 
--- Add foreign key constraints to Tenant table
-ALTER TABLE "Client" ADD CONSTRAINT "Client_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "Contact" ADD CONSTRAINT "Contact_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "Project" ADD CONSTRAINT "Project_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- Note: Foreign key constraints to Tenant table are not added here
+-- because the Tenant table is created via db push, not migrations.
+-- The application layer enforces tenant isolation through middleware.
