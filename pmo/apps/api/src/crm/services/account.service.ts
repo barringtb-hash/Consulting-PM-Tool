@@ -517,55 +517,75 @@ export async function mergeAccounts(
 export async function getAccountStats() {
   const tenantId = getTenantId();
 
-  const [totalAccounts, byType, byHealthScore, recentlyEngaged] =
-    await Promise.all([
-      // Total accounts
-      prisma.account.count({
-        where: { tenantId, archived: false },
-      }),
+  const baseWhere = { tenantId, archived: false };
 
-      // By type
-      prisma.account.groupBy({
-        by: ['type'],
-        where: { tenantId, archived: false },
-        _count: true,
-      }),
+  const [
+    totalAccounts,
+    byType,
+    healthyCount,
+    atRiskCount,
+    criticalCount,
+    _unknownHealthCount,
+    recentlyEngaged,
+  ] = await Promise.all([
+    // Total accounts
+    prisma.account.count({
+      where: baseWhere,
+    }),
 
-      // By health score ranges
-      prisma.$queryRaw`
-      SELECT
-        CASE
-          WHEN "healthScore" >= 80 THEN 'healthy'
-          WHEN "healthScore" >= 50 THEN 'at_risk'
-          WHEN "healthScore" IS NOT NULL THEN 'critical'
-          ELSE 'unknown'
-        END as health_category,
-        COUNT(*)::int as count
-      FROM "Account"
-      WHERE "tenantId" = ${tenantId} AND "archived" = false
-      GROUP BY health_category
-    `,
+    // By type
+    prisma.account.groupBy({
+      by: ['type'],
+      where: baseWhere,
+      _count: true,
+    }),
 
-      // Recently engaged - count accounts with recent activities
-      prisma.account.count({
-        where: {
-          tenantId,
-          archived: false,
-          activities: {
-            some: {
-              createdAt: {
-                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-              },
+    // Health score: healthy (>= 80)
+    prisma.account.count({
+      where: { ...baseWhere, healthScore: { gte: 80 } },
+    }),
+
+    // Health score: at_risk (50-79)
+    prisma.account.count({
+      where: { ...baseWhere, healthScore: { gte: 50, lt: 80 } },
+    }),
+
+    // Health score: critical (< 50, not null)
+    prisma.account.count({
+      where: { ...baseWhere, healthScore: { lt: 50, not: null } },
+    }),
+
+    // Health score: unknown (null)
+    prisma.account.count({
+      where: { ...baseWhere, healthScore: null },
+    }),
+
+    // Recently engaged - count accounts with recent activities
+    prisma.account.count({
+      where: {
+        ...baseWhere,
+        activities: {
+          some: {
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
             },
           },
         },
-      }),
-    ]);
+      },
+    }),
+  ]);
+
+  // Transform health score counts to match expected format
+  const healthDistribution = {
+    healthy: healthyCount,
+    atRisk: atRiskCount,
+    critical: criticalCount,
+  };
 
   return {
     total: totalAccounts,
     byType,
-    byHealthScore,
-    recentlyEngaged,
+    healthDistribution,
+    recentlyActive: recentlyEngaged,
   };
 }

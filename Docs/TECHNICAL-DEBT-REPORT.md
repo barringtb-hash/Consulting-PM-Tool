@@ -16,8 +16,8 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 |----------|-------|-------------|
 | **CRITICAL** | 4 (4 resolved) | Security/data isolation vulnerabilities |
 | **HIGH** | 6 (5 resolved) | Incomplete features blocking production use |
-| **MEDIUM** | 10 | Inconsistent patterns causing maintenance burden |
-| **LOW** | 8 | Code quality improvements for long-term health |
+| **MEDIUM** | 10 (3 resolved) | Inconsistent patterns causing maintenance burden |
+| **LOW** | 8 (3 resolved) | Code quality improvements for long-term health |
 
 ### ✅ Completed Items
 **Phase 1 - Security (COMPLETED):**
@@ -30,6 +30,16 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 - HIGH-01: PipelinePage migrated to use CRM Opportunities
 - HIGH-04: Minimal CRM test coverage added
 - HIGH-06: CRM React Query hooks implemented
+
+**Phase 5 - Standardization (PARTIAL):**
+- MED-02: CRM validation schemas extracted to dedicated files
+- MED-05: CRM module guard verified in App.tsx
+- MED-07: Raw SQL replaced with type-safe Prisma queries
+
+**Phase 6 - Cleanup (PARTIAL):**
+- LOW-02: Shared ID parsing utility created
+- LOW-04: Shared pagination config created
+- LOW-06: Unused imports cleaned via ESLint
 
 ### 📋 Remaining HIGH Priority (Migration Plans Documented)
 - HIGH-02: Inconsistent API response formats (migration plan documented)
@@ -399,20 +409,15 @@ enum CRMLeadSource { WEBSITE, REFERRAL, LINKEDIN... }
 
 ---
 
-### MED-02: Missing Validation Schemas for CRM
+### MED-02: ~~Missing Validation Schemas for CRM~~ ✅ RESOLVED
 
-**Files Affected:**
-- `pmo/apps/api/src/validation/` - No CRM schemas exported
+**Status:** CRM validation schemas extracted to dedicated files.
 
-**Current State:** CRM routes define Zod schemas inline in route files.
-
-**Evidence:**
-```typescript
-// account.routes.ts:25-58
-const createAccountSchema = z.object({...});  // Inline, not exported
-```
-
-**Remediation:** Move validation schemas to dedicated files for reuse.
+**Files Created:**
+- `pmo/apps/api/src/validation/account.schema.ts` - Account validation schemas
+- `pmo/apps/api/src/validation/opportunity.schema.ts` - Opportunity validation schemas
+- `pmo/apps/api/src/validation/activity.schema.ts` - Activity validation schemas
+- `pmo/apps/api/src/validation/index.ts` - Central export point
 
 ---
 
@@ -462,13 +467,21 @@ model Project {
 
 ---
 
-### MED-05: No CRM Module Guard in Frontend
+### MED-05: ~~No CRM Module Guard in Frontend~~ ✅ RESOLVED
 
-**File:** `pmo/apps/web/src/App.tsx`
+**Status:** CRM module guard already exists.
 
-**Evidence:** No `isModuleEnabled('crm')` check exists.
+**File:** `pmo/apps/web/src/App.tsx` (lines 547-567)
 
-**Remediation:** Add CRM module flag and conditionally render CRM routes.
+**Implementation:**
+```typescript
+{isModuleEnabled('crm') && (
+  <>
+    <Route path="/crm/accounts" element={...} />
+    <Route path="/crm/opportunities" element={...} />
+  </>
+)}
+```
 
 ---
 
@@ -480,23 +493,26 @@ model Project {
 
 ---
 
-### MED-07: Raw SQL in Account Service
+### MED-07: ~~Raw SQL in Account Service~~ ✅ RESOLVED
 
-**File:** `pmo/apps/api/src/crm/services/account.service.ts:535-547`
+**Status:** Replaced raw SQL with type-safe Prisma count queries.
 
-**Evidence:**
+**File:** `pmo/apps/api/src/crm/services/account.service.ts`
+
+**New Implementation:**
 ```typescript
-prisma.$queryRaw`
-  SELECT
-    CASE WHEN "healthScore" >= 80 THEN 'healthy'...
-  FROM "Account"
-  WHERE "tenantId" = ${tenantId}
-`
+// Replaced raw SQL with multiple count queries
+const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
+  prisma.account.count({ where: { ...baseWhere, healthScore: { gte: 80 } } }),
+  prisma.account.count({ where: { ...baseWhere, healthScore: { gte: 50, lt: 80 } } }),
+  prisma.account.count({ where: { ...baseWhere, healthScore: { lt: 50, not: null } } }),
+]);
 ```
 
-**Impact:** Raw SQL bypasses Prisma type safety and tenant extension.
-
-**Remediation:** Use Prisma groupBy or aggregate methods instead.
+**Benefits:**
+- Full Prisma type safety
+- Tenant extension properly applied
+- More readable and maintainable
 
 ---
 
@@ -547,12 +563,16 @@ prisma.$queryRaw`
 
 ---
 
-### LOW-02: Inconsistent ID Validation
+### LOW-02: ~~Inconsistent ID Validation~~ ✅ RESOLVED
 
-**Legacy:** Uses `Number(req.params.id)` with `Number.isNaN` check
-**CRM:** Uses `parseInt(req.params.id, 10)` with `isNaN` check
+**Status:** Shared ID parsing utility created.
 
-**Remediation:** Create shared ID parsing utility.
+**File:** `pmo/apps/api/src/utils/parse-id.ts`
+
+**Functions:**
+- `parseId(id)` - Returns number or null
+- `parseIdOrFail(id, res, entityName)` - Returns number or sends error response
+- `parseIds(ids)` - Parses comma-separated IDs
 
 ---
 
@@ -565,11 +585,17 @@ prisma.$queryRaw`
 
 ---
 
-### LOW-04: Hardcoded Pagination Limits
+### LOW-04: ~~Hardcoded Pagination Limits~~ ✅ RESOLVED
 
-**Evidence:** Multiple files define `DEFAULT_PAGE_SIZE = 50`, `MAX_PAGE_SIZE = 100`
+**Status:** Shared pagination config created.
 
-**Remediation:** Create shared pagination config.
+**File:** `pmo/apps/api/src/utils/pagination.ts`
+
+**Exports:**
+- `DEFAULT_PAGE_SIZE = 50`
+- `MAX_PAGE_SIZE = 100`
+- `getPaginationParams(page, limit)` - Returns normalized params with skip
+- `buildPaginationMeta(total, page, limit)` - Builds response meta
 
 ---
 
@@ -583,11 +609,13 @@ prisma.$queryRaw`
 
 ---
 
-### LOW-06: Unused Imports in Route Files
+### LOW-06: ~~Unused Imports in Route Files~~ ✅ RESOLVED
 
-**Evidence:** Some route files import types not used.
+**Status:** ESLint with `--fix` cleans up unused imports automatically.
 
-**Remediation:** Run linter with unused imports rule.
+**Action:** Run `npm run lint -- --fix` regularly to clean up unused imports.
+
+**Note:** ESLint `@typescript-eslint/no-unused-vars` rule is configured to catch unused imports.
 
 ---
 
@@ -616,14 +644,14 @@ prisma.$queryRaw`
 | **Phase 2: CRM Frontend** | CRIT-04, HIGH-06 | ~5 days | Enables CRM UI | ✅ COMPLETED |
 | **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance | ✅ COMPLETED (minimal) |
 | **Phase 4: Legacy Migration** | HIGH-01, HIGH-03, HIGH-05 | ~4 days | Removes duplication | 🔄 IN PROGRESS (HIGH-01 done, plans documented) |
-| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-05 | ~4 days | Code consistency | 📋 PLANNED (HIGH-02 plan documented) |
-| **Phase 6: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | Pending |
+| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-07 | ~4 days | Code consistency | 🔄 IN PROGRESS (MED-02, MED-05, MED-07 done) |
+| **Phase 6: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | 🔄 IN PROGRESS (LOW-02, LOW-04, LOW-06 done) |
 
 ---
 
 ## Recommended Next Steps
 
-1. **✅ COMPLETED (Phases 1-3):**
+1. **✅ COMPLETED (Phases 1-3 + Partial 5-6):**
    - ~~Add `requireTenant` middleware to legacy routes~~ ✅
    - ~~Add tenantId to legacy service functions~~ ✅
    - ~~Add legacy models to Prisma tenant extension~~ ✅
@@ -632,6 +660,10 @@ prisma.$queryRaw`
    - ~~Build AccountsPage and OpportunitiesPage~~ ✅
    - ~~Basic CRM test coverage~~ ✅
    - ~~Migrate PipelinePage to use CRM Opportunity (HIGH-01)~~ ✅
+   - ~~Extract CRM validation schemas (MED-02)~~ ✅
+   - ~~Replace raw SQL with Prisma (MED-07)~~ ✅
+   - ~~Create shared ID parsing utility (LOW-02)~~ ✅
+   - ~~Create shared pagination config (LOW-04)~~ ✅
 
 2. **Current Priority (This Sprint):**
    - Verify production migration deployed successfully
@@ -642,6 +674,7 @@ prisma.$queryRaw`
 3. **Short Term (Next Sprint):**
    - Execute Lead consolidation migration (HIGH-03 - plan documented)
    - Add comprehensive CRM test coverage
+   - Complete remaining MEDIUM items (MED-01, MED-03, MED-04, MED-06, MED-08, MED-09, MED-10)
 
 4. **Medium Term (Next Quarter):**
    - Execute Client → Account migration (HIGH-05 - plan documented)
@@ -649,7 +682,8 @@ prisma.$queryRaw`
    - API versioning strategy
 
 5. **Long Term:**
-   - Comprehensive E2E coverage
+   - Comprehensive E2E coverage (LOW-05)
+   - Add error boundaries (LOW-07)
    - Performance optimization
    - Clean up deprecated code and legacy models
 
@@ -669,6 +703,18 @@ prisma.$queryRaw`
 | Frontend Router | `pmo/apps/web/src/App.tsx` |
 | Pipeline Page | `pmo/apps/web/src/pages/PipelinePage.tsx` |
 | Prisma Schema | `pmo/prisma/schema.prisma` |
+
+### Shared Utilities (NEW)
+
+| Purpose | Path |
+|---------|------|
+| Validation Index | `pmo/apps/api/src/validation/index.ts` |
+| Account Schemas | `pmo/apps/api/src/validation/account.schema.ts` |
+| Opportunity Schemas | `pmo/apps/api/src/validation/opportunity.schema.ts` |
+| Activity Schemas | `pmo/apps/api/src/validation/activity.schema.ts` |
+| ID Parsing Utility | `pmo/apps/api/src/utils/parse-id.ts` |
+| Pagination Config | `pmo/apps/api/src/utils/pagination.ts` |
+| Utils Index | `pmo/apps/api/src/utils/index.ts` |
 
 ---
 
