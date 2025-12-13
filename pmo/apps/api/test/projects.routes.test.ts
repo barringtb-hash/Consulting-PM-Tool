@@ -128,7 +128,7 @@ describe('projects routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.projects).toHaveLength(2);
-      expect(response.body.pagination).toMatchObject({
+      expect(response.body.meta).toMatchObject({
         page: 1,
         limit: 2,
         total: 3,
