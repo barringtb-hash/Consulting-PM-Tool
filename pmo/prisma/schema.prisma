@@ -299,6 +299,7 @@ model Contact {
 
 model InboundLead {
   id               Int             @id @default(autoincrement())
+  tenantId         String?
   name             String?
   email            String
   company          String?
@@ -321,6 +322,7 @@ model InboundLead {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
+  tenant         Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   owner          User?    @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
   client         Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
   primaryContact Contact? @relation(fields: [primaryContactId], references: [id], onDelete: SetNull)
@@ -412,6 +414,7 @@ model Document {
 
 model Milestone {
   id          Int             @id @default(autoincrement())
+  tenantId    String?
   projectId   Int
   name        String
   description String?
@@ -420,12 +423,14 @@ model Milestone {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
+  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   tasks   Task[]
 }
 
 model Task {
   id              Int        @id @default(autoincrement())
+  tenantId        String?
   projectId       Int
   ownerId         Int
   milestoneId     Int?
@@ -439,6 +444,7 @@ model Task {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
+  tenant        Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   owner         User       @relation(fields: [ownerId], references: [id])
   milestone     Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
@@ -450,6 +456,7 @@ model Task {
 
 model Meeting {
   id        Int             @id @default(autoincrement())
+  tenantId  String?
   projectId Int
   title     String
   date      DateTime
@@ -462,6 +469,7 @@ model Meeting {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
+  tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   sourceTasks       Task[]
   marketingContents MarketingContent[]
@@ -472,6 +480,7 @@ model Meeting {
 
 model AIAsset {
   id          Int       @id @default(autoincrement())
+  tenantId    String?
   type        AssetType
   name        String
   description String?
@@ -484,6 +493,7 @@ model AIAsset {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  tenant    Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client    Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
   createdBy User?            @relation(fields: [createdById], references: [id])
   projects  ProjectAIAsset[]
@@ -505,8 +515,9 @@ model ProjectAIAsset {
 }
 
 model MarketingContent {
-  id      Int             @id @default(autoincrement())
-  name    String
+  id       Int             @id @default(autoincrement())
+  tenantId String?
+  name     String
   slug    String?         @unique
   type    ContentType
   channel ContentChannel?
@@ -535,6 +546,7 @@ model MarketingContent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   project              Project?              @relation(fields: [projectId], references: [id], onDelete: SetNull)
   sourceMeeting        Meeting?              @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
@@ -555,6 +567,7 @@ model MarketingContent {
 
 model Campaign {
   id          Int            @id @default(autoincrement())
+  tenantId    String?
   name        String
   description String?
   goals       Json?
@@ -571,6 +584,7 @@ model Campaign {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant    Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client    Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   project   Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdBy User?              @relation(fields: [createdById], references: [id])
@@ -5816,9 +5830,16 @@ model Tenant {
   usageSummaries UsageSummary[]
   savedReports   SavedReport[]
   // Legacy PMO models (tenant-scoped)
-  clients  Client[]
-  contacts Contact[]
-  projects Project[]
+  clients           Client[]
+  contacts          Contact[]
+  projects          Project[]
+  tasks             Task[]
+  milestones        Milestone[]
+  meetings          Meeting[]
+  aiAssets          AIAsset[]
+  marketingContents MarketingContent[]
+  campaigns         Campaign[]
+  inboundLeads      InboundLead[]
 
   @@index([slug])
   @@index([status])

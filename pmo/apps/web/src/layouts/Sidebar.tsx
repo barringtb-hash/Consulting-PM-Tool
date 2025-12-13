@@ -12,6 +12,8 @@ import {
   UserCog,
   Sparkles,
   Presentation,
+  Building2,
+  Target,
   LucideIcon,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
@@ -32,6 +34,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   UserCog,
   Sparkles,
   Presentation,
+  Building2,
+  Target,
 };
 
 /**
