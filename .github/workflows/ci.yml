@@ -41,11 +41,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Setup database environment
+        run: echo "DATABASE_URL=$DATABASE_URL" > .env
+
       - name: Generate Prisma client
         run: npx prisma generate
 
       - name: Push database schema
-        run: npx prisma db push --skip-generate
+        run: npx prisma db push --skip-generate --accept-data-loss
 
       - name: Run lint
         run: npm run lint
