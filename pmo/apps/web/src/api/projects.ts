@@ -1,6 +1,5 @@
 import { buildApiUrl } from './config';
 import { ApiError, buildOptions, handleResponse } from './http';
-import type { LeadSource } from './leads';
 
 export type ProjectStatus =
   | 'PLANNING'
@@ -35,14 +34,8 @@ export interface Project {
   healthStatus?: ProjectHealthStatus;
   statusSummary?: string | null;
   statusUpdatedAt?: string | null;
-  // Sales/Pipeline fields
-  pipelineStage?: PipelineStage | null;
-  pipelineValue?: string | number | null; // Decimal comes as string from API
-  currency?: string | null;
-  probability?: number | null;
-  expectedCloseDate?: string | null;
-  leadSource?: LeadSource | null;
-  lostReason?: string | null;
+  // Note: Pipeline fields removed - use CRM Opportunity for sales tracking
+  // See /crm/opportunities for sales pipeline management
 }
 
 export interface ProjectFilters {

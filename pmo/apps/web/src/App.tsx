@@ -4,6 +4,7 @@ import ProtectedRoute from './auth/ProtectedRoute';
 import AppLayout from './layouts/AppLayout';
 import { ClientProjectProvider } from './pages/ClientProjectContext';
 import { useModules } from './modules';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Core pages (always loaded)
 import DashboardPage from './pages/DashboardPage';
@@ -116,8 +117,12 @@ const CustomerSuccessAnalyticsPage = lazy(
 
 // CRM pages
 const AccountsPage = lazy(() => import('./pages/crm/AccountsPage'));
+const AccountDetailPage = lazy(() => import('./pages/crm/AccountDetailPage'));
 const CRMOpportunitiesPage = lazy(
   () => import('./pages/crm/OpportunitiesPage'),
+);
+const OpportunityDetailPage = lazy(
+  () => import('./pages/crm/OpportunityDetailPage'),
 );
 
 /**
@@ -544,23 +549,47 @@ function App(): JSX.Element {
               </>
             )}
 
-            {/* CRM module */}
+            {/* CRM module - wrapped with ErrorBoundary for graceful error handling */}
             {isModuleEnabled('crm') && (
               <>
                 <Route
                   path="/crm/accounts"
                   element={
-                    <LazyPage>
-                      <AccountsPage />
-                    </LazyPage>
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <AccountsPage />
+                      </LazyPage>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/crm/accounts/:accountId"
+                  element={
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <AccountDetailPage />
+                      </LazyPage>
+                    </ErrorBoundary>
                   }
                 />
                 <Route
                   path="/crm/opportunities"
                   element={
-                    <LazyPage>
-                      <CRMOpportunitiesPage />
-                    </LazyPage>
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <CRMOpportunitiesPage />
+                      </LazyPage>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/crm/opportunities/:opportunityId"
+                  element={
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <OpportunityDetailPage />
+                      </LazyPage>
+                    </ErrorBoundary>
                   }
                 />
               </>

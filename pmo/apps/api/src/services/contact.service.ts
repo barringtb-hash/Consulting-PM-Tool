@@ -13,6 +13,16 @@ export interface ListContactsParams {
   includeArchived?: boolean;
 }
 
+/**
+ * List contacts with optional filtering.
+ *
+ * @deprecated For CRM use cases, use CRMContact model and related services instead.
+ * @param params - Query parameters for filtering
+ * @param params.search - Search term to filter by name, email, role, or phone
+ * @param params.clientId - Filter by client ID
+ * @param params.includeArchived - Include archived contacts (default: false)
+ * @returns Array of contacts matching the criteria
+ */
 export const listContacts = async ({
   search,
   clientId,
@@ -42,6 +52,14 @@ export const listContacts = async ({
   });
 };
 
+/**
+ * Create a new contact within the current tenant context.
+ *
+ * @deprecated For CRM use cases, use CRMContact model instead.
+ * @param data - Contact creation data (clientId, name, email, etc.)
+ * @returns The created contact record
+ * @throws Prisma.PrismaClientKnownRequestError - P2002 if email already exists for client
+ */
 export const createContact = async (data: ContactCreateInput) => {
   // Get tenant context for multi-tenant isolation
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
@@ -54,6 +72,14 @@ export const createContact = async (data: ContactCreateInput) => {
   });
 };
 
+/**
+ * Update a contact by ID.
+ *
+ * @param id - Contact ID to update
+ * @param data - Partial contact data to update
+ * @returns The updated contact, or null if not found
+ * @throws Prisma.PrismaClientKnownRequestError - P2002 if email conflicts
+ */
 export const updateContact = async (id: number, data: ContactUpdateInput) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
@@ -72,6 +98,12 @@ export const updateContact = async (id: number, data: ContactUpdateInput) => {
   });
 };
 
+/**
+ * Archive (soft delete) a contact by ID.
+ *
+ * @param id - Contact ID to archive
+ * @returns The archived contact, or null if not found
+ */
 export const archiveContact = async (id: number) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
@@ -90,6 +122,12 @@ export const archiveContact = async (id: number) => {
   });
 };
 
+/**
+ * Hard delete a contact by ID.
+ *
+ * @param id - Contact ID to delete
+ * @returns The deleted contact, or null if not found
+ */
 export const deleteContact = async (id: number) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;

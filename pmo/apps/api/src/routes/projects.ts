@@ -28,7 +28,9 @@ import {
   updateProjectHealthStatusSchema,
   statusSummaryRequestSchema,
 } from '../validation/projectStatus.schema';
+import { createChildLogger } from '../utils/logger';
 
+const log = createChildLogger({ module: 'projects' });
 const router = Router();
 
 // All routes require authentication and tenant context
@@ -84,10 +86,10 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
 
     res.json({
       projects: result.data,
-      pagination: result.pagination,
+      meta: result.meta,
     });
   } catch (error) {
-    console.error('List projects error:', error);
+    log.error('List projects error', error);
     res.status(500).json({ error: 'Failed to list projects' });
   }
 });
@@ -126,7 +128,7 @@ router.get('/:id', async (req: ProjectRequest, res: Response) => {
 
     res.json({ project });
   } catch (error) {
-    console.error('Get project error:', error);
+    log.error('Get project error', error);
     res.status(500).json({ error: 'Failed to get project' });
   }
 });
@@ -161,7 +163,7 @@ router.post('/', async (req: TenantRequest, res: Response) => {
 
     res.status(201).json({ project });
   } catch (error) {
-    console.error('Create project error:', error);
+    log.error('Create project error', error);
     res.status(500).json({ error: 'Failed to create project' });
   }
 });
@@ -217,7 +219,7 @@ router.put('/:id', async (req: ProjectRequest, res: Response) => {
 
     res.json({ project: updated });
   } catch (error) {
-    console.error('Update project error:', error);
+    log.error('Update project error', error);
     res.status(500).json({ error: 'Failed to update project' });
   }
 });
@@ -252,7 +254,7 @@ router.delete('/:id', async (req: ProjectRequest, res: Response) => {
 
     res.status(204).send();
   } catch (error) {
-    console.error('Delete project error:', error);
+    log.error('Delete project error', error);
     res.status(500).json({ error: 'Failed to delete project' });
   }
 });
@@ -309,7 +311,7 @@ router.get('/:id/status', async (req: ProjectRequest, res: Response) => {
 
     res.json(snapshot);
   } catch (error) {
-    console.error('Get project status error:', error);
+    log.error('Get project status error', error);
     res.status(500).json({ error: 'Failed to get project status' });
   }
 });
@@ -372,7 +374,7 @@ router.patch('/:id/status', async (req: ProjectRequest, res: Response) => {
       statusUpdatedAt: updated.statusUpdatedAt,
     });
   } catch (error) {
-    console.error('Update project status error:', error);
+    log.error('Update project status error', error);
     res.status(500).json({ error: 'Failed to update project status' });
   }
 });
@@ -431,7 +433,7 @@ router.post(
 
       res.json(summary);
     } catch (error) {
-      console.error('Generate status summary error:', error);
+      log.error('Generate status summary error', error);
       res.status(500).json({ error: 'Failed to generate status summary' });
     }
   },

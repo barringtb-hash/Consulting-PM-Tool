@@ -5,6 +5,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, Building2, Search, MoreHorizontal } from 'lucide-react';
 
 import {
@@ -269,26 +270,31 @@ interface AccountRowProps {
 
 function AccountRow({ account, onDelete }: AccountRowProps): JSX.Element {
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-gray-50">
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-          <Building2 className="h-5 w-5 text-gray-600" />
+    <div className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
+      <Link
+        to={`/crm/accounts/${account.id}`}
+        className="flex items-center gap-4 flex-1"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+          <Building2 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </div>
         <div>
-          <div className="font-medium">{account.name}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400">
+            {account.name}
+          </div>
           <div className="text-sm text-gray-500">
             {account.industry ?? 'No industry'} •{' '}
             {account._count?.contacts ?? 0} contacts •{' '}
             {account._count?.opportunities ?? 0} opportunities
           </div>
         </div>
-      </div>
+      </Link>
       <div className="flex items-center gap-4">
         <Badge variant={getTypeVariant(account.type)}>
           {formatType(account.type)}
         </Badge>
         {account.annualRevenue && (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             {formatCurrency(account.annualRevenue)}
           </div>
         )}

@@ -1,4 +1,4 @@
-# AGENT.md – AI Agent Guide for the AI Consulting PMO Platform
+# AGENT.md – AI Agent Guide for the AI CRM Platform
 
 > **Note**: For comprehensive AI assistant documentation including architecture patterns, code conventions, key file references, and common tasks, see [../CLAUDE.md](../CLAUDE.md).
 
@@ -17,6 +17,8 @@ Whenever you work on this repo as an agent, read [CLAUDE.md](../CLAUDE.md) first
 Recommended companion docs:
 
 - [CLAUDE.md](../CLAUDE.md) - Comprehensive onboarding guide for AI assistants
+- `CRM-TRANSFORMATION-PLAN.md` - CRM architecture and implementation plan
+- `TECHNICAL-DEBT-REPORT.md` - Technical debt tracking (28/28 resolved)
 - `AI_Consulting_PMO_Implementation_Codex.md` - Technical architecture
 - `deploy-notes-render-vercel.md` - Deployment guide
 - `prisma/schema.prisma` - Database schema
@@ -25,14 +27,21 @@ Recommended companion docs:
 
 ## 2. Project overview
 
-This project is an **AI Consulting PMO Platform** for managing AI consulting clients, projects, tasks, meetings, and AI assets.
+This project is an **AI CRM Platform** - a comprehensive multi-tenant CRM SaaS platform with AI-powered modules. It evolved from a consulting PMO tool into a full CRM system.
 
 Core goals:
 
-- Light CRM for AI consulting clients and contacts.
-- Project tracking with milestones, tasks, and meetings.
-- Ability to link AI assets (prompts, workflows, datasets, training materials) to clients and projects.
-- A per-project status snapshot and summary for reporting.
+- **CRM Core**: Accounts, Contacts, Opportunities, Pipelines, Activities
+- **Multi-Tenant**: Row-level tenant isolation with automatic filtering
+- **Lead Conversion**: Convert leads to Accounts + Opportunities with automatic pipeline creation
+- **PMO Module** (optional): Project tracking, tasks, milestones, meetings
+- **AI Tools**: Chatbot with multi-channel support, Document Analyzer with OCR
+
+Key CRM entities:
+- **Account**: Company/organization with hierarchy, health scores, engagement tracking
+- **Opportunity**: Sales pipeline with customizable stages, weighted forecasting
+- **Activity**: Unified timeline (calls, emails, meetings, tasks, notes)
+- **Project**: Delivery/work tracking only (pipeline fields moved to Opportunity)
 
 High-level stack:
 
@@ -120,12 +129,17 @@ Recommended structure inside `apps/api`:
   src/
     index.ts          # App entry, server bootstrap
     config/           # Config, environment
+    crm/              # CRM module (Accounts, Opportunities, Activities)
+      routes/         # CRM API routes
+      services/       # CRM business logic
     routes/           # Express routers (auth, clients, projects, tasks, etc.)
-    controllers/      # Optional: route handlers
     services/         # Business logic for each domain
-    db/               # Prisma client instance
-    middleware/       # Auth, error handling, logging
-    schemas/          # zod schemas for request/response validation
+    prisma/           # Prisma client instance
+    middleware/       # Auth, error handling, logging, tenant
+    validation/       # zod schemas for request/response validation
+    modules/          # Feature modules (chatbot, document-analyzer)
+    tenant/           # Multi-tenant context and middleware
+    scripts/          # Migration scripts for data conversion
     utils/            # Shared utilities
 ```
 
@@ -163,7 +177,15 @@ Agents should:
 - Validate all request bodies and query parameters with zod.
 - Keep endpoints aligned with the Implementation Codex, including:
 
+  **Auth:**
   - `/auth/login`, `/auth/logout`, `/auth/me`
+
+  **CRM (under `/api/crm/`):**
+  - `/crm/accounts`, `/crm/accounts/:id`, `/crm/accounts/stats`
+  - `/crm/opportunities`, `/crm/opportunities/:id`, `/crm/opportunities/pipeline-stats`
+  - `/crm/activities`, `/crm/activities/:id`, `/crm/activities/my/upcoming`
+
+  **PMO Module:**
   - `/clients`, `/clients/:id`, and `/clients/:id/contacts`
   - `/projects`, `/projects/:id`, `/projects/from-template/:templateId`
   - `/tasks`, `/projects/:id/tasks`, `/tasks/:id/move`
@@ -171,6 +193,9 @@ Agents should:
   - `/meetings`, `/meetings/:id/tasks-from-selection`
   - `/assets`, `/projects/:projectId/assets/:assetId/link`
   - `/projects/:id/status`
+
+  **Lead Conversion:**
+  - `/leads/:id/convert` - Converts lead to Account + Opportunity
 
 ---
 

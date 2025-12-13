@@ -17,7 +17,9 @@ import {
   clientCreateSchema,
   clientUpdateSchema,
 } from '../validation/client.schema';
+import { createChildLogger } from '../utils/logger';
 
+const log = createChildLogger({ module: 'clients' });
 const router = Router();
 
 // All routes require authentication and tenant context
@@ -68,10 +70,10 @@ router.get('/', async (req: TenantRequest, res) => {
 
     res.json({
       clients: result.data,
-      pagination: result.pagination,
+      meta: result.meta,
     });
   } catch (error) {
-    console.error('List clients error:', error);
+    log.error('List clients error', error);
     res.status(500).json({ error: 'Failed to list clients' });
   }
 });
@@ -90,7 +92,7 @@ router.post('/', async (req: TenantRequest, res) => {
     const client = await createClient(parsed.data);
     res.status(201).json({ client });
   } catch (error) {
-    console.error('Create client error:', error);
+    log.error('Create client error', error);
     res.status(500).json({ error: 'Failed to create client' });
   }
 });
@@ -122,7 +124,7 @@ router.put('/:id', async (req: TenantRequest, res) => {
 
     res.json({ client: updated });
   } catch (error) {
-    console.error('Update client error:', error);
+    log.error('Update client error', error);
     res.status(500).json({ error: 'Failed to update client' });
   }
 });
@@ -145,7 +147,7 @@ router.patch('/:id/archive', async (req: TenantRequest, res) => {
 
     res.json({ client: archivedClient });
   } catch (error) {
-    console.error('Archive client error:', error);
+    log.error('Archive client error', error);
     res.status(500).json({ error: 'Failed to archive client' });
   }
 });
@@ -168,7 +170,7 @@ router.delete('/:id', async (req: TenantRequest, res) => {
 
     res.status(204).send();
   } catch (error) {
-    console.error('Delete client error:', error);
+    log.error('Delete client error', error);
     res.status(500).json({ error: 'Failed to delete client' });
   }
 });

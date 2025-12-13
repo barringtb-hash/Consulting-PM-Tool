@@ -24,7 +24,7 @@ export interface ListClientsParams {
 
 export interface PaginatedResult<T> {
   data: T[];
-  pagination: {
+  meta: {
     page: number;
     limit: number;
     total: number;
@@ -32,6 +32,18 @@ export interface PaginatedResult<T> {
   };
 }
 
+/**
+ * List clients with optional filtering and pagination.
+ *
+ * @param params - Query parameters for filtering and pagination
+ * @param params.search - Search term to filter by name, industry, or notes
+ * @param params.companySize - Filter by company size (MICRO, SMALL, MEDIUM)
+ * @param params.aiMaturity - Filter by AI maturity level
+ * @param params.includeArchived - Include archived clients (default: false)
+ * @param params.page - Page number (1-indexed, default: 1)
+ * @param params.limit - Page size (max: 100, default: 50)
+ * @returns Paginated result with clients and metadata
+ */
 export const listClients = async ({
   search,
   companySize,
@@ -84,7 +96,7 @@ export const listClients = async ({
 
   return {
     data,
-    pagination: {
+    meta: {
       page: safePage,
       limit: safeLimit,
       total,
@@ -93,6 +105,12 @@ export const listClients = async ({
   };
 };
 
+/**
+ * Create a new client within the current tenant context.
+ *
+ * @param data - Client creation data (name, industry, companySize, etc.)
+ * @returns The created client record
+ */
 export const createClient = async (data: ClientCreateInput) => {
   // Get tenant context for multi-tenant isolation
   const tenantId = hasTenantContext() ? getTenantId() : undefined;

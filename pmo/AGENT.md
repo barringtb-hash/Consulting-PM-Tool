@@ -1,8 +1,16 @@
 # Contributor Guide
 
-Welcome to the PMO monorepo. This document provides essential guidance for contributors working within the `pmo/` workspace.
+Welcome to the AI CRM Platform monorepo. This document provides essential guidance for contributors working within the `pmo/` workspace.
 
 > **AI Assistants**: For comprehensive documentation including architecture patterns, code conventions, and common tasks, see [../CLAUDE.md](../CLAUDE.md).
+
+## Project Overview
+
+This is a multi-tenant CRM SaaS platform with:
+
+- **CRM Core**: Accounts, Contacts, Opportunities, Pipelines, Activities
+- **PMO Module**: Projects, Tasks, Milestones, Meetings (optional)
+- **AI Tools**: Chatbot, Document Analyzer (premium add-ons)
 
 ## Directory Structure
 
@@ -11,7 +19,12 @@ pmo/
 ├── apps/
 │   ├── web/          # React + TypeScript frontend (Vite)
 │   └── api/          # Express + TypeScript API server
-├── packages/         # Shared packages (types, utilities)
+│       └── src/
+│           ├── crm/          # CRM module (Accounts, Opportunities, Activities)
+│           ├── modules/      # Feature modules (chatbot, document-analyzer)
+│           ├── tenant/       # Multi-tenant context and middleware
+│           └── scripts/      # Data migration scripts
+├── packages/         # Shared packages (types, utilities, chatbot-widget)
 ├── prisma/           # Database schema and migrations
 ├── e2e/              # Playwright E2E tests
 └── docs/             # Internal documentation
@@ -112,5 +125,7 @@ npx prisma studio
 
 - [CLAUDE.md](../CLAUDE.md) - Comprehensive AI assistant guide
 - [README.md](../README.md) - Project overview and quickstart
-- [Docs/ai-coding-notes.md](../Docs/ai-coding-notes.md) - Quick reference
+- [CRM-TRANSFORMATION-PLAN.md](../Docs/CRM-TRANSFORMATION-PLAN.md) - CRM architecture and implementation plan
+- [TECHNICAL-DEBT-REPORT.md](../Docs/TECHNICAL-DEBT-REPORT.md) - Technical debt tracking (28/28 resolved)
+- [AI-Tools.md](../Docs/AI-Tools.md) - AI Chatbot & Document Analyzer documentation
 - [Docs/MODULES.md](../Docs/MODULES.md) - Module system documentation
