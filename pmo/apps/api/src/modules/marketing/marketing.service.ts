@@ -1,5 +1,6 @@
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import {
   CreateMarketingContentInput,
   UpdateMarketingContentInput,
@@ -18,7 +19,10 @@ const validateClientAccess = async (
 
   _ownerId: number,
 ) => {
-  const client = await prisma.client.findUnique({ where: { id: clientId } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, tenantId },
+  });
 
   if (!client) {
     return 'not_found' as const;
@@ -33,7 +37,10 @@ const validateClientAccess = async (
  * Validate that the user has access to the project
  */
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, tenantId },
+  });
 
   if (!project) {
     return 'not_found' as const;
@@ -50,8 +57,9 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
  * Find a marketing content item and validate user access
  */
 const findContentWithAccess = async (id: number, ownerId: number) => {
-  const content = await prisma.marketingContent.findUnique({
-    where: { id },
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const content = await prisma.marketingContent.findFirst({
+    where: { id, tenantId },
     include: {
       client: true,
       project: true,
@@ -87,8 +95,10 @@ export const listMarketingContents = async (
   ownerId: number,
   query: MarketingContentListQuery,
 ) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const where: Prisma.MarketingContentWhereInput = {
     archived: query.archived ?? false,
+    tenantId,
     // CRITICAL: Authorization filter - only show content user has access to
     OR: [
       // Content linked to projects owned by this user
@@ -208,10 +218,12 @@ export const createMarketingContent = async (
     }
   }
 
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const content = await prisma.marketingContent.create({
     data: {
       ...data,
       createdById: ownerId,
+      tenantId,
       tags: data.tags ?? [],
       content: data.content as Prisma.InputJsonValue,
     },
@@ -332,8 +344,9 @@ export const getMarketingContentsByProject = async (
     return { error: projectAccess };
   }
 
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const contents = await prisma.marketingContent.findMany({
-    where: { projectId, archived: false },
+    where: { projectId, tenantId, archived: false },
     include: {
       client: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },
@@ -352,11 +365,12 @@ export const generateContent = async (
   input: GenerateContentInput,
 ) => {
   const { sourceType, sourceId, type, additionalContext, tone, length } = input;
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
   // Fetch source data
   if (sourceType === 'project') {
-    const project = await prisma.project.findUnique({
-      where: { id: sourceId },
+    const project = await prisma.project.findFirst({
+      where: { id: sourceId, tenantId },
       include: {
         client: true,
         meetings: {
@@ -400,8 +414,8 @@ export const generateContent = async (
 
     return { generated };
   } else if (sourceType === 'meeting') {
-    const meeting = await prisma.meeting.findUnique({
-      where: { id: sourceId },
+    const meeting = await prisma.meeting.findFirst({
+      where: { id: sourceId, tenantId },
       include: {
         project: {
           include: {
@@ -462,8 +476,9 @@ export const repurposeContent = async (
   }
 
   // Fetch full content with relations
-  const sourceContent = await prisma.marketingContent.findUnique({
-    where: { id: contentId },
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const sourceContent = await prisma.marketingContent.findFirst({
+    where: { id: contentId, tenantId },
     include: {
       client: true,
       project: true,

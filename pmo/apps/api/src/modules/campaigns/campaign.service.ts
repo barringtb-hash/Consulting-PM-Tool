@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import {
   CreateCampaignInput,
   UpdateCampaignInput,
@@ -13,7 +14,10 @@ const validateClientAccess = async (
 
   _ownerId: number,
 ) => {
-  const client = await prisma.client.findUnique({ where: { id: clientId } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, tenantId },
+  });
   if (!client) {
     return 'not_found' as const;
   }
@@ -24,7 +28,10 @@ const validateClientAccess = async (
  * Validate that the user has access to the project
  */
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, tenantId },
+  });
   if (!project) {
     return 'not_found' as const;
   }
@@ -38,8 +45,9 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
  * Find a campaign and validate user access
  */
 const findCampaignWithAccess = async (id: number, ownerId: number) => {
-  const campaign = await prisma.campaign.findUnique({
-    where: { id },
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const campaign = await prisma.campaign.findFirst({
+    where: { id, tenantId },
     include: {
       client: true,
       project: true,
@@ -79,8 +87,10 @@ export const listCampaigns = async (
     archived?: boolean;
   },
 ) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const where: Prisma.CampaignWhereInput = {
     archived: query.archived ?? false,
+    tenantId,
     // Authorization: only show campaigns user has access to
     OR: [
       // Campaigns linked to projects owned by this user
@@ -193,10 +203,12 @@ export const createCampaign = async (
     }
   }
 
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const campaign = await prisma.campaign.create({
     data: {
       ...input,
       createdById: ownerId,
+      tenantId,
       goals: input.goals as Prisma.InputJsonValue,
     },
     include: {
@@ -293,9 +305,11 @@ export const getCampaignContents = async (
     return result;
   }
 
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const contents = await prisma.marketingContent.findMany({
     where: {
       campaignId,
+      tenantId,
       archived: false,
     },
     include: {
