@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 
 import prisma from '../../prisma/client';
 import { createTask } from '../../services/task.service';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import {
   CreateMeetingInput,
   CreateTaskFromSelectionInput,
@@ -23,7 +24,12 @@ const stripProject = ({
 };
 
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, tenantId },
+  });
 
   if (!project) {
     return 'not_found' as const;
@@ -36,11 +42,15 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
   return project;
 };
 
-const findMeetingWithOwner = async (id: number) =>
-  prisma.meeting.findUnique({
-    where: { id },
+const findMeetingWithOwner = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.meeting.findFirst({
+    where: { id, tenantId },
     include: { project: { select: { ownerId: true } } },
   });
+};
 
 export const listMeetingsByProject = async (
   projectId: number,
@@ -70,9 +80,13 @@ export const createMeeting = async (
     return { error: projectAccess } as const;
   }
 
+  // Get tenant context for multi-tenant isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   const meeting = await prisma.meeting.create({
     data: {
       ...data,
+      tenantId,
       attendees: data.attendees ?? [],
     },
   });
