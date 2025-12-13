@@ -16,8 +16,8 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 |----------|-------|-------------|
 | **CRITICAL** | 4 (4 resolved) | Security/data isolation vulnerabilities |
 | **HIGH** | 6 (6 resolved) | Incomplete features blocking production use |
-| **MEDIUM** | 10 (7 resolved) | Inconsistent patterns causing maintenance burden |
-| **LOW** | 8 (7 resolved) | Code quality improvements for long-term health |
+| **MEDIUM** | 10 (9 resolved) | Inconsistent patterns causing maintenance burden |
+| **LOW** | 8 (8 resolved) | Code quality improvements for long-term health |
 
 ### ✅ Completed Items
 **Phase 1 - Security (COMPLETED):**
@@ -54,10 +54,13 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 - HIGH-03: Lead migration script created (`pmo/apps/api/src/scripts/migrate-leads-to-crm-contacts.ts`)
 - HIGH-05: Client migration script created (`pmo/apps/api/src/scripts/migrate-clients-to-accounts.ts`)
 
-### 📋 Remaining Items (Lower Priority)
-- MED-06: Create shared TypeScript types package (enhancement)
-- MED-10: Create Account and Opportunity detail pages (UI enhancement)
-- LOW-05: Add E2E tests for CRM flows (testing)
+### 📋 Remaining Items
+All technical debt items have been resolved!
+
+**Phase 6 - Additional Completions:**
+- MED-06: Shared TypeScript types package created (`pmo/packages/shared-types/`)
+- MED-10: Account and Opportunity detail pages created
+- LOW-05: E2E tests for CRM flows created
 
 ---
 
@@ -527,11 +530,42 @@ model Project {
 
 ---
 
-### MED-06: Missing TypeScript Types Export
+### MED-06: ~~Missing TypeScript Types Export~~ ✅ RESOLVED
 
-**Impact:** Frontend can't import types from backend - must duplicate interfaces.
+**Status:** Shared TypeScript types package created.
 
-**Remediation:** Create shared types package or export Prisma-generated types.
+**Files Created:**
+- `pmo/packages/shared-types/package.json` - Package configuration
+- `pmo/packages/shared-types/src/index.ts` - Main export entry
+- `pmo/packages/shared-types/src/api/index.ts` - API response types (PaginationMeta, ApiError, etc.)
+- `pmo/packages/shared-types/src/crm/index.ts` - CRM entity types (Account, Opportunity, Activity, Contact, etc.)
+
+**Package Exports:**
+```typescript
+// Import all types
+import { Account, PaginatedResponse } from '@pmo/shared-types';
+
+// Import from specific modules
+import { Account, Opportunity } from '@pmo/shared-types/crm';
+import { PaginationMeta } from '@pmo/shared-types/api';
+```
+
+**Types Included:**
+- **API Types:** PaginationMeta, ApiErrorObject, PaginatedResponse, SingleResponse, ErrorResponse
+- **CRM Types:** Account, Opportunity, Pipeline, PipelineStage, CRMContact, CRMActivity
+- **Input Types:** CreateAccountInput, UpdateAccountInput, CreateOpportunityInput, etc.
+- **Filter Types:** AccountFilters, OpportunityFilters, ActivityFilters
+- **Enums:** AccountType, OpportunityStatus, ActivityType, ContactLifecycle, etc.
+
+**Usage in Frontend:**
+```typescript
+// In pmo/apps/web/src/api/accounts.ts
+import type { Account, CreateAccountInput } from '@pmo/shared-types/crm';
+```
+
+**Original Impact:** Frontend couldn't import types from backend - must duplicate interfaces.
+
+**Resolution:** Shared package allows type synchronization between frontend and backend.
 
 ---
 
@@ -586,11 +620,44 @@ const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
 
 ---
 
-### MED-10: Frontend Client Model Doesn't Match CRM Account
+### MED-10: ~~Frontend Client Model Doesn't Match CRM Account~~ ✅ RESOLVED
 
-**Impact:** ClientsPage, ClientDetailsPage show PMO Client fields (aiMaturity, companySize) not CRM Account fields (healthScore, engagementScore, annualRevenue).
+**Status:** Account and Opportunity detail pages created with proper CRM fields.
 
-**Remediation:** Create AccountsPage/AccountDetailsPage with proper CRM fields.
+**Files Created:**
+- `pmo/apps/web/src/pages/crm/AccountDetailPage.tsx` - Full detail page for accounts
+- `pmo/apps/web/src/pages/crm/OpportunityDetailPage.tsx` - Full detail page for opportunities
+
+**Features:**
+- **AccountDetailPage:**
+  - Health score and engagement score indicators
+  - Annual revenue and employee count display
+  - Related opportunities list
+  - Quick actions (email, call, archive/restore)
+  - Inline editing capability
+  - Tags display
+  - Activity summary
+
+- **OpportunityDetailPage:**
+  - Amount and weighted value display
+  - Probability indicator
+  - Stage information with status badge
+  - Mark as Won/Lost actions
+  - Lost reason capture dialog
+  - Account information card
+  - Stage history summary
+  - Inline editing capability
+
+**Routes Added in App.tsx:**
+- `/crm/accounts/:accountId` - AccountDetailPage
+- `/crm/opportunities/:opportunityId` - OpportunityDetailPage
+
+**AccountsPage Updated:**
+- Account names now link to detail page
+
+**Original Impact:** ClientsPage, ClientDetailsPage show PMO Client fields (aiMaturity, companySize) not CRM Account fields (healthScore, engagementScore, annualRevenue).
+
+**Resolution:** New CRM-specific detail pages created with proper CRM fields.
 
 ---
 
@@ -660,13 +727,38 @@ const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
 
 ---
 
-### LOW-05: No E2E Tests for CRM Flows
+### LOW-05: ~~No E2E Tests for CRM Flows~~ ✅ RESOLVED
 
-**Existing E2E:** Focus on PMO flows (client intake, project setup)
+**Status:** E2E tests for CRM flows created.
 
-**Missing:** CRM flows (account creation, opportunity pipeline, activity logging)
+**Files Created:**
+- `pmo/e2e/crm-accounts.spec.ts` - Account management E2E tests
+- `pmo/e2e/crm-opportunities.spec.ts` - Opportunity management E2E tests
 
-**Remediation:** Add Playwright tests for CRM user journeys.
+**Test Coverage:**
+- **Accounts:**
+  - Display accounts page
+  - Create new account
+  - Navigate to account detail page
+  - Display account stats
+  - Filter accounts by type
+  - Search accounts
+  - Account detail page information
+  - Quick actions
+  - Back navigation
+  - Edit mode
+
+- **Opportunities:**
+  - Display opportunities page
+  - Display pipeline statistics
+  - Navigate to opportunity detail
+  - Opportunity detail information
+  - Back navigation
+  - Action buttons for open opportunities
+  - Pipeline view stages
+  - Pipeline page (legacy route)
+
+**Original Status:** Existing E2E focused on PMO flows (client intake, project setup), missing CRM flows.
 
 ---
 
@@ -784,6 +876,14 @@ const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
 | Pipeline Page | `pmo/apps/web/src/pages/PipelinePage.tsx` |
 | Prisma Schema | `pmo/prisma/schema.prisma` |
 
+### Shared Packages
+
+| Purpose | Path |
+|---------|------|
+| Shared Types Package | `pmo/packages/shared-types/` |
+| Shared Types - API | `pmo/packages/shared-types/src/api/index.ts` |
+| Shared Types - CRM | `pmo/packages/shared-types/src/crm/index.ts` |
+
 ### Shared Utilities
 
 | Purpose | Path |
@@ -815,6 +915,15 @@ const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
 | Purpose | Path |
 |---------|------|
 | ErrorBoundary | `pmo/apps/web/src/components/ErrorBoundary.tsx` |
+| Account Detail Page | `pmo/apps/web/src/pages/crm/AccountDetailPage.tsx` |
+| Opportunity Detail Page | `pmo/apps/web/src/pages/crm/OpportunityDetailPage.tsx` |
+
+### E2E Tests
+
+| Purpose | Path |
+|---------|------|
+| CRM Accounts E2E Tests | `pmo/e2e/crm-accounts.spec.ts` |
+| CRM Opportunities E2E Tests | `pmo/e2e/crm-opportunities.spec.ts` |
 
 ### Documentation
 

@@ -117,8 +117,12 @@ const CustomerSuccessAnalyticsPage = lazy(
 
 // CRM pages
 const AccountsPage = lazy(() => import('./pages/crm/AccountsPage'));
+const AccountDetailPage = lazy(() => import('./pages/crm/AccountDetailPage'));
 const CRMOpportunitiesPage = lazy(
   () => import('./pages/crm/OpportunitiesPage'),
+);
+const OpportunityDetailPage = lazy(
+  () => import('./pages/crm/OpportunityDetailPage'),
 );
 
 /**
@@ -559,11 +563,31 @@ function App(): JSX.Element {
                   }
                 />
                 <Route
+                  path="/crm/accounts/:accountId"
+                  element={
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <AccountDetailPage />
+                      </LazyPage>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
                   path="/crm/opportunities"
                   element={
                     <ErrorBoundary>
                       <LazyPage>
                         <CRMOpportunitiesPage />
+                      </LazyPage>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/crm/opportunities/:opportunityId"
+                  element={
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <OpportunityDetailPage />
                       </LazyPage>
                     </ErrorBoundary>
                   }
