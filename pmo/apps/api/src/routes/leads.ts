@@ -2,6 +2,7 @@ import { LeadSource, LeadStatus } from '@prisma/client';
 import { Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
+import { tenantMiddleware } from '../tenant/tenant.middleware';
 import { hasLeadAccess, getLeadAccessFilter } from '../auth/client-auth.helper';
 import {
   convertLead,
@@ -19,7 +20,9 @@ import {
 
 const router = Router();
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 // List all leads (filtered by user's access)
 router.get('/', async (req: AuthenticatedRequest, res) => {

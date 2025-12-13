@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
+import { tenantMiddleware } from '../tenant/tenant.middleware';
 import {
   createMilestone,
   deleteMilestone,
@@ -15,7 +16,9 @@ import {
 
 const router = Router();
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 router.get(
   '/projects/:projectId/milestones',

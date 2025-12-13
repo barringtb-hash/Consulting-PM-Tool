@@ -1,6 +1,7 @@
 import { AssetType, Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import {
   AssetCloneInput,
   AssetCreateInput,
@@ -27,7 +28,12 @@ const normalizeJsonInput = (
 };
 
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, tenantId },
+  });
 
   if (!project) {
     return 'not_found' as const;
@@ -55,7 +61,11 @@ export const listAssets = async ({
   search,
   includeArchived = false,
 }: ListAssetsParams) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   const where: Prisma.AIAssetWhereInput = {
+    tenantId,
     clientId,
     type,
     isTemplate,
@@ -76,12 +86,18 @@ export const listAssets = async ({
   });
 };
 
-export const getAssetById = async (id: number, includeArchived = false) =>
-  prisma.aIAsset.findFirst({
-    where: { id, archived: includeArchived ? undefined : false },
+export const getAssetById = async (id: number, includeArchived = false) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.aIAsset.findFirst({
+    where: { id, tenantId, archived: includeArchived ? undefined : false },
   });
+};
 
 export const createAsset = async (ownerId: number, data: AssetCreateInput) => {
+  // Get tenant context for multi-tenant isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const { content, ...rest } = data;
 
   return prisma.aIAsset.create({
@@ -89,6 +105,7 @@ export const createAsset = async (ownerId: number, data: AssetCreateInput) => {
       ...rest,
       content: normalizeJsonInput(content),
       createdById: ownerId,
+      tenantId,
       isTemplate: data.isTemplate ?? false,
       tags: data.tags ?? [],
       clientId: data.clientId ?? null,
@@ -101,7 +118,12 @@ export const updateAsset = async (
   requesterId: number,
   data: AssetUpdateInput,
 ) => {
-  const existing = await prisma.aIAsset.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const existing = await prisma.aIAsset.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!existing || existing.archived) {
     return { error: 'not_found' as const };
@@ -128,7 +150,12 @@ export const updateAsset = async (
 };
 
 export const archiveAsset = async (id: number, requesterId: number) => {
-  const existing = await prisma.aIAsset.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const existing = await prisma.aIAsset.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!existing || existing.archived) {
     return { error: 'not_found' as const };
@@ -152,7 +179,12 @@ export const cloneAsset = async (
   requesterId: number,
   overrides: AssetCloneInput,
 ) => {
-  const source = await prisma.aIAsset.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const source = await prisma.aIAsset.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!source || source.archived) {
     return { error: 'not_found' as const };
@@ -179,6 +211,7 @@ export const cloneAsset = async (
       isTemplate: overrides.isTemplate ?? false,
       clientId: overrides.clientId ?? source.clientId ?? null,
       createdById: requesterId,
+      tenantId,
     },
   });
 

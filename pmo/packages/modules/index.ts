@@ -24,6 +24,9 @@ export type ModuleId =
   | 'leads'
   | 'pipeline'
   | 'admin'
+  // CRM modules
+  | 'crmAccounts'
+  | 'crmOpportunities'
   // Customer Success Platform
   | 'customerSuccess'
   // MCP Integration module
@@ -63,6 +66,7 @@ export type NavGroup =
   | 'overview'
   | 'clients'
   | 'projects'
+  | 'crm'
   | 'customerSuccess'
   | 'marketing'
   | 'sales'
@@ -216,6 +220,33 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/users', '/api/admin'],
     description:
       'User administration, module configuration, and access control',
+  },
+
+  // ============ CRM MODULES ============
+  crmAccounts: {
+    id: 'crmAccounts',
+    label: 'Accounts',
+    navGroup: 'crm',
+    path: '/crm/accounts',
+    additionalPaths: ['/crm/accounts/:id'],
+    icon: 'Building2',
+    isCore: false,
+    apiPrefixes: ['/api/crm/accounts'],
+    description:
+      'CRM account management with hierarchy support and health scoring',
+  },
+  crmOpportunities: {
+    id: 'crmOpportunities',
+    label: 'Opportunities',
+    navGroup: 'crm',
+    path: '/crm/opportunities',
+    additionalPaths: ['/crm/opportunities/:id'],
+    icon: 'Target',
+    isCore: false,
+    dependencies: ['crmAccounts'],
+    apiPrefixes: ['/api/crm/opportunities'],
+    description:
+      'Sales pipeline management with customizable stages and forecasting',
   },
 
   // ============ CUSTOMER SUCCESS PLATFORM ============
@@ -621,13 +652,14 @@ export const NAV_GROUP_CONFIG: Record<
   demo: { label: 'Demos', order: 2 }, // Demo section at top for visibility
   clients: { label: 'Clients', order: 3 },
   projects: { label: 'Projects', order: 4 },
-  customerSuccess: { label: 'Customer Success', order: 5 },
-  marketing: { label: 'Marketing', order: 6 },
-  sales: { label: 'Sales', order: 7 },
-  aiTools: { label: 'AI Tools', order: 8 },
-  infrastructure: { label: 'Infrastructure', order: 9 },
-  compliance: { label: 'Compliance', order: 10 },
-  admin: { label: 'Admin', order: 11 },
+  crm: { label: 'CRM', order: 5 },
+  customerSuccess: { label: 'Customer Success', order: 6 },
+  marketing: { label: 'Marketing', order: 7 },
+  sales: { label: 'Sales', order: 8 },
+  aiTools: { label: 'AI Tools', order: 9 },
+  infrastructure: { label: 'Infrastructure', order: 10 },
+  compliance: { label: 'Compliance', order: 11 },
+  admin: { label: 'Admin', order: 12 },
 };
 
 /**
@@ -643,6 +675,9 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'leads',
   'pipeline',
   'admin',
+  // CRM modules
+  'crmAccounts',
+  'crmOpportunities',
   // Customer Success Platform
   'customerSuccess',
   // MCP Integration

@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import {
   TaskCreateInput,
   TaskMoveInput,
@@ -23,14 +24,23 @@ const stripProject = ({
   return taskData;
 };
 
-const findTaskWithOwner = async (id: number) =>
-  prisma.task.findUnique({
-    where: { id },
+const findTaskWithOwner = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.task.findFirst({
+    where: { id, tenantId },
     include: { project: { select: { ownerId: true } } },
   });
+};
 
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, tenantId },
+  });
 
   if (!project) {
     return 'not_found' as const;
@@ -47,8 +57,11 @@ const validateMilestoneForProject = async (
   milestoneId: number,
   projectId: number,
 ) => {
-  const milestone = await prisma.milestone.findUnique({
-    where: { id: milestoneId },
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const milestone = await prisma.milestone.findFirst({
+    where: { id: milestoneId, tenantId },
   });
 
   if (!milestone || milestone.projectId !== projectId) {
@@ -108,10 +121,14 @@ export const createTask = async (ownerId: number, data: TaskCreateData) => {
     }
   }
 
+  // Get tenant context for multi-tenant isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   const task = await prisma.task.create({
     data: {
       ...data,
       ownerId,
+      tenantId,
       sourceMeetingId: data.sourceMeetingId ?? undefined,
     },
   });

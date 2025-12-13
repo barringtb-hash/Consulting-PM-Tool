@@ -1,6 +1,7 @@
 import { LeadSource, LeadStatus, Prisma, PipelineStage } from '@prisma/client';
 
 import prisma from '../prisma/client';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import {
   LeadCreateInput,
   LeadUpdateInput,
@@ -23,7 +24,11 @@ export const listLeads = async ({
   ownerUserId,
   accessFilter,
 }: ListLeadsParams) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   const where: Prisma.InboundLeadWhereInput = {
+    tenantId,
     source,
     status,
     ownerUserId,
@@ -88,8 +93,11 @@ export const listLeads = async ({
 };
 
 export const getLeadById = async (id: number) => {
-  return prisma.inboundLead.findUnique({
-    where: { id },
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.inboundLead.findFirst({
+    where: { id, tenantId },
     include: {
       owner: {
         select: {
@@ -104,9 +112,15 @@ export const getLeadById = async (id: number) => {
   });
 };
 
-export const createLead = async (data: LeadCreateInput) =>
-  prisma.inboundLead.create({
-    data,
+export const createLead = async (data: LeadCreateInput) => {
+  // Get tenant context for multi-tenant isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.inboundLead.create({
+    data: {
+      ...data,
+      tenantId,
+    },
     include: {
       owner: {
         select: {
@@ -117,11 +131,16 @@ export const createLead = async (data: LeadCreateInput) =>
       },
     },
   });
+};
 
-export const createPublicLead = async (data: PublicLeadCreateInput) =>
-  prisma.inboundLead.create({
+export const createPublicLead = async (data: PublicLeadCreateInput) => {
+  // Get tenant context for multi-tenant isolation (if available)
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.inboundLead.create({
     data: {
       ...data,
+      tenantId,
       status: LeadStatus.NEW,
     },
     select: {
@@ -135,9 +154,15 @@ export const createPublicLead = async (data: PublicLeadCreateInput) =>
       createdAt: true,
     },
   });
+};
 
 export const updateLead = async (id: number, data: LeadUpdateInput) => {
-  const existing = await prisma.inboundLead.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const existing = await prisma.inboundLead.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!existing) {
     return null;
@@ -172,8 +197,11 @@ export const updateLead = async (id: number, data: LeadUpdateInput) => {
 };
 
 export const convertLead = async (id: number, conversion: LeadConvertInput) => {
-  const lead = await prisma.inboundLead.findUnique({
-    where: { id },
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const lead = await prisma.inboundLead.findFirst({
+    where: { id, tenantId },
     include: { client: true, primaryContact: true },
   });
 
@@ -275,7 +303,12 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
 };
 
 export const deleteLead = async (id: number) => {
-  const existing = await prisma.inboundLead.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const existing = await prisma.inboundLead.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!existing) {
     return null;

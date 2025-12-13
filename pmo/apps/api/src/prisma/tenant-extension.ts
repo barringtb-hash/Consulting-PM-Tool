@@ -43,16 +43,13 @@ const TENANT_SCOPED_MODELS = new Set([
   'Client',
   'Contact',
   'Project',
-
-  // Future: Add additional models after migration
-  // 'Task',
-  // 'Milestone',
-  // 'Meeting',
-  // 'Document',
-  // 'AIAsset',
-  // 'MarketingContent',
-  // 'Campaign',
-  // 'InboundLead',
+  'Task',
+  'Milestone',
+  'Meeting',
+  'AIAsset',
+  'MarketingContent',
+  'Campaign',
+  'InboundLead',
 ]);
 
 // Models that have tenantId but are accessed via parent relations
