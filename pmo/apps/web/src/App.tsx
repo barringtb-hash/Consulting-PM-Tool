@@ -4,6 +4,7 @@ import ProtectedRoute from './auth/ProtectedRoute';
 import AppLayout from './layouts/AppLayout';
 import { ClientProjectProvider } from './pages/ClientProjectContext';
 import { useModules } from './modules';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Core pages (always loaded)
 import DashboardPage from './pages/DashboardPage';
@@ -544,23 +545,27 @@ function App(): JSX.Element {
               </>
             )}
 
-            {/* CRM module */}
+            {/* CRM module - wrapped with ErrorBoundary for graceful error handling */}
             {isModuleEnabled('crm') && (
               <>
                 <Route
                   path="/crm/accounts"
                   element={
-                    <LazyPage>
-                      <AccountsPage />
-                    </LazyPage>
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <AccountsPage />
+                      </LazyPage>
+                    </ErrorBoundary>
                   }
                 />
                 <Route
                   path="/crm/opportunities"
                   element={
-                    <LazyPage>
-                      <CRMOpportunitiesPage />
-                    </LazyPage>
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <CRMOpportunitiesPage />
+                      </LazyPage>
+                    </ErrorBoundary>
                   }
                 />
               </>

@@ -17,7 +17,9 @@ import {
   leadCreateSchema,
   leadUpdateSchema,
 } from '../validation/lead.schema';
+import { createChildLogger } from '../utils/logger';
 
+const log = createChildLogger({ module: 'leads' });
 const router = Router();
 
 // All routes require authentication and tenant context
@@ -71,7 +73,7 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
 
     res.json({ leads });
   } catch (error) {
-    console.error('List leads error:', error);
+    log.error('List leads error', error);
     res.status(500).json({ error: 'Failed to list leads' });
   }
 });
@@ -107,7 +109,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
 
     res.json({ lead });
   } catch (error) {
-    console.error('Get lead error:', error);
+    log.error('Get lead error', error);
     res.status(500).json({ error: 'Failed to get lead' });
   }
 });
@@ -127,7 +129,7 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     const lead = await createLead(parsed.data);
     res.status(201).json({ lead });
   } catch (error) {
-    console.error('Create lead error:', error);
+    log.error('Create lead error', error);
     res.status(500).json({ error: 'Failed to create lead' });
   }
 });
@@ -172,7 +174,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res) => {
 
     res.json({ lead: updated });
   } catch (error) {
-    console.error('Update lead error:', error);
+    log.error('Update lead error', error);
     res.status(500).json({ error: 'Failed to update lead' });
   }
 });
@@ -212,7 +214,7 @@ router.post('/:id/convert', async (req: AuthenticatedRequest, res) => {
     const result = await convertLead(leadId, parsed.data);
     res.json(result);
   } catch (error) {
-    console.error('Convert lead error:', error);
+    log.error('Convert lead error', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to convert lead';
     res.status(500).json({ error: errorMessage });
@@ -250,7 +252,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res) => {
 
     res.status(204).send();
   } catch (error) {
-    console.error('Delete lead error:', error);
+    log.error('Delete lead error', error);
     res.status(500).json({ error: 'Failed to delete lead' });
   }
 });

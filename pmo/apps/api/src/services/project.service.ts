@@ -21,7 +21,7 @@ export interface ListProjectsParams {
 
 export interface PaginatedResult<T> {
   data: T[];
-  pagination: {
+  meta: {
     page: number;
     limit: number;
     total: number;
@@ -29,6 +29,17 @@ export interface PaginatedResult<T> {
   };
 }
 
+/**
+ * List projects for a specific owner with optional filtering and pagination.
+ *
+ * @param params - Query parameters
+ * @param params.ownerId - Owner user ID (required)
+ * @param params.clientId - Filter by client ID
+ * @param params.status - Filter by project status
+ * @param params.page - Page number (1-indexed, default: 1)
+ * @param params.limit - Page size (max: 100, default: 50)
+ * @returns Paginated result with projects and metadata
+ */
 export const listProjects = async ({
   ownerId,
   clientId,
@@ -66,7 +77,7 @@ export const listProjects = async ({
 
   return {
     data,
-    pagination: {
+    meta: {
       page: safePage,
       limit: safeLimit,
       total,
@@ -75,6 +86,12 @@ export const listProjects = async ({
   };
 };
 
+/**
+ * Get a project by ID within the current tenant context.
+ *
+ * @param id - Project ID
+ * @returns The project if found, null otherwise
+ */
 export const getProjectById = async (id: number) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
@@ -84,6 +101,13 @@ export const getProjectById = async (id: number) => {
   });
 };
 
+/**
+ * Create a new project within the current tenant context.
+ *
+ * @param ownerId - User ID of the project owner
+ * @param data - Project creation data (clientId, name, status, dates)
+ * @returns The created project record
+ */
 export const createProject = async (
   ownerId: number,
   data: ProjectCreateInput,

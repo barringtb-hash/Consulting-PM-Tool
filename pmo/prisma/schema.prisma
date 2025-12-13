@@ -69,6 +69,18 @@ enum DocumentType {
   OTHER
 }
 
+/**
+ * @deprecated Use CRMLeadSource instead for new CRM features.
+ * This enum is kept for backward compatibility with legacy PMO InboundLead model.
+ * Migration mapping:
+ *   WEBSITE_CONTACT -> WEBSITE
+ *   WEBSITE_DOWNLOAD -> WEBSITE
+ *   REFERRAL -> REFERRAL
+ *   LINKEDIN -> LINKEDIN
+ *   OUTBOUND -> OUTBOUND
+ *   EVENT -> EVENT
+ *   OTHER -> OTHER
+ */
 enum LeadSource {
   WEBSITE_CONTACT
   WEBSITE_DOWNLOAD
@@ -79,6 +91,16 @@ enum LeadSource {
   OTHER
 }
 
+/**
+ * @deprecated Use ContactLifecycle (CRM) instead for new features.
+ * This enum is for legacy PMO InboundLead model.
+ * Migration mapping to ContactLifecycle:
+ *   NEW -> LEAD
+ *   CONTACTED -> MQL
+ *   QUALIFIED -> SQL
+ *   DISQUALIFIED -> CHURNED
+ *   CONVERTED -> OPPORTUNITY (or CUSTOMER)
+ */
 enum LeadStatus {
   NEW
   CONTACTED
@@ -96,6 +118,12 @@ enum ServiceInterest {
   NOT_SURE
 }
 
+/**
+ * @deprecated Use SalesPipelineStage model (CRM) instead for new features.
+ * The CRM uses a dynamic stage model via the Pipeline and SalesPipelineStage models,
+ * allowing tenants to customize pipeline stages. Legacy PMO Project model still uses this enum.
+ * Migration: Create pipeline stages matching these values via the SalesPipelineStage model.
+ */
 enum PipelineStage {
   NEW_LEAD
   DISCOVERY
@@ -272,6 +300,17 @@ model Client {
   csSurveyResponses CSSurveyResponse[]
 }
 
+/**
+ * Contact - Legacy PMO contact model (project-related contacts)
+ *
+ * @deprecated For CRM use cases, use CRMContact instead which has:
+ *   - Lifecycle management (LEAD, MQL, SQL, etc.)
+ *   - Lead scoring
+ *   - Account hierarchy support
+ *
+ * Email uniqueness: Per-client (allows same email for contacts at different clients)
+ * This differs from CRMContact which enforces per-tenant uniqueness.
+ */
 model Contact {
   id        Int      @id @default(autoincrement())
   tenantId  String?
@@ -294,6 +333,8 @@ model Contact {
   csActivityLogs    CSActivityLog[]
   csSurveyResponses CSSurveyResponse[]
 
+  // Email unique per client (legacy behavior)
+  // CRMContact uses @@unique([tenantId, email]) for stricter deduplication
   @@unique([clientId, email])
 }
 
@@ -5727,6 +5768,11 @@ enum CRMActivityPriority {
   URGENT
 }
 
+/**
+ * CRMLeadSource - Preferred enum for tracking lead sources in CRM.
+ * Use this instead of the legacy LeadSource enum for new features.
+ * Provides more comprehensive source tracking than the legacy enum.
+ */
 enum CRMLeadSource {
   WEBSITE
   REFERRAL
@@ -5740,6 +5786,11 @@ enum CRMLeadSource {
   OTHER
 }
 
+/**
+ * ContactLifecycle - CRM contact lifecycle stages.
+ * Replaces the legacy LeadStatus enum with a more comprehensive lifecycle model.
+ * Used for CRMContact to track contacts through their entire journey.
+ */
 enum ContactLifecycle {
   LEAD
   MQL
@@ -5987,7 +6038,17 @@ model Account {
 }
 
 /**
- * CRMContact - Contact within CRM (distinct from project Contact)
+ * CRMContact - Contact within CRM (preferred model for new features)
+ *
+ * Features not in legacy Contact:
+ *   - Lifecycle stages (LEAD → MQL → SQL → OPPORTUNITY → CUSTOMER)
+ *   - Lead scoring with numeric score
+ *   - Account hierarchy support
+ *   - Social profiles (LinkedIn, Twitter)
+ *   - Communication preferences (doNotContact)
+ *
+ * Email uniqueness: Per-tenant (stricter deduplication than legacy Contact)
+ * This prevents duplicate contacts across the entire tenant's CRM.
  */
 model CRMContact {
   id        Int    @id @default(autoincrement())
@@ -6183,7 +6244,19 @@ model OpportunityStageHistory {
 // ============================================================================
 
 /**
- * CRMActivity - Unified activity timeline
+ * CRMActivity - Unified activity timeline for CRM interactions
+ *
+ * Tracks all interactions: calls, emails, meetings, tasks, notes, etc.
+ * Activities can be linked to accounts, contacts, and/or opportunities.
+ *
+ * Cascade Rules (intentional design):
+ *   - Tenant deleted → Activities CASCADE deleted (tenant isolation)
+ *   - Account deleted → Activity's accountId SET NULL (preserves activity history)
+ *   - Contact deleted → Activity's contactId SET NULL (preserves activity history)
+ *   - Opportunity deleted → Activity's opportunityId SET NULL (preserves activity history)
+ *
+ * The SetNull behavior ensures activity history is preserved even when
+ * linked entities are removed, which is important for audit trails.
  */
 model CRMActivity {
   id       Int    @id @default(autoincrement())
@@ -6217,6 +6290,7 @@ model CRMActivity {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations with explicit cascade rules
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   account     Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
   contact     CRMContact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
