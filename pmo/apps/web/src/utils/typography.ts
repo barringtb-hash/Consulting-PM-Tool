@@ -40,6 +40,8 @@ export const EMPTY_STATES = {
   noDecisions: 'No decisions yet',
   noRisks: 'No risks yet',
   noLeads: 'No leads yet',
+  accounts: 'No accounts yet',
+  opportunities: 'No opportunities yet',
 
   // Dates - use "Not set"
   noDate: 'Not set',

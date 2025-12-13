@@ -221,6 +221,7 @@ model User {
 
 model Client {
   id          Int          @id @default(autoincrement())
+  tenantId    String?
   name        String
   industry    String?
   companySize CompanySize?
@@ -231,6 +232,7 @@ model Client {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
+  tenant                Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contacts              Contact[]
   projects              Project[]
   documents             Document[]
@@ -272,6 +274,7 @@ model Client {
 
 model Contact {
   id        Int      @id @default(autoincrement())
+  tenantId  String?
   clientId  Int
   name      String
   email     String
@@ -282,6 +285,7 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant         Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   convertedLeads InboundLead[]
 
@@ -328,6 +332,7 @@ model InboundLead {
 
 model Project {
   id        Int           @id @default(autoincrement())
+  tenantId  String?
   clientId  Int
   ownerId   Int
   name      String
@@ -363,6 +368,7 @@ model Project {
   onboardingComplete    Boolean   @default(false)
   onboardingCompletedAt DateTime?
 
+  tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   owner             User               @relation(fields: [ownerId], references: [id])
   documents         Document[]
@@ -5809,6 +5815,10 @@ model Tenant {
   usageEvents    UsageEvent[]
   usageSummaries UsageSummary[]
   savedReports   SavedReport[]
+  // Legacy PMO models (tenant-scoped)
+  clients  Client[]
+  contacts Contact[]
+  projects Project[]
 
   @@index([slug])
   @@index([status])

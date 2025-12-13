@@ -1,9 +1,12 @@
 import { ProjectStatus } from '@prisma/client';
 import { Router, Response } from 'express';
-import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
 
-import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
+import { requireAuth } from '../auth/auth.middleware';
+import {
+  tenantMiddleware,
+  type TenantRequest,
+} from '../tenant/tenant.middleware';
 import prisma from '../prisma/client';
 import {
   createProject,
@@ -28,14 +31,13 @@ import {
 
 const router = Router();
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
-type ProjectListRequest = AuthenticatedRequest<
-  ParamsDictionary,
-  unknown,
-  unknown,
-  ParsedQs
->;
+type ProjectListRequest = TenantRequest & {
+  query: ParsedQs;
+};
 
 router.get('/', async (req: ProjectListRequest, res: Response) => {
   try {
@@ -92,43 +94,44 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
 
 type ProjectParams = { id: string };
 
-router.get(
-  '/:id',
-  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
-    try {
-      if (!req.userId) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
+type ProjectRequest = TenantRequest & {
+  params: ProjectParams;
+};
 
-      const projectId = Number(req.params.id);
-
-      if (Number.isNaN(projectId)) {
-        res.status(400).json({ error: 'Invalid project id' });
-        return;
-      }
-
-      const project = await getProjectById(projectId);
-
-      if (!project) {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
-
-      if (project.ownerId !== req.userId) {
-        res.status(403).json({ error: 'Forbidden' });
-        return;
-      }
-
-      res.json({ project });
-    } catch (error) {
-      console.error('Get project error:', error);
-      res.status(500).json({ error: 'Failed to get project' });
+router.get('/:id', async (req: ProjectRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
-  },
-);
 
-router.post('/', async (req: AuthenticatedRequest, res: Response) => {
+    const projectId = Number(req.params.id);
+
+    if (Number.isNaN(projectId)) {
+      res.status(400).json({ error: 'Invalid project id' });
+      return;
+    }
+
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    if (project.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    res.json({ project });
+  } catch (error) {
+    console.error('Get project error:', error);
+    res.status(500).json({ error: 'Failed to get project' });
+  }
+});
+
+router.post('/', async (req: TenantRequest, res: Response) => {
   try {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -163,102 +166,96 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
-router.put(
-  '/:id',
-  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
-    try {
-      if (!req.userId) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
-
-      const projectId = Number(req.params.id);
-
-      if (Number.isNaN(projectId)) {
-        res.status(400).json({ error: 'Invalid project id' });
-        return;
-      }
-
-      const parsed = projectUpdateSchema.safeParse(req.body);
-
-      if (!parsed.success) {
-        res.status(400).json({
-          error: 'Invalid project data',
-          details: parsed.error.format(),
-        });
-        return;
-      }
-
-      const project = await getProjectById(projectId);
-
-      if (!project) {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
-
-      if (project.ownerId !== req.userId) {
-        res.status(403).json({ error: 'Forbidden' });
-        return;
-      }
-
-      if (parsed.data.clientId && parsed.data.clientId !== project.clientId) {
-        const client = await prisma.client.findUnique({
-          where: { id: parsed.data.clientId },
-        });
-
-        if (!client) {
-          res.status(404).json({ error: 'Client not found' });
-          return;
-        }
-      }
-
-      const updated = await updateProject(projectId, parsed.data);
-
-      res.json({ project: updated });
-    } catch (error) {
-      console.error('Update project error:', error);
-      res.status(500).json({ error: 'Failed to update project' });
+router.put('/:id', async (req: ProjectRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
-  },
-);
 
-router.delete(
-  '/:id',
-  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
-    try {
-      if (!req.userId) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
+    const projectId = Number(req.params.id);
 
-      const projectId = Number(req.params.id);
-
-      if (Number.isNaN(projectId)) {
-        res.status(400).json({ error: 'Invalid project id' });
-        return;
-      }
-
-      const project = await getProjectById(projectId);
-
-      if (!project) {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
-
-      if (project.ownerId !== req.userId) {
-        res.status(403).json({ error: 'Forbidden' });
-        return;
-      }
-
-      await deleteProject(projectId);
-
-      res.status(204).send();
-    } catch (error) {
-      console.error('Delete project error:', error);
-      res.status(500).json({ error: 'Failed to delete project' });
+    if (Number.isNaN(projectId)) {
+      res.status(400).json({ error: 'Invalid project id' });
+      return;
     }
-  },
-);
+
+    const parsed = projectUpdateSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid project data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    if (project.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    if (parsed.data.clientId && parsed.data.clientId !== project.clientId) {
+      const client = await prisma.client.findUnique({
+        where: { id: parsed.data.clientId },
+      });
+
+      if (!client) {
+        res.status(404).json({ error: 'Client not found' });
+        return;
+      }
+    }
+
+    const updated = await updateProject(projectId, parsed.data);
+
+    res.json({ project: updated });
+  } catch (error) {
+    console.error('Update project error:', error);
+    res.status(500).json({ error: 'Failed to update project' });
+  }
+});
+
+router.delete('/:id', async (req: ProjectRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const projectId = Number(req.params.id);
+
+    if (Number.isNaN(projectId)) {
+      res.status(400).json({ error: 'Invalid project id' });
+      return;
+    }
+
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    if (project.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    await deleteProject(projectId);
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Delete project error:', error);
+    res.status(500).json({ error: 'Failed to delete project' });
+  }
+});
 
 // M7 - Status & Reporting Routes
 
@@ -266,125 +263,119 @@ router.delete(
  * GET /projects/:id/status
  * Get project status snapshot with metrics and aggregated data
  */
-router.get(
-  '/:id/status',
-  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
-    try {
-      if (!req.userId) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
-
-      const projectId = Number(req.params.id);
-
-      if (Number.isNaN(projectId)) {
-        res.status(400).json({ error: 'Invalid project id' });
-        return;
-      }
-
-      // Validate query params
-      const queryParsed = projectStatusQuerySchema.safeParse(req.query);
-
-      if (!queryParsed.success) {
-        res.status(400).json({
-          error: 'Invalid query parameters',
-          details: queryParsed.error.format(),
-        });
-        return;
-      }
-
-      // Check project exists and user has access
-      const project = await getProjectById(projectId);
-
-      if (!project) {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
-
-      if (project.ownerId !== req.userId) {
-        res.status(403).json({ error: 'Forbidden' });
-        return;
-      }
-
-      // Get status snapshot
-      const snapshot = await getProjectStatus(
-        projectId,
-        queryParsed.data.rangeDays,
-      );
-
-      res.json(snapshot);
-    } catch (error) {
-      console.error('Get project status error:', error);
-      res.status(500).json({ error: 'Failed to get project status' });
+router.get('/:id/status', async (req: ProjectRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
-  },
-);
+
+    const projectId = Number(req.params.id);
+
+    if (Number.isNaN(projectId)) {
+      res.status(400).json({ error: 'Invalid project id' });
+      return;
+    }
+
+    // Validate query params
+    const queryParsed = projectStatusQuerySchema.safeParse(req.query);
+
+    if (!queryParsed.success) {
+      res.status(400).json({
+        error: 'Invalid query parameters',
+        details: queryParsed.error.format(),
+      });
+      return;
+    }
+
+    // Check project exists and user has access
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    if (project.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    // Get status snapshot
+    const snapshot = await getProjectStatus(
+      projectId,
+      queryParsed.data.rangeDays,
+    );
+
+    res.json(snapshot);
+  } catch (error) {
+    console.error('Get project status error:', error);
+    res.status(500).json({ error: 'Failed to get project status' });
+  }
+});
 
 /**
  * PATCH /projects/:id/status
  * Update project health status and summary
  */
-router.patch(
-  '/:id/status',
-  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
-    try {
-      if (!req.userId) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
-
-      const projectId = Number(req.params.id);
-
-      if (Number.isNaN(projectId)) {
-        res.status(400).json({ error: 'Invalid project id' });
-        return;
-      }
-
-      // Validate body
-      const bodyParsed = updateProjectHealthStatusSchema.safeParse(req.body);
-
-      if (!bodyParsed.success) {
-        res.status(400).json({
-          error: 'Invalid status data',
-          details: bodyParsed.error.format(),
-        });
-        return;
-      }
-
-      // Check project exists and user has access
-      const project = await getProjectById(projectId);
-
-      if (!project) {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
-
-      if (project.ownerId !== req.userId) {
-        res.status(403).json({ error: 'Forbidden' });
-        return;
-      }
-
-      // Update project status
-      const updated = await prisma.project.update({
-        where: { id: projectId },
-        data: {
-          healthStatus: bodyParsed.data.healthStatus,
-          statusSummary: bodyParsed.data.statusSummary,
-          statusUpdatedAt: new Date(),
-        },
-      });
-
-      res.json({
-        healthStatus: updated.healthStatus,
-        statusSummary: updated.statusSummary,
-        statusUpdatedAt: updated.statusUpdatedAt,
-      });
-    } catch (error) {
-      console.error('Update project status error:', error);
-      res.status(500).json({ error: 'Failed to update project status' });
+router.patch('/:id/status', async (req: ProjectRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
-  },
-);
+
+    const projectId = Number(req.params.id);
+
+    if (Number.isNaN(projectId)) {
+      res.status(400).json({ error: 'Invalid project id' });
+      return;
+    }
+
+    // Validate body
+    const bodyParsed = updateProjectHealthStatusSchema.safeParse(req.body);
+
+    if (!bodyParsed.success) {
+      res.status(400).json({
+        error: 'Invalid status data',
+        details: bodyParsed.error.format(),
+      });
+      return;
+    }
+
+    // Check project exists and user has access
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    if (project.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    // Update project status
+    const updated = await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        healthStatus: bodyParsed.data.healthStatus,
+        statusSummary: bodyParsed.data.statusSummary,
+        statusUpdatedAt: new Date(),
+      },
+    });
+
+    res.json({
+      healthStatus: updated.healthStatus,
+      statusSummary: updated.statusSummary,
+      statusUpdatedAt: updated.statusUpdatedAt,
+    });
+  } catch (error) {
+    console.error('Update project status error:', error);
+    res.status(500).json({ error: 'Failed to update project status' });
+  }
+});
 
 /**
  * POST /projects/:id/status-summary
@@ -392,7 +383,7 @@ router.patch(
  */
 router.post(
   '/:id/status-summary',
-  async (req: AuthenticatedRequest<ProjectParams>, res: Response) => {
+  async (req: ProjectRequest, res: Response) => {
     try {
       if (!req.userId) {
         res.status(401).json({ error: 'Unauthorized' });

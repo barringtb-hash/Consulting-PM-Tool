@@ -1,7 +1,11 @@
 import { AiMaturity, CompanySize } from '@prisma/client';
 import { Router } from 'express';
 
-import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
+import { requireAuth } from '../auth/auth.middleware';
+import {
+  tenantMiddleware,
+  type TenantRequest,
+} from '../tenant/tenant.middleware';
 import {
   archiveClient,
   createClient,
@@ -16,9 +20,11 @@ import {
 
 const router = Router();
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
-router.get('/', async (req: AuthenticatedRequest, res) => {
+router.get('/', async (req: TenantRequest, res) => {
   try {
     const { search, companySize, aiMaturity, archived, page, limit } =
       req.query;
@@ -70,7 +76,7 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.post('/', async (req: AuthenticatedRequest, res) => {
+router.post('/', async (req: TenantRequest, res) => {
   try {
     const parsed = clientCreateSchema.safeParse(req.body);
 
@@ -89,7 +95,7 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.put('/:id', async (req: AuthenticatedRequest, res) => {
+router.put('/:id', async (req: TenantRequest, res) => {
   try {
     const clientId = Number(req.params.id);
 
@@ -121,7 +127,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.patch('/:id/archive', async (req: AuthenticatedRequest, res) => {
+router.patch('/:id/archive', async (req: TenantRequest, res) => {
   try {
     const clientId = Number(req.params.id);
 
@@ -144,7 +150,7 @@ router.patch('/:id/archive', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.delete('/:id', async (req: AuthenticatedRequest, res) => {
+router.delete('/:id', async (req: TenantRequest, res) => {
   try {
     const clientId = Number(req.params.id);
 

@@ -39,10 +39,12 @@ const TENANT_SCOPED_MODELS = new Set([
   'UsageEvent',
   'UsageSummary',
 
-  // Future: Add existing models after migration
-  // 'Client',
-  // 'Contact',
-  // 'Project',
+  // Legacy PMO models (tenant-scoped)
+  'Client',
+  'Contact',
+  'Project',
+
+  // Future: Add additional models after migration
   // 'Task',
   // 'Milestone',
   // 'Meeting',

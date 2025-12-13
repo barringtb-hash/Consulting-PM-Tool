@@ -17,6 +17,8 @@ import type { DocumentFilters } from '../documents';
 import type { AssetFilters } from '../assets';
 import type { LeadFilters } from '../leads';
 import type { MarketingContentListQuery } from '../../../../../packages/types/marketing';
+import type { AccountFilters } from '../accounts';
+import type { OpportunityFilters } from '../opportunities';
 
 // ============================================================================
 // Query Keys Namespace
@@ -195,6 +197,37 @@ export const queryKeys = {
       [...queryKeys.mcp.all, 'recent-meetings', days] as const,
     meetingBrief: (clientId: number) =>
       [...queryKeys.mcp.all, 'meeting-brief', clientId] as const,
+  },
+
+  // ---------------------------------------------------------------------------
+  // CRM Accounts Module
+  // ---------------------------------------------------------------------------
+  accounts: {
+    all: ['accounts'] as const,
+    lists: () => [...queryKeys.accounts.all, 'list'] as const,
+    list: (filters?: AccountFilters) =>
+      [...queryKeys.accounts.lists(), filters] as const,
+    details: () => [...queryKeys.accounts.all, 'detail'] as const,
+    detail: (id: number) => [...queryKeys.accounts.details(), id] as const,
+    stats: () => [...queryKeys.accounts.all, 'stats'] as const,
+  },
+
+  // ---------------------------------------------------------------------------
+  // CRM Opportunities Module
+  // ---------------------------------------------------------------------------
+  opportunities: {
+    all: ['opportunities'] as const,
+    lists: () => [...queryKeys.opportunities.all, 'list'] as const,
+    list: (filters?: OpportunityFilters) =>
+      [...queryKeys.opportunities.lists(), filters] as const,
+    details: () => [...queryKeys.opportunities.all, 'detail'] as const,
+    detail: (id: number) => [...queryKeys.opportunities.details(), id] as const,
+    pipelineStats: (pipelineId?: number) =>
+      [...queryKeys.opportunities.all, 'pipeline-stats', pipelineId] as const,
+    closingSoon: (days?: number) =>
+      [...queryKeys.opportunities.all, 'closing-soon', days] as const,
+    byAccount: (accountId: number) =>
+      [...queryKeys.opportunities.all, 'account', accountId] as const,
   },
 
   // ---------------------------------------------------------------------------

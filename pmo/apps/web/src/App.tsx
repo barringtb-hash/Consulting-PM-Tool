@@ -114,6 +114,12 @@ const CustomerSuccessAnalyticsPage = lazy(
   () => import('./pages/customer-success/CustomerSuccessAnalyticsPage'),
 );
 
+// CRM pages
+const AccountsPage = lazy(() => import('./pages/crm/AccountsPage'));
+const CRMOpportunitiesPage = lazy(
+  () => import('./pages/crm/OpportunitiesPage'),
+);
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -532,6 +538,28 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <CustomerSuccessAnalyticsPage />
+                    </LazyPage>
+                  }
+                />
+              </>
+            )}
+
+            {/* CRM module */}
+            {isModuleEnabled('crm') && (
+              <>
+                <Route
+                  path="/crm/accounts"
+                  element={
+                    <LazyPage>
+                      <AccountsPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/crm/opportunities"
+                  element={
+                    <LazyPage>
+                      <CRMOpportunitiesPage />
                     </LazyPage>
                   }
                 />
