@@ -16,6 +16,7 @@ import {
   requireAuth,
   type AuthenticatedRequest,
 } from '../auth/auth.middleware';
+import { requireRole } from '../auth/role.middleware';
 import { getTenantContext } from './tenant.context';
 import type { TenantRequest } from './tenant.middleware';
 
@@ -140,6 +141,7 @@ router.get(
 router.put(
   '/tenants/current',
   requireAuth,
+  requireRole('ADMIN'),
   async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext();
     const parsed = updateTenantSchema.safeParse(req.body);
@@ -148,7 +150,6 @@ router.put(
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
-    // TODO: Check user has admin/owner role
     const tenant = await tenantService.updateTenant(tenantId, parsed.data);
     res.json({ data: tenant });
   },

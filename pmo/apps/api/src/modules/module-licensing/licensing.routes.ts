@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import { requireAuth } from '../../auth/auth.middleware';
+import { requireRole } from '../../auth/role.middleware';
 import { requireTenant } from '../../tenant/tenant.middleware';
 import { getTenantContext } from '../../tenant/tenant.context';
 import * as licensingService from './licensing.service';
@@ -336,13 +337,12 @@ router.get(
 router.post(
   '/modules/:moduleId/usage/reset',
   requireAuth,
+  requireRole('ADMIN'),
   requireTenant,
   async (req, res, next) => {
     try {
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
-
-      // TODO: Add admin role check
 
       await licensingService.resetModuleUsage(tenantId, moduleId);
 

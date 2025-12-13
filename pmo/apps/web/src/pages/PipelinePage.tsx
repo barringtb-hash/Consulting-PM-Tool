@@ -1,40 +1,27 @@
-import React, { useMemo } from 'react';
-import { Plus, DollarSign, Calendar, TrendingUp } from 'lucide-react';
+/**
+ * Sales Pipeline Page
+ *
+ * Displays CRM opportunities in a Kanban-style pipeline view.
+ * Migrated from legacy Project-based pipeline to CRM Opportunity model.
+ */
+
+import React, { useMemo, useState } from 'react';
+import { Plus, DollarSign, Calendar, TrendingUp, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { useProjects } from '../api/queries';
-import { PipelineStage } from '../api/projects';
+import {
+  useOpportunities,
+  usePipelineStats,
+  useClosingSoon,
+  type Opportunity,
+} from '../api/hooks/crm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Button } from '../ui/Button';
 import { PageHeader } from '../ui/PageHeader';
 import { Badge } from '../ui/Badge';
+import { Card } from '../ui/Card';
 
-interface PipelineDeal {
-  id: number;
-  name: string;
-  clientId: number;
-  clientName: string;
-  pipelineStage: PipelineStage;
-  pipelineValue?: number;
-  probability?: number;
-  expectedCloseDate?: string;
-  leadSource?: string;
-}
-
-const PIPELINE_STAGES: {
-  value: PipelineStage;
-  label: string;
-  probability: number;
-}[] = [
-  { value: 'NEW_LEAD', label: 'New Lead', probability: 10 },
-  { value: 'DISCOVERY', label: 'Discovery', probability: 20 },
-  { value: 'SHAPING_SOLUTION', label: 'Shaping Solution', probability: 40 },
-  { value: 'PROPOSAL_SENT', label: 'Proposal Sent', probability: 60 },
-  { value: 'NEGOTIATION', label: 'Negotiation', probability: 80 },
-  { value: 'VERBAL_YES', label: 'Verbal Yes', probability: 90 },
-];
-
-function formatCurrency(value?: number): string {
+function formatCurrency(value?: number | null): string {
   if (!value) return '$0';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -44,7 +31,7 @@ function formatCurrency(value?: number): string {
   }).format(value);
 }
 
-function formatDate(dateString?: string): string {
+function formatDate(dateString?: string | null): string {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
@@ -54,46 +41,52 @@ function formatDate(dateString?: string): string {
   });
 }
 
+function getStageColor(stageType: string): string {
+  switch (stageType) {
+    case 'WON':
+      return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+    case 'LOST':
+      return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+    default:
+      return 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300';
+  }
+}
+
 interface DealCardProps {
-  deal: PipelineDeal;
+  opportunity: Opportunity;
   onClick: () => void;
 }
 
-function DealCard({ deal, onClick }: DealCardProps): JSX.Element {
-  const probability =
-    deal.probability ||
-    PIPELINE_STAGES.find((s) => s.value === deal.pipelineStage)?.probability ||
-    0;
-
+function DealCard({ opportunity, onClick }: DealCardProps): JSX.Element {
   return (
     <div
       onClick={onClick}
       className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 shadow-sm hover:shadow-md cursor-pointer transition-all"
     >
       <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2 line-clamp-2">
-        {deal.name}
+        {opportunity.name}
       </h4>
 
       <div className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-        {deal.clientName}
+        {opportunity.account?.name ?? 'No account'}
       </div>
 
-      {deal.pipelineValue && (
+      {opportunity.amount && (
         <div className="flex items-center gap-2 mb-2">
           <DollarSign size={14} className="text-green-600" />
           <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-            {formatCurrency(deal.pipelineValue)}
+            {formatCurrency(opportunity.amount)}
           </span>
           <Badge className="ml-auto bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs">
-            {probability}%
+            {opportunity.probability}%
           </Badge>
         </div>
       )}
 
-      {deal.expectedCloseDate && (
+      {opportunity.expectedCloseDate && (
         <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
           <Calendar size={12} />
-          <span>{formatDate(deal.expectedCloseDate)}</span>
+          <span>{formatDate(opportunity.expectedCloseDate)}</span>
         </div>
       )}
     </div>
@@ -101,42 +94,31 @@ function DealCard({ deal, onClick }: DealCardProps): JSX.Element {
 }
 
 interface PipelineColumnProps {
-  stage: { value: PipelineStage; label: string; probability: number };
-  deals: PipelineDeal[];
-  onDealClick: (deal: PipelineDeal) => void;
+  stageName: string;
+  stageType: string;
+  opportunities: Opportunity[];
+  totalValue: number;
+  weightedValue: number;
+  onDealClick: (opportunity: Opportunity) => void;
 }
 
 function PipelineColumn({
-  stage,
-  deals,
+  stageName,
+  stageType,
+  opportunities,
+  totalValue,
+  weightedValue,
   onDealClick,
 }: PipelineColumnProps): JSX.Element {
-  const totalValue = useMemo(
-    () => deals.reduce((sum, deal) => sum + (deal.pipelineValue || 0), 0),
-    [deals],
-  );
-
-  const weightedValue = useMemo(
-    () =>
-      deals.reduce(
-        (sum, deal) =>
-          sum +
-          (deal.pipelineValue || 0) *
-            ((deal.probability || stage.probability) / 100),
-        0,
-      ),
-    [deals, stage.probability],
-  );
-
   return (
     <div className="flex-shrink-0 w-80 bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
-            {stage.label}
+            {stageName}
           </h3>
-          <Badge className="bg-primary-100 text-primary-700">
-            {deals.length}
+          <Badge className={getStageColor(stageType)}>
+            {opportunities.length}
           </Badge>
         </div>
         <div className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -146,16 +128,16 @@ function PipelineColumn({
       </div>
 
       <div className="space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto">
-        {deals.length === 0 ? (
+        {opportunities.length === 0 ? (
           <div className="text-center py-8 text-sm text-neutral-400 dark:text-neutral-500">
             No deals in this stage
           </div>
         ) : (
-          deals.map((deal) => (
+          opportunities.map((opp) => (
             <DealCard
-              key={deal.id}
-              deal={deal}
-              onClick={() => onDealClick(deal)}
+              key={opp.id}
+              opportunity={opp}
+              onClick={() => onDealClick(opp)}
             />
           ))
         )}
@@ -166,88 +148,55 @@ function PipelineColumn({
 
 export function PipelinePage(): JSX.Element {
   const navigate = useNavigate();
+  const [showClosedDeals, setShowClosedDeals] = useState(false);
 
-  // Fetch projects with status = PLANNING (which includes pipeline deals)
-  const projectsQuery = useProjects({ status: 'PLANNING' });
+  // Fetch CRM opportunities (exclude archived)
+  const opportunitiesQuery = useOpportunities({ archived: false });
+  const pipelineStatsQuery = usePipelineStats();
+  const closingSoonQuery = useClosingSoon(7);
 
-  useRedirectOnUnauthorized(projectsQuery.error);
+  useRedirectOnUnauthorized(opportunitiesQuery.error);
 
-  const pipelineDeals = useMemo<PipelineDeal[]>(() => {
-    if (!projectsQuery.data) return [];
+  const opportunities = useMemo(
+    () => opportunitiesQuery.data?.data ?? [],
+    [opportunitiesQuery.data],
+  );
 
-    return projectsQuery.data
-      .filter(
-        (project) =>
-          project.status === 'PLANNING' &&
-          project.pipelineStage &&
-          project.pipelineStage !== 'WON' &&
-          project.pipelineStage !== 'LOST',
-      )
-      .map((project) => ({
-        id: project.id,
-        name: project.name,
-        clientId: project.clientId,
-        clientName: '', // We'd need to join with clients to get this
-        pipelineStage: project.pipelineStage as PipelineStage,
-        pipelineValue: project.pipelineValue
-          ? Number(project.pipelineValue)
-          : undefined,
-        probability: project.probability || undefined,
-        expectedCloseDate: project.expectedCloseDate || undefined,
-        leadSource: project.leadSource || undefined,
-      }));
-  }, [projectsQuery.data]);
+  const stats = pipelineStatsQuery.data;
+  const closingSoon = closingSoonQuery.data ?? [];
 
-  const dealsByStage = useMemo(() => {
-    const grouped: Record<PipelineStage, PipelineDeal[]> = {
-      NEW_LEAD: [],
-      DISCOVERY: [],
-      SHAPING_SOLUTION: [],
-      PROPOSAL_SENT: [],
-      NEGOTIATION: [],
-      VERBAL_YES: [],
-      WON: [],
-      LOST: [],
-    };
+  // Group opportunities by stage
+  const opportunitiesByStage = useMemo(() => {
+    const grouped: Record<number, Opportunity[]> = {};
 
-    pipelineDeals.forEach((deal) => {
-      if (deal.pipelineStage) {
-        grouped[deal.pipelineStage].push(deal);
+    opportunities.forEach((opp) => {
+      if (!grouped[opp.stageId]) {
+        grouped[opp.stageId] = [];
       }
+      grouped[opp.stageId].push(opp);
     });
 
     return grouped;
-  }, [pipelineDeals]);
+  }, [opportunities]);
 
-  const pipelineStats = useMemo(() => {
-    const totalValue = pipelineDeals.reduce(
-      (sum, deal) => sum + (deal.pipelineValue || 0),
-      0,
-    );
+  // Filter stages based on showClosedDeals toggle
+  const visibleStages = useMemo(() => {
+    if (!stats?.byStage) return [];
 
-    const weightedValue = pipelineDeals.reduce((sum, deal) => {
-      const probability =
-        deal.probability ||
-        PIPELINE_STAGES.find((s) => s.value === deal.pipelineStage)
-          ?.probability ||
-        0;
-      return sum + (deal.pipelineValue || 0) * (probability / 100);
-    }, 0);
+    if (showClosedDeals) {
+      return stats.byStage;
+    }
 
-    const avgDealSize =
-      pipelineDeals.length > 0 ? totalValue / pipelineDeals.length : 0;
+    // Only show OPEN stages
+    return stats.byStage.filter((stage) => stage.stageType === 'OPEN');
+  }, [stats?.byStage, showClosedDeals]);
 
-    return {
-      totalDeals: pipelineDeals.length,
-      totalValue,
-      weightedValue,
-      avgDealSize,
-    };
-  }, [pipelineDeals]);
-
-  const handleDealClick = (deal: PipelineDeal) => {
-    navigate(`/projects/${deal.id}`);
+  const handleDealClick = (opportunity: Opportunity) => {
+    navigate(`/crm/opportunities/${opportunity.id}`);
   };
+
+  const isLoading =
+    opportunitiesQuery.isLoading || pipelineStatsQuery.isLoading;
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -255,7 +204,7 @@ export function PipelinePage(): JSX.Element {
         title="Sales Pipeline"
         description="Track deals through your sales process from lead to close."
         actions={
-          <Button onClick={() => navigate('/projects/new')}>
+          <Button onClick={() => navigate('/crm/opportunities/new')}>
             <Plus size={16} />
             New Deal
           </Button>
@@ -264,65 +213,127 @@ export function PipelinePage(): JSX.Element {
 
       <main className="container-padding py-6 space-y-6">
         {/* Pipeline Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-              <TrendingUp size={16} />
-              <span>Open Deals</span>
-            </div>
-            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-              {pipelineStats.totalDeals}
-            </div>
-          </div>
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                <TrendingUp size={16} />
+                <span>Open Deals</span>
+              </div>
+              <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                {stats.byStage
+                  .filter((s) => s.stageType === 'OPEN')
+                  .reduce((sum, s) => sum + s.count, 0)}
+              </div>
+            </Card>
 
-          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-              <DollarSign size={16} />
-              <span>Total Pipeline</span>
-            </div>
-            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-              {formatCurrency(pipelineStats.totalValue)}
-            </div>
-          </div>
+            <Card className="p-4">
+              <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                <DollarSign size={16} />
+                <span>Total Pipeline</span>
+              </div>
+              <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                {formatCurrency(stats.totalValue)}
+              </div>
+            </Card>
 
-          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-              <DollarSign size={16} />
-              <span>Weighted Pipeline</span>
-            </div>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(pipelineStats.weightedValue)}
-            </div>
-          </div>
+            <Card className="p-4">
+              <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                <DollarSign size={16} />
+                <span>Weighted Pipeline</span>
+              </div>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(stats.weightedValue)}
+              </div>
+            </Card>
 
-          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">
-            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-              <DollarSign size={16} />
-              <span>Avg Deal Size</span>
-            </div>
-            <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-              {formatCurrency(pipelineStats.avgDealSize)}
-            </div>
+            <Card className="p-4">
+              <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                <Target size={16} />
+                <span>Win Rate</span>
+              </div>
+              <div className="text-2xl font-bold text-blue-600">
+                {(stats.winRate * 100).toFixed(1)}%
+              </div>
+            </Card>
           </div>
+        )}
+
+        {/* Closing Soon Alert */}
+        {closingSoon.length > 0 && (
+          <Card className="p-4 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700">
+            <h3 className="font-medium mb-3 text-yellow-800 dark:text-yellow-200">
+              Closing This Week ({closingSoon.length} deals)
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {closingSoon.slice(0, 5).map((opp) => (
+                <div
+                  key={opp.id}
+                  onClick={() => navigate(`/crm/opportunities/${opp.id}`)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-800 rounded-lg border border-yellow-200 dark:border-yellow-700 cursor-pointer hover:shadow-sm transition-shadow"
+                >
+                  <span className="font-medium text-sm">{opp.name}</span>
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {formatCurrency(opp.amount)}
+                  </span>
+                  <Badge variant="warning">
+                    {opp.daysUntilClose} day
+                    {opp.daysUntilClose !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              ))}
+              {closingSoon.length > 5 && (
+                <span className="text-sm text-yellow-700 dark:text-yellow-300 self-center">
+                  +{closingSoon.length - 5} more
+                </span>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {/* Toggle for showing Won/Lost stages */}
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showClosedDeals}
+              onChange={(e) => setShowClosedDeals(e.target.checked)}
+              className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+            />
+            Show Won/Lost stages
+          </label>
         </div>
 
         {/* Pipeline Board */}
-        <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6 overflow-x-auto">
-          <div className="flex gap-4 min-w-max">
-            {PIPELINE_STAGES.map((stage) => (
-              <PipelineColumn
-                key={stage.value}
-                stage={stage}
-                deals={dealsByStage[stage.value]}
-                onDealClick={handleDealClick}
-              />
-            ))}
-          </div>
-        </div>
+        <Card className="p-6 overflow-x-auto">
+          {isLoading ? (
+            <div className="text-center py-12 text-neutral-500">
+              Loading pipeline...
+            </div>
+          ) : visibleStages.length === 0 ? (
+            <div className="text-center py-12 text-neutral-500">
+              No pipeline stages configured. Please contact your administrator.
+            </div>
+          ) : (
+            <div className="flex gap-4 min-w-max">
+              {visibleStages.map((stage) => (
+                <PipelineColumn
+                  key={stage.stageId}
+                  stageName={stage.stageName}
+                  stageType={stage.stageType}
+                  opportunities={opportunitiesByStage[stage.stageId] ?? []}
+                  totalValue={stage.value}
+                  weightedValue={stage.weightedValue}
+                  onDealClick={handleDealClick}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
 
         {/* Empty State */}
-        {pipelineDeals.length === 0 && (
-          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-12 text-center">
+        {!isLoading && opportunities.length === 0 && (
+          <Card className="p-12 text-center">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp
@@ -331,25 +342,25 @@ export function PipelinePage(): JSX.Element {
                 />
               </div>
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-                No deals in pipeline yet
+                No opportunities in pipeline yet
               </h3>
               <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-                Get started by converting leads from your leads page or create a
-                new deal directly.
+                Get started by creating a new opportunity from an account or
+                directly here.
               </p>
               <div className="flex gap-3 justify-center">
-                <Button onClick={() => navigate('/sales/leads')}>
-                  View Leads
+                <Button onClick={() => navigate('/crm/accounts')}>
+                  View Accounts
                 </Button>
                 <Button
                   variant="subtle"
-                  onClick={() => navigate('/projects/new')}
+                  onClick={() => navigate('/crm/opportunities/new')}
                 >
-                  Create Deal
+                  Create Opportunity
                 </Button>
               </div>
             </div>
-          </div>
+          </Card>
         )}
       </main>
     </div>

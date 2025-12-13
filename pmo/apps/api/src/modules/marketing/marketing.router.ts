@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import {
   marketingContentCreateSchema,
   marketingContentUpdateSchema,
@@ -24,6 +25,7 @@ import { lintMarketingContent } from '../../services/content-lint.service';
 const router = Router();
 
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 /**
  * GET /api/marketing-contents
