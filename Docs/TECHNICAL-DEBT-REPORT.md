@@ -1,6 +1,7 @@
 # CRM Transformation Technical Debt Report
 
 **Generated:** December 11, 2025
+**Last Updated:** December 13, 2025
 **Reviewed Codebase:** PMO Consulting Tool → CRM Platform Transformation
 
 ---
@@ -13,95 +14,92 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 
 | Severity | Count | Description |
 |----------|-------|-------------|
-| **CRITICAL** | 4 | Security/data isolation vulnerabilities |
-| **HIGH** | 5 | Incomplete features blocking production use (1 resolved) |
+| **CRITICAL** | 4 (3 resolved) | Security/data isolation vulnerabilities |
+| **HIGH** | 5 (2 resolved) | Incomplete features blocking production use |
 | **MEDIUM** | 10 | Inconsistent patterns causing maintenance burden |
 | **LOW** | 8 | Code quality improvements for long-term health |
+
+### ✅ Recently Completed (Phase 2)
+- CRIT-01: Legacy routes now have tenantMiddleware
+- CRIT-02: Legacy services now have tenant filtering
+- CRIT-03: Prisma tenant extension includes all legacy models
+- HIGH-04: Minimal CRM test coverage added
 
 ---
 
 ## CRITICAL Issues (Must Fix Before Production)
 
-### CRIT-01: Legacy Routes Lack Tenant Isolation
+### CRIT-01: ~~Legacy Routes Lack Tenant Isolation~~ ✅ RESOLVED
 
-**Files Affected:**
-- `pmo/apps/api/src/routes/clients.ts:21-71` - No tenantId filtering
-- `pmo/apps/api/src/routes/contacts.ts:22-43` - No tenantId filtering
-- `pmo/apps/api/src/routes/projects.ts:40-91` - No tenantId filtering
-- `pmo/apps/api/src/routes/task.routes.ts` - No tenantId filtering
-- `pmo/apps/api/src/modules/meetings/meeting.router.ts` - No tenantId filtering
+**Status:** All legacy routes now have tenantMiddleware added.
 
-**Impact:** In a multi-tenant deployment, users can view/modify data belonging to other tenants.
+**Files Updated:**
+- `pmo/apps/api/src/routes/clients.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/routes/contacts.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/routes/projects.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/routes/task.routes.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/routes/milestone.routes.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/routes/assets.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/routes/leads.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/modules/meetings/meeting.router.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/modules/campaigns/campaign.router.ts` - ✅ tenantMiddleware added
+- `pmo/apps/api/src/modules/marketing/marketing.router.ts` - ✅ tenantMiddleware added
 
-**Evidence:**
+---
+
+### CRIT-02: ~~Legacy Services Missing Tenant Context~~ ✅ RESOLVED
+
+**Status:** All legacy services now use hasTenantContext()/getTenantId() pattern for tenant filtering.
+
+**Files Updated:**
+- `pmo/apps/api/src/services/client.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/services/contact.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/services/project.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/services/task.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/services/milestone.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/services/asset.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/services/lead.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/modules/meetings/meeting.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/modules/campaigns/campaign.service.ts` - ✅ Tenant filtering added
+- `pmo/apps/api/src/modules/marketing/marketing.service.ts` - ✅ Tenant filtering added
+
+**Pattern used:**
 ```typescript
-// clients.ts:54-62 - Lists ALL clients in database
-const result = await listClients({
-  search: typeof search === 'string' ? search : undefined,
-  // NO tenantId parameter!
+const tenantId = hasTenantContext() ? getTenantId() : undefined;
+const records = await prisma.model.findMany({
+  where: { ...filters, tenantId },
 });
-res.json({ clients: result.data, pagination: result.pagination });
 ```
-
-**Remediation:**
-1. Add `requireTenant` middleware to all legacy routes
-2. Pass tenantId to service functions
-3. Add legacy models to `TENANT_SCOPED_MODELS` in tenant-extension.ts
 
 ---
 
-### CRIT-02: Legacy Services Missing Tenant Context
+### CRIT-03: ~~Prisma Tenant Extension Excludes Legacy Models~~ ✅ RESOLVED
 
-**Files Affected:**
-- `pmo/apps/api/src/services/client.service.ts:34-89` - No getTenantId() call
-- `pmo/apps/api/src/services/contact.service.ts:15-38` - No getTenantId() call
-- `pmo/apps/api/src/services/project.service.ts:31-71` - No getTenantId() call
-- `pmo/apps/api/src/services/task.service.ts` - No getTenantId() call
-- `pmo/apps/api/src/modules/meetings/meeting.service.ts` - No getTenantId() call
+**Status:** All legacy PMO models are now included in TENANT_SCOPED_MODELS.
 
-**Impact:** Services query database without tenant filtering, returning all data regardless of tenant.
+**File:** `pmo/apps/api/src/prisma/tenant-extension.ts`
 
-**Evidence:**
-```typescript
-// client.service.ts:70-77
-const [total, data] = await Promise.all([
-  prisma.client.count({ where }),      // No tenantId filter
-  prisma.client.findMany({ where }),   // No tenantId filter
-]);
-```
-
-**Remediation:**
-1. Import `getTenantId` from tenant.context.ts
-2. Add tenantId to all WHERE clauses
-3. Add tenantId to all CREATE operations
-
----
-
-### CRIT-03: Prisma Tenant Extension Excludes Legacy Models
-
-**File:** `pmo/apps/api/src/prisma/tenant-extension.ts:21-54`
-
-**Evidence:**
+**Models now included:**
 ```typescript
 const TENANT_SCOPED_MODELS = new Set([
-  'Account',       // CRM - included
-  'CRMContact',    // CRM - included
-  'Opportunity',   // CRM - included
-  // ...
+  // CRM Core
+  'Account', 'CRMContact', 'Opportunity', 'OpportunityContact',
+  'OpportunityLineItem', 'OpportunityStageHistory', 'Pipeline',
+  'PipelineStage', 'CRMActivity',
 
-  // Legacy models EXCLUDED:
-  // 'Client',      // PMO - COMMENTED OUT
-  // 'Contact',     // PMO - COMMENTED OUT
-  // 'Project',     // PMO - COMMENTED OUT
+  // Notifications & Integrations
+  'Notification', 'Integration', 'SyncLog',
+
+  // Usage Metering
+  'UsageEvent', 'UsageSummary',
+
+  // Legacy PMO models (NOW INCLUDED)
+  'Client', 'Contact', 'Project', 'Task', 'Milestone',
+  'Meeting', 'AIAsset', 'MarketingContent', 'Campaign', 'InboundLead',
 ]);
 ```
 
-**Impact:** Prisma's automatic tenant filtering doesn't apply to legacy models.
-
-**Remediation:**
-1. Add tenantId field to legacy models via migration
-2. Uncomment legacy models in TENANT_SCOPED_MODELS
-3. Run data migration to assign existing records to default tenant
+**Migration:** `20251213100000_add_tenant_to_remaining_models` added tenantId to all legacy models.
 
 ---
 
@@ -538,37 +536,44 @@ prisma.$queryRaw`
 
 ## Remediation Priority Matrix
 
-| Phase | Items | Effort | Risk Reduction |
-|-------|-------|--------|----------------|
-| **Phase 1: Security** | CRIT-01, CRIT-02, CRIT-03 | ~3 days | Eliminates data leakage |
-| **Phase 2: Integration** | CRIT-04, HIGH-01, HIGH-06 | ~5 days | Enables CRM UI |
-| **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance |
-| **Phase 4: Standardization** | HIGH-02, MED-01 to MED-05 | ~4 days | Code consistency |
-| **Phase 5: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability |
+| Phase | Items | Effort | Risk Reduction | Status |
+|-------|-------|--------|----------------|--------|
+| **Phase 1: Security** | CRIT-01, CRIT-02, CRIT-03 | ~3 days | Eliminates data leakage | ✅ COMPLETED |
+| **Phase 2: Integration** | CRIT-04, HIGH-01, HIGH-06 | ~5 days | Enables CRM UI | 🔄 In Progress |
+| **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance | ✅ COMPLETED (minimal) |
+| **Phase 4: Standardization** | HIGH-02, MED-01 to MED-05 | ~4 days | Code consistency | Pending |
+| **Phase 5: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | Pending |
 
 ---
 
 ## Recommended Next Steps
 
-1. **Immediate (This Sprint):**
-   - Add `requireTenant` middleware to legacy routes
-   - Add tenantId to legacy service functions
-   - Run security audit on tenant isolation
+1. **✅ COMPLETED (Phase 2):**
+   - ~~Add `requireTenant` middleware to legacy routes~~ ✅
+   - ~~Add tenantId to legacy service functions~~ ✅
+   - ~~Add legacy models to Prisma tenant extension~~ ✅
+   - ~~Run tenant isolation security audit~~ ✅ (basic tests added)
 
-2. **Short Term (Next Sprint):**
-   - Create CRM API client files
-   - Create CRM React Query hooks
+2. **Current Priority (This Sprint):**
+   - Create CRM API client files (CRIT-04)
+   - Create CRM React Query hooks (HIGH-06)
    - Build AccountsPage and OpportunitiesPage
+   - Verify production migration deployed successfully
 
-3. **Medium Term (Next Quarter):**
-   - Write CRM test suite
-   - Migrate PipelinePage to use CRM Opportunity
-   - Consolidate Lead/Contact models
+3. **Short Term (Next Sprint):**
+   - Migrate PipelinePage to use CRM Opportunity (HIGH-01)
+   - Consolidate Lead/Contact models (HIGH-03)
+   - Add comprehensive CRM test coverage
 
-4. **Long Term:**
-   - Full Client → Account migration
+4. **Medium Term (Next Quarter):**
+   - Full Client → Account migration (HIGH-05)
+   - API response format standardization (HIGH-02)
    - API versioning strategy
+
+5. **Long Term:**
    - Comprehensive E2E coverage
+   - Performance optimization
+   - Clean up deprecated code
 
 ---
 
