@@ -6,73 +6,126 @@ echo "🔍 Checking migration status..."
 # Stay in the calling directory (apps/api) where node_modules with Prisma CLI exists
 # The Prisma schema path is configured in package.json: "prisma": { "schema": "../../prisma/schema.prisma" }
 
+# Function to extract failed migration name from P3009 error output
+extract_failed_migration() {
+    local output="$1"
+    # Look for the pattern: The `migration_name` migration started at ... failed
+    echo "$output" | grep -o 'The `[^`]*` migration started at' | sed 's/^The `\([^`]*\)` migration.*/\1/' | head -1
+}
+
+# Function to resolve a failed migration
+resolve_failed_migration() {
+    local migration_name="$1"
+
+    if [ -z "$migration_name" ]; then
+        echo "⚠️  No migration name provided to resolve"
+        return 1
+    fi
+
+    echo "📋 Attempting to resolve failed migration: $migration_name"
+
+    # Try marking as applied first (for partially applied migrations where columns already exist)
+    echo "🔄 Attempt: Marking '$migration_name' as applied..."
+    if npx prisma migrate resolve --applied "$migration_name" 2>&1; then
+        echo "✅ Migration '$migration_name' marked as applied"
+        return 0
+    fi
+
+    echo "⚠️  Could not mark as applied, trying to mark as rolled back..."
+    if npx prisma migrate resolve --rolled-back "$migration_name" 2>&1; then
+        echo "✅ Migration '$migration_name' marked as rolled back"
+        return 0
+    fi
+
+    echo "❌ Could not resolve migration '$migration_name'"
+    return 1
+}
+
 # Check migration status and capture output
 MIGRATION_STATUS=$(npx prisma migrate status 2>&1 || true)
 
 echo "$MIGRATION_STATUS"
 
-# Check if there's a failed migration
-if echo "$MIGRATION_STATUS" | grep -q "failed migrations"; then
+# Pre-check: Look for failed migration indicators in status
+# The status might show "failed" state in migration list
+if echo "$MIGRATION_STATUS" | grep -q "failed"; then
     echo ""
-    echo "⚠️  Found failed migrations. Attempting to resolve..."
+    echo "⚠️  Status indicates potential failed migration..."
 
-    # Extract the failed migration name (works for both GNU and BSD grep)
-    FAILED_MIGRATION=$(echo "$MIGRATION_STATUS" | grep "migration started at" | sed 's/^The `\([^`]*\)`.*/\1/')
-
-    if [ ! -z "$FAILED_MIGRATION" ]; then
-        echo "📋 Failed migration: $FAILED_MIGRATION"
-
-        # For tenant migrations that add columns, they likely partially applied
-        # Try marking as applied first (columns may already exist)
-        echo "🔄 Attempt 1: Marking as applied (columns may already exist)..."
-        if npx prisma migrate resolve --applied "$FAILED_MIGRATION" 2>&1; then
-            echo "✅ Migration marked as applied"
-        else
-            echo "⚠️  Could not mark as applied, trying to mark as rolled back..."
-            # If that fails, try marking as rolled back
-            if npx prisma migrate resolve --rolled-back "$FAILED_MIGRATION" 2>&1; then
-                echo "✅ Migration marked as rolled back"
-            else
-                echo "⚠️  Could not resolve migration, will try deploy anyway..."
-            fi
-        fi
+    FAILED_MIGRATION=$(extract_failed_migration "$MIGRATION_STATUS")
+    if [ -n "$FAILED_MIGRATION" ]; then
+        resolve_failed_migration "$FAILED_MIGRATION"
     fi
 fi
 
 echo ""
 echo "🚀 Deploying migrations..."
-if npx prisma migrate deploy; then
+
+# Capture deploy output to check for P3009 errors
+DEPLOY_OUTPUT=$(npx prisma migrate deploy 2>&1) && DEPLOY_SUCCESS=true || DEPLOY_SUCCESS=false
+
+echo "$DEPLOY_OUTPUT"
+
+if [ "$DEPLOY_SUCCESS" = "true" ]; then
     echo ""
     echo "✅ Migration deployment complete!"
-else
-    DEPLOY_EXIT_CODE=$?
+    exit 0
+fi
+
+echo ""
+echo "❌ Migration deployment failed. Analyzing error..."
+
+# Check for P3009 error (failed migrations blocking new ones)
+if echo "$DEPLOY_OUTPUT" | grep -q "P3009"; then
     echo ""
-    echo "❌ Migration deployment failed (exit code: $DEPLOY_EXIT_CODE). Checking status..."
+    echo "🔍 Detected P3009 error (failed migration blocking deployment)"
 
-    # Re-check migration status for any newly failed migrations
-    MIGRATION_STATUS=$(npx prisma migrate status 2>&1 || true)
-    echo "$MIGRATION_STATUS"
+    # Extract the failed migration name from the deploy error output
+    FAILED_MIGRATION=$(extract_failed_migration "$DEPLOY_OUTPUT")
 
-    # If there's still a failed migration, try to resolve it
-    if echo "$MIGRATION_STATUS" | grep -q "failed migrations"; then
-        FAILED_MIGRATION=$(echo "$MIGRATION_STATUS" | grep "migration started at" | sed 's/^The `\([^`]*\)`.*/\1/')
-        if [ ! -z "$FAILED_MIGRATION" ]; then
-            echo "📋 Resolving failed migration: $FAILED_MIGRATION"
-            # Try marking as applied (most common case for partially applied migrations)
-            npx prisma migrate resolve --applied "$FAILED_MIGRATION" || \
-            npx prisma migrate resolve --rolled-back "$FAILED_MIGRATION" || true
+    if [ -n "$FAILED_MIGRATION" ]; then
+        echo ""
+        resolve_failed_migration "$FAILED_MIGRATION"
+
+        echo ""
+        echo "🔄 Retrying migration deployment after resolution..."
+        DEPLOY_OUTPUT=$(npx prisma migrate deploy 2>&1) && DEPLOY_SUCCESS=true || DEPLOY_SUCCESS=false
+        echo "$DEPLOY_OUTPUT"
+
+        if [ "$DEPLOY_SUCCESS" = "true" ]; then
+            echo ""
+            echo "✅ Migration deployment complete after resolution!"
+            exit 0
         fi
-    fi
 
-    echo "🔄 Retrying migration deployment..."
-    if npx prisma migrate deploy; then
-        echo ""
-        echo "✅ Migration deployment complete after resolution!"
+        # If still P3009, there might be another failed migration
+        if echo "$DEPLOY_OUTPUT" | grep -q "P3009"; then
+            FAILED_MIGRATION=$(extract_failed_migration "$DEPLOY_OUTPUT")
+            if [ -n "$FAILED_MIGRATION" ]; then
+                resolve_failed_migration "$FAILED_MIGRATION"
+
+                echo ""
+                echo "🔄 Final retry of migration deployment..."
+                if npx prisma migrate deploy; then
+                    echo ""
+                    echo "✅ Migration deployment complete!"
+                    exit 0
+                fi
+            fi
+        fi
     else
-        echo ""
-        echo "❌ Migration deployment still failing. Manual intervention may be required."
-        echo "   Run: npx prisma migrate status"
-        echo "   And: npx prisma migrate resolve --applied <migration_name>"
-        exit 1
+        echo "⚠️  Could not extract failed migration name from error"
     fi
 fi
+
+# Final status check
+echo ""
+echo "📊 Final migration status:"
+npx prisma migrate status 2>&1 || true
+
+echo ""
+echo "❌ Migration deployment still failing. Manual intervention may be required."
+echo "   Run: npx prisma migrate status"
+echo "   And: npx prisma migrate resolve --applied <migration_name>"
+echo "   Or:  npx prisma migrate resolve --rolled-back <migration_name>"
+exit 1
