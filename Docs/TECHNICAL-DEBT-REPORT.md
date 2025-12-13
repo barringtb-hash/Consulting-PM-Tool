@@ -16,7 +16,7 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 |----------|-------|-------------|
 | **CRITICAL** | 4 (4 resolved) | Security/data isolation vulnerabilities |
 | **HIGH** | 6 (6 resolved) | Incomplete features blocking production use |
-| **MEDIUM** | 10 (9 resolved) | Inconsistent patterns causing maintenance burden |
+| **MEDIUM** | 10 (9 resolved) | Inconsistent patterns causing maintenance burden (**MED-04 pending**) |
 | **LOW** | 8 (8 resolved) | Code quality improvements for long-term health |
 
 ### ✅ Completed Items
@@ -55,7 +55,8 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 - HIGH-05: Client migration script created (`pmo/apps/api/src/scripts/migrate-clients-to-accounts.ts`)
 
 ### 📋 Remaining Items
-All technical debt items have been resolved!
+**1 item remaining:**
+- **MED-04**: Project Model Has Pipeline Fields - Requires refactoring lead conversion to create Opportunities for sales tracking instead of setting pipeline fields on Projects
 
 **Phase 6 - Additional Completions:**
 - MED-06: Shared TypeScript types package created (`pmo/packages/shared-types/`)
@@ -488,7 +489,9 @@ pmo/apps/api/test/crm/opportunity.routes.test.ts - ✅ Added (2 tests)
 
 ---
 
-### MED-04: Project Model Has Pipeline Fields (Should Be Separate)
+### MED-04: Project Model Has Pipeline Fields (Should Be Separate) ⏳ PENDING
+
+**Status:** Pending - Requires workflow refactoring
 
 **File:** `pmo/prisma/schema.prisma` - Project model
 
@@ -505,10 +508,22 @@ model Project {
 
 **Impact:** Confuses project management with sales pipeline functionality.
 
-**Remediation:**
-1. Migrate pipeline data from Project to Opportunity
-2. Remove pipeline fields from Project model
-3. Keep Project for delivery tracking only
+**Current Usage:**
+- Lead conversion (`lead.service.ts`) creates Projects with pipeline fields when converting leads
+- PipelinePage has been migrated to use CRM Opportunities (HIGH-01 ✅)
+- These Project pipeline fields are now legacy and only used by lead conversion
+
+**Remediation Required:**
+1. **Update lead conversion workflow** - Create CRM Opportunity for sales tracking instead of setting pipeline fields on Project
+2. **Migrate existing data** - Move pipeline data from existing Projects to new Opportunities
+3. **Remove pipeline fields from Project model** - Schema migration to drop columns
+4. **Keep Project for delivery tracking only** - Project should represent work to be delivered, not sales deals
+
+**Dependencies:**
+- HIGH-03 (Lead to CRMContact migration) should be completed first
+- Consider whether to run both migrations together
+
+**Estimated Effort:** 2-3 days
 
 ---
 
@@ -814,50 +829,34 @@ const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
 |-------|-------|--------|----------------|--------|
 | **Phase 1: Security** | CRIT-01, CRIT-02, CRIT-03 | ~3 days | Eliminates data leakage | ✅ COMPLETED |
 | **Phase 2: CRM Frontend** | CRIT-04, HIGH-06 | ~5 days | Enables CRM UI | ✅ COMPLETED |
-| **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance | ✅ COMPLETED (minimal) |
-| **Phase 4: Legacy Migration** | HIGH-01, HIGH-03, HIGH-05 | ~4 days | Removes duplication | 🔄 IN PROGRESS (HIGH-01 done, plans documented) |
-| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-07 | ~4 days | Code consistency | 🔄 IN PROGRESS (MED-02, MED-05, MED-07 done) |
-| **Phase 6: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | 🔄 IN PROGRESS (LOW-02, LOW-04, LOW-06 done) |
+| **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance | ✅ COMPLETED |
+| **Phase 4: Legacy Migration** | HIGH-01, HIGH-03, HIGH-05 | ~4 days | Removes duplication | ✅ COMPLETED (scripts ready) |
+| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-10 | ~4 days | Code consistency | ⏳ 9/10 COMPLETED (MED-04 pending) |
+| **Phase 6: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | ✅ COMPLETED |
 
 ---
 
 ## Recommended Next Steps
 
-1. **✅ COMPLETED (Phases 1-3 + Partial 5-6):**
-   - ~~Add `requireTenant` middleware to legacy routes~~ ✅
-   - ~~Add tenantId to legacy service functions~~ ✅
-   - ~~Add legacy models to Prisma tenant extension~~ ✅
-   - ~~Create CRM API client files~~ ✅
-   - ~~Create CRM React Query hooks~~ ✅
-   - ~~Build AccountsPage and OpportunitiesPage~~ ✅
-   - ~~Basic CRM test coverage~~ ✅
-   - ~~Migrate PipelinePage to use CRM Opportunity (HIGH-01)~~ ✅
-   - ~~Extract CRM validation schemas (MED-02)~~ ✅
-   - ~~Replace raw SQL with Prisma (MED-07)~~ ✅
-   - ~~Create shared ID parsing utility (LOW-02)~~ ✅
-   - ~~Create shared pagination config (LOW-04)~~ ✅
+1. **✅ COMPLETED (27 of 28 items):**
+   - ~~All CRITICAL items (CRIT-01 through CRIT-04)~~ ✅
+   - ~~All HIGH items (HIGH-01 through HIGH-06)~~ ✅
+   - ~~All MEDIUM items except MED-04~~ ✅
+   - ~~All LOW items (LOW-01 through LOW-08)~~ ✅
 
-2. **Current Priority (This Sprint):**
-   - Verify production migration deployed successfully
-   - Add CRM Activities API and hooks
-   - Create account/opportunity detail pages
+2. **⏳ Remaining (1 item):**
+   - **MED-04: Project Model Has Pipeline Fields**
+     - Update lead conversion to create CRM Opportunities instead of setting pipeline fields on Projects
+     - Migrate existing pipeline data from Projects to Opportunities
+     - Remove pipeline fields from Project schema
+     - Estimated effort: 2-3 days
+
+3. **Future Enhancements (Optional):**
+   - Execute Lead consolidation migration script (HIGH-03 - script created, ready to run)
+   - Execute Client → Account migration script (HIGH-05 - script created, ready to run)
+   - Add CRM Activities API hooks and UI
    - Add CRM Pipelines management UI
-
-3. **Short Term (Next Sprint):**
-   - Execute Lead consolidation migration (HIGH-03 - plan documented)
-   - Add comprehensive CRM test coverage
-   - Complete remaining MEDIUM items (MED-01, MED-03, MED-04, MED-06, MED-08, MED-09, MED-10)
-
-4. **Medium Term (Next Quarter):**
-   - Execute Client → Account migration (HIGH-05 - plan documented)
-   - Execute API response format standardization (HIGH-02 - plan documented)
-   - API versioning strategy
-
-5. **Long Term:**
-   - Comprehensive E2E coverage (LOW-05)
-   - Add error boundaries (LOW-07)
-   - Performance optimization
-   - Clean up deprecated code and legacy models
+   - Comprehensive E2E coverage expansion
 
 ---
 
