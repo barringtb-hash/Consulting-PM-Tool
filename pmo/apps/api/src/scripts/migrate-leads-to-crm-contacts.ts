@@ -94,25 +94,26 @@ async function migrateLead(
   const leadSource = lead.source ? SOURCE_MAPPING[lead.source] : null;
 
   // Prepare contact data
+  // Note: InboundLead model only has: name, email, company, website, source,
+  // serviceInterest, message, status, ownerUserId, clientId, primaryContactId,
+  // firstResponseAt, page, utmSource, utmMedium, utmCampaign, utmContent, utmTerm
   const contactData = {
     tenantId: lead.tenantId || 'default',
     firstName,
     lastName,
     email: lead.email,
-    phone: lead.phone || null,
-    jobTitle: lead.jobTitle || null,
     lifecycle,
     leadSource,
-    leadScore: lead.leadScore || null,
     ownerId: lead.ownerUserId || null,
-    tags: lead.tags,
     customFields: {
       originalLeadId: lead.id,
       company: lead.company,
       website: lead.website,
-      budget: lead.budget,
-      timeline: lead.timeline,
       serviceInterest: lead.serviceInterest,
+      message: lead.message,
+      utmSource: lead.utmSource,
+      utmMedium: lead.utmMedium,
+      utmCampaign: lead.utmCampaign,
       migratedAt: new Date().toISOString(),
     },
     archived: lead.status === 'DISQUALIFIED',
