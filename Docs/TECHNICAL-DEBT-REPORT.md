@@ -14,16 +14,27 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 
 | Severity | Count | Description |
 |----------|-------|-------------|
-| **CRITICAL** | 4 (3 resolved) | Security/data isolation vulnerabilities |
-| **HIGH** | 5 (2 resolved) | Incomplete features blocking production use |
+| **CRITICAL** | 4 (4 resolved) | Security/data isolation vulnerabilities |
+| **HIGH** | 6 (4 resolved) | Incomplete features blocking production use |
 | **MEDIUM** | 10 | Inconsistent patterns causing maintenance burden |
 | **LOW** | 8 | Code quality improvements for long-term health |
 
-### ✅ Recently Completed (Phase 2)
+### ✅ Completed Items
+**Phase 1 - Security (COMPLETED):**
 - CRIT-01: Legacy routes now have tenantMiddleware
 - CRIT-02: Legacy services now have tenant filtering
 - CRIT-03: Prisma tenant extension includes all legacy models
+
+**Phase 2 - CRM Frontend (COMPLETED):**
+- CRIT-04: CRM frontend implementation (accounts, opportunities pages)
 - HIGH-04: Minimal CRM test coverage added
+- HIGH-06: CRM React Query hooks implemented
+
+### 🔄 Remaining HIGH Priority
+- HIGH-01: PipelinePage uses legacy data (needs CRM Opportunity migration)
+- HIGH-02: Inconsistent API response formats
+- HIGH-03: Duplicate lead management systems
+- HIGH-05: Terminology collision (Client vs Account)
 
 ---
 
@@ -103,29 +114,29 @@ const TENANT_SCOPED_MODELS = new Set([
 
 ---
 
-### CRIT-04: No CRM Frontend Implementation
+### CRIT-04: ~~No CRM Frontend Implementation~~ ✅ LARGELY RESOLVED
 
-**Files Missing:**
-- `pmo/apps/web/src/api/accounts.ts` - Does not exist
-- `pmo/apps/web/src/api/opportunities.ts` - Does not exist
-- `pmo/apps/web/src/api/crm-contacts.ts` - Does not exist
-- `pmo/apps/web/src/api/activities.ts` - Does not exist
-- `pmo/apps/web/src/api/pipelines.ts` - Does not exist
+**Status:** Core CRM frontend is implemented and functional.
 
-**Routes Missing in App.tsx:**
-- `/crm/accounts` - No route defined
-- `/crm/accounts/:id` - No route defined
-- `/crm/opportunities` - No route defined
-- `/crm/contacts` - No route defined
-- `/crm/pipeline` - No route defined
+**Files Created:**
+- `pmo/apps/web/src/api/accounts.ts` - ✅ Full CRUD API client
+- `pmo/apps/web/src/api/opportunities.ts` - ✅ Full CRUD API client
+- `pmo/apps/web/src/api/hooks/crm/index.ts` - ✅ Complete React Query hooks
+- `pmo/apps/web/src/api/hooks/queryKeys.ts` - ✅ Query keys for accounts, opportunities
+- `pmo/apps/web/src/pages/crm/AccountsPage.tsx` - ✅ Full page with stats, filters, CRUD
+- `pmo/apps/web/src/pages/crm/OpportunitiesPage.tsx` - ✅ Full page with pipeline stats
 
-**Impact:** Backend CRM APIs exist but have zero frontend integration. Users cannot access CRM features.
+**Routes Added in App.tsx:**
+- `/crm/accounts` - ✅ AccountsPage
+- `/crm/opportunities` - ✅ CRMOpportunitiesPage
 
-**Remediation:**
-1. Create CRM API client files
-2. Create React Query hooks for CRM entities
-3. Create CRM page components
-4. Add routes to App.tsx
+**Still Missing (Lower Priority):**
+- `pmo/apps/web/src/api/crm-contacts.ts` - CRM contacts API (contacts exist in PMO)
+- `pmo/apps/web/src/api/activities.ts` - Activities API client
+- `pmo/apps/web/src/api/pipelines.ts` - Pipelines management API
+- Detail pages for accounts and opportunities
+
+**Note:** Core CRM functionality is operational. Users can now access CRM features via `/crm/accounts` and `/crm/opportunities`.
 
 ---
 
@@ -269,26 +280,35 @@ pmo/apps/api/test/crm/activity.routes.test.ts    - Not yet added
 
 ---
 
-### HIGH-06: Missing CRM React Query Hooks
+### HIGH-06: ~~Missing CRM React Query Hooks~~ ✅ RESOLVED
 
-**File:** `pmo/apps/web/src/api/hooks/` - No CRM hooks
+**Status:** CRM React Query hooks are fully implemented.
 
-**Existing PMO Hooks:**
-```
-hooks/clients/index.ts     - useClients, useClient, useCreateClient...
-hooks/contacts/index.ts    - useContacts, useCreateContact...
-hooks/projects/index.ts    - useProjects, useProject...
-```
+**File:** `pmo/apps/web/src/api/hooks/crm/index.ts`
 
-**Missing CRM Hooks:**
-```
-hooks/crm/accounts.ts      - useAccounts, useAccount...
-hooks/crm/opportunities.ts - useOpportunities, useOpportunity...
-hooks/crm/activities.ts    - useActivities, useCreateActivity...
-hooks/crm/pipelines.ts     - usePipelines, usePipelineStages...
-```
+**Account Hooks:**
+- `useAccounts(filters?)` - List accounts with filtering
+- `useAccount(id)` - Single account by ID
+- `useAccountStats()` - Account statistics
+- `useCreateAccount()` - Create mutation
+- `useUpdateAccount(id)` - Update mutation
+- `useArchiveAccount()` - Archive mutation
+- `useRestoreAccount()` - Restore mutation
+- `useDeleteAccount()` - Delete mutation
 
-**Remediation:** Create React Query hooks for all CRM entities.
+**Opportunity Hooks:**
+- `useOpportunities(filters?)` - List opportunities
+- `useOpportunity(id)` - Single opportunity
+- `usePipelineStats(pipelineId?)` - Pipeline statistics
+- `useClosingSoon(days?)` - Opportunities closing soon
+- `useCreateOpportunity()` - Create mutation
+- `useUpdateOpportunity(id)` - Update mutation
+- `useMoveOpportunityToStage(id)` - Stage change mutation
+- `useMarkOpportunityWon(id)` - Won mutation
+- `useMarkOpportunityLost(id)` - Lost mutation
+- `useDeleteOpportunity()` - Delete mutation
+
+**Query keys defined in:** `pmo/apps/web/src/api/hooks/queryKeys.ts`
 
 ---
 
@@ -539,26 +559,30 @@ prisma.$queryRaw`
 | Phase | Items | Effort | Risk Reduction | Status |
 |-------|-------|--------|----------------|--------|
 | **Phase 1: Security** | CRIT-01, CRIT-02, CRIT-03 | ~3 days | Eliminates data leakage | ✅ COMPLETED |
-| **Phase 2: Integration** | CRIT-04, HIGH-01, HIGH-06 | ~5 days | Enables CRM UI | 🔄 In Progress |
+| **Phase 2: CRM Frontend** | CRIT-04, HIGH-06 | ~5 days | Enables CRM UI | ✅ COMPLETED |
 | **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance | ✅ COMPLETED (minimal) |
-| **Phase 4: Standardization** | HIGH-02, MED-01 to MED-05 | ~4 days | Code consistency | Pending |
-| **Phase 5: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | Pending |
+| **Phase 4: Legacy Migration** | HIGH-01, HIGH-03, HIGH-05 | ~4 days | Removes duplication | Pending |
+| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-05 | ~4 days | Code consistency | Pending |
+| **Phase 6: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | Pending |
 
 ---
 
 ## Recommended Next Steps
 
-1. **✅ COMPLETED (Phase 2):**
+1. **✅ COMPLETED (Phases 1-3):**
    - ~~Add `requireTenant` middleware to legacy routes~~ ✅
    - ~~Add tenantId to legacy service functions~~ ✅
    - ~~Add legacy models to Prisma tenant extension~~ ✅
-   - ~~Run tenant isolation security audit~~ ✅ (basic tests added)
+   - ~~Create CRM API client files~~ ✅
+   - ~~Create CRM React Query hooks~~ ✅
+   - ~~Build AccountsPage and OpportunitiesPage~~ ✅
+   - ~~Basic CRM test coverage~~ ✅
 
 2. **Current Priority (This Sprint):**
-   - Create CRM API client files (CRIT-04)
-   - Create CRM React Query hooks (HIGH-06)
-   - Build AccountsPage and OpportunitiesPage
    - Verify production migration deployed successfully
+   - Add CRM Activities API and hooks
+   - Create account/opportunity detail pages
+   - Add CRM Pipelines management UI
 
 3. **Short Term (Next Sprint):**
    - Migrate PipelinePage to use CRM Opportunity (HIGH-01)
