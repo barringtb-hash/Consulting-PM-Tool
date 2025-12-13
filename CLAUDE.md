@@ -433,6 +433,15 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Activity routes | `pmo/apps/api/src/crm/routes/activity.routes.ts` |
 | CRM module exports | `pmo/apps/api/src/crm/index.ts` |
 | Pipeline page (UI) | `pmo/apps/web/src/pages/PipelinePage.tsx` |
+| Account detail page | `pmo/apps/web/src/pages/crm/AccountDetailPage.tsx` |
+| Opportunity detail page | `pmo/apps/web/src/pages/crm/OpportunityDetailPage.tsx` |
+| Lead service (with conversion) | `pmo/apps/api/src/services/lead.service.ts` |
+| Lead schema (conversion params) | `pmo/apps/api/src/validation/lead.schema.ts` |
+| Migration: Leads → CRMContacts | `pmo/apps/api/src/scripts/migrate-leads-to-crm-contacts.ts` |
+| Migration: Clients → Accounts | `pmo/apps/api/src/scripts/migrate-clients-to-accounts.ts` |
+| Migration: Pipeline → Opportunities | `pmo/apps/api/src/scripts/migrate-project-pipeline-to-opportunities.ts` |
+| CRM validation schemas | `pmo/apps/api/src/validation/crm/` |
+| Technical Debt Report | `Docs/TECHNICAL-DEBT-REPORT.md` |
 
 ## Common Tasks
 
@@ -505,6 +514,45 @@ For the comprehensive CRM transformation plan, see [Docs/CRM-TRANSFORMATION-PLAN
 - **Activity Timeline**: Unified view of all interactions across accounts, contacts, and opportunities
 - **Merge Accounts**: Combine duplicate accounts (moves all contacts, opportunities, activities)
 
+**Lead Conversion Workflow:**
+When converting a lead, the system creates:
+- **Account**: Linked to the Client (if exists) via `customFields.legacyClientId`
+- **Opportunity**: Sales pipeline tracking with stage, amount, probability
+- **Project** (optional): For delivery tracking only - no pipeline fields
+
+Lead conversion parameters:
+```typescript
+{
+  createOpportunity: true,      // Create CRM Opportunity (default: true)
+  opportunityName: string,      // Custom opportunity name
+  opportunityAmount: number,    // Deal value
+  opportunityProbability: number, // Win probability (0-100)
+  expectedCloseDate: string,    // Expected close date
+  createProject: false,         // Create Project for delivery (default: false)
+  // Legacy params (deprecated, mapped to Opportunity):
+  pipelineStage: string,        // @deprecated - use Opportunity
+  pipelineValue: number,        // @deprecated - use opportunityAmount
+}
+```
+
+**Data Model Notes:**
+- **Project**: Represents delivery/work tracking only. Pipeline fields (pipelineStage, pipelineValue, etc.) have been moved to Opportunity.
+- **Opportunity**: Represents sales pipeline tracking with weighted forecasting.
+- **Account**: CRM entity linked to legacy Client via `customFields.legacyClientId`.
+
+**Migration Scripts:**
+| Script | Purpose |
+|--------|---------|
+| `migrate-leads-to-crm-contacts.ts` | Migrate InboundLead to CRMContact |
+| `migrate-clients-to-accounts.ts` | Migrate Client to Account |
+| `migrate-project-pipeline-to-opportunities.ts` | Migrate Project pipeline data to Opportunities |
+
+Run migration scripts from `/pmo/apps/api`:
+```bash
+npx ts-node src/scripts/migrate-project-pipeline-to-opportunities.ts --dry-run  # Preview
+npx ts-node src/scripts/migrate-project-pipeline-to-opportunities.ts            # Execute
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -530,6 +578,8 @@ For the comprehensive CRM transformation plan, see [Docs/CRM-TRANSFORMATION-PLAN
 ## Documentation Links
 
 - [CRM Transformation Plan](Docs/CRM-TRANSFORMATION-PLAN.md) - Comprehensive CRM architecture and implementation plan
+- [Technical Debt Report](Docs/TECHNICAL-DEBT-REPORT.md) - CRM technical debt tracking (28/28 items resolved)
+- [API Versioning Strategy](Docs/API-VERSIONING.md) - API versioning documentation
 - [Product Requirements](Docs/ai-consulting-pmo-product-requirements.md) - Original PMO product specs
 - [Implementation Codex](Docs/AI_Consulting_PMO_Implementation_Codex.md) - Technical architecture
 - [AI Coding Notes](Docs/ai-coding-notes.md) - Legacy quick reference

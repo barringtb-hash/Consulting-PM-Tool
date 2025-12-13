@@ -10,8 +10,9 @@ A comprehensive multi-tenant CRM SaaS platform with AI-powered modules, evolved 
 - **Accounts**: Company management with hierarchy support, health scores, and engagement tracking
 - **Contacts**: Lifecycle management (Lead → MQL → SQL → Customer) with lead scoring
 - **Opportunities**: Sales pipeline with customizable stages, weighted forecasting, and stage history
-- **Pipelines**: Kanban-style sales pipeline visualization
+- **Pipelines**: Kanban-style sales pipeline visualization with drag-and-drop
 - **Activities**: Unified timeline for calls, emails, meetings, tasks, and notes
+- **Lead Conversion**: Convert leads to Accounts + Opportunities with automatic pipeline creation
 
 ### AI Tools (Premium Add-ons)
 - **AI Chatbot**: Customer-facing chatbot with intent detection, multi-channel support, and webhooks
@@ -209,6 +210,8 @@ See [Quickstart](#quickstart) section above.
 
 - **CRM & Architecture**:
   - [CRM Transformation Plan](Docs/CRM-TRANSFORMATION-PLAN.md) - CRM architecture and implementation plan
+  - [Technical Debt Report](Docs/TECHNICAL-DEBT-REPORT.md) - CRM technical debt tracking (28/28 resolved)
+  - [API Versioning Strategy](Docs/API-VERSIONING.md) - API versioning documentation
   - [Module System](Docs/MODULES.md) - Feature module configuration
 
 - **Testing**:
