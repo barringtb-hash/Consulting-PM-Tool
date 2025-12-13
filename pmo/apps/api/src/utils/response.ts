@@ -166,7 +166,10 @@ export function apiValidationError(
  * @param res - Express response object
  * @param resource - Name of the resource (e.g., 'Client', 'Project')
  */
-export function apiNotFound(res: Response, resource: string = 'Resource'): void {
+export function apiNotFound(
+  res: Response,
+  resource: string = 'Resource',
+): void {
   res.status(404).json({
     errors: [{ code: 'NOT_FOUND', message: `${resource} not found` }],
     error: `${resource} not found`,

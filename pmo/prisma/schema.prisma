@@ -390,14 +390,9 @@ model Project {
   statusSummary   String?
   statusUpdatedAt DateTime?
 
-  // Sales/Pipeline fields
-  pipelineStage     PipelineStage?
-  pipelineValue     Decimal?       @db.Decimal(12, 2)
-  currency          String?        @default("USD")
-  probability       Int?
-  expectedCloseDate DateTime?
-  leadSource        LeadSource?
-  lostReason        String?
+  // Note: Pipeline fields (pipelineStage, pipelineValue, probability, expectedCloseDate, leadSource, lostReason)
+  // have been removed. Use CRM Opportunity for sales pipeline tracking.
+  // See MED-04 in TECHNICAL-DEBT-REPORT.md for migration details.
 
   // Customer Success Platform fields
   renewalDate           DateTime? // When the contract/project renews
@@ -430,7 +425,7 @@ model Project {
   csMetricSnapshots CSMetricSnapshot[]
   csSurveyResponses CSSurveyResponse[]
 
-  @@index([status, pipelineStage])
+  @@index([status])
   @@index([renewalDate])
   @@index([healthStatus, renewalDate])
 }

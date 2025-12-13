@@ -16,7 +16,7 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 |----------|-------|-------------|
 | **CRITICAL** | 4 (4 resolved) | Security/data isolation vulnerabilities |
 | **HIGH** | 6 (6 resolved) | Incomplete features blocking production use |
-| **MEDIUM** | 10 (9 resolved) | Inconsistent patterns causing maintenance burden (**MED-04 pending**) |
+| **MEDIUM** | 10 (10 resolved) | Inconsistent patterns causing maintenance burden |
 | **LOW** | 8 (8 resolved) | Code quality improvements for long-term health |
 
 ### ✅ Completed Items
@@ -55,10 +55,10 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 - HIGH-05: Client migration script created (`pmo/apps/api/src/scripts/migrate-clients-to-accounts.ts`)
 
 ### 📋 Remaining Items
-**1 item remaining:**
-- **MED-04**: Project Model Has Pipeline Fields - Requires refactoring lead conversion to create Opportunities for sales tracking instead of setting pipeline fields on Projects
+✅ **All 28 technical debt items have been resolved!**
 
 **Phase 6 - Additional Completions:**
+- MED-04: Project pipeline fields removed - lead conversion now creates CRM Opportunities
 - MED-06: Shared TypeScript types package created (`pmo/packages/shared-types/`)
 - MED-10: Account and Opportunity detail pages created
 - LOW-05: E2E tests for CRM flows created
@@ -489,41 +489,37 @@ pmo/apps/api/test/crm/opportunity.routes.test.ts - ✅ Added (2 tests)
 
 ---
 
-### MED-04: Project Model Has Pipeline Fields (Should Be Separate) ⏳ PENDING
+### MED-04: ~~Project Model Has Pipeline Fields (Should Be Separate)~~ ✅ RESOLVED
 
-**Status:** Pending - Requires workflow refactoring
+**Status:** Resolved - Pipeline fields removed, lead conversion now creates Opportunities
 
-**File:** `pmo/prisma/schema.prisma` - Project model
+**Changes Made:**
+1. **Updated lead conversion workflow** (`pmo/apps/api/src/services/lead.service.ts`)
+   - Lead conversion now creates CRM Opportunities instead of Projects with pipeline fields
+   - Backward compatible: accepts legacy `pipelineStage`/`pipelineValue` params but creates Opportunities
+   - New params: `createOpportunity`, `opportunityName`, `opportunityAmount`, `opportunityProbability`, `expectedCloseDate`
+   - Automatically creates Account linked to Client and default Pipeline if needed
 
-**Evidence:** Project model includes sales pipeline fields that should be on Opportunity:
-```prisma
-model Project {
-  pipelineStage      PipelineStage?
-  pipelineValue      Decimal?
-  probability        Int?
-  expectedCloseDate  String?
-  leadSource         String?
-}
-```
+2. **Created migration script** (`pmo/apps/api/src/scripts/migrate-project-pipeline-to-opportunities.ts`)
+   - Migrates existing Project pipeline data to new Opportunities
+   - Creates Accounts for Clients and default Pipeline with stages
+   - Dry-run mode for previewing changes
+   - Usage: `npx ts-node src/scripts/migrate-project-pipeline-to-opportunities.ts --dry-run`
 
-**Impact:** Confuses project management with sales pipeline functionality.
+3. **Removed pipeline fields from Project model** (`pmo/prisma/schema.prisma`)
+   - Removed: `pipelineStage`, `pipelineValue`, `currency`, `probability`, `expectedCloseDate`, `leadSource`, `lostReason`
+   - Project now represents delivery/work tracking only
+   - Sales pipeline tracking is now handled by CRM Opportunity model
 
-**Current Usage:**
-- Lead conversion (`lead.service.ts`) creates Projects with pipeline fields when converting leads
-- PipelinePage has been migrated to use CRM Opportunities (HIGH-01 ✅)
-- These Project pipeline fields are now legacy and only used by lead conversion
+4. **Updated frontend types** (`pmo/apps/web/src/api/projects.ts`)
+   - Removed pipeline fields from Project interface
+   - Added comment directing to CRM Opportunities for sales tracking
 
-**Remediation Required:**
-1. **Update lead conversion workflow** - Create CRM Opportunity for sales tracking instead of setting pipeline fields on Project
-2. **Migrate existing data** - Move pipeline data from existing Projects to new Opportunities
-3. **Remove pipeline fields from Project model** - Schema migration to drop columns
-4. **Keep Project for delivery tracking only** - Project should represent work to be delivered, not sales deals
+5. **Updated lead schema** (`pmo/apps/api/src/validation/lead.schema.ts`)
+   - Added `createOpportunity`, `opportunityName`, `opportunityAmount`, etc.
+   - Deprecated `pipelineStage` and `pipelineValue` with JSDoc comments
 
-**Dependencies:**
-- HIGH-03 (Lead to CRMContact migration) should be completed first
-- Consider whether to run both migrations together
-
-**Estimated Effort:** 2-3 days
+**Note:** Run the migration script before deploying schema changes to preserve existing pipeline data.
 
 ---
 
@@ -831,29 +827,23 @@ const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
 | **Phase 2: CRM Frontend** | CRIT-04, HIGH-06 | ~5 days | Enables CRM UI | ✅ COMPLETED |
 | **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance | ✅ COMPLETED |
 | **Phase 4: Legacy Migration** | HIGH-01, HIGH-03, HIGH-05 | ~4 days | Removes duplication | ✅ COMPLETED (scripts ready) |
-| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-10 | ~4 days | Code consistency | ⏳ 9/10 COMPLETED (MED-04 pending) |
+| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-10 | ~4 days | Code consistency | ✅ COMPLETED |
 | **Phase 6: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | ✅ COMPLETED |
 
 ---
 
 ## Recommended Next Steps
 
-1. **✅ COMPLETED (27 of 28 items):**
+1. **✅ COMPLETED (28 of 28 items):**
    - ~~All CRITICAL items (CRIT-01 through CRIT-04)~~ ✅
    - ~~All HIGH items (HIGH-01 through HIGH-06)~~ ✅
-   - ~~All MEDIUM items except MED-04~~ ✅
+   - ~~All MEDIUM items (MED-01 through MED-10)~~ ✅
    - ~~All LOW items (LOW-01 through LOW-08)~~ ✅
 
-2. **⏳ Remaining (1 item):**
-   - **MED-04: Project Model Has Pipeline Fields**
-     - Update lead conversion to create CRM Opportunities instead of setting pipeline fields on Projects
-     - Migrate existing pipeline data from Projects to Opportunities
-     - Remove pipeline fields from Project schema
-     - Estimated effort: 2-3 days
-
-3. **Future Enhancements (Optional):**
+2. **Future Enhancements (Optional):**
    - Execute Lead consolidation migration script (HIGH-03 - script created, ready to run)
    - Execute Client → Account migration script (HIGH-05 - script created, ready to run)
+   - Execute Project pipeline migration script (MED-04 - script created, ready to run)
    - Add CRM Activities API hooks and UI
    - Add CRM Pipelines management UI
    - Comprehensive E2E coverage expansion
@@ -908,6 +898,7 @@ const [healthyCount, atRiskCount, criticalCount] = await Promise.all([
 |---------|------|
 | Lead to CRMContact | `pmo/apps/api/src/scripts/migrate-leads-to-crm-contacts.ts` |
 | Client to Account | `pmo/apps/api/src/scripts/migrate-clients-to-accounts.ts` |
+| Project Pipeline to Opportunity | `pmo/apps/api/src/scripts/migrate-project-pipeline-to-opportunities.ts` |
 
 ### Frontend Components
 

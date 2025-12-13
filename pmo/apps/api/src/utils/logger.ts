@@ -20,7 +20,11 @@ interface Logger {
   debug: (message: string, context?: LogContext) => void;
   info: (message: string, context?: LogContext) => void;
   warn: (message: string, context?: LogContext) => void;
-  error: (message: string, error?: Error | unknown, context?: LogContext) => void;
+  error: (
+    message: string,
+    error?: Error | unknown,
+    context?: LogContext,
+  ) => void;
 }
 
 const LOG_LEVELS: Record<LogLevel, number> = {
@@ -78,16 +82,20 @@ function createLogger(): Logger {
       context?: LogContext,
     ): void {
       if (shouldLog('error')) {
-        const errorContext = error instanceof Error
-          ? {
-              ...context,
-              error: {
-                name: error.name,
-                message: error.message,
-                stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
-              },
-            }
-          : { ...context, error };
+        const errorContext =
+          error instanceof Error
+            ? {
+                ...context,
+                error: {
+                  name: error.name,
+                  message: error.message,
+                  stack:
+                    process.env.NODE_ENV !== 'production'
+                      ? error.stack
+                      : undefined,
+                },
+              }
+            : { ...context, error };
         console.error(formatMessage('error', message, errorContext));
       }
     },

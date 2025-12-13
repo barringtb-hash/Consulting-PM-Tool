@@ -97,7 +97,9 @@ async function migrateClient(
 
   // Build description from client notes and AI maturity
   const aiMaturityNote = getAiMaturityDescription(client.aiMaturity);
-  const description = [client.notes, aiMaturityNote].filter(Boolean).join('\n\n');
+  const description = [client.notes, aiMaturityNote]
+    .filter(Boolean)
+    .join('\n\n');
 
   // Prepare account data
   // Need to get a default owner - use first admin user or skip
@@ -238,15 +240,21 @@ async function main() {
   console.log('Migration Summary');
   console.log('='.repeat(60));
   console.log(`Total processed: ${results.length}`);
-  console.log(`Successful: ${results.filter((r) => r.success && !r.skipped).length}`);
-  console.log(`Skipped (already migrated): ${results.filter((r) => r.skipped).length}`);
+  console.log(
+    `Successful: ${results.filter((r) => r.success && !r.skipped).length}`,
+  );
+  console.log(
+    `Skipped (already migrated): ${results.filter((r) => r.skipped).length}`,
+  );
   console.log(`Failed: ${results.filter((r) => !r.success).length}`);
 
   if (!dryRun && results.some((r) => r.success && !r.skipped)) {
     console.log('\nMigration completed. Original Client records preserved.');
     console.log('Accounts have legacyClientId in customFields for reference.');
     console.log('\nNext steps:');
-    console.log('1. Update AI Tool configs (ChatbotConfig, DocumentAnalyzerConfig)');
+    console.log(
+      '1. Update AI Tool configs (ChatbotConfig, DocumentAnalyzerConfig)',
+    );
     console.log('   to add accountId field and link to new Accounts.');
     console.log('2. Update frontend to redirect /clients to /crm/accounts.');
     console.log('3. Migrate Contacts to CRMContacts (separate migration).');

@@ -34,9 +34,19 @@ export const leadConvertSchema = z.object({
   clientId: z.number().int().positive().optional(),
   createContact: z.boolean().default(true),
   contactRole: z.string().optional(),
-  createProject: z.boolean().default(true),
+  // Project creation (for delivery tracking - no pipeline fields)
+  createProject: z.boolean().default(false),
   projectName: z.string().optional(),
+  // Opportunity creation (for sales pipeline tracking)
+  createOpportunity: z.boolean().default(true),
+  opportunityName: z.string().optional(),
+  opportunityAmount: z.number().optional(),
+  opportunityProbability: z.number().min(0).max(100).optional(),
+  expectedCloseDate: z.string().datetime().optional(),
+  // Legacy fields - kept for backward compatibility but deprecated
+  /** @deprecated Use createOpportunity and opportunityAmount instead */
   pipelineStage: z.string().optional(),
+  /** @deprecated Use createOpportunity and opportunityAmount instead */
   pipelineValue: z.number().optional(),
   ownerId: z.number().int().positive().optional(),
 });

@@ -16,7 +16,13 @@
  *   - Preserves original InboundLead records
  */
 
-import { PrismaClient, LeadStatus, ContactLifecycle, CRMLeadSource, LeadSource } from '@prisma/client';
+import {
+  PrismaClient,
+  LeadStatus,
+  ContactLifecycle,
+  CRMLeadSource,
+  LeadSource,
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -188,13 +194,21 @@ async function main() {
   console.log('Migration Summary');
   console.log('='.repeat(60));
   console.log(`Total processed: ${results.length}`);
-  console.log(`Successful: ${results.filter((r) => r.success && !r.skipped).length}`);
-  console.log(`Skipped (already migrated): ${results.filter((r) => r.skipped).length}`);
+  console.log(
+    `Successful: ${results.filter((r) => r.success && !r.skipped).length}`,
+  );
+  console.log(
+    `Skipped (already migrated): ${results.filter((r) => r.skipped).length}`,
+  );
   console.log(`Failed: ${results.filter((r) => !r.success).length}`);
 
   if (!dryRun && results.some((r) => r.success && !r.skipped)) {
-    console.log('\nMigration completed. Original InboundLead records preserved.');
-    console.log('CRMContacts have originalLeadId in customFields for reference.');
+    console.log(
+      '\nMigration completed. Original InboundLead records preserved.',
+    );
+    console.log(
+      'CRMContacts have originalLeadId in customFields for reference.',
+    );
   }
 
   await prisma.$disconnect();
