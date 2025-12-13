@@ -21,11 +21,15 @@ const stripProject = ({
   return milestoneData;
 };
 
-const findMilestoneWithOwner = async (id: number) =>
-  prisma.milestone.findUnique({
-    where: { id },
+const findMilestoneWithOwner = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.milestone.findFirst({
+    where: { id, tenantId },
     include: { project: { select: { ownerId: true } } },
   });
+};
 
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
   // Get tenant context for multi-tenant filtering

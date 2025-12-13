@@ -24,11 +24,15 @@ const stripProject = ({
   return taskData;
 };
 
-const findTaskWithOwner = async (id: number) =>
-  prisma.task.findUnique({
-    where: { id },
+const findTaskWithOwner = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.task.findFirst({
+    where: { id, tenantId },
     include: { project: { select: { ownerId: true } } },
   });
+};
 
 const validateProjectAccess = async (projectId: number, ownerId: number) => {
   // Get tenant context for multi-tenant filtering
@@ -53,8 +57,11 @@ const validateMilestoneForProject = async (
   milestoneId: number,
   projectId: number,
 ) => {
-  const milestone = await prisma.milestone.findUnique({
-    where: { id: milestoneId },
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const milestone = await prisma.milestone.findFirst({
+    where: { id: milestoneId, tenantId },
   });
 
   if (!milestone || milestone.projectId !== projectId) {
