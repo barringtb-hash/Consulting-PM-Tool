@@ -6,12 +6,11 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { generateWidgetScript, WidgetConfig } from './widget.template';
 import { env } from '../../../config/env';
+import prisma from '../../../prisma/client';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * GET /api/chatbot/widget/:configId.js
