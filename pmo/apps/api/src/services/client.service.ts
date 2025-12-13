@@ -1,6 +1,7 @@
 import { AiMaturity, CompanySize, Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import {
   ClientCreateInput,
   ClientUpdateInput,
@@ -41,7 +42,11 @@ export const listClients = async ({
 }: ListClientsParams): Promise<
   PaginatedResult<Awaited<ReturnType<typeof prisma.client.findMany>>[0]>
 > => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   const where: Prisma.ClientWhereInput = {
+    tenantId,
     companySize,
     aiMaturity,
     archived: includeArchived ? undefined : false,
@@ -88,15 +93,36 @@ export const listClients = async ({
   };
 };
 
-export const createClient = async (data: ClientCreateInput) =>
-  prisma.client.create({ data });
+export const createClient = async (data: ClientCreateInput) => {
+  // Get tenant context for multi-tenant isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.client.create({
+    data: {
+      ...data,
+      tenantId,
+    },
+  });
+};
 
 /**
  * Update a client by ID using atomic operation.
  * Returns null if client not found (Prisma P2025 error).
  */
 export const updateClient = async (id: number, data: ClientUpdateInput) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   try {
+    // First verify the client belongs to this tenant
+    const existing = await prisma.client.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
     return await prisma.client.update({
       where: { id },
       data,
@@ -118,7 +144,19 @@ export const updateClient = async (id: number, data: ClientUpdateInput) => {
  * Returns null if client not found.
  */
 export const archiveClient = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   try {
+    // First verify the client belongs to this tenant
+    const existing = await prisma.client.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
     return await prisma.client.update({
       where: { id },
       data: { archived: true },
@@ -140,7 +178,19 @@ export const archiveClient = async (id: number) => {
  * Note: This will cascade delete related contacts due to schema relations.
  */
 export const deleteClient = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   try {
+    // First verify the client belongs to this tenant
+    const existing = await prisma.client.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
     return await prisma.client.delete({
       where: { id },
     });

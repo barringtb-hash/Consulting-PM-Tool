@@ -26,6 +26,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,6 +40,15 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Setup database environment
+        run: echo "DATABASE_URL=$DATABASE_URL" > .env
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
 
       - name: Run lint
         run: npm run lint

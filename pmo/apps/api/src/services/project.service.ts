@@ -1,6 +1,7 @@
 import { ProjectStatus, Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import {
   ProjectCreateInput,
   ProjectUpdateInput,
@@ -37,7 +38,11 @@ export const listProjects = async ({
 }: ListProjectsParams): Promise<
   PaginatedResult<Awaited<ReturnType<typeof prisma.project.findMany>>[0]>
 > => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   const where: Prisma.ProjectWhereInput = {
+    tenantId,
     ownerId,
     clientId,
     status,
@@ -70,26 +75,49 @@ export const listProjects = async ({
   };
 };
 
-export const getProjectById = async (id: number) =>
-  prisma.project.findUnique({ where: { id } });
+export const getProjectById = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.project.findFirst({
+    where: { id, tenantId },
+  });
+};
 
 export const createProject = async (
   ownerId: number,
   data: ProjectCreateInput,
-) =>
-  prisma.project.create({
+) => {
+  // Get tenant context for multi-tenant isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.project.create({
     data: {
       ...data,
       ownerId,
+      tenantId,
     },
   });
+};
 
 /**
  * Update a project by ID using atomic operation.
  * Returns null if project not found.
  */
 export const updateProject = async (id: number, data: ProjectUpdateInput) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   try {
+    // First verify the project belongs to this tenant
+    const existing = await prisma.project.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
     return await prisma.project.update({
       where: { id },
       data,
@@ -110,7 +138,19 @@ export const updateProject = async (id: number, data: ProjectUpdateInput) => {
  * Returns null if project not found.
  */
 export const deleteProject = async (id: number) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   try {
+    // First verify the project belongs to this tenant
+    const existing = await prisma.project.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!existing) {
+      return null;
+    }
+
     return await prisma.project.delete({
       where: { id },
     });

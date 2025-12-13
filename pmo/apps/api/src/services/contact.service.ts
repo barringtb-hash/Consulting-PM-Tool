@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import {
   ContactCreateInput,
   ContactUpdateInput,
@@ -17,7 +18,11 @@ export const listContacts = async ({
   clientId,
   includeArchived = false,
 }: ListContactsParams) => {
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   const where: Prisma.ContactWhereInput = {
+    tenantId,
     clientId,
     archived: includeArchived ? undefined : false,
   };
@@ -37,11 +42,25 @@ export const listContacts = async ({
   });
 };
 
-export const createContact = async (data: ContactCreateInput) =>
-  prisma.contact.create({ data });
+export const createContact = async (data: ContactCreateInput) => {
+  // Get tenant context for multi-tenant isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  return prisma.contact.create({
+    data: {
+      ...data,
+      tenantId,
+    },
+  });
+};
 
 export const updateContact = async (id: number, data: ContactUpdateInput) => {
-  const existing = await prisma.contact.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const existing = await prisma.contact.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!existing) {
     return null;
@@ -54,7 +73,12 @@ export const updateContact = async (id: number, data: ContactUpdateInput) => {
 };
 
 export const archiveContact = async (id: number) => {
-  const existing = await prisma.contact.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const existing = await prisma.contact.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!existing) {
     return null;
@@ -67,7 +91,12 @@ export const archiveContact = async (id: number) => {
 };
 
 export const deleteContact = async (id: number) => {
-  const existing = await prisma.contact.findUnique({ where: { id } });
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const existing = await prisma.contact.findFirst({
+    where: { id, tenantId },
+  });
 
   if (!existing) {
     return null;
