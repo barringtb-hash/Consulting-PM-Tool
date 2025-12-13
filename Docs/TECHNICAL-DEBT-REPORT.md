@@ -15,7 +15,7 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 | Severity | Count | Description |
 |----------|-------|-------------|
 | **CRITICAL** | 4 (4 resolved) | Security/data isolation vulnerabilities |
-| **HIGH** | 6 (4 resolved) | Incomplete features blocking production use |
+| **HIGH** | 6 (5 resolved) | Incomplete features blocking production use |
 | **MEDIUM** | 10 | Inconsistent patterns causing maintenance burden |
 | **LOW** | 8 | Code quality improvements for long-term health |
 
@@ -27,14 +27,14 @@ The PMO-to-CRM transformation has a solid architectural foundation with well-des
 
 **Phase 2 - CRM Frontend (COMPLETED):**
 - CRIT-04: CRM frontend implementation (accounts, opportunities pages)
+- HIGH-01: PipelinePage migrated to use CRM Opportunities
 - HIGH-04: Minimal CRM test coverage added
 - HIGH-06: CRM React Query hooks implemented
 
-### 🔄 Remaining HIGH Priority
-- HIGH-01: PipelinePage uses legacy data (needs CRM Opportunity migration)
-- HIGH-02: Inconsistent API response formats
-- HIGH-03: Duplicate lead management systems
-- HIGH-05: Terminology collision (Client vs Account)
+### 📋 Remaining HIGH Priority (Migration Plans Documented)
+- HIGH-02: Inconsistent API response formats (migration plan documented)
+- HIGH-03: Duplicate lead management systems (migration plan documented)
+- HIGH-05: Terminology collision - Client vs Account (migration plan documented)
 
 ---
 
@@ -142,93 +142,181 @@ const TENANT_SCOPED_MODELS = new Set([
 
 ## HIGH Priority Issues
 
-### HIGH-01: PipelinePage Uses Legacy Data
+### HIGH-01: ~~PipelinePage Uses Legacy Data~~ ✅ RESOLVED
 
-**File:** `pmo/apps/web/src/pages/PipelinePage.tsx:5-6, 24-35`
+**Status:** PipelinePage now uses CRM Opportunities API.
 
-**Evidence:**
-```typescript
-import { useProjects } from '../api/queries';
-import { PipelineStage } from '../api/projects';  // LEGACY ENUM
+**Changes Made:**
+- Replaced `useProjects` with `useOpportunities`, `usePipelineStats`, `useClosingSoon`
+- Uses dynamic pipeline stages from API instead of hardcoded `PIPELINE_STAGES`
+- Navigation updated to `/crm/opportunities/:id`
+- Added "Closing This Week" alert section
+- Added toggle to show Won/Lost stages
 
-const PIPELINE_STAGES: { value: PipelineStage }[] = [
-  { value: 'NEW_LEAD', ... },     // Uses Project.pipelineStage
-  { value: 'DISCOVERY', ... },    // NOT CRM Pipeline/SalesPipelineStage
-];
-```
-
-**Impact:** Pipeline feature doesn't use CRM Opportunity/Pipeline models - just filters projects.
-
-**Remediation:** Rewrite PipelinePage to use CRM Opportunity API with proper Pipeline/Stage support.
+**File:** `pmo/apps/web/src/pages/PipelinePage.tsx`
 
 ---
 
-### HIGH-02: Inconsistent API Response Formats
+### HIGH-02: Inconsistent API Response Formats (Migration Plan)
 
-**Legacy Routes:**
+**Current State:**
+- Legacy routes use: `{ clients }`, `{ client }`, `{ error, details }`
+- CRM routes use: `{ data }`, `{ data: client }`, `{ errors }`
+
+**Migration Plan (BREAKING CHANGE - Requires Coordination):**
+
+**Phase 1: Add Backward Compatibility (Non-Breaking)**
 ```typescript
-// clients.ts:63-66
-res.json({ clients: result.data, pagination: result.pagination });
-
-// contacts.ts:42
-res.json({ contacts });
-
-// Error format
-res.status(400).json({ error: 'Invalid client data', details: ... });
+// Option A: Wrapper utility
+function legacyResponse<T>(res: Response, key: string, data: T) {
+  res.json({ [key]: data, data });  // Both formats
+}
 ```
 
-**CRM Routes:**
+**Phase 2: Update Frontend API Clients**
+1. Update all frontend API files to expect `{ data }` format
+2. Add fallback for legacy format during transition:
 ```typescript
-// account.routes.ts:114, 137
-res.json(result);  // { data: [], meta: {} }
-res.status(201).json({ data: account });
-
-// Error format
-res.status(400).json({ errors: parsed.error.flatten() });
+const data = response.data ?? response.clients;
 ```
 
-**Files Affected:**
-| Route File | Response Wrapper | Error Format |
-|------------|------------------|--------------|
-| clients.ts | `{ clients }` | `{ error, details }` |
-| contacts.ts | `{ contacts }` | `{ error, details }` |
-| projects.ts | `{ projects }` | `{ error, details }` |
-| account.routes.ts | `{ data }` | `{ errors }` |
-| opportunity.routes.ts | `{ data }` | `{ errors }` |
+**Phase 3: Remove Legacy Format**
+1. Update all backend routes to use `{ data }` only
+2. Standardize error format to `{ errors }`
 
-**Remediation:** Standardize all routes to use `{ data }` wrapper and Zod `{ errors }` format.
+**Files to Update:**
+| Backend Route | Frontend Client |
+|--------------|-----------------|
+| clients.ts | clients.ts |
+| contacts.ts | contacts.ts |
+| projects.ts | projects.ts |
+| task.routes.ts | tasks.ts |
+| milestone.routes.ts | milestones.ts |
+| leads.ts | leads.ts |
+| assets.ts | assets.ts |
+
+**Estimated Effort:** 2-3 days (coordinated backend + frontend changes)
 
 ---
 
-### HIGH-03: Duplicate Lead Management Systems
+### HIGH-03: Duplicate Lead Management Systems (Migration Plan)
 
-**System 1 - InboundLead (Legacy PMO):**
-```prisma
-model InboundLead {
-  id      Int        @id
-  email   String
-  status  LeadStatus // NEW, CONTACTED, QUALIFIED, DISQUALIFIED, CONVERTED
-  // ...
+**Current Systems:**
+1. **InboundLead (Legacy PMO)** - `pmo/prisma/schema.prisma`
+   - Status: NEW, CONTACTED, QUALIFIED, DISQUALIFIED, CONVERTED
+   - Used by: `LeadsPage.tsx`, `lead.service.ts`
+
+2. **CRMContact Lifecycle (CRM)** - `pmo/prisma/schema.prisma`
+   - Lifecycle: LEAD, MQL, SQL, OPPORTUNITY, CUSTOMER, EVANGELIST, CHURNED
+   - Used by: CRM module (not yet in UI)
+
+**Migration Plan:**
+
+**Phase 1: Map Status to Lifecycle**
+```typescript
+const STATUS_TO_LIFECYCLE = {
+  NEW: 'LEAD',
+  CONTACTED: 'MQL',
+  QUALIFIED: 'SQL',
+  DISQUALIFIED: 'CHURNED',
+  CONVERTED: 'OPPORTUNITY',
+};
+```
+
+**Phase 2: Create Migration Script**
+```typescript
+// migrations/migrate-leads-to-crm-contacts.ts
+async function migrateLeads() {
+  const leads = await prisma.inboundLead.findMany();
+  for (const lead of leads) {
+    await prisma.cRMContact.create({
+      data: {
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        email: lead.email,
+        phone: lead.phone,
+        lifecycle: STATUS_TO_LIFECYCLE[lead.status],
+        leadSource: lead.source,
+        tenantId: lead.tenantId,
+        // Create linked Account if company provided
+      },
+    });
+  }
 }
 ```
 
-**System 2 - CRMContact Lifecycle (New CRM):**
+**Phase 3: Update LeadsPage to Use CRMContact**
+1. Replace InboundLead API with CRMContact API (filtered by lifecycle = LEAD/MQL/SQL)
+2. Update status transitions to lifecycle transitions
+
+**Phase 4: Deprecate InboundLead**
+1. Add deprecation notice to InboundLead routes
+2. Remove InboundLead model after migration validation
+
+**Estimated Effort:** 3-4 days
+
+---
+
+### HIGH-05: Terminology Collision - Client vs Account (Migration Plan)
+
+**Problem:**
+| PMO Term | CRM Term | Overlap |
+|----------|----------|---------|
+| `Client` | `Account` | Both represent companies |
+| `Contact` | `CRMContact` | Both represent people |
+
+**Complication:** Client model has AI Tool configurations attached (ChatbotConfig, DocumentAnalyzerConfig)
+
+**Migration Plan:**
+
+**Phase 1: Add clientId to Account Model (Schema Change)**
 ```prisma
-model CRMContact {
-  id        Int              @id
-  email     String?
-  lifecycle ContactLifecycle // LEAD, MQL, SQL, OPPORTUNITY, CUSTOMER, EVANGELIST, CHURNED
-  leadScore Int?
-  // ...
+model Account {
+  // ... existing fields
+  legacyClientId  Int?  @unique  // Link to original Client
 }
 ```
 
-**Impact:** Two different models tracking same concept with different enums.
+**Phase 2: Migrate Client Data to Account**
+```typescript
+async function migrateClientsToAccounts() {
+  const clients = await prisma.client.findMany();
+  for (const client of clients) {
+    await prisma.account.create({
+      data: {
+        name: client.name,
+        industry: client.industry,
+        employeeCount: mapCompanySizeToEmployeeCount(client.companySize),
+        type: 'CUSTOMER',  // or infer from usage
+        tenantId: client.tenantId,
+        legacyClientId: client.id,
+      },
+    });
+  }
+}
+```
 
-**Remediation:**
-1. Map InboundLead → CRMContact via migration
-2. Deprecate InboundLead model
-3. Update LeadsPage to use CRMContact API
+**Phase 3: Update AI Tool Configs**
+1. Add `accountId` field to ChatbotConfig and DocumentAnalyzerConfig
+2. Migrate existing clientId references to accountId
+3. Deprecate clientId fields
+
+**Phase 4: Update Frontend**
+1. Update ClientsPage to redirect to AccountsPage
+2. Update AI Tools pages to use Account instead of Client
+3. Remove Client-specific pages/components
+
+**Phase 5: Deprecate Client Model**
+1. Add deprecation notice
+2. Mark routes as deprecated
+3. Remove after validation period
+
+**Dependencies:**
+- All projects must be migrated or linked to Accounts
+- AI Tool configurations must be migrated
+- Contact → CRMContact migration should happen in parallel
+
+**Estimated Effort:** 5-7 days (coordinated with HIGH-03)
 
 ---
 
@@ -236,47 +324,13 @@ model CRMContact {
 
 **Status:** Minimal test suite added.
 
-**Existing Tests (Legacy PMO):**
+**Existing Tests:**
 ```
-pmo/apps/api/test/clients.routes.test.ts
-pmo/apps/api/test/contacts.routes.test.ts
-pmo/apps/api/test/projects.routes.test.ts
-pmo/apps/api/test/task.routes.test.ts
-pmo/apps/api/test/meetings.routes.test.ts
-```
-
-**CRM Tests Added:**
-```
-pmo/apps/api/test/crm/account.routes.test.ts     - ✅ ADDED (3 tests)
-pmo/apps/api/test/crm/opportunity.routes.test.ts - ✅ ADDED (2 tests)
-```
-
-**Remaining (Optional):**
-```
-pmo/apps/api/test/crm/activity.routes.test.ts    - Not yet added
+pmo/apps/api/test/crm/account.routes.test.ts     - ✅ Added (3 tests)
+pmo/apps/api/test/crm/opportunity.routes.test.ts - ✅ Added (2 tests)
 ```
 
 **Note:** Minimal test coverage now exists for core CRM functionality (accounts, opportunities, tenant isolation).
-
----
-
-### HIGH-05: Terminology Collision (Client vs Account)
-
-**Collision:**
-| PMO Term | CRM Term | Semantic Overlap |
-|----------|----------|------------------|
-| `Client` | `Account` | Both represent companies |
-| `Contact` | `CRMContact` | Both represent people |
-
-**Impact:**
-- Confusing codebase with two models for same concept
-- Client model has AI Tool configs attached
-- Can't cleanly migrate without breaking AI tools
-
-**Remediation:**
-1. Create migration path for Client → Account
-2. Move AI Tool configs to Account model
-3. Deprecate Client model over time
 
 ---
 
@@ -561,8 +615,8 @@ prisma.$queryRaw`
 | **Phase 1: Security** | CRIT-01, CRIT-02, CRIT-03 | ~3 days | Eliminates data leakage | ✅ COMPLETED |
 | **Phase 2: CRM Frontend** | CRIT-04, HIGH-06 | ~5 days | Enables CRM UI | ✅ COMPLETED |
 | **Phase 3: Testing** | HIGH-04 | ~3 days | Quality assurance | ✅ COMPLETED (minimal) |
-| **Phase 4: Legacy Migration** | HIGH-01, HIGH-03, HIGH-05 | ~4 days | Removes duplication | Pending |
-| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-05 | ~4 days | Code consistency | Pending |
+| **Phase 4: Legacy Migration** | HIGH-01, HIGH-03, HIGH-05 | ~4 days | Removes duplication | 🔄 IN PROGRESS (HIGH-01 done, plans documented) |
+| **Phase 5: Standardization** | HIGH-02, MED-01 to MED-05 | ~4 days | Code consistency | 📋 PLANNED (HIGH-02 plan documented) |
 | **Phase 6: Cleanup** | LOW-01 to LOW-08 | ~2 days | Maintainability | Pending |
 
 ---
@@ -577,6 +631,7 @@ prisma.$queryRaw`
    - ~~Create CRM React Query hooks~~ ✅
    - ~~Build AccountsPage and OpportunitiesPage~~ ✅
    - ~~Basic CRM test coverage~~ ✅
+   - ~~Migrate PipelinePage to use CRM Opportunity (HIGH-01)~~ ✅
 
 2. **Current Priority (This Sprint):**
    - Verify production migration deployed successfully
@@ -585,19 +640,18 @@ prisma.$queryRaw`
    - Add CRM Pipelines management UI
 
 3. **Short Term (Next Sprint):**
-   - Migrate PipelinePage to use CRM Opportunity (HIGH-01)
-   - Consolidate Lead/Contact models (HIGH-03)
+   - Execute Lead consolidation migration (HIGH-03 - plan documented)
    - Add comprehensive CRM test coverage
 
 4. **Medium Term (Next Quarter):**
-   - Full Client → Account migration (HIGH-05)
-   - API response format standardization (HIGH-02)
+   - Execute Client → Account migration (HIGH-05 - plan documented)
+   - Execute API response format standardization (HIGH-02 - plan documented)
    - API versioning strategy
 
 5. **Long Term:**
    - Comprehensive E2E coverage
    - Performance optimization
-   - Clean up deprecated code
+   - Clean up deprecated code and legacy models
 
 ---
 
