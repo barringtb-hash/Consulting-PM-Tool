@@ -17,7 +17,8 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../auth/AuthContext';
-import { useClients, useProjects } from '../../../api/queries';
+import { useProjects } from '../../../api/queries';
+import { useAccountStats } from '../../../api/hooks/crm';
 import { useMyTasks } from '../../../hooks/tasks';
 import type {
   DashboardPluginContext as PluginContextType,
@@ -84,25 +85,26 @@ export function DashboardPluginProvider({
   const ownerId = user ? Number(user.id) : undefined;
 
   // Fetch dashboard data
-  const clientsQuery = useClients({ includeArchived: false });
+  const accountStatsQuery = useAccountStats();
   const projectsQuery = useProjects();
   const tasksQuery = useMyTasks(ownerId);
 
-  // Process clients data
-  const clientsData = useMemo(() => {
-    const clients = clientsQuery.data ?? [];
+  // Process accounts data (using CRM Account Stats API)
+  const accountsData = useMemo(() => {
+    const stats = accountStatsQuery.data;
     return {
-      total: clients.length,
-      active: clients.filter((c) => !c.archived).length,
-      isLoading: clientsQuery.isLoading,
-      error: clientsQuery.error as Error | undefined,
-      refetch: clientsQuery.refetch,
+      total: stats?.total ?? 0,
+      // Active accounts = total (stats API excludes archived accounts)
+      active: stats?.total ?? 0,
+      isLoading: accountStatsQuery.isLoading,
+      error: accountStatsQuery.error as Error | undefined,
+      refetch: accountStatsQuery.refetch,
     };
   }, [
-    clientsQuery.data,
-    clientsQuery.isLoading,
-    clientsQuery.error,
-    clientsQuery.refetch,
+    accountStatsQuery.data,
+    accountStatsQuery.isLoading,
+    accountStatsQuery.error,
+    accountStatsQuery.refetch,
   ]);
 
   // Process projects data
@@ -180,11 +182,11 @@ export function DashboardPluginProvider({
   // Combine all dashboard data
   const dashboardData: DashboardData = useMemo(
     () => ({
-      clients: clientsData,
+      accounts: accountsData,
       projects: projectsData,
       tasks: tasksData,
     }),
-    [clientsData, projectsData, tasksData],
+    [accountsData, projectsData, tasksData],
   );
 
   // Compute enabled plugin IDs locally based on preferences
@@ -238,17 +240,19 @@ export function DashboardPluginProvider({
 
   // Refetch all data
   const refetchAll = useCallback(() => {
-    clientsQuery.refetch();
+    accountStatsQuery.refetch();
     projectsQuery.refetch();
     tasksQuery.refetch();
-  }, [clientsQuery, projectsQuery, tasksQuery]);
+  }, [accountStatsQuery, projectsQuery, tasksQuery]);
 
   // Check loading and error states
   const isLoading =
-    clientsQuery.isLoading || projectsQuery.isLoading || tasksQuery.isLoading;
+    accountStatsQuery.isLoading ||
+    projectsQuery.isLoading ||
+    tasksQuery.isLoading;
 
   const hasError = !!(
-    clientsQuery.error ||
+    accountStatsQuery.error ||
     projectsQuery.error ||
     tasksQuery.error
   );

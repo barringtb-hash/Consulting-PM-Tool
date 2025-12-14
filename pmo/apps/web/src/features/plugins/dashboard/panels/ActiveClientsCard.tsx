@@ -11,17 +11,16 @@ import type { DashboardPanelPlugin, DashboardPanelConfig } from '../types';
 
 function ActiveAccountsCardPanel(): JSX.Element {
   const { data, navigate } = useDashboardPluginContext();
-  // TODO: Migrate to CRM accounts API (currently uses legacy clients data)
-  const clientsData = data?.clients;
+  const accountsData = data?.accounts;
 
   return (
     <SummaryCard
       title="Active Accounts"
-      value={clientsData?.active ?? 0}
+      value={accountsData?.active ?? 0}
       description="Accounts you're working with"
       variant="primary"
       onClick={() => navigate('/crm/accounts')}
-      isLoading={clientsData?.isLoading}
+      isLoading={accountsData?.isLoading}
     />
   );
 }
