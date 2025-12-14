@@ -16,7 +16,7 @@ import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
 import { Badge } from '../../ui/Badge';
 import { useToast } from '../../ui/Toast';
-import { useClients } from '../../api/queries';
+import { useAccounts } from '../../api/hooks/crm';
 import {
   Plus,
   MessageCircle,
@@ -595,7 +595,7 @@ function ChatbotPage(): JSX.Element {
   const queryClient = useQueryClient();
 
   // Queries
-  const clientsQuery = useClients({ includeArchived: false });
+  const accountsQuery = useAccounts({ archived: false });
   const configsQuery = useQuery({
     queryKey: ['chatbot-configs'],
     queryFn: fetchChatbotConfigs,
@@ -816,13 +816,13 @@ function ChatbotPage(): JSX.Element {
 
   // Redirect to login on 401 errors from any query or mutation
   useRedirectOnUnauthorized(configsQuery.error);
-  useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(conversationsQuery.error);
   useRedirectOnUnauthorized(analyticsQuery.error);
   useRedirectOnUnauthorized(knowledgeBaseQuery.error);
   useRedirectOnUnauthorized(createConfigMutation.error);
 
-  const clients = clientsQuery.data ?? [];
+  const accounts = accountsQuery.data?.data ?? [];
 
   const filteredConfigs = useMemo(() => {
     const configList = configsQuery.data ?? [];
@@ -866,10 +866,10 @@ function ChatbotPage(): JSX.Element {
                 value={selectedClientId}
                 onChange={(e) => setSelectedClientId(e.target.value)}
               >
-                <option value="">All Clients</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
+                <option value="">All Accounts</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
                   </option>
                 ))}
               </Select>
@@ -2889,11 +2889,11 @@ function ChatbotPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <form onSubmit={handleCreateConfig} className="space-y-4">
-                <Select label="Client" name="clientId" required>
-                  <option value="">Select a client...</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
+                <Select label="Account" name="clientId" required>
+                  <option value="">Select an account...</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
                     </option>
                   ))}
                 </Select>
