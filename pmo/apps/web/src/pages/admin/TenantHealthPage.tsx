@@ -15,7 +15,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { Button, Card, Badge } from '../../ui';
-import { http } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
+import { buildOptions, handleResponse } from '../../api/http';
 
 interface UsageMetrics {
   users: { total: number; active: number; limit: number; percentage: number };
@@ -233,8 +234,9 @@ export function TenantHealthPage(): JSX.Element {
   } = useQuery<TenantHealthData>({
     queryKey: ['tenant-health'],
     queryFn: async () => {
-      const res = await http.get('/tenant-health');
-      return res.data;
+      const res = await fetch(buildApiUrl('/tenant-health'), buildOptions());
+      const data = await handleResponse<{ data: TenantHealthData }>(res);
+      return data.data;
     },
     refetchInterval: 60000, // Refresh every minute
   });
@@ -244,8 +246,12 @@ export function TenantHealthPage(): JSX.Element {
   >({
     queryKey: ['tenant-health-history', historyDays],
     queryFn: async () => {
-      const res = await http.get(`/tenant-health/history?days=${historyDays}`);
-      return res.data;
+      const res = await fetch(
+        buildApiUrl(`/tenant-health/history?days=${historyDays}`),
+        buildOptions(),
+      );
+      const data = await handleResponse<{ data: HistoryRecord[] }>(res);
+      return data.data;
     },
   });
 

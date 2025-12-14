@@ -8,7 +8,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Building2, Check, Loader2 } from 'lucide-react';
-import { http } from '../api/http';
+import { buildApiUrl } from '../api/config';
+import { buildOptions, handleResponse } from '../api/http';
 
 interface Tenant {
   id: string;
@@ -37,8 +38,9 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
   } = useQuery<Tenant[]>({
     queryKey: ['my-tenants'],
     queryFn: async () => {
-      const res = await http('/tenants/my');
-      return res.data;
+      const res = await fetch(buildApiUrl('/tenants/my'), buildOptions());
+      const data = await handleResponse<{ data: Tenant[] }>(res);
+      return data.data;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
@@ -46,8 +48,14 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
   // Switch tenant mutation
   const switchMutation = useMutation({
     mutationFn: async (tenantId: string) => {
-      const res = await http(`/tenants/switch/${tenantId}`, { method: 'POST' });
-      return res.data;
+      const res = await fetch(
+        buildApiUrl(`/tenants/switch/${tenantId}`),
+        buildOptions({ method: 'POST' }),
+      );
+      const data = await handleResponse<{
+        data: { tenant: Tenant; role: string };
+      }>(res);
+      return data.data;
     },
     onSuccess: (data) => {
       // Store the new tenant context
