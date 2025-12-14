@@ -61,6 +61,13 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  // Delete in proper order to respect foreign key constraints
+  // Delete dependent records first, then parent records
+  await prismaClient.task.deleteMany();
+  await prismaClient.milestone.deleteMany();
+  await prismaClient.meeting.deleteMany();
+  await prismaClient.document.deleteMany();
+  await prismaClient.project.deleteMany();
   await prismaClient.contact.deleteMany();
   await prismaClient.client.deleteMany();
   await prismaClient.user.deleteMany();
