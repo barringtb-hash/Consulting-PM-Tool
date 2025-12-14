@@ -17,10 +17,22 @@ let isConnected = false;
 let _connectionAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
+// Check if Redis is configured
+const isRedisConfigured = Boolean(env.redisUrl);
+
+if (!isRedisConfigured) {
+  console.log('Redis: No REDIS_URL configured, Redis features disabled');
+}
+
 /**
  * Create Redis client with automatic reconnection.
+ * Returns null if Redis is not configured.
  */
-function createRedisClient(): Redis {
+function createRedisClient(): Redis | null {
+  if (!isRedisConfigured) {
+    return null;
+  }
+
   const client = new Redis(env.redisUrl, {
     maxRetriesPerRequest: 3,
     retryStrategy: (times) => {
@@ -71,17 +83,22 @@ function createRedisClient(): Redis {
   return client;
 }
 
-// Primary Redis client instance
-export const redis: Redis = createRedisClient();
+// Primary Redis client instance (null if not configured)
+export const redis: Redis | null = createRedisClient();
 
 // Subscriber client for pub/sub (requires separate connection)
-export const redisSubscriber: Redis = createRedisClient();
+export const redisSubscriber: Redis | null = createRedisClient();
 
 /**
  * Create Redis client for BullMQ blocking operations.
  * BullMQ QueueEvents requires maxRetriesPerRequest: null for blocking commands.
+ * Returns null if Redis is not configured.
  */
-function createBullMQRedisClient(): Redis {
+function createBullMQRedisClient(): Redis | null {
+  if (!isRedisConfigured) {
+    return null;
+  }
+
   const client = new Redis(env.redisUrl, {
     maxRetriesPerRequest: null, // Required for BullMQ blocking operations
     retryStrategy: (times) => {
@@ -104,22 +121,21 @@ function createBullMQRedisClient(): Redis {
 }
 
 // BullMQ client for queue event listeners (requires maxRetriesPerRequest: null)
-export const redisBullMQ: Redis = createBullMQRedisClient();
+export const redisBullMQ: Redis | null = createBullMQRedisClient();
 
 /**
  * Check if Redis is connected and ready.
  */
 export function isRedisConnected(): boolean {
-  return isConnected && redis.status === 'ready';
+  return isConnected && redis !== null && redis.status === 'ready';
 }
 
 /**
  * Connect to Redis if not already connected.
  */
 export async function connectRedis(): Promise<void> {
-  if (!env.redisUrl) {
-    console.log('Redis: No REDIS_URL configured, skipping connection');
-    return;
+  if (!redis) {
+    return; // Redis not configured
   }
 
   if (redis.status === 'ready') {
@@ -138,10 +154,10 @@ export async function connectRedis(): Promise<void> {
  * Disconnect from Redis gracefully.
  */
 export async function disconnectRedis(): Promise<void> {
-  if (redis.status !== 'end') {
+  if (redis && redis.status !== 'end') {
     await redis.quit();
   }
-  if (redisSubscriber.status !== 'end') {
+  if (redisSubscriber && redisSubscriber.status !== 'end') {
     await redisSubscriber.quit();
   }
 }
@@ -167,7 +183,7 @@ const DEFAULT_TTL = 300; // 5 minutes
  * Get a cached value.
  */
 export async function cacheGet<T>(key: string): Promise<T | null> {
-  if (!isRedisConnected()) return null;
+  if (!isRedisConnected() || !redis) return null;
 
   try {
     const value = await redis.get(key);
@@ -186,7 +202,7 @@ export async function cacheSet(
   value: unknown,
   ttlSeconds: number = DEFAULT_TTL,
 ): Promise<void> {
-  if (!isRedisConnected()) return;
+  if (!isRedisConnected() || !redis) return;
 
   try {
     await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
@@ -199,7 +215,7 @@ export async function cacheSet(
  * Delete a cached value.
  */
 export async function cacheDelete(key: string): Promise<void> {
-  if (!isRedisConnected()) return;
+  if (!isRedisConnected() || !redis) return;
 
   try {
     await redis.del(key);
@@ -212,7 +228,7 @@ export async function cacheDelete(key: string): Promise<void> {
  * Delete all keys matching a pattern (use with caution).
  */
 export async function cacheDeletePattern(pattern: string): Promise<void> {
-  if (!isRedisConnected()) return;
+  if (!isRedisConnected() || !redis) return;
 
   try {
     const keys = await redis.keys(pattern);
