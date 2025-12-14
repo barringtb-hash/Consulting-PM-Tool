@@ -63,17 +63,47 @@ beforeAll(async () => {
 beforeEach(async () => {
   // Delete in proper order to respect foreign key constraints
   // Delete dependent records first, then parent records
+  //
+  // IMPORTANT: Skip deleting data belonging to test tenants (slug starting with
+  // 'test-tenant-' or 'test-tenant-api-') as these are managed by tenant-isolation
+  // tests which create them in beforeAll and need them to persist across tests.
 
-  // CRM tables (most dependent first)
-  await prismaClient.cRMActivity.deleteMany();
-  await prismaClient.opportunityStageHistory.deleteMany();
-  await prismaClient.opportunityContact.deleteMany();
-  await prismaClient.opportunity.deleteMany();
-  await prismaClient.salesPipelineStage.deleteMany();
-  await prismaClient.pipeline.deleteMany();
-  await prismaClient.cRMContact.deleteMany();
+  // Get test tenant IDs to exclude from cleanup
+  const testTenants = await prismaClient.tenant.findMany({
+    where: {
+      OR: [
+        { slug: { startsWith: 'test-tenant-' } },
+        { slug: { startsWith: 'test-tenant-api-' } },
+      ],
+    },
+    select: { id: true },
+  });
+  const testTenantIds = testTenants.map((t) => t.id);
 
-  // PMO tables
+  // CRM tables (most dependent first) - skip test tenant data
+  await prismaClient.cRMActivity.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+  await prismaClient.opportunityStageHistory.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+  await prismaClient.opportunityContact.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+  await prismaClient.opportunity.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+  await prismaClient.salesPipelineStage.deleteMany({
+    where: { pipeline: { tenantId: { notIn: testTenantIds } } },
+  });
+  await prismaClient.pipeline.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+  await prismaClient.cRMContact.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+
+  // PMO tables (not tenant-scoped in legacy schema, delete all)
   await prismaClient.task.deleteMany();
   await prismaClient.milestone.deleteMany();
   await prismaClient.meeting.deleteMany();
@@ -82,10 +112,32 @@ beforeEach(async () => {
   await prismaClient.contact.deleteMany();
   await prismaClient.client.deleteMany();
 
-  // Shared tables (Account depends on User, User depends on Tenant for some relations)
-  await prismaClient.account.deleteMany();
-  await prismaClient.user.deleteMany();
-  await prismaClient.tenant.deleteMany();
+  // Shared tables - skip test tenant data
+  await prismaClient.account.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+
+  // Tenant-related tables must be deleted in order
+  // First, delete tenant-user associations for non-test tenants
+  await prismaClient.tenantUser.deleteMany({
+    where: { tenantId: { notIn: testTenantIds } },
+  });
+
+  // Delete users not associated with test tenants
+  const testTenantUserIds = await prismaClient.tenantUser.findMany({
+    where: { tenantId: { in: testTenantIds } },
+    select: { userId: true },
+  });
+  const protectedUserIds = testTenantUserIds.map((tu) => tu.userId);
+
+  await prismaClient.user.deleteMany({
+    where: { id: { notIn: protectedUserIds } },
+  });
+
+  // Delete only non-test tenants
+  await prismaClient.tenant.deleteMany({
+    where: { id: { notIn: testTenantIds } },
+  });
 });
 
 afterAll(async () => {
