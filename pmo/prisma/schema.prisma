@@ -245,6 +245,8 @@ model User {
   createdActivities       CRMActivity[]             @relation("ActivityCreator")
   notifications           Notification[]
   savedReports            SavedReport[]
+  // Audit logging
+  auditLogs               AuditLog[]    @relation("AuditLogUser")
 }
 
 model Client {
@@ -5912,6 +5914,9 @@ model Tenant {
   marketingContents MarketingContent[]
   campaigns         Campaign[]
   inboundLeads      InboundLead[]
+  // Audit and health metrics
+  auditLogs     AuditLog[]
+  healthMetrics TenantHealthMetrics[]
 
   @@index([slug])
   @@index([status])
@@ -6565,4 +6570,82 @@ model SavedReport {
 
   @@index([tenantId, createdById])
   @@index([tenantId, entity])
+}
+
+// ============================================================================
+// AUDIT LOGGING
+// ============================================================================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  BULK_UPDATE
+  BULK_DELETE
+  PERMISSION_CHANGE
+  TENANT_SWITCH
+}
+
+/**
+ * AuditLog - Track all sensitive operations with who did what, when, and what changed
+ */
+model AuditLog {
+  id         String      @id @default(cuid())
+  tenantId   String?
+  userId     Int?
+  action     AuditAction
+  entityType String      // e.g., "Account", "Opportunity", "CRMContact"
+  entityId   String      // ID of the affected entity
+  changes    Json?       // { before: {...}, after: {...} }
+  metadata   Json?       // Request IP, user agent, etc.
+  createdAt  DateTime    @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user   User?   @relation("AuditLogUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ============================================================================
+// TENANT HEALTH METRICS
+// ============================================================================
+
+/**
+ * TenantHealthMetrics - Track tenant usage, quotas, and health metrics
+ */
+model TenantHealthMetrics {
+  id         String   @id @default(cuid())
+  tenantId   String
+  recordedAt DateTime @default(now())
+
+  // Usage metrics
+  activeUsers      Int @default(0)
+  totalUsers       Int @default(0)
+  accountCount     Int @default(0)
+  contactCount     Int @default(0)
+  opportunityCount Int @default(0)
+  activityCount    Int @default(0)
+
+  // Storage
+  storageUsedMB  Float @default(0)
+  documentsCount Int   @default(0)
+
+  // API usage
+  apiCallsToday Int @default(0)
+  apiCallsMonth Int @default(0)
+
+  // Engagement
+  dailyActiveUsers  Int       @default(0)
+  weeklyActiveUsers Int       @default(0)
+  lastActivityAt    DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, recordedAt])
 }

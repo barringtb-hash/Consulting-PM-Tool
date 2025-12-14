@@ -16,6 +16,9 @@ import {
 } from '../validation/tenant-admin.schema';
 import * as tenantAdminService from './tenant-admin.service';
 import type { UpdateTenantBrandingInput } from './tenant-admin.service';
+import * as tenantService from '../tenant/tenant.service';
+import { logAudit } from '../services/audit.service';
+import { AuditAction } from '@prisma/client';
 
 const router = Router();
 
@@ -151,7 +154,7 @@ router.put(
 
 /**
  * POST /api/admin/tenants/:tenantId/suspend
- * Suspend a tenant
+ * Suspend a tenant with optional reason
  */
 router.post(
   '/tenants/:tenantId/suspend',
@@ -159,8 +162,26 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { tenantId } = req.params;
-      const tenant = await tenantAdminService.suspendTenant(tenantId);
-      return res.json(tenant);
+      const body = req.body as { reason?: string };
+      const { reason } = body;
+
+      const tenant = await tenantService.suspendTenant(tenantId, reason);
+
+      // Audit log
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.UPDATE,
+        entityType: 'Tenant',
+        entityId: tenantId,
+        after: { status: 'SUSPENDED', reason },
+        metadata: {
+          adminAction: 'suspend',
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      return res.json({ data: tenant });
     } catch (error) {
       console.error('Error suspending tenant:', error);
       return res.status(500).json({
@@ -172,8 +193,47 @@ router.post(
 );
 
 /**
+ * POST /api/admin/tenants/:tenantId/reactivate
+ * Reactivate a suspended tenant
+ */
+router.post(
+  '/tenants/:tenantId/reactivate',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const tenant = await tenantService.reactivateTenant(tenantId);
+
+      // Audit log
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.UPDATE,
+        entityType: 'Tenant',
+        entityId: tenantId,
+        after: { status: 'ACTIVE' },
+        metadata: {
+          adminAction: 'reactivate',
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      return res.json({ data: tenant });
+    } catch (error) {
+      console.error('Error reactivating tenant:', error);
+      return res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to reactivate tenant',
+      });
+    }
+  },
+);
+
+/**
  * POST /api/admin/tenants/:tenantId/activate
- * Activate a tenant
+ * Activate a tenant (legacy endpoint - use reactivate for suspended tenants)
  */
 router.post(
   '/tenants/:tenantId/activate',
@@ -194,8 +254,127 @@ router.post(
 );
 
 /**
+ * POST /api/admin/tenants/:tenantId/initiate-deletion
+ * Initiate tenant deletion with 30-day retention period
+ */
+router.post(
+  '/tenants/:tenantId/initiate-deletion',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const tenant = await tenantService.initiateTenantDeletion(tenantId);
+
+      // Audit log
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.DELETE,
+        entityType: 'Tenant',
+        entityId: tenantId,
+        after: { status: 'CANCELLED' },
+        metadata: {
+          adminAction: 'initiate-deletion',
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      return res.json({ data: tenant });
+    } catch (error) {
+      console.error('Error initiating tenant deletion:', error);
+      return res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to initiate tenant deletion',
+      });
+    }
+  },
+);
+
+/**
+ * POST /api/admin/tenants/:tenantId/cancel-deletion
+ * Cancel pending tenant deletion
+ */
+router.post(
+  '/tenants/:tenantId/cancel-deletion',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const tenant = await tenantService.cancelTenantDeletion(tenantId);
+
+      // Audit log
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.UPDATE,
+        entityType: 'Tenant',
+        entityId: tenantId,
+        after: { status: 'ACTIVE', deletionCancelled: true },
+        metadata: {
+          adminAction: 'cancel-deletion',
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      return res.json({ data: tenant });
+    } catch (error) {
+      console.error('Error cancelling tenant deletion:', error);
+      return res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to cancel tenant deletion',
+      });
+    }
+  },
+);
+
+/**
+ * GET /api/admin/tenants/:tenantId/export
+ * Export tenant data for compliance/portability
+ */
+router.get(
+  '/tenants/:tenantId/export',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const exportData = await tenantService.exportTenantData(tenantId);
+
+      // Audit log
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.EXPORT,
+        entityType: 'Tenant',
+        entityId: tenantId,
+        metadata: {
+          adminAction: 'export',
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      return res.json({ data: exportData });
+    } catch (error) {
+      console.error('Error exporting tenant data:', error);
+      if (error instanceof Error && error.message === 'Tenant not found') {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      return res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to export tenant data',
+      });
+    }
+  },
+);
+
+/**
  * POST /api/admin/tenants/:tenantId/cancel
- * Cancel a tenant (soft delete)
+ * Cancel a tenant (soft delete) - legacy endpoint
  */
 router.post(
   '/tenants/:tenantId/cancel',

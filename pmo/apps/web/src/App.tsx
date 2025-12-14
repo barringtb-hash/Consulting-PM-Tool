@@ -58,6 +58,11 @@ const TenantFormPage = lazy(() =>
     default: m.TenantFormPage,
   })),
 );
+const TenantHealthPage = lazy(() =>
+  import('./pages/admin/TenantHealthPage').then((m) => ({
+    default: m.TenantHealthPage,
+  })),
+);
 
 // Phase 1 AI Tools pages
 const ChatbotPage = lazy(() => import('./pages/ai-tools/ChatbotPage'));
@@ -329,6 +334,15 @@ function App(): JSX.Element {
                     />
                   </>
                 )}
+                {/* Tenant Health Dashboard - available to tenant admins */}
+                <Route
+                  path="/admin/health"
+                  element={
+                    <LazyPage>
+                      <TenantHealthPage />
+                    </LazyPage>
+                  }
+                />
               </>
             )}
 
