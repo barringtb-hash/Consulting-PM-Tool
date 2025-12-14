@@ -106,13 +106,15 @@ router.post('/assets', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  if (parsed.data.clientId) {
-    const client = await prisma.client.findUnique({
-      where: { id: parsed.data.clientId },
+  // Support both clientId (deprecated) and accountId
+  const accountId = parsed.data.accountId || parsed.data.clientId;
+  if (accountId) {
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
     });
 
-    if (!client) {
-      res.status(404).json({ error: 'Client not found' });
+    if (!account) {
+      res.status(404).json({ error: 'Account not found' });
       return;
     }
   }

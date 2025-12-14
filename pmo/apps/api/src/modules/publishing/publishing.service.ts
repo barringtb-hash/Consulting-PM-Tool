@@ -34,25 +34,26 @@ async function verifyClientAccess(
 }
 
 /**
- * Get all publishing connections for a client
+ * Get all publishing connections for an account
+ * @param accountId - Account ID (or legacy clientId)
  */
 export const getPublishingConnections = async (
-  clientId: number,
+  accountId: number,
   ownerId: number,
 ) => {
-  const client = await prisma.client.findUnique({ where: { id: clientId } });
-  if (!client) {
+  const account = await prisma.account.findUnique({ where: { id: accountId } });
+  if (!account) {
     return { error: 'client_not_found' as const };
   }
 
-  // Verify user has access to this client
-  const hasAccess = await verifyClientAccess(clientId, ownerId);
+  // Verify user has access to this account
+  const hasAccess = await verifyClientAccess(accountId, ownerId);
   if (!hasAccess) {
     return { error: 'forbidden' as const };
   }
 
   const connections = await prisma.publishingConnection.findMany({
-    where: { clientId },
+    where: { clientId: accountId },
     include: {
       client: {
         select: { id: true, name: true },
@@ -66,19 +67,20 @@ export const getPublishingConnections = async (
 
 /**
  * Create a publishing connection
+ * Note: input.clientId now represents accountId for backwards compatibility
  */
 export const createPublishingConnection = async (
   ownerId: number,
   input: CreatePublishingConnectionInput,
 ) => {
-  const client = await prisma.client.findUnique({
+  const account = await prisma.account.findUnique({
     where: { id: input.clientId },
   });
-  if (!client) {
+  if (!account) {
     return { error: 'client_not_found' as const };
   }
 
-  // Verify user has access to this client
+  // Verify user has access to this account
   const hasAccess = await verifyClientAccess(input.clientId, ownerId);
   if (!hasAccess) {
     return { error: 'forbidden' as const };

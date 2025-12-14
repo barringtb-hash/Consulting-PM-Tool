@@ -12,25 +12,26 @@ import { generateMarketingContent } from '../../services/llm.service';
 import { ContentType, ContentStatus } from '../../types/marketing';
 
 /**
- * Validate that the user has access to the client
+ * Validate that the user has access to the account
+ * @param accountId - Account ID (or legacy clientId)
  */
-const validateClientAccess = async (
-  clientId: number,
+const validateAccountAccess = async (
+  accountId: number,
 
   _ownerId: number,
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
-  const client = await prisma.client.findFirst({
-    where: { id: clientId, tenantId },
+  const account = await prisma.account.findFirst({
+    where: { id: accountId, tenantId },
   });
 
-  if (!client) {
+  if (!account) {
     return 'not_found' as const;
   }
 
-  // In this system, all users can access all clients
-  // If you want to add client-level access control, implement it here
-  return client;
+  // In this system, all users can access all accounts
+  // If you want to add account-level access control, implement it here
+  return account;
 };
 
 /**
@@ -190,10 +191,10 @@ export const createMarketingContent = async (
   ownerId: number,
   data: CreateMarketingContentInput,
 ) => {
-  // Validate client access
-  const clientAccess = await validateClientAccess(data.clientId, ownerId);
+  // Validate account access (clientId maps to accountId)
+  const accountAccess = await validateAccountAccess(data.clientId, ownerId);
 
-  if (clientAccess === 'not_found') {
+  if (accountAccess === 'not_found') {
     return { error: 'client_not_found' as const };
   }
 

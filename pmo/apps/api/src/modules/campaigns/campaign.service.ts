@@ -7,21 +7,22 @@ import {
 } from '../../types/marketing';
 
 /**
- * Validate that the user has access to the client
+ * Validate that the user has access to the account
+ * @param accountId - Account ID (or legacy clientId)
  */
-const validateClientAccess = async (
-  clientId: number,
+const validateAccountAccess = async (
+  accountId: number,
 
   _ownerId: number,
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
-  const client = await prisma.client.findFirst({
-    where: { id: clientId, tenantId },
+  const account = await prisma.account.findFirst({
+    where: { id: accountId, tenantId },
   });
-  if (!client) {
+  if (!account) {
     return 'not_found' as const;
   }
-  return client;
+  return account;
 };
 
 /**
@@ -186,9 +187,9 @@ export const createCampaign = async (
   ownerId: number,
   input: CreateCampaignInput,
 ) => {
-  // Validate client access
-  const clientCheck = await validateClientAccess(input.clientId, ownerId);
-  if (clientCheck === 'not_found') {
+  // Validate account access (clientId maps to accountId)
+  const accountCheck = await validateAccountAccess(input.clientId, ownerId);
+  if (accountCheck === 'not_found') {
     return { error: 'client_not_found' as const };
   }
 
