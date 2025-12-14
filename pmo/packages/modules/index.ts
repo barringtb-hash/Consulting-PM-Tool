@@ -140,9 +140,8 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     additionalPaths: ['/clients/:clientId', '/client-intake'],
     icon: 'Users',
     isCore: true,
-    apiPrefixes: ['/api/clients', '/api/contacts', '/api/documents'],
-    description:
-      'Client management, contacts, and documents (Legacy - use Accounts)',
+    apiPrefixes: ['/api/clients', '/api/documents'],
+    description: 'Legacy client management - redirects to CRM Accounts',
     showInNavigation: false, // Hidden - redirects to CRM Accounts
   },
   projects: {
