@@ -44,6 +44,23 @@ const AdminModulesPage = lazy(() =>
   })),
 );
 
+// System Admin - Tenant Management pages
+const TenantListPage = lazy(() =>
+  import('./pages/admin/TenantListPage').then((m) => ({
+    default: m.TenantListPage,
+  })),
+);
+const TenantDetailPage = lazy(() =>
+  import('./pages/admin/TenantDetailPage').then((m) => ({
+    default: m.TenantDetailPage,
+  })),
+);
+const TenantFormPage = lazy(() =>
+  import('./pages/admin/TenantFormPage').then((m) => ({
+    default: m.TenantFormPage,
+  })),
+);
+
 // Phase 1 AI Tools pages
 const ChatbotPage = lazy(() => import('./pages/ai-tools/ChatbotPage'));
 const ProductDescriptionsPage = lazy(
@@ -264,6 +281,43 @@ function App(): JSX.Element {
                     </LazyPage>
                   }
                 />
+                {/* System Admin - Tenant Management */}
+                {isModuleEnabled('tenantAdmin') && (
+                  <>
+                    <Route
+                      path="/admin/tenants"
+                      element={
+                        <LazyPage>
+                          <TenantListPage />
+                        </LazyPage>
+                      }
+                    />
+                    <Route
+                      path="/admin/tenants/new"
+                      element={
+                        <LazyPage>
+                          <TenantFormPage />
+                        </LazyPage>
+                      }
+                    />
+                    <Route
+                      path="/admin/tenants/:tenantId"
+                      element={
+                        <LazyPage>
+                          <TenantDetailPage />
+                        </LazyPage>
+                      }
+                    />
+                    <Route
+                      path="/admin/tenants/:tenantId/edit"
+                      element={
+                        <LazyPage>
+                          <TenantFormPage />
+                        </LazyPage>
+                      }
+                    />
+                  </>
+                )}
               </>
             )}
 

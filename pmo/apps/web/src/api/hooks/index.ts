@@ -326,3 +326,23 @@ export type {
   RecentMeeting,
   MeetingBrief,
 } from './mcp';
+
+// ============================================================================
+// System Admin - Tenant Management
+// ============================================================================
+
+export {
+  useTenants,
+  useTenantStats,
+  useTenant,
+  useTenantUsers,
+  useCreateTenant,
+  useUpdateTenant,
+  useSuspendTenant,
+  useActivateTenant,
+  useCancelTenant,
+  useAddTenantUser,
+  useUpdateTenantUserRole,
+  useRemoveTenantUser,
+  useConfigureTenantModule,
+} from './useTenantAdmin';

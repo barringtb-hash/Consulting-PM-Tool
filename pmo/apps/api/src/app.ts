@@ -55,6 +55,8 @@ import { integrationRouter } from './integrations';
 import { brandingRouter } from './branding';
 import { domainRouter } from './domains';
 import { analyticsRouter } from './analytics';
+// System Admin Routes
+import { tenantAdminRouter } from './admin';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -312,6 +314,11 @@ export function createApp(): express.Express {
   if (isModuleEnabled('admin')) {
     app.use('/api/users', requireModule('admin'), usersRouter);
   }
+
+  // ============ SYSTEM ADMIN ROUTES ============
+  // System admin routes for managing all tenants (requires global ADMIN role)
+  // These routes are separate from the admin module and always available
+  app.use('/api/admin', tenantAdminRouter);
 
   // ============ MCP INTEGRATION MODULE ============
   // MCP routes are ALWAYS registered to ensure proper error messages.

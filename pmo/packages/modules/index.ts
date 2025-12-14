@@ -24,6 +24,7 @@ export type ModuleId =
   | 'leads'
   | 'pipeline'
   | 'admin'
+  | 'tenantAdmin'
   // CRM modules
   | 'crmAccounts'
   | 'crmOpportunities'
@@ -220,6 +221,23 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/users', '/api/admin'],
     description:
       'User administration, module configuration, and access control',
+  },
+  tenantAdmin: {
+    id: 'tenantAdmin',
+    label: 'Tenants',
+    navGroup: 'admin',
+    path: '/admin/tenants',
+    additionalPaths: [
+      '/admin/tenants/new',
+      '/admin/tenants/:tenantId',
+      '/admin/tenants/:tenantId/edit',
+    ],
+    icon: 'Building2',
+    isCore: false,
+    dependencies: ['admin'],
+    apiPrefixes: ['/api/admin/tenants'],
+    description:
+      'System admin tenant management - create and manage customer organizations',
   },
 
   // ============ CRM MODULES ============
@@ -675,6 +693,7 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'leads',
   'pipeline',
   'admin',
+  'tenantAdmin',
   // CRM modules
   'crmAccounts',
   'crmOpportunities',
