@@ -121,7 +121,7 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
   // Loading state - show current tenant name if available
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-500">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>Loading...</span>
       </div>
@@ -131,7 +131,7 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
   // Don't show switcher if user only has one tenant
   if (tenants.length <= 1) {
     return currentTenant ? (
-      <div className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700">
+      <div className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-700">
         {currentTenant.logoUrl ? (
           <img
             src={currentTenant.logoUrl}
@@ -153,7 +153,7 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={switchMutation.isPending}
-        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50"
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 disabled:opacity-50"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -186,8 +186,8 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-1 w-64 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-          <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500">
+        <div className="absolute left-0 z-50 mt-1 w-64 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+          <div className="border-b border-neutral-100 px-3 py-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
             Your Workspaces
           </div>
           <div className="max-h-[300px] overflow-y-auto">
@@ -205,7 +205,7 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
                     setIsOpen(false);
                   }}
                   disabled={switchMutation.isPending}
-                  className={`flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50 ${
+                  className={`flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-neutral-50 disabled:opacity-50 ${
                     isActive ? 'bg-blue-50' : ''
                   }`}
                   role="option"
@@ -228,10 +228,10 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
                     </div>
                   )}
                   <div className="min-w-0 flex-1 text-left">
-                    <div className="truncate font-medium text-gray-900">
+                    <div className="truncate font-medium text-neutral-900">
                       {tenant.name}
                     </div>
-                    <div className="text-xs capitalize text-gray-500">
+                    <div className="text-xs capitalize text-neutral-500">
                       {tenant.role.toLowerCase()} &middot;{' '}
                       {tenant.plan.toLowerCase()}
                     </div>

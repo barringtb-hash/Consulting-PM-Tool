@@ -165,16 +165,12 @@ export async function getTenantHealth(
     accountCount,
     contactCount,
     opportunityCount,
-    _activityCount,
-    _documentsCount,
     recentActivities,
     recentOpportunityUpdates,
   ] = await Promise.all([
     prisma.account.count({ where: { tenantId: effectiveTenantId } }),
     prisma.cRMContact.count({ where: { tenantId: effectiveTenantId } }),
     prisma.opportunity.count({ where: { tenantId: effectiveTenantId } }),
-    prisma.cRMActivity.count({ where: { tenantId: effectiveTenantId } }),
-    prisma.analyzedDocument.count({ where: { tenantId: effectiveTenantId } }),
     // Activities created this week
     prisma.cRMActivity.count({
       where: {
@@ -460,7 +456,6 @@ export async function recordHealthMetrics(tenantId: string): Promise<void> {
   ]);
 
   // Get active user counts
-  const _thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 

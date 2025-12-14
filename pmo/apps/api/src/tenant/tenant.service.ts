@@ -741,8 +741,17 @@ export async function permanentlyDeleteTenant(tenantId: string) {
     await tx.tenantBranding.deleteMany({ where: { tenantId } });
     await tx.tenantUser.deleteMany({ where: { tenantId } });
 
-    // Delete Audit logs (optional - might want to keep for compliance)
-    await tx.auditLog.deleteMany({ where: { tenantId } });
+    // IMPORTANT: Do NOT delete audit logs for compliance purposes.
+    // Regulatory frameworks (GDPR, SOC 2, HIPAA) often require audit log
+    // retention even after account deletion. The audit logs are anonymized
+    // below by removing user associations but the records are preserved.
+    await tx.auditLog.updateMany({
+      where: { tenantId },
+      data: {
+        // Anonymize but preserve the audit trail
+        metadata: { deletedTenant: true, deletedAt: new Date().toISOString() },
+      },
+    });
 
     // Delete Health metrics
     await tx.tenantHealthMetrics.deleteMany({ where: { tenantId } });
