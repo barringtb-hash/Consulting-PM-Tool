@@ -39,10 +39,11 @@ const createClient = async (ownerId: number) => {
   });
 
   // Create legacy Client (still required by DB constraint)
+  // Note: Client model doesn't have ownerId field
   const client = await prisma.client.create({
     data: {
       name: 'Test Client',
-      ownerId: ownerId,
+      tenantId: tenant.id,
     },
   });
 
