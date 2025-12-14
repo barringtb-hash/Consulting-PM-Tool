@@ -16,6 +16,7 @@ import {
   ContentStatus,
   ContentChannel,
   CampaignStatus,
+  TenantRole,
 } from '@prisma/client';
 
 if (!process.env.DATABASE_URL) {
@@ -894,6 +895,45 @@ async function main() {
     userMap.set(user.email, user.id);
   }
 
+  // Create default tenant for multi-tenant support
+  const defaultTenant = await prisma.tenant.upsert({
+    where: { slug: 'default' },
+    update: {
+      name: 'Launchpad Consulting Partners',
+    },
+    create: {
+      name: 'Launchpad Consulting Partners',
+      slug: 'default',
+      plan: 'PROFESSIONAL',
+      status: 'ACTIVE',
+    },
+  });
+  console.log(`  ✓ Default tenant created/updated: ${defaultTenant.name}`);
+
+  // Link all users to the default tenant
+  for (const [email, userId] of userMap) {
+    const isAdmin =
+      users.find((u) => u.email === email)?.role === UserRole.ADMIN;
+    await prisma.tenantUser.upsert({
+      where: {
+        tenantId_userId: {
+          tenantId: defaultTenant.id,
+          userId,
+        },
+      },
+      update: {
+        role: isAdmin ? TenantRole.OWNER : TenantRole.MEMBER,
+      },
+      create: {
+        tenantId: defaultTenant.id,
+        userId,
+        role: isAdmin ? TenantRole.OWNER : TenantRole.MEMBER,
+        acceptedAt: new Date(),
+      },
+    });
+  }
+  console.log(`  ✓ Linked ${userMap.size} users to default tenant`);
+
   const clientMap = new Map<string, number>();
   const projectMap = new Map<string, { id: number; clientId: number }>();
   for (const clientData of clients) {
@@ -905,6 +945,7 @@ async function main() {
       ? await prisma.client.update({
           where: { id: existingClient.id },
           data: {
+            tenantId: defaultTenant.id,
             industry: clientData.industry,
             companySize: clientData.companySize,
             timezone: clientData.timezone,
@@ -915,6 +956,7 @@ async function main() {
         })
       : await prisma.client.create({
           data: {
+            tenantId: defaultTenant.id,
             name: clientData.name,
             industry: clientData.industry,
             companySize: clientData.companySize,
@@ -976,6 +1018,7 @@ async function main() {
       ? await prisma.project.update({
           where: { id: existingProject.id },
           data: {
+            tenantId: defaultTenant.id,
             ownerId,
             status: projectSeed.status,
             startDate: projectSeed.startDate,
@@ -987,6 +1030,7 @@ async function main() {
         })
       : await prisma.project.create({
           data: {
+            tenantId: defaultTenant.id,
             name: projectSeed.name,
             clientId,
             ownerId,

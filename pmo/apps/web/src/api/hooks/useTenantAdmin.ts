@@ -254,3 +254,25 @@ export function useConfigureTenantModule() {
     },
   });
 }
+
+/**
+ * Hook to update tenant branding
+ */
+export function useUpdateTenantBranding() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      input,
+    }: {
+      tenantId: string;
+      input: tenantAdminApi.UpdateTenantBrandingInput;
+    }) => tenantAdminApi.updateTenantBranding(tenantId, input),
+    onSuccess: (_data, { tenantId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tenantAdmin.detail(tenantId),
+      });
+    },
+  });
+}

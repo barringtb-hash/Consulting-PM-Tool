@@ -15,6 +15,7 @@ import {
   listTenantsQuerySchema,
 } from '../validation/tenant-admin.schema';
 import * as tenantAdminService from './tenant-admin.service';
+import type { UpdateTenantBrandingInput } from './tenant-admin.service';
 
 const router = Router();
 
@@ -355,6 +356,36 @@ router.put(
           error instanceof Error
             ? error.message
             : 'Failed to configure tenant module',
+      });
+    }
+  },
+);
+
+/**
+ * PUT /api/admin/tenants/:tenantId/branding
+ * Update tenant branding
+ */
+router.put(
+  '/tenants/:tenantId/branding',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const branding = await tenantAdminService.updateTenantBrandingByAdmin(
+        tenantId,
+        req.body as UpdateTenantBrandingInput,
+      );
+      return res.json(branding);
+    } catch (error) {
+      console.error('Error updating tenant branding:', error);
+      if (error instanceof Error && error.message === 'Tenant not found') {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      return res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update tenant branding',
       });
     }
   },
