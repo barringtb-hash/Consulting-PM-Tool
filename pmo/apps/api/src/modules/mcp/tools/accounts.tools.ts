@@ -329,7 +329,7 @@ export async function executeAccountTool(
                 lastName: true,
                 email: true,
                 jobTitle: true,
-                lifecycleStage: true,
+                lifecycle: true,
               },
             },
             opportunities: {

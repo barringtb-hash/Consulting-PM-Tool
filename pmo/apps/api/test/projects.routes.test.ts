@@ -29,9 +29,12 @@ const createAuthenticatedAgent = async () => {
 };
 
 const createClient = async () => {
-  return prisma.client.create({
+  // Create an Account (the CRM entity) instead of legacy Client
+  // The route looks up Account, not Client
+  return prisma.account.create({
     data: {
       name: 'Test Client',
+      tenantId: 'test-tenant',
     },
   });
 };
@@ -300,7 +303,7 @@ describe('projects routes', () => {
       expect(response.body.error).toBe('Project not found');
     });
 
-    it('returns 404 for non-existent client on create', async () => {
+    it('returns 404 for non-existent account on create', async () => {
       const { agent } = await createAuthenticatedAgent();
 
       const response = await agent.post('/api/projects').send({
@@ -309,7 +312,7 @@ describe('projects routes', () => {
       });
 
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe('Client not found');
+      expect(response.body.error).toBe('Account not found');
     });
 
     it('returns 400 for invalid project id', async () => {

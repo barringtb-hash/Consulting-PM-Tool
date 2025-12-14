@@ -70,6 +70,7 @@ beforeEach(async () => {
   await prismaClient.project.deleteMany();
   await prismaClient.contact.deleteMany();
   await prismaClient.client.deleteMany();
+  await prismaClient.account.deleteMany();
   await prismaClient.user.deleteMany();
 });
 
