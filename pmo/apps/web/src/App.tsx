@@ -8,9 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Core pages (always loaded)
 import DashboardPage from './pages/DashboardPage';
-// ClientsPage removed - /clients now redirects to CRM Accounts
-import ClientDetailsPage from './pages/ClientDetailsPage';
-import ClientIntakePage from './pages/ClientIntakePage';
+// ClientsPage, ClientDetailsPage, ClientIntakePage removed - see CRM Accounts
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectSetupPage from './pages/ProjectSetupPage';
 import ProjectDashboardPage from './pages/ProjectDashboardPage';
@@ -190,13 +188,19 @@ function App(): JSX.Element {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<MyTasksPage />} />
-            {/* Legacy /clients redirects to CRM Accounts */}
+            {/* Legacy /clients and /client-intake redirect to CRM Accounts */}
             <Route
               path="/clients"
               element={<Navigate to="/crm/accounts" replace />}
             />
-            <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
-            <Route path="/client-intake" element={<ClientIntakePage />} />
+            <Route
+              path="/clients/:clientId"
+              element={<Navigate to="/crm/accounts" replace />}
+            />
+            <Route
+              path="/client-intake"
+              element={<Navigate to="/crm/accounts" replace />}
+            />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/new" element={<ProjectSetupPage />} />
             <Route path="/projects/:id" element={<ProjectDashboardPage />} />
