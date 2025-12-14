@@ -13,7 +13,8 @@ const MAX_PAGE_SIZE = 100;
 
 export interface ListProjectsParams {
   ownerId: number;
-  clientId?: number;
+  accountId?: number;
+  clientId?: number; // @deprecated - use accountId
   status?: ProjectStatus;
   page?: number;
   limit?: number;
@@ -34,7 +35,8 @@ export interface PaginatedResult<T> {
  *
  * @param params - Query parameters
  * @param params.ownerId - Owner user ID (required)
- * @param params.clientId - Filter by client ID
+ * @param params.accountId - Filter by account ID (preferred)
+ * @param params.clientId - Filter by client ID (deprecated - use accountId)
  * @param params.status - Filter by project status
  * @param params.page - Page number (1-indexed, default: 1)
  * @param params.limit - Page size (max: 100, default: 50)
@@ -42,6 +44,7 @@ export interface PaginatedResult<T> {
  */
 export const listProjects = async ({
   ownerId,
+  accountId,
   clientId,
   status,
   page = 1,
@@ -52,10 +55,13 @@ export const listProjects = async ({
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
+  // Support both accountId (preferred) and clientId (deprecated)
+  const filterAccountId = accountId || clientId;
+
   const where: Prisma.ProjectWhereInput = {
     tenantId,
     ownerId,
-    clientId,
+    ...(filterAccountId && { accountId: filterAccountId }),
     status,
   };
 

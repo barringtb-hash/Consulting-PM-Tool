@@ -48,14 +48,17 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
       return;
     }
 
-    const { clientId, status, page, limit } = req.query;
-    const parsedClientId =
-      typeof clientId === 'string' && clientId.length > 0
-        ? Number(clientId)
-        : undefined;
+    const { clientId, accountId, status, page, limit } = req.query;
+    // Support both clientId (deprecated) and accountId
+    const parsedAccountId =
+      typeof accountId === 'string' && accountId.length > 0
+        ? Number(accountId)
+        : typeof clientId === 'string' && clientId.length > 0
+          ? Number(clientId)
+          : undefined;
 
-    if (parsedClientId !== undefined && Number.isNaN(parsedClientId)) {
-      res.status(400).json({ error: 'Invalid client id' });
+    if (parsedAccountId !== undefined && Number.isNaN(parsedAccountId)) {
+      res.status(400).json({ error: 'Invalid account id' });
       return;
     }
 
@@ -78,7 +81,7 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
 
     const result = await listProjects({
       ownerId: req.userId,
-      clientId: parsedClientId,
+      accountId: parsedAccountId,
       status: parsedStatus,
       page: parsedPage,
       limit: parsedLimit,
@@ -150,16 +153,23 @@ router.post('/', async (req: TenantRequest, res: Response) => {
       return;
     }
 
-    const client = await prisma.client.findUnique({
-      where: { id: parsed.data.clientId },
-    });
+    // Verify account exists (support both clientId and accountId)
+    const accountId = parsed.data.accountId || parsed.data.clientId;
+    if (accountId) {
+      const account = await prisma.account.findUnique({
+        where: { id: accountId },
+      });
 
-    if (!client) {
-      res.status(404).json({ error: 'Client not found' });
-      return;
+      if (!account) {
+        res.status(404).json({ error: 'Account not found' });
+        return;
+      }
     }
 
-    const project = await createProject(req.userId, parsed.data);
+    const project = await createProject(req.userId, {
+      ...parsed.data,
+      accountId: accountId,
+    });
 
     res.status(201).json({ project });
   } catch (error) {
@@ -204,18 +214,23 @@ router.put('/:id', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (parsed.data.clientId && parsed.data.clientId !== project.clientId) {
-      const client = await prisma.client.findUnique({
-        where: { id: parsed.data.clientId },
+    // Verify account exists if changing (support both clientId and accountId)
+    const newAccountId = parsed.data.accountId || parsed.data.clientId;
+    if (newAccountId && newAccountId !== project.accountId) {
+      const account = await prisma.account.findUnique({
+        where: { id: newAccountId },
       });
 
-      if (!client) {
-        res.status(404).json({ error: 'Client not found' });
+      if (!account) {
+        res.status(404).json({ error: 'Account not found' });
         return;
       }
     }
 
-    const updated = await updateProject(projectId, parsed.data);
+    const updated = await updateProject(projectId, {
+      ...parsed.data,
+      accountId: newAccountId || parsed.data.accountId,
+    });
 
     res.json({ project: updated });
   } catch (error) {

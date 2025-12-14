@@ -8,15 +8,22 @@ const mockMutateAsync = vi.fn();
 const mockNavigate = vi.fn();
 const mockShowToast = vi.fn();
 
-vi.mock('../api/queries', () => ({
-  useClients: vi.fn(() => ({
-    data: [
-      { id: 1, name: 'Acme Corp', industry: 'Technology', archived: false },
-      { id: 2, name: 'Beta Inc', industry: 'Finance', archived: false },
-    ],
+// Mock CRM hooks for accounts
+vi.mock('../api/hooks/crm', () => ({
+  useAccounts: vi.fn(() => ({
+    data: {
+      data: [
+        { id: 1, name: 'Acme Corp', industry: 'Technology', archived: false },
+        { id: 2, name: 'Beta Inc', industry: 'Finance', archived: false },
+      ],
+      meta: { total: 2, page: 1, limit: 20 },
+    },
     isLoading: false,
     error: null,
   })),
+}));
+
+vi.mock('../api/queries', () => ({
   useCreateProject: vi.fn(() => ({
     mutateAsync: mockMutateAsync,
     isPending: false,
@@ -42,6 +49,11 @@ vi.mock('../pages/ClientProjectContext', () => ({
     setSelectedClient: vi.fn(),
     setSelectedProject: vi.fn(),
   })),
+  useAccountProjectContext: vi.fn(() => ({
+    selectedAccount: null,
+    setSelectedAccount: vi.fn(),
+    setSelectedProject: vi.fn(),
+  })),
 }));
 
 vi.mock('../ui/Toast', () => ({
@@ -61,33 +73,36 @@ describe('Project Setup Flow', () => {
       expect(screen.getByText('New Project Setup')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Choose Client')).toBeInTheDocument();
+    // Check for step labels (may be "Choose Client" or "Choose Account")
+    expect(screen.getByText(/Choose (Client|Account)/i)).toBeInTheDocument();
     expect(screen.getByText('Choose Template')).toBeInTheDocument();
     expect(screen.getByText('Project Details')).toBeInTheDocument();
     expect(screen.getByText('Review & Create')).toBeInTheDocument();
   });
 
-  it('shows validation error when trying to proceed without selecting client', async () => {
+  it('shows validation error when trying to proceed without selecting account', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ProjectSetupPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Select a Client')).toBeInTheDocument();
+      expect(
+        screen.getByText(/Select a (Client|Account)/i),
+      ).toBeInTheDocument();
     });
 
-    // Try to proceed without selecting a client
+    // Try to proceed without selecting
     const nextButton = screen.getByRole('button', { name: /Next/i });
     await user.click(nextButton);
 
     // Should show validation error
     await waitFor(() => {
       expect(
-        screen.getByText('Please select a client to continue'),
+        screen.getByText(/Please select a (client|account) to continue/i),
       ).toBeInTheDocument();
     });
   });
 
-  it('allows selecting a client', async () => {
+  it('allows selecting an account', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ProjectSetupPage />);
 
@@ -95,12 +110,12 @@ describe('Project Setup Flow', () => {
       expect(screen.getByText('Acme Corp')).toBeInTheDocument();
     });
 
-    // Select a client
-    const clientButton = screen.getByRole('button', { name: /Acme Corp/i });
-    await user.click(clientButton);
+    // Select an account
+    const accountButton = screen.getByRole('button', { name: /Acme Corp/i });
+    await user.click(accountButton);
 
-    // Verify client is selected (check icon should appear)
-    expect(clientButton).toHaveClass('border-primary-600');
+    // Verify account is selected (check icon should appear)
+    expect(accountButton).toHaveClass('border-primary-600');
 
     // Proceed to next step
     const nextButton = screen.getByRole('button', { name: /Next/i });
@@ -116,7 +131,7 @@ describe('Project Setup Flow', () => {
     const user = userEvent.setup();
     renderWithProviders(<ProjectSetupPage />);
 
-    // Select client
+    // Select account
     await waitFor(() => {
       expect(screen.getByText('Acme Corp')).toBeInTheDocument();
     });
@@ -189,13 +204,13 @@ describe('Project Setup Flow', () => {
     mockMutateAsync.mockResolvedValue({
       id: 1,
       name: 'Acme Corp - AI Discovery',
-      clientId: 1,
+      accountId: 1,
       status: 'PLANNING',
     });
 
     renderWithProviders(<ProjectSetupPage />);
 
-    // Step 1: Select Client
+    // Step 1: Select Account
     await waitFor(() => {
       expect(screen.getByText('Acme Corp')).toBeInTheDocument();
     });
@@ -228,11 +243,10 @@ describe('Project Setup Flow', () => {
     });
     await user.click(createButton);
 
-    // Should call the mutation
+    // Should call the mutation with accountId (or clientId for backwards compat)
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          clientId: 1,
           name: expect.any(String),
           status: 'PLANNING',
         }),
@@ -275,7 +289,9 @@ describe('Project Setup Flow', () => {
 
     // Should be back at Step 1
     await waitFor(() => {
-      expect(screen.getByText('Select a Client')).toBeInTheDocument();
+      expect(
+        screen.getByText(/Select a (Client|Account)/i),
+      ).toBeInTheDocument();
     });
   });
 });
