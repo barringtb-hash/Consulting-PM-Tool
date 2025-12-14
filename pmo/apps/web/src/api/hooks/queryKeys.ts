@@ -317,6 +317,28 @@ export const queryKeys = {
         ] as const,
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // System Admin - Tenant Management
+  // ---------------------------------------------------------------------------
+  tenantAdmin: {
+    all: ['tenantAdmin'] as const,
+    lists: () => [...queryKeys.tenantAdmin.all, 'list'] as const,
+    list: (filters?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      plan?: string;
+      status?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    }) => [...queryKeys.tenantAdmin.lists(), filters] as const,
+    details: () => [...queryKeys.tenantAdmin.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.tenantAdmin.details(), id] as const,
+    stats: () => [...queryKeys.tenantAdmin.all, 'stats'] as const,
+    users: (tenantId: string) =>
+      [...queryKeys.tenantAdmin.all, 'users', tenantId] as const,
+  },
 } as const;
 
 // ============================================================================
