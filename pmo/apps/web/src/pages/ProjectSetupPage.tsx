@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
-import { useClients, useCreateProject } from '../api/queries';
+import { useCreateProject } from '../api/queries';
+import { useAccounts } from '../api/hooks/crm';
 import { type ProjectStatus } from '../api/projects';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { useClientProjectContext } from './ClientProjectContext';
@@ -163,7 +164,7 @@ function ProjectSetupPage(): JSX.Element {
     useClientProjectContext();
   const { showToast } = useToast();
 
-  const clientsQuery = useClients({ includeArchived: false });
+  const accountsQuery = useAccounts({ archived: false });
   const createProjectMutation = useCreateProject();
 
   // Check URL params for initial step (useful for testing)
@@ -198,7 +199,7 @@ function ProjectSetupPage(): JSX.Element {
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(createProjectMutation.error);
 
   useEffect(() => {
@@ -217,19 +218,19 @@ function ProjectSetupPage(): JSX.Element {
   );
 
   const selectedClientData = useMemo(
-    () => clientsQuery.data?.find((c) => c.id === formData.clientId),
-    [clientsQuery.data, formData.clientId],
+    () => accountsQuery.data?.data?.find((c) => c.id === formData.clientId),
+    [accountsQuery.data?.data, formData.clientId],
   );
 
   const filteredClients = useMemo(() => {
-    if (!clientsQuery.data) return [];
-    if (!clientSearchTerm) return clientsQuery.data;
+    if (!accountsQuery.data?.data) return [];
+    if (!clientSearchTerm) return accountsQuery.data.data;
 
     const term = clientSearchTerm.toLowerCase();
-    return clientsQuery.data.filter((client) =>
+    return accountsQuery.data.data.filter((client) =>
       client.name.toLowerCase().includes(term),
     );
-  }, [clientsQuery.data, clientSearchTerm]);
+  }, [accountsQuery.data?.data, clientSearchTerm]);
 
   const stepConfig = [
     { key: 'client' as const, label: 'Choose Client', number: 1 },
@@ -248,7 +249,9 @@ function ProjectSetupPage(): JSX.Element {
         setError('Please select a client to continue');
         return;
       }
-      const client = clientsQuery.data?.find((c) => c.id === formData.clientId);
+      const client = accountsQuery.data?.data?.find(
+        (c) => c.id === formData.clientId,
+      );
       if (client) {
         setSelectedClient(client);
       }
@@ -418,15 +421,15 @@ function ProjectSetupPage(): JSX.Element {
                 if needed.
               </p>
 
-              {clientsQuery.isLoading && (
+              {accountsQuery.isLoading && (
                 <p className="text-neutral-600">Loading clients…</p>
               )}
 
-              {clientsQuery.error && (
+              {accountsQuery.error && (
                 <p className="text-danger-600">Unable to load clients.</p>
               )}
 
-              {clientsQuery.data && (
+              {accountsQuery.data?.data && (
                 <>
                   <div>
                     <label htmlFor="client-search" className="sr-only">

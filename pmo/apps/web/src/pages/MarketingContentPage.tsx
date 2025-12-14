@@ -3,7 +3,7 @@ import {
   useMarketingContents,
   useArchiveMarketingContent,
 } from '../api/marketing';
-import { useClients } from '../api/queries';
+import { useAccounts } from '../api/hooks/crm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
@@ -67,11 +67,11 @@ function MarketingContentPage(): JSX.Element {
   );
 
   const contentsQuery = useMarketingContents(filterParams);
-  const clientsQuery = useClients({ includeArchived: false });
+  const accountsQuery = useAccounts({ archived: false });
   const archiveContentMutation = useArchiveMarketingContent();
 
   useRedirectOnUnauthorized(contentsQuery.error);
-  useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
 
   const handleArchive = async (contentId: number) => {
     try {
@@ -93,7 +93,7 @@ function MarketingContentPage(): JSX.Element {
   };
 
   const contents = contentsQuery.data ?? [];
-  const clients = clientsQuery.data ?? [];
+  const accounts = accountsQuery.data?.data ?? [];
 
   const handleEdit = (content: MarketingContent) => {
     setEditingContent(content);
@@ -193,9 +193,9 @@ function MarketingContentPage(): JSX.Element {
                 onChange={(e) => setClientIdFilter(e.target.value)}
               >
                 <option value="">All Clients</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
                   </option>
                 ))}
               </Select>
@@ -339,7 +339,7 @@ function MarketingContentPage(): JSX.Element {
             setEditingContent(null);
           }}
           editingContent={editingContent}
-          clients={clients}
+          clients={accounts}
         />
       )}
 
