@@ -12,6 +12,9 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  Settings,
+  Power,
+  Plus,
 } from 'lucide-react';
 import {
   Button,
@@ -34,11 +37,13 @@ import {
   useAddTenantUser,
   useRemoveTenantUser,
   useUpdateTenantUserRole,
+  useConfigureTenantModule,
 } from '../../api/hooks';
 import type {
   TenantPlan,
   TenantStatus,
   TenantRole,
+  ModuleTier,
 } from '../../api/tenant-admin';
 
 const PLAN_COLORS: Record<TenantPlan, string> = {
@@ -71,6 +76,7 @@ export function TenantDetailPage(): JSX.Element {
   const addUserMutation = useAddTenantUser();
   const removeUserMutation = useRemoveTenantUser();
   const updateRoleMutation = useUpdateTenantUserRole();
+  const configureModuleMutation = useConfigureTenantModule();
 
   // Modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -86,6 +92,18 @@ export function TenantDetailPage(): JSX.Element {
     email: string;
     password: string;
   } | null>(null);
+  const [showModuleConfigModal, setShowModuleConfigModal] = useState(false);
+  const [selectedModuleConfig, setSelectedModuleConfig] = useState<{
+    moduleId: string;
+    enabled: boolean;
+    tier: ModuleTier;
+    trialEndsAt: string;
+  }>({
+    moduleId: '',
+    enabled: true,
+    tier: 'BASIC',
+    trialEndsAt: '',
+  });
 
   const handleBack = () => {
     navigate('/admin/tenants');
@@ -164,6 +182,134 @@ export function TenantDetailPage(): JSX.Element {
       });
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update role');
+    }
+  };
+
+  // Available modules that can be configured per tenant
+  const AVAILABLE_MODULES = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      description: 'Main dashboard with overview metrics',
+    },
+    {
+      id: 'tasks',
+      label: 'Tasks',
+      description: 'Personal task management and tracking',
+    },
+    {
+      id: 'clients',
+      label: 'Clients',
+      description: 'Client management, contacts, and documents',
+    },
+    {
+      id: 'projects',
+      label: 'Projects',
+      description: 'Project management, milestones, and meetings',
+    },
+    {
+      id: 'assets',
+      label: 'Assets',
+      description: 'AI-generated assets and content library',
+    },
+    {
+      id: 'marketing',
+      label: 'Marketing',
+      description: 'Marketing content creation and campaigns',
+    },
+    { id: 'leads', label: 'Leads', description: 'Lead capture and management' },
+    {
+      id: 'pipeline',
+      label: 'Pipeline',
+      description: 'Sales pipeline visualization and tracking',
+    },
+    {
+      id: 'crmAccounts',
+      label: 'CRM Accounts',
+      description: 'CRM account management with hierarchy support',
+    },
+    {
+      id: 'crmOpportunities',
+      label: 'CRM Opportunities',
+      description: 'Sales pipeline with customizable stages',
+    },
+    {
+      id: 'customerSuccess',
+      label: 'Customer Success',
+      description: 'Customer Success Platform with health scoring',
+    },
+    {
+      id: 'chatbot',
+      label: 'AI Chatbot',
+      description: 'AI-powered customer service chatbot',
+    },
+    {
+      id: 'documentAnalyzer',
+      label: 'Document Analyzer',
+      description: 'Smart document analysis with OCR',
+    },
+    {
+      id: 'contentGenerator',
+      label: 'Content Generator',
+      description: 'AI-powered content generation',
+    },
+    {
+      id: 'leadScoring',
+      label: 'Lead Scoring',
+      description: 'ML-based lead scoring with predictive analytics',
+    },
+  ];
+
+  const handleOpenModuleConfig = (
+    moduleId: string,
+    existingModule?: (typeof tenant.modules)[0],
+  ) => {
+    setSelectedModuleConfig({
+      moduleId,
+      enabled: existingModule?.enabled ?? true,
+      tier: existingModule?.tier ?? 'BASIC',
+      trialEndsAt: existingModule?.trialEndsAt
+        ? new Date(existingModule.trialEndsAt).toISOString().split('T')[0]
+        : '',
+    });
+    setShowModuleConfigModal(true);
+  };
+
+  const handleToggleModule = async (
+    moduleId: string,
+    currentlyEnabled: boolean,
+  ) => {
+    if (!tenantId) return;
+    try {
+      await configureModuleMutation.mutateAsync({
+        tenantId,
+        input: {
+          moduleId,
+          enabled: !currentlyEnabled,
+        },
+      });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to toggle module');
+    }
+  };
+
+  const handleSaveModuleConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantId || !selectedModuleConfig.moduleId) return;
+
+    try {
+      await configureModuleMutation.mutateAsync({
+        tenantId,
+        input: {
+          moduleId: selectedModuleConfig.moduleId,
+          enabled: selectedModuleConfig.enabled,
+          tier: selectedModuleConfig.tier,
+          trialEndsAt: selectedModuleConfig.trialEndsAt || undefined,
+        },
+      });
+      setShowModuleConfigModal(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to configure module');
     }
   };
 
@@ -479,52 +625,152 @@ export function TenantDetailPage(): JSX.Element {
 
           {/* Modules */}
           <Card>
-            <CardHeader>
-              <CardTitle>Enabled Modules ({tenant.modules.length})</CardTitle>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle>
+                Modules ({tenant.modules.filter((m) => m.enabled).length}{' '}
+                enabled)
+              </CardTitle>
+              <Button size="sm" onClick={() => handleOpenModuleConfig('')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Module
+              </Button>
             </CardHeader>
             <CardBody>
-              {tenant.modules.length === 0 ? (
-                <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">
-                  No modules configured for this tenant.
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {tenant.modules.map((mod) => (
+              {/* Currently configured modules */}
+              {tenant.modules.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+                    Configured Modules
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {tenant.modules.map((mod) => {
+                      const moduleInfo = AVAILABLE_MODULES.find(
+                        (m) => m.id === mod.moduleId,
+                      );
+                      return (
+                        <div
+                          key={mod.id}
+                          className={`p-4 rounded-lg border ${
+                            mod.enabled
+                              ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
+                              : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {moduleInfo?.label || mod.moduleId}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleToggleModule(mod.moduleId, mod.enabled)
+                                }
+                                disabled={configureModuleMutation.isPending}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                                  mod.enabled
+                                    ? 'bg-green-600'
+                                    : 'bg-neutral-300 dark:bg-neutral-600'
+                                }`}
+                                role="switch"
+                                aria-checked={mod.enabled}
+                              >
+                                <span
+                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                    mod.enabled
+                                      ? 'translate-x-6'
+                                      : 'translate-x-1'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
+                            {moduleInfo?.description || 'No description'}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs text-neutral-400 dark:text-neutral-500">
+                              <Badge
+                                className={
+                                  mod.tier === 'ENTERPRISE'
+                                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                    : mod.tier === 'PREMIUM'
+                                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                                      : mod.tier === 'TRIAL'
+                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                        : 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
+                                }
+                              >
+                                {mod.tier}
+                              </Badge>
+                              {mod.trialEndsAt && (
+                                <span className="ml-2 text-amber-600 dark:text-amber-400">
+                                  Trial ends:{' '}
+                                  {new Date(
+                                    mod.trialEndsAt,
+                                  ).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() =>
+                                handleOpenModuleConfig(mod.moduleId, mod)
+                              }
+                            >
+                              <Settings className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Available modules to add */}
+              <div>
+                <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+                  Available Modules
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {AVAILABLE_MODULES.filter(
+                    (m) => !tenant.modules.find((tm) => tm.moduleId === m.id),
+                  ).map((mod) => (
                     <div
                       key={mod.id}
-                      className={`p-4 rounded-lg border ${
-                        mod.enabled
-                          ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
-                          : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800'
-                      }`}
+                      className="p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-800/50"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                          {mod.moduleId}
-                        </span>
-                        <Badge
-                          className={
-                            mod.enabled
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                              : 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
-                          }
-                        >
-                          {mod.enabled ? 'Enabled' : 'Disabled'}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Tier: {mod.tier}
-                        {mod.trialEndsAt && (
-                          <span className="ml-2">
-                            (Trial ends:{' '}
-                            {new Date(mod.trialEndsAt).toLocaleDateString()})
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium text-neutral-700 dark:text-neutral-300 text-sm">
+                            {mod.label}
                           </span>
-                        )}
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                            {mod.description}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleOpenModuleConfig(mod.id)}
+                        >
+                          <Power className="w-3 h-3 mr-1" />
+                          Enable
+                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+                {AVAILABLE_MODULES.filter(
+                  (m) => !tenant.modules.find((tm) => tm.moduleId === m.id),
+                ).length === 0 && (
+                  <p className="text-neutral-500 dark:text-neutral-400 text-center py-4 text-sm">
+                    All available modules have been configured.
+                  </p>
+                )}
+              </div>
             </CardBody>
           </Card>
         </Container>
@@ -697,6 +943,148 @@ export function TenantDetailPage(): JSX.Element {
         <div className="flex justify-end mt-6">
           <Button onClick={() => setTempPasswordResult(null)}>Close</Button>
         </div>
+      </Modal>
+
+      {/* Module Configuration Modal */}
+      <Modal
+        isOpen={showModuleConfigModal}
+        onClose={() => setShowModuleConfigModal(false)}
+        title={
+          selectedModuleConfig.moduleId
+            ? `Configure ${AVAILABLE_MODULES.find((m) => m.id === selectedModuleConfig.moduleId)?.label || selectedModuleConfig.moduleId}`
+            : 'Add Module'
+        }
+      >
+        <form onSubmit={handleSaveModuleConfig}>
+          <div className="space-y-4">
+            {/* Module selector (only shown when adding new) */}
+            {!selectedModuleConfig.moduleId && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Select Module *
+                </label>
+                <select
+                  value={selectedModuleConfig.moduleId}
+                  onChange={(e) =>
+                    setSelectedModuleConfig((prev) => ({
+                      ...prev,
+                      moduleId: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800"
+                  required
+                >
+                  <option value="">Select a module...</option>
+                  {AVAILABLE_MODULES.filter(
+                    (m) => !tenant.modules.find((tm) => tm.moduleId === m.id),
+                  ).map((mod) => (
+                    <option key={mod.id} value={mod.id}>
+                      {mod.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Enabled toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  Enabled
+                </label>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Enable or disable this module for the tenant
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedModuleConfig((prev) => ({
+                    ...prev,
+                    enabled: !prev.enabled,
+                  }))
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                  selectedModuleConfig.enabled
+                    ? 'bg-green-600'
+                    : 'bg-neutral-300 dark:bg-neutral-600'
+                }`}
+                role="switch"
+                aria-checked={selectedModuleConfig.enabled}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    selectedModuleConfig.enabled
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Tier selection */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Tier
+              </label>
+              <select
+                value={selectedModuleConfig.tier}
+                onChange={(e) =>
+                  setSelectedModuleConfig((prev) => ({
+                    ...prev,
+                    tier: e.target.value as ModuleTier,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800"
+              >
+                <option value="TRIAL">Trial</option>
+                <option value="BASIC">Basic</option>
+                <option value="PREMIUM">Premium</option>
+                <option value="ENTERPRISE">Enterprise</option>
+              </select>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Determines feature access level for this module
+              </p>
+            </div>
+
+            {/* Trial end date */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Trial End Date (optional)
+              </label>
+              <Input
+                type="date"
+                value={selectedModuleConfig.trialEndsAt}
+                onChange={(e) =>
+                  setSelectedModuleConfig((prev) => ({
+                    ...prev,
+                    trialEndsAt: e.target.value,
+                  }))
+                }
+              />
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                If set, the module will automatically expire after this date
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowModuleConfigModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              isLoading={configureModuleMutation.isPending}
+              disabled={!selectedModuleConfig.moduleId}
+            >
+              Save Configuration
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
