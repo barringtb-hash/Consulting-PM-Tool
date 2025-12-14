@@ -14,11 +14,11 @@ function ActiveClientsCardPanel(): JSX.Element {
 
   return (
     <SummaryCard
-      title="Active Clients"
+      title="Active Accounts"
       value={clientsData?.active ?? 0}
-      description="Clients you're working with"
+      description="Accounts you're working with"
       variant="primary"
-      onClick={() => navigate('/clients')}
+      onClick={() => navigate('/crm/accounts')}
       isLoading={clientsData?.isLoading}
     />
   );

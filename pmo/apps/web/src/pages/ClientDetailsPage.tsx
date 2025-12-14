@@ -255,7 +255,7 @@ function ClientDetailsPage(): JSX.Element {
     if (!clientId) return;
     try {
       await archiveClientMutation.mutateAsync(clientId);
-      navigate('/clients');
+      navigate('/crm/accounts');
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Archive failed');
     }
@@ -265,7 +265,7 @@ function ClientDetailsPage(): JSX.Element {
     return (
       <main>
         <p>Invalid client id.</p>
-        <Link to="/clients">Back to clients</Link>
+        <Link to="/crm/accounts">Back to Accounts</Link>
       </main>
     );
   }
@@ -288,7 +288,7 @@ function ClientDetailsPage(): JSX.Element {
       return (
         <main>
           <p>Client not found.</p>
-          <Link to="/clients">Back to clients</Link>
+          <Link to="/crm/accounts">Back to Accounts</Link>
         </main>
       );
     }
@@ -296,7 +296,7 @@ function ClientDetailsPage(): JSX.Element {
     return (
       <main>
         <p role="alert">{message}</p>
-        <Link to="/clients">Back to clients</Link>
+        <Link to="/crm/accounts">Back to Accounts</Link>
       </main>
     );
   }
@@ -309,8 +309,8 @@ function ClientDetailsPage(): JSX.Element {
         title={client.name}
         description={client.industry || EMPTY_STATES.notProvided}
         action={
-          <Link to="/clients">
-            <Button variant="secondary">Back to Clients</Button>
+          <Link to="/crm/accounts">
+            <Button variant="secondary">Back to Accounts</Button>
           </Link>
         }
       >

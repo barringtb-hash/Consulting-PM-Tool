@@ -328,11 +328,11 @@ function ClientIntakePage(): JSX.Element {
     // For now, we'll just complete the wizard
 
     showToast(`Client "${client?.name}" created successfully!`, 'success');
-    navigate(`/clients/${client?.id}`);
+    navigate('/crm/accounts');
   };
 
   const handleCancel = () => {
-    navigate('/clients');
+    navigate('/crm/accounts');
   };
 
   return (
