@@ -47,7 +47,9 @@ The AI Tools module provides two powerful customer-facing AI capabilities:
 | **AI Chatbot** | Customer service automation | Conversational AI, intent detection, knowledge base, multi-channel messaging, webhooks |
 | **Document Analyzer** | Intelligent document processing | OCR, field extraction, NER, compliance checking, version comparison |
 
-Both tools follow a per-client configuration model, where each client can have their own configuration with customized settings.
+Both tools follow a per-account configuration model, where each Account (CRM entity) can have their own configuration with customized settings.
+
+> **Note**: AI Tools are configured per-Account (not per-Client). The legacy Client model is deprecated - use Account for new implementations.
 
 ---
 
