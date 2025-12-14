@@ -328,7 +328,7 @@ export async function executeAccountTool(
                 firstName: true,
                 lastName: true,
                 email: true,
-                title: true,
+                jobTitle: true,
                 lifecycleStage: true,
               },
             },
