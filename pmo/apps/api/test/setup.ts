@@ -27,14 +27,25 @@ const sharedExecOptions = {
   stdio: 'inherit' as const,
 };
 
-execSync(
-  `psql "${adminDatabaseUrl}" -c "DROP DATABASE IF EXISTS \"${testDatabaseName}\";"`,
-  sharedExecOptions,
-);
-execSync(
-  `psql "${adminDatabaseUrl}" -c "CREATE DATABASE \"${testDatabaseName}\";"`,
-  sharedExecOptions,
-);
+// Check if we're in CI mode (database already created externally)
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+
+// In CI, the test database is created and migrated externally
+// Locally, we create the database ourselves
+if (!isCI) {
+  try {
+    execSync(
+      `psql "${adminDatabaseUrl}" -c "DROP DATABASE IF EXISTS \\"${testDatabaseName}\\";"`,
+      sharedExecOptions,
+    );
+    execSync(
+      `psql "${adminDatabaseUrl}" -c "CREATE DATABASE \\"${testDatabaseName}\\";"`,
+      sharedExecOptions,
+    );
+  } catch (error) {
+    console.warn('Database creation skipped (may already exist):', error);
+  }
+}
 
 process.env.DATABASE_URL = testDatabaseUrl.toString();
 
@@ -45,16 +56,30 @@ const schemaPath = path.join(repoRoot, 'prisma', 'schema.prisma');
 let prismaClient: PrismaClient;
 
 beforeAll(async () => {
-  execSync(
-    `npx prisma migrate reset --force --skip-generate --skip-seed --schema "${schemaPath}"`,
-    {
+  // In CI, migrations are already applied. Locally, we apply them.
+  // Use 'migrate deploy' which is safer and doesn't drop data
+  try {
+    execSync(`npx prisma migrate deploy --schema "${schemaPath}"`, {
       cwd: workspaceRoot,
       env: {
         ...process.env,
       },
       stdio: 'inherit',
-    },
-  );
+    });
+  } catch (error) {
+    // If migrate deploy fails, try reset (for local dev with schema changes)
+    console.warn('migrate deploy failed, trying migrate reset...');
+    execSync(
+      `npx prisma migrate reset --force --skip-generate --skip-seed --schema "${schemaPath}"`,
+      {
+        cwd: workspaceRoot,
+        env: {
+          ...process.env,
+        },
+        stdio: 'inherit',
+      },
+    );
+  }
 
   const prismaModule = await import('../src/prisma/client');
   prismaClient = prismaModule.default ?? prismaModule.prisma;

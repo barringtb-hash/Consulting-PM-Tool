@@ -75,12 +75,16 @@ jobs:
       - name: Apply database migrations
         run: npx prisma migrate deploy
 
-      - name: Create test database
+      - name: Create and setup test databases
         run: |
+          # Create test databases
           psql -c "DROP DATABASE IF EXISTS pmo_test_ci;"
           psql -c "CREATE DATABASE pmo_test_ci;"
           psql -c "DROP DATABASE IF EXISTS pmo_test_1;"
           psql -c "CREATE DATABASE pmo_test_1;"
+          # Apply migrations to test databases
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pmo_test_ci npx prisma migrate deploy
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pmo_test_1 npx prisma migrate deploy
 
       - name: Run lint
         run: npm run lint
@@ -89,6 +93,7 @@ jobs:
         run: npm run test --workspace pmo-api
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pmo_test_ci
+          POSTGRES_TEST_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
       - name: Build all packages
         run: npm run build
