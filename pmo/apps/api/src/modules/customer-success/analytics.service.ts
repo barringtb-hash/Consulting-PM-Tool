@@ -403,8 +403,8 @@ export async function getTimeToValueMetrics(): Promise<TimeToValueMetrics> {
   for (const project of projects) {
     const startDate = project.startDate || project.createdAt;
 
-    // Time to healthy (if achieved)
-    if (project.client.healthScores.length > 0) {
+    // Time to healthy (if achieved) - skip if client is null
+    if (project.client && project.client.healthScores.length > 0) {
       const healthyDate = project.client.healthScores[0].lastCalculatedAt;
       const days = Math.floor(
         (healthyDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),

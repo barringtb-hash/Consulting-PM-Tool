@@ -69,22 +69,50 @@ interface ComplianceResult {
 // DOCUMENT ANALYZER CONFIG MANAGEMENT
 // ============================================================================
 
-export async function getDocumentAnalyzerConfig(clientId: number) {
-  return prisma.documentAnalyzerConfig.findUnique({
-    where: { clientId },
-    include: {
-      client: { select: { id: true, name: true, industry: true } },
-    },
-  });
+/**
+ * Get document analyzer config by clientId (deprecated) or accountId (preferred)
+ */
+export async function getDocumentAnalyzerConfig(
+  clientId?: number,
+  accountId?: number,
+) {
+  // Prefer accountId if provided
+  if (accountId) {
+    return prisma.documentAnalyzerConfig.findUnique({
+      where: { accountId },
+      include: {
+        account: { select: { id: true, name: true, industry: true } },
+        client: { select: { id: true, name: true, industry: true } },
+      },
+    });
+  }
+  // Fall back to clientId (deprecated)
+  if (clientId) {
+    return prisma.documentAnalyzerConfig.findUnique({
+      where: { clientId },
+      include: {
+        client: { select: { id: true, name: true, industry: true } },
+        account: { select: { id: true, name: true, industry: true } },
+      },
+    });
+  }
+  return null;
 }
 
 export async function listDocumentAnalyzerConfigs(filters?: {
   clientId?: number;
   clientIds?: number[];
+  accountId?: number;
+  accountIds?: number[];
 }) {
   const whereClause: Prisma.DocumentAnalyzerConfigWhereInput = {};
 
-  if (filters?.clientId) {
+  // Prefer account filters
+  if (filters?.accountId) {
+    whereClause.accountId = filters.accountId;
+  } else if (filters?.accountIds && filters.accountIds.length > 0) {
+    whereClause.accountId = { in: filters.accountIds };
+  } else if (filters?.clientId) {
     whereClause.clientId = filters.clientId;
   } else if (filters?.clientIds && filters.clientIds.length > 0) {
     whereClause.clientId = { in: filters.clientIds };
@@ -94,31 +122,49 @@ export async function listDocumentAnalyzerConfigs(filters?: {
     where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
     include: {
       client: { select: { id: true, name: true, industry: true } },
+      account: { select: { id: true, name: true, industry: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
 }
 
+/**
+ * Create document analyzer config linked to Account (preferred) or Client (deprecated)
+ */
 export async function createDocumentAnalyzerConfig(
-  clientId: number,
-  data: DocumentAnalyzerConfigInput,
+  data: DocumentAnalyzerConfigInput & { clientId?: number; accountId?: number },
 ) {
+  const { clientId, accountId, ...configData } = data;
   return prisma.documentAnalyzerConfig.create({
     data: {
-      clientId,
-      ...data,
+      ...(accountId && { accountId }),
+      ...(clientId && { clientId }),
+      ...configData,
     },
   });
 }
 
+/**
+ * Update document analyzer config by clientId (deprecated) or accountId (preferred)
+ */
 export async function updateDocumentAnalyzerConfig(
-  clientId: number,
   data: Partial<DocumentAnalyzerConfigInput>,
+  clientId?: number,
+  accountId?: number,
 ) {
-  return prisma.documentAnalyzerConfig.update({
-    where: { clientId },
-    data,
-  });
+  if (accountId) {
+    return prisma.documentAnalyzerConfig.update({
+      where: { accountId },
+      data,
+    });
+  }
+  if (clientId) {
+    return prisma.documentAnalyzerConfig.update({
+      where: { clientId },
+      data,
+    });
+  }
+  throw new Error('Either clientId or accountId is required');
 }
 
 // ============================================================================

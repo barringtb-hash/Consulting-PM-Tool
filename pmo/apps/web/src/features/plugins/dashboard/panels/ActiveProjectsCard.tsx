@@ -18,7 +18,7 @@ function ActiveProjectsCardPanel(): JSX.Element {
       value={projectsData?.active ?? 0}
       description="Projects in progress"
       variant="primary"
-      onClick={() => navigate('/clients')}
+      onClick={() => navigate('/projects')}
       isLoading={projectsData?.isLoading}
     />
   );

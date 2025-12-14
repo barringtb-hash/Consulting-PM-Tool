@@ -59,14 +59,17 @@ export async function getAccessibleClientIds(
     return null;
   }
 
-  // Get all unique client IDs from projects owned by this user
+  // Get all unique account IDs from projects owned by this user
   const projects = await prisma.project.findMany({
     where: { ownerId: userId },
-    select: { clientId: true },
-    distinct: ['clientId'],
+    select: { accountId: true },
+    distinct: ['accountId'],
   });
 
-  return projects.map((p) => p.clientId);
+  // Filter out null accountIds and return only valid numbers
+  return projects
+    .map((p: { accountId: number | null }) => p.accountId)
+    .filter((id: number | null): id is number => id !== null);
 }
 
 /**

@@ -115,7 +115,7 @@ export interface DashboardPreferences {
  * Shared dashboard data available to plugins
  */
 export interface DashboardData {
-  clients?: {
+  accounts?: {
     total: number;
     active: number;
     isLoading: boolean;

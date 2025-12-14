@@ -89,7 +89,7 @@ export {
 
 // Individual Panel Plugins (for custom composition)
 export {
-  ActiveClientsCardPlugin,
+  ActiveAccountsCardPlugin,
   ActiveProjectsCardPlugin,
   OpenTasksCardPlugin,
   OverdueTasksCardPlugin,

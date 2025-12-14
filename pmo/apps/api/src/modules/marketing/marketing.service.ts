@@ -12,25 +12,26 @@ import { generateMarketingContent } from '../../services/llm.service';
 import { ContentType, ContentStatus } from '../../types/marketing';
 
 /**
- * Validate that the user has access to the client
+ * Validate that the user has access to the account
+ * @param accountId - Account ID (or legacy clientId)
  */
-const validateClientAccess = async (
-  clientId: number,
+const validateAccountAccess = async (
+  accountId: number,
 
   _ownerId: number,
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
-  const client = await prisma.client.findFirst({
-    where: { id: clientId, tenantId },
+  const account = await prisma.account.findFirst({
+    where: { id: accountId, tenantId },
   });
 
-  if (!client) {
+  if (!account) {
     return 'not_found' as const;
   }
 
-  // In this system, all users can access all clients
-  // If you want to add client-level access control, implement it here
-  return client;
+  // In this system, all users can access all accounts
+  // If you want to add account-level access control, implement it here
+  return account;
 };
 
 /**
@@ -190,10 +191,10 @@ export const createMarketingContent = async (
   ownerId: number,
   data: CreateMarketingContentInput,
 ) => {
-  // Validate client access
-  const clientAccess = await validateClientAccess(data.clientId, ownerId);
+  // Validate account access (clientId maps to accountId)
+  const accountAccess = await validateAccountAccess(data.clientId, ownerId);
 
-  if (clientAccess === 'not_found') {
+  if (accountAccess === 'not_found') {
     return { error: 'client_not_found' as const };
   }
 
@@ -390,8 +391,8 @@ export const generateContent = async (
 
     // Build context from project
     const context = {
-      clientName: project.client.name,
-      industry: project.client.industry || undefined,
+      clientName: project.client?.name ?? 'Unknown Client',
+      industry: project.client?.industry || undefined,
       projectName: project.name,
       projectDescription: project.statusSummary || undefined,
       meetingNotes: project.meetings
@@ -435,8 +436,8 @@ export const generateContent = async (
 
     // Build context from meeting
     const context = {
-      clientName: meeting.project.client.name,
-      industry: meeting.project.client.industry || undefined,
+      clientName: meeting.project.client?.name ?? 'Unknown Client',
+      industry: meeting.project.client?.industry || undefined,
       projectName: meeting.project.name,
       meetingTitle: meeting.title,
       meetingNotes: meeting.notes || undefined,
@@ -492,8 +493,8 @@ export const repurposeContent = async (
 
   // Build context for LLM from the source content
   const context = {
-    clientName: sourceContent.client.name,
-    industry: sourceContent.client.industry || undefined,
+    clientName: sourceContent.client?.name ?? 'Unknown Client',
+    industry: sourceContent.client?.industry || undefined,
     projectName: sourceContent.project?.name,
     sourceContentType: sourceContent.type,
     sourceContentName: sourceContent.name,

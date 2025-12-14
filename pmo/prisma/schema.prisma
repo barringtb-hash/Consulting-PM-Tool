@@ -376,7 +376,8 @@ model InboundLead {
 model Project {
   id        Int           @id @default(autoincrement())
   tenantId  String?
-  clientId  Int
+  clientId  Int?          // @deprecated - use accountId
+  accountId Int?          // Preferred: link to CRM Account
   ownerId   Int
   name      String
   status    ProjectStatus @default(PLANNING)
@@ -407,7 +408,8 @@ model Project {
   onboardingCompletedAt DateTime?
 
   tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client            Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account           Account?           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   owner             User               @relation(fields: [ownerId], references: [id])
   documents         Document[]
   tasks             Task[]
@@ -428,11 +430,13 @@ model Project {
   @@index([status])
   @@index([renewalDate])
   @@index([healthStatus, renewalDate])
+  @@index([accountId])
 }
 
 model Document {
   id        Int          @id @default(autoincrement())
-  clientId  Int
+  clientId  Int?         // @deprecated - use accountId
+  accountId Int?         // Preferred: link to CRM Account
   projectId Int?
   ownerId   Int
   type      DocumentType @default(OTHER)
@@ -441,11 +445,13 @@ model Document {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client  Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account Account? @relation(fields: [accountId], references: [id], onDelete: Cascade)
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   owner   User     @relation(fields: [ownerId], references: [id])
 
   @@index([projectId])
+  @@index([accountId])
 }
 
 model Milestone {
@@ -494,6 +500,7 @@ model Meeting {
   id        Int             @id @default(autoincrement())
   tenantId  String?
   projectId Int
+  accountId Int?            // Preferred: link to CRM Account
   title     String
   date      DateTime
   time      String
@@ -507,11 +514,13 @@ model Meeting {
 
   tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  account           Account?           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   sourceTasks       Task[]
   marketingContents MarketingContent[]
 
   @@index([projectId, date(sort: Desc)])
   @@index([category, date(sort: Desc)])
+  @@index([accountId])
 }
 
 model AIAsset {
@@ -524,17 +533,20 @@ model AIAsset {
   tags        String[]  @default([])
   archived    Boolean   @default(false)
   isTemplate  Boolean   @default(false)
-  clientId    Int?
+  clientId    Int?      // @deprecated - use accountId
+  accountId   Int?      // Preferred: link to CRM Account
   createdById Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   tenant    Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client    Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  account   Account?         @relation(fields: [accountId], references: [id], onDelete: SetNull)
   createdBy User?            @relation(fields: [createdById], references: [id])
   projects  ProjectAIAsset[]
 
   @@unique([name, clientId])
+  @@index([accountId])
 }
 
 model ProjectAIAsset {
@@ -563,7 +575,8 @@ model MarketingContent {
   tags    String[]        @default([])
 
   // Relations
-  clientId        Int
+  clientId        Int?    // @deprecated - use accountId
+  accountId       Int?    // Preferred: link to CRM Account
   projectId       Int?
   sourceMeetingId Int?
   createdById     Int?
@@ -583,7 +596,8 @@ model MarketingContent {
   updatedAt DateTime @updatedAt
 
   tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client               Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account              Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   project              Project?              @relation(fields: [projectId], references: [id], onDelete: SetNull)
   sourceMeeting        Meeting?              @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
   createdBy            User?                 @relation(fields: [createdById], references: [id])
@@ -595,6 +609,7 @@ model MarketingContent {
   repurposedContent MarketingContent[] @relation("RepurposedFrom")
 
   @@index([clientId, type])
+  @@index([accountId, type])
   @@index([status, createdAt(sort: Desc)])
   @@index([projectId])
   @@index([campaignId])
@@ -613,7 +628,8 @@ model Campaign {
   archived    Boolean        @default(false)
 
   // Relations
-  clientId    Int
+  clientId    Int?   // @deprecated - use accountId
+  accountId   Int?   // Preferred: link to CRM Account
   projectId   Int?
   createdById Int?
 
@@ -621,12 +637,14 @@ model Campaign {
   updatedAt DateTime @updatedAt
 
   tenant    Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client    Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client    Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account   Account?           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   project   Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdBy User?              @relation(fields: [createdById], references: [id])
   contents  MarketingContent[]
 
   @@index([clientId, status])
+  @@index([accountId, status])
   @@index([status, startDate])
 }
 
@@ -793,12 +811,14 @@ enum IntentType {
 }
 
 /**
- * ChatbotConfig - Configuration for a client's customer service chatbot
+ * ChatbotConfig - Configuration for a customer service chatbot
+ * Note: accountId is the preferred field; clientId is deprecated
  */
 model ChatbotConfig {
-  id              Int     @id @default(autoincrement())
-  clientId        Int     @unique
-  name            String
+  id        Int  @id @default(autoincrement())
+  clientId  Int? @unique // @deprecated - use accountId
+  accountId Int? @unique // Preferred: link to CRM Account
+  name      String
   welcomeMessage  String?
   fallbackMessage String?
 
@@ -835,13 +855,15 @@ model ChatbotConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client         Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client         Client?             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account        Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   conversations  ChatConversation[]
   knowledgeBase  KnowledgeBaseItem[]
   webhooks       WebhookConfig[]
   channelConfigs ChannelConfig[]
 
   @@index([clientId, isActive])
+  @@index([accountId, isActive])
 }
 
 /**
@@ -2074,11 +2096,13 @@ enum WorkflowActionType {
 }
 
 /**
- * DocumentAnalyzerConfig - Configuration for smart document analysis per client
+ * DocumentAnalyzerConfig - Configuration for smart document analysis
+ * Note: accountId is the preferred field; clientId is deprecated
  */
 model DocumentAnalyzerConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id        Int  @id @default(autoincrement())
+  clientId  Int? @unique // @deprecated - use accountId
+  accountId Int? @unique // Preferred: link to CRM Account
 
   // Industry configuration for specialized templates
   industryType      IndustryType       @default(OTHER)
@@ -2113,7 +2137,8 @@ model DocumentAnalyzerConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client              Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client              Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account             Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   analyzedDocuments   AnalyzedDocument[]
   extractionTemplates ExtractionTemplate[]
   batchJobs           DocumentBatchJob[]
@@ -2122,6 +2147,7 @@ model DocumentAnalyzerConfig {
   processingMetrics   ProcessingMetrics[]
 
   @@index([clientId, isActive])
+  @@index([accountId, isActive])
   @@index([industryType])
 }
 
@@ -6026,6 +6052,18 @@ model Account {
   crmContacts   CRMContact[]
   opportunities Opportunity[]
   activities    CRMActivity[]
+
+  // PMO relations (migrated from legacy Client)
+  projects          Project[]
+  documents         Document[]
+  marketingContents MarketingContent[]
+  aiAssets          AIAsset[]
+  campaigns         Campaign[]
+  meetings          Meeting[]
+
+  // AI Tool configurations (replaces legacy Client relations)
+  chatbotConfig          ChatbotConfig?
+  documentAnalyzerConfig DocumentAnalyzerConfig?
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])

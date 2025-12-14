@@ -1,39 +1,39 @@
 /**
- * Active Clients Summary Card Plugin
+ * Active Accounts Summary Card Plugin
  *
- * Displays the count of active (non-archived) clients.
+ * Displays the count of active (non-archived) CRM accounts.
  */
 
 import { SummaryCard } from './SummaryCard';
 import { useDashboardPluginContext } from '../DashboardPluginContext';
 import type { DashboardPanelPlugin, DashboardPanelConfig } from '../types';
 
-function ActiveClientsCardPanel(): JSX.Element {
+function ActiveAccountsCardPanel(): JSX.Element {
   const { data, navigate } = useDashboardPluginContext();
-  const clientsData = data?.clients;
+  const accountsData = data?.accounts;
 
   return (
     <SummaryCard
-      title="Active Clients"
-      value={clientsData?.active ?? 0}
-      description="Clients you're working with"
+      title="Active Accounts"
+      value={accountsData?.active ?? 0}
+      description="Accounts you're working with"
       variant="primary"
-      onClick={() => navigate('/clients')}
-      isLoading={clientsData?.isLoading}
+      onClick={() => navigate('/crm/accounts')}
+      isLoading={accountsData?.isLoading}
     />
   );
 }
 
 const config: DashboardPanelConfig = {
-  id: 'active-clients-card',
-  name: 'Active Clients',
-  description: 'Displays the count of active clients',
+  id: 'active-accounts-card',
+  name: 'Active Accounts',
+  description: 'Displays the count of active CRM accounts',
   position: 'summary-cards',
   priority: 10,
   defaultEnabled: true,
 };
 
-export const ActiveClientsCardPlugin: DashboardPanelPlugin = {
+export const ActiveAccountsCardPlugin: DashboardPanelPlugin = {
   config,
-  component: ActiveClientsCardPanel,
+  component: ActiveAccountsCardPanel,
 };

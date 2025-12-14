@@ -95,7 +95,7 @@ function RecentProjectsPanelComponent(): JSX.Element {
         <div className="flex items-center justify-between mb-4">
           <CardTitle>Recent Projects</CardTitle>
           <Link
-            to="/clients"
+            to="/projects"
             className="text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
             View all →

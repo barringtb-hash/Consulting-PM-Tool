@@ -100,7 +100,9 @@ function LeadDetailPanel({
 
   const handleConvert = async () => {
     if (
-      confirm('Convert this lead to a client, contact, and pipeline project?')
+      confirm(
+        'Convert this lead to an Account and Opportunity in the sales pipeline?',
+      )
     ) {
       await onConvert(lead.id);
       onClose();
@@ -231,7 +233,7 @@ function LeadDetailPanel({
           <div className="space-y-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
             {lead.status !== 'CONVERTED' && lead.status !== 'DISQUALIFIED' && (
               <Button onClick={handleConvert} className="w-full">
-                Convert to Client
+                Convert to Opportunity
               </Button>
             )}
             <Button
@@ -329,12 +331,10 @@ export function LeadsPage(): JSX.Element {
   const handleConvertLead = async () => {
     try {
       const result = await convertLead.mutateAsync({
-        createClient: true,
-        createContact: true,
-        createProject: true,
+        createOpportunity: true,
       });
       showToast(
-        `Lead converted successfully! Created ${result.projectId ? 'client, contact, and project' : 'client and contact'}.`,
+        `Lead converted successfully! Created Account${result.opportunityId ? ' and Opportunity' : ''}.`,
         'success',
       );
     } catch {
@@ -368,8 +368,8 @@ export function LeadsPage(): JSX.Element {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
-        title="Leads"
-        description="Manage inbound leads and convert them to clients and projects."
+        title="Inbound Leads"
+        description="Capture and qualify inbound leads, then convert them to Accounts and Opportunities."
         actions={
           <Button onClick={() => setShowNewLeadForm(!showNewLeadForm)}>
             <Plus size={16} />

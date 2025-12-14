@@ -19,12 +19,17 @@ const projectDatesRefinement = (
 
 export const projectCreateSchema = z
   .object({
-    clientId: z.number().int().positive(),
+    accountId: z.number().int().positive().optional(), // Preferred: link to CRM Account
+    clientId: z.number().int().positive().optional(), // @deprecated - use accountId
     name: z.string().min(1, 'Name is required').max(MAX_NAME_LENGTH),
     status: z.nativeEnum(ProjectStatus).optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
   })
+  .refine(
+    (data) => data.accountId !== undefined || data.clientId !== undefined,
+    'Either accountId or clientId is required',
+  )
   .superRefine(projectDatesRefinement);
 
 export const projectUpdateSchema = projectCreateSchema

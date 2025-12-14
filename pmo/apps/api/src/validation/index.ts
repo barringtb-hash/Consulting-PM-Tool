@@ -7,7 +7,7 @@
 // Legacy PMO schemas
 export * from './asset.schema';
 export * from './client.schema';
-export * from './contact.schema';
+// contact.schema removed - legacy PMO contacts replaced by CRMContact
 export * from './document.schema';
 export * from './lead.schema';
 export * from './marketing.schema';

@@ -3,10 +3,10 @@ import { type Asset, type AssetType } from '../api/assets';
 import {
   useArchiveAsset,
   useAssets,
-  useClients,
   useCreateAsset,
   useUpdateAsset,
 } from '../api/queries';
+import { useAccounts } from '../api/hooks/crm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
@@ -65,13 +65,13 @@ function AssetsPage(): JSX.Element {
   );
 
   const assetsQuery = useAssets(filterParams);
-  const clientsQuery = useClients({ includeArchived: true });
+  const accountsQuery = useAccounts({ archived: undefined });
   const createAssetMutation = useCreateAsset();
   const updateAssetMutation = useUpdateAsset(editingAsset?.id ?? 0);
   const archiveAssetMutation = useArchiveAsset();
 
   useRedirectOnUnauthorized(assetsQuery.error);
-  useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(createAssetMutation.error);
   useRedirectOnUnauthorized(updateAssetMutation.error);
   useRedirectOnUnauthorized(archiveAssetMutation.error);
@@ -95,7 +95,7 @@ function AssetsPage(): JSX.Element {
   };
 
   const assets = assetsQuery.data ?? [];
-  const clients = clientsQuery.data ?? [];
+  const accounts = accountsQuery.data?.data ?? [];
 
   const handleEdit = (asset: Asset) => {
     setEditingAsset(asset);
@@ -145,7 +145,7 @@ function AssetsPage(): JSX.Element {
         {showCreateForm && (
           <AssetFormCard
             editingAsset={editingAsset}
-            clients={clients}
+            clients={accounts}
             onCancel={handleCancelEdit}
             onSuccess={handleCreateSuccess}
           />
@@ -199,9 +199,9 @@ function AssetsPage(): JSX.Element {
                 onChange={(e) => setClientId(e.target.value)}
               >
                 <option value="">All Clients</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
                   </option>
                 ))}
               </Select>
@@ -297,7 +297,7 @@ function AssetsPage(): JSX.Element {
             assets.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {assets.map((asset) => {
-                  const client = clients.find((c) => c.id === asset.clientId);
+                  const client = accounts.find((c) => c.id === asset.clientId);
                   return (
                     <Card
                       key={asset.id}
@@ -403,7 +403,7 @@ function AssetsPage(): JSX.Element {
       {selectedAsset && (
         <AssetDetailModal
           asset={selectedAsset}
-          client={clients.find((c) => c.id === selectedAsset.clientId)}
+          client={accounts.find((c) => c.id === selectedAsset.clientId)}
           onClose={() => setSelectedAsset(null)}
           onEdit={() => {
             handleEdit(selectedAsset);

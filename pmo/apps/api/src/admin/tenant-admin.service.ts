@@ -121,59 +121,119 @@ export async function listAllTenants(
   const total = await prisma.tenant.count({ where });
 
   // Get tenants with related data
-  const tenants = await prisma.tenant.findMany({
-    where,
-    orderBy,
-    skip: (page - 1) * limit,
-    take: limit,
-    include: {
-      _count: {
-        select: {
-          users: true,
-          accounts: true,
-          opportunities: true,
+  // Note: Using try/catch to handle case where CRM tables may not exist yet
+  try {
+    const tenants = await prisma.tenant.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        _count: {
+          select: {
+            users: true,
+            accounts: true,
+            opportunities: true,
+          },
         },
-      },
-      users: {
-        where: { role: 'OWNER' },
-        take: 1,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+        users: {
+          where: { role: 'OWNER' },
+          take: 1,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
 
-  // Transform to include owner info
-  const transformedTenants = tenants.map((tenant) => ({
-    id: tenant.id,
-    name: tenant.name,
-    slug: tenant.slug,
-    plan: tenant.plan,
-    status: tenant.status,
-    billingEmail: tenant.billingEmail,
-    createdAt: tenant.createdAt,
-    updatedAt: tenant.updatedAt,
-    trialEndsAt: tenant.trialEndsAt,
-    _count: tenant._count,
-    owner: tenant.users[0]?.user || null,
-  }));
+    // Transform to include owner info
+    const transformedTenants = tenants.map((tenant) => ({
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      plan: tenant.plan,
+      status: tenant.status,
+      billingEmail: tenant.billingEmail,
+      createdAt: tenant.createdAt,
+      updatedAt: tenant.updatedAt,
+      trialEndsAt: tenant.trialEndsAt,
+      _count: tenant._count,
+      owner: tenant.users[0]?.user || null,
+    }));
 
-  return {
-    tenants: transformedTenants,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+    return {
+      tenants: transformedTenants,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch {
+    // Fallback query without CRM tables if they don't exist yet
+    const tenants = await prisma.tenant.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+        users: {
+          where: { role: 'OWNER' },
+          take: 1,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Transform with zero counts for CRM entities
+    const transformedTenants = tenants.map((tenant) => ({
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      plan: tenant.plan,
+      status: tenant.status,
+      billingEmail: tenant.billingEmail,
+      createdAt: tenant.createdAt,
+      updatedAt: tenant.updatedAt,
+      trialEndsAt: tenant.trialEndsAt,
+      _count: {
+        users: tenant._count.users,
+        accounts: 0,
+        opportunities: 0,
+      },
+      owner: tenant.users[0]?.user || null,
+    }));
+
+    return {
+      tenants: transformedTenants,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 }
 
 /**

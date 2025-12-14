@@ -8,9 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Core pages (always loaded)
 import DashboardPage from './pages/DashboardPage';
-import ClientsPage from './pages/ClientsPage';
-import ClientDetailsPage from './pages/ClientDetailsPage';
-import ClientIntakePage from './pages/ClientIntakePage';
+// ClientsPage, ClientDetailsPage, ClientIntakePage removed - see CRM Accounts
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectSetupPage from './pages/ProjectSetupPage';
 import ProjectDashboardPage from './pages/ProjectDashboardPage';
@@ -22,7 +20,7 @@ import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 const AssetsPage = lazy(() => import('./pages/AssetsPage'));
 const MarketingContentPage = lazy(() => import('./pages/MarketingContentPage'));
 const LeadsPage = lazy(() => import('./pages/LeadsPage'));
-const PipelinePage = lazy(() => import('./pages/PipelinePage'));
+// PipelinePage removed - now redirects to CRM Opportunities
 const AdminUsersListPage = lazy(() =>
   import('./pages/AdminUsersListPage').then((m) => ({
     default: m.AdminUsersListPage,
@@ -190,9 +188,19 @@ function App(): JSX.Element {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<MyTasksPage />} />
-            <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
-            <Route path="/client-intake" element={<ClientIntakePage />} />
+            {/* Legacy /clients and /client-intake redirect to CRM Accounts */}
+            <Route
+              path="/clients"
+              element={<Navigate to="/crm/accounts" replace />}
+            />
+            <Route
+              path="/clients/:clientId"
+              element={<Navigate to="/crm/accounts" replace />}
+            />
+            <Route
+              path="/client-intake"
+              element={<Navigate to="/crm/accounts" replace />}
+            />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/new" element={<ProjectSetupPage />} />
             <Route path="/projects/:id" element={<ProjectDashboardPage />} />
@@ -222,27 +230,30 @@ function App(): JSX.Element {
               />
             )}
 
-            {/* Sales module - Leads (toggleable) */}
+            {/* CRM module - Inbound Leads (toggleable) */}
             {isModuleEnabled('leads') && (
-              <Route
-                path="/sales/leads"
-                element={
-                  <LazyPage>
-                    <LeadsPage />
-                  </LazyPage>
-                }
-              />
+              <>
+                <Route
+                  path="/crm/leads"
+                  element={
+                    <LazyPage>
+                      <LeadsPage />
+                    </LazyPage>
+                  }
+                />
+                {/* Legacy redirect */}
+                <Route
+                  path="/sales/leads"
+                  element={<Navigate to="/crm/leads" replace />}
+                />
+              </>
             )}
 
-            {/* Sales module - Pipeline (toggleable) */}
+            {/* Legacy Pipeline redirects to CRM Opportunities */}
             {isModuleEnabled('pipeline') && (
               <Route
                 path="/sales/pipeline"
-                element={
-                  <LazyPage>
-                    <PipelinePage />
-                  </LazyPage>
-                }
+                element={<Navigate to="/crm/opportunities" replace />}
               />
             )}
 

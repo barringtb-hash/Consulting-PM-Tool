@@ -106,13 +106,14 @@ router.post('/assets', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
+  // Validate account exists if clientId provided (clientId maps to accountId)
   if (parsed.data.clientId) {
-    const client = await prisma.client.findUnique({
+    const account = await prisma.account.findUnique({
       where: { id: parsed.data.clientId },
     });
 
-    if (!client) {
-      res.status(404).json({ error: 'Client not found' });
+    if (!account) {
+      res.status(404).json({ error: 'Account not found' });
       return;
     }
   }

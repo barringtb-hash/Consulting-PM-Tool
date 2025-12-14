@@ -162,16 +162,16 @@ export const meetingTools = [
   {
     name: 'prepare_meeting_brief',
     description:
-      'Generate a meeting brief for a client, including recent activity, open tasks, and project status.',
+      'Generate a meeting brief for an account, including recent activity, open tasks, and project status.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        clientId: {
+        accountId: {
           type: 'number',
-          description: 'The client ID to prepare the brief for',
+          description: 'The account ID to prepare the brief for',
         },
       },
-      required: ['clientId'],
+      required: ['accountId'],
     },
   },
 ];
@@ -223,7 +223,7 @@ const recentMeetingsSchema = z.object({
 });
 
 const meetingBriefSchema = z.object({
-  clientId: z.number(),
+  accountId: z.number(),
   _userId: z.number().optional(), // Internal: for ownership filtering
 });
 
@@ -483,20 +483,20 @@ export async function executeMeetingTool(
       case 'prepare_meeting_brief': {
         const parsed = meetingBriefSchema.parse(args);
 
-        // Get client info
-        const client = await prisma.client.findUnique({
-          where: { id: parsed.clientId },
+        // Get account info
+        const account = await prisma.account.findUnique({
+          where: { id: parsed.accountId },
           include: {
-            contacts: {
+            crmContacts: {
               take: 5,
               orderBy: { createdAt: 'desc' },
             },
           },
         });
 
-        if (!client) {
+        if (!account) {
           return {
-            content: [{ type: 'text', text: 'Client not found' }],
+            content: [{ type: 'text', text: 'Account not found' }],
             isError: true,
           };
         }
@@ -504,7 +504,7 @@ export async function executeMeetingTool(
         // Get active projects (filter by owner if userId is provided)
         const projects = await prisma.project.findMany({
           where: {
-            clientId: parsed.clientId,
+            accountId: parsed.accountId,
             status: { in: ['PLANNING', 'IN_PROGRESS'] },
             // Filter by owner if userId is provided
             ...(parsed._userId ? { ownerId: parsed._userId } : {}),
@@ -547,14 +547,14 @@ export async function executeMeetingTool(
         });
 
         const brief = {
-          client: {
-            id: client.id,
-            name: client.name,
-            industry: client.industry,
-            aiMaturity: client.aiMaturity,
-            notes: client.notes,
+          account: {
+            id: account.id,
+            name: account.name,
+            industry: account.industry,
+            type: account.type,
+            healthScore: account.healthScore,
           },
-          contacts: client.contacts,
+          contacts: account.crmContacts,
           activeProjects: projects.map((p) => ({
             id: p.id,
             name: p.name,

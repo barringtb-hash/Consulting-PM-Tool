@@ -15,7 +15,7 @@ import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { Select } from '../../ui/Select';
 import { Badge } from '../../ui/Badge';
 import { useToast } from '../../ui/Toast';
-import { useClients } from '../../api/queries';
+import { useAccounts } from '../../api/hooks/crm';
 import {
   Wrench,
   Settings,
@@ -197,7 +197,7 @@ function PredictiveMaintenancePage(): JSX.Element {
   const queryClient = useQueryClient();
 
   // Queries
-  const clientsQuery = useClients({ includeArchived: false });
+  const accountsQuery = useAccounts({ archived: false });
   const configsQuery = useQuery({
     queryKey: ['maintenance-configs'],
     queryFn: fetchMaintenanceConfigs,
@@ -244,7 +244,7 @@ function PredictiveMaintenancePage(): JSX.Element {
 
   // Redirect to login on 401 errors from queries or mutations
   useRedirectOnUnauthorized(configsQuery.error);
-  useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(createConfigMutation.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
@@ -657,9 +657,9 @@ function PredictiveMaintenancePage(): JSX.Element {
                 required
               >
                 <option value="">Select a client...</option>
-                {clientsQuery.data?.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
+                {accountsQuery.data?.data?.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
                   </option>
                 ))}
               </Select>

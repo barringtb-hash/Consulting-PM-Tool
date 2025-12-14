@@ -153,6 +153,7 @@ router.get(
     }
 
     // If specific clientId requested, verify access
+    // Note: clientId param now represents accountId (frontend sends account IDs)
     if (clientId) {
       const canAccess = await hasClientAccess(req.userId, clientId);
       if (!canAccess) {
@@ -161,16 +162,17 @@ router.get(
           .json({ error: 'Forbidden: You do not have access to this client' });
         return;
       }
+      // Use accountId (frontend now sends account IDs via the clientId param)
       const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs(
         {
-          clientId,
+          accountId: clientId,
         },
       );
       res.json({ configs });
       return;
     }
 
-    // No specific clientId - filter by accessible clients
+    // No specific clientId - filter by accessible accounts
     const accessibleClientIds = await getAccessibleClientIds(req.userId);
 
     // If null, user is admin and can see all
@@ -182,9 +184,9 @@ router.get(
       return;
     }
 
-    // Filter to only accessible clients
+    // Filter to only accessible accounts
     const configs = await documentAnalyzerService.listDocumentAnalyzerConfigs({
-      clientIds: accessibleClientIds,
+      accountIds: accessibleClientIds,
     });
     res.json({ configs });
   },
@@ -218,8 +220,11 @@ router.get(
       return;
     }
 
-    const config =
-      await documentAnalyzerService.getDocumentAnalyzerConfig(clientId);
+    // Use accountId (frontend now sends account IDs via the clientId param)
+    const config = await documentAnalyzerService.getDocumentAnalyzerConfig(
+      undefined,
+      clientId,
+    );
     res.json({ config });
   },
 );
@@ -261,9 +266,10 @@ router.post(
     }
 
     try {
+      // Use accountId (frontend now sends account IDs via the clientId param)
       const config = await documentAnalyzerService.createDocumentAnalyzerConfig(
-        clientId,
         {
+          accountId: clientId,
           ...parsed.data,
           defaultExtractionFields: parsed.data
             .defaultExtractionFields as Prisma.InputJsonValue,
@@ -275,7 +281,7 @@ router.post(
       if ((error as { code?: string }).code === 'P2002') {
         res
           .status(409)
-          .json({ error: 'Config already exists for this client' });
+          .json({ error: 'Config already exists for this account' });
         return;
       }
       throw error;
@@ -319,14 +325,16 @@ router.patch(
       return;
     }
 
+    // Use accountId (frontend now sends account IDs via the clientId param)
     const config = await documentAnalyzerService.updateDocumentAnalyzerConfig(
-      clientId,
       {
         ...parsed.data,
         defaultExtractionFields: parsed.data
           .defaultExtractionFields as Prisma.InputJsonValue,
         complianceRules: parsed.data.complianceRules as Prisma.InputJsonValue,
       },
+      undefined,
+      clientId,
     );
     res.json({ config });
   },

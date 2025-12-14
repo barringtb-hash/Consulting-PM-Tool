@@ -29,14 +29,7 @@ export {
   useDeleteClient,
 } from './hooks/clients';
 
-// Contacts
-export {
-  useContacts,
-  useCreateContact,
-  useUpdateContact,
-  useArchiveContact,
-  useDeleteContact,
-} from './hooks/contacts';
+// Contacts - REMOVED (legacy PMO contacts replaced by CRMContact)
 
 // Projects
 export {
@@ -90,7 +83,7 @@ export {
 export const queryKeys = {
   clients: (filters?: ClientFilters) => ['clients', filters] as const,
   client: (id: number) => ['client', id] as const,
-  contacts: (clientId?: number) => ['contacts', clientId] as const,
+  // contacts removed - legacy PMO contacts replaced by CRMContact
   leads: (filters?: LeadFilters) => ['leads', filters] as const,
   lead: (id: number) => ['lead', id] as const,
   projects: (filters?: ProjectFilters) => ['projects', filters] as const,

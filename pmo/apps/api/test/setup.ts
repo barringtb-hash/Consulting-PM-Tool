@@ -61,9 +61,31 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  // Delete in proper order to respect foreign key constraints
+  // Delete dependent records first, then parent records
+
+  // CRM tables (most dependent first)
+  await prismaClient.cRMActivity.deleteMany();
+  await prismaClient.opportunityStageHistory.deleteMany();
+  await prismaClient.opportunityContact.deleteMany();
+  await prismaClient.opportunity.deleteMany();
+  await prismaClient.salesPipelineStage.deleteMany();
+  await prismaClient.pipeline.deleteMany();
+  await prismaClient.cRMContact.deleteMany();
+
+  // PMO tables
+  await prismaClient.task.deleteMany();
+  await prismaClient.milestone.deleteMany();
+  await prismaClient.meeting.deleteMany();
+  await prismaClient.document.deleteMany();
+  await prismaClient.project.deleteMany();
   await prismaClient.contact.deleteMany();
   await prismaClient.client.deleteMany();
+
+  // Shared tables (Account depends on User, User depends on Tenant for some relations)
+  await prismaClient.account.deleteMany();
   await prismaClient.user.deleteMany();
+  await prismaClient.tenant.deleteMany();
 });
 
 afterAll(async () => {

@@ -8,20 +8,21 @@ import {
 } from '../../types/marketing';
 
 /**
- * Get brand profile by client ID
+ * Get brand profile by account ID
+ * @param accountId - Account ID (or legacy clientId)
  */
 export const getBrandProfileByClientId = async (
-  clientId: number,
+  accountId: number,
 
   _ownerId: number,
 ) => {
-  const client = await prisma.client.findUnique({ where: { id: clientId } });
-  if (!client) {
+  const account = await prisma.account.findUnique({ where: { id: accountId } });
+  if (!account) {
     return { error: 'client_not_found' as const };
   }
 
   const brandProfile = await prisma.brandProfile.findUnique({
-    where: { clientId },
+    where: { clientId: accountId },
     include: {
       client: {
         select: { id: true, name: true },
@@ -42,15 +43,16 @@ export const getBrandProfileByClientId = async (
 
 /**
  * Create a brand profile
+ * Note: input.clientId now represents accountId for backwards compatibility
  */
 export const createBrandProfile = async (
   _ownerId: number,
   input: CreateBrandProfileInput,
 ) => {
-  const client = await prisma.client.findUnique({
+  const account = await prisma.account.findUnique({
     where: { id: input.clientId },
   });
-  if (!client) {
+  if (!account) {
     return { error: 'client_not_found' as const };
   }
 

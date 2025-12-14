@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 
 import { ProjectStatus } from '../api/projects';
-import { useProjects, useClients, useDeleteProject } from '../api/queries';
+import { useProjects, useDeleteProject } from '../api/queries';
+import { useAccounts } from '../api/hooks/crm';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -74,25 +75,28 @@ function ProjectsPage(): JSX.Element {
   );
 
   const projectsQuery = useProjects(filterParams);
-  const clientsQuery = useClients();
+  const accountsQuery = useAccounts();
 
   useRedirectOnUnauthorized(projectsQuery.error);
-  useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
 
   const projects = useMemo(
     () => projectsQuery.data ?? [],
     [projectsQuery.data],
   );
-  const clients = useMemo(() => clientsQuery.data ?? [], [clientsQuery.data]);
+  const accounts = useMemo(
+    () => accountsQuery.data?.data ?? [],
+    [accountsQuery.data?.data],
+  );
 
   // Create a map of client IDs to names for display
   const clientMap = useMemo(() => {
     const map: Record<number, string> = {};
-    clients.forEach((client) => {
-      map[client.id] = client.name;
+    accounts.forEach((account) => {
+      map[account.id] = account.name;
     });
     return map;
-  }, [clients]);
+  }, [accounts]);
 
   // Apply search filter client-side
   const filteredProjects = useMemo(() => {
@@ -215,9 +219,9 @@ function ProjectsPage(): JSX.Element {
               }
             >
               <option value="">All clients</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
                 </option>
               ))}
             </Select>

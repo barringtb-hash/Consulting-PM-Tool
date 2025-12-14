@@ -16,7 +16,7 @@ import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
 import { Badge } from '../../ui/Badge';
 import { useToast } from '../../ui/Toast';
-import { useClients } from '../../api/queries';
+import { useAccounts } from '../../api/hooks/crm';
 import {
   Plus,
   Calendar,
@@ -197,7 +197,7 @@ function SchedulingPage(): JSX.Element {
   const queryClient = useQueryClient();
 
   // Queries
-  const clientsQuery = useClients({ includeArchived: false });
+  const accountsQuery = useAccounts({ archived: false });
   const configsQuery = useQuery({
     queryKey: ['scheduling-configs'],
     queryFn: fetchConfigs,
@@ -228,11 +228,11 @@ function SchedulingPage(): JSX.Element {
 
   // Redirect to login on 401 errors from queries
   useRedirectOnUnauthorized(configsQuery.error);
-  useRedirectOnUnauthorized(clientsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(providersQuery.error);
   useRedirectOnUnauthorized(appointmentsQuery.error);
 
-  const clients = clientsQuery.data ?? [];
+  const accounts = accountsQuery.data?.data ?? [];
   const providers = providersQuery.data ?? [];
   const appointments = appointmentsQuery.data ?? [];
 
@@ -345,9 +345,9 @@ function SchedulingPage(): JSX.Element {
                 onChange={(e) => setSelectedClientId(e.target.value)}
               >
                 <option value="">All Clients</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
                   </option>
                 ))}
               </Select>
@@ -853,9 +853,9 @@ function SchedulingPage(): JSX.Element {
               <form onSubmit={handleCreateConfig} className="space-y-4">
                 <Select label="Client" name="clientId" required>
                   <option value="">Select a client...</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
                     </option>
                   ))}
                 </Select>

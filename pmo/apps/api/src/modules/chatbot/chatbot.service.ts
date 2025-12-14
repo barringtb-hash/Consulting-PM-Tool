@@ -68,46 +68,92 @@ interface BotResponse {
 // CHATBOT CONFIG MANAGEMENT
 // ============================================================================
 
-export async function getChatbotConfig(clientId: number) {
-  return prisma.chatbotConfig.findUnique({
-    where: { clientId },
-    include: {
-      client: { select: { id: true, name: true, industry: true } },
-    },
-  });
+/**
+ * Get chatbot config by clientId (deprecated) or accountId (preferred)
+ */
+export async function getChatbotConfig(clientId?: number, accountId?: number) {
+  // Prefer accountId if provided
+  if (accountId) {
+    return prisma.chatbotConfig.findUnique({
+      where: { accountId },
+      include: {
+        account: { select: { id: true, name: true, industry: true } },
+        client: { select: { id: true, name: true, industry: true } },
+      },
+    });
+  }
+  // Fall back to clientId (deprecated)
+  if (clientId) {
+    return prisma.chatbotConfig.findUnique({
+      where: { clientId },
+      include: {
+        client: { select: { id: true, name: true, industry: true } },
+        account: { select: { id: true, name: true, industry: true } },
+      },
+    });
+  }
+  return null;
 }
 
-export async function listChatbotConfigs(filters?: { clientId?: number }) {
+export async function listChatbotConfigs(filters?: {
+  clientId?: number;
+  accountId?: number;
+}) {
+  const where: Prisma.ChatbotConfigWhereInput = {};
+  if (filters?.accountId) {
+    where.accountId = filters.accountId;
+  } else if (filters?.clientId) {
+    where.clientId = filters.clientId;
+  }
+
   return prisma.chatbotConfig.findMany({
-    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    where: Object.keys(where).length > 0 ? where : undefined,
     include: {
       client: { select: { id: true, name: true, industry: true } },
+      account: { select: { id: true, name: true, industry: true } },
       _count: { select: { conversations: true, knowledgeBase: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
 }
 
+/**
+ * Create chatbot config linked to Account (preferred) or Client (deprecated)
+ */
 export async function createChatbotConfig(
-  clientId: number,
-  data: ChatbotConfigInput,
+  data: ChatbotConfigInput & { clientId?: number; accountId?: number },
 ) {
+  const { clientId, accountId, ...configData } = data;
   return prisma.chatbotConfig.create({
     data: {
-      clientId,
-      ...data,
+      ...(accountId && { accountId }),
+      ...(clientId && { clientId }),
+      ...configData,
     },
   });
 }
 
+/**
+ * Update chatbot config by clientId (deprecated) or accountId (preferred)
+ */
 export async function updateChatbotConfig(
-  clientId: number,
   data: Partial<ChatbotConfigInput>,
+  clientId?: number,
+  accountId?: number,
 ) {
-  return prisma.chatbotConfig.update({
-    where: { clientId },
-    data,
-  });
+  if (accountId) {
+    return prisma.chatbotConfig.update({
+      where: { accountId },
+      data,
+    });
+  }
+  if (clientId) {
+    return prisma.chatbotConfig.update({
+      where: { clientId },
+      data,
+    });
+  }
+  throw new Error('Either clientId or accountId is required');
 }
 
 // ============================================================================

@@ -64,12 +64,13 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const client = await prisma.client.findUnique({
+  // Validate account exists (clientId maps to accountId)
+  const account = await prisma.account.findUnique({
     where: { id: parsed.data.clientId },
   });
 
-  if (!client) {
-    res.status(404).json({ error: 'Client not found' });
+  if (!account) {
+    res.status(404).json({ error: 'Account not found' });
     return;
   }
 
@@ -83,8 +84,8 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    if (project.clientId !== parsed.data.clientId) {
-      res.status(400).json({ error: 'Project does not belong to client' });
+    if (project.accountId !== parsed.data.clientId) {
+      res.status(400).json({ error: 'Project does not belong to account' });
       return;
     }
 
