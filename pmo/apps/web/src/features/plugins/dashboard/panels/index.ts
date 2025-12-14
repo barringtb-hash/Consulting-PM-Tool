@@ -5,7 +5,7 @@
  */
 
 // Summary Card Plugins
-export { ActiveClientsCardPlugin } from './ActiveClientsCard';
+export { ActiveAccountsCardPlugin } from './ActiveClientsCard';
 export { ActiveProjectsCardPlugin } from './ActiveProjectsCard';
 export { OpenTasksCardPlugin } from './OpenTasksCard';
 export { OverdueTasksCardPlugin } from './OverdueTasksCard';

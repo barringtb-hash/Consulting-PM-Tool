@@ -1,9 +1,19 @@
 import { test, expect } from '@playwright/test';
 
 /**
+ * @deprecated LEGACY TEST FILE - Needs migration to CRM Accounts
+ *
  * M2: Clients & Contacts E2E Tests
  *
- * Coverage:
+ * These tests navigate to /clients which now redirects to /crm/accounts.
+ * The tests will fail because the Accounts page has different UI elements.
+ *
+ * For CRM Accounts testing, use: e2e/crm-accounts.spec.ts
+ * For CRM Opportunities testing, use: e2e/crm-opportunities.spec.ts
+ *
+ * TODO: Either delete this file or rewrite tests for legacy Client detail pages.
+ *
+ * Original Coverage:
  * - Create new client
  * - View client list
  * - View client details

@@ -6,7 +6,7 @@
  */
 
 import { dashboardPluginRegistry } from './registry';
-import { ActiveClientsCardPlugin } from './panels/ActiveClientsCard';
+import { ActiveAccountsCardPlugin } from './panels/ActiveClientsCard';
 import { ActiveProjectsCardPlugin } from './panels/ActiveProjectsCard';
 import { OpenTasksCardPlugin } from './panels/OpenTasksCard';
 import { OverdueTasksCardPlugin } from './panels/OverdueTasksCard';
@@ -18,7 +18,7 @@ import { RecentProjectsPanelPlugin } from './panels/RecentProjectsPanel';
  */
 export const corePlugins = [
   // Summary Cards (order matters for display)
-  ActiveClientsCardPlugin,
+  ActiveAccountsCardPlugin,
   ActiveProjectsCardPlugin,
   OpenTasksCardPlugin,
   OverdueTasksCardPlugin,
