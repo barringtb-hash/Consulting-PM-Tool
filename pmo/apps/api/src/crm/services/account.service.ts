@@ -299,77 +299,122 @@ export async function listAccounts(
 
 /**
  * Update an account.
+ * Returns null if the account is not found.
  */
 export async function updateAccount(id: number, input: UpdateAccountInput) {
   const tenantId = getTenantId();
 
-  return prisma.account.update({
-    where: { id, tenantId },
-    data: {
-      name: input.name,
-      website: input.website,
-      phone: input.phone,
-      parentAccountId: input.parentAccountId,
-      type: input.type,
-      industry: input.industry,
-      employeeCount: input.employeeCount,
-      annualRevenue: input.annualRevenue,
-      billingAddress: input.billingAddress as Prisma.InputJsonValue,
-      shippingAddress: input.shippingAddress as Prisma.InputJsonValue,
-      healthScore: input.healthScore,
-      engagementScore: input.engagementScore,
-      churnRisk: input.churnRisk,
-      ownerId: input.ownerId,
-      tags: input.tags,
-      customFields: input.customFields as Prisma.InputJsonValue,
-      archived: input.archived,
-    },
-    include: {
-      owner: {
-        select: { id: true, name: true, email: true },
+  try {
+    return await prisma.account.update({
+      where: { id, tenantId },
+      data: {
+        name: input.name,
+        website: input.website,
+        phone: input.phone,
+        parentAccountId: input.parentAccountId,
+        type: input.type,
+        industry: input.industry,
+        employeeCount: input.employeeCount,
+        annualRevenue: input.annualRevenue,
+        billingAddress: input.billingAddress as Prisma.InputJsonValue,
+        shippingAddress: input.shippingAddress as Prisma.InputJsonValue,
+        healthScore: input.healthScore,
+        engagementScore: input.engagementScore,
+        churnRisk: input.churnRisk,
+        ownerId: input.ownerId,
+        tags: input.tags,
+        customFields: input.customFields as Prisma.InputJsonValue,
+        archived: input.archived,
       },
-    },
-  });
+      include: {
+        owner: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /**
  * Archive an account (soft delete).
+ * Returns null if the account is not found.
  */
 export async function archiveAccount(id: number) {
   const tenantId = getTenantId();
 
-  return prisma.account.update({
-    where: { id, tenantId },
-    data: {
-      archived: true,
-    },
-  });
+  try {
+    return await prisma.account.update({
+      where: { id, tenantId },
+      data: {
+        archived: true,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /**
  * Restore an archived account.
+ * Returns null if the account is not found.
  */
 export async function restoreAccount(id: number) {
   const tenantId = getTenantId();
 
-  return prisma.account.update({
-    where: { id, tenantId },
-    data: {
-      archived: false,
-    },
-  });
+  try {
+    return await prisma.account.update({
+      where: { id, tenantId },
+      data: {
+        archived: false,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /**
  * Delete an account permanently.
  * Use with caution - this cascades to all related data.
+ * Returns false if the account is not found.
  */
-export async function deleteAccount(id: number) {
+export async function deleteAccount(id: number): Promise<boolean> {
   const tenantId = getTenantId();
 
-  return prisma.account.delete({
-    where: { id, tenantId },
-  });
+  try {
+    await prisma.account.delete({
+      where: { id, tenantId },
+    });
+    return true;
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 // ============================================================================
