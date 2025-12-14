@@ -15,6 +15,7 @@ import {
   listTenantsQuerySchema,
 } from '../validation/tenant-admin.schema';
 import * as tenantAdminService from './tenant-admin.service';
+import type { UpdateTenantBrandingInput } from './tenant-admin.service';
 
 const router = Router();
 
@@ -372,7 +373,7 @@ router.put(
       const { tenantId } = req.params;
       const branding = await tenantAdminService.updateTenantBrandingByAdmin(
         tenantId,
-        req.body,
+        req.body as UpdateTenantBrandingInput,
       );
       return res.json(branding);
     } catch (error) {
