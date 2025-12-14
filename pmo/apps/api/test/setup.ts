@@ -82,9 +82,10 @@ beforeEach(async () => {
   await prismaClient.contact.deleteMany();
   await prismaClient.client.deleteMany();
 
-  // Shared tables (Account depends on User)
+  // Shared tables (Account depends on User, User depends on Tenant for some relations)
   await prismaClient.account.deleteMany();
   await prismaClient.user.deleteMany();
+  await prismaClient.tenant.deleteMany();
 });
 
 afterAll(async () => {

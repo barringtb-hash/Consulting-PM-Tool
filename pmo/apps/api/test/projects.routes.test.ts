@@ -28,13 +28,21 @@ const createAuthenticatedAgent = async () => {
   return { agent, user };
 };
 
-const createClient = async () => {
-  // Create an Account (the CRM entity) instead of legacy Client
-  // The route looks up Account, not Client
+const createClient = async (ownerId: number) => {
+  // Create a Tenant first, then create an Account connected to it
+  const tenant = await prisma.tenant.create({
+    data: {
+      id: `test-tenant-${Date.now()}`,
+      name: 'Test Tenant',
+      slug: `test-tenant-${Date.now()}`,
+    },
+  });
+
   return prisma.account.create({
     data: {
       name: 'Test Client',
-      tenantId: 'test-tenant',
+      tenantId: tenant.id,
+      ownerId: ownerId,
     },
   });
 };
@@ -57,8 +65,8 @@ describe('projects routes', () => {
 
   describe('validation', () => {
     it('validates project payloads - missing name', async () => {
-      const { agent } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const { agent, user } = await createAuthenticatedAgent();
+      const client = await createClient(user.id);
 
       const response = await agent
         .post('/api/projects')
@@ -80,8 +88,8 @@ describe('projects routes', () => {
     });
 
     it('validates project payloads - invalid status', async () => {
-      const { agent } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const { agent, user } = await createAuthenticatedAgent();
+      const client = await createClient(user.id);
 
       const response = await agent.post('/api/projects').send({
         name: 'Test Project',
@@ -95,8 +103,8 @@ describe('projects routes', () => {
 
   describe('CRUD operations', () => {
     it('creates a project successfully', async () => {
-      const { agent } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const { agent, user } = await createAuthenticatedAgent();
+      const client = await createClient(user.id);
 
       const response = await agent.post('/api/projects').send({
         name: 'New Project',
@@ -114,7 +122,7 @@ describe('projects routes', () => {
 
     it('lists projects with pagination', async () => {
       const { agent, user } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user.id);
 
       // Create multiple projects
       await prisma.project.createMany({
@@ -141,7 +149,7 @@ describe('projects routes', () => {
 
     it('filters projects by status', async () => {
       const { agent, user } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user.id);
 
       await prisma.project.createMany({
         data: [
@@ -171,7 +179,7 @@ describe('projects routes', () => {
 
     it('gets a single project by id', async () => {
       const { agent, user } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user.id);
 
       const project = await prisma.project.create({
         data: {
@@ -192,7 +200,7 @@ describe('projects routes', () => {
 
     it('updates a project', async () => {
       const { agent, user } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user.id);
 
       const project = await prisma.project.create({
         data: {
@@ -217,7 +225,7 @@ describe('projects routes', () => {
 
     it('deletes a project', async () => {
       const { agent, user } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user.id);
 
       const project = await prisma.project.create({
         data: {
@@ -240,7 +248,7 @@ describe('projects routes', () => {
     it('prevents access to other users projects', async () => {
       const { agent: agent1, user: user1 } = await createAuthenticatedAgent();
       const { agent: agent2 } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user1.id);
 
       const project = await prisma.project.create({
         data: {
@@ -259,7 +267,7 @@ describe('projects routes', () => {
     it('prevents updating other users projects', async () => {
       const { user: user1 } = await createAuthenticatedAgent();
       const { agent: agent2 } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user1.id);
 
       const project = await prisma.project.create({
         data: {
@@ -279,7 +287,7 @@ describe('projects routes', () => {
     it('prevents deleting other users projects', async () => {
       const { user: user1 } = await createAuthenticatedAgent();
       const { agent: agent2 } = await createAuthenticatedAgent();
-      const client = await createClient();
+      const client = await createClient(user1.id);
 
       const project = await prisma.project.create({
         data: {
