@@ -70,7 +70,7 @@ VITE_API_BASE_URL="http://localhost:3001/api"
 
 ## Database Models (Key Entities)
 
-**CRM Core Models:**
+**CRM Core Models (Primary):**
 - **Account**: Company/organization with hierarchy, health scores, engagement tracking
 - **CRMContact**: CRM contacts with lifecycle management (Lead → MQL → SQL → Customer)
 - **Pipeline**: Customizable sales pipelines with stages
@@ -78,26 +78,28 @@ VITE_API_BASE_URL="http://localhost:3001/api"
 - **Opportunity**: Deals with weighted forecasting and stage history
 - **CRMActivity**: Unified timeline (calls, emails, meetings, tasks, notes)
 
-**PMO Models:**
+**PMO Models (Legacy - being replaced by CRM):**
 - **User**: Consultants/admins with role-based access
-- **Client**: Companies with industry, size, AI maturity
-- **Contact**: Client contacts (cascade delete)
-- **Project**: Projects with status tracking
+- **Client**: *(deprecated - use Account)* Companies with industry, size, AI maturity
+- **Contact**: *(deprecated - use CRMContact)* Client contacts (cascade delete)
+- **Project**: Projects linked to Accounts with status tracking
 - **Task**: Kanban tasks with priority and assignee
 - **Milestone**: Project milestones
-- **Meeting**: Client/project meetings
+- **Meeting**: Account/project meetings
 - **AIAsset**: Reusable AI assets
 - **MarketingContent**: Content with publishing workflow
+- **InboundLead**: Leads (convert to Opportunity for pipeline tracking)
 
 ## Module System
 
 Enable modules via `PMO_MODULES` environment variable:
 
 ```bash
-PMO_MODULES="assets,marketing,leads,admin,mcp,chatbot"
+# CRM-centric configuration (recommended)
+PMO_MODULES="crm,accounts,opportunities,activities,pipeline,chatbot,documentAnalyzer"
 ```
 
-See [MODULES.md](MODULES.md) for full module documentation.
+See [MODULES.md](MODULES.md) for full module documentation including all AI Tools phases.
 
 ## Additional Resources
 

@@ -290,7 +290,7 @@ Key models in `pmo/prisma/schema.prisma`:
 - **InboundLead**: Sales pipeline leads
 
 **AI Chatbot Models** (Tool 1.1):
-- **ChatbotConfig**: Per-client chatbot configuration with widget customization
+- **ChatbotConfig**: Per-account chatbot configuration with widget customization
 - **ChatConversation**: Conversation sessions with customer info and status
 - **ChatMessage**: Individual messages with intent detection and sentiment
 - **KnowledgeBaseItem**: FAQ entries for automated responses
@@ -299,7 +299,7 @@ Key models in `pmo/prisma/schema.prisma`:
 - **ChatAnalytics**: Daily aggregated analytics
 
 **Document Analyzer Models** (Tool 2.1):
-- **DocumentAnalyzerConfig**: Per-client document analysis configuration
+- **DocumentAnalyzerConfig**: Per-account document analysis configuration
 - **AnalyzedDocument**: Uploaded documents with extraction results
 - **ExtractionTemplate**: Custom field extraction templates
 - **DocumentIntegration**: External system integrations

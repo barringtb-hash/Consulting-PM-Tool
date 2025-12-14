@@ -1,6 +1,6 @@
-# E2E Test Coverage - M0 through M7
+# E2E Test Coverage - M0 through M7 + CRM
 
-**Last Updated**: 2025-11-21
+**Last Updated**: 2025-12-14
 **Test Framework**: Playwright
 **Location**: `/pmo/e2e/`
 
@@ -8,7 +8,11 @@
 
 ## Overview
 
-This document describes the end-to-end test coverage for the AI Consulting PMO Platform, covering all core features from M0 (Foundation) through M7 (Status & Reporting).
+This document describes the end-to-end test coverage for the AI CRM Platform, covering:
+- **CRM Core**: Accounts, Opportunities, Pipeline, Activities (primary)
+- **Legacy PMO**: Clients, Projects, Tasks, Meetings (M0-M7)
+
+> **Note**: The platform has evolved from a PMO tool to a comprehensive CRM SaaS platform. New features should use CRM entities (Account, Opportunity, CRMContact, CRMActivity) instead of legacy PMO entities (Client, Contact).
 
 ## Test Execution
 
@@ -73,7 +77,9 @@ Global authentication setup that:
 
 ---
 
-## M2: Clients & Contacts Management
+## M2: Clients & Contacts Management (Legacy PMO)
+
+> **Note**: These tests cover the legacy Client/Contact entities. For new implementations, use the CRM Accounts and CRMContacts modules. See `/crm/accounts` routes.
 
 **Test File**: `e2e/clients.spec.ts`
 
@@ -451,7 +457,7 @@ This test covers the primary user journey:
 | Module       | Test File                  | Tests | Key Flows Covered                            |
 | ------------ | -------------------------- | ----- | -------------------------------------------- |
 | M1: Auth     | `auth.spec.ts`             | 6     | Login, logout, session, protected routes     |
-| M2: Clients  | `clients.spec.ts`          | 7     | Create client, contacts, list, details       |
+| M2: Clients (Legacy) | `clients.spec.ts`   | 7     | Create client, contacts, list, details (use Account instead) |
 | M3: Projects | `projects.spec.ts`         | 6     | Create project, tabs, summary, templates     |
 | M4: Tasks    | `tasks-milestones.spec.ts` | 7     | Create task, kanban, milestones, global view |
 | M5: Meetings | `meetings.spec.ts`         | 8     | Create meeting, notes, task creation         |
@@ -460,6 +466,16 @@ This test covers the primary user journey:
 | Happy Path   | `happy-path.spec.ts`       | 2     | End-to-end workflows                         |
 
 **Total Tests**: ~57 individual test cases
+
+### CRM Module Coverage (Recommended Additions)
+
+| Module            | Suggested Test File        | Priority | Key Flows                                     |
+| ----------------- | -------------------------- | -------- | --------------------------------------------- |
+| CRM: Accounts     | `crm-accounts.spec.ts`     | High     | CRUD, hierarchy, health, merge, timeline      |
+| CRM: Opportunities| `crm-opportunities.spec.ts`| High     | Pipeline stages, won/lost, forecasting        |
+| CRM: Activities   | `crm-activities.spec.ts`   | Medium   | Log calls/emails, timeline, complete/cancel   |
+| Lead Conversion   | `lead-conversion.spec.ts`  | Medium   | Convert to Account + Opportunity              |
+| AI Tools Config   | `ai-tools.spec.ts`         | Low      | Chatbot/Doc Analyzer configuration            |
 
 ---
 
@@ -539,17 +555,50 @@ This allows tests to pass even if UI varies slightly between implementations.
 
 ---
 
+## CRM E2E Tests (Recommended)
+
+Future E2E tests should cover the CRM modules:
+
+### CRM: Accounts
+- Create Account with hierarchy (parent/child)
+- View Account details and timeline
+- Update health score and engagement
+- Archive and restore Account
+- Merge duplicate Accounts
+
+### CRM: Opportunities
+- Create Opportunity linked to Account
+- Move Opportunity through pipeline stages
+- Mark as Won/Lost with reason
+- View pipeline statistics
+- Stage history tracking
+
+### CRM: Activities
+- Log calls, emails, meetings
+- View unified timeline
+- Complete/cancel activities
+- Filter by type and status
+
+### CRM: Lead Conversion
+- Convert InboundLead to Account + Opportunity
+- Verify pipeline creation
+- Test conversion with/without Project
+
+---
+
 ## Future Enhancements
 
 ### Additional Coverage Needed
 
-1. **Error Handling**: Test error states and validation messages
-2. **Edge Cases**: Empty states, maximum limits, special characters
-3. **Performance**: Measure page load times, API response times
-4. **Accessibility**: Add a11y assertions to all tests
-5. **Mobile**: Test responsive layouts
-6. **Concurrent Users**: Multi-user scenarios
-7. **Data Persistence**: Verify data survives page reloads
+1. **CRM Coverage**: Comprehensive CRM E2E tests for Accounts, Opportunities, Activities
+2. **Error Handling**: Test error states and validation messages
+3. **Edge Cases**: Empty states, maximum limits, special characters
+4. **Performance**: Measure page load times, API response times
+5. **Accessibility**: Add a11y assertions to all tests
+6. **Mobile**: Test responsive layouts
+7. **Concurrent Users**: Multi-user scenarios
+8. **Data Persistence**: Verify data survives page reloads
+9. **AI Tools**: E2E tests for Chatbot, Document Analyzer configuration
 
 ### Test Organization
 
