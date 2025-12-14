@@ -239,32 +239,33 @@ export async function createTenantByAdmin(input: CreateTenantAdminInput) {
     throw new Error(`Tenant with slug "${slug}" already exists`);
   }
 
-  // Check if owner email exists
-  let ownerUser = await prisma.user.findUnique({
-    where: { email: input.ownerEmail },
-  });
-
-  let tempPassword: string | null = null;
-
-  // If user doesn't exist, create a new user
-  if (!ownerUser) {
-    tempPassword = generateTempPassword();
-    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
-    const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
-
-    ownerUser = await prisma.user.create({
-      data: {
-        email: input.ownerEmail,
-        name: input.ownerName || input.ownerEmail.split('@')[0],
-        passwordHash,
-        role: 'USER',
-        timezone: 'America/New_York',
-      },
-    });
-  }
-
   // Create tenant with owner and default pipeline in a transaction
-  const tenant = await prisma.$transaction(async (tx) => {
+  // This ensures atomicity - if any step fails, everything rolls back
+  const result = await prisma.$transaction(async (tx) => {
+    // Check if owner email exists
+    let ownerUser = await tx.user.findUnique({
+      where: { email: input.ownerEmail },
+    });
+
+    let tempPassword: string | null = null;
+
+    // If user doesn't exist, create a new user inside the transaction
+    if (!ownerUser) {
+      tempPassword = generateTempPassword();
+      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
+      const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
+
+      ownerUser = await tx.user.create({
+        data: {
+          email: input.ownerEmail,
+          name: input.ownerName || input.ownerEmail.split('@')[0],
+          passwordHash,
+          role: 'USER',
+          timezone: 'America/New_York',
+        },
+      });
+    }
+
     // Create tenant
     const newTenant = await tx.tenant.create({
       data: {
@@ -281,7 +282,7 @@ export async function createTenantByAdmin(input: CreateTenantAdminInput) {
     await tx.tenantUser.create({
       data: {
         tenantId: newTenant.id,
-        userId: ownerUser!.id,
+        userId: ownerUser.id,
         role: 'OWNER',
         acceptedAt: new Date(),
       },
@@ -349,17 +350,21 @@ export async function createTenantByAdmin(input: CreateTenantAdminInput) {
       },
     });
 
-    return newTenant;
+    return {
+      tenant: newTenant,
+      ownerUser,
+      tempPassword,
+    };
   });
 
   return {
-    tenant,
+    tenant: result.tenant,
     owner: {
-      id: ownerUser.id,
-      email: ownerUser.email,
-      name: ownerUser.name,
-      isNewUser: !!tempPassword,
-      tempPassword,
+      id: result.ownerUser.id,
+      email: result.ownerUser.email,
+      name: result.ownerUser.name,
+      isNewUser: !!result.tempPassword,
+      tempPassword: result.tempPassword,
     },
   };
 }
