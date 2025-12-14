@@ -1,5 +1,7 @@
 -- Add accountId columns to legacy PMO models for CRM Account integration
 -- This migration adds accountId as the preferred field, while keeping clientId for backward compatibility
+-- Note: Foreign key constraints are NOT added here because the Account table may not exist yet
+-- (it may have been created via db push). The application layer handles referential integrity.
 
 -- Add accountId column to Project table
 ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "accountId" INTEGER;
@@ -38,13 +40,3 @@ CREATE INDEX IF NOT EXISTS "Meeting_accountId_idx" ON "Meeting"("accountId");
 CREATE INDEX IF NOT EXISTS "AIAsset_accountId_idx" ON "AIAsset"("accountId");
 CREATE INDEX IF NOT EXISTS "MarketingContent_accountId_idx" ON "MarketingContent"("accountId");
 CREATE INDEX IF NOT EXISTS "Campaign_accountId_idx" ON "Campaign"("accountId");
-
--- Add foreign key constraints to Account table
-ALTER TABLE "Project" ADD CONSTRAINT "Project_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "Document" ADD CONSTRAINT "Document_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "Meeting" ADD CONSTRAINT "Meeting_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "AIAsset" ADD CONSTRAINT "AIAsset_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "MarketingContent" ADD CONSTRAINT "MarketingContent_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "Campaign" ADD CONSTRAINT "Campaign_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "ChatbotConfig" ADD CONSTRAINT "ChatbotConfig_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "DocumentAnalyzerConfig" ADD CONSTRAINT "DocumentAnalyzerConfig_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
