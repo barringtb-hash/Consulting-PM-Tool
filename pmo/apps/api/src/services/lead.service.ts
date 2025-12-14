@@ -227,24 +227,18 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
   }
 
   return prisma.$transaction(async (tx) => {
-    let clientId = conversion.clientId || lead.clientId;
+    // Legacy: clientId still tracked for backward compatibility with existing projects
+    const clientId = conversion.clientId || lead.clientId;
     let contactId = lead.primaryContactId;
     let projectId: number | undefined;
     let opportunityId: number | undefined;
     let accountId: number | undefined;
 
-    // Create or use existing client
-    if (conversion.createClient && !clientId && lead.company) {
-      const client = await tx.client.create({
-        data: {
-          name: lead.company,
-          notes: `Created from lead: ${lead.email}`,
-        },
-      });
-      clientId = client.id;
-    }
+    // Note: Client creation removed - Accounts are now the primary entity
+    // Legacy createClient flag is ignored; use Accounts instead
 
-    // Create contact if requested and we have a client
+    // Create contact if requested and we have a legacy client
+    // TODO: Migrate to CRMContact creation linked to Account
     if (conversion.createContact && clientId && !contactId) {
       const contact = await tx.contact.create({
         data: {
@@ -258,36 +252,9 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
       contactId = contact.id;
     }
 
-    // Create project for delivery tracking (no pipeline fields)
-    if (conversion.createProject && clientId) {
-      const projectOwnerId = conversion.ownerId || lead.ownerUserId;
-
-      if (!projectOwnerId) {
-        throw new Error(
-          'Project owner not specified. Please provide an ownerId or ensure the lead has an assigned owner.',
-        );
-      }
-
-      const project = await tx.project.create({
-        data: {
-          clientId,
-          ownerId: projectOwnerId,
-          name:
-            conversion.projectName ||
-            `${lead.company || lead.email} - ${lead.serviceInterest}`,
-          status: 'PLANNING',
-          // Note: Pipeline fields removed - use Opportunity for sales tracking
-        },
-      });
-      projectId = project.id;
-    }
-
-    // Create opportunity for sales pipeline tracking
-    // Check for createOpportunity flag or legacy pipelineStage/pipelineValue
-    const shouldCreateOpportunity =
-      conversion.createOpportunity ||
-      conversion.pipelineStage ||
-      conversion.pipelineValue;
+    // Create opportunity for sales pipeline tracking (default behavior)
+    // Opportunity creation is now the primary conversion path
+    const shouldCreateOpportunity = conversion.createOpportunity !== false; // Default to true
 
     if (shouldCreateOpportunity && tenantId) {
       const opportunityOwnerId = conversion.ownerId || lead.ownerUserId;
@@ -298,49 +265,40 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
         );
       }
 
-      // Get or create Account linked to Client
-      let account = clientId
-        ? await tx.account.findFirst({
-            where: {
-              tenantId,
-              OR: [
-                {
-                  customFields: { path: ['legacyClientId'], equals: clientId },
-                },
-                {
-                  name: lead.company || lead.email,
-                },
-              ],
-            },
-          })
-        : null;
+      // Get or create Account (primary CRM entity)
+      let account = await tx.account.findFirst({
+        where: {
+          tenantId,
+          OR: [
+            // Match by legacy client link
+            ...(clientId
+              ? [
+                  {
+                    customFields: {
+                      path: ['legacyClientId'],
+                      equals: clientId,
+                    },
+                  },
+                ]
+              : []),
+            // Match by company name
+            { name: lead.company || lead.email },
+          ],
+        },
+      });
 
       if (!account) {
-        // Get client details if we have one
-        const clientDetails = clientId
-          ? await tx.client.findUnique({
-              where: { id: clientId },
-              select: { name: true, industry: true },
-            })
-          : null;
-
         account = await tx.account.create({
           data: {
             tenantId,
-            name: clientDetails?.name || lead.company || lead.email,
-            industry: clientDetails?.industry,
+            name: lead.company || lead.email,
             type: 'PROSPECT',
             ownerId: opportunityOwnerId,
-            customFields: clientId
-              ? {
-                  legacyClientId: clientId,
-                  createdFrom: 'lead-conversion',
-                  leadId: id,
-                }
-              : {
-                  createdFrom: 'lead-conversion',
-                  leadId: id,
-                },
+            customFields: {
+              createdFrom: 'lead-conversion',
+              leadId: id,
+              ...(clientId ? { legacyClientId: clientId } : {}),
+            },
           },
         });
       }
@@ -462,6 +420,30 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
           changedById: opportunityOwnerId,
         },
       });
+    }
+
+    // Create project for delivery tracking (legacy - requires existing clientId)
+    // Note: Projects require a Client; if no clientId, skip project creation
+    if (conversion.createProject && clientId) {
+      const projectOwnerId = conversion.ownerId || lead.ownerUserId;
+
+      if (!projectOwnerId) {
+        throw new Error(
+          'Project owner not specified. Please provide an ownerId or ensure the lead has an assigned owner.',
+        );
+      }
+
+      const project = await tx.project.create({
+        data: {
+          clientId,
+          ownerId: projectOwnerId,
+          name:
+            conversion.projectName ||
+            `${lead.company || lead.email} - ${lead.serviceInterest}`,
+          status: 'PLANNING',
+        },
+      });
+      projectId = project.id;
     }
 
     // Update lead to converted status

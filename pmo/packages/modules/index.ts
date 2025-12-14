@@ -26,6 +26,7 @@ export type ModuleId =
   | 'admin'
   | 'tenantAdmin'
   // CRM modules
+  | 'crm'
   | 'crmAccounts'
   | 'crmOpportunities'
   // Customer Success Platform
@@ -65,12 +66,10 @@ export type ModuleId =
  */
 export type NavGroup =
   | 'overview'
-  | 'clients'
-  | 'projects'
   | 'crm'
+  | 'projects'
   | 'customerSuccess'
   | 'marketing'
-  | 'sales'
   | 'aiTools'
   | 'infrastructure'
   | 'compliance'
@@ -136,13 +135,15 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
   clients: {
     id: 'clients',
     label: 'Clients',
-    navGroup: 'clients',
+    navGroup: 'projects',
     path: '/clients',
     additionalPaths: ['/clients/:clientId', '/client-intake'],
     icon: 'Users',
     isCore: true,
     apiPrefixes: ['/api/clients', '/api/contacts', '/api/documents'],
-    description: 'Client management, contacts, and documents',
+    description:
+      'Client management, contacts, and documents (Legacy - use Accounts)',
+    showInNavigation: false, // Hidden - redirects to CRM Accounts
   },
   projects: {
     id: 'projects',
@@ -187,28 +188,31 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
   },
   leads: {
     id: 'leads',
-    label: 'Leads',
-    navGroup: 'sales',
-    path: '/sales/leads',
+    label: 'Inbound Leads',
+    navGroup: 'crm',
+    path: '/crm/leads',
     icon: 'UserCheck',
     isCore: false,
+    dependencies: ['crm'],
     apiPrefixes: [
       '/api/leads',
       '/api/public/leads',
       '/api/public/inbound-leads',
     ],
-    description: 'Lead capture and management',
+    description:
+      'Inbound lead capture, qualification, and conversion to opportunities',
   },
   pipeline: {
     id: 'pipeline',
     label: 'Pipeline',
-    navGroup: 'sales',
+    navGroup: 'crm',
     path: '/sales/pipeline',
     icon: 'TrendingUp',
     isCore: false,
     dependencies: ['leads'],
     apiPrefixes: [],
-    description: 'Sales pipeline visualization and tracking',
+    description: 'Sales pipeline visualization (Legacy - use Opportunities)',
+    showInNavigation: false, // Hidden - redirects to CRM Opportunities
   },
   admin: {
     id: 'admin',
@@ -241,6 +245,18 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
   },
 
   // ============ CRM MODULES ============
+  crm: {
+    id: 'crm',
+    label: 'CRM',
+    navGroup: 'crm',
+    path: '/crm',
+    icon: 'Building2',
+    isCore: false,
+    apiPrefixes: ['/api/crm'],
+    description:
+      'Customer Relationship Management - Accounts, Opportunities, Leads, and Activities',
+    showInNavigation: false, // Parent module - children show in navigation
+  },
   crmAccounts: {
     id: 'crmAccounts',
     label: 'Accounts',
@@ -249,6 +265,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     additionalPaths: ['/crm/accounts/:id'],
     icon: 'Building2',
     isCore: false,
+    dependencies: ['crm'],
     apiPrefixes: ['/api/crm/accounts'],
     description:
       'CRM account management with hierarchy support and health scoring',
@@ -261,7 +278,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     additionalPaths: ['/crm/opportunities/:id'],
     icon: 'Target',
     isCore: false,
-    dependencies: ['crmAccounts'],
+    dependencies: ['crm', 'crmAccounts'],
     apiPrefixes: ['/api/crm/opportunities'],
     description:
       'Sales pipeline management with customizable stages and forecasting',
@@ -661,23 +678,22 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
 
 /**
  * Navigation group display configuration
+ * CRM is positioned prominently as the primary business system
  */
 export const NAV_GROUP_CONFIG: Record<
   NavGroup,
   { label: string; order: number }
 > = {
-  overview: { label: '', order: 1 }, // No header for overview
-  demo: { label: 'Demos', order: 2 }, // Demo section at top for visibility
-  clients: { label: 'Clients', order: 3 },
-  projects: { label: 'Projects', order: 4 },
-  crm: { label: 'CRM', order: 5 },
-  customerSuccess: { label: 'Customer Success', order: 6 },
-  marketing: { label: 'Marketing', order: 7 },
-  sales: { label: 'Sales', order: 8 },
-  aiTools: { label: 'AI Tools', order: 9 },
-  infrastructure: { label: 'Infrastructure', order: 10 },
-  compliance: { label: 'Compliance', order: 11 },
-  admin: { label: 'Admin', order: 12 },
+  overview: { label: '', order: 1 }, // No header for overview (Dashboard, Tasks)
+  crm: { label: 'CRM', order: 2 }, // CRM at top - primary business system
+  projects: { label: 'Projects', order: 3 }, // Project delivery
+  customerSuccess: { label: 'Customer Success', order: 4 },
+  marketing: { label: 'Marketing', order: 5 },
+  aiTools: { label: 'AI Tools', order: 6 },
+  infrastructure: { label: 'Infrastructure', order: 7 },
+  compliance: { label: 'Compliance', order: 8 },
+  admin: { label: 'Admin', order: 9 },
+  demo: { label: 'Demos', order: 10 }, // Demos at bottom
 };
 
 /**
@@ -695,6 +711,7 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'admin',
   'tenantAdmin',
   // CRM modules
+  'crm',
   'crmAccounts',
   'crmOpportunities',
   // Customer Success Platform
