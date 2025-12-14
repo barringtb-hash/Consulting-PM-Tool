@@ -251,7 +251,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     navGroup: 'crm',
     path: '/crm',
     icon: 'Building2',
-    isCore: false,
+    isCore: true, // Core module - always enabled
     apiPrefixes: ['/api/crm'],
     description:
       'Customer Relationship Management - Accounts, Opportunities, Leads, and Activities',
@@ -264,7 +264,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     path: '/crm/accounts',
     additionalPaths: ['/crm/accounts/:id'],
     icon: 'Building2',
-    isCore: false,
+    isCore: true, // Core module - always enabled
     dependencies: ['crm'],
     apiPrefixes: ['/api/crm/accounts'],
     description:
@@ -277,7 +277,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     path: '/crm/opportunities',
     additionalPaths: ['/crm/opportunities/:id'],
     icon: 'Target',
-    isCore: false,
+    isCore: true, // Core module - always enabled
     dependencies: ['crm', 'crmAccounts'],
     apiPrefixes: ['/api/crm/opportunities'],
     description:
