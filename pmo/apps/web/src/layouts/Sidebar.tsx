@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../ui/utils';
 import { useModules, type ModuleDefinition } from '../modules';
+import { TenantSwitcher } from '../components/TenantSwitcher';
 
 /**
  * Icon map - maps icon names from module definitions to Lucide components
@@ -140,6 +141,11 @@ export function Sidebar(): JSX.Element {
             </span>
           </div>
         </Link>
+      </div>
+
+      {/* Tenant Switcher */}
+      <div className="px-2 py-3 border-b border-neutral-200 dark:border-neutral-700">
+        <TenantSwitcher />
       </div>
 
       {/* Navigation - dynamically rendered based on enabled modules */}

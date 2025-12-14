@@ -75,8 +75,10 @@ function needsTenantFiltering(model: string): boolean {
  * Note: This is designed to work alongside the existing Prisma client.
  * The extension intercepts operations on tenant-scoped models and
  * automatically injects tenantId.
+ *
+ * @param _baseClient - The base Prisma client (reserved for future RLS context setting)
  */
-export function createTenantExtension() {
+export function createTenantExtension(_baseClient?: PrismaClient) {
   return Prisma.defineExtension({
     name: 'tenant-isolation',
     query: {

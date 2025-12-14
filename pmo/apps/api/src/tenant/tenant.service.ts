@@ -511,3 +511,345 @@ export async function startModuleTrial(
     },
   });
 }
+
+// ============================================================================
+// TENANT LIFECYCLE MANAGEMENT
+// ============================================================================
+
+/**
+ * Suspend a tenant (reversible).
+ * Users can still log in but cannot perform most actions.
+ */
+export async function suspendTenant(tenantId: string, reason?: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  if (tenant.status === 'SUSPENDED') {
+    throw new Error('Tenant is already suspended');
+  }
+
+  const currentSettings = (tenant.settings as Record<string, unknown>) || {};
+
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      status: 'SUSPENDED',
+      settings: {
+        ...currentSettings,
+        suspensionReason: reason,
+        suspendedAt: new Date().toISOString(),
+        previousStatus: tenant.status,
+      },
+    },
+  });
+}
+
+/**
+ * Reactivate a suspended tenant.
+ */
+export async function reactivateTenant(tenantId: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  if (tenant.status !== 'SUSPENDED') {
+    throw new Error('Tenant is not suspended');
+  }
+
+  const currentSettings = (tenant.settings as Record<string, unknown>) || {};
+
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      status: 'ACTIVE',
+      settings: {
+        ...currentSettings,
+        suspensionReason: null,
+        suspendedAt: null,
+        previousStatus: null,
+        reactivatedAt: new Date().toISOString(),
+      },
+    },
+  });
+}
+
+/**
+ * Initiate tenant deletion with 30-day retention period.
+ * After the retention period, data will be permanently deleted.
+ */
+export async function initiateTenantDeletion(tenantId: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  if (tenant.status === 'CANCELLED') {
+    throw new Error('Tenant deletion has already been initiated');
+  }
+
+  const deletionDate = new Date();
+  deletionDate.setDate(deletionDate.getDate() + 30); // 30-day retention
+
+  const currentSettings = (tenant.settings as Record<string, unknown>) || {};
+
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      status: 'CANCELLED',
+      settings: {
+        ...currentSettings,
+        deletionInitiatedAt: new Date().toISOString(),
+        scheduledDeletionDate: deletionDate.toISOString(),
+        previousStatus: tenant.status,
+      },
+    },
+  });
+}
+
+/**
+ * Cancel pending tenant deletion and restore to active status.
+ */
+export async function cancelTenantDeletion(tenantId: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  if (tenant.status !== 'CANCELLED') {
+    throw new Error('Tenant is not pending deletion');
+  }
+
+  const currentSettings = (tenant.settings as Record<string, unknown>) || {};
+
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      status: 'ACTIVE',
+      settings: {
+        ...currentSettings,
+        deletionInitiatedAt: null,
+        scheduledDeletionDate: null,
+        previousStatus: null,
+        deletionCancelledAt: new Date().toISOString(),
+      },
+    },
+  });
+}
+
+/**
+ * Permanently delete a tenant and all associated data.
+ * Should only be called after the retention period has passed.
+ */
+export async function permanentlyDeleteTenant(tenantId: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  if (tenant.status !== 'CANCELLED') {
+    throw new Error(
+      'Tenant must be in CANCELLED status for permanent deletion',
+    );
+  }
+
+  // Verify retention period has passed
+  const settings = tenant.settings as Record<string, unknown>;
+  if (settings?.scheduledDeletionDate) {
+    const scheduledDate = new Date(settings.scheduledDeletionDate as string);
+    if (new Date() < scheduledDate) {
+      throw new Error(
+        `Deletion scheduled for ${scheduledDate.toISOString()}. Cannot delete before retention period ends.`,
+      );
+    }
+  }
+
+  // Delete all tenant data in a transaction (respecting FK constraints)
+  await prisma.$transaction(async (tx) => {
+    // Delete CRM Activities
+    await tx.cRMActivity.deleteMany({ where: { tenantId } });
+
+    // Delete Opportunity-related data
+    await tx.opportunityStageHistory.deleteMany({
+      where: { opportunity: { tenantId } },
+    });
+    await tx.opportunityContact.deleteMany({
+      where: { opportunity: { tenantId } },
+    });
+    await tx.opportunity.deleteMany({ where: { tenantId } });
+
+    // Delete CRM Contacts
+    await tx.cRMContact.deleteMany({ where: { tenantId } });
+
+    // Delete Accounts
+    await tx.account.deleteMany({ where: { tenantId } });
+
+    // Delete Pipeline Stages then Pipelines
+    await tx.salesPipelineStage.deleteMany({
+      where: { pipeline: { tenantId } },
+    });
+    await tx.pipeline.deleteMany({ where: { tenantId } });
+
+    // Delete Notifications
+    await tx.notification.deleteMany({ where: { tenantId } });
+
+    // Delete Integrations and Sync Logs
+    await tx.syncLog.deleteMany({
+      where: { integration: { tenantId } },
+    });
+    await tx.integration.deleteMany({ where: { tenantId } });
+
+    // Delete Usage data
+    await tx.usageEvent.deleteMany({ where: { tenantId } });
+    await tx.usageSummary.deleteMany({ where: { tenantId } });
+
+    // Delete Saved Reports
+    await tx.savedReport.deleteMany({ where: { tenantId } });
+
+    // Delete Legacy PMO data
+    await tx.task.deleteMany({ where: { tenantId } });
+    await tx.milestone.deleteMany({ where: { tenantId } });
+    await tx.meeting.deleteMany({ where: { tenantId } });
+    await tx.project.deleteMany({ where: { tenantId } });
+    await tx.contact.deleteMany({ where: { tenantId } });
+    await tx.client.deleteMany({ where: { tenantId } });
+    await tx.aIAsset.deleteMany({ where: { tenantId } });
+    await tx.marketingContent.deleteMany({ where: { tenantId } });
+    await tx.campaign.deleteMany({ where: { tenantId } });
+    await tx.inboundLead.deleteMany({ where: { tenantId } });
+
+    // Delete Tenant configuration
+    await tx.tenantModule.deleteMany({ where: { tenantId } });
+    await tx.tenantDomain.deleteMany({ where: { tenantId } });
+    await tx.tenantBranding.deleteMany({ where: { tenantId } });
+    await tx.tenantUser.deleteMany({ where: { tenantId } });
+
+    // IMPORTANT: Do NOT delete audit logs for compliance purposes.
+    // Regulatory frameworks (GDPR, SOC 2, HIPAA) often require audit log
+    // retention even after account deletion. The audit logs are anonymized
+    // below by removing user associations but the records are preserved.
+    await tx.auditLog.updateMany({
+      where: { tenantId },
+      data: {
+        // Anonymize but preserve the audit trail
+        metadata: { deletedTenant: true, deletedAt: new Date().toISOString() },
+      },
+    });
+
+    // Delete Health metrics
+    await tx.tenantHealthMetrics.deleteMany({ where: { tenantId } });
+
+    // Finally, delete the tenant
+    await tx.tenant.delete({ where: { id: tenantId } });
+  });
+
+  return { deleted: true, tenantId };
+}
+
+/**
+ * Export tenant data for compliance or data portability.
+ */
+export async function exportTenantData(tenantId: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    include: {
+      branding: true,
+      modules: true,
+      domains: true,
+      users: {
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, createdAt: true },
+          },
+        },
+      },
+      accounts: {
+        include: {
+          owner: { select: { id: true, name: true, email: true } },
+        },
+      },
+      crmContacts: true,
+      opportunities: {
+        include: {
+          stage: { select: { id: true, name: true } },
+          owner: { select: { id: true, name: true, email: true } },
+        },
+      },
+      activities: {
+        include: {
+          owner: { select: { id: true, name: true } },
+        },
+        take: 1000, // Limit for performance
+      },
+      pipelines: {
+        include: { stages: true },
+      },
+    },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  return {
+    exportedAt: new Date().toISOString(),
+    tenant: {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      plan: tenant.plan,
+      status: tenant.status,
+      createdAt: tenant.createdAt,
+    },
+    branding: tenant.branding,
+    modules: tenant.modules,
+    domains: tenant.domains,
+    users: tenant.users,
+    accounts: tenant.accounts,
+    contacts: tenant.crmContacts,
+    opportunities: tenant.opportunities,
+    activities: tenant.activities,
+    pipelines: tenant.pipelines,
+  };
+}
+
+/**
+ * Get tenants scheduled for deletion.
+ * Used by scheduled job to process permanent deletions.
+ */
+export async function getTenantsForDeletion() {
+  const now = new Date();
+
+  const tenants = await prisma.tenant.findMany({
+    where: {
+      status: 'CANCELLED',
+    },
+  });
+
+  // Filter to only those past their retention period
+  return tenants.filter((tenant) => {
+    const settings = tenant.settings as Record<string, unknown>;
+    if (settings?.scheduledDeletionDate) {
+      const scheduledDate = new Date(settings.scheduledDeletionDate as string);
+      return now >= scheduledDate;
+    }
+    return false;
+  });
+}

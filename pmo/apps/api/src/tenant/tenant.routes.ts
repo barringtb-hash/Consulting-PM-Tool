@@ -17,8 +17,11 @@ import {
   type AuthenticatedRequest,
 } from '../auth/auth.middleware';
 import { requireRole } from '../auth/role.middleware';
-import { getTenantContext } from './tenant.context';
+import { getTenantContext, hasTenantContext } from './tenant.context';
 import type { TenantRequest } from './tenant.middleware';
+import { logAudit } from '../services/audit.service';
+import { AuditAction } from '@prisma/client';
+import { prisma } from '../prisma/client';
 
 const router = Router();
 
@@ -85,6 +88,108 @@ const moduleConfigSchema = z.object({
   enabled: z.boolean().optional(),
   tier: z.enum(['TRIAL', 'BASIC', 'PREMIUM', 'ENTERPRISE']).optional(),
 });
+
+// ============================================================================
+// USER'S TENANTS ROUTES (Tenant Switching)
+// ============================================================================
+
+/**
+ * GET /api/tenants/my
+ * Get all tenants the current user belongs to
+ */
+router.get(
+  '/tenants/my',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const memberships = await prisma.tenantUser.findMany({
+      where: { userId: req.userId },
+      include: {
+        tenant: {
+          include: {
+            branding: true,
+          },
+        },
+      },
+      orderBy: { acceptedAt: 'desc' },
+    });
+
+    const tenants = memberships
+      .filter((m) => m.tenant.status === 'ACTIVE')
+      .map((m) => ({
+        id: m.tenant.id,
+        name: m.tenant.name,
+        slug: m.tenant.slug,
+        plan: m.tenant.plan,
+        role: m.role,
+        logoUrl: m.tenant.branding?.logoUrl,
+        primaryColor: m.tenant.branding?.primaryColor,
+      }));
+
+    res.json({ data: tenants });
+  },
+);
+
+/**
+ * POST /api/tenants/switch/:tenantId
+ * Switch to a different tenant
+ */
+router.post(
+  '/tenants/switch/:tenantId',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const { tenantId } = req.params;
+
+    // Verify user has access to this tenant
+    const membership = await prisma.tenantUser.findUnique({
+      where: {
+        tenantId_userId: {
+          tenantId,
+          userId: req.userId!,
+        },
+      },
+      include: { tenant: true },
+    });
+
+    if (!membership) {
+      return res
+        .status(403)
+        .json({ error: 'You do not have access to this tenant' });
+    }
+
+    if (membership.tenant.status !== 'ACTIVE') {
+      return res.status(403).json({ error: 'This tenant is not active' });
+    }
+
+    // Log the tenant switch for audit
+    const previousTenantId = hasTenantContext()
+      ? getTenantContext().tenantId
+      : undefined;
+    await logAudit({
+      userId: req.userId,
+      action: AuditAction.TENANT_SWITCH,
+      entityType: 'Tenant',
+      entityId: tenantId,
+      metadata: {
+        previousTenantId,
+        newTenantId: tenantId,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    });
+
+    res.json({
+      data: {
+        tenant: {
+          id: membership.tenant.id,
+          name: membership.tenant.name,
+          slug: membership.tenant.slug,
+          plan: membership.tenant.plan,
+        },
+        role: membership.role,
+      },
+    });
+  },
+);
 
 // ============================================================================
 // TENANT ROUTES

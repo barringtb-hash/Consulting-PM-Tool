@@ -57,6 +57,10 @@ import { domainRouter } from './domains';
 import { analyticsRouter } from './analytics';
 // System Admin Routes
 import { tenantAdminRouter } from './admin';
+// Audit Routes
+import auditRouter from './routes/audit.routes';
+// Tenant Health Routes
+import tenantHealthRouter from './routes/tenant-health.routes';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -260,6 +264,14 @@ export function createApp(): express.Express {
 
   // ============ NOTIFICATION ROUTES ============
   app.use('/api/notifications', notificationRouter);
+
+  // ============ AUDIT ROUTES ============
+  // Audit logs for tracking sensitive operations
+  app.use('/api/audit', auditRouter);
+
+  // ============ TENANT HEALTH ROUTES ============
+  // Tenant health monitoring and metrics
+  app.use('/api/tenant-health', tenantHealthRouter);
 
   // ============ CRM ROUTES ============
   // CRM module routes for accounts, opportunities, and activities

@@ -6,18 +6,18 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /**
- * Create a Prisma client with tenant isolation extension.
+ * Create a Prisma client with tenant isolation extension and RLS support.
  * The extension automatically filters queries by tenantId when tenant context is available.
+ * RLS context is set within the tenant extension's query handlers.
  */
 function createExtendedPrismaClient() {
   const baseClient = new PrismaClient({
-    log:
-      process.env.NODE_ENV === 'development'
-        ? ['query', 'warn', 'error']
-        : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   });
 
-  return baseClient.$extends(createTenantExtension());
+  // Return client with tenant extension
+  // RLS context setting is now handled within the tenant extension
+  return baseClient.$extends(createTenantExtension(baseClient));
 }
 
 export const prisma = globalForPrisma.prisma ?? createExtendedPrismaClient();

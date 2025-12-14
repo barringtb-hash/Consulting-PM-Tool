@@ -1,0 +1,208 @@
+/**
+ * Tenant Test Utilities
+ *
+ * Helper functions for testing multi-tenant functionality.
+ */
+
+import { PrismaClient } from '@prisma/client';
+import { runWithTenantContextAsync } from '../../src/tenant/tenant.context';
+import type { TenantContext } from '../../src/tenant/tenant.types';
+
+// Use a fresh Prisma client for tests to avoid extension conflicts
+const testPrisma = new PrismaClient();
+
+/**
+ * Create a test tenant with a unique slug.
+ */
+export async function createTestTenant(suffix: string) {
+  return testPrisma.tenant.create({
+    data: {
+      name: `Test Tenant ${suffix}`,
+      slug: `test-tenant-${suffix}-${Date.now()}`,
+      plan: 'PROFESSIONAL',
+      status: 'ACTIVE',
+    },
+  });
+}
+
+/**
+ * Create a test user with a unique email.
+ */
+export async function createTestUser(email?: string) {
+  const uniqueEmail = email || `test-user-${Date.now()}@test.com`;
+  return testPrisma.user.create({
+    data: {
+      name: 'Test User',
+      email: uniqueEmail,
+      passwordHash: '$2a$10$test-hash-for-testing',
+      role: 'USER',
+      timezone: 'UTC',
+    },
+  });
+}
+
+/**
+ * Add a user to a tenant.
+ */
+export async function addUserToTenant(
+  tenantId: string,
+  userId: number,
+  role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' = 'MEMBER',
+) {
+  return testPrisma.tenantUser.create({
+    data: {
+      tenantId,
+      userId,
+      role,
+      acceptedAt: new Date(),
+    },
+  });
+}
+
+/**
+ * Create a default pipeline for a tenant.
+ */
+export async function createDefaultPipeline(tenantId: string) {
+  return testPrisma.pipeline.create({
+    data: {
+      tenantId,
+      name: 'Default Pipeline',
+      isDefault: true,
+      isActive: true,
+      stages: {
+        create: [
+          { name: 'Lead', order: 0, probability: 10, type: 'OPEN' },
+          { name: 'Qualified', order: 1, probability: 25, type: 'OPEN' },
+          { name: 'Proposal', order: 2, probability: 50, type: 'OPEN' },
+          { name: 'Negotiation', order: 3, probability: 75, type: 'OPEN' },
+          { name: 'Won', order: 4, probability: 100, type: 'WON' },
+          { name: 'Lost', order: 5, probability: 0, type: 'LOST' },
+        ],
+      },
+    },
+    include: {
+      stages: true,
+    },
+  });
+}
+
+/**
+ * Run a function within a specific tenant context.
+ */
+export function withTenant<T>(
+  tenant: { id: string; slug: string; plan: string },
+  fn: () => Promise<T>,
+): Promise<T> {
+  const context: TenantContext = {
+    tenantId: tenant.id,
+    tenantSlug: tenant.slug,
+    tenantPlan: tenant.plan as
+      | 'TRIAL'
+      | 'STARTER'
+      | 'PROFESSIONAL'
+      | 'ENTERPRISE',
+  };
+  return runWithTenantContextAsync(context, fn);
+}
+
+/**
+ * Create an account within a tenant context.
+ */
+export async function createTestAccount(
+  tenantId: string,
+  ownerId: number,
+  name?: string,
+) {
+  return testPrisma.account.create({
+    data: {
+      tenantId,
+      name: name || `Test Account ${Date.now()}`,
+      ownerId,
+    },
+  });
+}
+
+/**
+ * Create an opportunity within a tenant context.
+ */
+export async function createTestOpportunity(
+  tenantId: string,
+  accountId: number,
+  stageId: number,
+  ownerId: number,
+  name?: string,
+) {
+  return testPrisma.opportunity.create({
+    data: {
+      tenantId,
+      name: name || `Test Opportunity ${Date.now()}`,
+      accountId,
+      stageId,
+      ownerId,
+      amount: 10000,
+      probability: 50,
+    },
+  });
+}
+
+/**
+ * Create a CRM contact within a tenant context.
+ */
+export async function createTestContact(
+  tenantId: string,
+  accountId: number,
+  firstName?: string,
+  lastName?: string,
+) {
+  return testPrisma.cRMContact.create({
+    data: {
+      tenantId,
+      accountId,
+      firstName: firstName || 'Test',
+      lastName: lastName || `Contact-${Date.now()}`,
+      email: `contact-${Date.now()}@test.com`,
+    },
+  });
+}
+
+/**
+ * Cleanup test tenants and all related data.
+ */
+export async function cleanupTestTenants() {
+  // Delete tenants with test slug pattern - cascade will handle related records
+  await testPrisma.tenant.deleteMany({
+    where: { slug: { startsWith: 'test-tenant-' } },
+  });
+}
+
+/**
+ * Cleanup test users.
+ */
+export async function cleanupTestUsers() {
+  await testPrisma.user.deleteMany({
+    where: { email: { contains: '@test.com' } },
+  });
+}
+
+/**
+ * Full cleanup for test suite.
+ */
+export async function cleanupAll() {
+  // Clean up in order to respect foreign key constraints
+  await cleanupTestTenants();
+  await cleanupTestUsers();
+}
+
+/**
+ * Get Prisma client for direct queries (bypasses tenant extension).
+ */
+export function getTestPrisma() {
+  return testPrisma;
+}
+
+/**
+ * Disconnect test Prisma client.
+ */
+export async function disconnectTestPrisma() {
+  await testPrisma.$disconnect();
+}
