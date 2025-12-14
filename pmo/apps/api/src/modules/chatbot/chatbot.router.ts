@@ -154,7 +154,8 @@ router.post(
     }
 
     try {
-      const config = await chatbotService.createChatbotConfig(clientId, {
+      const config = await chatbotService.createChatbotConfig({
+        clientId,
         ...parsed.data,
         channelSettings: parsed.data.channelSettings as Prisma.InputJsonValue,
         businessHours: parsed.data.businessHours as Prisma.InputJsonValue,
@@ -199,11 +200,14 @@ router.patch(
       return;
     }
 
-    const config = await chatbotService.updateChatbotConfig(clientId, {
-      ...parsed.data,
-      channelSettings: parsed.data.channelSettings as Prisma.InputJsonValue,
-      businessHours: parsed.data.businessHours as Prisma.InputJsonValue,
-    });
+    const config = await chatbotService.updateChatbotConfig(
+      {
+        ...parsed.data,
+        channelSettings: parsed.data.channelSettings as Prisma.InputJsonValue,
+        businessHours: parsed.data.businessHours as Prisma.InputJsonValue,
+      },
+      clientId,
+    );
     res.json({ config });
   },
 );

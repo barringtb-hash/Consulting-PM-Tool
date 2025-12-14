@@ -67,17 +67,8 @@ export {
 export type { Client, ClientFilters, ClientPayload } from './clients';
 
 // ============================================================================
-// Contacts Module
+// Contacts Module - REMOVED (legacy PMO contacts replaced by CRMContact)
 // ============================================================================
-
-export {
-  useContacts,
-  useCreateContact,
-  useUpdateContact,
-  useArchiveContact,
-  useDeleteContact,
-} from './contacts';
-export type { Contact, ContactFilters, ContactPayload } from './contacts';
 
 // ============================================================================
 // Projects Module

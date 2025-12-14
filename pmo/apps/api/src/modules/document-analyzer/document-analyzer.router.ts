@@ -262,8 +262,8 @@ router.post(
 
     try {
       const config = await documentAnalyzerService.createDocumentAnalyzerConfig(
-        clientId,
         {
+          clientId,
           ...parsed.data,
           defaultExtractionFields: parsed.data
             .defaultExtractionFields as Prisma.InputJsonValue,
@@ -320,13 +320,13 @@ router.patch(
     }
 
     const config = await documentAnalyzerService.updateDocumentAnalyzerConfig(
-      clientId,
       {
         ...parsed.data,
         defaultExtractionFields: parsed.data
           .defaultExtractionFields as Prisma.InputJsonValue,
         complianceRules: parsed.data.complianceRules as Prisma.InputJsonValue,
       },
+      clientId,
     );
     res.json({ config });
   },
