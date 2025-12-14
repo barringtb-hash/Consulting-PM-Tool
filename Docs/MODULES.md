@@ -42,8 +42,15 @@ These modules cannot be disabled as they form the foundation of the platform:
 |-----------|-------|-------------|--------|
 | `dashboard` | Dashboard | Main dashboard with metrics | `/dashboard` |
 | `tasks` | Tasks | Personal task management | `/tasks` |
-| `clients` | Clients | Client management (PMO) | `/clients`, `/clients/:id` |
-| `projects` | Projects | Project management (PMO) | `/projects/:id` |
+| `projects` | Projects | Project management | `/projects/:id` |
+
+### Legacy PMO Module (Deprecated)
+
+> **Note**: The `clients` module is deprecated and replaced by the CRM `accounts` module. New implementations should use the CRM Accounts module.
+
+| Module ID | Label | Description | Routes |
+|-----------|-------|-------------|--------|
+| `clients` | Clients | Legacy client management (PMO) | `/clients`, `/clients/:id` |
 
 ### CRM Modules
 
@@ -70,9 +77,9 @@ These modules can be enabled/disabled per customer:
 | Module ID | Label | Dependencies | Description | Routes |
 |-----------|-------|--------------|-------------|--------|
 | `assets` | Assets | None | AI-generated assets library | `/assets` |
-| `marketing` | Marketing | clients, projects | Marketing content, campaigns, publishing | `/marketing` |
+| `marketing` | Marketing | accounts, projects | Marketing content, campaigns, publishing | `/marketing` |
 | `leads` | Leads | None | Lead capture and management | `/sales/leads` |
-| `pipeline` | Pipeline | leads | Sales pipeline visualization | `/sales/pipeline` |
+| `pipeline` | Pipeline | opportunities | Sales pipeline visualization | `/sales/pipeline` |
 | `admin` | Admin | None | User & module administration | `/admin/users`, `/admin/modules` |
 | `customerSuccess` | Customer Success | accounts | Customer health scoring, success plans, playbooks | `/customer-success/*` |
 
@@ -84,29 +91,29 @@ The platform includes comprehensive AI-powered tools organized into implementati
 
 | Module ID | Label | Dependencies | Description | Routes |
 |-----------|-------|--------------|-------------|--------|
-| `chatbot` | AI Chatbot | clients | Customer service chatbot with multi-channel support, intent detection, webhooks | `/ai-tools/chatbot` |
-| `productDescriptions` | Product Descriptions | clients | AI-generated product descriptions with bulk generation | `/ai-tools/product-descriptions` |
-| `scheduling` | Scheduling Assistant | clients | Appointment booking with no-show prediction | `/ai-tools/scheduling` |
-| `intake` | Intelligent Intake | clients | Form processing with compliance checking | `/ai-tools/intake` |
+| `chatbot` | AI Chatbot | accounts | Customer service chatbot with multi-channel support, intent detection, webhooks | `/ai-tools/chatbot` |
+| `productDescriptions` | Product Descriptions | accounts | AI-generated product descriptions with bulk generation | `/ai-tools/product-descriptions` |
+| `scheduling` | Scheduling Assistant | accounts | Appointment booking with no-show prediction | `/ai-tools/scheduling` |
+| `intake` | Intelligent Intake | accounts | Form processing with compliance checking | `/ai-tools/intake` |
 
 #### Phase 2 AI Tools (Business Intelligence)
 
 | Module ID | Label | Dependencies | Description | Routes |
 |-----------|-------|--------------|-------------|--------|
-| `documentAnalyzer` | Document Analyzer | clients | OCR, field extraction, compliance checking, version comparison | `/ai-tools/document-analyzer` |
-| `contentGenerator` | Content Generator | clients | AI-powered marketing content creation | `/ai-tools/content-generator` |
+| `documentAnalyzer` | Document Analyzer | accounts | OCR, field extraction, compliance checking, version comparison | `/ai-tools/document-analyzer` |
+| `contentGenerator` | Content Generator | accounts | AI-powered marketing content creation | `/ai-tools/content-generator` |
 | `leadScoring` | Lead Scoring | leads | ML-based lead prioritization with nurture sequences | `/ai-tools/lead-scoring` |
-| `priorAuth` | Prior Authorization | clients | Healthcare prior authorization workflow automation | `/ai-tools/prior-auth` |
+| `priorAuth` | Prior Authorization | accounts | Healthcare prior authorization workflow automation | `/ai-tools/prior-auth` |
 
 #### Phase 3 AI Tools (Industry-Specific)
 
 | Module ID | Label | Dependencies | Description | Routes |
 |-----------|-------|--------------|-------------|--------|
-| `inventoryForecasting` | Inventory Forecasting | clients | Demand forecasting with scenario planning | `/ai-tools/inventory-forecasting` |
-| `complianceMonitor` | Compliance Monitor | clients | Real-time compliance monitoring (HIPAA, SOX, GDPR, PCI) | `/ai-tools/compliance-monitor` |
-| `predictiveMaintenance` | Predictive Maintenance | clients | Equipment failure prediction with sensor data | `/ai-tools/predictive-maintenance` |
-| `revenueManagement` | Revenue Management | clients | Dynamic pricing and revenue optimization | `/ai-tools/revenue-management` |
-| `safetyMonitor` | Safety Monitor | clients | Safety incident tracking and OSHA compliance | `/ai-tools/safety-monitor` |
+| `inventoryForecasting` | Inventory Forecasting | accounts | Demand forecasting with scenario planning | `/ai-tools/inventory-forecasting` |
+| `complianceMonitor` | Compliance Monitor | accounts | Real-time compliance monitoring (HIPAA, SOX, GDPR, PCI) | `/ai-tools/compliance-monitor` |
+| `predictiveMaintenance` | Predictive Maintenance | accounts | Equipment failure prediction with sensor data | `/ai-tools/predictive-maintenance` |
+| `revenueManagement` | Revenue Management | accounts | Dynamic pricing and revenue optimization | `/ai-tools/revenue-management` |
+| `safetyMonitor` | Safety Monitor | accounts | Safety incident tracking and OSHA compliance | `/ai-tools/safety-monitor` |
 
 > **AI Tools Documentation**: For detailed information on configuring the AI Chatbot and Document Analyzer, see [AI-Tools.md](AI-Tools.md).
 
@@ -115,30 +122,30 @@ The platform includes comprehensive AI-powered tools organized into implementati
 When you enable a module, its dependencies are automatically enabled:
 
 ```
-marketing            → requires → clients, projects
-pipeline             → requires → leads
+marketing            → requires → accounts, projects
+pipeline             → requires → opportunities
 tasks                → requires → projects (core)
-projects             → requires → clients (core)
+projects             → requires → accounts (CRM)
 customerSuccess      → requires → accounts (CRM)
 
 # Phase 1 AI Tools
-chatbot              → requires → clients
-productDescriptions  → requires → clients
-scheduling           → requires → clients
-intake               → requires → clients
+chatbot              → requires → accounts
+productDescriptions  → requires → accounts
+scheduling           → requires → accounts
+intake               → requires → accounts
 
 # Phase 2 AI Tools
-documentAnalyzer     → requires → clients
-contentGenerator     → requires → clients
+documentAnalyzer     → requires → accounts
+contentGenerator     → requires → accounts
 leadScoring          → requires → leads
-priorAuth            → requires → clients
+priorAuth            → requires → accounts
 
 # Phase 3 AI Tools
-inventoryForecasting → requires → clients
-complianceMonitor    → requires → clients
-predictiveMaintenance→ requires → clients
-revenueManagement    → requires → clients
-safetyMonitor        → requires → clients
+inventoryForecasting → requires → accounts
+complianceMonitor    → requires → accounts
+predictiveMaintenance→ requires → accounts
+revenueManagement    → requires → accounts
+safetyMonitor        → requires → accounts
 ```
 
 ---
@@ -152,13 +159,13 @@ Best for single-tenant deployments or setting defaults.
 **Backend** (`pmo/apps/api/.env`):
 ```env
 # Comma-separated list of module IDs
-ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
+ENABLED_MODULES=dashboard,tasks,crm,accounts,opportunities,activities,pipeline
 ```
 
 **Frontend** (`pmo/apps/web/.env`):
 ```env
 # Must match backend configuration
-VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
+VITE_ENABLED_MODULES=dashboard,tasks,crm,accounts,opportunities,activities,pipeline
 ```
 
 #### Example Configurations
@@ -168,16 +175,16 @@ VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
 | CRM Only | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline` |
 | CRM + Sales | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,leads,leadScoring` |
 | PMO Only (Legacy) | `dashboard,tasks,clients,projects` |
-| Sales-focused | `dashboard,tasks,clients,projects,leads,pipeline` |
-| Marketing Agency | `dashboard,tasks,clients,projects,marketing,assets,contentGenerator` |
-| Customer Service | `dashboard,tasks,clients,projects,chatbot,customerSuccess` |
-| Document Processing | `dashboard,tasks,clients,projects,documentAnalyzer` |
-| E-commerce | `dashboard,tasks,clients,projects,chatbot,productDescriptions,inventoryForecasting` |
-| Healthcare | `dashboard,tasks,clients,projects,intake,priorAuth,complianceMonitor,documentAnalyzer` |
-| Manufacturing | `dashboard,tasks,clients,projects,predictiveMaintenance,safetyMonitor,inventoryForecasting` |
-| Hospitality | `dashboard,tasks,clients,projects,scheduling,revenueManagement,chatbot` |
+| Sales-focused | `dashboard,tasks,crm,accounts,opportunities,leads,pipeline` |
+| Marketing Agency | `dashboard,tasks,crm,accounts,projects,marketing,assets,contentGenerator` |
+| Customer Service | `dashboard,tasks,crm,accounts,chatbot,customerSuccess` |
+| Document Processing | `dashboard,tasks,crm,accounts,projects,documentAnalyzer` |
+| E-commerce | `dashboard,tasks,crm,accounts,chatbot,productDescriptions,inventoryForecasting` |
+| Healthcare | `dashboard,tasks,crm,accounts,projects,intake,priorAuth,complianceMonitor,documentAnalyzer` |
+| Manufacturing | `dashboard,tasks,crm,accounts,projects,predictiveMaintenance,safetyMonitor,inventoryForecasting` |
+| Hospitality | `dashboard,tasks,crm,accounts,projects,scheduling,revenueManagement,chatbot` |
 | AI-Enabled CRM | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,chatbot,documentAnalyzer,leadScoring,customerSuccess` |
-| Full Platform | `dashboard,tasks,crm,accounts,opportunities,activities,clients,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer,customerSuccess,productDescriptions,scheduling,intake,contentGenerator,leadScoring,priorAuth,inventoryForecasting,complianceMonitor,predictiveMaintenance,revenueManagement,safetyMonitor` |
+| Full Platform | `dashboard,tasks,crm,accounts,opportunities,activities,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer,customerSuccess,productDescriptions,scheduling,intake,contentGenerator,leadScoring,priorAuth,inventoryForecasting,complianceMonitor,predictiveMaintenance,revenueManagement,safetyMonitor` |
 
 ### Method 2: Admin UI (Per-Tenant)
 
@@ -197,7 +204,7 @@ curl -X POST /api/admin/modules/bulk \
   -H "Content-Type: application/json" \
   -d '{
     "tenantId": "customer-acme",
-    "enabledModules": ["dashboard", "tasks", "clients", "projects", "leads"]
+    "enabledModules": ["dashboard", "tasks", "crm", "accounts", "opportunities", "activities"]
   }'
 ```
 
@@ -221,7 +228,7 @@ GET /api/modules?tenantId={tenantId}
 {
   "tenantId": "customer-acme",
   "source": "database",
-  "enabledModules": ["dashboard", "tasks", "clients", "projects", "leads"],
+  "enabledModules": ["dashboard", "tasks", "crm", "accounts", "opportunities", "activities"],
   "modules": [
     {
       "id": "dashboard",
@@ -296,7 +303,7 @@ POST /api/admin/modules/bulk
 ```json
 {
   "tenantId": "customer-acme",
-  "enabledModules": ["dashboard", "tasks", "clients", "projects", "leads"]
+  "enabledModules": ["dashboard", "tasks", "crm", "accounts", "opportunities", "activities"]
 }
 ```
 
@@ -571,14 +578,14 @@ function getTenantId(req: Request): string {
 Use environment variables only:
 
 ```env
-ENABLED_MODULES=dashboard,tasks,clients,projects,leads
+ENABLED_MODULES=dashboard,tasks,crm,accounts,opportunities,activities
 ```
 
 #### Multi-Tenant (Multiple Customers, One Deployment)
 
 1. Set environment variable as default:
    ```env
-   ENABLED_MODULES=dashboard,tasks,clients,projects
+   ENABLED_MODULES=dashboard,tasks,crm,accounts
    ```
 
 2. Configure per-tenant overrides in database via Admin UI or API

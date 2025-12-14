@@ -276,14 +276,14 @@ Key models in `pmo/prisma/schema.prisma`:
   - Status: PLANNED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
   - Links to accounts, contacts, and opportunities
 
-**PMO Models (Original):**
+**PMO Models (Legacy - being replaced by CRM modules):**
 - **User**: Consultants/admins with role-based access
-- **Client**: Client companies with industry, size, AI maturity
-- **Contact**: Project-related client contacts (cascade delete with client)
-- **Project**: Projects linked to clients with status tracking
+- **Client**: Legacy client companies (deprecated - use Account instead)
+- **Contact**: Legacy project-related contacts (deprecated - use CRMContact instead)
+- **Project**: Projects linked to accounts with status tracking
 - **Task**: Kanban-style tasks with status, priority, assignee
 - **Milestone**: Project milestones with status tracking
-- **Meeting**: Meetings linked to clients/projects
+- **Meeting**: Meetings linked to accounts/projects
 - **AIAsset**: Reusable AI assets (prompts, workflows, datasets)
 - **MarketingContent**: Content pieces with publishing workflow
 - **Campaign**: Marketing campaigns with multiple content pieces
@@ -517,7 +517,7 @@ For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI
 1. Enable modules: Add desired AI tool modules to `PMO_MODULES` env var
 2. Set `OPENAI_API_KEY` for AI-powered features (optional - falls back to rule-based)
 3. Access UI at `/ai-tools/{tool-name}` (e.g., `/ai-tools/chatbot`, `/ai-tools/lead-scoring`)
-4. Configure per-client via the Client detail page
+4. Configure per-account via the Account detail page (`/crm/accounts/:id`)
 
 **AI Tool UI Routes:**
 | Tool | Route |
@@ -596,9 +596,10 @@ Lead conversion parameters:
 ```
 
 **Data Model Notes:**
-- **Project**: Represents delivery/work tracking only. Pipeline fields (pipelineStage, pipelineValue, etc.) have been moved to Opportunity.
+- **Account**: Primary CRM entity for companies/organizations. Replaces the legacy Client model. Supports hierarchy, health scores, and engagement tracking.
 - **Opportunity**: Represents sales pipeline tracking with weighted forecasting.
-- **Account**: CRM entity linked to legacy Client via `customFields.legacyClientId`.
+- **Project**: Represents delivery/work tracking only. Links to Account (not Client). Pipeline fields have been moved to Opportunity.
+- **Client (deprecated)**: Legacy PMO entity. Use Account instead for new implementations.
 
 **Migration Scripts:**
 | Script | Purpose |
