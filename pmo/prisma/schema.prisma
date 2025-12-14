@@ -793,12 +793,14 @@ enum IntentType {
 }
 
 /**
- * ChatbotConfig - Configuration for a client's customer service chatbot
+ * ChatbotConfig - Configuration for a customer service chatbot
+ * Note: accountId is the preferred field; clientId is deprecated
  */
 model ChatbotConfig {
-  id              Int     @id @default(autoincrement())
-  clientId        Int     @unique
-  name            String
+  id        Int  @id @default(autoincrement())
+  clientId  Int? @unique // @deprecated - use accountId
+  accountId Int? @unique // Preferred: link to CRM Account
+  name      String
   welcomeMessage  String?
   fallbackMessage String?
 
@@ -835,13 +837,15 @@ model ChatbotConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client         Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client         Client?             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account        Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   conversations  ChatConversation[]
   knowledgeBase  KnowledgeBaseItem[]
   webhooks       WebhookConfig[]
   channelConfigs ChannelConfig[]
 
   @@index([clientId, isActive])
+  @@index([accountId, isActive])
 }
 
 /**
@@ -2074,11 +2078,13 @@ enum WorkflowActionType {
 }
 
 /**
- * DocumentAnalyzerConfig - Configuration for smart document analysis per client
+ * DocumentAnalyzerConfig - Configuration for smart document analysis
+ * Note: accountId is the preferred field; clientId is deprecated
  */
 model DocumentAnalyzerConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id        Int  @id @default(autoincrement())
+  clientId  Int? @unique // @deprecated - use accountId
+  accountId Int? @unique // Preferred: link to CRM Account
 
   // Industry configuration for specialized templates
   industryType      IndustryType       @default(OTHER)
@@ -2113,7 +2119,8 @@ model DocumentAnalyzerConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client              Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client              Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account             Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   analyzedDocuments   AnalyzedDocument[]
   extractionTemplates ExtractionTemplate[]
   batchJobs           DocumentBatchJob[]
@@ -2122,6 +2129,7 @@ model DocumentAnalyzerConfig {
   processingMetrics   ProcessingMetrics[]
 
   @@index([clientId, isActive])
+  @@index([accountId, isActive])
   @@index([industryType])
 }
 
@@ -6026,6 +6034,10 @@ model Account {
   crmContacts   CRMContact[]
   opportunities Opportunity[]
   activities    CRMActivity[]
+
+  // AI Tool configurations (replaces legacy Client relations)
+  chatbotConfig          ChatbotConfig?
+  documentAnalyzerConfig DocumentAnalyzerConfig?
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
