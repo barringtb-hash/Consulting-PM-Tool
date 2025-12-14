@@ -26,9 +26,15 @@ The AI CRM Platform is a full-stack monorepo application that has evolved from a
 - Milestone tracking
 - Meeting notes with action item extraction
 
-**AI Tools** (Premium Add-ons):
-- AI Chatbot with multi-channel support
-- Smart Document Analyzer with OCR and field extraction
+**AI Tools** (Premium Add-ons organized in phases):
+- **Phase 1 - Customer Automation**: AI Chatbot (multi-channel), Product Descriptions, Scheduling Assistant, Intelligent Intake
+- **Phase 2 - Business Intelligence**: Document Analyzer (OCR), Content Generator, Lead Scoring, Prior Authorization
+- **Phase 3 - Industry-Specific**: Inventory Forecasting, Compliance Monitor, Predictive Maintenance, Revenue Management, Safety Monitor
+
+**Customer Success Platform**:
+- Customer health scoring and engagement tracking
+- Success plans and playbooks
+- CTAs (Calls-to-Action) and automated alerts
 
 ## Quick Reference
 
@@ -107,8 +113,21 @@ Consulting-PM-Tool/
 │   │       │   │   └── index.ts          # CRM module exports
 │   │       │   ├── middleware/   # Express middleware (error, rate-limit, module-guard)
 │   │       │   ├── modules/      # Feature modules (AI tools, MCP, marketing, etc.)
-│   │       │   │   ├── chatbot/          # AI Chatbot (Tool 1.1)
-│   │       │   │   └── document-analyzer/ # Smart Document Analyzer (Tool 2.1)
+│   │       │   │   ├── chatbot/          # AI Chatbot (Phase 1)
+│   │       │   │   ├── product-descriptions/ # AI Product Descriptions (Phase 1)
+│   │       │   │   ├── scheduling/       # Scheduling Assistant (Phase 1)
+│   │       │   │   ├── intake/           # Intelligent Intake (Phase 1)
+│   │       │   │   ├── document-analyzer/ # Document Analyzer (Phase 2)
+│   │       │   │   ├── content-generator/ # Content Generator (Phase 2)
+│   │       │   │   ├── lead-scoring/     # Lead Scoring (Phase 2)
+│   │       │   │   ├── prior-auth/       # Prior Authorization (Phase 2)
+│   │       │   │   ├── inventory-forecasting/ # Inventory Forecasting (Phase 3)
+│   │       │   │   ├── compliance-monitor/ # Compliance Monitor (Phase 3)
+│   │       │   │   ├── predictive-maintenance/ # Predictive Maintenance (Phase 3)
+│   │       │   │   ├── revenue-management/ # Revenue Management (Phase 3)
+│   │       │   │   ├── safety-monitor/   # Safety Monitor (Phase 3)
+│   │       │   │   ├── customer-success/ # Customer Success Platform
+│   │       │   │   └── feature-flags/    # Feature toggle system
 │   │       │   ├── prisma/       # Prisma client configuration
 │   │       │   ├── routes/       # Core API routes
 │   │       │   ├── services/     # Business logic services
@@ -409,6 +428,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 
 | Purpose | File Path |
 |---------|-----------|
+| **Phase 1 - Chatbot** | |
 | Chatbot router | `pmo/apps/api/src/modules/chatbot/chatbot.router.ts` |
 | Chatbot service | `pmo/apps/api/src/modules/chatbot/chatbot.service.ts` |
 | Chatbot widget router | `pmo/apps/api/src/modules/chatbot/widget/widget.router.ts` |
@@ -416,10 +436,28 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Chatbot channels | `pmo/apps/api/src/modules/chatbot/channels/` |
 | Chatbot page (UI) | `pmo/apps/web/src/pages/ai-tools/ChatbotPage.tsx` |
 | Widget package | `pmo/packages/chatbot-widget/` |
+| **Phase 1 - Other** | |
+| Product Descriptions | `pmo/apps/api/src/modules/product-descriptions/` |
+| Scheduling | `pmo/apps/api/src/modules/scheduling/` |
+| Intake | `pmo/apps/api/src/modules/intake/` |
+| **Phase 2 - Document Analyzer** | |
 | Doc analyzer router | `pmo/apps/api/src/modules/document-analyzer/document-analyzer.router.ts` |
 | Doc analyzer service | `pmo/apps/api/src/modules/document-analyzer/document-analyzer.service.ts` |
 | Doc analyzer templates | `pmo/apps/api/src/modules/document-analyzer/templates/built-in-templates.ts` |
 | Doc analyzer page (UI) | `pmo/apps/web/src/pages/ai-tools/DocumentAnalyzerPage.tsx` |
+| **Phase 2 - Other** | |
+| Content Generator | `pmo/apps/api/src/modules/content-generator/` |
+| Lead Scoring | `pmo/apps/api/src/modules/lead-scoring/` |
+| Prior Authorization | `pmo/apps/api/src/modules/prior-auth/` |
+| **Phase 3 - Industry AI** | |
+| Inventory Forecasting | `pmo/apps/api/src/modules/inventory-forecasting/` |
+| Compliance Monitor | `pmo/apps/api/src/modules/compliance-monitor/` |
+| Predictive Maintenance | `pmo/apps/api/src/modules/predictive-maintenance/` |
+| Revenue Management | `pmo/apps/api/src/modules/revenue-management/` |
+| Safety Monitor | `pmo/apps/api/src/modules/safety-monitor/` |
+| **Customer Success** | |
+| Customer Success module | `pmo/apps/api/src/modules/customer-success/` |
+| Customer Success pages | `pmo/apps/web/src/pages/customer-success/` |
 
 **CRM Files:**
 
@@ -468,13 +506,35 @@ PMO_MODULES="assets,marketing,leads,admin,mcp,chatbot,documentAnalyzer"
 ```
 
 ### Working with AI Tools
-For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI-Tools.md](Docs/AI-Tools.md).
+For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI-Tools.md](Docs/AI-Tools.md). For module configuration, see [Docs/MODULES.md](Docs/MODULES.md).
+
+**Available AI Tools:**
+- **Phase 1**: `chatbot`, `productDescriptions`, `scheduling`, `intake`
+- **Phase 2**: `documentAnalyzer`, `contentGenerator`, `leadScoring`, `priorAuth`
+- **Phase 3**: `inventoryForecasting`, `complianceMonitor`, `predictiveMaintenance`, `revenueManagement`, `safetyMonitor`
 
 **Quick start for AI Tools:**
-1. Enable modules: Add `chatbot` and/or `documentAnalyzer` to `PMO_MODULES`
+1. Enable modules: Add desired AI tool modules to `PMO_MODULES` env var
 2. Set `OPENAI_API_KEY` for AI-powered features (optional - falls back to rule-based)
-3. Access UI at `/ai-tools/chatbot` or `/ai-tools/document-analyzer`
+3. Access UI at `/ai-tools/{tool-name}` (e.g., `/ai-tools/chatbot`, `/ai-tools/lead-scoring`)
 4. Configure per-client via the Client detail page
+
+**AI Tool UI Routes:**
+| Tool | Route |
+|------|-------|
+| AI Chatbot | `/ai-tools/chatbot` |
+| Product Descriptions | `/ai-tools/product-descriptions` |
+| Scheduling | `/ai-tools/scheduling` |
+| Intake | `/ai-tools/intake` |
+| Document Analyzer | `/ai-tools/document-analyzer` |
+| Content Generator | `/ai-tools/content-generator` |
+| Lead Scoring | `/ai-tools/lead-scoring` |
+| Prior Authorization | `/ai-tools/prior-auth` |
+| Inventory Forecasting | `/ai-tools/inventory-forecasting` |
+| Compliance Monitor | `/ai-tools/compliance-monitor` |
+| Predictive Maintenance | `/ai-tools/predictive-maintenance` |
+| Revenue Management | `/ai-tools/revenue-management` |
+| Safety Monitor | `/ai-tools/safety-monitor` |
 
 ### Working with CRM Features
 For the comprehensive CRM transformation plan, see [Docs/CRM-TRANSFORMATION-PLAN.md](Docs/CRM-TRANSFORMATION-PLAN.md).

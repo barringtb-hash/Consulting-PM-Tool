@@ -74,22 +74,71 @@ These modules can be enabled/disabled per customer:
 | `leads` | Leads | None | Lead capture and management | `/sales/leads` |
 | `pipeline` | Pipeline | leads | Sales pipeline visualization | `/sales/pipeline` |
 | `admin` | Admin | None | User & module administration | `/admin/users`, `/admin/modules` |
-| `chatbot` | AI Chatbot | clients | Customer service chatbot with multi-channel support | `/ai-tools/chatbot` |
-| `documentAnalyzer` | Document Analyzer | clients | Smart document analysis with OCR and extraction | `/ai-tools/document-analyzer` |
+| `customerSuccess` | Customer Success | accounts | Customer health scoring, success plans, playbooks | `/customer-success/*` |
 
-> **AI Tools Documentation**: For detailed information on configuring and extending the AI Chatbot and Document Analyzer, see [AI-Tools.md](AI-Tools.md).
+### AI Tools Modules
+
+The platform includes comprehensive AI-powered tools organized into implementation phases:
+
+#### Phase 1 AI Tools (Customer Automation)
+
+| Module ID | Label | Dependencies | Description | Routes |
+|-----------|-------|--------------|-------------|--------|
+| `chatbot` | AI Chatbot | clients | Customer service chatbot with multi-channel support, intent detection, webhooks | `/ai-tools/chatbot` |
+| `productDescriptions` | Product Descriptions | clients | AI-generated product descriptions with bulk generation | `/ai-tools/product-descriptions` |
+| `scheduling` | Scheduling Assistant | clients | Appointment booking with no-show prediction | `/ai-tools/scheduling` |
+| `intake` | Intelligent Intake | clients | Form processing with compliance checking | `/ai-tools/intake` |
+
+#### Phase 2 AI Tools (Business Intelligence)
+
+| Module ID | Label | Dependencies | Description | Routes |
+|-----------|-------|--------------|-------------|--------|
+| `documentAnalyzer` | Document Analyzer | clients | OCR, field extraction, compliance checking, version comparison | `/ai-tools/document-analyzer` |
+| `contentGenerator` | Content Generator | clients | AI-powered marketing content creation | `/ai-tools/content-generator` |
+| `leadScoring` | Lead Scoring | leads | ML-based lead prioritization with nurture sequences | `/ai-tools/lead-scoring` |
+| `priorAuth` | Prior Authorization | clients | Healthcare prior authorization workflow automation | `/ai-tools/prior-auth` |
+
+#### Phase 3 AI Tools (Industry-Specific)
+
+| Module ID | Label | Dependencies | Description | Routes |
+|-----------|-------|--------------|-------------|--------|
+| `inventoryForecasting` | Inventory Forecasting | clients | Demand forecasting with scenario planning | `/ai-tools/inventory-forecasting` |
+| `complianceMonitor` | Compliance Monitor | clients | Real-time compliance monitoring (HIPAA, SOX, GDPR, PCI) | `/ai-tools/compliance-monitor` |
+| `predictiveMaintenance` | Predictive Maintenance | clients | Equipment failure prediction with sensor data | `/ai-tools/predictive-maintenance` |
+| `revenueManagement` | Revenue Management | clients | Dynamic pricing and revenue optimization | `/ai-tools/revenue-management` |
+| `safetyMonitor` | Safety Monitor | clients | Safety incident tracking and OSHA compliance | `/ai-tools/safety-monitor` |
+
+> **AI Tools Documentation**: For detailed information on configuring the AI Chatbot and Document Analyzer, see [AI-Tools.md](AI-Tools.md).
 
 ### Module Dependencies
 
 When you enable a module, its dependencies are automatically enabled:
 
 ```
-marketing        → requires → clients, projects
-pipeline         → requires → leads
-tasks            → requires → projects (core)
-projects         → requires → clients (core)
-chatbot          → requires → clients
-documentAnalyzer → requires → clients
+marketing            → requires → clients, projects
+pipeline             → requires → leads
+tasks                → requires → projects (core)
+projects             → requires → clients (core)
+customerSuccess      → requires → accounts (CRM)
+
+# Phase 1 AI Tools
+chatbot              → requires → clients
+productDescriptions  → requires → clients
+scheduling           → requires → clients
+intake               → requires → clients
+
+# Phase 2 AI Tools
+documentAnalyzer     → requires → clients
+contentGenerator     → requires → clients
+leadScoring          → requires → leads
+priorAuth            → requires → clients
+
+# Phase 3 AI Tools
+inventoryForecasting → requires → clients
+complianceMonitor    → requires → clients
+predictiveMaintenance→ requires → clients
+revenueManagement    → requires → clients
+safetyMonitor        → requires → clients
 ```
 
 ---
@@ -117,14 +166,18 @@ VITE_ENABLED_MODULES=dashboard,tasks,clients,projects,leads,pipeline
 | Customer Type | Configuration |
 |---------------|---------------|
 | CRM Only | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline` |
-| CRM + Sales | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,leads` |
+| CRM + Sales | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,leads,leadScoring` |
 | PMO Only (Legacy) | `dashboard,tasks,clients,projects` |
 | Sales-focused | `dashboard,tasks,clients,projects,leads,pipeline` |
-| Marketing Agency | `dashboard,tasks,clients,projects,marketing,assets` |
-| Customer Service | `dashboard,tasks,clients,projects,chatbot` |
+| Marketing Agency | `dashboard,tasks,clients,projects,marketing,assets,contentGenerator` |
+| Customer Service | `dashboard,tasks,clients,projects,chatbot,customerSuccess` |
 | Document Processing | `dashboard,tasks,clients,projects,documentAnalyzer` |
-| AI-Enabled CRM | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,chatbot,documentAnalyzer` |
-| Full Platform | `dashboard,tasks,crm,accounts,opportunities,activities,clients,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer` |
+| E-commerce | `dashboard,tasks,clients,projects,chatbot,productDescriptions,inventoryForecasting` |
+| Healthcare | `dashboard,tasks,clients,projects,intake,priorAuth,complianceMonitor,documentAnalyzer` |
+| Manufacturing | `dashboard,tasks,clients,projects,predictiveMaintenance,safetyMonitor,inventoryForecasting` |
+| Hospitality | `dashboard,tasks,clients,projects,scheduling,revenueManagement,chatbot` |
+| AI-Enabled CRM | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,chatbot,documentAnalyzer,leadScoring,customerSuccess` |
+| Full Platform | `dashboard,tasks,crm,accounts,opportunities,activities,clients,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer,customerSuccess,productDescriptions,scheduling,intake,contentGenerator,leadScoring,priorAuth,inventoryForecasting,complianceMonitor,predictiveMaintenance,revenueManagement,safetyMonitor` |
 
 ### Method 2: Admin UI (Per-Tenant)
 
