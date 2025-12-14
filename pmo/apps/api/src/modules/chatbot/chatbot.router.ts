@@ -97,7 +97,10 @@ router.get(
       return;
     }
 
-    const configs = await chatbotService.listChatbotConfigs({ clientId });
+    // Use accountId (frontend now sends account IDs via the clientId param)
+    const configs = await chatbotService.listChatbotConfigs({
+      accountId: clientId,
+    });
     res.json({ configs });
   },
 );
@@ -121,7 +124,8 @@ router.get(
       return;
     }
 
-    const config = await chatbotService.getChatbotConfig(clientId);
+    // Use accountId (frontend now sends account IDs via the clientId param)
+    const config = await chatbotService.getChatbotConfig(undefined, clientId);
     res.json({ config });
   },
 );
@@ -154,8 +158,9 @@ router.post(
     }
 
     try {
+      // Use accountId (frontend now sends account IDs via the clientId param)
       const config = await chatbotService.createChatbotConfig({
-        clientId,
+        accountId: clientId,
         ...parsed.data,
         channelSettings: parsed.data.channelSettings as Prisma.InputJsonValue,
         businessHours: parsed.data.businessHours as Prisma.InputJsonValue,
@@ -165,7 +170,7 @@ router.post(
       if ((error as { code?: string }).code === 'P2002') {
         res
           .status(409)
-          .json({ error: 'Chatbot config already exists for this client' });
+          .json({ error: 'Chatbot config already exists for this account' });
         return;
       }
       throw error;
@@ -200,12 +205,14 @@ router.patch(
       return;
     }
 
+    // Use accountId (frontend now sends account IDs via the clientId param)
     const config = await chatbotService.updateChatbotConfig(
       {
         ...parsed.data,
         channelSettings: parsed.data.channelSettings as Prisma.InputJsonValue,
         businessHours: parsed.data.businessHours as Prisma.InputJsonValue,
       },
+      undefined,
       clientId,
     );
     res.json({ config });
