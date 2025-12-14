@@ -7,20 +7,20 @@
  * - Webhook delivery
  * - Integration sync
  * - Notifications
+ *
+ * NOTE: Queues are only available when Redis is configured (REDIS_URL env var).
+ * When Redis is not available, queue operations are no-ops.
  */
 
 import { Queue, QueueEvents } from 'bullmq';
 import { redis, redisBullMQ } from '../cache/redis.client';
 
-// Queue connection options for regular queues
-const connection = {
-  connection: redis,
-};
+// Check if Redis is configured (queues require Redis)
+const isQueueEnabled = redis !== null && redisBullMQ !== null;
 
-// Queue connection options for QueueEvents (requires maxRetriesPerRequest: null)
-const eventsConnection = {
-  connection: redisBullMQ,
-};
+if (!isQueueEnabled) {
+  console.log('Queues: Redis not configured, job queues disabled');
+}
 
 // Default job options
 const defaultJobOptions = {
@@ -38,102 +38,109 @@ const defaultJobOptions = {
 };
 
 // ============================================================================
-// QUEUE DEFINITIONS
+// QUEUE DEFINITIONS (null when Redis not configured)
 // ============================================================================
 
 /**
  * Document Processing Queue
  * Handles OCR, extraction, and analysis
  */
-export const documentQueue = new Queue('document-processing', {
-  ...connection,
-  defaultJobOptions: {
-    ...defaultJobOptions,
-    attempts: 2, // Documents shouldn't retry too much
-  },
-});
+export const documentQueue = isQueueEnabled
+  ? new Queue('document-processing', {
+      connection: redis!,
+      defaultJobOptions: {
+        ...defaultJobOptions,
+        attempts: 2, // Documents shouldn't retry too much
+      },
+    })
+  : null;
 
 /**
  * Email Sending Queue
  * Handles transactional and notification emails
  */
-export const emailQueue = new Queue('email-sending', {
-  ...connection,
-  defaultJobOptions: {
-    ...defaultJobOptions,
-    attempts: 5, // More retries for emails
-  },
-});
+export const emailQueue = isQueueEnabled
+  ? new Queue('email-sending', {
+      connection: redis!,
+      defaultJobOptions: {
+        ...defaultJobOptions,
+        attempts: 5, // More retries for emails
+      },
+    })
+  : null;
 
 /**
  * Webhook Delivery Queue
  * Handles outgoing webhook deliveries
  */
-export const webhookQueue = new Queue('webhook-delivery', {
-  ...connection,
-  defaultJobOptions: {
-    ...defaultJobOptions,
-    attempts: 5,
-  },
-});
+export const webhookQueue = isQueueEnabled
+  ? new Queue('webhook-delivery', {
+      connection: redis!,
+      defaultJobOptions: {
+        ...defaultJobOptions,
+        attempts: 5,
+      },
+    })
+  : null;
 
 /**
  * Integration Sync Queue
  * Handles sync with external systems
  */
-export const syncQueue = new Queue('integration-sync', {
-  ...connection,
-  defaultJobOptions: {
-    ...defaultJobOptions,
-    attempts: 3,
-  },
-});
+export const syncQueue = isQueueEnabled
+  ? new Queue('integration-sync', {
+      connection: redis!,
+      defaultJobOptions: {
+        ...defaultJobOptions,
+        attempts: 3,
+      },
+    })
+  : null;
 
 /**
  * Notification Queue
  * Handles multi-channel notification delivery
  */
-export const notificationQueue = new Queue('notifications', {
-  ...connection,
-  defaultJobOptions,
-});
+export const notificationQueue = isQueueEnabled
+  ? new Queue('notifications', {
+      connection: redis!,
+      defaultJobOptions,
+    })
+  : null;
 
 /**
  * Analytics Aggregation Queue
  * Handles periodic analytics calculations
  */
-export const analyticsQueue = new Queue('analytics', {
-  ...connection,
-  defaultJobOptions: {
-    ...defaultJobOptions,
-    attempts: 2,
-  },
-});
+export const analyticsQueue = isQueueEnabled
+  ? new Queue('analytics', {
+      connection: redis!,
+      defaultJobOptions: {
+        ...defaultJobOptions,
+        attempts: 2,
+      },
+    })
+  : null;
 
 // ============================================================================
-// QUEUE EVENTS
+// QUEUE EVENTS (null when Redis not configured)
 // ============================================================================
 
-export const documentQueueEvents = new QueueEvents(
-  'document-processing',
-  eventsConnection,
-);
-export const emailQueueEvents = new QueueEvents(
-  'email-sending',
-  eventsConnection,
-);
-export const webhookQueueEvents = new QueueEvents(
-  'webhook-delivery',
-  eventsConnection,
-);
-export const syncQueueEvents = new QueueEvents(
-  'integration-sync',
-  eventsConnection,
-);
-export const notificationQueueEvents = new QueueEvents(
-  'notifications',
-  eventsConnection,
-);
+export const documentQueueEvents = isQueueEnabled
+  ? new QueueEvents('document-processing', { connection: redisBullMQ! })
+  : null;
+export const emailQueueEvents = isQueueEnabled
+  ? new QueueEvents('email-sending', { connection: redisBullMQ! })
+  : null;
+export const webhookQueueEvents = isQueueEnabled
+  ? new QueueEvents('webhook-delivery', { connection: redisBullMQ! })
+  : null;
+export const syncQueueEvents = isQueueEnabled
+  ? new QueueEvents('integration-sync', { connection: redisBullMQ! })
+  : null;
+export const notificationQueueEvents = isQueueEnabled
+  ? new QueueEvents('notifications', { connection: redisBullMQ! })
+  : null;
 
 // ============================================================================
 // JOB TYPE DEFINITIONS
@@ -192,16 +199,18 @@ export interface AnalyticsJobData {
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS (return null when queues disabled)
 // ============================================================================
 
 /**
  * Add a document processing job.
+ * Returns null if queues are not available.
  */
 export async function addDocumentJob(
   data: DocumentJobData,
   options?: { priority?: number },
 ) {
+  if (!documentQueue) return null;
   return documentQueue.add('process-document', data, {
     priority: options?.priority,
     jobId: `doc-${data.documentId}-${data.operation}`,
@@ -210,15 +219,19 @@ export async function addDocumentJob(
 
 /**
  * Add an email sending job.
+ * Returns null if queues are not available.
  */
 export async function addEmailJob(data: EmailJobData) {
+  if (!emailQueue) return null;
   return emailQueue.add('send-email', data);
 }
 
 /**
  * Add a webhook delivery job.
+ * Returns null if queues are not available.
  */
 export async function addWebhookJob(data: WebhookJobData) {
+  if (!webhookQueue) return null;
   return webhookQueue.add('deliver-webhook', data, {
     jobId: `webhook-${data.webhookId}-${Date.now()}`,
   });
@@ -226,11 +239,13 @@ export async function addWebhookJob(data: WebhookJobData) {
 
 /**
  * Add an integration sync job.
+ * Returns null if queues are not available.
  */
 export async function addSyncJob(
   data: SyncJobData,
   options?: { delay?: number },
 ) {
+  if (!syncQueue) return null;
   return syncQueue.add('sync', data, {
     delay: options?.delay,
     jobId: data.fullSync
@@ -241,8 +256,10 @@ export async function addSyncJob(
 
 /**
  * Add a notification delivery job.
+ * Returns null if queues are not available.
  */
 export async function addNotificationJob(data: NotificationJobData) {
+  if (!notificationQueue) return null;
   return notificationQueue.add('deliver-notification', data, {
     jobId: `notif-${data.notificationId}-${data.channel}`,
   });
@@ -250,12 +267,15 @@ export async function addNotificationJob(data: NotificationJobData) {
 
 /**
  * Schedule recurring analytics job.
+ * Returns null if queues are not available.
  */
 export async function scheduleAnalyticsJob(
   tenantId: string,
   metric: string,
   period: 'daily' | 'weekly' | 'monthly',
 ) {
+  if (!analyticsQueue) return null;
+
   const cronPattern =
     period === 'daily'
       ? '0 1 * * *' // 1 AM daily
@@ -278,14 +298,16 @@ export async function scheduleAnalyticsJob(
 // ============================================================================
 
 export async function closeQueues() {
-  await Promise.all([
-    documentQueue.close(),
-    emailQueue.close(),
-    webhookQueue.close(),
-    syncQueue.close(),
-    notificationQueue.close(),
-    analyticsQueue.close(),
-  ]);
+  const queues = [
+    documentQueue,
+    emailQueue,
+    webhookQueue,
+    syncQueue,
+    notificationQueue,
+    analyticsQueue,
+  ].filter((q): q is Queue => q !== null);
+
+  await Promise.all(queues.map((q) => q.close()));
 }
 
 process.on('SIGTERM', async () => {

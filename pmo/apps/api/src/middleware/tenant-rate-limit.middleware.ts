@@ -66,6 +66,11 @@ async function checkRateLimitRedis(
   maxRequests: number,
   windowMs: number,
 ): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
+  if (!redis) {
+    // Fallback to in-memory if Redis not available
+    return checkRateLimitMemory(key, maxRequests, windowMs);
+  }
+
   const now = Date.now();
   const windowStart = now - windowMs;
 
