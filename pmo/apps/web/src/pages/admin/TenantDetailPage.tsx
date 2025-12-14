@@ -323,6 +323,20 @@ export function TenantDetailPage(): JSX.Element {
     e.preventDefault();
     if (!tenantId || !selectedModuleConfig.moduleId) return;
 
+    // Convert trialEndsAt date string to trialDays (number of days from today)
+    let trialDays: number | undefined;
+    if (selectedModuleConfig.trialEndsAt) {
+      const trialEndDate = new Date(selectedModuleConfig.trialEndsAt);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      trialEndDate.setHours(0, 0, 0, 0);
+      const diffTime = trialEndDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        trialDays = diffDays;
+      }
+    }
+
     try {
       await configureModuleMutation.mutateAsync({
         tenantId,
@@ -330,7 +344,7 @@ export function TenantDetailPage(): JSX.Element {
           moduleId: selectedModuleConfig.moduleId,
           enabled: selectedModuleConfig.enabled,
           tier: selectedModuleConfig.tier,
-          trialEndsAt: selectedModuleConfig.trialEndsAt || undefined,
+          trialDays,
         },
       });
       setShowModuleConfigModal(false);
