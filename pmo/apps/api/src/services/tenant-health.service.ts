@@ -451,7 +451,10 @@ export async function recordHealthMetrics(tenantId: string): Promise<void> {
     prisma.cRMContact.count({ where: { tenantId } }),
     prisma.opportunity.count({ where: { tenantId } }),
     prisma.cRMActivity.count({ where: { tenantId } }),
-    prisma.analyzedDocument.count({ where: { tenantId } }),
+    // AnalyzedDocument doesn't have tenantId directly - query through config.account
+    prisma.analyzedDocument.count({
+      where: { config: { account: { tenantId } } },
+    }),
     prisma.tenantUser.count({ where: { tenantId } }),
   ]);
 

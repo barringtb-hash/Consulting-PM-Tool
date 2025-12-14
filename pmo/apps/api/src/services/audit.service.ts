@@ -41,9 +41,9 @@ export async function logAudit(input: AuditLogInput): Promise<void> {
     let changes: Prisma.InputJsonValue | undefined;
     if (input.before || input.after) {
       changes = {
-        before: input.before ?? null,
-        after: input.after ?? null,
-      };
+        before: (input.before ?? null) as Prisma.InputJsonValue | null,
+        after: (input.after ?? null) as Prisma.InputJsonValue | null,
+      } as Prisma.InputJsonValue;
     }
 
     await prisma.auditLog.create({
@@ -80,7 +80,10 @@ export async function logAuditBatch(inputs: AuditLogInput[]): Promise<void> {
         entityId: input.entityId,
         changes:
           input.before || input.after
-            ? { before: input.before ?? null, after: input.after ?? null }
+            ? ({
+                before: (input.before ?? null) as Prisma.InputJsonValue | null,
+                after: (input.after ?? null) as Prisma.InputJsonValue | null,
+              } as Prisma.InputJsonValue)
             : undefined,
         metadata: input.metadata as Prisma.InputJsonValue,
       })),
