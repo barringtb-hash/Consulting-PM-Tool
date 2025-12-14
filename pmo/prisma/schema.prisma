@@ -6042,7 +6042,7 @@ model Account {
   engagementScore Int?   @default(50)
   churnRisk       Float?
 
-  ownerId      Int
+  ownerId      Int?
   tags         String[] @default([])
   customFields Json?
   archived     Boolean  @default(false)
@@ -6051,7 +6051,7 @@ model Account {
   updatedAt DateTime @updatedAt
 
   tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  owner         User          @relation(fields: [ownerId], references: [id])
+  owner         User?         @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   parentAccount Account?      @relation("AccountHierarchy", fields: [parentAccountId], references: [id], onDelete: SetNull)
   childAccounts Account[]     @relation("AccountHierarchy")
   crmContacts   CRMContact[]
