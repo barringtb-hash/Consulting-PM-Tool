@@ -1,8 +1,7 @@
 /**
  * Active Accounts Summary Card Plugin
  *
- * Displays the count of active (non-archived) accounts.
- * Note: Uses legacy 'clients' data source until dashboard is migrated to CRM API.
+ * Displays the count of active (non-archived) CRM accounts.
  */
 
 import { SummaryCard } from './SummaryCard';
