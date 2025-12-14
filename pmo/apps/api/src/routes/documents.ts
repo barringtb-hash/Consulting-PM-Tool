@@ -64,10 +64,9 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  // Support both clientId (deprecated) and accountId
-  const accountId = parsed.data.accountId || parsed.data.clientId;
+  // Validate account exists (clientId maps to accountId)
   const account = await prisma.account.findUnique({
-    where: { id: accountId },
+    where: { id: parsed.data.clientId },
   });
 
   if (!account) {
@@ -85,7 +84,7 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    if (project.accountId !== accountId) {
+    if (project.accountId !== parsed.data.clientId) {
       res.status(400).json({ error: 'Project does not belong to account' });
       return;
     }

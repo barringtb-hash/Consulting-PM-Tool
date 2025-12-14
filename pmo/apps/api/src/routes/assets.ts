@@ -106,11 +106,10 @@ router.post('/assets', async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  // Support both clientId (deprecated) and accountId
-  const accountId = parsed.data.accountId || parsed.data.clientId;
-  if (accountId) {
+  // Validate account exists if clientId provided (clientId maps to accountId)
+  if (parsed.data.clientId) {
     const account = await prisma.account.findUnique({
-      where: { id: accountId },
+      where: { id: parsed.data.clientId },
     });
 
     if (!account) {

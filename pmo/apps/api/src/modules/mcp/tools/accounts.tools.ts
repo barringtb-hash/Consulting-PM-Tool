@@ -114,8 +114,12 @@ export const accountTools = [
           type: 'number',
           description: 'ID of the user who owns this account',
         },
+        tenantId: {
+          type: 'string',
+          description: 'Tenant ID for multi-tenant isolation',
+        },
       },
-      required: ['name', 'ownerId'],
+      required: ['name', 'ownerId', 'tenantId'],
     },
   },
   {
@@ -203,6 +207,7 @@ const createAccountSchema = z.object({
   website: z.string().optional(),
   phone: z.string().optional(),
   ownerId: z.number(),
+  tenantId: z.string(),
 });
 
 const updateAccountSchema = z.object({
@@ -273,7 +278,7 @@ export async function executeAccountTool(
             createdAt: true,
             _count: {
               select: {
-                contacts: true,
+                crmContacts: true,
                 opportunities: true,
               },
             },
@@ -295,7 +300,7 @@ export async function executeAccountTool(
                     employeeCount: a.employeeCount,
                     healthScore: a.healthScore,
                     archived: a.archived,
-                    contactCount: a._count.contacts,
+                    contactCount: a._count.crmContacts,
                     opportunityCount: a._count.opportunities,
                   })),
                 },
@@ -315,7 +320,7 @@ export async function executeAccountTool(
             owner: {
               select: { id: true, name: true, email: true },
             },
-            contacts: {
+            crmContacts: {
               take: 10,
               orderBy: { createdAt: 'desc' },
               select: {
@@ -372,6 +377,7 @@ export async function executeAccountTool(
             website: parsed.website,
             phone: parsed.phone,
             ownerId: parsed.ownerId,
+            tenantId: parsed.tenantId,
           },
         });
 

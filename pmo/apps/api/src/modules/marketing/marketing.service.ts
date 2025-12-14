@@ -391,8 +391,8 @@ export const generateContent = async (
 
     // Build context from project
     const context = {
-      clientName: project.client.name,
-      industry: project.client.industry || undefined,
+      clientName: project.client?.name ?? 'Unknown Client',
+      industry: project.client?.industry || undefined,
       projectName: project.name,
       projectDescription: project.statusSummary || undefined,
       meetingNotes: project.meetings
@@ -436,8 +436,8 @@ export const generateContent = async (
 
     // Build context from meeting
     const context = {
-      clientName: meeting.project.client.name,
-      industry: meeting.project.client.industry || undefined,
+      clientName: meeting.project.client?.name ?? 'Unknown Client',
+      industry: meeting.project.client?.industry || undefined,
       projectName: meeting.project.name,
       meetingTitle: meeting.title,
       meetingNotes: meeting.notes || undefined,
@@ -493,8 +493,8 @@ export const repurposeContent = async (
 
   // Build context for LLM from the source content
   const context = {
-    clientName: sourceContent.client.name,
-    industry: sourceContent.client.industry || undefined,
+    clientName: sourceContent.client?.name ?? 'Unknown Client',
+    industry: sourceContent.client?.industry || undefined,
     projectName: sourceContent.project?.name,
     sourceContentType: sourceContent.type,
     sourceContentName: sourceContent.name,

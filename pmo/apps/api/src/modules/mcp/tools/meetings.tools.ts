@@ -487,7 +487,7 @@ export async function executeMeetingTool(
         const account = await prisma.account.findUnique({
           where: { id: parsed.accountId },
           include: {
-            contacts: {
+            crmContacts: {
               take: 5,
               orderBy: { createdAt: 'desc' },
             },
@@ -554,7 +554,7 @@ export async function executeMeetingTool(
             type: account.type,
             healthScore: account.healthScore,
           },
-          contacts: account.contacts,
+          contacts: account.crmContacts,
           activeProjects: projects.map((p) => ({
             id: p.id,
             name: p.name,
