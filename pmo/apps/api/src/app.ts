@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import authRouter from './auth/auth.routes';
 import assetsRouter from './routes/assets';
 import clientsRouter from './routes/clients';
-import contactsRouter from './routes/contacts';
+// contactsRouter removed - legacy PMO contacts replaced by CRMContact
 import documentsRouter from './routes/documents';
 import healthRouter from './routes/health';
 import leadsRouter from './routes/leads';
@@ -244,7 +244,7 @@ export function createApp(): express.Express {
   // ============ CORE ROUTES (always enabled) ============
   app.use('/api', authRouter);
   app.use('/api/clients', clientsRouter);
-  app.use('/api/contacts', contactsRouter);
+  // /api/contacts removed - legacy PMO contacts replaced by CRMContact
   app.use('/api/documents', documentsRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api', tasksRouter);
