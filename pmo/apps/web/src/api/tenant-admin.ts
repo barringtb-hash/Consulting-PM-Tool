@@ -399,3 +399,35 @@ export async function configureTenantModule(
   );
   return handleResponse<TenantModule>(response);
 }
+
+/**
+ * Update tenant branding input
+ */
+export interface UpdateTenantBrandingInput {
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  logoUrl?: string | null;
+  logoSmallUrl?: string | null;
+  faviconUrl?: string | null;
+  fontFamily?: string | null;
+  customCss?: string | null;
+  emailLogoUrl?: string | null;
+  emailFooterText?: string | null;
+}
+
+/**
+ * Update tenant branding
+ */
+export async function updateTenantBranding(
+  tenantId: string,
+  input: UpdateTenantBrandingInput,
+): Promise<TenantBranding> {
+  const response = await fetch(
+    `${API_BASE}/admin/tenants/${tenantId}/branding`,
+    buildOptions({
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  );
+  return handleResponse<TenantBranding>(response);
+}

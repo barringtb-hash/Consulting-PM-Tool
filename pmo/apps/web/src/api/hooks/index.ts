@@ -345,4 +345,5 @@ export {
   useUpdateTenantUserRole,
   useRemoveTenantUser,
   useConfigureTenantModule,
+  useUpdateTenantBranding,
 } from './useTenantAdmin';

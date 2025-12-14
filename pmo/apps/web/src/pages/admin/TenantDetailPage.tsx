@@ -15,6 +15,8 @@ import {
   Settings,
   Power,
   Plus,
+  Palette,
+  Save,
 } from 'lucide-react';
 import {
   Button,
@@ -38,6 +40,7 @@ import {
   useRemoveTenantUser,
   useUpdateTenantUserRole,
   useConfigureTenantModule,
+  useUpdateTenantBranding,
 } from '../../api/hooks';
 import type {
   TenantPlan,
@@ -77,6 +80,7 @@ export function TenantDetailPage(): JSX.Element {
   const removeUserMutation = useRemoveTenantUser();
   const updateRoleMutation = useUpdateTenantUserRole();
   const configureModuleMutation = useConfigureTenantModule();
+  const updateBrandingMutation = useUpdateTenantBranding();
 
   // Modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -104,6 +108,28 @@ export function TenantDetailPage(): JSX.Element {
     tier: 'BASIC',
     trialEndsAt: '',
   });
+  const [brandingForm, setBrandingForm] = useState({
+    primaryColor: '',
+    secondaryColor: '',
+    logoUrl: '',
+    faviconUrl: '',
+    customCss: '',
+  });
+  const [brandingDirty, setBrandingDirty] = useState(false);
+
+  // Initialize branding form when tenant loads
+  React.useEffect(() => {
+    if (tenant?.branding) {
+      setBrandingForm({
+        primaryColor: tenant.branding.primaryColor || '',
+        secondaryColor: tenant.branding.secondaryColor || '',
+        logoUrl: tenant.branding.logoUrl || '',
+        faviconUrl: tenant.branding.faviconUrl || '',
+        customCss: tenant.branding.customCss || '',
+      });
+      setBrandingDirty(false);
+    }
+  }, [tenant?.branding]);
 
   const handleBack = () => {
     navigate('/admin/tenants');
@@ -310,6 +336,34 @@ export function TenantDetailPage(): JSX.Element {
       setShowModuleConfigModal(false);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to configure module');
+    }
+  };
+
+  const handleBrandingChange = (
+    field: keyof typeof brandingForm,
+    value: string,
+  ) => {
+    setBrandingForm((prev) => ({ ...prev, [field]: value }));
+    setBrandingDirty(true);
+  };
+
+  const handleSaveBranding = async () => {
+    if (!tenantId) return;
+
+    try {
+      await updateBrandingMutation.mutateAsync({
+        tenantId,
+        input: {
+          primaryColor: brandingForm.primaryColor || null,
+          secondaryColor: brandingForm.secondaryColor || null,
+          logoUrl: brandingForm.logoUrl || null,
+          faviconUrl: brandingForm.faviconUrl || null,
+          customCss: brandingForm.customCss || null,
+        },
+      });
+      setBrandingDirty(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save branding');
     }
   };
 
@@ -770,6 +824,145 @@ export function TenantDetailPage(): JSX.Element {
                     All available modules have been configured.
                   </p>
                 )}
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Branding */}
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="w-5 h-5" />
+                Branding
+              </CardTitle>
+              {brandingDirty && (
+                <Button
+                  size="sm"
+                  onClick={handleSaveBranding}
+                  isLoading={updateBrandingMutation.isPending}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </Button>
+              )}
+            </CardHeader>
+            <CardBody>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Colors */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Colors
+                  </h4>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                        Primary Color
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={brandingForm.primaryColor || '#3b82f6'}
+                          onChange={(e) =>
+                            handleBrandingChange('primaryColor', e.target.value)
+                          }
+                          className="w-10 h-10 rounded border border-neutral-300 dark:border-neutral-600 cursor-pointer"
+                        />
+                        <Input
+                          type="text"
+                          value={brandingForm.primaryColor}
+                          onChange={(e) =>
+                            handleBrandingChange('primaryColor', e.target.value)
+                          }
+                          placeholder="#3b82f6"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                        Secondary Color
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={brandingForm.secondaryColor || '#64748b'}
+                          onChange={(e) =>
+                            handleBrandingChange(
+                              'secondaryColor',
+                              e.target.value,
+                            )
+                          }
+                          className="w-10 h-10 rounded border border-neutral-300 dark:border-neutral-600 cursor-pointer"
+                        />
+                        <Input
+                          type="text"
+                          value={brandingForm.secondaryColor}
+                          onChange={(e) =>
+                            handleBrandingChange(
+                              'secondaryColor',
+                              e.target.value,
+                            )
+                          }
+                          placeholder="#64748b"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Logo & Favicon */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Logo & Favicon
+                  </h4>
+                  <div>
+                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                      Logo URL
+                    </label>
+                    <Input
+                      type="url"
+                      value={brandingForm.logoUrl}
+                      onChange={(e) =>
+                        handleBrandingChange('logoUrl', e.target.value)
+                      }
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                      Favicon URL
+                    </label>
+                    <Input
+                      type="url"
+                      value={brandingForm.faviconUrl}
+                      onChange={(e) =>
+                        handleBrandingChange('faviconUrl', e.target.value)
+                      }
+                      placeholder="https://example.com/favicon.ico"
+                    />
+                  </div>
+                </div>
+
+                {/* Custom CSS */}
+                <div className="md:col-span-2 space-y-2">
+                  <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Custom CSS
+                  </h4>
+                  <textarea
+                    value={brandingForm.customCss}
+                    onChange={(e) =>
+                      handleBrandingChange('customCss', e.target.value)
+                    }
+                    placeholder="/* Add custom CSS styles here */"
+                    rows={5}
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 font-mono text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400"
+                  />
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Custom CSS will be applied to the tenant&apos;s interface.
+                    Use with caution.
+                  </p>
+                </div>
               </div>
             </CardBody>
           </Card>

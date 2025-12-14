@@ -360,4 +360,34 @@ router.put(
   },
 );
 
+/**
+ * PUT /api/admin/tenants/:tenantId/branding
+ * Update tenant branding
+ */
+router.put(
+  '/tenants/:tenantId/branding',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const branding = await tenantAdminService.updateTenantBrandingByAdmin(
+        tenantId,
+        req.body,
+      );
+      return res.json(branding);
+    } catch (error) {
+      console.error('Error updating tenant branding:', error);
+      if (error instanceof Error && error.message === 'Tenant not found') {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      return res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update tenant branding',
+      });
+    }
+  },
+);
+
 export default router;

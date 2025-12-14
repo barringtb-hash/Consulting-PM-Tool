@@ -692,3 +692,42 @@ export async function getTenantStats() {
     byStatus: Object.fromEntries(byStatus.map((s) => [s.status, s._count.id])),
   };
 }
+
+/**
+ * Update tenant branding (System Admin only)
+ */
+export interface UpdateTenantBrandingInput {
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  logoUrl?: string | null;
+  logoSmallUrl?: string | null;
+  faviconUrl?: string | null;
+  fontFamily?: string | null;
+  customCss?: string | null;
+  emailLogoUrl?: string | null;
+  emailFooterText?: string | null;
+}
+
+export async function updateTenantBrandingByAdmin(
+  tenantId: string,
+  input: UpdateTenantBrandingInput,
+) {
+  // Check if tenant exists
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  // Upsert branding
+  return prisma.tenantBranding.upsert({
+    where: { tenantId },
+    create: {
+      tenantId,
+      ...input,
+    },
+    update: input,
+  });
+}
