@@ -21,7 +21,7 @@ describe('projects routes', () => {
   let testEnv: TestEnvironment;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment('projects');
+    testEnv = await createTestEnvironment(`projects-${Date.now()}`);
   });
 
   afterAll(async () => {
@@ -278,7 +278,7 @@ describe('projects routes', () => {
     let testEnv2: TestEnvironment;
 
     beforeAll(async () => {
-      testEnv2 = await createTestEnvironment('projects-auth');
+      testEnv2 = await createTestEnvironment(`projects-auth-${Date.now()}`);
     });
 
     afterAll(async () => {
