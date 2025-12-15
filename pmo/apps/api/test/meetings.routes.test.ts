@@ -1,34 +1,37 @@
 /// <reference types="vitest" />
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
-import { Priority, ProjectStatus } from '@prisma/client';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { Priority } from '@prisma/client';
 
-import { hashPassword } from '../src/auth/password';
 import { createApp } from '../src/app';
-import prisma from '../src/prisma/client';
+import {
+  createTestEnvironment,
+  createTenantAgent,
+  cleanupTestEnvironment,
+  createTestClient,
+  createTestProject,
+  getRawPrisma,
+  type TestEnvironment,
+} from './utils/test-fixtures';
 
 const app = createApp();
-
-const createAuthenticatedAgent = async () => {
-  const password = 'password123';
-  const passwordHash = await hashPassword(password);
-
-  const user = await prisma.user.create({
-    data: {
-      name: 'Meeting Owner',
-      email: 'meeting-owner@example.com',
-      passwordHash,
-      timezone: 'UTC',
-    },
-  });
-
-  const agent = request.agent(app);
-  await agent.post('/api/auth/login').send({ email: user.email, password });
-
-  return { agent, user };
-};
+const rawPrisma = getRawPrisma();
 
 describe('meeting routes', () => {
+  let testEnv: TestEnvironment;
+
+  beforeAll(async () => {
+    testEnv = await createTestEnvironment('meetings');
+  });
+
+  afterAll(async () => {
+    await cleanupTestEnvironment(testEnv.tenant.id);
+  });
+
+  // Helper to create tenant-aware agent
+  const getAgent = () =>
+    createTenantAgent(app, testEnv.token, testEnv.tenant.id);
+
   it('requires authentication', async () => {
     const response = await request(app).get('/api/projects/1/meetings');
     expect(response.status).toBe(401);
@@ -36,7 +39,7 @@ describe('meeting routes', () => {
   });
 
   it('validates payloads and params', async () => {
-    const { agent } = await createAuthenticatedAgent();
+    const agent = getAgent();
 
     const invalidProject = await agent
       .post('/api/projects/not-a-number/meetings')
@@ -56,19 +59,18 @@ describe('meeting routes', () => {
   });
 
   it('supports meeting lifecycle operations', async () => {
-    const { agent, user } = await createAuthenticatedAgent();
+    const agent = getAgent();
 
-    const client = await prisma.client.create({
-      data: { name: 'Meeting Client' },
-    });
-    const project = await prisma.project.create({
-      data: {
-        name: 'Meeting Project',
-        clientId: client.id,
-        ownerId: user.id,
-        status: ProjectStatus.PLANNING,
-      },
-    });
+    // Create client with explicit tenantId
+    const client = await createTestClient(testEnv.tenant.id, 'Meeting Client');
+
+    // Create project with explicit tenantId
+    const project = await createTestProject(
+      testEnv.tenant.id,
+      client.id,
+      testEnv.user.id,
+      { name: 'Meeting Project', status: 'PLANNING' },
+    );
 
     const createResponse = await agent
       .post(`/api/projects/${project.id}/meetings`)
@@ -108,32 +110,38 @@ describe('meeting routes', () => {
   });
 
   it('creates tasks from meeting selection', async () => {
-    const { agent, user } = await createAuthenticatedAgent();
+    const agent = getAgent();
 
-    const client = await prisma.client.create({
-      data: { name: 'Task Client' },
-    });
-    const project = await prisma.project.create({
-      data: {
-        name: 'Task Project',
-        clientId: client.id,
-        ownerId: user.id,
-        status: ProjectStatus.PLANNING,
-      },
-    });
+    // Create client with explicit tenantId
+    const client = await createTestClient(testEnv.tenant.id, 'Task Client');
 
-    const meeting = await prisma.meeting.create({
+    // Create project with explicit tenantId
+    const project = await createTestProject(
+      testEnv.tenant.id,
+      client.id,
+      testEnv.user.id,
+      { name: 'Task Project', status: 'PLANNING' },
+    );
+
+    // Create meeting with explicit tenantId
+    const meeting = await rawPrisma.meeting.create({
       data: {
         projectId: project.id,
         title: 'Task Source Meeting',
         date: new Date('2024-05-01T00:00:00Z'),
         time: '12:00',
         attendees: [],
+        tenantId: testEnv.tenant.id,
       },
     });
 
-    const milestone = await prisma.milestone.create({
-      data: { projectId: project.id, name: 'Kickoff' },
+    // Create milestone with explicit tenantId
+    const milestone = await rawPrisma.milestone.create({
+      data: {
+        projectId: project.id,
+        name: 'Kickoff',
+        tenantId: testEnv.tenant.id,
+      },
     });
 
     const taskResponse = await agent

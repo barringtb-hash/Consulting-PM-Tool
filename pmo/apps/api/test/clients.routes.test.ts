@@ -1,34 +1,35 @@
 /// <reference types="vitest" />
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { AiMaturity, CompanySize } from '@prisma/client';
 
-import { hashPassword } from '../src/auth/password';
 import { createApp } from '../src/app';
-import prisma from '../src/prisma/client';
+import {
+  createTestEnvironment,
+  createTenantAgent,
+  cleanupTestEnvironment,
+  getRawPrisma,
+  type TestEnvironment,
+} from './utils/test-fixtures';
 
 const app = createApp();
-
-const createAuthenticatedAgent = async () => {
-  const password = 'password123';
-  const passwordHash = await hashPassword(password);
-
-  const user = await prisma.user.create({
-    data: {
-      name: 'Client Owner',
-      email: 'client-owner@example.com',
-      passwordHash,
-      timezone: 'UTC',
-    },
-  });
-
-  const agent = request.agent(app);
-  await agent.post('/api/auth/login').send({ email: user.email, password });
-
-  return agent;
-};
+const rawPrisma = getRawPrisma();
 
 describe('clients routes', () => {
+  let testEnv: TestEnvironment;
+
+  beforeAll(async () => {
+    testEnv = await createTestEnvironment('clients');
+  });
+
+  afterAll(async () => {
+    await cleanupTestEnvironment(testEnv.tenant.id);
+  });
+
+  // Helper to create tenant-aware agent
+  const getAgent = () =>
+    createTenantAgent(app, testEnv.token, testEnv.tenant.id);
+
   it('blocks unauthenticated access', async () => {
     const response = await request(app).get('/api/clients');
 
@@ -37,7 +38,7 @@ describe('clients routes', () => {
   });
 
   it('validates client payloads', async () => {
-    const agent = await createAuthenticatedAgent();
+    const agent = getAgent();
 
     const response = await agent
       .post('/api/clients')
@@ -48,7 +49,7 @@ describe('clients routes', () => {
   });
 
   it('supports CRUD operations with filtering', async () => {
-    const agent = await createAuthenticatedAgent();
+    const agent = getAgent();
 
     const createResponse = await agent.post('/api/clients').send({
       name: 'Acme Corp',
@@ -122,8 +123,10 @@ describe('clients routes', () => {
     const deleteResponse = await agent.delete(`/api/clients/${clientId}`);
     expect(deleteResponse.status).toBe(204);
 
-    // Verify hard delete - record should no longer exist
-    const stored = await prisma.client.findUnique({ where: { id: clientId } });
+    // Verify hard delete using raw Prisma (bypasses tenant filtering)
+    const stored = await rawPrisma.client.findUnique({
+      where: { id: clientId },
+    });
     expect(stored).toBeNull();
   });
 });

@@ -2,14 +2,29 @@
  * Tenant Test Utilities
  *
  * Helper functions for testing multi-tenant functionality.
+ *
+ * IMPORTANT: This module provides TWO types of Prisma clients:
+ *
+ * 1. `rawPrisma` (via getTestPrisma()) - Raw PrismaClient WITHOUT tenant extension
+ *    Use for: Test setup, cleanup, cross-tenant data verification
+ *    Example: Creating test tenants, users, cleaning up after tests
+ *
+ * 2. Extended Prisma (via getTenantAwarePrisma()) - Client WITH tenant filtering
+ *    Use for: Testing actual service behavior with tenant isolation
+ *    Example: Verifying tenant isolation works correctly
  */
 
 import { PrismaClient } from '@prisma/client';
 import { runWithTenantContextAsync } from '../../src/tenant/tenant.context';
 import type { TenantContext } from '../../src/tenant/tenant.types';
+import { prisma as extendedPrisma } from '../../src/prisma/client';
 
-// Use a fresh Prisma client for tests to avoid extension conflicts
-const testPrisma = new PrismaClient();
+// Raw Prisma client for test setup/cleanup (bypasses tenant filtering)
+// Use this for creating test data, tenants, users, and cross-tenant verification
+const rawPrisma = new PrismaClient();
+
+// Legacy alias for backward compatibility
+const testPrisma = rawPrisma;
 
 /**
  * Create a test tenant with a unique slug.
@@ -194,15 +209,28 @@ export async function cleanupAll() {
 }
 
 /**
- * Get Prisma client for direct queries (bypasses tenant extension).
+ * Get raw Prisma client for direct queries (bypasses tenant extension).
+ * Use this for test setup, cleanup, and cross-tenant verification.
  */
 export function getTestPrisma() {
-  return testPrisma;
+  return rawPrisma;
+}
+
+/**
+ * Get tenant-aware Prisma client (with tenant extension).
+ * Use this when testing service behavior that should respect tenant isolation.
+ * Queries through this client will automatically filter by tenant context.
+ */
+export function getTenantAwarePrisma() {
+  return extendedPrisma;
 }
 
 /**
  * Disconnect test Prisma client.
  */
 export async function disconnectTestPrisma() {
-  await testPrisma.$disconnect();
+  await rawPrisma.$disconnect();
 }
+
+// Export both clients for explicit usage
+export { rawPrisma, extendedPrisma };

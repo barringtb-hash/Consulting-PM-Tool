@@ -165,8 +165,13 @@ export async function getActivityById(id: number) {
         },
       },
       opportunity: {
-        select: { id: true, name: true, amount: true, status: true },
-        include: { stage: { select: { id: true, name: true, color: true } } },
+        select: {
+          id: true,
+          name: true,
+          amount: true,
+          status: true,
+          stage: { select: { id: true, name: true, color: true } },
+        },
       },
     },
   });

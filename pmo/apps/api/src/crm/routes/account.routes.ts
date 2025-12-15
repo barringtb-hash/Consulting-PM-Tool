@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import * as accountService from '../services/account.service';
 import {
   requireAuth,
@@ -15,6 +16,14 @@ import {
   requireTenant,
   type TenantRequest,
 } from '../../tenant/tenant.middleware';
+
+// Helper to check if error is a Prisma "not found" error
+function isNotFoundError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2025'
+  );
+}
 
 const router = Router();
 
@@ -194,8 +203,15 @@ router.put(
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
-    const account = await accountService.updateAccount(id, parsed.data);
-    res.json({ data: account });
+    try {
+      const account = await accountService.updateAccount(id, parsed.data);
+      res.json({ data: account });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
   },
 );
 
@@ -213,8 +229,15 @@ router.delete(
       return res.status(400).json({ error: 'Invalid account ID' });
     }
 
-    await accountService.deleteAccount(id);
-    res.status(204).send();
+    try {
+      await accountService.deleteAccount(id);
+      res.status(204).send();
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
   },
 );
 
@@ -232,8 +255,15 @@ router.post(
       return res.status(400).json({ error: 'Invalid account ID' });
     }
 
-    const account = await accountService.archiveAccount(id);
-    res.json({ data: account });
+    try {
+      const account = await accountService.archiveAccount(id);
+      res.json({ data: account });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
   },
 );
 
@@ -251,8 +281,15 @@ router.post(
       return res.status(400).json({ error: 'Invalid account ID' });
     }
 
-    const account = await accountService.restoreAccount(id);
-    res.json({ data: account });
+    try {
+      const account = await accountService.restoreAccount(id);
+      res.json({ data: account });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
   },
 );
 
@@ -323,11 +360,18 @@ router.post(
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
-    const result = await accountService.mergeAccounts(
-      targetId,
-      parsed.data.sourceAccountId,
-    );
-    res.json({ data: result });
+    try {
+      const result = await accountService.mergeAccounts(
+        targetId,
+        parsed.data.sourceAccountId,
+      );
+      res.json({ data: result });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
   },
 );
 
