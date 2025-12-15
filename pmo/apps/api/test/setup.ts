@@ -203,8 +203,14 @@ beforeEach(async () => {
   });
 
   // Delete only non-test tenants using ID pattern directly
+  // NOTE: Tenant model uses 'id', not 'tenantId' (it IS the tenant)
   await prismaClient.tenant.deleteMany({
-    where: isNotTestTenant,
+    where: {
+      AND: [
+        { id: { not: { startsWith: 'test-tenant-' } } },
+        { id: { not: { startsWith: 'test-tenant-api-' } } },
+      ],
+    },
   });
 });
 
