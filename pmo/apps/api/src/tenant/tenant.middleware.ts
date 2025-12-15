@@ -121,15 +121,35 @@ export async function tenantMiddleware(
       }
     }
 
-    // 3. Try X-Tenant-ID header (for service-to-service calls)
+    // 3. Try X-Tenant-ID header (for service-to-service calls or explicit tenant selection)
     if (!tenant) {
       const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
       if (headerTenantId) {
-        tenant = await prisma.tenant.findUnique({
-          where: { id: headerTenantId },
-        });
-        if (tenant) {
-          tenantSlug = tenant.slug;
+        // If user is authenticated, verify they have access to the requested tenant
+        if (req.userId) {
+          const tenantUser = await prisma.tenantUser.findUnique({
+            where: {
+              tenantId_userId: {
+                tenantId: headerTenantId,
+                userId: req.userId,
+              },
+            },
+            include: { tenant: true },
+          });
+
+          if (tenantUser) {
+            tenant = tenantUser.tenant;
+            tenantSlug = tenant.slug;
+          }
+          // If user doesn't have access, fall through to step 4 (user's default tenant)
+        } else {
+          // For unauthenticated service-to-service calls, trust the header
+          tenant = await prisma.tenant.findUnique({
+            where: { id: headerTenantId },
+          });
+          if (tenant) {
+            tenantSlug = tenant.slug;
+          }
         }
       }
     }
