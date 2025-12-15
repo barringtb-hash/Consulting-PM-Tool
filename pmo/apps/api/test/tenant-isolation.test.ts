@@ -45,8 +45,12 @@ describe('Tenant Isolation', () => {
     tenantB = await createTestTenant('B');
 
     // Create users and add to tenants
-    userA = await createTestUser(`user-a-${Date.now()}@test.com`);
-    userB = await createTestUser(`user-b-${Date.now()}@test.com`);
+    userA = await createTestUser(
+      `user-a-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@test.com`,
+    );
+    userB = await createTestUser(
+      `user-b-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@test.com`,
+    );
 
     await addUserToTenant(tenantA.id, userA.id, 'ADMIN');
     await addUserToTenant(tenantB.id, userB.id, 'ADMIN');

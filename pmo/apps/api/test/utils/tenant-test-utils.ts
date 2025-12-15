@@ -23,6 +23,14 @@ import { prisma as extendedPrisma } from '../../src/prisma/client';
 // Use this for creating test data, tenants, users, and cross-tenant verification
 const rawPrisma = new PrismaClient();
 
+/**
+ * Generate a unique ID for test data to prevent collisions in parallel tests.
+ * Combines timestamp with random string for robust uniqueness.
+ */
+export function uniqueId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 // Legacy alias for backward compatibility
 const testPrisma = rawPrisma;
 
@@ -33,7 +41,7 @@ export async function createTestTenant(suffix: string) {
   return testPrisma.tenant.create({
     data: {
       name: `Test Tenant ${suffix}`,
-      slug: `test-tenant-${suffix}-${Date.now()}`,
+      slug: `test-tenant-${suffix}-${uniqueId()}`,
       plan: 'PROFESSIONAL',
       status: 'ACTIVE',
     },
@@ -44,7 +52,7 @@ export async function createTestTenant(suffix: string) {
  * Create a test user with a unique email.
  */
 export async function createTestUser(email?: string) {
-  const uniqueEmail = email || `test-user-${Date.now()}@test.com`;
+  const uniqueEmail = email || `test-user-${uniqueId()}@test.com`;
   return testPrisma.user.create({
     data: {
       name: 'Test User',
@@ -131,7 +139,7 @@ export async function createTestAccount(
   return testPrisma.account.create({
     data: {
       tenantId,
-      name: name || `Test Account ${Date.now()}`,
+      name: name || `Test Account ${uniqueId()}`,
       ownerId,
     },
   });
@@ -150,7 +158,7 @@ export async function createTestOpportunity(
   return testPrisma.opportunity.create({
     data: {
       tenantId,
-      name: name || `Test Opportunity ${Date.now()}`,
+      name: name || `Test Opportunity ${uniqueId()}`,
       accountId,
       stageId,
       ownerId,
@@ -174,8 +182,8 @@ export async function createTestContact(
       tenantId,
       accountId,
       firstName: firstName || 'Test',
-      lastName: lastName || `Contact-${Date.now()}`,
-      email: `contact-${Date.now()}@test.com`,
+      lastName: lastName || `Contact-${uniqueId()}`,
+      email: `contact-${uniqueId()}@test.com`,
     },
   });
 }

@@ -21,7 +21,9 @@ describe('projects routes', () => {
   let testEnv: TestEnvironment;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment(`projects-${Date.now()}`);
+    testEnv = await createTestEnvironment(
+      `projects-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    );
   });
 
   afterAll(async () => {
@@ -278,7 +280,9 @@ describe('projects routes', () => {
     let testEnv2: TestEnvironment;
 
     beforeAll(async () => {
-      testEnv2 = await createTestEnvironment(`projects-auth-${Date.now()}`);
+      testEnv2 = await createTestEnvironment(
+        `projects-auth-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      );
     });
 
     afterAll(async () => {
