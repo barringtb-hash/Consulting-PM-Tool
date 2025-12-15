@@ -27,7 +27,7 @@ describe('meeting service', () => {
   let testEnv: TestEnvironment;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment('meetings-service');
+    testEnv = await createTestEnvironment(`meetings-service-${Date.now()}`);
   });
 
   afterAll(async () => {

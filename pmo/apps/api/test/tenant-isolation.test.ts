@@ -27,7 +27,6 @@ import {
   createTestOpportunity,
   createTestContact,
   withTenant,
-  cleanupAll,
   getTestPrisma,
   disconnectTestPrisma,
 } from './utils/tenant-test-utils';
@@ -58,7 +57,36 @@ describe('Tenant Isolation', () => {
   });
 
   afterAll(async () => {
-    await cleanupAll();
+    // Clean up only the specific tenants created by this test file
+    // Do NOT use cleanupAll() as it deletes ALL test tenants including those from parallel tests
+    const rawPrisma = getTestPrisma();
+    const tenantIds = [tenantA?.id, tenantB?.id].filter(Boolean);
+
+    for (const tenantId of tenantIds) {
+      try {
+        // Delete in order to respect foreign key constraints
+        await rawPrisma.account.deleteMany({ where: { tenantId } });
+        await rawPrisma.salesPipelineStage.deleteMany({
+          where: { pipeline: { tenantId } },
+        });
+        await rawPrisma.pipeline.deleteMany({ where: { tenantId } });
+        await rawPrisma.tenantUser.deleteMany({ where: { tenantId } });
+        await rawPrisma.tenant.delete({ where: { id: tenantId } });
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+
+    // Clean up users
+    const userIds = [userA?.id, userB?.id].filter(Boolean);
+    for (const userId of userIds) {
+      try {
+        await rawPrisma.user.delete({ where: { id: userId } });
+      } catch {
+        // User may have other associations
+      }
+    }
+
     await disconnectTestPrisma();
   });
 

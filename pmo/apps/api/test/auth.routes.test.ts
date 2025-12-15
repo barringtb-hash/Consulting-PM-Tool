@@ -12,11 +12,12 @@ describe('auth routes', () => {
   const createTestUser = async () => {
     const password = 'password123';
     const passwordHash = await hashPassword(password);
+    const uniqueEmail = `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
 
     const user = await prisma.user.create({
       data: {
         name: 'Test User',
-        email: 'test@example.com',
+        email: uniqueEmail,
         passwordHash,
         timezone: 'UTC',
       },
@@ -28,11 +29,12 @@ describe('auth routes', () => {
   const seedAdminUser = async () => {
     const password = 'AdminDemo123!';
     const passwordHash = await hashPassword(password);
+    const uniqueEmail = `admin-${Date.now()}-${Math.random().toString(36).substring(7)}@pmo.test`;
 
     const user = await prisma.user.create({
       data: {
         name: 'Testing Admin',
-        email: 'admin@pmo.test',
+        email: uniqueEmail,
         passwordHash,
         timezone: 'UTC',
       },
