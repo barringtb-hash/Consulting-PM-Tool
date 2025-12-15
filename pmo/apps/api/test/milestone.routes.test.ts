@@ -1,34 +1,37 @@
 /// <reference types="vitest" />
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
-import { MilestoneStatus, ProjectStatus } from '@prisma/client';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { MilestoneStatus } from '@prisma/client';
 
-import { hashPassword } from '../src/auth/password';
 import { createApp } from '../src/app';
-import prisma from '../src/prisma/client';
+import {
+  createTestEnvironment,
+  createTenantAgent,
+  cleanupTestEnvironment,
+  createTestClient,
+  createTestProject,
+  getRawPrisma,
+  type TestEnvironment,
+} from './utils/test-fixtures';
 
 const app = createApp();
-
-const createAuthenticatedAgent = async () => {
-  const password = 'password123';
-  const passwordHash = await hashPassword(password);
-
-  const user = await prisma.user.create({
-    data: {
-      name: 'Milestone Owner',
-      email: 'milestone-owner@example.com',
-      passwordHash,
-      timezone: 'UTC',
-    },
-  });
-
-  const agent = request.agent(app);
-  await agent.post('/api/auth/login').send({ email: user.email, password });
-
-  return { agent, user };
-};
+const rawPrisma = getRawPrisma();
 
 describe('milestone routes', () => {
+  let testEnv: TestEnvironment;
+
+  beforeAll(async () => {
+    testEnv = await createTestEnvironment('milestones');
+  });
+
+  afterAll(async () => {
+    await cleanupTestEnvironment(testEnv.tenant.id);
+  });
+
+  // Helper to create tenant-aware agent
+  const getAgent = () =>
+    createTenantAgent(app, testEnv.token, testEnv.tenant.id);
+
   it('blocks unauthenticated access', async () => {
     const response = await request(app).get('/api/projects/1/milestones');
 
@@ -37,20 +40,21 @@ describe('milestone routes', () => {
   });
 
   it('supports milestone lifecycle operations', async () => {
-    const { agent, user } = await createAuthenticatedAgent();
+    const agent = getAgent();
 
-    const client = await prisma.client.create({
-      data: { name: 'Milestone Client' },
-    });
+    // Create client with explicit tenantId
+    const client = await createTestClient(
+      testEnv.tenant.id,
+      'Milestone Client',
+    );
 
-    const project = await prisma.project.create({
-      data: {
-        name: 'Milestone Project',
-        clientId: client.id,
-        ownerId: user.id,
-        status: ProjectStatus.PLANNING,
-      },
-    });
+    // Create project with explicit tenantId
+    const project = await createTestProject(
+      testEnv.tenant.id,
+      client.id,
+      testEnv.user.id,
+      { name: 'Milestone Project', status: 'PLANNING' },
+    );
 
     const createResponse = await agent.post('/api/milestones').send({
       projectId: project.id,
@@ -89,7 +93,8 @@ describe('milestone routes', () => {
     const deleteResponse = await agent.delete(`/api/milestones/${milestoneId}`);
     expect(deleteResponse.status).toBe(204);
 
-    const stored = await prisma.milestone.findUnique({
+    // Verify deletion using raw Prisma (bypasses tenant filtering)
+    const stored = await rawPrisma.milestone.findUnique({
       where: { id: milestoneId },
     });
     expect(stored).toBeNull();
