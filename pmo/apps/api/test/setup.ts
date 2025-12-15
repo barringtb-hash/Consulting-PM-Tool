@@ -109,11 +109,13 @@ beforeEach(async () => {
   await prismaClient.cRMActivity.deleteMany({
     where: { tenantId: { notIn: testTenantIds } },
   });
+  // OpportunityStageHistory doesn't have direct tenantId - filter through opportunity relation
   await prismaClient.opportunityStageHistory.deleteMany({
-    where: { tenantId: { notIn: testTenantIds } },
+    where: { opportunity: { tenantId: { notIn: testTenantIds } } },
   });
+  // OpportunityContact doesn't have direct tenantId - filter through opportunity relation
   await prismaClient.opportunityContact.deleteMany({
-    where: { tenantId: { notIn: testTenantIds } },
+    where: { opportunity: { tenantId: { notIn: testTenantIds } } },
   });
   await prismaClient.opportunity.deleteMany({
     where: { tenantId: { notIn: testTenantIds } },
