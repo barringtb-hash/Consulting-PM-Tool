@@ -97,7 +97,8 @@ beforeEach(async () => {
   // the pattern 'test-tenant-*' (matching the slug). This is simpler and more
   // reliable than relation-based filtering.
 
-  // Helper: check if tenantId is NOT a test tenant (for tables with direct tenantId)
+  // Helper: check if tenantId is NOT a test tenant (for tables with required tenantId)
+  // Used for CRM models where tenantId is required (String, not String?)
   const isNotTestTenant = {
     AND: [
       { tenantId: { not: { startsWith: 'test-tenant-' } } },
@@ -106,39 +107,41 @@ beforeEach(async () => {
   };
 
   // Helper: include null tenantId (orphaned records)
+  // Used for PMO models where tenantId is optional (String?)
   const isOrphanedOrNotTestTenant = {
     OR: [{ tenantId: null }, isNotTestTenant],
   };
 
   // CRM tables (most dependent first) - skip test tenant data
+  // CRM models have REQUIRED tenantId, so we cannot check for null
   await prismaClient.cRMActivity.deleteMany({
-    where: isOrphanedOrNotTestTenant,
+    where: isNotTestTenant,
   });
   // OpportunityStageHistory - filter through opportunity relation's tenantId
   await prismaClient.opportunityStageHistory.deleteMany({
     where: {
-      opportunity: isOrphanedOrNotTestTenant,
+      opportunity: isNotTestTenant,
     },
   });
   // OpportunityContact - filter through opportunity relation's tenantId
   await prismaClient.opportunityContact.deleteMany({
     where: {
-      opportunity: isOrphanedOrNotTestTenant,
+      opportunity: isNotTestTenant,
     },
   });
   await prismaClient.opportunity.deleteMany({
-    where: isOrphanedOrNotTestTenant,
+    where: isNotTestTenant,
   });
   await prismaClient.salesPipelineStage.deleteMany({
     where: {
-      pipeline: isOrphanedOrNotTestTenant,
+      pipeline: isNotTestTenant,
     },
   });
   await prismaClient.pipeline.deleteMany({
-    where: isOrphanedOrNotTestTenant,
+    where: isNotTestTenant,
   });
   await prismaClient.cRMContact.deleteMany({
-    where: isOrphanedOrNotTestTenant,
+    where: isNotTestTenant,
   });
 
   // PMO tables - filter by tenantId pattern
@@ -171,9 +174,9 @@ beforeEach(async () => {
     where: isOrphanedOrNotTestTenant,
   });
 
-  // Shared tables - skip test tenant data
+  // CRM Account table - has REQUIRED tenantId
   await prismaClient.account.deleteMany({
-    where: isOrphanedOrNotTestTenant,
+    where: isNotTestTenant,
   });
 
   // Tenant-related tables must be deleted in order
