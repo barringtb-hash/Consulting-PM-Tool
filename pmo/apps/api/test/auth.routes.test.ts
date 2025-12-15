@@ -12,11 +12,12 @@ describe('auth routes', () => {
   const createTestUser = async () => {
     const password = 'password123';
     const passwordHash = await hashPassword(password);
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     const user = await prisma.user.create({
       data: {
         name: 'Test User',
-        email: 'test@example.com',
+        email: `test-${uniqueSuffix}@example.com`,
         passwordHash,
         timezone: 'UTC',
       },
@@ -28,11 +29,12 @@ describe('auth routes', () => {
   const seedAdminUser = async () => {
     const password = 'AdminDemo123!';
     const passwordHash = await hashPassword(password);
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     const user = await prisma.user.create({
       data: {
         name: 'Testing Admin',
-        email: 'admin@pmo.test',
+        email: `admin-${uniqueSuffix}@pmo.test`,
         passwordHash,
         timezone: 'UTC',
       },
@@ -59,11 +61,11 @@ describe('auth routes', () => {
   });
 
   it('rejects login when credentials are invalid', async () => {
-    await createTestUser();
+    const { user } = await createTestUser();
 
     const response = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'test@example.com', password: 'wrong' });
+      .send({ email: user.email, password: 'wrong' });
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual({ error: 'Invalid credentials' });
