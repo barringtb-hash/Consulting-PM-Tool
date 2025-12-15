@@ -26,11 +26,15 @@ const rawPrisma = new PrismaClient();
 // Legacy alias for backward compatibility
 const testPrisma = rawPrisma;
 
+// Track tenants created by this module for targeted cleanup
+const createdTenantIds: string[] = [];
+
 /**
  * Create a test tenant with a unique slug.
+ * Tracks the tenant ID for cleanup.
  */
 export async function createTestTenant(suffix: string) {
-  return testPrisma.tenant.create({
+  const tenant = await testPrisma.tenant.create({
     data: {
       name: `Test Tenant ${suffix}`,
       slug: `test-tenant-${suffix}-${Date.now()}`,
@@ -38,6 +42,8 @@ export async function createTestTenant(suffix: string) {
       status: 'ACTIVE',
     },
   });
+  createdTenantIds.push(tenant.id);
+  return tenant;
 }
 
 /**
@@ -182,12 +188,19 @@ export async function createTestContact(
 
 /**
  * Cleanup test tenants and all related data.
+ * Only cleans up tenants created by this module to avoid race conditions
+ * with other test files running in parallel.
  */
 export async function cleanupTestTenants() {
-  // Delete tenants with test slug pattern - cascade will handle related records
+  if (createdTenantIds.length === 0) {
+    return;
+  }
+  // Only delete tenants that were created by this module
   await testPrisma.tenant.deleteMany({
-    where: { slug: { startsWith: 'test-tenant-' } },
+    where: { id: { in: createdTenantIds } },
   });
+  // Clear the tracking array
+  createdTenantIds.length = 0;
 }
 
 /**
