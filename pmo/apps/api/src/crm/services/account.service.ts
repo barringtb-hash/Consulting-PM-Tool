@@ -9,6 +9,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { getTenantId } from '../../tenant/tenant.context';
+import { AppError } from '../../middleware/error.middleware';
 
 // ============================================================================
 // TYPES
@@ -299,7 +300,7 @@ export async function listAccounts(
 
 /**
  * Update an account.
- * Returns null if the account is not found.
+ * Throws AppError(404) if the account is not found.
  */
 export async function updateAccount(id: number, input: UpdateAccountInput) {
   const tenantId = getTenantId();
@@ -337,7 +338,7 @@ export async function updateAccount(id: number, input: UpdateAccountInput) {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2025'
     ) {
-      return null;
+      throw new AppError(404, 'Account not found');
     }
     throw error;
   }
@@ -345,7 +346,7 @@ export async function updateAccount(id: number, input: UpdateAccountInput) {
 
 /**
  * Archive an account (soft delete).
- * Returns null if the account is not found.
+ * Throws AppError(404) if the account is not found.
  */
 export async function archiveAccount(id: number) {
   const tenantId = getTenantId();
@@ -362,7 +363,7 @@ export async function archiveAccount(id: number) {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2025'
     ) {
-      return null;
+      throw new AppError(404, 'Account not found');
     }
     throw error;
   }
@@ -370,7 +371,7 @@ export async function archiveAccount(id: number) {
 
 /**
  * Restore an archived account.
- * Returns null if the account is not found.
+ * Throws AppError(404) if the account is not found.
  */
 export async function restoreAccount(id: number) {
   const tenantId = getTenantId();
@@ -387,7 +388,7 @@ export async function restoreAccount(id: number) {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2025'
     ) {
-      return null;
+      throw new AppError(404, 'Account not found');
     }
     throw error;
   }
@@ -396,22 +397,21 @@ export async function restoreAccount(id: number) {
 /**
  * Delete an account permanently.
  * Use with caution - this cascades to all related data.
- * Returns false if the account is not found.
+ * Throws AppError(404) if the account is not found.
  */
-export async function deleteAccount(id: number): Promise<boolean> {
+export async function deleteAccount(id: number): Promise<void> {
   const tenantId = getTenantId();
 
   try {
     await prisma.account.delete({
       where: { id, tenantId },
     });
-    return true;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2025'
     ) {
-      return false;
+      throw new AppError(404, 'Account not found');
     }
     throw error;
   }

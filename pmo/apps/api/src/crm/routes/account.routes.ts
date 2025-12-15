@@ -194,10 +194,8 @@ router.put(
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
+    // Service throws AppError(404) if not found
     const account = await accountService.updateAccount(id, parsed.data);
-    if (!account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
     res.json({ data: account });
   },
 );
@@ -216,10 +214,8 @@ router.delete(
       return res.status(400).json({ error: 'Invalid account ID' });
     }
 
-    const deleted = await accountService.deleteAccount(id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
+    // Service throws AppError(404) if not found
+    await accountService.deleteAccount(id);
     res.status(204).send();
   },
 );
@@ -238,10 +234,8 @@ router.post(
       return res.status(400).json({ error: 'Invalid account ID' });
     }
 
+    // Service throws AppError(404) if not found
     const account = await accountService.archiveAccount(id);
-    if (!account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
     res.json({ data: account });
   },
 );
@@ -260,10 +254,8 @@ router.post(
       return res.status(400).json({ error: 'Invalid account ID' });
     }
 
+    // Service throws AppError(404) if not found
     const account = await accountService.restoreAccount(id);
-    if (!account) {
-      return res.status(404).json({ error: 'Account not found' });
-    }
     res.json({ data: account });
   },
 );
