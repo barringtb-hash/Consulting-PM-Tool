@@ -27,7 +27,9 @@ describe('meeting service', () => {
   let testEnv: TestEnvironment;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment(`meetings-service-${Date.now()}`);
+    testEnv = await createTestEnvironment(
+      `meetings-service-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    );
   });
 
   afterAll(async () => {
@@ -112,7 +114,7 @@ describe('meeting service', () => {
     const otherUser = await rawPrisma.user.create({
       data: {
         name: 'Other',
-        email: `other-${Date.now()}@example.com`,
+        email: `other-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@example.com`,
         passwordHash: otherUserPasswordHash,
         timezone: 'UTC',
       },

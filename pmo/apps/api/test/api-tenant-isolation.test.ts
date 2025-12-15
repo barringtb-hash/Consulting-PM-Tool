@@ -32,8 +32,12 @@ describe('API Tenant Isolation', () => {
     tenantB = await createTestTenant('api-B');
 
     // Create users
-    userA = await createTestUser(`api-user-a-${Date.now()}@test.com`);
-    userB = await createTestUser(`api-user-b-${Date.now()}@test.com`);
+    userA = await createTestUser(
+      `api-user-a-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@test.com`,
+    );
+    userB = await createTestUser(
+      `api-user-b-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@test.com`,
+    );
 
     // Add users to tenants
     await addUserToTenant(tenantA.id, userA.id, 'ADMIN');

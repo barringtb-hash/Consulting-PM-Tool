@@ -51,7 +51,7 @@ export interface TestEnvironment {
  * @param options - Configuration options
  */
 export async function createTestEnvironment(
-  suffix: string = Date.now().toString(),
+  suffix: string = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
   options: { createPipeline?: boolean } = { createPipeline: false },
 ): Promise<TestEnvironment> {
   // 1. Create tenant

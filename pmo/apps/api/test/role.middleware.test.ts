@@ -25,7 +25,7 @@ describe('role middleware', () => {
     return prisma.user.create({
       data: {
         name: `Test ${role}`,
-        email: `test-${role.toLowerCase()}-${Date.now()}@example.com`,
+        email: `test-${role.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@example.com`,
         passwordHash,
         timezone: 'UTC',
         role,
