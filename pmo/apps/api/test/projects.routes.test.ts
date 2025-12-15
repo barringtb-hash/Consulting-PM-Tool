@@ -274,9 +274,18 @@ describe('projects routes', () => {
   });
 
   describe('authorization', () => {
+    // Shared secondary test environment for authorization tests
+    let testEnv2: TestEnvironment;
+
+    beforeAll(async () => {
+      testEnv2 = await createTestEnvironment('projects-auth');
+    });
+
+    afterAll(async () => {
+      await cleanupTestEnvironment(testEnv2.tenant.id);
+    });
+
     it('prevents access to other users projects', async () => {
-      // Create a second test environment with a different user/tenant
-      const testEnv2 = await createTestEnvironment('projects-auth');
       const { client, account } = await createClientAndAccount();
 
       // Create project owned by first user in first tenant
@@ -296,14 +305,9 @@ describe('projects routes', () => {
 
       // Should be 404 (not found in their tenant) or 403 (forbidden)
       expect([403, 404]).toContain(response.status);
-
-      // Cleanup second test environment
-      await cleanupTestEnvironment(testEnv2.tenant.id);
     });
 
     it('prevents updating other users projects', async () => {
-      // Create a second test environment with a different user/tenant
-      const testEnv2 = await createTestEnvironment('projects-auth-update');
       const { client, account } = await createClientAndAccount();
 
       const project = await rawPrisma.project.create({
@@ -322,14 +326,9 @@ describe('projects routes', () => {
       });
 
       expect([403, 404]).toContain(response.status);
-
-      // Cleanup second test environment
-      await cleanupTestEnvironment(testEnv2.tenant.id);
     });
 
     it('prevents deleting other users projects', async () => {
-      // Create a second test environment with a different user/tenant
-      const testEnv2 = await createTestEnvironment('projects-auth-delete');
       const { client, account } = await createClientAndAccount();
 
       const project = await rawPrisma.project.create({
@@ -346,9 +345,6 @@ describe('projects routes', () => {
       const response = await agent2.delete(`/api/projects/${project.id}`);
 
       expect([403, 404]).toContain(response.status);
-
-      // Cleanup second test environment
-      await cleanupTestEnvironment(testEnv2.tenant.id);
     });
   });
 
