@@ -51,7 +51,7 @@ export interface TestEnvironment {
  * @param options - Configuration options
  */
 export async function createTestEnvironment(
-  suffix: string = Date.now().toString(),
+  suffix: string = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
   options: { createPipeline?: boolean } = { createPipeline: false },
 ): Promise<TestEnvironment> {
   // 1. Create tenant
@@ -173,12 +173,16 @@ export function createTenantAgent(
  * 1. Tasks (depends on Project, Milestone)
  * 2. Milestones (depends on Project)
  * 3. Meetings (depends on Project)
- * 4. Projects (depends on Client, Account)
- * 5. Clients (depends on Tenant)
- * 6. Accounts (depends on Tenant)
- * 7. TenantUser (depends on Tenant, User)
- * 8. Users created for this tenant
- * 9. Tenant
+ * 4. Documents (depends on Project)
+ * 5. Projects (depends on Client, Account)
+ * 6. Clients (depends on Tenant)
+ * 7. CRMActivities (explicitly cleaned, cascade would also handle via Tenant)
+ * 8. CRMContacts (explicitly cleaned, cascade would also handle via Tenant)
+ * 9. Accounts (depends on Tenant)
+ * 10. Pipelines (stages cascade-deleted automatically)
+ * 11. TenantUser (depends on Tenant, User)
+ * 12. Users created for this tenant
+ * 13. Tenant
  *
  * @param tenantId - The tenant ID to clean up
  */
@@ -214,15 +218,22 @@ export async function cleanupTestEnvironment(tenantId: string): Promise<void> {
       where: { tenantId },
     });
 
+    // Delete CRM activities (explicitly for clarity; cascade via Tenant would also work)
+    await rawPrisma.cRMActivity.deleteMany({
+      where: { tenantId },
+    });
+
+    // Delete CRM contacts (explicitly for clarity; cascade via Tenant would also work)
+    await rawPrisma.cRMContact.deleteMany({
+      where: { tenantId },
+    });
+
     // Delete accounts
     await rawPrisma.account.deleteMany({
       where: { tenantId },
     });
 
-    // Delete pipeline stages first, then pipelines
-    await rawPrisma.salesPipelineStage.deleteMany({
-      where: { pipeline: { tenantId } },
-    });
+    // Delete pipelines (stages are cascade-deleted automatically via onDelete: Cascade)
     await rawPrisma.pipeline.deleteMany({
       where: { tenantId },
     });
