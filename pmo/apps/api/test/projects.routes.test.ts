@@ -38,6 +38,16 @@ const createClient = async (ownerId: number) => {
     },
   });
 
+  // Add the owner to the tenant (required to protect user from cleanup)
+  await prisma.tenantUser.create({
+    data: {
+      tenantId: tenant.id,
+      userId: ownerId,
+      role: 'ADMIN',
+      acceptedAt: new Date(),
+    },
+  });
+
   // Create legacy Client (still required by DB constraint)
   // Note: Client model doesn't have ownerId field
   const client = await prisma.client.create({
@@ -56,7 +66,7 @@ const createClient = async (ownerId: number) => {
     },
   });
 
-  return { client, account };
+  return { client, account, tenant };
 };
 
 describe('projects routes', () => {
