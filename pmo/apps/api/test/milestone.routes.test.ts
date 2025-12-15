@@ -19,9 +19,10 @@ const rawPrisma = getRawPrisma();
 
 describe('milestone routes', () => {
   let testEnv: TestEnvironment;
+  const uniqueSuffix = `milestones-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment('milestones');
+    testEnv = await createTestEnvironment(uniqueSuffix);
   });
 
   afterAll(async () => {

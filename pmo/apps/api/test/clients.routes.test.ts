@@ -17,9 +17,10 @@ const rawPrisma = getRawPrisma();
 
 describe('clients routes', () => {
   let testEnv: TestEnvironment;
+  const uniqueSuffix = `clients-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment('clients');
+    testEnv = await createTestEnvironment(uniqueSuffix);
   });
 
   afterAll(async () => {

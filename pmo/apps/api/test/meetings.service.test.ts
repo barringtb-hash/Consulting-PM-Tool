@@ -25,9 +25,10 @@ const rawPrisma = getRawPrisma();
 
 describe('meeting service', () => {
   let testEnv: TestEnvironment;
+  const uniqueSuffix = `meetings-service-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment('meetings-service');
+    testEnv = await createTestEnvironment(uniqueSuffix);
   });
 
   afterAll(async () => {

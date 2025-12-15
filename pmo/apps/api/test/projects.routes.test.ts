@@ -19,9 +19,10 @@ const rawPrisma = getRawPrisma();
 
 describe('projects routes', () => {
   let testEnv: TestEnvironment;
+  const uniqueSuffix = `projects-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
   beforeAll(async () => {
-    testEnv = await createTestEnvironment('projects');
+    testEnv = await createTestEnvironment(uniqueSuffix);
   });
 
   afterAll(async () => {
@@ -276,9 +277,10 @@ describe('projects routes', () => {
   describe('authorization', () => {
     // Shared secondary test environment for authorization tests
     let testEnv2: TestEnvironment;
+    const authSuffix = `projects-auth-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     beforeAll(async () => {
-      testEnv2 = await createTestEnvironment('projects-auth');
+      testEnv2 = await createTestEnvironment(authSuffix);
     });
 
     afterAll(async () => {
