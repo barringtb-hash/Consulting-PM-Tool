@@ -77,11 +77,11 @@ jobs:
 
       - name: Create and setup test databases
         run: |
-          # Create test databases
-          psql -c "DROP DATABASE IF EXISTS pmo_test_ci;"
-          psql -c "CREATE DATABASE pmo_test_ci;"
-          psql -c "DROP DATABASE IF EXISTS pmo_test_1;"
-          psql -c "CREATE DATABASE pmo_test_1;"
+          # Create test databases - explicitly use postgres user to avoid OS user fallback
+          psql -U postgres -h localhost -c "DROP DATABASE IF EXISTS pmo_test_ci;"
+          psql -U postgres -h localhost -c "CREATE DATABASE pmo_test_ci;"
+          psql -U postgres -h localhost -c "DROP DATABASE IF EXISTS pmo_test_1;"
+          psql -U postgres -h localhost -c "CREATE DATABASE pmo_test_1;"
           # Apply migrations to test databases
           DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pmo_test_ci npx prisma migrate deploy
           DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pmo_test_1 npx prisma migrate deploy
