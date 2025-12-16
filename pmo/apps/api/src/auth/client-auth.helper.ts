@@ -8,6 +8,33 @@
  */
 
 import { prisma } from '../prisma/client';
+import { Prisma } from '@prisma/client';
+
+/**
+ * Check if a Prisma error is due to a missing column (typically from pending migration)
+ * Uses Prisma error code P2022 for more reliable detection than string matching
+ */
+function isMissingColumnError(error: unknown, columnName: string): boolean {
+  // Check for PrismaClientKnownRequestError with code P2022 (column does not exist)
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2022'
+  ) {
+    // Check if the meta contains the column name
+    const meta = error.meta as
+      | { column?: string; column_name?: string }
+      | undefined;
+    if (meta?.column === columnName || meta?.column_name === columnName) {
+      return true;
+    }
+  }
+
+  // Fallback: check error message for cases where error code isn't set correctly
+  const errorMessage = (error as Error).message || '';
+  return (
+    errorMessage.includes(columnName) && errorMessage.includes('does not exist')
+  );
+}
 
 /**
  * Check if a user has access to a client
@@ -59,17 +86,35 @@ export async function getAccessibleClientIds(
     return null;
   }
 
-  // Get all unique account IDs from projects owned by this user
-  const projects = await prisma.project.findMany({
-    where: { ownerId: userId },
-    select: { accountId: true },
-    distinct: ['accountId'],
-  });
+  try {
+    // Get all unique account IDs from projects owned by this user
+    const projects = await prisma.project.findMany({
+      where: { ownerId: userId },
+      select: { accountId: true },
+      distinct: ['accountId'],
+    });
 
-  // Filter out null accountIds and return only valid numbers
-  return projects
-    .map((p: { accountId: number | null }) => p.accountId)
-    .filter((id: number | null): id is number => id !== null);
+    // Filter out null accountIds and return only valid numbers
+    return projects
+      .map((p: { accountId: number | null }) => p.accountId)
+      .filter((id: number | null): id is number => id !== null);
+  } catch (error) {
+    if (isMissingColumnError(error, 'accountId')) {
+      console.warn(
+        '[ClientAuth] Project.accountId column not found in database, falling back to clientId query. Run pending migrations to resolve.',
+      );
+      // Fall back to clientId
+      const projects = await prisma.project.findMany({
+        where: { ownerId: userId },
+        select: { clientId: true },
+        distinct: ['clientId'],
+      });
+      return projects
+        .map((p: { clientId: number | null }) => p.clientId)
+        .filter((id: number | null): id is number => id !== null);
+    }
+    throw error;
+  }
 }
 
 /**
