@@ -6,9 +6,10 @@
  *
  * How it works:
  * 1. When a query runs within a tenant context, tenantId is auto-injected
- * 2. findMany/findFirst/count get WHERE tenantId = X
+ * 2. findMany/findFirst/count/aggregate/groupBy get WHERE tenantId = X
  * 3. create/createMany get tenantId added to data
- * 4. update/updateMany/delete/deleteMany get tenantId in WHERE
+ * 4. updateMany/deleteMany get tenantId in WHERE (for bulk operations)
+ * 5. update/delete verify tenant ownership before executing (using findFirst)
  *
  * This ensures complete tenant isolation at the database level.
  */
@@ -70,15 +71,33 @@ function needsTenantFiltering(model: string): boolean {
 }
 
 /**
+ * Create a Prisma-compatible "record not found" error.
+ * This error will be caught by existing error handlers that check for P2025.
+ */
+function createNotFoundError(
+  model: string,
+  operation: string,
+): Prisma.PrismaClientKnownRequestError {
+  return new Prisma.PrismaClientKnownRequestError(
+    `An operation failed because it depends on one or more records that were required but not found. Record to ${operation} not found.`,
+    {
+      code: 'P2025',
+      clientVersion: '5.0.0',
+      meta: { modelName: model },
+    },
+  );
+}
+
+/**
  * Create tenant-aware Prisma extension.
  *
  * Note: This is designed to work alongside the existing Prisma client.
  * The extension intercepts operations on tenant-scoped models and
  * automatically injects tenantId.
  *
- * @param _baseClient - The base Prisma client (reserved for future RLS context setting)
+ * @param baseClient - The base Prisma client used for tenant ownership verification
  */
-export function createTenantExtension(_baseClient?: PrismaClient) {
+export function createTenantExtension(baseClient: PrismaClient) {
   return Prisma.defineExtension({
     name: 'tenant-isolation',
     query: {
@@ -159,9 +178,45 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
         },
 
         async update({ model, args, query }) {
+          // Prisma's update requires where to match a unique constraint exactly,
+          // so we can't add tenantId to the where clause. Instead, we verify
+          // tenant ownership by checking if the record exists with matching tenantId
+          // before proceeding with the update.
           if (needsTenantFiltering(model) && hasTenantContext()) {
-            // Add tenantId to where clause to ensure we can only update our tenant's data
-            args.where = { ...args.where, tenantId: getTenantId() };
+            const tenantId = getTenantId();
+            const whereClause = args.where as {
+              id?: number | string;
+              tenantId?: string;
+            };
+            const whereId = whereClause.id;
+
+            if (whereId !== undefined) {
+              // Use base client to verify tenant ownership
+              const modelDelegate = (
+                baseClient as unknown as Record<
+                  string,
+                  {
+                    findFirst: (args: {
+                      where: { id: number | string; tenantId: string };
+                    }) => Promise<unknown>;
+                  }
+                >
+              )[model.charAt(0).toLowerCase() + model.slice(1)];
+
+              if (modelDelegate?.findFirst) {
+                const existing = await modelDelegate.findFirst({
+                  where: { id: whereId, tenantId },
+                });
+
+                if (!existing) {
+                  throw createNotFoundError(model, 'update');
+                }
+              }
+
+              // Strip tenantId from where clause since Prisma requires unique constraint only
+              // We construct a new where with just the id to satisfy TypeScript's type requirements
+              args.where = { id: whereId } as typeof args.where;
+            }
           }
           return query(args);
         },
@@ -174,8 +229,45 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
         },
 
         async delete({ model, args, query }) {
+          // Prisma's delete requires where to match a unique constraint exactly,
+          // so we can't add tenantId to the where clause. Instead, we verify
+          // tenant ownership by checking if the record exists with matching tenantId
+          // before proceeding with the delete.
           if (needsTenantFiltering(model) && hasTenantContext()) {
-            args.where = { ...args.where, tenantId: getTenantId() };
+            const tenantId = getTenantId();
+            const whereClause = args.where as {
+              id?: number | string;
+              tenantId?: string;
+            };
+            const whereId = whereClause.id;
+
+            if (whereId !== undefined) {
+              // Use base client to verify tenant ownership
+              const modelDelegate = (
+                baseClient as unknown as Record<
+                  string,
+                  {
+                    findFirst: (args: {
+                      where: { id: number | string; tenantId: string };
+                    }) => Promise<unknown>;
+                  }
+                >
+              )[model.charAt(0).toLowerCase() + model.slice(1)];
+
+              if (modelDelegate?.findFirst) {
+                const existing = await modelDelegate.findFirst({
+                  where: { id: whereId, tenantId },
+                });
+
+                if (!existing) {
+                  throw createNotFoundError(model, 'delete');
+                }
+              }
+
+              // Strip tenantId from where clause since Prisma requires unique constraint only
+              // We construct a new where with just the id to satisfy TypeScript's type requirements
+              args.where = { id: whereId } as typeof args.where;
+            }
           }
           return query(args);
         },
@@ -188,11 +280,51 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
         },
 
         async upsert({ model, args, query }) {
+          // Prisma's upsert requires where to match a unique constraint exactly,
+          // so we can't add tenantId to the where clause. We verify tenant ownership
+          // for existing records and add tenantId to create data for new records.
           if (needsTenantFiltering(model) && hasTenantContext()) {
             const tenantId = getTenantId();
-            (args.where as Record<string, unknown>).tenantId = tenantId;
+            const whereClause = args.where as {
+              id?: number | string;
+              tenantId?: string;
+            };
+            const whereId = whereClause.id;
+
+            // Add tenantId to create data for new records
             (args.create as Record<string, unknown>).tenantId = tenantId;
-            // update doesn't need tenantId as where already filters
+
+            // Verify existing record belongs to tenant (if record exists)
+            if (whereId !== undefined) {
+              const modelDelegate = (
+                baseClient as unknown as Record<
+                  string,
+                  {
+                    findFirst: (args: {
+                      where: { id: number | string; tenantId: string };
+                    }) => Promise<unknown>;
+                    findUnique: (args: {
+                      where: { id: number | string };
+                    }) => Promise<{ tenantId?: string } | null>;
+                  }
+                >
+              )[model.charAt(0).toLowerCase() + model.slice(1)];
+
+              if (modelDelegate?.findUnique) {
+                const existing = await modelDelegate.findUnique({
+                  where: { id: whereId },
+                });
+
+                // If record exists but belongs to different tenant, throw error
+                if (existing && existing.tenantId !== tenantId) {
+                  throw createNotFoundError(model, 'upsert');
+                }
+              }
+
+              // Strip tenantId from where clause since Prisma requires unique constraint only
+              // We construct a new where with just the id to satisfy TypeScript's type requirements
+              args.where = { id: whereId } as typeof args.where;
+            }
           }
           return query(args);
         },
