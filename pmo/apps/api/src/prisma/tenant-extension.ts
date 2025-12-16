@@ -214,9 +214,8 @@ export function createTenantExtension(baseClient: PrismaClient) {
               }
 
               // Strip tenantId from where clause since Prisma requires unique constraint only
-
-              const { tenantId: _, ...cleanWhere } = whereClause;
-              args.where = cleanWhere;
+              // We construct a new where with just the id to satisfy TypeScript's type requirements
+              args.where = { id: whereId } as typeof args.where;
             }
           }
           return query(args);
@@ -266,9 +265,8 @@ export function createTenantExtension(baseClient: PrismaClient) {
               }
 
               // Strip tenantId from where clause since Prisma requires unique constraint only
-
-              const { tenantId: _, ...cleanWhere } = whereClause;
-              args.where = cleanWhere;
+              // We construct a new where with just the id to satisfy TypeScript's type requirements
+              args.where = { id: whereId } as typeof args.where;
             }
           }
           return query(args);
@@ -324,9 +322,8 @@ export function createTenantExtension(baseClient: PrismaClient) {
               }
 
               // Strip tenantId from where clause since Prisma requires unique constraint only
-
-              const { tenantId: _, ...cleanWhere } = whereClause;
-              args.where = cleanWhere;
+              // We construct a new where with just the id to satisfy TypeScript's type requirements
+              args.where = { id: whereId } as typeof args.where;
             }
           }
           return query(args);
