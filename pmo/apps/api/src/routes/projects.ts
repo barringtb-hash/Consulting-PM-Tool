@@ -29,6 +29,7 @@ import {
   statusSummaryRequestSchema,
 } from '../validation/projectStatus.schema';
 import { createChildLogger } from '../utils/logger';
+import { env } from '../config/env';
 
 const log = createChildLogger({ module: 'projects' });
 const router = Router();
@@ -92,8 +93,24 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
       meta: result.meta,
     });
   } catch (error) {
-    log.error('List projects error', error);
-    res.status(500).json({ error: 'Failed to list projects' });
+    const errorInfo = {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      // Include stack and Prisma details for server-side logging only
+      stack: error instanceof Error ? error.stack : undefined,
+      code: (error as { code?: string }).code,
+      meta: (error as { meta?: unknown }).meta,
+    };
+    log.error('List projects error', error, errorInfo);
+
+    // In development, include only non-sensitive error details for debugging
+    const isDev = env.nodeEnv === 'development';
+    res.status(500).json({
+      error: 'Failed to list projects',
+      ...(isDev && {
+        details: { message: errorInfo.message, name: errorInfo.name },
+      }),
+    });
   }
 });
 
