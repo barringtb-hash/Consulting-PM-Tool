@@ -5,7 +5,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import {
   Plus,
   Search,

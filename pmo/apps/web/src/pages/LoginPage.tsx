@@ -4,7 +4,7 @@ import {
   useLocation,
   useNavigate,
   type Location,
-} from 'react-router-dom';
+} from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 
 function LoginPage(): JSX.Element {

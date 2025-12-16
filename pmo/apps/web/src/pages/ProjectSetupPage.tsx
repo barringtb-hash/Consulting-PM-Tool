@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useCreateProject } from '../api/queries';
 import { useAccounts } from '../api/hooks/crm';

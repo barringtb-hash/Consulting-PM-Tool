@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Menu, LogOut, User } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { cn } from '../ui/utils';

@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes, Outlet } from 'react-router-dom';
+import { Navigate, Route, Routes, Outlet } from 'react-router';
 import ProtectedRoute from './auth/ProtectedRoute';
 import AppLayout from './layouts/AppLayout';
 import { ClientProjectProvider } from './pages/ClientProjectContext';

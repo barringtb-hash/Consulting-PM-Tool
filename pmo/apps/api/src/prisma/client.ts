@@ -1,17 +1,38 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { createTenantExtension } from './tenant-extension';
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: ReturnType<typeof createExtendedPrismaClient>;
+  pgPool?: Pool;
 };
 
 /**
  * Create a Prisma client with tenant isolation extension and RLS support.
  * The extension automatically filters queries by tenantId when tenant context is available.
  * RLS context is set within the tenant extension's query handlers.
+ *
+ * Prisma 7 uses the adapter pattern with @prisma/adapter-pg for PostgreSQL connections.
  */
 function createExtendedPrismaClient() {
+  // Create a PostgreSQL connection pool
+  const pool =
+    globalForPrisma.pgPool ??
+    new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+
+  // Cache the pool in development to prevent creating multiple pools during hot reload
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.pgPool = pool;
+  }
+
+  // Create the Prisma adapter
+  const adapter = new PrismaPg(pool);
+
   const baseClient = new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   });
 

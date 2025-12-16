@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { LayoutList, LayoutGrid } from 'lucide-react';
 
 import { useProjects } from '../api/queries';

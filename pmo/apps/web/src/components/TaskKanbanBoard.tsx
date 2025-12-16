@@ -15,7 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { TASK_STATUSES, type TaskStatus } from '../hooks/tasks';
 import type { TaskWithProject } from '../api/tasks';

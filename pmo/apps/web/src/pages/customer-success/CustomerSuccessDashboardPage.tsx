@@ -7,7 +7,7 @@
  * - Quick access to success plans and playbooks
  */
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import {
   AlertTriangle,
   CheckCircle,

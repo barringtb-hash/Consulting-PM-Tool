@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import { AuthProvider } from './auth/AuthContext';
 import { ModuleProvider } from './modules';
 import { ThemeProvider } from './theme';
