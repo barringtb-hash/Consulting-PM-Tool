@@ -35,7 +35,9 @@ function isMissingColumnError(error: unknown, columnName: string): boolean {
     error.code === 'P2022'
   ) {
     // Check if the meta contains the column name
-    const meta = error.meta as { column?: string; column_name?: string } | undefined;
+    const meta = error.meta as
+      | { column?: string; column_name?: string }
+      | undefined;
     if (meta?.column === columnName || meta?.column_name === columnName) {
       return true;
     }
@@ -43,10 +45,7 @@ function isMissingColumnError(error: unknown, columnName: string): boolean {
 
   // Fallback: check error message for cases where error code isn't set correctly
   const errorMessage = (error as Error).message || '';
-  return (
-    errorMessage.includes(columnName) &&
-    errorMessage.includes('does not exist')
-  );
+  return errorMessage.includes(columnName) && errorMessage.includes('does not exist');
 }
 
 // ============================================================================
@@ -186,7 +185,10 @@ export async function listDocumentAnalyzerConfigs(filters?: {
 
       // If accountId-based filters were requested but can't be applied,
       // return empty array to avoid returning unfiltered/unauthorized data
-      if (filters?.accountId || (filters?.accountIds && filters.accountIds.length > 0)) {
+      if (
+        filters?.accountId ||
+        (filters?.accountIds && filters.accountIds.length > 0)
+      ) {
         console.warn(
           '[DocumentAnalyzer] accountId filter requested but column missing - returning empty result for safety',
         );

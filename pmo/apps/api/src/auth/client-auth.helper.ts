@@ -21,7 +21,9 @@ function isMissingColumnError(error: unknown, columnName: string): boolean {
     error.code === 'P2022'
   ) {
     // Check if the meta contains the column name
-    const meta = error.meta as { column?: string; column_name?: string } | undefined;
+    const meta = error.meta as
+      | { column?: string; column_name?: string }
+      | undefined;
     if (meta?.column === columnName || meta?.column_name === columnName) {
       return true;
     }
@@ -29,10 +31,7 @@ function isMissingColumnError(error: unknown, columnName: string): boolean {
 
   // Fallback: check error message for cases where error code isn't set correctly
   const errorMessage = (error as Error).message || '';
-  return (
-    errorMessage.includes(columnName) &&
-    errorMessage.includes('does not exist')
-  );
+  return errorMessage.includes(columnName) && errorMessage.includes('does not exist');
 }
 
 /**
