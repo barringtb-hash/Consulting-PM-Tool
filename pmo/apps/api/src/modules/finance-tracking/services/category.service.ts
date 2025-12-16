@@ -127,7 +127,7 @@ export async function ensureDefaultCategories(): Promise<void> {
 }
 
 export async function listCategories(
-  params: ListCategoriesInput = {},
+  params: Partial<ListCategoriesInput> = {},
 ): Promise<{
   categories: Prisma.ExpenseCategoryGetPayload<object>[];
   total: number;

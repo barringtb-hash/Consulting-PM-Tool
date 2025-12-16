@@ -464,7 +464,7 @@ export async function generateCashFlowProjection(params: {
   const recurringCosts = await prisma.recurringCost.findMany({
     where: {
       tenantId,
-      isActive: true,
+      status: 'ACTIVE',
       nextDueDate: { lte: endDate },
     },
     select: {
@@ -575,7 +575,7 @@ export async function getFinancialInsights(): Promise<{
         select: { amount: true, spent: true },
       }),
       prisma.recurringCost.aggregate({
-        where: { tenantId, isActive: true },
+        where: { tenantId, status: 'ACTIVE' },
         _sum: { amount: true },
       }),
     ]);

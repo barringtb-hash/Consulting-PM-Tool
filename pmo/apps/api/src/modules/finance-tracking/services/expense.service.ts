@@ -66,6 +66,22 @@ export async function listExpenses(
     maxAmount,
   } = params;
 
+  // Build date filter separately to avoid self-reference
+  let dateFilter: { gte?: Date; lte?: Date } | undefined;
+  if (startDate || endDate) {
+    dateFilter = {};
+    if (startDate) dateFilter.gte = new Date(startDate);
+    if (endDate) dateFilter.lte = new Date(endDate);
+  }
+
+  // Build amount filter separately to avoid self-reference
+  let amountFilter: { gte?: number; lte?: number } | undefined;
+  if (minAmount !== undefined || maxAmount !== undefined) {
+    amountFilter = {};
+    if (minAmount !== undefined) amountFilter.gte = minAmount;
+    if (maxAmount !== undefined) amountFilter.lte = maxAmount;
+  }
+
   const where: Prisma.ExpenseWhereInput = {
     tenantId,
     ...(status && { status }),
@@ -73,20 +89,8 @@ export async function listExpenses(
     ...(accountId && { accountId }),
     ...(projectId && { projectId }),
     ...(budgetId && { budgetId }),
-    ...(startDate && { date: { gte: new Date(startDate) } }),
-    ...(endDate && {
-      date: {
-        ...((where as Record<string, unknown>).date || {}),
-        lte: new Date(endDate),
-      },
-    }),
-    ...(minAmount !== undefined && { amount: { gte: minAmount } }),
-    ...(maxAmount !== undefined && {
-      amount: {
-        ...((where as Record<string, unknown>).amount || {}),
-        lte: maxAmount,
-      },
-    }),
+    ...(dateFilter && { date: dateFilter }),
+    ...(amountFilter && { amount: amountFilter }),
     ...(search && {
       OR: [
         { description: { contains: search, mode: 'insensitive' } },

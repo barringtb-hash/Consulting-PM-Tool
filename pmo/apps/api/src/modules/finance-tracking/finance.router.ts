@@ -5,10 +5,13 @@
  * Admin-only module for tracking expenses, budgets, and recurring costs.
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { requireAuth } from '../../auth/auth.middleware';
 import { requireRole } from '../../auth/role.middleware';
-import { runWithTenant } from '../../tenant/tenant.context';
+import {
+  tenantMiddleware,
+  type TenantRequest,
+} from '../../tenant/tenant.middleware';
 import * as categoryService from './services/category.service';
 import * as expenseService from './services/expense.service';
 import * as budgetService from './services/budget.service';
@@ -32,12 +35,14 @@ import {
 } from '../../validation/finance';
 import * as categorizationService from './ai/categorization.service';
 import * as anomalyService from './ai/anomaly-detection.service';
+import type { AnomalyResult } from './ai/anomaly-detection.service';
 import * as forecastingService from './ai/forecasting.service';
 
 const router = Router();
 
-// All finance routes require authentication
+// All finance routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // MIDDLEWARE: Admin check for write operations
@@ -50,7 +55,7 @@ const requireFinanceAdmin = requireRole('ADMIN');
 // ============================================================================
 
 // List categories
-router.get('/categories', async (req: Request, res: Response) => {
+router.get('/categories', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = listCategoriesSchema.safeParse(req.query);
     if (!parsed.success) {
@@ -59,11 +64,7 @@ router.get('/categories', async (req: Request, res: Response) => {
         .json({ error: 'Invalid parameters', details: parsed.error.flatten() });
     }
 
-    const result = await runWithTenant(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      () => categoryService.listCategories(parsed.data) as any,
-      req.tenantId!,
-    );
+    const result = await categoryService.listCategories(parsed.data);
     return res.json(result);
   } catch (error) {
     console.error('Error listing categories:', error);
@@ -72,17 +73,14 @@ router.get('/categories', async (req: Request, res: Response) => {
 });
 
 // Get category by ID
-router.get('/categories/:id', async (req: Request, res: Response) => {
+router.get('/categories/:id', async (req: TenantRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid category ID' });
     }
 
-    const category = await runWithTenant(
-      () => categoryService.getCategoryById(id),
-      req.tenantId!,
-    );
+    const category = await categoryService.getCategoryById(id);
 
     if (!category) {
       return res.status(404).json({ error: 'Category not found' });
@@ -99,7 +97,7 @@ router.get('/categories/:id', async (req: Request, res: Response) => {
 router.post(
   '/categories',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const parsed = createCategorySchema.safeParse(req.body);
       if (!parsed.success) {
@@ -108,10 +106,7 @@ router.post(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const category = await runWithTenant(
-        () => categoryService.createCategory(parsed.data),
-        req.tenantId!,
-      );
+      const category = await categoryService.createCategory(parsed.data);
 
       return res.status(201).json({ category });
     } catch (error) {
@@ -127,7 +122,7 @@ router.post(
 router.put(
   '/categories/:id',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -141,10 +136,7 @@ router.put(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const category = await runWithTenant(
-        () => categoryService.updateCategory(id, parsed.data),
-        req.tenantId!,
-      );
+      const category = await categoryService.updateCategory(id, parsed.data);
 
       return res.json({ category });
     } catch (error) {
@@ -160,17 +152,14 @@ router.put(
 router.delete(
   '/categories/:id',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid category ID' });
       }
 
-      await runWithTenant(
-        () => categoryService.deleteCategory(id),
-        req.tenantId!,
-      );
+      await categoryService.deleteCategory(id);
 
       return res.status(204).send();
     } catch (error) {
@@ -187,7 +176,7 @@ router.delete(
 // ============================================================================
 
 // List expenses
-router.get('/expenses', async (req: Request, res: Response) => {
+router.get('/expenses', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = listExpensesSchema.safeParse(req.query);
     if (!parsed.success) {
@@ -196,10 +185,7 @@ router.get('/expenses', async (req: Request, res: Response) => {
         .json({ error: 'Invalid parameters', details: parsed.error.flatten() });
     }
 
-    const result = await runWithTenant(
-      () => expenseService.listExpenses(parsed.data),
-      req.tenantId!,
-    );
+    const result = await expenseService.listExpenses(parsed.data);
 
     return res.json(result);
   } catch (error) {
@@ -209,18 +195,14 @@ router.get('/expenses', async (req: Request, res: Response) => {
 });
 
 // Get expense stats
-router.get('/expenses/stats', async (req: Request, res: Response) => {
+router.get('/expenses/stats', async (req: TenantRequest, res: Response) => {
   try {
     const { startDate, endDate, accountId } = req.query;
-    const stats = await runWithTenant(
-      () =>
-        expenseService.getExpenseStats({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-          accountId: accountId ? parseInt(accountId as string, 10) : undefined,
-        }),
-      req.tenantId!,
-    );
+    const stats = await expenseService.getExpenseStats({
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
+      accountId: accountId ? parseInt(accountId as string, 10) : undefined,
+    });
 
     return res.json(stats);
   } catch (error) {
@@ -230,17 +212,14 @@ router.get('/expenses/stats', async (req: Request, res: Response) => {
 });
 
 // Get expense by ID
-router.get('/expenses/:id', async (req: Request, res: Response) => {
+router.get('/expenses/:id', async (req: TenantRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid expense ID' });
     }
 
-    const expense = await runWithTenant(
-      () => expenseService.getExpenseById(id),
-      req.tenantId!,
-    );
+    const expense = await expenseService.getExpenseById(id);
 
     if (!expense) {
       return res.status(404).json({ error: 'Expense not found' });
@@ -254,7 +233,7 @@ router.get('/expenses/:id', async (req: Request, res: Response) => {
 });
 
 // Create expense
-router.post('/expenses', async (req: Request, res: Response) => {
+router.post('/expenses', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = createExpenseSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -263,9 +242,9 @@ router.post('/expenses', async (req: Request, res: Response) => {
         .json({ error: 'Invalid input', details: parsed.error.flatten() });
     }
 
-    const expense = await runWithTenant(
-      () => expenseService.createExpense(parsed.data, req.user!.id),
-      req.tenantId!,
+    const expense = await expenseService.createExpense(
+      parsed.data,
+      req.userId!,
     );
 
     return res.status(201).json({ expense });
@@ -278,7 +257,7 @@ router.post('/expenses', async (req: Request, res: Response) => {
 });
 
 // Update expense
-router.put('/expenses/:id', async (req: Request, res: Response) => {
+router.put('/expenses/:id', async (req: TenantRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -292,9 +271,10 @@ router.put('/expenses/:id', async (req: Request, res: Response) => {
         .json({ error: 'Invalid input', details: parsed.error.flatten() });
     }
 
-    const expense = await runWithTenant(
-      () => expenseService.updateExpense(id, parsed.data, req.user!.id),
-      req.tenantId!,
+    const expense = await expenseService.updateExpense(
+      id,
+      parsed.data,
+      req.userId!,
     );
 
     return res.json({ expense });
@@ -307,17 +287,14 @@ router.put('/expenses/:id', async (req: Request, res: Response) => {
 });
 
 // Delete expense
-router.delete('/expenses/:id', async (req: Request, res: Response) => {
+router.delete('/expenses/:id', async (req: TenantRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid expense ID' });
     }
 
-    await runWithTenant(
-      () => expenseService.deleteExpense(id, req.user!.id),
-      req.tenantId!,
-    );
+    await expenseService.deleteExpense(id, req.userId!);
 
     return res.status(204).send();
   } catch (error) {
@@ -332,7 +309,7 @@ router.delete('/expenses/:id', async (req: Request, res: Response) => {
 router.post(
   '/expenses/:id/approve',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -346,10 +323,10 @@ router.post(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const expense = await runWithTenant(
-        () =>
-          expenseService.approveExpense(id, req.user!.id, parsed.data.notes),
-        req.tenantId!,
+      const expense = await expenseService.approveExpense(
+        id,
+        req.userId!,
+        parsed.data.notes,
       );
 
       return res.json({ expense });
@@ -366,7 +343,7 @@ router.post(
 router.post(
   '/expenses/:id/reject',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -380,10 +357,10 @@ router.post(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const expense = await runWithTenant(
-        () =>
-          expenseService.rejectExpense(id, req.user!.id, parsed.data.reason),
-        req.tenantId!,
+      const expense = await expenseService.rejectExpense(
+        id,
+        req.userId!,
+        parsed.data.reason,
       );
 
       return res.json({ expense });
@@ -400,17 +377,14 @@ router.post(
 router.post(
   '/expenses/:id/paid',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid expense ID' });
       }
 
-      const expense = await runWithTenant(
-        () => expenseService.markExpenseAsPaid(id, req.user!.id),
-        req.tenantId!,
-      );
+      const expense = await expenseService.markExpenseAsPaid(id, req.userId!);
 
       return res.json({ expense });
     } catch (error) {
@@ -429,7 +403,7 @@ router.post(
 // ============================================================================
 
 // List budgets
-router.get('/budgets', async (req: Request, res: Response) => {
+router.get('/budgets', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = listBudgetsSchema.safeParse(req.query);
     if (!parsed.success) {
@@ -438,10 +412,7 @@ router.get('/budgets', async (req: Request, res: Response) => {
         .json({ error: 'Invalid parameters', details: parsed.error.flatten() });
     }
 
-    const result = await runWithTenant(
-      () => budgetService.listBudgets(parsed.data),
-      req.tenantId!,
-    );
+    const result = await budgetService.listBudgets(parsed.data);
 
     return res.json(result);
   } catch (error) {
@@ -451,12 +422,9 @@ router.get('/budgets', async (req: Request, res: Response) => {
 });
 
 // Get budget stats
-router.get('/budgets/stats', async (req: Request, res: Response) => {
+router.get('/budgets/stats', async (req: TenantRequest, res: Response) => {
   try {
-    const stats = await runWithTenant(
-      () => budgetService.getBudgetStats(),
-      req.tenantId!,
-    );
+    const stats = await budgetService.getBudgetStats();
     return res.json(stats);
   } catch (error) {
     console.error('Error getting budget stats:', error);
@@ -465,17 +433,14 @@ router.get('/budgets/stats', async (req: Request, res: Response) => {
 });
 
 // Get budget by ID
-router.get('/budgets/:id', async (req: Request, res: Response) => {
+router.get('/budgets/:id', async (req: TenantRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid budget ID' });
     }
 
-    const budget = await runWithTenant(
-      () => budgetService.getBudgetById(id),
-      req.tenantId!,
-    );
+    const budget = await budgetService.getBudgetById(id);
 
     if (!budget) {
       return res.status(404).json({ error: 'Budget not found' });
@@ -489,37 +454,38 @@ router.get('/budgets/:id', async (req: Request, res: Response) => {
 });
 
 // Get budget expenses
-router.get('/budgets/:id/expenses', async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid budget ID' });
+router.get(
+  '/budgets/:id/expenses',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid budget ID' });
+      }
+
+      const { page, limit } = req.query;
+      const result = await budgetService.getBudgetExpenses(id, {
+        page: page ? parseInt(page as string, 10) : undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
+      });
+
+      return res.json(result);
+    } catch (error) {
+      console.error('Error getting budget expenses:', error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to get budget expenses';
+      return res.status(400).json({ error: message });
     }
-
-    const { page, limit } = req.query;
-    const result = await runWithTenant(
-      () =>
-        budgetService.getBudgetExpenses(id, {
-          page: page ? parseInt(page as string, 10) : undefined,
-          limit: limit ? parseInt(limit as string, 10) : undefined,
-        }),
-      req.tenantId!,
-    );
-
-    return res.json(result);
-  } catch (error) {
-    console.error('Error getting budget expenses:', error);
-    const message =
-      error instanceof Error ? error.message : 'Failed to get budget expenses';
-    return res.status(400).json({ error: message });
-  }
-});
+  },
+);
 
 // Create budget (admin only)
 router.post(
   '/budgets',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const parsed = createBudgetSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -528,10 +494,7 @@ router.post(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const budget = await runWithTenant(
-        () => budgetService.createBudget(parsed.data, req.user!.id),
-        req.tenantId!,
-      );
+      const budget = await budgetService.createBudget(parsed.data, req.userId!);
 
       return res.status(201).json({ budget });
     } catch (error) {
@@ -547,7 +510,7 @@ router.post(
 router.put(
   '/budgets/:id',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -561,10 +524,7 @@ router.put(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const budget = await runWithTenant(
-        () => budgetService.updateBudget(id, parsed.data),
-        req.tenantId!,
-      );
+      const budget = await budgetService.updateBudget(id, parsed.data);
 
       return res.json({ budget });
     } catch (error) {
@@ -580,14 +540,14 @@ router.put(
 router.delete(
   '/budgets/:id',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid budget ID' });
       }
 
-      await runWithTenant(() => budgetService.deleteBudget(id), req.tenantId!);
+      await budgetService.deleteBudget(id);
 
       return res.status(204).send();
     } catch (error) {
@@ -604,7 +564,7 @@ router.delete(
 // ============================================================================
 
 // List recurring costs
-router.get('/recurring-costs', async (req: Request, res: Response) => {
+router.get('/recurring-costs', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = listRecurringCostsSchema.safeParse(req.query);
     if (!parsed.success) {
@@ -613,10 +573,7 @@ router.get('/recurring-costs', async (req: Request, res: Response) => {
         .json({ error: 'Invalid parameters', details: parsed.error.flatten() });
     }
 
-    const result = await runWithTenant(
-      () => recurringCostService.listRecurringCosts(parsed.data),
-      req.tenantId!,
-    );
+    const result = await recurringCostService.listRecurringCosts(parsed.data);
 
     return res.json(result);
   } catch (error) {
@@ -626,68 +583,67 @@ router.get('/recurring-costs', async (req: Request, res: Response) => {
 });
 
 // Get recurring cost stats
-router.get('/recurring-costs/stats', async (req: Request, res: Response) => {
-  try {
-    const stats = await runWithTenant(
-      () => recurringCostService.getRecurringCostStats(),
-      req.tenantId!,
-    );
-    return res.json(stats);
-  } catch (error) {
-    console.error('Error getting recurring cost stats:', error);
-    return res
-      .status(500)
-      .json({ error: 'Failed to get recurring cost stats' });
-  }
-});
+router.get(
+  '/recurring-costs/stats',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const stats = await recurringCostService.getRecurringCostStats();
+      return res.json(stats);
+    } catch (error) {
+      console.error('Error getting recurring cost stats:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to get recurring cost stats' });
+    }
+  },
+);
 
 // Get upcoming renewals
-router.get('/recurring-costs/upcoming', async (req: Request, res: Response) => {
-  try {
-    const { days } = req.query;
-    const costs = await runWithTenant(
-      () =>
-        recurringCostService.getUpcomingRenewals(
-          days ? parseInt(days as string, 10) : 30,
-        ),
-      req.tenantId!,
-    );
-    return res.json({ costs });
-  } catch (error) {
-    console.error('Error getting upcoming renewals:', error);
-    return res.status(500).json({ error: 'Failed to get upcoming renewals' });
-  }
-});
+router.get(
+  '/recurring-costs/upcoming',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const { days } = req.query;
+      const costs = await recurringCostService.getUpcomingRenewals(
+        days ? parseInt(days as string, 10) : 30,
+      );
+      return res.json({ costs });
+    } catch (error) {
+      console.error('Error getting upcoming renewals:', error);
+      return res.status(500).json({ error: 'Failed to get upcoming renewals' });
+    }
+  },
+);
 
 // Get recurring cost by ID
-router.get('/recurring-costs/:id', async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid recurring cost ID' });
+router.get(
+  '/recurring-costs/:id',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid recurring cost ID' });
+      }
+
+      const cost = await recurringCostService.getRecurringCostById(id);
+
+      if (!cost) {
+        return res.status(404).json({ error: 'Recurring cost not found' });
+      }
+
+      return res.json({ cost });
+    } catch (error) {
+      console.error('Error getting recurring cost:', error);
+      return res.status(500).json({ error: 'Failed to get recurring cost' });
     }
-
-    const cost = await runWithTenant(
-      () => recurringCostService.getRecurringCostById(id),
-      req.tenantId!,
-    );
-
-    if (!cost) {
-      return res.status(404).json({ error: 'Recurring cost not found' });
-    }
-
-    return res.json({ cost });
-  } catch (error) {
-    console.error('Error getting recurring cost:', error);
-    return res.status(500).json({ error: 'Failed to get recurring cost' });
-  }
-});
+  },
+);
 
 // Create recurring cost (admin only)
 router.post(
   '/recurring-costs',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const parsed = createRecurringCostSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -696,10 +652,9 @@ router.post(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const cost = await runWithTenant(
-        () =>
-          recurringCostService.createRecurringCost(parsed.data, req.user!.id),
-        req.tenantId!,
+      const cost = await recurringCostService.createRecurringCost(
+        parsed.data,
+        req.userId!,
       );
 
       return res.status(201).json({ cost });
@@ -718,7 +673,7 @@ router.post(
 router.put(
   '/recurring-costs/:id',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -732,9 +687,9 @@ router.put(
           .json({ error: 'Invalid input', details: parsed.error.flatten() });
       }
 
-      const cost = await runWithTenant(
-        () => recurringCostService.updateRecurringCost(id, parsed.data),
-        req.tenantId!,
+      const cost = await recurringCostService.updateRecurringCost(
+        id,
+        parsed.data,
       );
 
       return res.json({ cost });
@@ -753,17 +708,14 @@ router.put(
 router.delete(
   '/recurring-costs/:id',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid recurring cost ID' });
       }
 
-      await runWithTenant(
-        () => recurringCostService.deleteRecurringCost(id),
-        req.tenantId!,
-      );
+      await recurringCostService.deleteRecurringCost(id);
 
       return res.status(204).send();
     } catch (error) {
@@ -781,21 +733,18 @@ router.delete(
 router.post(
   '/recurring-costs/:id/generate',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid recurring cost ID' });
       }
 
-      const result = await runWithTenant(
-        () =>
-          recurringCostService.generateExpenseFromRecurringCost(
-            id,
-            req.user!.id,
-          ),
-        req.tenantId!,
-      );
+      const result =
+        await recurringCostService.generateExpenseFromRecurringCost(
+          id,
+          req.userId!,
+        );
 
       return res.status(201).json(result);
     } catch (error) {
@@ -812,17 +761,13 @@ router.post(
 // ============================================================================
 
 // Dashboard overview
-router.get('/analytics/overview', async (req: Request, res: Response) => {
+router.get('/analytics/overview', async (req: TenantRequest, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
-    const overview = await runWithTenant(
-      () =>
-        analyticsService.getDashboardOverview({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-        }),
-      req.tenantId!,
-    );
+    const overview = await analyticsService.getDashboardOverview({
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
+    });
     return res.json(overview);
   } catch (error) {
     console.error('Error getting dashboard overview:', error);
@@ -831,41 +776,36 @@ router.get('/analytics/overview', async (req: Request, res: Response) => {
 });
 
 // Spending by category
-router.get('/analytics/by-category', async (req: Request, res: Response) => {
-  try {
-    const { startDate, endDate, accountId } = req.query;
-    const data = await runWithTenant(
-      () =>
-        analyticsService.getSpendingByCategory({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-          accountId: accountId ? parseInt(accountId as string, 10) : undefined,
-        }),
-      req.tenantId!,
-    );
-    return res.json({ categories: data });
-  } catch (error) {
-    console.error('Error getting spending by category:', error);
-    return res
-      .status(500)
-      .json({ error: 'Failed to get spending by category' });
-  }
-});
+router.get(
+  '/analytics/by-category',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const { startDate, endDate, accountId } = req.query;
+      const data = await analyticsService.getSpendingByCategory({
+        startDate: startDate as string | undefined,
+        endDate: endDate as string | undefined,
+        accountId: accountId ? parseInt(accountId as string, 10) : undefined,
+      });
+      return res.json({ categories: data });
+    } catch (error) {
+      console.error('Error getting spending by category:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to get spending by category' });
+    }
+  },
+);
 
 // Spending trends
-router.get('/analytics/trends', async (req: Request, res: Response) => {
+router.get('/analytics/trends', async (req: TenantRequest, res: Response) => {
   try {
     const { startDate, endDate, groupBy, accountId } = req.query;
-    const data = await runWithTenant(
-      () =>
-        analyticsService.getSpendingTrends({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-          groupBy: groupBy as 'day' | 'week' | 'month' | undefined,
-          accountId: accountId ? parseInt(accountId as string, 10) : undefined,
-        }),
-      req.tenantId!,
-    );
+    const data = await analyticsService.getSpendingTrends({
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
+      groupBy: groupBy as 'day' | 'week' | 'month' | undefined,
+      accountId: accountId ? parseInt(accountId as string, 10) : undefined,
+    });
     return res.json({ trends: data });
   } catch (error) {
     console.error('Error getting spending trends:', error);
@@ -874,90 +814,90 @@ router.get('/analytics/trends', async (req: Request, res: Response) => {
 });
 
 // Account profitability
-router.get('/analytics/profitability', async (req: Request, res: Response) => {
-  try {
-    const { startDate, endDate, accountIds } = req.query;
-    const data = await runWithTenant(
-      () =>
-        analyticsService.getAccountProfitability({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-          accountIds: accountIds
-            ? (accountIds as string).split(',').map((id) => parseInt(id, 10))
-            : undefined,
-        }),
-      req.tenantId!,
-    );
-    return res.json({ accounts: data });
-  } catch (error) {
-    console.error('Error getting account profitability:', error);
-    return res
-      .status(500)
-      .json({ error: 'Failed to get account profitability' });
-  }
-});
+router.get(
+  '/analytics/profitability',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const { startDate, endDate, accountIds } = req.query;
+      const data = await analyticsService.getAccountProfitability({
+        startDate: startDate as string | undefined,
+        endDate: endDate as string | undefined,
+        accountIds: accountIds
+          ? (accountIds as string).split(',').map((id) => parseInt(id, 10))
+          : undefined,
+      });
+      return res.json({ accounts: data });
+    } catch (error) {
+      console.error('Error getting account profitability:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to get account profitability' });
+    }
+  },
+);
 
 // Expenses by account
-router.get('/analytics/by-account', async (req: Request, res: Response) => {
-  try {
-    const { startDate, endDate, limit } = req.query;
-    const data = await runWithTenant(
-      () =>
-        analyticsService.getExpensesByAccount({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-          limit: limit ? parseInt(limit as string, 10) : undefined,
-        }),
-      req.tenantId!,
-    );
-    return res.json({ accounts: data });
-  } catch (error) {
-    console.error('Error getting expenses by account:', error);
-    return res.status(500).json({ error: 'Failed to get expenses by account' });
-  }
-});
+router.get(
+  '/analytics/by-account',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const { startDate, endDate, limit } = req.query;
+      const data = await analyticsService.getExpensesByAccount({
+        startDate: startDate as string | undefined,
+        endDate: endDate as string | undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
+      });
+      return res.json({ accounts: data });
+    } catch (error) {
+      console.error('Error getting expenses by account:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to get expenses by account' });
+    }
+  },
+);
 
 // Top vendors
-router.get('/analytics/top-vendors', async (req: Request, res: Response) => {
-  try {
-    const { startDate, endDate, limit } = req.query;
-    const data = await runWithTenant(
-      () =>
-        analyticsService.getTopVendors({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-          limit: limit ? parseInt(limit as string, 10) : undefined,
-        }),
-      req.tenantId!,
-    );
-    return res.json({ vendors: data });
-  } catch (error) {
-    console.error('Error getting top vendors:', error);
-    return res.status(500).json({ error: 'Failed to get top vendors' });
-  }
-});
+router.get(
+  '/analytics/top-vendors',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const { startDate, endDate, limit } = req.query;
+      const data = await analyticsService.getTopVendors({
+        startDate: startDate as string | undefined,
+        endDate: endDate as string | undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
+      });
+      return res.json({ vendors: data });
+    } catch (error) {
+      console.error('Error getting top vendors:', error);
+      return res.status(500).json({ error: 'Failed to get top vendors' });
+    }
+  },
+);
 
 // ============================================================================
 // AI ROUTES
 // ============================================================================
 
 // Get AI category suggestions
-router.post('/ai/categorize', async (req: Request, res: Response) => {
+router.post('/ai/categorize', async (req: TenantRequest, res: Response) => {
   try {
-    const { description, vendorName, amount } = req.body;
+    const body = req.body as {
+      description?: string;
+      vendorName?: string;
+      amount?: string | number;
+    };
+    const { description, vendorName, amount } = body;
 
     if (!description) {
       return res.status(400).json({ error: 'Description is required' });
     }
 
-    const result = await runWithTenant(
-      () =>
-        categorizationService.suggestCategory(
-          description,
-          vendorName,
-          amount ? parseFloat(amount) : undefined,
-        ),
-      req.tenantId!,
+    const result = await categorizationService.suggestCategory(
+      description,
+      vendorName,
+      amount ? parseFloat(String(amount)) : undefined,
     );
 
     return res.json(result);
@@ -973,18 +913,22 @@ router.post('/ai/categorize', async (req: Request, res: Response) => {
 router.post(
   '/ai/categorize/bulk',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
-      const { expenses } = req.body;
+      type BulkExpenseInput = {
+        id: number;
+        description: string;
+        vendorName?: string;
+        amount?: number;
+      };
+      const body = req.body as { expenses?: BulkExpenseInput[] };
+      const { expenses } = body;
 
       if (!Array.isArray(expenses)) {
         return res.status(400).json({ error: 'Expenses array is required' });
       }
 
-      const results = await runWithTenant(
-        () => categorizationService.bulkCategorize(expenses),
-        req.tenantId!,
-      );
+      const results = await categorizationService.bulkCategorize(expenses);
 
       return res.json({
         results: Object.fromEntries(results),
@@ -997,63 +941,64 @@ router.post(
 );
 
 // Record categorization feedback
-router.post('/ai/categorize/feedback', async (req: Request, res: Response) => {
-  try {
-    const { expenseId, suggestedCategoryId, actualCategoryId, wasAccepted } =
-      req.body;
+router.post(
+  '/ai/categorize/feedback',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const body = req.body as {
+        expenseId?: number;
+        suggestedCategoryId?: number;
+        actualCategoryId?: number;
+        wasAccepted?: boolean;
+      };
+      const { expenseId, suggestedCategoryId, actualCategoryId, wasAccepted } =
+        body;
 
-    await runWithTenant(
-      () =>
-        categorizationService.recordCategorizationFeedback({
-          expenseId,
-          suggestedCategoryId,
-          actualCategoryId,
-          wasAccepted,
-        }),
-      req.tenantId!,
-    );
+      await categorizationService.recordCategorizationFeedback({
+        expenseId: expenseId!,
+        suggestedCategoryId: suggestedCategoryId!,
+        actualCategoryId: actualCategoryId!,
+        wasAccepted: wasAccepted!,
+      });
 
-    return res.json({ success: true });
-  } catch (error) {
-    console.error('Error recording feedback:', error);
-    return res.status(500).json({ error: 'Failed to record feedback' });
-  }
-});
+      return res.json({ success: true });
+    } catch (error) {
+      console.error('Error recording feedback:', error);
+      return res.status(500).json({ error: 'Failed to record feedback' });
+    }
+  },
+);
 
 // Detect anomalies for an expense
-router.get('/ai/anomalies/:expenseId', async (req: Request, res: Response) => {
-  try {
-    const expenseId = parseInt(req.params.expenseId, 10);
-    if (isNaN(expenseId)) {
-      return res.status(400).json({ error: 'Invalid expense ID' });
+router.get(
+  '/ai/anomalies/:expenseId',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const expenseId = parseInt(req.params.expenseId, 10);
+      if (isNaN(expenseId)) {
+        return res.status(400).json({ error: 'Invalid expense ID' });
+      }
+
+      const anomalies = await anomalyService.detectExpenseAnomalies(expenseId);
+
+      return res.json({ anomalies });
+    } catch (error) {
+      console.error('Error detecting anomalies:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to detect anomalies';
+      return res.status(400).json({ error: message });
     }
-
-    const anomalies = await runWithTenant(
-      () => anomalyService.detectExpenseAnomalies(expenseId),
-      req.tenantId!,
-    );
-
-    return res.json({ anomalies });
-  } catch (error) {
-    console.error('Error detecting anomalies:', error);
-    const message =
-      error instanceof Error ? error.message : 'Failed to detect anomalies';
-    return res.status(400).json({ error: message });
-  }
-});
+  },
+);
 
 // Get anomaly statistics
-router.get('/ai/anomalies/stats', async (req: Request, res: Response) => {
+router.get('/ai/anomalies/stats', async (req: TenantRequest, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
-    const stats = await runWithTenant(
-      () =>
-        anomalyService.getAnomalyStats({
-          startDate: startDate as string | undefined,
-          endDate: endDate as string | undefined,
-        }),
-      req.tenantId!,
-    );
+    const stats = await anomalyService.getAnomalyStats({
+      startDate: startDate as string | undefined,
+      endDate: endDate as string | undefined,
+    });
 
     return res.json(stats);
   } catch (error) {
@@ -1066,12 +1011,9 @@ router.get('/ai/anomalies/stats', async (req: Request, res: Response) => {
 router.post(
   '/ai/anomalies/scan',
   requireFinanceAdmin,
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
-      const result = await runWithTenant(
-        () => anomalyService.scanPendingExpenses(),
-        req.tenantId!,
-      );
+      const result = await anomalyService.scanPendingExpenses();
 
       return res.json(result);
     } catch (error) {
@@ -1082,42 +1024,37 @@ router.post(
 );
 
 // Get AI anomaly insights
-router.post('/ai/anomalies/insights', async (req: Request, res: Response) => {
-  try {
-    const { anomalies } = req.body;
+router.post(
+  '/ai/anomalies/insights',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const body = req.body as { anomalies?: AnomalyResult[] };
+      const { anomalies } = body;
 
-    if (!Array.isArray(anomalies)) {
-      return res.status(400).json({ error: 'Anomalies array is required' });
+      if (!Array.isArray(anomalies)) {
+        return res.status(400).json({ error: 'Anomalies array is required' });
+      }
+
+      const insights = await anomalyService.getAnomalyInsights(anomalies);
+
+      return res.json({ insights });
+    } catch (error) {
+      console.error('Error getting anomaly insights:', error);
+      return res.status(500).json({ error: 'Failed to get anomaly insights' });
     }
-
-    const insights = await runWithTenant(
-      () => anomalyService.getAnomalyInsights(anomalies),
-      req.tenantId!,
-    );
-
-    return res.json({ insights });
-  } catch (error) {
-    console.error('Error getting anomaly insights:', error);
-    return res.status(500).json({ error: 'Failed to get anomaly insights' });
-  }
-});
+  },
+);
 
 // Generate spending forecast
-router.get('/ai/forecast', async (req: Request, res: Response) => {
+router.get('/ai/forecast', async (req: TenantRequest, res: Response) => {
   try {
     const { periods, periodType, categoryId } = req.query;
 
-    const forecast = await runWithTenant(
-      () =>
-        forecastingService.generateSpendingForecast({
-          periods: periods ? parseInt(periods as string, 10) : undefined,
-          periodType: periodType as 'MONTH' | 'QUARTER' | undefined,
-          categoryId: categoryId
-            ? parseInt(categoryId as string, 10)
-            : undefined,
-        }),
-      req.tenantId!,
-    );
+    const forecast = await forecastingService.generateSpendingForecast({
+      periods: periods ? parseInt(periods as string, 10) : undefined,
+      periodType: periodType as 'MONTH' | 'QUARTER' | undefined,
+      categoryId: categoryId ? parseInt(categoryId as string, 10) : undefined,
+    });
 
     return res.json(forecast);
   } catch (error) {
@@ -1131,12 +1068,10 @@ router.get('/ai/forecast', async (req: Request, res: Response) => {
 // Get budget recommendations
 router.get(
   '/ai/budget-recommendations',
-  async (req: Request, res: Response) => {
+  async (req: TenantRequest, res: Response) => {
     try {
-      const recommendations = await runWithTenant(
-        () => forecastingService.generateBudgetRecommendations(),
-        req.tenantId!,
-      );
+      const recommendations =
+        await forecastingService.generateBudgetRecommendations();
 
       return res.json({ recommendations });
     } catch (error) {
@@ -1149,20 +1084,16 @@ router.get(
 );
 
 // Get cash flow projection
-router.get('/ai/cash-flow', async (req: Request, res: Response) => {
+router.get('/ai/cash-flow', async (req: TenantRequest, res: Response) => {
   try {
     const { days, startingBalance } = req.query;
 
-    const projection = await runWithTenant(
-      () =>
-        forecastingService.generateCashFlowProjection({
-          days: days ? parseInt(days as string, 10) : undefined,
-          startingBalance: startingBalance
-            ? parseFloat(startingBalance as string)
-            : undefined,
-        }),
-      req.tenantId!,
-    );
+    const projection = await forecastingService.generateCashFlowProjection({
+      days: days ? parseInt(days as string, 10) : undefined,
+      startingBalance: startingBalance
+        ? parseFloat(startingBalance as string)
+        : undefined,
+    });
 
     return res.json({ projection });
   } catch (error) {
@@ -1174,12 +1105,9 @@ router.get('/ai/cash-flow', async (req: Request, res: Response) => {
 });
 
 // Get financial insights
-router.get('/ai/insights', async (req: Request, res: Response) => {
+router.get('/ai/insights', async (req: TenantRequest, res: Response) => {
   try {
-    const insights = await runWithTenant(
-      () => forecastingService.getFinancialInsights(),
-      req.tenantId!,
-    );
+    const insights = await forecastingService.getFinancialInsights();
 
     return res.json(insights);
   } catch (error) {
