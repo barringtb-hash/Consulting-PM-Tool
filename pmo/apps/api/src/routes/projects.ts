@@ -92,8 +92,21 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
       meta: result.meta,
     });
   } catch (error) {
-    log.error('List projects error', error);
-    res.status(500).json({ error: 'Failed to list projects' });
+    const errorInfo = {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      // Include Prisma error details if available
+      code: (error as { code?: string }).code,
+      meta: (error as { meta?: unknown }).meta,
+    };
+    log.error('List projects error', error, errorInfo);
+
+    // In development, include error details for debugging
+    const isDev = process.env.NODE_ENV === 'development';
+    res.status(500).json({
+      error: 'Failed to list projects',
+      ...(isDev && { details: errorInfo }),
+    });
   }
 });
 
