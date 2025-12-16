@@ -88,8 +88,7 @@ export interface CreateRecurringCostInput {
   renewalAlertDays?: number;
 }
 
-export interface UpdateRecurringCostInput
-  extends Partial<CreateRecurringCostInput> {
+export interface UpdateRecurringCostInput extends Partial<CreateRecurringCostInput> {
   status?: RecurringCostStatus;
 }
 

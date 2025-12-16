@@ -14,8 +14,10 @@ import {
   type UpdatePublishingConnectionInput,
 } from '../../../../packages/types/marketing';
 
-interface PublishingConnectionResponse
-  extends Omit<PublishingConnection, 'createdAt' | 'updatedAt' | 'expiresAt'> {
+interface PublishingConnectionResponse extends Omit<
+  PublishingConnection,
+  'createdAt' | 'updatedAt' | 'expiresAt'
+> {
   createdAt: string;
   updatedAt: string;
   expiresAt?: string | null;

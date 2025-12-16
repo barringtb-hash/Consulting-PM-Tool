@@ -1,10 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  type Location,
-} from 'react-router';
+import { Link, useLocation, useNavigate, type Location } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 
 function LoginPage(): JSX.Element {

@@ -20,11 +20,10 @@ import {
   type ContentLintResult,
 } from '../../../../packages/types/marketing';
 
-interface MarketingContentResponse
-  extends Omit<
-    MarketingContent,
-    'createdAt' | 'updatedAt' | 'publishedAt' | 'scheduledFor' | 'sourceMeeting'
-  > {
+interface MarketingContentResponse extends Omit<
+  MarketingContent,
+  'createdAt' | 'updatedAt' | 'publishedAt' | 'scheduledFor' | 'sourceMeeting'
+> {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string | null;
