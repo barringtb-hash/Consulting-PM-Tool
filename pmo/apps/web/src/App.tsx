@@ -145,6 +145,24 @@ const OpportunityDetailPage = lazy(
   () => import('./pages/crm/OpportunityDetailPage'),
 );
 
+// Finance Tracking pages
+const FinanceDashboardPage = lazy(
+  () => import('./pages/finance/FinanceDashboardPage'),
+);
+const ExpensesPage = lazy(() => import('./pages/finance/ExpensesPage'));
+const ExpenseFormPage = lazy(() => import('./pages/finance/ExpenseFormPage'));
+const ExpenseDetailPage = lazy(
+  () => import('./pages/finance/ExpenseDetailPage'),
+);
+const BudgetsPage = lazy(() => import('./pages/finance/BudgetsPage'));
+const BudgetFormPage = lazy(() => import('./pages/finance/BudgetFormPage'));
+const RecurringCostsPage = lazy(
+  () => import('./pages/finance/RecurringCostsPage'),
+);
+const RecurringCostFormPage = lazy(
+  () => import('./pages/finance/RecurringCostFormPage'),
+);
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -622,6 +640,116 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <CustomerSuccessAnalyticsPage />
+                    </LazyPage>
+                  }
+                />
+              </>
+            )}
+
+            {/* Finance Tracking module (admin only) */}
+            {isModuleEnabled('financeTracking') && (
+              <>
+                <Route
+                  path="/finance"
+                  element={
+                    <LazyPage>
+                      <FinanceDashboardPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/expenses"
+                  element={
+                    <LazyPage>
+                      <ExpensesPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/expenses/new"
+                  element={
+                    <LazyPage>
+                      <ExpenseFormPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/expenses/:id"
+                  element={
+                    <LazyPage>
+                      <ExpenseDetailPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/expenses/:id/edit"
+                  element={
+                    <LazyPage>
+                      <ExpenseFormPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/budgets"
+                  element={
+                    <LazyPage>
+                      <BudgetsPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/budgets/new"
+                  element={
+                    <LazyPage>
+                      <BudgetFormPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/budgets/:id"
+                  element={
+                    <LazyPage>
+                      <BudgetFormPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/budgets/:id/edit"
+                  element={
+                    <LazyPage>
+                      <BudgetFormPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/recurring-costs"
+                  element={
+                    <LazyPage>
+                      <RecurringCostsPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/recurring-costs/new"
+                  element={
+                    <LazyPage>
+                      <RecurringCostFormPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/recurring-costs/:id"
+                  element={
+                    <LazyPage>
+                      <RecurringCostFormPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/finance/recurring-costs/:id/edit"
+                  element={
+                    <LazyPage>
+                      <RecurringCostFormPage />
                     </LazyPage>
                   }
                 />

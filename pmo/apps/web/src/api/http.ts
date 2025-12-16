@@ -1,4 +1,5 @@
 import { getStoredToken } from './token-storage';
+import { buildApiUrl } from './config';
 
 export interface ApiError extends Error {
   status?: number;
@@ -62,3 +63,58 @@ export async function handleResponse<T>(response: Response): Promise<T> {
 
   return (payload as T) ?? (null as T);
 }
+
+/**
+ * HTTP utility object for making API requests.
+ * Provides convenient methods that combine buildApiUrl, buildOptions, and handleResponse.
+ */
+export const http = {
+  async get<T>(path: string): Promise<T> {
+    const response = await fetch(
+      buildApiUrl(path),
+      buildOptions({ method: 'GET' }),
+    );
+    return handleResponse<T>(response);
+  },
+
+  async post<T>(path: string, body?: unknown): Promise<T> {
+    const response = await fetch(
+      buildApiUrl(path),
+      buildOptions({
+        method: 'POST',
+        body: body ? JSON.stringify(body) : undefined,
+      }),
+    );
+    return handleResponse<T>(response);
+  },
+
+  async put<T>(path: string, body?: unknown): Promise<T> {
+    const response = await fetch(
+      buildApiUrl(path),
+      buildOptions({
+        method: 'PUT',
+        body: body ? JSON.stringify(body) : undefined,
+      }),
+    );
+    return handleResponse<T>(response);
+  },
+
+  async patch<T>(path: string, body?: unknown): Promise<T> {
+    const response = await fetch(
+      buildApiUrl(path),
+      buildOptions({
+        method: 'PATCH',
+        body: body ? JSON.stringify(body) : undefined,
+      }),
+    );
+    return handleResponse<T>(response);
+  },
+
+  async delete<T>(path: string): Promise<T> {
+    const response = await fetch(
+      buildApiUrl(path),
+      buildOptions({ method: 'DELETE' }),
+    );
+    return handleResponse<T>(response);
+  },
+};
