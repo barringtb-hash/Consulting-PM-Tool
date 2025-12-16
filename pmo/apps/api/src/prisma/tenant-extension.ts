@@ -71,6 +71,24 @@ function needsTenantFiltering(model: string): boolean {
 }
 
 /**
+ * Create a Prisma-compatible "record not found" error.
+ * This error will be caught by existing error handlers that check for P2025.
+ */
+function createNotFoundError(
+  model: string,
+  operation: string,
+): Prisma.PrismaClientKnownRequestError {
+  return new Prisma.PrismaClientKnownRequestError(
+    `An operation failed because it depends on one or more records that were required but not found. Record to ${operation} not found.`,
+    {
+      code: 'P2025',
+      clientVersion: '5.0.0',
+      meta: { modelName: model },
+    },
+  );
+}
+
+/**
  * Create tenant-aware Prisma extension.
  *
  * Note: This is designed to work alongside the existing Prisma client.
@@ -187,9 +205,7 @@ export function createTenantExtension(baseClient: PrismaClient) {
                 });
 
                 if (!existing) {
-                  throw new Error(
-                    `Record not found or does not belong to current tenant`,
-                  );
+                  throw createNotFoundError(model, 'update');
                 }
               }
             }
@@ -232,9 +248,7 @@ export function createTenantExtension(baseClient: PrismaClient) {
                 });
 
                 if (!existing) {
-                  throw new Error(
-                    `Record not found or does not belong to current tenant`,
-                  );
+                  throw createNotFoundError(model, 'delete');
                 }
               }
             }
@@ -283,9 +297,7 @@ export function createTenantExtension(baseClient: PrismaClient) {
 
                 // If record exists but belongs to different tenant, throw error
                 if (existing && existing.tenantId !== tenantId) {
-                  throw new Error(
-                    `Record not found or does not belong to current tenant`,
-                  );
+                  throw createNotFoundError(model, 'upsert');
                 }
               }
             }
