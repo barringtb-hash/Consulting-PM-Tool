@@ -59,17 +59,39 @@ export async function getAccessibleClientIds(
     return null;
   }
 
-  // Get all unique account IDs from projects owned by this user
-  const projects = await prisma.project.findMany({
-    where: { ownerId: userId },
-    select: { accountId: true },
-    distinct: ['accountId'],
-  });
+  try {
+    // Get all unique account IDs from projects owned by this user
+    const projects = await prisma.project.findMany({
+      where: { ownerId: userId },
+      select: { accountId: true },
+      distinct: ['accountId'],
+    });
 
-  // Filter out null accountIds and return only valid numbers
-  return projects
-    .map((p: { accountId: number | null }) => p.accountId)
-    .filter((id: number | null): id is number => id !== null);
+    // Filter out null accountIds and return only valid numbers
+    return projects
+      .map((p: { accountId: number | null }) => p.accountId)
+      .filter((id: number | null): id is number => id !== null);
+  } catch (error) {
+    const errorMessage = (error as Error).message || '';
+    if (
+      errorMessage.includes('accountId') &&
+      errorMessage.includes('does not exist')
+    ) {
+      console.warn(
+        'Project.accountId column not found, falling back to clientId query',
+      );
+      // Fall back to clientId
+      const projects = await prisma.project.findMany({
+        where: { ownerId: userId },
+        select: { clientId: true },
+        distinct: ['clientId'],
+      });
+      return projects
+        .map((p: { clientId: number | null }) => p.clientId)
+        .filter((id: number | null): id is number => id !== null);
+    }
+    throw error;
+  }
 }
 
 /**

@@ -71,6 +71,7 @@ interface ComplianceResult {
 
 /**
  * Get document analyzer config by clientId (deprecated) or accountId (preferred)
+ * Handles case where accountId column may not exist in database yet
  */
 export async function getDocumentAnalyzerConfig(
   clientId?: number,
@@ -78,13 +79,36 @@ export async function getDocumentAnalyzerConfig(
 ) {
   // Prefer accountId if provided
   if (accountId) {
-    return prisma.documentAnalyzerConfig.findUnique({
-      where: { accountId },
-      include: {
-        account: { select: { id: true, name: true, industry: true } },
-        client: { select: { id: true, name: true, industry: true } },
-      },
-    });
+    try {
+      return await prisma.documentAnalyzerConfig.findUnique({
+        where: { accountId },
+        include: {
+          account: { select: { id: true, name: true, industry: true } },
+          client: { select: { id: true, name: true, industry: true } },
+        },
+      });
+    } catch (error) {
+      const errorMessage = (error as Error).message || '';
+      if (
+        errorMessage.includes('accountId') &&
+        errorMessage.includes('does not exist')
+      ) {
+        console.warn(
+          'DocumentAnalyzerConfig.accountId column not found, falling back to clientId query',
+        );
+        // Fall back to clientId query if we have it
+        if (clientId) {
+          return prisma.documentAnalyzerConfig.findUnique({
+            where: { clientId },
+            include: {
+              client: { select: { id: true, name: true, industry: true } },
+            },
+          });
+        }
+        return null;
+      }
+      throw error;
+    }
   }
   // Fall back to clientId (deprecated)
   if (clientId) {
@@ -107,7 +131,8 @@ export async function listDocumentAnalyzerConfigs(filters?: {
 }) {
   const whereClause: Prisma.DocumentAnalyzerConfigWhereInput = {};
 
-  // Prefer account filters
+  // Build where clause - prefer account filters if available
+  // Note: accountId column may not exist in older databases, so we handle errors gracefully
   if (filters?.accountId) {
     whereClause.accountId = filters.accountId;
   } else if (filters?.accountIds && filters.accountIds.length > 0) {
@@ -118,34 +143,87 @@ export async function listDocumentAnalyzerConfigs(filters?: {
     whereClause.clientId = { in: filters.clientIds };
   }
 
-  return prisma.documentAnalyzerConfig.findMany({
-    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-    include: {
-      client: { select: { id: true, name: true, industry: true } },
-      account: { select: { id: true, name: true, industry: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  try {
+    return await prisma.documentAnalyzerConfig.findMany({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+      include: {
+        client: { select: { id: true, name: true, industry: true } },
+        account: { select: { id: true, name: true, industry: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (error) {
+    // If query fails (e.g., accountId column doesn't exist), fall back to simpler query
+    const errorMessage = (error as Error).message || '';
+    if (
+      errorMessage.includes('accountId') &&
+      errorMessage.includes('does not exist')
+    ) {
+      console.warn(
+        'DocumentAnalyzerConfig.accountId column not found, falling back to clientId query',
+      );
+      // Retry without accountId filter - use clientId instead if we have account IDs
+      const fallbackWhere: Prisma.DocumentAnalyzerConfigWhereInput = {};
+      if (filters?.clientId) {
+        fallbackWhere.clientId = filters.clientId;
+      } else if (filters?.clientIds && filters.clientIds.length > 0) {
+        fallbackWhere.clientId = { in: filters.clientIds };
+      }
+      // Note: We lose accountId filtering but at least the query works
+
+      return await prisma.documentAnalyzerConfig.findMany({
+        where:
+          Object.keys(fallbackWhere).length > 0 ? fallbackWhere : undefined,
+        include: {
+          client: { select: { id: true, name: true, industry: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    throw error;
+  }
 }
 
 /**
  * Create document analyzer config linked to Account (preferred) or Client (deprecated)
+ * Handles case where accountId column may not exist in database yet
  */
 export async function createDocumentAnalyzerConfig(
   data: DocumentAnalyzerConfigInput & { clientId?: number; accountId?: number },
 ) {
   const { clientId, accountId, ...configData } = data;
-  return prisma.documentAnalyzerConfig.create({
-    data: {
-      ...(accountId && { accountId }),
-      ...(clientId && { clientId }),
-      ...configData,
-    },
-  });
+  try {
+    return await prisma.documentAnalyzerConfig.create({
+      data: {
+        ...(accountId && { accountId }),
+        ...(clientId && { clientId }),
+        ...configData,
+      },
+    });
+  } catch (error) {
+    const errorMessage = (error as Error).message || '';
+    if (
+      errorMessage.includes('accountId') &&
+      errorMessage.includes('does not exist')
+    ) {
+      console.warn(
+        'DocumentAnalyzerConfig.accountId column not found, creating with clientId only',
+      );
+      // Retry without accountId
+      return await prisma.documentAnalyzerConfig.create({
+        data: {
+          ...(clientId && { clientId }),
+          ...configData,
+        },
+      });
+    }
+    throw error;
+  }
 }
 
 /**
  * Update document analyzer config by clientId (deprecated) or accountId (preferred)
+ * Handles case where accountId column may not exist in database yet
  */
 export async function updateDocumentAnalyzerConfig(
   data: Partial<DocumentAnalyzerConfigInput>,
@@ -153,10 +231,33 @@ export async function updateDocumentAnalyzerConfig(
   accountId?: number,
 ) {
   if (accountId) {
-    return prisma.documentAnalyzerConfig.update({
-      where: { accountId },
-      data,
-    });
+    try {
+      return await prisma.documentAnalyzerConfig.update({
+        where: { accountId },
+        data,
+      });
+    } catch (error) {
+      const errorMessage = (error as Error).message || '';
+      if (
+        errorMessage.includes('accountId') &&
+        errorMessage.includes('does not exist')
+      ) {
+        console.warn(
+          'DocumentAnalyzerConfig.accountId column not found, falling back to clientId update',
+        );
+        // Fall back to clientId if available
+        if (clientId) {
+          return await prisma.documentAnalyzerConfig.update({
+            where: { clientId },
+            data,
+          });
+        }
+        throw new Error(
+          'Cannot update config: accountId column does not exist and no clientId provided',
+        );
+      }
+      throw error;
+    }
   }
   if (clientId) {
     return prisma.documentAnalyzerConfig.update({
