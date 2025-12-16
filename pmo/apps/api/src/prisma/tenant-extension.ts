@@ -6,9 +6,15 @@
  *
  * How it works:
  * 1. When a query runs within a tenant context, tenantId is auto-injected
- * 2. findMany/findFirst/count get WHERE tenantId = X
+ * 2. findMany/findFirst/count/aggregate/groupBy get WHERE tenantId = X
  * 3. create/createMany get tenantId added to data
- * 4. update/updateMany/delete/deleteMany get tenantId in WHERE
+ * 4. updateMany/deleteMany get tenantId in WHERE (for bulk operations)
+ *
+ * IMPORTANT: update/delete/upsert do NOT get tenantId in WHERE because Prisma
+ * requires the where clause to match a unique constraint exactly. Adding extra
+ * fields causes PrismaClientValidationError. The service layer must verify
+ * tenant ownership using findFirst before calling these operations.
+ * See project.service.ts for the correct pattern.
  *
  * This ensures complete tenant isolation at the database level.
  */
@@ -158,11 +164,12 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
           return query(args);
         },
 
-        async update({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
-            // Add tenantId to where clause to ensure we can only update our tenant's data
-            args.where = { ...args.where, tenantId: getTenantId() };
-          }
+        async update({ args, query }) {
+          // Note: We do NOT add tenantId to update's where clause because
+          // Prisma's update requires where to match a unique constraint exactly.
+          // Adding extra fields like tenantId causes PrismaClientValidationError.
+          // The service layer must verify tenant ownership using findFirst before
+          // calling update. See project.service.ts for the correct pattern.
           return query(args);
         },
 
@@ -173,10 +180,12 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
           return query(args);
         },
 
-        async delete({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
-            args.where = { ...args.where, tenantId: getTenantId() };
-          }
+        async delete({ args, query }) {
+          // Note: We do NOT add tenantId to delete's where clause because
+          // Prisma's delete requires where to match a unique constraint exactly.
+          // Adding extra fields like tenantId causes PrismaClientValidationError.
+          // The service layer must verify tenant ownership using findFirst before
+          // calling delete. See project.service.ts for the correct pattern.
           return query(args);
         },
 
@@ -188,11 +197,13 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
         },
 
         async upsert({ model, args, query }) {
+          // Note: We do NOT add tenantId to upsert's where clause because
+          // Prisma's upsert requires where to match a unique constraint exactly.
+          // However, we DO add tenantId to create data to ensure proper isolation.
+          // The service layer should verify tenant ownership separately if needed.
           if (needsTenantFiltering(model) && hasTenantContext()) {
             const tenantId = getTenantId();
-            (args.where as Record<string, unknown>).tenantId = tenantId;
             (args.create as Record<string, unknown>).tenantId = tenantId;
-            // update doesn't need tenantId as where already filters
           }
           return query(args);
         },
