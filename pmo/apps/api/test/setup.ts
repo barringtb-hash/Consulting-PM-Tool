@@ -1,7 +1,6 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
-import { afterAll, beforeAll, beforeEach } from 'vitest';
-import type { PrismaClient } from '@prisma/client';
+import { afterAll, beforeAll } from 'vitest';
 
 process.env.NODE_ENV = process.env.NODE_ENV ?? 'test';
 // JWT_SECRET must be at least 32 characters for security validation
@@ -53,7 +52,8 @@ const workspaceRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(workspaceRoot, '..', '..');
 const schemaPath = path.join(repoRoot, 'prisma', 'schema.prisma');
 
-let prismaClient: PrismaClient;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let prismaClient: { $disconnect: () => Promise<void> } | undefined;
 
 beforeAll(async () => {
   // In CI, migrations are already applied. Locally, we apply them.
@@ -68,17 +68,16 @@ beforeAll(async () => {
     });
   } catch (error) {
     // If migrate deploy fails, try reset (for local dev with schema changes)
+    // Note: Prisma 7 removed --skip-generate and --skip-seed flags
+    // Use migrate reset --force which applies migrations without seed
     console.warn('migrate deploy failed, trying migrate reset...');
-    execSync(
-      `npx prisma migrate reset --force --skip-generate --skip-seed --schema "${schemaPath}"`,
-      {
-        cwd: workspaceRoot,
-        env: {
-          ...process.env,
-        },
-        stdio: 'inherit',
+    execSync(`npx prisma migrate reset --force --schema "${schemaPath}"`, {
+      cwd: workspaceRoot,
+      env: {
+        ...process.env,
       },
-    );
+      stdio: 'inherit',
+    });
   }
 
   const prismaModule = await import('../src/prisma/client');

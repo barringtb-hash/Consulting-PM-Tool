@@ -6,9 +6,8 @@
  */
 
 import crypto from 'crypto';
-import { Prisma, PrismaClient, WebhookConfig } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma, WebhookConfig } from '@prisma/client';
+import { prisma } from '../../../prisma/client';
 
 // Webhook event types
 export const WEBHOOK_EVENTS = {
