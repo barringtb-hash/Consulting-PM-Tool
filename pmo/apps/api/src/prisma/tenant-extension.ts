@@ -9,12 +9,7 @@
  * 2. findMany/findFirst/count/aggregate/groupBy get WHERE tenantId = X
  * 3. create/createMany get tenantId added to data
  * 4. updateMany/deleteMany get tenantId in WHERE (for bulk operations)
- *
- * IMPORTANT: update/delete/upsert do NOT get tenantId in WHERE because Prisma
- * requires the where clause to match a unique constraint exactly. Adding extra
- * fields causes PrismaClientValidationError. The service layer must verify
- * tenant ownership using findFirst before calling these operations.
- * See project.service.ts for the correct pattern.
+ * 5. update/delete verify tenant ownership before executing (using findFirst)
  *
  * This ensures complete tenant isolation at the database level.
  */
@@ -82,9 +77,9 @@ function needsTenantFiltering(model: string): boolean {
  * The extension intercepts operations on tenant-scoped models and
  * automatically injects tenantId.
  *
- * @param _baseClient - The base Prisma client (reserved for future RLS context setting)
+ * @param baseClient - The base Prisma client used for tenant ownership verification
  */
-export function createTenantExtension(_baseClient?: PrismaClient) {
+export function createTenantExtension(baseClient: PrismaClient) {
   return Prisma.defineExtension({
     name: 'tenant-isolation',
     query: {
@@ -164,12 +159,41 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
           return query(args);
         },
 
-        async update({ args, query }) {
-          // Note: We do NOT add tenantId to update's where clause because
-          // Prisma's update requires where to match a unique constraint exactly.
-          // Adding extra fields like tenantId causes PrismaClientValidationError.
-          // The service layer must verify tenant ownership using findFirst before
-          // calling update. See project.service.ts for the correct pattern.
+        async update({ model, args, query }) {
+          // Prisma's update requires where to match a unique constraint exactly,
+          // so we can't add tenantId to the where clause. Instead, we verify
+          // tenant ownership by checking if the record exists with matching tenantId
+          // before proceeding with the update.
+          if (needsTenantFiltering(model) && hasTenantContext()) {
+            const tenantId = getTenantId();
+            const whereId = (args.where as { id?: number | string }).id;
+
+            if (whereId !== undefined) {
+              // Use base client to verify tenant ownership
+              const modelDelegate = (
+                baseClient as unknown as Record<
+                  string,
+                  {
+                    findFirst: (args: {
+                      where: { id: number | string; tenantId: string };
+                    }) => Promise<unknown>;
+                  }
+                >
+              )[model.charAt(0).toLowerCase() + model.slice(1)];
+
+              if (modelDelegate?.findFirst) {
+                const existing = await modelDelegate.findFirst({
+                  where: { id: whereId, tenantId },
+                });
+
+                if (!existing) {
+                  throw new Error(
+                    `Record not found or does not belong to current tenant`,
+                  );
+                }
+              }
+            }
+          }
           return query(args);
         },
 
@@ -180,12 +204,41 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
           return query(args);
         },
 
-        async delete({ args, query }) {
-          // Note: We do NOT add tenantId to delete's where clause because
-          // Prisma's delete requires where to match a unique constraint exactly.
-          // Adding extra fields like tenantId causes PrismaClientValidationError.
-          // The service layer must verify tenant ownership using findFirst before
-          // calling delete. See project.service.ts for the correct pattern.
+        async delete({ model, args, query }) {
+          // Prisma's delete requires where to match a unique constraint exactly,
+          // so we can't add tenantId to the where clause. Instead, we verify
+          // tenant ownership by checking if the record exists with matching tenantId
+          // before proceeding with the delete.
+          if (needsTenantFiltering(model) && hasTenantContext()) {
+            const tenantId = getTenantId();
+            const whereId = (args.where as { id?: number | string }).id;
+
+            if (whereId !== undefined) {
+              // Use base client to verify tenant ownership
+              const modelDelegate = (
+                baseClient as unknown as Record<
+                  string,
+                  {
+                    findFirst: (args: {
+                      where: { id: number | string; tenantId: string };
+                    }) => Promise<unknown>;
+                  }
+                >
+              )[model.charAt(0).toLowerCase() + model.slice(1)];
+
+              if (modelDelegate?.findFirst) {
+                const existing = await modelDelegate.findFirst({
+                  where: { id: whereId, tenantId },
+                });
+
+                if (!existing) {
+                  throw new Error(
+                    `Record not found or does not belong to current tenant`,
+                  );
+                }
+              }
+            }
+          }
           return query(args);
         },
 
@@ -197,13 +250,45 @@ export function createTenantExtension(_baseClient?: PrismaClient) {
         },
 
         async upsert({ model, args, query }) {
-          // Note: We do NOT add tenantId to upsert's where clause because
-          // Prisma's upsert requires where to match a unique constraint exactly.
-          // However, we DO add tenantId to create data to ensure proper isolation.
-          // The service layer should verify tenant ownership separately if needed.
+          // Prisma's upsert requires where to match a unique constraint exactly,
+          // so we can't add tenantId to the where clause. We verify tenant ownership
+          // for existing records and add tenantId to create data for new records.
           if (needsTenantFiltering(model) && hasTenantContext()) {
             const tenantId = getTenantId();
+            const whereId = (args.where as { id?: number | string }).id;
+
+            // Add tenantId to create data for new records
             (args.create as Record<string, unknown>).tenantId = tenantId;
+
+            // Verify existing record belongs to tenant (if record exists)
+            if (whereId !== undefined) {
+              const modelDelegate = (
+                baseClient as unknown as Record<
+                  string,
+                  {
+                    findFirst: (args: {
+                      where: { id: number | string; tenantId: string };
+                    }) => Promise<unknown>;
+                    findUnique: (args: {
+                      where: { id: number | string };
+                    }) => Promise<{ tenantId?: string } | null>;
+                  }
+                >
+              )[model.charAt(0).toLowerCase() + model.slice(1)];
+
+              if (modelDelegate?.findUnique) {
+                const existing = await modelDelegate.findUnique({
+                  where: { id: whereId },
+                });
+
+                // If record exists but belongs to different tenant, throw error
+                if (existing && existing.tenantId !== tenantId) {
+                  throw new Error(
+                    `Record not found or does not belong to current tenant`,
+                  );
+                }
+              }
+            }
           }
           return query(args);
         },
