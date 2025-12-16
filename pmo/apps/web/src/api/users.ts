@@ -1,4 +1,5 @@
 import { buildApiUrl } from './config';
+import { buildOptions, handleResponse } from './http';
 
 export interface CreateUserInput {
   name: string;
@@ -30,67 +31,43 @@ export interface User {
  * Create a new user
  */
 export async function createUser(input: CreateUserInput): Promise<User> {
-  const response = await fetch(buildApiUrl('/users'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify(input),
-  });
+  const response = await fetch(
+    buildApiUrl('/users'),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  );
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: 'Failed to create user',
-    }));
-    throw new Error(error.error || 'Failed to create user');
-  }
-
-  return response.json();
+  return handleResponse<User>(response);
 }
 
 /**
  * Get all users
  */
 export async function getAllUsers(): Promise<User[]> {
-  const response = await fetch(buildApiUrl('/users'), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  });
+  const response = await fetch(
+    buildApiUrl('/users'),
+    buildOptions({
+      method: 'GET',
+    }),
+  );
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: 'Failed to fetch users',
-    }));
-    throw new Error(error.error || 'Failed to fetch users');
-  }
-
-  return response.json();
+  return handleResponse<User[]>(response);
 }
 
 /**
  * Get a user by ID
  */
 export async function getUserById(id: number): Promise<User> {
-  const response = await fetch(buildApiUrl(`/users/${id}`), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  });
+  const response = await fetch(
+    buildApiUrl(`/users/${id}`),
+    buildOptions({
+      method: 'GET',
+    }),
+  );
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: 'Failed to fetch user',
-    }));
-    throw new Error(error.error || 'Failed to fetch user');
-  }
-
-  return response.json();
+  return handleResponse<User>(response);
 }
 
 /**
@@ -100,41 +77,27 @@ export async function updateUser(
   id: number,
   input: UpdateUserInput,
 ): Promise<User> {
-  const response = await fetch(buildApiUrl(`/users/${id}`), {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify(input),
-  });
+  const response = await fetch(
+    buildApiUrl(`/users/${id}`),
+    buildOptions({
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  );
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: 'Failed to update user',
-    }));
-    throw new Error(error.error || 'Failed to update user');
-  }
-
-  return response.json();
+  return handleResponse<User>(response);
 }
 
 /**
  * Delete a user
  */
 export async function deleteUser(id: number): Promise<void> {
-  const response = await fetch(buildApiUrl(`/users/${id}`), {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  });
+  const response = await fetch(
+    buildApiUrl(`/users/${id}`),
+    buildOptions({
+      method: 'DELETE',
+    }),
+  );
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: 'Failed to delete user',
-    }));
-    throw new Error(error.error || 'Failed to delete user');
-  }
+  await handleResponse<void>(response);
 }
