@@ -2,7 +2,7 @@
  * Finance AI API Client
  */
 
-import http from '../http';
+import { http } from '../http';
 
 // Types
 export interface CategorySuggestion {
@@ -108,9 +108,10 @@ export async function suggestCategory(
   vendorName?: string,
   amount?: number,
 ): Promise<CategorizationResult> {
-  return http('/finance/ai/categorize', {
-    method: 'POST',
-    body: JSON.stringify({ description, vendorName, amount }),
+  return http.post('/finance/ai/categorize', {
+    description,
+    vendorName,
+    amount,
   });
 }
 
@@ -122,10 +123,9 @@ export async function bulkCategorize(
     amount?: number;
   }>,
 ): Promise<Record<number, CategorizationResult>> {
-  const response = await http('/finance/ai/categorize/bulk', {
-    method: 'POST',
-    body: JSON.stringify({ expenses }),
-  });
+  const response = await http.post<{
+    results: Record<number, CategorizationResult>;
+  }>('/finance/ai/categorize/bulk', { expenses });
   return response.results;
 }
 
@@ -135,16 +135,13 @@ export async function recordCategorizationFeedback(params: {
   actualCategoryId: number;
   wasAccepted: boolean;
 }): Promise<void> {
-  await http('/finance/ai/categorize/feedback', {
-    method: 'POST',
-    body: JSON.stringify(params),
-  });
+  await http.post('/finance/ai/categorize/feedback', params);
 }
 
 export async function detectExpenseAnomalies(
   expenseId: number,
 ): Promise<{ anomalies: AnomalyResult[] }> {
-  return http(`/finance/ai/anomalies/${expenseId}`);
+  return http.get(`/finance/ai/anomalies/${expenseId}`);
 }
 
 export async function getAnomalyStats(params?: {
@@ -156,25 +153,20 @@ export async function getAnomalyStats(params?: {
   if (params?.endDate) searchParams.set('endDate', params.endDate);
 
   const query = searchParams.toString();
-  return http(`/finance/ai/anomalies/stats${query ? `?${query}` : ''}`);
+  return http.get(`/finance/ai/anomalies/stats${query ? `?${query}` : ''}`);
 }
 
 export async function scanForAnomalies(): Promise<{
   scanned: number;
   flagged: number;
 }> {
-  return http('/finance/ai/anomalies/scan', {
-    method: 'POST',
-  });
+  return http.post('/finance/ai/anomalies/scan', {});
 }
 
 export async function getAnomalyInsights(
   anomalies: AnomalyResult[],
 ): Promise<{ insights: string }> {
-  return http('/finance/ai/anomalies/insights', {
-    method: 'POST',
-    body: JSON.stringify({ anomalies }),
-  });
+  return http.post('/finance/ai/anomalies/insights', { anomalies });
 }
 
 export async function getSpendingForecast(params?: {
@@ -189,13 +181,13 @@ export async function getSpendingForecast(params?: {
     searchParams.set('categoryId', params.categoryId.toString());
 
   const query = searchParams.toString();
-  return http(`/finance/ai/forecast${query ? `?${query}` : ''}`);
+  return http.get(`/finance/ai/forecast${query ? `?${query}` : ''}`);
 }
 
 export async function getBudgetRecommendations(): Promise<{
   recommendations: BudgetRecommendation[];
 }> {
-  return http('/finance/ai/budget-recommendations');
+  return http.get('/finance/ai/budget-recommendations');
 }
 
 export async function getCashFlowProjection(params?: {
@@ -208,9 +200,9 @@ export async function getCashFlowProjection(params?: {
     searchParams.set('startingBalance', params.startingBalance.toString());
 
   const query = searchParams.toString();
-  return http(`/finance/ai/cash-flow${query ? `?${query}` : ''}`);
+  return http.get(`/finance/ai/cash-flow${query ? `?${query}` : ''}`);
 }
 
 export async function getFinancialInsights(): Promise<FinancialInsights> {
-  return http('/finance/ai/insights');
+  return http.get('/finance/ai/insights');
 }
