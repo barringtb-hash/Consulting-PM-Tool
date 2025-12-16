@@ -4,16 +4,10 @@
  * Manages channel configurations and provides CRUD operations.
  */
 
-import {
-  Prisma,
-  PrismaClient,
-  ChannelConfig,
-  ChatChannel,
-} from '@prisma/client';
+import { Prisma, ChannelConfig, ChatChannel } from '@prisma/client';
 import { ChannelCredentials, ChannelSettings } from './channel.types';
 import { channelManager } from './channel-manager';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../prisma/client';
 
 interface CreateChannelInput {
   channel: ChatChannel;
