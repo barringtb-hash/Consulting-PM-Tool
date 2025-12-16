@@ -21,6 +21,35 @@ import {
 } from '@prisma/client';
 
 // ============================================================================
+// HELPER: Prisma Error Detection
+// ============================================================================
+
+/**
+ * Check if a Prisma error is due to a missing column (typically from pending migration)
+ * Uses Prisma error code P2022 for more reliable detection than string matching
+ */
+function isMissingColumnError(error: unknown, columnName: string): boolean {
+  // Check for PrismaClientKnownRequestError with code P2022 (column does not exist)
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2022'
+  ) {
+    // Check if the meta contains the column name
+    const meta = error.meta as { column?: string; column_name?: string } | undefined;
+    if (meta?.column === columnName || meta?.column_name === columnName) {
+      return true;
+    }
+  }
+
+  // Fallback: check error message for cases where error code isn't set correctly
+  const errorMessage = (error as Error).message || '';
+  return (
+    errorMessage.includes(columnName) &&
+    errorMessage.includes('does not exist')
+  );
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -88,13 +117,9 @@ export async function getDocumentAnalyzerConfig(
         },
       });
     } catch (error) {
-      const errorMessage = (error as Error).message || '';
-      if (
-        errorMessage.includes('accountId') &&
-        errorMessage.includes('does not exist')
-      ) {
+      if (isMissingColumnError(error, 'accountId')) {
         console.warn(
-          'DocumentAnalyzerConfig.accountId column not found, falling back to clientId query',
+          '[DocumentAnalyzer] accountId column not found in database, falling back to clientId query. Run pending migrations to resolve.',
         );
         // Fall back to clientId query if we have it
         if (clientId) {
@@ -154,22 +179,27 @@ export async function listDocumentAnalyzerConfigs(filters?: {
     });
   } catch (error) {
     // If query fails (e.g., accountId column doesn't exist), fall back to simpler query
-    const errorMessage = (error as Error).message || '';
-    if (
-      errorMessage.includes('accountId') &&
-      errorMessage.includes('does not exist')
-    ) {
+    if (isMissingColumnError(error, 'accountId')) {
       console.warn(
-        'DocumentAnalyzerConfig.accountId column not found, falling back to clientId query',
+        '[DocumentAnalyzer] accountId column not found in database, falling back to clientId query. Run pending migrations to resolve.',
       );
-      // Retry without accountId filter - use clientId instead if we have account IDs
+
+      // If accountId-based filters were requested but can't be applied,
+      // return empty array to avoid returning unfiltered/unauthorized data
+      if (filters?.accountId || (filters?.accountIds && filters.accountIds.length > 0)) {
+        console.warn(
+          '[DocumentAnalyzer] accountId filter requested but column missing - returning empty result for safety',
+        );
+        return [];
+      }
+
+      // Retry without accountId filter - use clientId instead
       const fallbackWhere: Prisma.DocumentAnalyzerConfigWhereInput = {};
       if (filters?.clientId) {
         fallbackWhere.clientId = filters.clientId;
       } else if (filters?.clientIds && filters.clientIds.length > 0) {
         fallbackWhere.clientId = { in: filters.clientIds };
       }
-      // Note: We lose accountId filtering but at least the query works
 
       return await prisma.documentAnalyzerConfig.findMany({
         where:
@@ -201,13 +231,9 @@ export async function createDocumentAnalyzerConfig(
       },
     });
   } catch (error) {
-    const errorMessage = (error as Error).message || '';
-    if (
-      errorMessage.includes('accountId') &&
-      errorMessage.includes('does not exist')
-    ) {
+    if (isMissingColumnError(error, 'accountId')) {
       console.warn(
-        'DocumentAnalyzerConfig.accountId column not found, creating with clientId only',
+        '[DocumentAnalyzer] accountId column not found in database, creating with clientId only. Run pending migrations to resolve.',
       );
       // Retry without accountId
       return await prisma.documentAnalyzerConfig.create({
@@ -237,13 +263,9 @@ export async function updateDocumentAnalyzerConfig(
         data,
       });
     } catch (error) {
-      const errorMessage = (error as Error).message || '';
-      if (
-        errorMessage.includes('accountId') &&
-        errorMessage.includes('does not exist')
-      ) {
+      if (isMissingColumnError(error, 'accountId')) {
         console.warn(
-          'DocumentAnalyzerConfig.accountId column not found, falling back to clientId update',
+          '[DocumentAnalyzer] accountId column not found in database, falling back to clientId update. Run pending migrations to resolve.',
         );
         // Fall back to clientId if available
         if (clientId) {
