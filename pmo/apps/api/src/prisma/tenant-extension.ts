@@ -184,7 +184,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
           // before proceeding with the update.
           if (needsTenantFiltering(model) && hasTenantContext()) {
             const tenantId = getTenantId();
-            const whereId = (args.where as { id?: number | string }).id;
+            const whereClause = args.where as {
+              id?: number | string;
+              tenantId?: string;
+            };
+            const whereId = whereClause.id;
 
             if (whereId !== undefined) {
               // Use base client to verify tenant ownership
@@ -208,6 +212,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
                   throw createNotFoundError(model, 'update');
                 }
               }
+
+              // Strip tenantId from where clause since Prisma requires unique constraint only
+
+              const { tenantId: _, ...cleanWhere } = whereClause;
+              args.where = cleanWhere;
             }
           }
           return query(args);
@@ -227,7 +236,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
           // before proceeding with the delete.
           if (needsTenantFiltering(model) && hasTenantContext()) {
             const tenantId = getTenantId();
-            const whereId = (args.where as { id?: number | string }).id;
+            const whereClause = args.where as {
+              id?: number | string;
+              tenantId?: string;
+            };
+            const whereId = whereClause.id;
 
             if (whereId !== undefined) {
               // Use base client to verify tenant ownership
@@ -251,6 +264,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
                   throw createNotFoundError(model, 'delete');
                 }
               }
+
+              // Strip tenantId from where clause since Prisma requires unique constraint only
+
+              const { tenantId: _, ...cleanWhere } = whereClause;
+              args.where = cleanWhere;
             }
           }
           return query(args);
@@ -269,7 +287,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
           // for existing records and add tenantId to create data for new records.
           if (needsTenantFiltering(model) && hasTenantContext()) {
             const tenantId = getTenantId();
-            const whereId = (args.where as { id?: number | string }).id;
+            const whereClause = args.where as {
+              id?: number | string;
+              tenantId?: string;
+            };
+            const whereId = whereClause.id;
 
             // Add tenantId to create data for new records
             (args.create as Record<string, unknown>).tenantId = tenantId;
@@ -300,6 +322,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
                   throw createNotFoundError(model, 'upsert');
                 }
               }
+
+              // Strip tenantId from where clause since Prisma requires unique constraint only
+
+              const { tenantId: _, ...cleanWhere } = whereClause;
+              args.where = cleanWhere;
             }
           }
           return query(args);
