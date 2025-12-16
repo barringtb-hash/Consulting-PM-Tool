@@ -18,11 +18,13 @@ This guide assumes:
 ## 2. Set up the API service on Render
 
 1. Create a new **Web Service** from your GitHub repo pointing to the `/apps/api` directory.
-2. Build command (example):
+2. Build command (**IMPORTANT: include migrations**):
 
    ```bash
-   cd apps/api && npm install && npm run build
+   cd apps/api && npm install && npm run build && npx prisma migrate deploy
    ```
+
+   > **Note**: The `prisma migrate deploy` step is critical. Without it, schema changes won't be applied to the production database, causing runtime errors like "The column X does not exist".
 
 3. Start command (example):
 
@@ -37,9 +39,8 @@ This guide assumes:
    - `NODE_ENV` – `production`.
    - `PORT` – Render usually injects this automatically; ensure your app listens on `process.env.PORT`.
 
-5. After the first deploy, run Prisma migrations:
-   - Option A: add a `postdeploy` command in package.json to run `prisma migrate deploy`.
-   - Option B: open a shell on the service and run:
+5. If you previously deployed without migrations, you may need to manually run them once:
+   - Open a shell on the Render service and run:
 
      ```bash
      cd apps/api
