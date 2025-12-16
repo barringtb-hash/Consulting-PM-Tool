@@ -11,29 +11,32 @@ vi.mock('../src/tenant/tenant.context', () => ({
 }));
 
 // Mock the prisma client
-vi.mock('../src/prisma/client', () => ({
-  prisma: {
-    expenseCategory: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-    },
-    expense: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      groupBy: vi.fn(),
-      count: vi.fn(),
-      aggregate: vi.fn(),
-      updateMany: vi.fn(),
-    },
-    recurringCost: {
-      findMany: vi.fn(),
-      aggregate: vi.fn(),
-    },
-    budget: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-    },
+const mockPrisma = {
+  expenseCategory: {
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
   },
+  expense: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    groupBy: vi.fn(),
+    count: vi.fn(),
+    aggregate: vi.fn(),
+    updateMany: vi.fn(),
+  },
+  recurringCost: {
+    findMany: vi.fn(),
+    aggregate: vi.fn(),
+  },
+  budget: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+  },
+};
+
+vi.mock('../src/prisma/client', () => ({
+  prisma: mockPrisma,
+  default: mockPrisma,
 }));
 
 // Import after mocks
