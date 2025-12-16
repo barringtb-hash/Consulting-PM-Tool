@@ -33,6 +33,7 @@ vi.mock('../src/prisma/client', () => {
       findFirst: vi.fn(),
       findMany: vi.fn(),
     },
+    $disconnect: vi.fn().mockResolvedValue(undefined),
   };
   return {
     prisma: mockPrisma,
@@ -210,16 +211,18 @@ describe('Finance AI Services', () => {
           prisma.expense.findFirst as ReturnType<typeof vi.fn>
         ).mockResolvedValue(mockExpense);
         // Mock finding similar expenses (duplicates)
+        // Order matters: checkAmountAnomaly (baseline) runs first, then checkDuplicateExpense
         (prisma.expense.findMany as ReturnType<typeof vi.fn>)
+          .mockResolvedValueOnce([]) // baseline check (returns empty, so no amount anomaly)
           .mockResolvedValueOnce([
             {
               id: 1,
               description: 'Office supplies',
               amount: 500,
               date: new Date(),
+              vendorName: 'Staples',
             },
-          ]) // duplicates check
-          .mockResolvedValueOnce([]); // baseline check
+          ]); // duplicates check - should find similar expense
         (prisma.expense.count as ReturnType<typeof vi.fn>)
           .mockResolvedValueOnce(0) // vendor check
           .mockResolvedValueOnce(1); // rapid spending check
