@@ -327,7 +327,7 @@ function ProjectSetupPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="New Project Setup"
         description="Create a new project using guided workflow templates"
@@ -360,8 +360,8 @@ function ProjectSetupPage(): JSX.Element {
                             isCompleted
                               ? 'bg-primary-600 border-primary-600'
                               : isActive
-                                ? 'border-primary-600 bg-white'
-                                : 'border-neutral-300 bg-white'
+                                ? 'border-primary-600 bg-white dark:bg-neutral-800'
+                                : 'border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800'
                           }`}
                         >
                           {isCompleted ? (
@@ -381,8 +381,8 @@ function ProjectSetupPage(): JSX.Element {
                         <span
                           className={`mt-2 text-xs font-medium ${
                             isAccessible
-                              ? 'text-neutral-900'
-                              : 'text-neutral-500'
+                              ? 'text-neutral-900 dark:text-neutral-100'
+                              : 'text-neutral-500 dark:text-neutral-400'
                           }`}
                         >
                           {s.label}
@@ -391,7 +391,9 @@ function ProjectSetupPage(): JSX.Element {
                       {idx < stepConfig.length - 1 && (
                         <div
                           className={`flex-1 h-0.5 mx-4 ${
-                            isCompleted ? 'bg-primary-600' : 'bg-neutral-300'
+                            isCompleted
+                              ? 'bg-primary-600'
+                              : 'bg-neutral-300 dark:bg-neutral-600'
                           }`}
                         />
                       )}
@@ -410,7 +412,7 @@ function ProjectSetupPage(): JSX.Element {
               <CardTitle>Select a Client</CardTitle>
             </CardHeader>
             <CardBody className="space-y-4">
-              <p className="text-neutral-600">
+              <p className="text-neutral-600 dark:text-neutral-400">
                 Choose which client this project belongs to. You can also{' '}
                 <Link
                   to="/client-intake"
@@ -422,7 +424,9 @@ function ProjectSetupPage(): JSX.Element {
               </p>
 
               {accountsQuery.isLoading && (
-                <p className="text-neutral-600">Loading clients…</p>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  Loading clients…
+                </p>
               )}
 
               {accountsQuery.error && (
@@ -457,17 +461,17 @@ function ProjectSetupPage(): JSX.Element {
                         }
                         className={`p-4 text-left border-2 rounded-lg transition-all ${
                           formData.clientId === client.id
-                            ? 'border-primary-600 bg-primary-50'
-                            : 'border-neutral-200 bg-white hover:border-neutral-300'
+                            ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                            : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600'
                         }`}
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-semibold text-neutral-900">
+                            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
                               {client.name}
                             </h3>
                             {client.industry && (
-                              <p className="text-sm text-neutral-600 mt-1">
+                              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                                 {client.industry}
                               </p>
                             )}
@@ -481,7 +485,7 @@ function ProjectSetupPage(): JSX.Element {
                   </div>
 
                   {filteredClients.length === 0 && (
-                    <p className="text-neutral-600 text-center py-4">
+                    <p className="text-neutral-600 dark:text-neutral-400 text-center py-4">
                       No clients found matching your search.
                     </p>
                   )}
@@ -501,7 +505,7 @@ function ProjectSetupPage(): JSX.Element {
               <CardTitle>Choose a Project Template</CardTitle>
             </CardHeader>
             <CardBody className="space-y-4">
-              <p className="text-neutral-600">
+              <p className="text-neutral-600 dark:text-neutral-400">
                 Select a template that best matches your engagement type.
                 Templates provide suggested milestones and tasks to help you get
                 started quickly.
@@ -515,22 +519,22 @@ function ProjectSetupPage(): JSX.Element {
                     onClick={() => handleSelectTemplate(template.id)}
                     className={`p-4 text-left border-2 rounded-lg transition-all ${
                       formData.templateId === template.id
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                        : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-neutral-900">
+                      <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
                         {template.name}
                       </h3>
                       {formData.templateId === template.id && (
                         <Check className="w-5 h-5 text-primary-600 flex-shrink-0" />
                       )}
                     </div>
-                    <p className="text-sm text-neutral-600 mb-2">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
                       {template.description}
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-500">
                       Duration: {template.duration}
                     </p>
                   </button>
@@ -554,7 +558,7 @@ function ProjectSetupPage(): JSX.Element {
                 <div className="md:col-span-2">
                   <label
                     htmlFor="project-name"
-                    className="block text-sm font-medium text-neutral-900 mb-1"
+                    className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                   >
                     Project Name <span className="text-danger-600">*</span>
                   </label>
@@ -572,7 +576,7 @@ function ProjectSetupPage(): JSX.Element {
                 <div>
                   <label
                     htmlFor="project-type"
-                    className="block text-sm font-medium text-neutral-900 mb-1"
+                    className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                   >
                     Project Type
                   </label>
@@ -584,7 +588,7 @@ function ProjectSetupPage(): JSX.Element {
                     }
                     placeholder="e.g., Discovery, PoC, Implementation"
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                     Auto-filled from template, can be customized
                   </p>
                 </div>
@@ -592,7 +596,7 @@ function ProjectSetupPage(): JSX.Element {
                 <div>
                   <label
                     htmlFor="project-status"
-                    className="block text-sm font-medium text-neutral-900 mb-1"
+                    className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                   >
                     Initial Status
                   </label>
@@ -617,7 +621,7 @@ function ProjectSetupPage(): JSX.Element {
                 <div>
                   <label
                     htmlFor="project-start-date"
-                    className="block text-sm font-medium text-neutral-900 mb-1"
+                    className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                   >
                     Start Date
                   </label>
@@ -637,7 +641,7 @@ function ProjectSetupPage(): JSX.Element {
                 <div>
                   <label
                     htmlFor="project-end-date"
-                    className="block text-sm font-medium text-neutral-900 mb-1"
+                    className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                   >
                     Target End Date
                   </label>
@@ -657,7 +661,7 @@ function ProjectSetupPage(): JSX.Element {
                 <div className="md:col-span-2">
                   <label
                     htmlFor="project-goals"
-                    className="block text-sm font-medium text-neutral-900 mb-1"
+                    className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                   >
                     Goals & Objectives
                   </label>
@@ -678,7 +682,7 @@ function ProjectSetupPage(): JSX.Element {
                 <div className="md:col-span-2">
                   <label
                     htmlFor="project-description"
-                    className="block text-sm font-medium text-neutral-900 mb-1"
+                    className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
                   >
                     Description
                   </label>
@@ -713,54 +717,56 @@ function ProjectSetupPage(): JSX.Element {
               <CardBody className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                    <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                       Client
                     </h4>
-                    <p className="text-neutral-900">
+                    <p className="text-neutral-900 dark:text-neutral-100">
                       {selectedClientData?.name || 'Not selected'}
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                    <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                       Template
                     </h4>
-                    <p className="text-neutral-900">
+                    <p className="text-neutral-900 dark:text-neutral-100">
                       {selectedTemplate?.name || 'Not selected'}
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                    <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                       Project Name
                     </h4>
-                    <p className="text-neutral-900">{formData.name}</p>
+                    <p className="text-neutral-900 dark:text-neutral-100">
+                      {formData.name}
+                    </p>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                    <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                       Type
                     </h4>
-                    <p className="text-neutral-900">
+                    <p className="text-neutral-900 dark:text-neutral-100">
                       {formData.type || 'Not specified'}
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                    <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                       Status
                     </h4>
-                    <p className="text-neutral-900">
+                    <p className="text-neutral-900 dark:text-neutral-100">
                       {STATUS_OPTIONS.find((s) => s.value === formData.status)
                         ?.label || formData.status}
                     </p>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                    <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                       Duration
                     </h4>
-                    <p className="text-neutral-900">
+                    <p className="text-neutral-900 dark:text-neutral-100">
                       {formData.startDate && formData.endDate
                         ? `${new Date(formData.startDate).toLocaleDateString()} - ${new Date(formData.endDate).toLocaleDateString()}`
                         : formData.startDate
@@ -771,10 +777,10 @@ function ProjectSetupPage(): JSX.Element {
 
                   {formData.goals && (
                     <div className="md:col-span-2">
-                      <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                         Goals
                       </h4>
-                      <p className="text-neutral-900 whitespace-pre-wrap">
+                      <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
                         {formData.goals}
                       </p>
                     </div>
@@ -782,10 +788,10 @@ function ProjectSetupPage(): JSX.Element {
 
                   {formData.description && (
                     <div className="md:col-span-2">
-                      <h4 className="text-sm font-medium text-neutral-500 mb-1">
+                      <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                         Description
                       </h4>
-                      <p className="text-neutral-900 whitespace-pre-wrap">
+                      <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
                         {formData.description}
                       </p>
                     </div>
@@ -804,7 +810,7 @@ function ProjectSetupPage(): JSX.Element {
                   <CardTitle>Suggested Milestones & Tasks</CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <p className="text-neutral-600 mb-4">
+                  <p className="text-neutral-600 dark:text-neutral-400 mb-4">
                     Based on the {selectedTemplate.name} template, here are
                     suggested milestones and tasks. You can customize these
                     after creating the project.
@@ -812,10 +818,10 @@ function ProjectSetupPage(): JSX.Element {
 
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-neutral-900 mb-2">
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
                         Milestones
                       </h4>
-                      <ul className="list-disc list-inside space-y-1 text-neutral-700">
+                      <ul className="list-disc list-inside space-y-1 text-neutral-700 dark:text-neutral-300">
                         {selectedTemplate.milestones.map((milestone, idx) => (
                           <li key={idx}>{milestone}</li>
                         ))}
@@ -823,17 +829,17 @@ function ProjectSetupPage(): JSX.Element {
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-neutral-900 mb-2">
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
                         Tasks
                       </h4>
-                      <ul className="list-disc list-inside space-y-1 text-neutral-700">
+                      <ul className="list-disc list-inside space-y-1 text-neutral-700 dark:text-neutral-300">
                         {selectedTemplate.tasks.map((task, idx) => (
                           <li key={idx}>{task}</li>
                         ))}
                       </ul>
                     </div>
 
-                    <p className="text-xs text-neutral-500 italic">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 italic">
                       Note: Automatic milestone and task creation from templates
                       will be enabled in a future update. For now, you&apos;ll
                       need to add these manually after project creation.
