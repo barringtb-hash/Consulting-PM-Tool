@@ -73,13 +73,13 @@ enum DocumentType {
  * @deprecated Use CRMLeadSource instead for new CRM features.
  * This enum is kept for backward compatibility with legacy PMO InboundLead model.
  * Migration mapping:
- *   WEBSITE_CONTACT -> WEBSITE
- *   WEBSITE_DOWNLOAD -> WEBSITE
- *   REFERRAL -> REFERRAL
- *   LINKEDIN -> LINKEDIN
- *   OUTBOUND -> OUTBOUND
- *   EVENT -> EVENT
- *   OTHER -> OTHER
+ * WEBSITE_CONTACT -> WEBSITE
+ * WEBSITE_DOWNLOAD -> WEBSITE
+ * REFERRAL -> REFERRAL
+ * LINKEDIN -> LINKEDIN
+ * OUTBOUND -> OUTBOUND
+ * EVENT -> EVENT
+ * OTHER -> OTHER
  */
 enum LeadSource {
   WEBSITE_CONTACT
@@ -95,11 +95,11 @@ enum LeadSource {
  * @deprecated Use ContactLifecycle (CRM) instead for new features.
  * This enum is for legacy PMO InboundLead model.
  * Migration mapping to ContactLifecycle:
- *   NEW -> LEAD
- *   CONTACTED -> MQL
- *   QUALIFIED -> SQL
- *   DISQUALIFIED -> CHURNED
- *   CONVERTED -> OPPORTUNITY (or CUSTOMER)
+ * NEW -> LEAD
+ * CONTACTED -> MQL
+ * QUALIFIED -> SQL
+ * DISQUALIFIED -> CHURNED
+ * CONVERTED -> OPPORTUNITY (or CUSTOMER)
  */
 enum LeadStatus {
   NEW
@@ -236,17 +236,25 @@ model User {
   createdSurveys       CSSurvey[]
 
   // Multi-tenant CRM relations
-  tenantMemberships       TenantUser[]
-  ownedAccounts           Account[]
-  ownedCRMContacts        CRMContact[]
-  ownedOpportunities      Opportunity[]
-  changedStageHistory     OpportunityStageHistory[]
-  ownedActivities         CRMActivity[]             @relation("ActivityOwner")
-  createdActivities       CRMActivity[]             @relation("ActivityCreator")
-  notifications           Notification[]
-  savedReports            SavedReport[]
+  tenantMemberships   TenantUser[]
+  ownedAccounts       Account[]
+  ownedCRMContacts    CRMContact[]
+  ownedOpportunities  Opportunity[]
+  changedStageHistory OpportunityStageHistory[]
+  ownedActivities     CRMActivity[]             @relation("ActivityOwner")
+  createdActivities   CRMActivity[]             @relation("ActivityCreator")
+  notifications       Notification[]
+  savedReports        SavedReport[]
   // Audit logging
-  auditLogs               AuditLog[]    @relation("AuditLogUser")
+  auditLogs           AuditLog[]                @relation("AuditLogUser")
+
+  // Finance Tracking relations
+  ownedBudgets        Budget[]        @relation("BudgetOwner")
+  ownedExpenses       Expense[]       @relation("ExpenseOwner")
+  approvedExpenses    Expense[]       @relation("ExpenseApprover")
+  ownedRecurringCosts RecurringCost[] @relation("RecurringCostOwner")
+  employeeCosts       RecurringCost[] @relation("EmployeeCost")
+  financeAlerts       FinanceAlert[]
 }
 
 model Client {
@@ -262,7 +270,7 @@ model Client {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  tenant                Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contacts              Contact[]
   projects              Project[]
   documents             Document[]
@@ -304,12 +312,10 @@ model Client {
 
 /**
  * Contact - Legacy PMO contact model (project-related contacts)
- *
  * @deprecated For CRM use cases, use CRMContact instead which has:
- *   - Lifecycle management (LEAD, MQL, SQL, etc.)
- *   - Lead scoring
- *   - Account hierarchy support
- *
+ * - Lifecycle management (LEAD, MQL, SQL, etc.)
+ * - Lead scoring
+ * - Account hierarchy support
  * Email uniqueness: Per-client (allows same email for contacts at different clients)
  * This differs from CRMContact which enforces per-tenant uniqueness.
  */
@@ -378,8 +384,8 @@ model InboundLead {
 model Project {
   id        Int           @id @default(autoincrement())
   tenantId  String?
-  clientId  Int?          // @deprecated - use accountId
-  accountId Int?          // Preferred: link to CRM Account
+  clientId  Int? // @deprecated - use accountId
+  accountId Int? // Preferred: link to CRM Account
   ownerId   Int
   name      String
   status    ProjectStatus @default(PLANNING)
@@ -429,6 +435,10 @@ model Project {
   csMetricSnapshots CSMetricSnapshot[]
   csSurveyResponses CSSurveyResponse[]
 
+  // Finance Tracking relations
+  budgets  Budget[]
+  expenses Expense[]
+
   @@index([status])
   @@index([renewalDate])
   @@index([healthStatus, renewalDate])
@@ -437,8 +447,8 @@ model Project {
 
 model Document {
   id        Int          @id @default(autoincrement())
-  clientId  Int?         // @deprecated - use accountId
-  accountId Int?         // Preferred: link to CRM Account
+  clientId  Int? // @deprecated - use accountId
+  accountId Int? // Preferred: link to CRM Account
   projectId Int?
   ownerId   Int
   type      DocumentType @default(OTHER)
@@ -467,7 +477,7 @@ model Milestone {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant  Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   tasks   Task[]
 }
@@ -502,7 +512,7 @@ model Meeting {
   id        Int             @id @default(autoincrement())
   tenantId  String?
   projectId Int
-  accountId Int?            // Preferred: link to CRM Account
+  accountId Int? // Preferred: link to CRM Account
   title     String
   date      DateTime
   time      String
@@ -535,8 +545,8 @@ model AIAsset {
   tags        String[]  @default([])
   archived    Boolean   @default(false)
   isTemplate  Boolean   @default(false)
-  clientId    Int?      // @deprecated - use accountId
-  accountId   Int?      // Preferred: link to CRM Account
+  clientId    Int? // @deprecated - use accountId
+  accountId   Int? // Preferred: link to CRM Account
   createdById Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -568,17 +578,17 @@ model MarketingContent {
   id       Int             @id @default(autoincrement())
   tenantId String?
   name     String
-  slug    String?         @unique
-  type    ContentType
-  channel ContentChannel?
-  status  ContentStatus   @default(DRAFT)
-  content Json?
-  summary String?
-  tags    String[]        @default([])
+  slug     String?         @unique
+  type     ContentType
+  channel  ContentChannel?
+  status   ContentStatus   @default(DRAFT)
+  content  Json?
+  summary  String?
+  tags     String[]        @default([])
 
   // Relations
-  clientId        Int?    // @deprecated - use accountId
-  accountId       Int?    // Preferred: link to CRM Account
+  clientId        Int? // @deprecated - use accountId
+  accountId       Int? // Preferred: link to CRM Account
   projectId       Int?
   sourceMeetingId Int?
   createdById     Int?
@@ -630,8 +640,8 @@ model Campaign {
   archived    Boolean        @default(false)
 
   // Relations
-  clientId    Int?   // @deprecated - use accountId
-  accountId   Int?   // Preferred: link to CRM Account
+  clientId    Int? // @deprecated - use accountId
+  accountId   Int? // Preferred: link to CRM Account
   projectId   Int?
   createdById Int?
 
@@ -817,10 +827,10 @@ enum IntentType {
  * Note: accountId is the preferred field; clientId is deprecated
  */
 model ChatbotConfig {
-  id        Int  @id @default(autoincrement())
-  clientId  Int? @unique // @deprecated - use accountId
-  accountId Int? @unique // Preferred: link to CRM Account
-  name      String
+  id              Int     @id @default(autoincrement())
+  clientId        Int?    @unique // @deprecated - use accountId
+  accountId       Int?    @unique // Preferred: link to CRM Account
+  name            String
   welcomeMessage  String?
   fallbackMessage String?
 
@@ -5888,21 +5898,21 @@ model Tenant {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  users         TenantUser[]
-  domains       TenantDomain[]
-  branding      TenantBranding?
-  modules       TenantModule[]
-  accounts      Account[]
-  crmContacts   CRMContact[]
-  opportunities Opportunity[]
-  pipelines     Pipeline[]
-  activities    CRMActivity[]
-  notifications Notification[]
+  users             TenantUser[]
+  domains           TenantDomain[]
+  branding          TenantBranding?
+  modules           TenantModule[]
+  accounts          Account[]
+  crmContacts       CRMContact[]
+  opportunities     Opportunity[]
+  pipelines         Pipeline[]
+  activities        CRMActivity[]
+  notifications     Notification[]
   // CRM Phase 3-6 relations
-  integrations   Integration[]
-  usageEvents    UsageEvent[]
-  usageSummaries UsageSummary[]
-  savedReports   SavedReport[]
+  integrations      Integration[]
+  usageEvents       UsageEvent[]
+  usageSummaries    UsageSummary[]
+  savedReports      SavedReport[]
   // Legacy PMO models (tenant-scoped)
   clients           Client[]
   contacts          Contact[]
@@ -5915,8 +5925,18 @@ model Tenant {
   campaigns         Campaign[]
   inboundLeads      InboundLead[]
   // Audit and health metrics
-  auditLogs     AuditLog[]
-  healthMetrics TenantHealthMetrics[]
+  auditLogs         AuditLog[]
+  healthMetrics     TenantHealthMetrics[]
+
+  // Finance Tracking relations
+  financeConfig        FinanceConfig?
+  expenseCategories    ExpenseCategory[]
+  budgets              Budget[]
+  expenses             Expense[]
+  recurringCosts       RecurringCost[]
+  accountProfitability AccountProfitability[]
+  financeAlerts        FinanceAlert[]
+  financeInsights      FinanceInsight[]
 
   @@index([slug])
   @@index([status])
@@ -6070,6 +6090,13 @@ model Account {
   chatbotConfig          ChatbotConfig?
   documentAnalyzerConfig DocumentAnalyzerConfig?
 
+  // Finance Tracking relations
+  budgets         Budget[]
+  expenses        Expense[]
+  recurringCosts  RecurringCost[]
+  profitability   AccountProfitability[]
+  financeInsights FinanceInsight[]
+
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
   @@index([tenantId, archived])
@@ -6077,14 +6104,12 @@ model Account {
 
 /**
  * CRMContact - Contact within CRM (preferred model for new features)
- *
  * Features not in legacy Contact:
- *   - Lifecycle stages (LEAD → MQL → SQL → OPPORTUNITY → CUSTOMER)
- *   - Lead scoring with numeric score
- *   - Account hierarchy support
- *   - Social profiles (LinkedIn, Twitter)
- *   - Communication preferences (doNotContact)
- *
+ * - Lifecycle stages (LEAD → MQL → SQL → OPPORTUNITY → CUSTOMER)
+ * - Lead scoring with numeric score
+ * - Account hierarchy support
+ * - Social profiles (LinkedIn, Twitter)
+ * - Communication preferences (doNotContact)
  * Email uniqueness: Per-tenant (stricter deduplication than legacy Contact)
  * This prevents duplicate contacts across the entire tenant's CRM.
  */
@@ -6198,10 +6223,10 @@ model Opportunity {
   pipelineId Int?
   stageId    Int
 
-  amount         Decimal?          @db.Decimal(15, 2)
+  amount         Decimal? @db.Decimal(15, 2)
   probability    Int?
-  weightedAmount Decimal?          @db.Decimal(15, 2)
-  currency       String            @default("USD")
+  weightedAmount Decimal? @db.Decimal(15, 2)
+  currency       String   @default("USD")
 
   status            OpportunityStatus @default(OPEN)
   expectedCloseDate DateTime?
@@ -6228,6 +6253,9 @@ model Opportunity {
   contacts     OpportunityContact[]
   stageHistory OpportunityStageHistory[]
   activities   CRMActivity[]
+
+  // Finance Tracking relations
+  expenses Expense[]
 
   @@index([tenantId, status])
   @@index([tenantId, ownerId])
@@ -6283,16 +6311,13 @@ model OpportunityStageHistory {
 
 /**
  * CRMActivity - Unified activity timeline for CRM interactions
- *
  * Tracks all interactions: calls, emails, meetings, tasks, notes, etc.
  * Activities can be linked to accounts, contacts, and/or opportunities.
- *
  * Cascade Rules (intentional design):
- *   - Tenant deleted → Activities CASCADE deleted (tenant isolation)
- *   - Account deleted → Activity's accountId SET NULL (preserves activity history)
- *   - Contact deleted → Activity's contactId SET NULL (preserves activity history)
- *   - Opportunity deleted → Activity's opportunityId SET NULL (preserves activity history)
- *
+ * - Tenant deleted → Activities CASCADE deleted (tenant isolation)
+ * - Account deleted → Activity's accountId SET NULL (preserves activity history)
+ * - Contact deleted → Activity's contactId SET NULL (preserves activity history)
+ * - Opportunity deleted → Activity's opportunityId SET NULL (preserves activity history)
  * The SetNull behavior ensures activity history is preserved even when
  * linked entities are removed, which is important for audit trails.
  */
@@ -6458,7 +6483,7 @@ model Integration {
  * SyncLog - Integration sync history
  */
 model SyncLog {
-  id            Int    @id @default(autoincrement())
+  id            Int @id @default(autoincrement())
   integrationId Int
 
   direction  SyncDirection
@@ -6556,7 +6581,7 @@ model SavedReport {
 
   name        String
   description String?
-  type        String @default("CUSTOM")
+  type        String  @default("CUSTOM")
   entity      String
 
   config Json // columns, filters, sortBy, groupBy, schedule
@@ -6597,10 +6622,10 @@ model AuditLog {
   tenantId   String?
   userId     Int?
   action     AuditAction
-  entityType String      // e.g., "Account", "Opportunity", "CRMContact"
-  entityId   String      // ID of the affected entity
-  changes    Json?       // { before: {...}, after: {...} }
-  metadata   Json?       // Request IP, user agent, etc.
+  entityType String // e.g., "Account", "Opportunity", "CRMContact"
+  entityId   String // ID of the affected entity
+  changes    Json? // { before: {...}, after: {...} }
+  metadata   Json? // Request IP, user agent, etc.
   createdAt  DateTime    @default(now())
 
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
@@ -6648,4 +6673,419 @@ model TenantHealthMetrics {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, recordedAt])
+}
+
+// ============================================================================
+// FINANCE TRACKING MODULE
+// ============================================================================
+
+enum BudgetPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+enum BudgetStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum ExpenseStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+enum RecurringCostType {
+  SUBSCRIPTION
+  LICENSE
+  PAYROLL
+  BENEFITS
+  CONTRACTOR
+  RENT
+  UTILITIES
+  INSURANCE
+  MAINTENANCE
+  OTHER
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMIANNUALLY
+  YEARLY
+}
+
+enum RecurringCostStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum ProfitabilityPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum FinanceAlertType {
+  BUDGET_THRESHOLD
+  BUDGET_EXCEEDED
+  EXPENSE_PENDING_APPROVAL
+  EXPENSE_APPROVED
+  EXPENSE_REJECTED
+  RENEWAL_UPCOMING
+  RENEWAL_OVERDUE
+  ANOMALY_DETECTED
+  FORECAST_WARNING
+}
+
+enum FinanceAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum FinanceInsightType {
+  SPENDING_TREND
+  COST_OPTIMIZATION
+  BUDGET_RECOMMENDATION
+  ANOMALY_INSIGHT
+  FORECAST
+  PROFITABILITY
+}
+
+/**
+ * FinanceConfig - Finance module configuration per tenant
+ */
+model FinanceConfig {
+  id       Int    @id @default(autoincrement())
+  tenantId String @unique
+
+  // Feature toggles
+  enableExpenseTracking  Boolean @default(true)
+  enableBudgetManagement Boolean @default(true)
+  enableRecurringCosts   Boolean @default(true)
+  enableProfitability    Boolean @default(true)
+
+  // AI feature toggles
+  enableAICategorization Boolean @default(false)
+  enableAnomalyDetection Boolean @default(false)
+  enableForecasting      Boolean @default(false)
+
+  // Alert settings
+  budgetAlertThresholds Json    @default("[50, 75, 90, 100]")
+  notifyOnApproval      Boolean @default(true)
+
+  // Currency settings
+  defaultCurrency String @default("USD")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * ExpenseCategory - Expense categories (predefined + custom)
+ */
+model ExpenseCategory {
+  id          Int     @id @default(autoincrement())
+  tenantId    String
+  name        String
+  description String?
+  color       String  @default("#6B7280")
+  icon        String  @default("folder")
+  isSystem    Boolean @default(false)
+  isActive    Boolean @default(true)
+  parentId    Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent         ExpenseCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       ExpenseCategory[] @relation("CategoryHierarchy")
+  expenses       Expense[]
+  budgets        Budget[]
+  recurringCosts RecurringCost[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+/**
+ * Budget - Budget definitions
+ */
+model Budget {
+  id         Int    @id @default(autoincrement())
+  tenantId   String
+  accountId  Int?
+  projectId  Int?
+  categoryId Int?
+
+  name        String
+  description String?
+  amount      Decimal @db.Decimal(15, 2)
+  spent       Decimal @default(0) @db.Decimal(15, 2)
+  currency    String  @default("USD")
+
+  period    BudgetPeriod
+  startDate DateTime
+  endDate   DateTime?
+
+  alertThresholds Json @default("[50, 75, 90, 100]")
+  lastAlertLevel  Int?
+
+  allowRollover  Boolean @default(false)
+  rolloverAmount Decimal @default(0) @db.Decimal(15, 2)
+
+  status  BudgetStatus @default(ACTIVE)
+  ownerId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account  Account?         @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  project  Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  category ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  owner    User             @relation("BudgetOwner", fields: [ownerId], references: [id])
+  expenses Expense[]
+  alerts   FinanceAlert[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, accountId])
+  @@index([tenantId, categoryId])
+}
+
+/**
+ * Expense - Individual expense records
+ */
+model Expense {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+
+  accountId       Int?
+  projectId       Int?
+  opportunityId   Int?
+  budgetId        Int?
+  categoryId      Int
+  recurringCostId Int?
+
+  description String
+  amount      Decimal  @db.Decimal(15, 2)
+  currency    String   @default("USD")
+  date        DateTime
+
+  vendorName    String?
+  vendorId      String?
+  invoiceNumber String?
+
+  status          ExpenseStatus @default(PENDING)
+  approvedBy      Int?
+  approvedAt      DateTime?
+  rejectionReason String?
+
+  attachments Json @default("[]")
+
+  // AI-generated fields
+  aiCategorySuggestion String?
+  aiConfidenceScore    Float?
+  aiAnomalyFlag        Boolean @default(false)
+  aiAnomalyReason      String?
+
+  tags  String[] @default([])
+  notes String?
+
+  allocations Json?
+
+  ownerId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account       Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  project       Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  opportunity   Opportunity?    @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  budget        Budget?         @relation(fields: [budgetId], references: [id], onDelete: SetNull)
+  category      ExpenseCategory @relation(fields: [categoryId], references: [id])
+  recurringCost RecurringCost?  @relation(fields: [recurringCostId], references: [id], onDelete: SetNull)
+  owner         User            @relation("ExpenseOwner", fields: [ownerId], references: [id])
+  approver      User?           @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+
+  @@index([tenantId, status])
+  @@index([tenantId, accountId])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, date])
+}
+
+/**
+ * RecurringCost - Recurring costs (subscriptions, licenses, payroll)
+ */
+model RecurringCost {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+
+  accountId  Int?
+  categoryId Int
+
+  name        String
+  description String?
+
+  type RecurringCostType
+
+  amount    Decimal            @db.Decimal(15, 2)
+  currency  String             @default("USD")
+  frequency RecurringFrequency
+
+  billingDay  Int?
+  startDate   DateTime
+  endDate     DateTime?
+  nextDueDate DateTime
+
+  vendorName     String?
+  vendorUrl      String?
+  contractNumber String?
+  seatCount      Int?
+  costPerSeat    Decimal? @db.Decimal(15, 2)
+
+  employeeId Int?
+  department String?
+
+  autoRenew        Boolean @default(true)
+  renewalAlertDays Int     @default(30)
+
+  status  RecurringCostStatus @default(ACTIVE)
+  ownerId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account  Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  employee User?           @relation("EmployeeCost", fields: [employeeId], references: [id])
+  owner    User            @relation("RecurringCostOwner", fields: [ownerId], references: [id])
+  expenses Expense[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@index([tenantId, nextDueDate])
+}
+
+/**
+ * AccountProfitability - Profitability snapshots for accounts
+ */
+model AccountProfitability {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  accountId Int
+
+  period     String
+  periodType ProfitabilityPeriod
+  startDate  DateTime
+  endDate    DateTime
+
+  totalRevenue      Decimal @default(0) @db.Decimal(15, 2)
+  recognizedRevenue Decimal @default(0) @db.Decimal(15, 2)
+
+  directCosts    Decimal @default(0) @db.Decimal(15, 2)
+  allocatedCosts Decimal @default(0) @db.Decimal(15, 2)
+  totalCosts     Decimal @default(0) @db.Decimal(15, 2)
+
+  grossProfit Decimal @default(0) @db.Decimal(15, 2)
+  grossMargin Float   @default(0)
+  netProfit   Decimal @default(0) @db.Decimal(15, 2)
+  netMargin   Float   @default(0)
+
+  costBreakdown Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, accountId, period])
+  @@index([tenantId, accountId])
+  @@index([tenantId, periodType])
+}
+
+/**
+ * FinanceAlert - Finance alerts and notifications
+ */
+model FinanceAlert {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+
+  type     FinanceAlertType
+  severity FinanceAlertSeverity @default(INFO)
+
+  title   String
+  message String
+
+  budgetId        Int?
+  expenseId       Int?
+  recurringCostId Int?
+  accountId       Int?
+
+  metadata Json @default("{}")
+
+  isRead      Boolean @default(false)
+  isDismissed Boolean @default(false)
+
+  userId Int
+
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budget Budget? @relation(fields: [budgetId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, userId, isRead])
+  @@index([tenantId, type])
+}
+
+/**
+ * FinanceInsight - AI-generated financial insights
+ */
+model FinanceInsight {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  accountId Int?
+
+  type        FinanceInsightType
+  title       String
+  description String             @db.Text
+
+  metrics         Json @default("{}")
+  recommendations Json @default("[]")
+
+  confidence Float    @default(0)
+  validFrom  DateTime
+  validUntil DateTime
+
+  isActive    Boolean @default(true)
+  isDismissed Boolean @default(false)
+  isActedUpon Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, type, isActive])
 }

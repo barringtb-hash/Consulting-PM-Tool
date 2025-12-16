@@ -59,7 +59,9 @@ export type ModuleId =
   | 'generalCompliance'
   // Demo modules
   | 'demoAITools'
-  | 'demoMarketing';
+  | 'demoMarketing'
+  // Finance Tracking module
+  | 'financeTracking';
 
 /**
  * Navigation group identifiers
@@ -73,6 +75,7 @@ export type NavGroup =
   | 'aiTools'
   | 'infrastructure'
   | 'compliance'
+  | 'finance'
   | 'admin'
   | 'demo';
 
@@ -673,6 +676,24 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     description:
       'Interactive demo of AI-powered marketing content generation, scheduling, and analytics',
   },
+
+  // ============ FINANCE TRACKING MODULE ============
+  financeTracking: {
+    id: 'financeTracking',
+    label: 'Finance',
+    navGroup: 'finance',
+    path: '/finance',
+    additionalPaths: [
+      '/finance/expenses',
+      '/finance/budgets',
+      '/finance/recurring-costs',
+    ],
+    icon: 'DollarSign',
+    isCore: false,
+    apiPrefixes: ['/api/finance'],
+    description:
+      'Admin-only finance tracking: expenses, budgets, recurring costs, and profitability analysis',
+  },
 };
 
 /**
@@ -687,12 +708,13 @@ export const NAV_GROUP_CONFIG: Record<
   crm: { label: 'CRM', order: 2 }, // CRM at top - primary business system
   projects: { label: 'Projects', order: 3 }, // Project delivery
   customerSuccess: { label: 'Customer Success', order: 4 },
-  marketing: { label: 'Marketing', order: 5 },
-  aiTools: { label: 'AI Tools', order: 6 },
-  infrastructure: { label: 'Infrastructure', order: 7 },
-  compliance: { label: 'Compliance', order: 8 },
-  admin: { label: 'Admin', order: 9 },
-  demo: { label: 'Demos', order: 10 }, // Demos at bottom
+  finance: { label: 'Finance', order: 5 }, // Finance tracking
+  marketing: { label: 'Marketing', order: 6 },
+  aiTools: { label: 'AI Tools', order: 7 },
+  infrastructure: { label: 'Infrastructure', order: 8 },
+  compliance: { label: 'Compliance', order: 9 },
+  admin: { label: 'Admin', order: 10 },
+  demo: { label: 'Demos', order: 11 }, // Demos at bottom
 };
 
 /**
@@ -744,6 +766,8 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   // Demo modules
   'demoAITools',
   'demoMarketing',
+  // Finance Tracking
+  'financeTracking',
 ];
 
 /**

@@ -36,6 +36,8 @@ import complianceMonitorRouter from './modules/compliance-monitor/compliance-mon
 import predictiveMaintenanceRouter from './modules/predictive-maintenance/predictive-maintenance.router';
 import revenueManagementRouter from './modules/revenue-management/revenue-management.router';
 import safetyMonitorRouter from './modules/safety-monitor/safety-monitor.router';
+// Finance Tracking Module
+import { financeRouter } from './modules/finance-tracking';
 // MCP Integration
 import mcpRouter from './modules/mcp/mcp.router';
 // Customer Success Platform
@@ -428,6 +430,12 @@ export function createApp(): express.Express {
     requireModule('safetyMonitor'),
     safetyMonitorRouter,
   );
+
+  // ============ FINANCE TRACKING MODULE ============
+  // Admin-only module for expense tracking, budgets, and recurring costs
+  if (isModuleEnabled('financeTracking')) {
+    app.use('/api/finance', requireModule('financeTracking'), financeRouter);
+  }
 
   // Error handling middleware must be last
   app.use(errorHandler);
