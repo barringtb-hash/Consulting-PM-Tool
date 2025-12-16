@@ -534,7 +534,7 @@ function ProjectSetupPage(): JSX.Element {
                     <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
                       {template.description}
                     </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-500">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       Duration: {template.duration}
                     </p>
                   </button>
