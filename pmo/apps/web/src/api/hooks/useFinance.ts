@@ -8,6 +8,7 @@ import * as budgetsApi from '../finance/budgets';
 import * as recurringCostsApi from '../finance/recurring-costs';
 import * as categoriesApi from '../finance/categories';
 import * as analyticsApi from '../finance/analytics';
+import * as aiApi from '../finance/ai';
 
 // Query Keys
 export const financeKeys = {
@@ -470,5 +471,112 @@ export function useTopVendors(params?: {
   return useQuery({
     queryKey: [...financeKeys.analytics(), 'topVendors', params],
     queryFn: () => analyticsApi.getTopVendors(params || {}),
+  });
+}
+
+// ============================================================================
+// AI HOOKS
+// ============================================================================
+
+export function useCategorySuggestions(
+  description: string,
+  vendorName?: string,
+  amount?: number,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: [
+      ...financeKeys.all,
+      'ai',
+      'categorize',
+      description,
+      vendorName,
+      amount,
+    ],
+    queryFn: () => aiApi.suggestCategory(description, vendorName, amount),
+    enabled: enabled && description.length > 3,
+    staleTime: 60000, // Cache for 1 minute
+  });
+}
+
+export function useBulkCategorize() {
+  return useMutation({
+    mutationFn: aiApi.bulkCategorize,
+  });
+}
+
+export function useRecordCategorizationFeedback() {
+  return useMutation({
+    mutationFn: aiApi.recordCategorizationFeedback,
+  });
+}
+
+export function useExpenseAnomalies(expenseId: number) {
+  return useQuery({
+    queryKey: [...financeKeys.all, 'ai', 'anomalies', expenseId],
+    queryFn: () => aiApi.detectExpenseAnomalies(expenseId),
+    enabled: expenseId > 0,
+  });
+}
+
+export function useAnomalyStats(params?: {
+  startDate?: string;
+  endDate?: string;
+}) {
+  return useQuery({
+    queryKey: [...financeKeys.all, 'ai', 'anomalyStats', params],
+    queryFn: () => aiApi.getAnomalyStats(params),
+  });
+}
+
+export function useScanAnomalies() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: aiApi.scanForAnomalies,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: financeKeys.expenses() });
+    },
+  });
+}
+
+export function useAnomalyInsights() {
+  return useMutation({
+    mutationFn: (anomalies: aiApi.AnomalyResult[]) =>
+      aiApi.getAnomalyInsights(anomalies),
+  });
+}
+
+export function useSpendingForecast(params?: {
+  periods?: number;
+  periodType?: 'MONTH' | 'QUARTER';
+  categoryId?: number;
+}) {
+  return useQuery({
+    queryKey: [...financeKeys.all, 'ai', 'forecast', params],
+    queryFn: () => aiApi.getSpendingForecast(params),
+  });
+}
+
+export function useBudgetRecommendations() {
+  return useQuery({
+    queryKey: [...financeKeys.all, 'ai', 'budgetRecommendations'],
+    queryFn: aiApi.getBudgetRecommendations,
+  });
+}
+
+export function useCashFlowProjection(params?: {
+  days?: number;
+  startingBalance?: number;
+}) {
+  return useQuery({
+    queryKey: [...financeKeys.all, 'ai', 'cashFlow', params],
+    queryFn: () => aiApi.getCashFlowProjection(params),
+  });
+}
+
+export function useFinancialInsights() {
+  return useQuery({
+    queryKey: [...financeKeys.all, 'ai', 'insights'],
+    queryFn: aiApi.getFinancialInsights,
   });
 }

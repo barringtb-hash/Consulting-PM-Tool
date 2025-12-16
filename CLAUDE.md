@@ -458,6 +458,16 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | **Customer Success** | |
 | Customer Success module | `pmo/apps/api/src/modules/customer-success/` |
 | Customer Success pages | `pmo/apps/web/src/pages/customer-success/` |
+| **Finance Tracking** | |
+| Finance router | `pmo/apps/api/src/modules/finance-tracking/finance.router.ts` |
+| Finance services | `pmo/apps/api/src/modules/finance-tracking/services/` |
+| Finance AI services | `pmo/apps/api/src/modules/finance-tracking/ai/` |
+| Finance validation schemas | `pmo/apps/api/src/validation/finance/` |
+| Finance API hooks | `pmo/apps/web/src/api/hooks/useFinance.ts` |
+| Finance Dashboard page | `pmo/apps/web/src/pages/finance/FinanceDashboardPage.tsx` |
+| Expenses page | `pmo/apps/web/src/pages/finance/ExpensesPage.tsx` |
+| Budgets page | `pmo/apps/web/src/pages/finance/BudgetsPage.tsx` |
+| Recurring Costs page | `pmo/apps/web/src/pages/finance/RecurringCostsPage.tsx` |
 
 **CRM Files:**
 
@@ -613,6 +623,60 @@ Run migration scripts from `/pmo/apps/api`:
 npx ts-node src/scripts/migrate-project-pipeline-to-opportunities.ts --dry-run  # Preview
 npx ts-node src/scripts/migrate-project-pipeline-to-opportunities.ts            # Execute
 ```
+
+### Working with Finance Tracking
+
+The Finance Tracking module provides expense management, budgeting, recurring cost tracking, and AI-powered financial insights.
+
+**Finance API Endpoints:**
+
+| Resource | Endpoints |
+|----------|-----------|
+| **Categories** | `GET/POST /api/finance/categories`, `GET/PUT/DELETE /api/finance/categories/:id` |
+| **Expenses** | `GET/POST /api/finance/expenses`, `GET/PUT/DELETE /api/finance/expenses/:id` |
+| | `GET /api/finance/expenses/stats` - Expense statistics |
+| | `POST /api/finance/expenses/:id/approve` - Approve expense |
+| | `POST /api/finance/expenses/:id/reject` - Reject expense |
+| | `POST /api/finance/expenses/:id/mark-paid` - Mark as paid |
+| **Budgets** | `GET/POST /api/finance/budgets`, `GET/PUT/DELETE /api/finance/budgets/:id` |
+| | `GET /api/finance/budgets/stats` - Budget statistics |
+| | `GET /api/finance/budgets/:id/expenses` - Expenses for budget |
+| **Recurring Costs** | `GET/POST /api/finance/recurring-costs`, `GET/PUT/DELETE /api/finance/recurring-costs/:id` |
+| | `GET /api/finance/recurring-costs/stats` - Recurring cost stats |
+| | `GET /api/finance/recurring-costs/upcoming` - Upcoming renewals |
+| | `POST /api/finance/recurring-costs/:id/generate-expense` - Generate expense |
+| **Analytics** | `GET /api/finance/analytics/overview` - Dashboard overview |
+| | `GET /api/finance/analytics/spending-by-category` - Category breakdown |
+| | `GET /api/finance/analytics/spending-trends` - Spending trends |
+| | `GET /api/finance/analytics/top-vendors` - Top vendors |
+| **AI Features** | `POST /api/finance/ai/categorize` - AI category suggestions |
+| | `GET /api/finance/ai/anomalies/:expenseId` - Detect anomalies |
+| | `POST /api/finance/ai/anomalies/scan` - Scan pending expenses |
+| | `GET /api/finance/ai/forecast` - Spending forecast |
+| | `GET /api/finance/ai/budget-recommendations` - Budget recommendations |
+| | `GET /api/finance/ai/insights` - Financial insights |
+
+**Finance UI Routes:**
+
+| Page | Route |
+|------|-------|
+| Finance Dashboard | `/finance` |
+| Expenses List | `/finance/expenses` |
+| Expense Detail | `/finance/expenses/:id` |
+| New Expense | `/finance/expenses/new` |
+| Budgets | `/finance/budgets` |
+| New Budget | `/finance/budgets/new` |
+| Recurring Costs | `/finance/recurring-costs` |
+| New Recurring Cost | `/finance/recurring-costs/new` |
+
+**Key Finance Features:**
+- **Expense Management**: Create, approve/reject, and track expenses with category tagging
+- **Budget Tracking**: Set budgets by category/account/project with utilization tracking
+- **Recurring Costs**: Track subscriptions and recurring expenses with auto-generation
+- **AI Categorization**: Automatic category suggestions based on description and vendor
+- **Anomaly Detection**: Statistical and AI-powered detection of unusual expenses
+- **Spending Forecasting**: Predictive forecasts based on historical spending patterns
+- **Financial Insights**: AI-generated summaries and recommendations
 
 ## Troubleshooting
 

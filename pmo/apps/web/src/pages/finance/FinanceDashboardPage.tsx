@@ -16,6 +16,9 @@ import {
   Receipt,
   Wallet,
   RefreshCw,
+  Sparkles,
+  BarChart3,
+  Lightbulb,
 } from 'lucide-react';
 import { Card, Button } from '../../ui';
 import {
@@ -25,6 +28,8 @@ import {
   useSpendingByCategory,
   useUpcomingRenewals,
   useExpenses,
+  useSpendingForecast,
+  useFinancialInsights,
 } from '../../api/hooks/useFinance';
 
 function formatCurrency(amount: number, currency: string = 'USD'): string {
@@ -154,6 +159,11 @@ export default function FinanceDashboardPage() {
     status: 'PENDING',
     limit: 5,
   });
+  const { data: forecast, isLoading: forecastLoading } = useSpendingForecast({
+    periods: 3,
+    periodType: 'MONTH',
+  });
+  const { data: insights } = useFinancialInsights();
 
   const isLoading = overviewLoading || budgetLoading || recurringLoading;
 
@@ -361,6 +371,171 @@ export default function FinanceDashboardPage() {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* AI Insights & Forecast */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Spending Forecast */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-5 w-5 text-purple-500" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Spending Forecast
+            </h2>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">
+              <Sparkles className="h-3 w-3" />
+              AI
+            </span>
+          </div>
+          {forecastLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
+                  <div className="h-8 bg-gray-200 rounded w-full" />
+                </div>
+              ))}
+            </div>
+          ) : forecast?.forecasts ? (
+            <div className="space-y-4">
+              {/* Trend Summary */}
+              <div className="flex items-center gap-2 text-sm">
+                {forecast.summary.trend === 'INCREASING' ? (
+                  <>
+                    <TrendingUp className="h-4 w-4 text-red-500" />
+                    <span className="text-red-600">
+                      Spending trending up {forecast.summary.trendPercentage}%
+                    </span>
+                  </>
+                ) : forecast.summary.trend === 'DECREASING' ? (
+                  <>
+                    <TrendingDown className="h-4 w-4 text-green-500" />
+                    <span className="text-green-600">
+                      Spending trending down{' '}
+                      {Math.abs(forecast.summary.trendPercentage)}%
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-gray-600">Spending is stable</span>
+                )}
+              </div>
+
+              {/* Forecast Bars */}
+              {forecast.forecasts.map((f, i) => {
+                const maxAmount = Math.max(
+                  ...forecast.forecasts.map((x) => x.confidenceInterval.high),
+                );
+                const percentage = (f.predictedAmount / maxAmount) * 100;
+
+                return (
+                  <div key={i}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">{f.period}</span>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(f.predictedAmount)}
+                      </span>
+                    </div>
+                    <div className="relative h-6 bg-gray-100 rounded overflow-hidden">
+                      {/* Confidence interval background */}
+                      <div
+                        className="absolute h-full bg-purple-100"
+                        style={{
+                          left: `${(f.confidenceInterval.low / maxAmount) * 100}%`,
+                          width: `${((f.confidenceInterval.high - f.confidenceInterval.low) / maxAmount) * 100}%`,
+                        }}
+                      />
+                      {/* Predicted amount bar */}
+                      <div
+                        className="absolute h-full bg-purple-500 rounded"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+                      <span>{formatCurrency(f.confidenceInterval.low)}</span>
+                      <span>{formatCurrency(f.confidenceInterval.high)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Total Predicted */}
+              <div className="pt-3 border-t">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">
+                    Total 3-month forecast
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {formatCurrency(forecast.summary.totalPredicted)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              Not enough data for forecasting
+            </div>
+          )}
+        </Card>
+
+        {/* AI Insights */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="h-5 w-5 text-amber-500" />
+            <h2 className="text-lg font-semibold text-gray-900">AI Insights</h2>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700">
+              <Sparkles className="h-3 w-3" />
+              AI
+            </span>
+          </div>
+          {insights ? (
+            <div className="space-y-4">
+              {/* Summary */}
+              <p className="text-sm text-gray-600">{insights.summary}</p>
+
+              {/* Key Metrics */}
+              <div className="grid grid-cols-3 gap-3">
+                {insights.keyMetrics.map((metric, i) => (
+                  <div
+                    key={i}
+                    className="text-center p-3 bg-gray-50 rounded-lg"
+                  >
+                    <p className="text-xs text-gray-500">{metric.label}</p>
+                    <p className="font-semibold text-gray-900">
+                      {metric.value}
+                    </p>
+                    <p className="text-xs text-gray-400">{metric.trend}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Recommendations */}
+              {insights.recommendations.length > 0 && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Recommendations
+                  </p>
+                  <ul className="space-y-2">
+                    {insights.recommendations.map((rec, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-600"
+                      >
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-600 text-xs font-medium shrink-0 mt-0.5">
+                          {i + 1}
+                        </span>
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Loading insights...
+            </div>
+          )}
+        </Card>
       </div>
 
       {/* Quick Stats Row */}

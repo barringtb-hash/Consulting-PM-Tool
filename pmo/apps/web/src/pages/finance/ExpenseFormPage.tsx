@@ -4,12 +4,19 @@
  * Create or edit an expense with validation and category selection.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, Receipt, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Save,
+  Receipt,
+  Loader2,
+  Sparkles,
+  Check,
+} from 'lucide-react';
 import { Card, Button, Input } from '../../ui';
 import {
   useExpense,
@@ -17,9 +24,28 @@ import {
   useUpdateExpense,
   useCategories,
   useBudgets,
+  useCategorySuggestions,
+  useRecordCategorizationFeedback,
 } from '../../api/hooks/useFinance';
 import { useAccounts } from '../../api/hooks/crm';
 import { useProjects } from '../../api/hooks/projects';
+
+// Debounce hook for AI suggestions
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 const expenseFormSchema = z.object({
   description: z.string().min(1, 'Description is required').max(500),
@@ -80,6 +106,41 @@ export default function ExpenseFormPage() {
   });
 
   const selectedAccountId = watch('accountId');
+  const description = watch('description');
+  const vendorName = watch('vendorName');
+  const amount = watch('amount');
+  const currentCategoryId = watch('categoryId');
+
+  // Debounce the inputs for AI suggestions
+  const debouncedDescription = useDebounce(description, 500);
+  const debouncedVendorName = useDebounce(vendorName, 500);
+  const debouncedAmount = useDebounce(amount, 500);
+
+  // AI category suggestions
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const { data: suggestionsData, isLoading: suggestionsLoading } =
+    useCategorySuggestions(
+      debouncedDescription || '',
+      debouncedVendorName,
+      debouncedAmount,
+      !isEditing && showSuggestions && (debouncedDescription?.length ?? 0) > 3,
+    );
+  const recordFeedback = useRecordCategorizationFeedback();
+
+  // Handle suggestion selection
+  const handleSelectSuggestion = useCallback(
+    (categoryId: number, suggestedCategoryId: number) => {
+      // Record feedback for AI learning
+      recordFeedback.mutate({
+        expenseId: 0, // New expense, no ID yet
+        suggestedCategoryId,
+        actualCategoryId: categoryId,
+        wasAccepted: categoryId === suggestedCategoryId,
+      });
+      setShowSuggestions(false);
+    },
+    [recordFeedback],
+  );
 
   // Filter projects by selected account
   const filteredProjects = projectsData?.projects.filter(
@@ -254,6 +315,16 @@ export default function ExpenseFormPage() {
                 render={({ field }) => (
                   <select
                     {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // Record feedback if there was a suggestion
+                      if (suggestionsData?.suggestions?.[0]) {
+                        handleSelectSuggestion(
+                          Number(e.target.value),
+                          suggestionsData.suggestions[0].categoryId,
+                        );
+                      }
+                    }}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                       errors.categoryId ? 'border-red-500' : ''
                     }`}
@@ -271,6 +342,75 @@ export default function ExpenseFormPage() {
                 <p className="mt-1 text-sm text-red-500">
                   {errors.categoryId.message}
                 </p>
+              )}
+
+              {/* AI Category Suggestions */}
+              {!isEditing && showSuggestions && (
+                <div className="mt-2">
+                  {suggestionsLoading && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Getting AI suggestions...</span>
+                    </div>
+                  )}
+                  {suggestionsData?.suggestions &&
+                    suggestionsData.suggestions.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Sparkles className="h-4 w-4 text-purple-500" />
+                          <span>
+                            AI Suggestions
+                            {suggestionsData.usedAI && (
+                              <span className="text-xs text-purple-500 ml-1">
+                                (AI-powered)
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {suggestionsData.suggestions.map((suggestion) => (
+                            <Controller
+                              key={suggestion.categoryId}
+                              name="categoryId"
+                              control={control}
+                              render={({ field }) => (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    field.onChange(suggestion.categoryId);
+                                    handleSelectSuggestion(
+                                      suggestion.categoryId,
+                                      suggestion.categoryId,
+                                    );
+                                  }}
+                                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                                    Number(currentCategoryId) ===
+                                    suggestion.categoryId
+                                      ? 'bg-purple-100 border-purple-300 text-purple-700'
+                                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-purple-50 hover:border-purple-200'
+                                  }`}
+                                >
+                                  {Number(currentCategoryId) ===
+                                    suggestion.categoryId && (
+                                    <Check className="h-3 w-3" />
+                                  )}
+                                  <span>{suggestion.categoryName}</span>
+                                  <span className="text-xs text-gray-400">
+                                    {Math.round(suggestion.confidence * 100)}%
+                                  </span>
+                                </button>
+                              )}
+                            />
+                          ))}
+                        </div>
+                        {suggestionsData.suggestions[0]?.reason && (
+                          <p className="text-xs text-gray-500 italic">
+                            {suggestionsData.suggestions[0].reason}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                </div>
               )}
             </div>
           </div>

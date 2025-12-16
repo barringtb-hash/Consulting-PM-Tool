@@ -23,6 +23,7 @@ import {
   Trash2,
   Check,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, Button, Input, Modal } from '../../ui';
 import {
@@ -509,17 +510,29 @@ export default function ExpensesPage() {
                 {data?.expenses.map((expense) => (
                   <tr key={expense.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <Link
-                        to={`/finance/expenses/${expense.id}`}
-                        className="font-medium text-gray-900 hover:text-blue-600"
-                      >
-                        {expense.description}
-                      </Link>
-                      {expense.vendorName && (
-                        <p className="text-sm text-gray-500">
-                          {expense.vendorName}
-                        </p>
-                      )}
+                      <div className="flex items-start gap-2">
+                        {expense.aiAnomalyFlag && (
+                          <span
+                            className="inline-flex items-center justify-center p-1 bg-amber-100 text-amber-600 rounded"
+                            title="Potential anomaly detected"
+                          >
+                            <AlertTriangle className="h-4 w-4" />
+                          </span>
+                        )}
+                        <div>
+                          <Link
+                            to={`/finance/expenses/${expense.id}`}
+                            className="font-medium text-gray-900 hover:text-blue-600"
+                          >
+                            {expense.description}
+                          </Link>
+                          {expense.vendorName && (
+                            <p className="text-sm text-gray-500">
+                              {expense.vendorName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span

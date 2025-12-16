@@ -6,7 +6,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { requireAuth, requireTenantRole } from '../../auth/auth.middleware';
+import { requireAuth } from '../../auth/auth.middleware';
+import { requireRole } from '../../auth/role.middleware';
 import { runWithTenant } from '../../tenant/tenant.context';
 import * as categoryService from './services/category.service';
 import * as expenseService from './services/expense.service';
@@ -29,6 +30,9 @@ import {
   updateCategorySchema,
   listCategoriesSchema,
 } from '../../validation/finance';
+import * as categorizationService from './ai/categorization.service';
+import * as anomalyService from './ai/anomaly-detection.service';
+import * as forecastingService from './ai/forecasting.service';
 
 const router = Router();
 
@@ -39,7 +43,7 @@ router.use(requireAuth);
 // MIDDLEWARE: Admin check for write operations
 // ============================================================================
 
-const requireFinanceAdmin = requireTenantRole(['OWNER', 'ADMIN']);
+const requireFinanceAdmin = requireRole('ADMIN');
 
 // ============================================================================
 // CATEGORY ROUTES
@@ -930,6 +934,257 @@ router.get('/analytics/top-vendors', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error getting top vendors:', error);
     return res.status(500).json({ error: 'Failed to get top vendors' });
+  }
+});
+
+// ============================================================================
+// AI ROUTES
+// ============================================================================
+
+// Get AI category suggestions
+router.post('/ai/categorize', async (req: Request, res: Response) => {
+  try {
+    const { description, vendorName, amount } = req.body;
+
+    if (!description) {
+      return res.status(400).json({ error: 'Description is required' });
+    }
+
+    const result = await runWithTenant(
+      () =>
+        categorizationService.suggestCategory(
+          description,
+          vendorName,
+          amount ? parseFloat(amount) : undefined,
+        ),
+      req.tenantId!,
+    );
+
+    return res.json(result);
+  } catch (error) {
+    console.error('Error getting category suggestions:', error);
+    return res
+      .status(500)
+      .json({ error: 'Failed to get category suggestions' });
+  }
+});
+
+// Bulk categorize expenses
+router.post(
+  '/ai/categorize/bulk',
+  requireFinanceAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { expenses } = req.body;
+
+      if (!Array.isArray(expenses)) {
+        return res.status(400).json({ error: 'Expenses array is required' });
+      }
+
+      const results = await runWithTenant(
+        () => categorizationService.bulkCategorize(expenses),
+        req.tenantId!,
+      );
+
+      return res.json({
+        results: Object.fromEntries(results),
+      });
+    } catch (error) {
+      console.error('Error bulk categorizing:', error);
+      return res.status(500).json({ error: 'Failed to bulk categorize' });
+    }
+  },
+);
+
+// Record categorization feedback
+router.post('/ai/categorize/feedback', async (req: Request, res: Response) => {
+  try {
+    const { expenseId, suggestedCategoryId, actualCategoryId, wasAccepted } =
+      req.body;
+
+    await runWithTenant(
+      () =>
+        categorizationService.recordCategorizationFeedback({
+          expenseId,
+          suggestedCategoryId,
+          actualCategoryId,
+          wasAccepted,
+        }),
+      req.tenantId!,
+    );
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error recording feedback:', error);
+    return res.status(500).json({ error: 'Failed to record feedback' });
+  }
+});
+
+// Detect anomalies for an expense
+router.get('/ai/anomalies/:expenseId', async (req: Request, res: Response) => {
+  try {
+    const expenseId = parseInt(req.params.expenseId, 10);
+    if (isNaN(expenseId)) {
+      return res.status(400).json({ error: 'Invalid expense ID' });
+    }
+
+    const anomalies = await runWithTenant(
+      () => anomalyService.detectExpenseAnomalies(expenseId),
+      req.tenantId!,
+    );
+
+    return res.json({ anomalies });
+  } catch (error) {
+    console.error('Error detecting anomalies:', error);
+    const message =
+      error instanceof Error ? error.message : 'Failed to detect anomalies';
+    return res.status(400).json({ error: message });
+  }
+});
+
+// Get anomaly statistics
+router.get('/ai/anomalies/stats', async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const stats = await runWithTenant(
+      () =>
+        anomalyService.getAnomalyStats({
+          startDate: startDate as string | undefined,
+          endDate: endDate as string | undefined,
+        }),
+      req.tenantId!,
+    );
+
+    return res.json(stats);
+  } catch (error) {
+    console.error('Error getting anomaly stats:', error);
+    return res.status(500).json({ error: 'Failed to get anomaly stats' });
+  }
+});
+
+// Scan pending expenses for anomalies
+router.post(
+  '/ai/anomalies/scan',
+  requireFinanceAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const result = await runWithTenant(
+        () => anomalyService.scanPendingExpenses(),
+        req.tenantId!,
+      );
+
+      return res.json(result);
+    } catch (error) {
+      console.error('Error scanning for anomalies:', error);
+      return res.status(500).json({ error: 'Failed to scan for anomalies' });
+    }
+  },
+);
+
+// Get AI anomaly insights
+router.post('/ai/anomalies/insights', async (req: Request, res: Response) => {
+  try {
+    const { anomalies } = req.body;
+
+    if (!Array.isArray(anomalies)) {
+      return res.status(400).json({ error: 'Anomalies array is required' });
+    }
+
+    const insights = await runWithTenant(
+      () => anomalyService.getAnomalyInsights(anomalies),
+      req.tenantId!,
+    );
+
+    return res.json({ insights });
+  } catch (error) {
+    console.error('Error getting anomaly insights:', error);
+    return res.status(500).json({ error: 'Failed to get anomaly insights' });
+  }
+});
+
+// Generate spending forecast
+router.get('/ai/forecast', async (req: Request, res: Response) => {
+  try {
+    const { periods, periodType, categoryId } = req.query;
+
+    const forecast = await runWithTenant(
+      () =>
+        forecastingService.generateSpendingForecast({
+          periods: periods ? parseInt(periods as string, 10) : undefined,
+          periodType: periodType as 'MONTH' | 'QUARTER' | undefined,
+          categoryId: categoryId
+            ? parseInt(categoryId as string, 10)
+            : undefined,
+        }),
+      req.tenantId!,
+    );
+
+    return res.json(forecast);
+  } catch (error) {
+    console.error('Error generating forecast:', error);
+    const message =
+      error instanceof Error ? error.message : 'Failed to generate forecast';
+    return res.status(400).json({ error: message });
+  }
+});
+
+// Get budget recommendations
+router.get(
+  '/ai/budget-recommendations',
+  async (req: Request, res: Response) => {
+    try {
+      const recommendations = await runWithTenant(
+        () => forecastingService.generateBudgetRecommendations(),
+        req.tenantId!,
+      );
+
+      return res.json({ recommendations });
+    } catch (error) {
+      console.error('Error getting budget recommendations:', error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to get budget recommendations' });
+    }
+  },
+);
+
+// Get cash flow projection
+router.get('/ai/cash-flow', async (req: Request, res: Response) => {
+  try {
+    const { days, startingBalance } = req.query;
+
+    const projection = await runWithTenant(
+      () =>
+        forecastingService.generateCashFlowProjection({
+          days: days ? parseInt(days as string, 10) : undefined,
+          startingBalance: startingBalance
+            ? parseFloat(startingBalance as string)
+            : undefined,
+        }),
+      req.tenantId!,
+    );
+
+    return res.json({ projection });
+  } catch (error) {
+    console.error('Error generating cash flow projection:', error);
+    return res
+      .status(500)
+      .json({ error: 'Failed to generate cash flow projection' });
+  }
+});
+
+// Get financial insights
+router.get('/ai/insights', async (req: Request, res: Response) => {
+  try {
+    const insights = await runWithTenant(
+      () => forecastingService.getFinancialInsights(),
+      req.tenantId!,
+    );
+
+    return res.json(insights);
+  } catch (error) {
+    console.error('Error getting financial insights:', error);
+    return res.status(500).json({ error: 'Failed to get financial insights' });
   }
 });
 
