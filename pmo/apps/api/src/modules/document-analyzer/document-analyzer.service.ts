@@ -45,7 +45,9 @@ function isMissingColumnError(error: unknown, columnName: string): boolean {
 
   // Fallback: check error message for cases where error code isn't set correctly
   const errorMessage = (error as Error).message || '';
-  return errorMessage.includes(columnName) && errorMessage.includes('does not exist');
+  return (
+    errorMessage.includes(columnName) && errorMessage.includes('does not exist')
+  );
 }
 
 // ============================================================================
