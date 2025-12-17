@@ -14,10 +14,10 @@
  * Conversion Workflow (convertLead):
  * The convertLead function transforms a qualified lead into CRM entities:
  *
- * ┌─────────────┐
- * │   Lead      │
- * │ (InboundLead)
- * └──────┬──────┘
+ * ┌───────────────┐
+ * │     Lead      │
+ * │ (InboundLead) │
+ * └───────┬───────┘
  *        │ convertLead()
  *        ▼
  * ┌──────────────────────────────────────────┐

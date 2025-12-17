@@ -7,7 +7,7 @@ This plan outlines a comprehensive documentation review for the AI CRM Platform 
 **Scope:**
 - 214 TypeScript files (API backend)
 - 190 TypeScript/React files (Web frontend)
-- 179,573-line Prisma schema
+- 7,090-line Prisma schema
 - 20+ feature modules
 - 52 page components
 - 50+ API endpoints
@@ -446,7 +446,7 @@ Each component will be rated:
 | Finance models | Expense, Budget, RecurringCost, Category |
 | Tenant models | Tenant, TenantUser, TenantSettings |
 
-**File:** `pmo/prisma/schema.prisma` (179,573 lines)
+**File:** `pmo/prisma/schema.prisma` (7,090 lines)
 
 **Deliverables:**
 - Entity relationship diagram
