@@ -82,7 +82,7 @@ function EmptyState({
       </p>
       {action && (
         <Button variant="secondary" size="sm" as={Link} to={action.href}>
-          <Plus className="h-4 w-4 mr-1" />
+          <Plus className="h-4 w-4 mr-2" />
           {action.label}
         </Button>
       )}
@@ -116,52 +116,52 @@ function StatCard({
     purple: 'bg-purple-50 text-purple-600',
   };
 
-  const content = (
-    <Card className="p-6 hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
-          {subtitle && (
-            <p className="mt-1 text-sm text-gray-500 truncate">{subtitle}</p>
-          )}
-          {trend !== undefined && (
-            <div className="mt-2 flex items-center gap-1.5">
-              {trend >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-red-500" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-green-500" />
-              )}
-              <span
-                className={`text-sm font-medium ${trend >= 0 ? 'text-red-600' : 'text-green-600'}`}
-              >
-                {Math.abs(trend)}%
-              </span>
-              {trendLabel && (
-                <span className="text-sm text-gray-400">{trendLabel}</span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className={`rounded-xl p-3 ${iconColorClasses[iconColor]}`}>
-          <Icon className="h-6 w-6" />
-        </div>
+  const cardContent = (
+    <div className="flex items-start justify-between">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
+        <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+        {subtitle && (
+          <p className="mt-1 text-sm text-gray-500 truncate">{subtitle}</p>
+        )}
+        {trend !== undefined && (
+          <div className="mt-2 flex items-center gap-1.5">
+            {trend >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-red-500" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-green-500" />
+            )}
+            <span
+              className={`text-sm font-medium ${trend >= 0 ? 'text-red-600' : 'text-green-600'}`}
+            >
+              {Math.abs(trend)}%
+            </span>
+            {trendLabel && (
+              <span className="text-sm text-gray-400">{trendLabel}</span>
+            )}
+          </div>
+        )}
       </div>
-    </Card>
+      <div className={`rounded-xl p-3 ${iconColorClasses[iconColor]}`}>
+        <Icon className="h-6 w-6" />
+      </div>
+    </div>
   );
 
   if (href) {
     return (
       <Link
         to={href}
-        className="block focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg"
+        className="block rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
-        {content}
+        <Card className="p-6 hover:shadow-md transition-shadow duration-200">
+          {cardContent}
+        </Card>
       </Link>
     );
   }
 
-  return content;
+  return <Card className="p-6">{cardContent}</Card>;
 }
 
 function CategoryBreakdown({
@@ -509,7 +509,8 @@ export default function FinanceDashboardPage() {
                 const maxAmount = Math.max(
                   ...forecast.forecasts.map((x) => x.confidenceInterval.high),
                 );
-                const percentage = (f.predictedAmount / maxAmount) * 100;
+                const percentage =
+                  maxAmount > 0 ? (f.predictedAmount / maxAmount) * 100 : 0;
 
                 return (
                   <div key={i}>
@@ -526,8 +527,8 @@ export default function FinanceDashboardPage() {
                       <div
                         className="absolute h-full bg-purple-100"
                         style={{
-                          left: `${(f.confidenceInterval.low / maxAmount) * 100}%`,
-                          width: `${((f.confidenceInterval.high - f.confidenceInterval.low) / maxAmount) * 100}%`,
+                          left: `${maxAmount > 0 ? (f.confidenceInterval.low / maxAmount) * 100 : 0}%`,
+                          width: `${maxAmount > 0 ? ((f.confidenceInterval.high - f.confidenceInterval.low) / maxAmount) * 100 : 0}%`,
                         }}
                       />
                       {/* Predicted amount bar */}
@@ -623,8 +624,8 @@ export default function FinanceDashboardPage() {
           ) : (
             <EmptyState
               icon={Lightbulb}
-              title="Generating insights"
-              description="AI is analyzing your financial data to provide personalized insights."
+              title="No insights available yet"
+              description="AI insights will appear here once your financial data has been analyzed."
             />
           )}
         </Card>
