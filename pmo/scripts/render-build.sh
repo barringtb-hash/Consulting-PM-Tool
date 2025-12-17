@@ -24,10 +24,10 @@ else
     exit 1
 fi
 
-# Step 1: Install dependencies from workspace root
+# Step 1: Install dependencies from workspace root (include dev for TypeScript types)
 echo ""
 echo "Installing dependencies..."
-npm install
+npm ci --include=dev
 echo "Dependencies installed"
 echo ""
 
