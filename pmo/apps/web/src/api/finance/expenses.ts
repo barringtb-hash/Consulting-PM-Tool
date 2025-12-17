@@ -26,6 +26,8 @@ export interface Expense {
   budget?: { id: number; name: string } | null;
   owner: { id: number; name: string };
   approver?: { id: number; name: string } | null;
+  approvedBy?: { id: number; name: string } | null;
+  approvedAt?: string | null;
   vendorName?: string | null;
   invoiceNumber?: string | null;
   tags: string[];
