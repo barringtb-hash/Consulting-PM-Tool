@@ -24,33 +24,29 @@ else
     exit 1
 fi
 
-# Step 1: Install dependencies from workspace root
+# Step 1: Install dependencies from workspace root (include dev for TypeScript types)
 echo ""
 echo "Installing dependencies..."
-npm install
+npm ci --include=dev
 echo "Dependencies installed"
 echo ""
 
 # Define schema path for Prisma 7 compatibility
 SCHEMA_PATH="$WORKSPACE_ROOT/prisma/schema.prisma"
 
-# Step 2: Generate Prisma client
+# Step 2: Generate Prisma client (run from workspace root where prisma.config.ts is)
 echo "Generating Prisma client..."
-cd "$API_DIR"
 npx prisma generate --schema "$SCHEMA_PATH"
-cd "$WORKSPACE_ROOT"
 echo "Prisma client generated"
 echo ""
 
-# Step 3: Run smart migration deployment (handles failed migrations)
+# Step 3: Run smart migration deployment (run from workspace root where prisma.config.ts is)
 echo "Deploying database migrations..."
-cd "$API_DIR"
 if [ -f "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" ]; then
     bash "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" "$SCHEMA_PATH"
 else
     npx prisma migrate deploy --schema "$SCHEMA_PATH"
 fi
-cd "$WORKSPACE_ROOT"
 echo "Migrations deployed"
 echo ""
 
