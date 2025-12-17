@@ -23,8 +23,22 @@ import {
   CRMLeadSource,
   LeadSource,
 } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({
+  adapter,
+  log: ['error'],
+});
+
+async function cleanup() {
+  await prisma.$disconnect();
+  await pool.end();
+}
 
 // Mapping from legacy LeadStatus to CRM ContactLifecycle
 const STATUS_TO_LIFECYCLE: Record<LeadStatus, ContactLifecycle> = {
@@ -212,11 +226,11 @@ async function main() {
     );
   }
 
-  await prisma.$disconnect();
+  await cleanup();
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('Migration failed:', error);
-  prisma.$disconnect();
+  await cleanup();
   process.exit(1);
 });
