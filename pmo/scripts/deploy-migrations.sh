@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# NOTE: This script must be run from the workspace root (pmo/) where prisma.config.ts is located
+# Prisma 7 requires the config file to be in the current working directory
+
 echo "🔍 Checking migration status..."
 
 # Accept schema path as first argument (required for Prisma 7)
@@ -8,7 +11,11 @@ SCHEMA_PATH="${1:-}"
 
 if [ -z "$SCHEMA_PATH" ]; then
     # Try to determine schema path relative to current directory
-    if [ -f "../../prisma/schema.prisma" ]; then
+    if [ -f "prisma/schema.prisma" ]; then
+        # Running from workspace root (pmo/)
+        SCHEMA_PATH="$(pwd)/prisma/schema.prisma"
+    elif [ -f "../../prisma/schema.prisma" ]; then
+        # Running from apps/api (legacy support)
         SCHEMA_PATH="$(cd ../.. && pwd)/prisma/schema.prisma"
     else
         echo "❌ Schema path not provided and could not be auto-detected"
