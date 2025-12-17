@@ -39,7 +39,7 @@ export async function fetchPublishingConnections(
   clientId: number,
 ): Promise<PublishingConnection[]> {
   const url = buildApiUrl(`/clients/${clientId}/publishing-connections`);
-  const response = await fetch(url, buildOptions('GET'));
+  const response = await fetch(url, buildOptions({ method: 'GET' }));
   const data = await handleResponse<{
     connections: PublishingConnectionResponse[];
   }>(response);
@@ -55,7 +55,10 @@ export async function createPublishingConnection(
   const url = buildApiUrl(
     `/clients/${payload.clientId}/publishing-connections`,
   );
-  const response = await fetch(url, buildOptions('POST', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'POST', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{
     connection: PublishingConnectionResponse;
   }>(response);
@@ -70,7 +73,10 @@ export async function updatePublishingConnection(
   payload: UpdatePublishingConnectionInput,
 ): Promise<PublishingConnection> {
   const url = buildApiUrl(`/publishing-connections/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'PATCH', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{
     connection: PublishingConnectionResponse;
   }>(response);
@@ -82,7 +88,7 @@ export async function updatePublishingConnection(
  */
 export async function deletePublishingConnection(id: number): Promise<void> {
   const url = buildApiUrl(`/publishing-connections/${id}`);
-  const response = await fetch(url, buildOptions('DELETE'));
+  const response = await fetch(url, buildOptions({ method: 'DELETE' }));
   await handleResponse(response);
 }
 
@@ -97,7 +103,10 @@ export async function publishContent(
   },
 ): Promise<{ content: unknown }> {
   const url = buildApiUrl(`/marketing-contents/${contentId}/publish`);
-  const response = await fetch(url, buildOptions('POST', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'POST', body: JSON.stringify(payload) }),
+  );
   return handleResponse(response);
 }
 

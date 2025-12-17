@@ -19,7 +19,7 @@ import {
 
 interface BrandProfileResponse extends Omit<
   BrandProfile,
-  'createdAt' | 'updatedAt'
+  'createdAt' | 'updatedAt' | 'assets'
 > {
   createdAt: string;
   updatedAt: string;
@@ -55,7 +55,7 @@ export async function fetchBrandProfile(
 ): Promise<BrandProfile | null> {
   const url = buildApiUrl(`/clients/${clientId}/brand-profile`);
   try {
-    const response = await fetch(url, buildOptions('GET'));
+    const response = await fetch(url, buildOptions({ method: 'GET' }));
     const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
       response,
     );
@@ -80,7 +80,10 @@ export async function createBrandProfile(
   payload: CreateBrandProfileInput,
 ): Promise<BrandProfile> {
   const url = buildApiUrl(`/clients/${payload.clientId}/brand-profile`);
-  const response = await fetch(url, buildOptions('POST', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'POST', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
     response,
   );
@@ -95,7 +98,10 @@ export async function updateBrandProfile(
   payload: UpdateBrandProfileInput,
 ): Promise<BrandProfile> {
   const url = buildApiUrl(`/brand-profiles/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'PATCH', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
     response,
   );
@@ -109,7 +115,7 @@ export async function fetchBrandAssets(
   brandProfileId: number,
 ): Promise<BrandAsset[]> {
   const url = buildApiUrl(`/brand-profiles/${brandProfileId}/assets`);
-  const response = await fetch(url, buildOptions('GET'));
+  const response = await fetch(url, buildOptions({ method: 'GET' }));
   const data = await handleResponse<{ assets: BrandAssetResponse[] }>(response);
   return data.assets.map(mapBrandAsset);
 }
@@ -121,7 +127,10 @@ export async function createBrandAsset(
   payload: CreateBrandAssetInput,
 ): Promise<BrandAsset> {
   const url = buildApiUrl(`/brand-profiles/${payload.brandProfileId}/assets`);
-  const response = await fetch(url, buildOptions('POST', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'POST', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{ asset: BrandAssetResponse }>(response);
   return mapBrandAsset(data.asset);
 }
@@ -134,7 +143,10 @@ export async function updateBrandAsset(
   payload: UpdateBrandAssetInput,
 ): Promise<BrandAsset> {
   const url = buildApiUrl(`/brand-assets/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'PATCH', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{ asset: BrandAssetResponse }>(response);
   return mapBrandAsset(data.asset);
 }
@@ -144,7 +156,7 @@ export async function updateBrandAsset(
  */
 export async function archiveBrandAsset(id: number): Promise<void> {
   const url = buildApiUrl(`/brand-assets/${id}`);
-  const response = await fetch(url, buildOptions('DELETE'));
+  const response = await fetch(url, buildOptions({ method: 'DELETE' }));
   await handleResponse(response);
 }
 

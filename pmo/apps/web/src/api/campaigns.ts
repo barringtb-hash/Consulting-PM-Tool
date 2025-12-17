@@ -49,7 +49,7 @@ export async function fetchCampaigns(query: {
     params.append('archived', query.archived.toString());
 
   const url = buildApiUrl(`/campaigns?${params.toString()}`);
-  const response = await fetch(url, buildOptions('GET'));
+  const response = await fetch(url, buildOptions({ method: 'GET' }));
   const data = await handleResponse<{ campaigns: CampaignResponse[] }>(
     response,
   );
@@ -61,7 +61,7 @@ export async function fetchCampaigns(query: {
  */
 export async function fetchCampaign(id: number): Promise<Campaign> {
   const url = buildApiUrl(`/campaigns/${id}`);
-  const response = await fetch(url, buildOptions('GET'));
+  const response = await fetch(url, buildOptions({ method: 'GET' }));
   const data = await handleResponse<{ campaign: CampaignResponse }>(response);
   return mapCampaign(data.campaign);
 }
@@ -73,7 +73,10 @@ export async function createCampaign(
   payload: CreateCampaignInput,
 ): Promise<Campaign> {
   const url = buildApiUrl('/campaigns');
-  const response = await fetch(url, buildOptions('POST', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'POST', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{ campaign: CampaignResponse }>(response);
   return mapCampaign(data.campaign);
 }
@@ -86,7 +89,10 @@ export async function updateCampaign(
   payload: UpdateCampaignInput,
 ): Promise<Campaign> {
   const url = buildApiUrl(`/campaigns/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
+  const response = await fetch(
+    url,
+    buildOptions({ method: 'PATCH', body: JSON.stringify(payload) }),
+  );
   const data = await handleResponse<{ campaign: CampaignResponse }>(response);
   return mapCampaign(data.campaign);
 }
@@ -96,7 +102,7 @@ export async function updateCampaign(
  */
 export async function archiveCampaign(id: number): Promise<void> {
   const url = buildApiUrl(`/campaigns/${id}`);
-  const response = await fetch(url, buildOptions('DELETE'));
+  const response = await fetch(url, buildOptions({ method: 'DELETE' }));
   await handleResponse(response);
 }
 
