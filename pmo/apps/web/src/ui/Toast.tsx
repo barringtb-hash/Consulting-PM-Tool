@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  memo,
   useCallback,
   useContext,
   useMemo,
@@ -135,7 +136,10 @@ const iconPaths: Record<ToastVariant, JSX.Element> = {
   ),
 };
 
-function ToastItem({ toast, onClose }: ToastItemProps): JSX.Element {
+const ToastItem = memo(function ToastItem({
+  toast,
+  onClose,
+}: ToastItemProps): JSX.Element {
   return (
     <div
       className={cn(
@@ -169,4 +173,6 @@ function ToastItem({ toast, onClose }: ToastItemProps): JSX.Element {
       </button>
     </div>
   );
-}
+});
+
+ToastItem.displayName = 'ToastItem';
