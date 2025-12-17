@@ -1,3 +1,31 @@
+/**
+ * Tool 3.3: Predictive Maintenance Service
+ *
+ * Provides AI-powered equipment maintenance prediction and management including:
+ * - Equipment lifecycle management and tracking
+ * - Sensor data collection and analysis
+ * - Failure prediction using ML algorithms
+ * - Anomaly detection from sensor readings
+ * - Work order generation and management
+ * - Maintenance schedule optimization
+ * - Downtime tracking and analysis
+ * - Spare parts inventory integration
+ *
+ * Prediction Methods:
+ * - Statistical analysis of sensor trends
+ * - Anomaly detection algorithms
+ * - Equipment age and usage patterns
+ * - Historical failure correlation
+ *
+ * Industry Applications:
+ * - Manufacturing: Production equipment monitoring
+ * - Facilities: HVAC and building systems
+ * - Fleet: Vehicle maintenance scheduling
+ * - Energy: Generator and grid equipment
+ *
+ * @module modules/predictive-maintenance
+ */
+
 import {
   EquipmentStatus,
   MaintenanceType,

@@ -1,3 +1,29 @@
+/**
+ * Express Application Factory
+ *
+ * Creates and configures the Express application with all middleware,
+ * routes, and error handlers. Uses factory pattern for testability.
+ *
+ * Middleware Stack (in order):
+ * 1. Cookie Parser - Parse cookies for JWT auth
+ * 2. CORS - Dynamic CORS based on request path
+ * 3. JSON Body Parser - Parse JSON request bodies
+ * 4. Health Check - /api/healthz endpoint
+ * 5. Public Routes - Unauthenticated endpoints (public leads, widget)
+ * 6. Feature Flags - Module availability endpoint
+ * 7. Auth Routes - Login/logout/me endpoints
+ * 8. Protected Routes - All authenticated API routes
+ * 9. Error Handler - Global error handling (must be last)
+ *
+ * Route Organization:
+ * - Core Routes: /api/auth, /api/clients, /api/projects, /api/tasks
+ * - CRM Routes: /api/crm/accounts, /api/crm/opportunities, /api/crm/activities
+ * - AI Tools: /api/chatbot, /api/document-analyzer, /api/lead-scoring, etc.
+ * - Admin Routes: /api/admin/tenants, /api/analytics
+ *
+ * @module app
+ */
+
 import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';

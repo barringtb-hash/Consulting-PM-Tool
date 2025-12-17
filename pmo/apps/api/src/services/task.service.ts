@@ -1,3 +1,21 @@
+/**
+ * Task Service
+ *
+ * Provides task management operations for the PMO module.
+ * Tasks are the primary work items within projects, supporting:
+ * - Kanban-style status workflow (TODO, IN_PROGRESS, DONE)
+ * - Priority levels (LOW, MEDIUM, HIGH, URGENT)
+ * - Milestone associations
+ * - Meeting-to-task conversion (sourceMeetingId)
+ *
+ * Access Control:
+ * - Tasks belong to projects, which have owners
+ * - Only project owners can CRUD tasks within their projects
+ * - Multi-tenant isolation via tenantId filtering
+ *
+ * @module services/task
+ */
+
 import { Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
@@ -8,12 +26,15 @@ import {
   TaskUpdateInput,
 } from '../validation/task.schema';
 
+/** Task with project owner information for access control checks */
 type TaskWithOwner = Prisma.TaskGetPayload<{
   include: { project: { select: { ownerId: true } } };
 }>;
 
+/** Task data without the nested project relation */
 type TaskWithoutProject = Omit<TaskWithOwner, 'project'>;
 
+/** Task creation data including optional meeting source */
 type TaskCreateData = TaskCreateInput & { sourceMeetingId?: number };
 
 const stripProject = ({
@@ -71,6 +92,13 @@ const validateMilestoneForProject = async (
   return true;
 };
 
+/**
+ * Lists all tasks for a project.
+ *
+ * @param projectId - The ID of the project to list tasks for
+ * @param ownerId - The ID of the user requesting access (must be project owner)
+ * @returns Object with either { tasks } array or { error } with 'not_found' | 'forbidden'
+ */
 export const listTasksForProject = async (
   projectId: number,
   ownerId: number,
@@ -89,6 +117,13 @@ export const listTasksForProject = async (
   return { tasks } as const;
 };
 
+/**
+ * Retrieves a task by ID, verifying owner access.
+ *
+ * @param id - The task ID
+ * @param ownerId - The ID of the user requesting access (must be project owner)
+ * @returns Object with either { task } or { error } with 'not_found' | 'forbidden'
+ */
 export const getTaskForOwner = async (id: number, ownerId: number) => {
   const task = await findTaskWithOwner(id);
 
@@ -103,6 +138,16 @@ export const getTaskForOwner = async (id: number, ownerId: number) => {
   return { task: stripProject(task) } as const;
 };
 
+/**
+ * Creates a new task within a project.
+ *
+ * Validates project ownership and milestone association before creation.
+ * Automatically assigns tenant context for multi-tenant isolation.
+ *
+ * @param ownerId - The ID of the user creating the task (must be project owner)
+ * @param data - Task creation data including title, projectId, optional milestoneId
+ * @returns Object with either { task } or { error } with 'not_found' | 'forbidden' | 'invalid_milestone'
+ */
 export const createTask = async (ownerId: number, data: TaskCreateData) => {
   const projectAccess = await validateProjectAccess(data.projectId, ownerId);
 
@@ -136,6 +181,17 @@ export const createTask = async (ownerId: number, data: TaskCreateData) => {
   return { task } as const;
 };
 
+/**
+ * Updates an existing task.
+ *
+ * Supports updating title, description, status, priority, milestone, and project.
+ * Validates ownership and milestone association before update.
+ *
+ * @param id - The task ID to update
+ * @param ownerId - The ID of the user updating (must be project owner)
+ * @param data - Partial task data to update
+ * @returns Object with either { task } or { error } with 'not_found' | 'forbidden' | 'invalid_milestone'
+ */
 export const updateTask = async (
   id: number,
   ownerId: number,
@@ -183,6 +239,16 @@ export const updateTask = async (
   return { task: updated } as const;
 };
 
+/**
+ * Moves a task to a different status or milestone (Kanban board operation).
+ *
+ * Optimized for drag-and-drop operations, only updating status and milestone.
+ *
+ * @param id - The task ID to move
+ * @param ownerId - The ID of the user moving (must be project owner)
+ * @param data - Object with new status and optional milestoneId
+ * @returns Object with either { task } or { error } with 'not_found' | 'forbidden' | 'invalid_milestone'
+ */
 export const moveTask = async (
   id: number,
   ownerId: number,
@@ -220,6 +286,13 @@ export const moveTask = async (
   return { task: moved } as const;
 };
 
+/**
+ * Deletes a task permanently.
+ *
+ * @param id - The task ID to delete
+ * @param ownerId - The ID of the user deleting (must be project owner)
+ * @returns Object with either { deleted: true } or { error } with 'not_found' | 'forbidden'
+ */
 export const deleteTask = async (id: number, ownerId: number) => {
   const existing = await findTaskWithOwner(id);
 

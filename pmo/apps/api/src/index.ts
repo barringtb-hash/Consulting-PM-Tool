@@ -1,7 +1,32 @@
+/**
+ * API Server Entry Point
+ *
+ * This is the main entry point for the Express API server.
+ * It bootstraps the application and starts listening for HTTP requests.
+ *
+ * Startup Sequence:
+ * 1. Register global error handlers (uncaughtException, unhandledRejection)
+ * 2. Create Express app with all middleware and routes
+ * 3. Start HTTP server on configured port
+ * 4. Log CORS configuration for debugging
+ *
+ * Environment Requirements:
+ * - PORT: Server port (default: 3001)
+ * - DATABASE_URL: PostgreSQL connection string
+ * - JWT_SECRET: Secret for JWT signing (min 32 chars)
+ * - CORS_ORIGIN: Allowed origins (comma-separated)
+ *
+ * Graceful Shutdown:
+ * - uncaughtException: Immediate exit (code 1)
+ * - unhandledRejection: Close server then exit (code 1)
+ *
+ * @module index
+ */
+
 import { createApp } from './app';
 import { env } from './config/env';
 
-// Handle uncaught exceptions
+// Handle uncaught exceptions - exit immediately as state may be corrupted
 process.on('uncaughtException', (error: Error) => {
   console.error('UNCAUGHT EXCEPTION! Shutting down...', {
     message: error.message,
