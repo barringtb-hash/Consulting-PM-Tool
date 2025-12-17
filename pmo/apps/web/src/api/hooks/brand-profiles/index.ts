@@ -34,7 +34,7 @@ import type {
   CreateBrandProfileInput,
   UpdateBrandAssetInput,
   UpdateBrandProfileInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';
 
 // ============================================================================
 // Queries
@@ -198,4 +198,4 @@ export type {
   CreateBrandProfileInput,
   UpdateBrandAssetInput,
   UpdateBrandProfileInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';

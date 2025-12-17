@@ -29,7 +29,7 @@ import type {
   Campaign,
   CreateCampaignInput,
   UpdateCampaignInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';
 
 // ============================================================================
 // Types
@@ -171,4 +171,4 @@ export type {
   Campaign,
   CreateCampaignInput,
   UpdateCampaignInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';
