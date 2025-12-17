@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Plus, Mail, Building2, User } from 'lucide-react';
 
 import {
@@ -84,21 +84,25 @@ interface LeadDetailPanelProps {
   onDelete: (leadId: number) => Promise<void>;
 }
 
-function LeadDetailPanel({
+// OPTIMIZED: Memoize LeadDetailPanel to prevent unnecessary re-renders
+const LeadDetailPanel = memo(function LeadDetailPanel({
   lead,
   onClose,
   onUpdate,
   onConvert,
   onDelete,
-}: LeadDetailPanelProps): JSX.Element {
+}: LeadDetailPanelProps) {
   const [status, setStatus] = useState(lead.status);
 
-  const handleStatusChange = async (newStatus: LeadStatus) => {
-    setStatus(newStatus);
-    await onUpdate(lead.id, { status: newStatus });
-  };
+  const handleStatusChange = useCallback(
+    async (newStatus: LeadStatus) => {
+      setStatus(newStatus);
+      await onUpdate(lead.id, { status: newStatus });
+    },
+    [lead.id, onUpdate],
+  );
 
-  const handleConvert = async () => {
+  const handleConvert = useCallback(async () => {
     if (
       confirm(
         'Convert this lead to an Account and Opportunity in the sales pipeline?',
@@ -107,14 +111,14 @@ function LeadDetailPanel({
       await onConvert(lead.id);
       onClose();
     }
-  };
+  }, [lead.id, onConvert, onClose]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (confirm('Are you sure you want to delete this lead?')) {
       await onDelete(lead.id);
       onClose();
     }
-  };
+  }, [lead.id, onDelete, onClose]);
 
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-white dark:bg-neutral-800 shadow-xl border-l border-neutral-200 dark:border-neutral-700 overflow-y-auto z-50">
@@ -248,7 +252,9 @@ function LeadDetailPanel({
       </div>
     </div>
   );
-}
+});
+
+LeadDetailPanel.displayName = 'LeadDetailPanel';
 
 export function LeadsPage(): JSX.Element {
   const { showToast } = useToast();
@@ -295,40 +301,44 @@ export function LeadsPage(): JSX.Element {
     return { newLeads, contacted, qualified, total: leads.length };
   }, [leads]);
 
-  const handleCreateLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newLead.email.trim()) return;
+  // OPTIMIZED: Wrap handlers with useCallback to prevent unnecessary re-renders
+  const handleCreateLead = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newLead.email.trim()) return;
 
-    try {
-      await createLead.mutateAsync(newLead);
-      setNewLead({
-        name: '',
-        email: '',
-        company: '',
-        source: 'OTHER',
-        serviceInterest: 'NOT_SURE',
-        message: '',
-      });
-      setShowNewLeadForm(false);
-      showToast('Lead created successfully', 'success');
-    } catch {
-      showToast('Failed to create lead', 'error');
-    }
-  };
+      try {
+        await createLead.mutateAsync(newLead);
+        setNewLead({
+          name: '',
+          email: '',
+          company: '',
+          source: 'OTHER',
+          serviceInterest: 'NOT_SURE',
+          message: '',
+        });
+        setShowNewLeadForm(false);
+        showToast('Lead created successfully', 'success');
+      } catch {
+        showToast('Failed to create lead', 'error');
+      }
+    },
+    [newLead, createLead, showToast],
+  );
 
-  const handleUpdateLead = async (
-    _leadId: number,
-    updates: Partial<InboundLead>,
-  ) => {
-    try {
-      await updateLead.mutateAsync(updates);
-      showToast('Lead updated successfully', 'success');
-    } catch {
-      showToast('Failed to update lead', 'error');
-    }
-  };
+  const handleUpdateLead = useCallback(
+    async (_leadId: number, updates: Partial<InboundLead>) => {
+      try {
+        await updateLead.mutateAsync(updates);
+        showToast('Lead updated successfully', 'success');
+      } catch {
+        showToast('Failed to update lead', 'error');
+      }
+    },
+    [updateLead, showToast],
+  );
 
-  const handleConvertLead = async () => {
+  const handleConvertLead = useCallback(async () => {
     try {
       const result = await convertLead.mutateAsync({
         createOpportunity: true,
@@ -340,24 +350,27 @@ export function LeadsPage(): JSX.Element {
     } catch {
       showToast('Failed to convert lead', 'error');
     }
-  };
+  }, [convertLead, showToast]);
 
-  const handleDeleteLead = async (leadId: number) => {
-    try {
-      await deleteLead.mutateAsync(leadId);
-      showToast('Lead deleted successfully', 'success');
-    } catch {
-      showToast('Failed to delete lead', 'error');
-    }
-  };
+  const handleDeleteLead = useCallback(
+    async (leadId: number) => {
+      try {
+        await deleteLead.mutateAsync(leadId);
+        showToast('Lead deleted successfully', 'success');
+      } catch {
+        showToast('Failed to delete lead', 'error');
+      }
+    },
+    [deleteLead, showToast],
+  );
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({
       search: '',
       source: '',
       status: '',
     });
-  };
+  }, []);
 
   const activeFilterCount = [
     filters.search,

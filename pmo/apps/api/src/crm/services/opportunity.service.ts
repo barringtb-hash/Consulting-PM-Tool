@@ -51,6 +51,7 @@ export interface UpdateOpportunityInput {
 
 export interface OpportunityFilters {
   status?: 'OPEN' | 'WON' | 'LOST';
+  stageType?: 'OPEN' | 'WON' | 'LOST'; // Filter by stage's stageType (server-side filtering)
   pipelineId?: number;
   stageId?: number;
   accountId?: number;
@@ -227,6 +228,13 @@ export async function listOpportunities(
 
   if (filters.stageId) {
     where.stageId = filters.stageId;
+  }
+
+  // OPTIMIZED: Server-side stageType filtering
+  // Filters by the stage's type (OPEN, WON, LOST) instead of client-side filtering
+  // Note: Prisma field is 'type', frontend uses 'stageType' for clarity
+  if (filters.stageType) {
+    where.stage = { is: { type: filters.stageType } };
   }
 
   if (filters.accountId) {

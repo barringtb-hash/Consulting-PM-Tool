@@ -212,16 +212,70 @@ export async function getAuditStats(startDate: Date, endDate: Date) {
     _count: { id: true },
   });
 
-  return {
-    byAction: stats.reduce(
-      (acc, s) => ({ ...acc, [s.action]: s._count.id }),
-      {} as Record<string, number>,
-    ),
-    byEntityType: entityStats.reduce(
-      (acc, s) => ({ ...acc, [s.entityType]: s._count.id }),
-      {} as Record<string, number>,
-    ),
-  };
+  // OPTIMIZED: Build objects in-place instead of using spread in reduce
+  // Spread operator in reduce creates new object copies on each iteration: O(n²)
+  // Direct assignment is O(n)
+  const byAction: Record<string, number> = {};
+  for (const s of stats) {
+    byAction[s.action] = s._count.id;
+  }
+
+  const byEntityType: Record<string, number> = {};
+  for (const s of entityStats) {
+    byEntityType[s.entityType] = s._count.id;
+  }
+
+  return { byAction, byEntityType };
+}
+
+/**
+ * OPTIMIZED: Deep equality check without JSON.stringify overhead.
+ * Handles primitives, arrays, and plain objects efficiently.
+ */
+function deepEqual(a: unknown, b: unknown): boolean {
+  // Same reference or both primitives with same value
+  if (a === b) return true;
+
+  // Handle null/undefined
+  if (a == null || b == null) return a === b;
+
+  // Different types
+  if (typeof a !== typeof b) return false;
+
+  // Handle Date objects
+  if (a instanceof Date && b instanceof Date) {
+    return a.getTime() === b.getTime();
+  }
+
+  // Handle arrays
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  // Handle plain objects
+  if (typeof a === 'object' && typeof b === 'object') {
+    const keysA = Object.keys(a as object);
+    const keysB = Object.keys(b as object);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+      if (
+        !Object.prototype.hasOwnProperty.call(b, key) ||
+        !deepEqual(
+          (a as Record<string, unknown>)[key],
+          (b as Record<string, unknown>)[key],
+        )
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -239,8 +293,9 @@ export function createChangeDiff<T extends Record<string, unknown>>(
     const beforeValue = before[key];
     const afterValue = after[key];
 
-    // Skip if values are the same (including deep equality for objects)
-    if (JSON.stringify(beforeValue) === JSON.stringify(afterValue)) {
+    // OPTIMIZED: Use deep equality check instead of JSON.stringify
+    // JSON.stringify has O(n) memory allocation overhead per comparison
+    if (deepEqual(beforeValue, afterValue)) {
       continue;
     }
 

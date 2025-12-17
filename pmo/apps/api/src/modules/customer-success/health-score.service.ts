@@ -289,28 +289,22 @@ export async function calculateHealthScore(
 /**
  * Auto-calculate health score based on available data
  * This is the "out-of-box" AI-powered scoring that learns from customer data
+ * OPTIMIZED: Parallelize all score calculations with Promise.all
+ * Previous: 4 sequential DB queries (~4x latency)
+ * Now: 4 parallel DB queries (~1x latency)
  */
 export async function autoCalculateHealthScore(
   clientId: number,
   projectId?: number,
 ): Promise<HealthScoreResult> {
-  // Calculate engagement score from meetings and activities
-  const engagementScore = await calculateEngagementScoreFromData(
-    clientId,
-    projectId,
-  );
-
-  // Calculate support score from tasks/issues
-  const supportScore = await calculateSupportScoreFromData(clientId, projectId);
-
-  // Calculate sentiment from NPS/CSAT if available
-  const sentimentScore = await calculateSentimentScoreFromData(
-    clientId,
-    projectId,
-  );
-
-  // Calculate usage from project activity
-  const usageScore = await calculateUsageScoreFromData(clientId, projectId);
+  // OPTIMIZED: Run all score calculations in parallel
+  const [engagementScore, supportScore, sentimentScore, usageScore] =
+    await Promise.all([
+      calculateEngagementScoreFromData(clientId, projectId),
+      calculateSupportScoreFromData(clientId, projectId),
+      calculateSentimentScoreFromData(clientId, projectId),
+      calculateUsageScoreFromData(clientId, projectId),
+    ]);
 
   return calculateHealthScore({
     clientId,
@@ -496,6 +490,9 @@ export async function getHealthScoreHistory(
 
 /**
  * Get portfolio health summary (all clients)
+ * OPTIMIZED: Single-pass aggregation instead of multiple filter/reduce passes
+ * Previous: 5 passes over scores array (3 filters + 2 reduces)
+ * Now: 1 pass collecting all aggregations
  */
 export async function getPortfolioHealthSummary(): Promise<{
   totalClients: number;
@@ -517,24 +514,39 @@ export async function getPortfolioHealthSummary(): Promise<{
   });
 
   const totalClients = scores.length;
-  const healthyCount = scores.filter((s) => s.category === 'HEALTHY').length;
-  const atRiskCount = scores.filter((s) => s.category === 'AT_RISK').length;
-  const criticalCount = scores.filter((s) => s.category === 'CRITICAL').length;
+
+  // OPTIMIZED: Single-pass aggregation
+  let healthyCount = 0;
+  let atRiskCount = 0;
+  let criticalCount = 0;
+  let scoreSum = 0;
+  let churnRiskSum = 0;
+
+  for (const score of scores) {
+    // Count by category
+    switch (score.category) {
+      case 'HEALTHY':
+        healthyCount++;
+        break;
+      case 'AT_RISK':
+        atRiskCount++;
+        break;
+      case 'CRITICAL':
+        criticalCount++;
+        break;
+    }
+
+    // Accumulate sums for averages
+    scoreSum += score.overallScore;
+    churnRiskSum += score.churnRisk ?? 0;
+  }
 
   const averageScore =
-    totalClients > 0
-      ? Math.round(
-          scores.reduce((sum, s) => sum + s.overallScore, 0) / totalClients,
-        )
-      : 0;
+    totalClients > 0 ? Math.round(scoreSum / totalClients) : 0;
 
   const averageChurnRisk =
     totalClients > 0
-      ? Math.round(
-          (scores.reduce((sum, s) => sum + (s.churnRisk ?? 0), 0) /
-            totalClients) *
-            100,
-        ) / 100
+      ? Math.round((churnRiskSum / totalClients) * 100) / 100
       : 0;
 
   return {

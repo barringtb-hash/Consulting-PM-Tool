@@ -92,46 +92,78 @@ export async function getProjectStatus(
     throw new Error('Project not found');
   }
 
-  // Calculate task counts by status
+  // OPTIMIZED: Single-pass task processing instead of multiple filter passes
+  // Previous: 3 separate passes over tasks array - O(3n)
+  // Now: 1 pass collecting all data - O(n)
   const taskCounts: Record<string, number> = {};
+  // Initialize all status counts to 0
   for (const status of Object.values(TaskStatus)) {
-    taskCounts[status] = project.tasks.filter(
-      (t) => t.status === status,
-    ).length;
+    taskCounts[status] = 0;
   }
 
-  // Find overdue tasks (not done and past due date)
-  const overdueTasks = project.tasks
-    .filter(
-      (task) =>
-        task.dueDate &&
-        new Date(task.dueDate) < today &&
-        task.status !== TaskStatus.DONE,
-    )
-    .map((task) => ({
-      id: task.id,
-      title: task.title,
-      dueDate: task.dueDate!.toISOString(),
-      status: task.status,
-    }))
-    .slice(0, 10); // Limit to 10 most overdue
+  const overdueTasksRaw: Array<{
+    id: number;
+    title: string;
+    dueDate: Date;
+    status: string;
+  }> = [];
+  const upcomingTasksRaw: Array<{
+    id: number;
+    title: string;
+    dueDate: Date;
+    status: string;
+  }> = [];
 
-  // Find upcoming tasks (due in next N days, not done)
-  const upcomingTasks = project.tasks
-    .filter(
-      (task) =>
-        task.dueDate &&
-        new Date(task.dueDate) >= today &&
-        new Date(task.dueDate) <= upcomingDate &&
-        task.status !== TaskStatus.DONE,
-    )
+  // Single pass to collect task counts, overdue, and upcoming
+  for (const task of project.tasks) {
+    // Count by status
+    taskCounts[task.status]++;
+
+    // Skip DONE tasks for overdue/upcoming calculations
+    if (task.status === TaskStatus.DONE) continue;
+
+    if (task.dueDate) {
+      const dueDate = new Date(task.dueDate);
+      if (dueDate < today) {
+        // Overdue task
+        overdueTasksRaw.push({
+          id: task.id,
+          title: task.title,
+          dueDate: task.dueDate,
+          status: task.status,
+        });
+      } else if (dueDate <= upcomingDate) {
+        // Upcoming task
+        upcomingTasksRaw.push({
+          id: task.id,
+          title: task.title,
+          dueDate: task.dueDate,
+          status: task.status,
+        });
+      }
+    }
+  }
+
+  // Sort and limit the results
+  const overdueTasks = overdueTasksRaw
+    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+    .slice(0, 10)
     .map((task) => ({
       id: task.id,
       title: task.title,
-      dueDate: task.dueDate!.toISOString(),
+      dueDate: task.dueDate.toISOString(),
       status: task.status,
-    }))
-    .slice(0, 10); // Limit to 10
+    }));
+
+  const upcomingTasks = upcomingTasksRaw
+    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+    .slice(0, 10)
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      dueDate: task.dueDate.toISOString(),
+      status: task.status,
+    }));
 
   // Find upcoming milestones
   const upcomingMilestones = project.milestones
@@ -324,6 +356,9 @@ export async function buildStatusSummary(
 
 /**
  * Generate a markdown-formatted status summary
+ * OPTIMIZED: Use array.join() instead of string concatenation
+ * String concatenation creates new string objects on each iteration (O(n²))
+ * Array.join() collects parts and joins once (O(n))
  */
 function generateMarkdownSummary(data: {
   projectName: string;
@@ -345,34 +380,39 @@ function generateMarkdownSummary(data: {
     return d.toISOString().split('T')[0]; // YYYY-MM-DD
   };
 
-  let markdown = `## Status Report – ${data.projectName}\n\n`;
-  markdown += `**Status:** ${statusMap[data.healthStatus]}\n`;
-  markdown += `**Period:** ${formatDate(data.from)} → ${formatDate(data.to)}\n\n`;
+  // OPTIMIZED: Collect parts in array and join once at the end
+  const parts: string[] = [
+    `## Status Report – ${data.projectName}\n`,
+    `**Status:** ${statusMap[data.healthStatus]}`,
+    `**Period:** ${formatDate(data.from)} → ${formatDate(data.to)}\n`,
+    `### Completed`,
+  ];
 
   if (data.completedTasks.length > 0) {
-    markdown += `### Completed\n`;
     for (const task of data.completedTasks) {
-      markdown += `- ${task.title} (Done ${formatDate(task.completedAt)})\n`;
+      parts.push(`- ${task.title} (Done ${formatDate(task.completedAt)})`);
     }
-    markdown += `\n`;
   } else {
-    markdown += `### Completed\n`;
-    markdown += `- No tasks completed in this period\n\n`;
+    parts.push(`- No tasks completed in this period`);
   }
 
+  parts.push(''); // Empty line separator
+
   if (data.upcomingTasks.length > 0 || data.upcomingMilestones.length > 0) {
-    markdown += `### Upcoming (Next 7 days)\n`;
+    parts.push(`### Upcoming (Next 7 days)`);
 
     for (const task of data.upcomingTasks) {
-      markdown += `- ${task.title} – due ${formatDate(task.dueDate)}\n`;
+      parts.push(`- ${task.title} – due ${formatDate(task.dueDate)}`);
     }
 
     for (const milestone of data.upcomingMilestones) {
-      markdown += `- **Milestone:** ${milestone.name} – target ${formatDate(milestone.dueDate)}\n`;
+      parts.push(
+        `- **Milestone:** ${milestone.name} – target ${formatDate(milestone.dueDate)}`,
+      );
     }
 
-    markdown += `\n`;
+    parts.push(''); // Trailing newline
   }
 
-  return markdown;
+  return parts.join('\n');
 }
