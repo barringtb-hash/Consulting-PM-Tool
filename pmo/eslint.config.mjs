@@ -52,12 +52,6 @@ export default [
       // React Hooks core rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      // Disable React Compiler rules - codebase not using React Compiler yet
-      // These can be re-enabled when migrating to React Compiler
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/purity': 'off',
-      'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/incompatible-library': 'off',
     },
   },
 ];

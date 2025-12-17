@@ -16,17 +16,15 @@ const globalForPrisma = globalThis as unknown as {
  * Prisma 7 uses the adapter pattern with @prisma/adapter-pg for PostgreSQL connections.
  */
 function createExtendedPrismaClient() {
-  // Create a PostgreSQL connection pool
+  // Create a PostgreSQL connection pool (reuse existing if available)
   const pool =
     globalForPrisma.pgPool ??
     new Pool({
       connectionString: process.env.DATABASE_URL,
     });
 
-  // Cache the pool in development to prevent creating multiple pools during hot reload
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.pgPool = pool;
-  }
+  // Cache the pool in all environments to prevent memory leaks from multiple pool instances
+  globalForPrisma.pgPool = pool;
 
   // Create the Prisma adapter
   const adapter = new PrismaPg(pool);
