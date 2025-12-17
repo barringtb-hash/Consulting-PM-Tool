@@ -19,7 +19,6 @@ import {
   Sparkles,
   BarChart3,
   Lightbulb,
-  FolderOpen,
   Plus,
 } from 'lucide-react';
 import { Card, Button } from '../../ui';
@@ -654,7 +653,9 @@ export default function FinanceDashboardPage() {
               <Wallet className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Budgeted</p>
+              <p className="text-sm font-medium text-gray-500">
+                Total Budgeted
+              </p>
               <p className="text-xl font-bold text-gray-900">
                 {formatCurrency(budgetStats?.totalBudgeted || 0)}
               </p>
