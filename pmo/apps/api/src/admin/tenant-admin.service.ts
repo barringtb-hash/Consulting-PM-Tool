@@ -10,6 +10,7 @@
  * - Configuring tenant modules
  */
 
+import crypto from 'crypto';
 import { prisma } from '../prisma/client';
 import { Prisma, TenantPlan, TenantStatus, TenantRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -33,14 +34,14 @@ function generateSlug(name: string): string {
 }
 
 /**
- * Generate a random temporary password
+ * Generate a random temporary password using cryptographically secure randomness
  */
 function generateTempPassword(): string {
   const chars =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
   let password = '';
   for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    password += chars.charAt(crypto.randomInt(chars.length));
   }
   return password;
 }
