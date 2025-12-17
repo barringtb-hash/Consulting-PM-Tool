@@ -31,6 +31,9 @@ export interface Expense {
   tags: string[];
   notes?: string | null;
   aiAnomalyFlag: boolean;
+  rejectionReason?: string | null;
+  approvalNotes?: string | null;
+  paidAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

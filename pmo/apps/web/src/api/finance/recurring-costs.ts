@@ -55,11 +55,15 @@ export interface RecurringCost {
   autoRenew: boolean;
   renewalAlertDays: number;
   account?: { id: number; name: string } | null;
+  project?: { id: number; name: string } | null;
+  projectId?: number | null;
   category: { id: number; name: string; color: string };
   employee?: { id: number; name: string } | null;
   owner: { id: number; name: string };
   _count: { expenses: number };
   annualCost: number;
+  notes?: string | null;
+  autoCreateExpense?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,6 +114,7 @@ export interface RecurringCostStats {
   activeCosts: number;
   monthlyTotal: number;
   annualTotal: number;
+  upcomingRenewalsCount?: number;
   byType: Array<{ type: string; count: number; monthlyTotal: number }>;
 }
 

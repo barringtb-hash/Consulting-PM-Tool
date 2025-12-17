@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vitest/globals" />
 
 // Re-export JSX namespace from React for backwards compatibility
 // This allows using `JSX.Element` without `React.` prefix

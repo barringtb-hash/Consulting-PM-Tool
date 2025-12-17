@@ -80,6 +80,7 @@ export function useExpense(id: number) {
   return useQuery({
     queryKey: financeKeys.expenseDetail(id),
     queryFn: () => expensesApi.getExpense(id),
+    select: (data) => data.expense,
     enabled: id > 0,
   });
 }
@@ -195,6 +196,7 @@ export function useBudget(id: number) {
   return useQuery({
     queryKey: financeKeys.budgetDetail(id),
     queryFn: () => budgetsApi.getBudget(id),
+    select: (data) => data.budget,
     enabled: id > 0,
   });
 }
@@ -274,6 +276,7 @@ export function useRecurringCost(id: number) {
   return useQuery({
     queryKey: financeKeys.recurringCostDetail(id),
     queryFn: () => recurringCostsApi.getRecurringCost(id),
+    select: (data) => data.cost,
     enabled: id > 0,
   });
 }
