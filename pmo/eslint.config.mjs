@@ -52,6 +52,13 @@ export default [
       // React Hooks core rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      // Disable React Compiler rules - codebase not using React Compiler yet
+      // These rules are included in eslint-plugin-react-hooks v7.x but require
+      // React Compiler setup to work properly. Can be re-enabled when migrating.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/incompatible-library': 'off',
     },
   },
 ];
