@@ -16,7 +16,7 @@ describe('requireAuth middleware', () => {
   };
 
   it('rejects requests without a token', () => {
-    const req = { cookies: {} } as Request;
+    const req = { cookies: {} } as unknown as Request;
     const res = createMockResponse();
     const next = vi.fn() as NextFunction;
 
@@ -28,7 +28,7 @@ describe('requireAuth middleware', () => {
   });
 
   it('rejects requests with an invalid token', () => {
-    const req = { cookies: { token: 'invalid-token' } } as Request;
+    const req = { cookies: { token: 'invalid-token' } } as unknown as Request;
     const res = createMockResponse();
     const next = vi.fn() as NextFunction;
 
@@ -41,7 +41,7 @@ describe('requireAuth middleware', () => {
 
   it('adds the userId to the request when the token is valid', () => {
     const token = signToken({ userId: 123 });
-    const req = { cookies: { token } } as Request;
+    const req = { cookies: { token } } as unknown as Request;
     const res = createMockResponse();
     const next = vi.fn() as NextFunction;
 

@@ -77,12 +77,12 @@ describe('meeting service', () => {
     expect(listResult).toEqual({ meetings: [createResult.meeting] });
 
     const fetched = await withTenant(testEnv.tenant, () =>
-      getMeetingById(createResult.meeting.id, testEnv.user.id),
+      getMeetingById(createResult.meeting!.id, testEnv.user.id),
     );
     expect(fetched.meeting).toMatchObject({ title: 'Kickoff' });
 
     const updateResult = await withTenant(testEnv.tenant, () =>
-      updateMeeting(createResult.meeting.id, testEnv.user.id, {
+      updateMeeting(createResult.meeting!.id, testEnv.user.id, {
         title: 'Updated Kickoff',
         attendees: ['C'],
         notes: 'Updated notes',
@@ -96,12 +96,12 @@ describe('meeting service', () => {
     });
 
     const deleteResult = await withTenant(testEnv.tenant, () =>
-      deleteMeeting(createResult.meeting.id, testEnv.user.id),
+      deleteMeeting(createResult.meeting!.id, testEnv.user.id),
     );
     expect(deleteResult).toEqual({ deleted: true });
 
     const afterDelete = await withTenant(testEnv.tenant, () =>
-      getMeetingById(createResult.meeting.id, testEnv.user.id),
+      getMeetingById(createResult.meeting!.id, testEnv.user.id),
     );
     expect(afterDelete.error).toBe('not_found');
   });
@@ -157,7 +157,7 @@ describe('meeting service', () => {
     );
 
     const forbiddenGet = await withTenant(testEnv.tenant, () =>
-      getMeetingById(created.meeting.id, otherUser.id),
+      getMeetingById(created.meeting!.id, otherUser.id),
     );
     expect(forbiddenGet.error).toBe('forbidden');
   });
@@ -174,7 +174,7 @@ describe('meeting service', () => {
         attendees: [],
       }),
     );
-    const meeting = meetingResult.meeting;
+    const meeting = meetingResult.meeting!;
 
     // Create milestone with explicit tenantId
     const milestone = await rawPrisma.milestone.create({
@@ -199,7 +199,7 @@ describe('meeting service', () => {
       }),
     );
 
-    expect(taskResult.task).toMatchObject({
+    expect(taskResult.task!).toMatchObject({
       title: 'Follow up',
       description: 'Send recap',
       projectId: project.id,

@@ -180,7 +180,7 @@ describe('API Tenant Isolation', () => {
     let accountAId: number;
     let opportunityAId: number;
     let pipelineA: Awaited<
-      ReturnType<typeof getTestPrisma>['pipeline']['findFirst']
+      ReturnType<ReturnType<typeof getTestPrisma>['pipeline']['findFirst']>
     >;
 
     beforeAll(async () => {
