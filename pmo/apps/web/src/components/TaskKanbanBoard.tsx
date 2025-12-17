@@ -32,7 +32,7 @@ function formatStatusLabel(status: TaskStatus): string {
   return status
     .replace(/_/g, ' ')
     .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+    .replace(/\b\w/g, (l: string) => l.toUpperCase());
 }
 
 function getStatusBadgeVariant(status: TaskStatus): BadgeVariant {

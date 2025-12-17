@@ -6,8 +6,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 
-import { buildApiUrl } from './config';
-import { buildOptions, handleResponse } from './http';
+import { http } from './http';
 import {
   type Campaign,
   type CreateCampaignInput,
@@ -48,10 +47,8 @@ export async function fetchCampaigns(query: {
   if (query.archived !== undefined)
     params.append('archived', query.archived.toString());
 
-  const url = buildApiUrl(`/campaigns?${params.toString()}`);
-  const response = await fetch(url, buildOptions('GET'));
-  const data = await handleResponse<{ campaigns: CampaignResponse[] }>(
-    response,
+  const data = await http.get<{ campaigns: CampaignResponse[] }>(
+    `/campaigns?${params.toString()}`,
   );
   return data.campaigns.map(mapCampaign);
 }
@@ -60,9 +57,9 @@ export async function fetchCampaigns(query: {
  * Fetch a single campaign by ID
  */
 export async function fetchCampaign(id: number): Promise<Campaign> {
-  const url = buildApiUrl(`/campaigns/${id}`);
-  const response = await fetch(url, buildOptions('GET'));
-  const data = await handleResponse<{ campaign: CampaignResponse }>(response);
+  const data = await http.get<{ campaign: CampaignResponse }>(
+    `/campaigns/${id}`,
+  );
   return mapCampaign(data.campaign);
 }
 
@@ -72,9 +69,10 @@ export async function fetchCampaign(id: number): Promise<Campaign> {
 export async function createCampaign(
   payload: CreateCampaignInput,
 ): Promise<Campaign> {
-  const url = buildApiUrl('/campaigns');
-  const response = await fetch(url, buildOptions('POST', payload));
-  const data = await handleResponse<{ campaign: CampaignResponse }>(response);
+  const data = await http.post<{ campaign: CampaignResponse }>(
+    '/campaigns',
+    payload,
+  );
   return mapCampaign(data.campaign);
 }
 
@@ -85,9 +83,10 @@ export async function updateCampaign(
   id: number,
   payload: UpdateCampaignInput,
 ): Promise<Campaign> {
-  const url = buildApiUrl(`/campaigns/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
-  const data = await handleResponse<{ campaign: CampaignResponse }>(response);
+  const data = await http.patch<{ campaign: CampaignResponse }>(
+    `/campaigns/${id}`,
+    payload,
+  );
   return mapCampaign(data.campaign);
 }
 
@@ -95,9 +94,7 @@ export async function updateCampaign(
  * Archive a campaign
  */
 export async function archiveCampaign(id: number): Promise<void> {
-  const url = buildApiUrl(`/campaigns/${id}`);
-  const response = await fetch(url, buildOptions('DELETE'));
-  await handleResponse(response);
+  await http.delete(`/campaigns/${id}`);
 }
 
 /**

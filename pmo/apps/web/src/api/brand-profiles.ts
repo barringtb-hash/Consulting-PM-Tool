@@ -6,8 +6,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 
-import { buildApiUrl } from './config';
-import { buildOptions, handleResponse } from './http';
+import { http } from './http';
 import {
   type BrandProfile,
   type BrandAsset,
@@ -53,11 +52,9 @@ const mapBrandAsset = (payload: BrandAssetResponse): BrandAsset => ({
 export async function fetchBrandProfile(
   clientId: number,
 ): Promise<BrandProfile | null> {
-  const url = buildApiUrl(`/clients/${clientId}/brand-profile`);
   try {
-    const response = await fetch(url, buildOptions('GET'));
-    const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
-      response,
+    const data = await http.get<{ brandProfile: BrandProfileResponse }>(
+      `/clients/${clientId}/brand-profile`,
     );
     return mapBrandProfile(data.brandProfile);
   } catch (error: unknown) {
@@ -79,10 +76,9 @@ export async function fetchBrandProfile(
 export async function createBrandProfile(
   payload: CreateBrandProfileInput,
 ): Promise<BrandProfile> {
-  const url = buildApiUrl(`/clients/${payload.clientId}/brand-profile`);
-  const response = await fetch(url, buildOptions('POST', payload));
-  const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
-    response,
+  const data = await http.post<{ brandProfile: BrandProfileResponse }>(
+    `/clients/${payload.clientId}/brand-profile`,
+    payload,
   );
   return mapBrandProfile(data.brandProfile);
 }
@@ -94,10 +90,9 @@ export async function updateBrandProfile(
   id: number,
   payload: UpdateBrandProfileInput,
 ): Promise<BrandProfile> {
-  const url = buildApiUrl(`/brand-profiles/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
-  const data = await handleResponse<{ brandProfile: BrandProfileResponse }>(
-    response,
+  const data = await http.patch<{ brandProfile: BrandProfileResponse }>(
+    `/brand-profiles/${id}`,
+    payload,
   );
   return mapBrandProfile(data.brandProfile);
 }
@@ -108,9 +103,9 @@ export async function updateBrandProfile(
 export async function fetchBrandAssets(
   brandProfileId: number,
 ): Promise<BrandAsset[]> {
-  const url = buildApiUrl(`/brand-profiles/${brandProfileId}/assets`);
-  const response = await fetch(url, buildOptions('GET'));
-  const data = await handleResponse<{ assets: BrandAssetResponse[] }>(response);
+  const data = await http.get<{ assets: BrandAssetResponse[] }>(
+    `/brand-profiles/${brandProfileId}/assets`,
+  );
   return data.assets.map(mapBrandAsset);
 }
 
@@ -120,9 +115,10 @@ export async function fetchBrandAssets(
 export async function createBrandAsset(
   payload: CreateBrandAssetInput,
 ): Promise<BrandAsset> {
-  const url = buildApiUrl(`/brand-profiles/${payload.brandProfileId}/assets`);
-  const response = await fetch(url, buildOptions('POST', payload));
-  const data = await handleResponse<{ asset: BrandAssetResponse }>(response);
+  const data = await http.post<{ asset: BrandAssetResponse }>(
+    `/brand-profiles/${payload.brandProfileId}/assets`,
+    payload,
+  );
   return mapBrandAsset(data.asset);
 }
 
@@ -133,9 +129,10 @@ export async function updateBrandAsset(
   id: number,
   payload: UpdateBrandAssetInput,
 ): Promise<BrandAsset> {
-  const url = buildApiUrl(`/brand-assets/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
-  const data = await handleResponse<{ asset: BrandAssetResponse }>(response);
+  const data = await http.patch<{ asset: BrandAssetResponse }>(
+    `/brand-assets/${id}`,
+    payload,
+  );
   return mapBrandAsset(data.asset);
 }
 
@@ -143,9 +140,7 @@ export async function updateBrandAsset(
  * Archive a brand asset
  */
 export async function archiveBrandAsset(id: number): Promise<void> {
-  const url = buildApiUrl(`/brand-assets/${id}`);
-  const response = await fetch(url, buildOptions('DELETE'));
-  await handleResponse(response);
+  await http.delete(`/brand-assets/${id}`);
 }
 
 /**
