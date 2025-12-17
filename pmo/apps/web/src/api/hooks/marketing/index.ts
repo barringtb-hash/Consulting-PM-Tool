@@ -41,7 +41,7 @@ import type {
   MarketingContentListQuery,
   RepurposeContentInput,
   UpdateMarketingContentInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';
 
 // ============================================================================
 // Queries
@@ -278,4 +278,4 @@ export type {
   MarketingContentListQuery,
   RepurposeContentInput,
   UpdateMarketingContentInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';

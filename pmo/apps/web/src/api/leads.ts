@@ -204,3 +204,6 @@ export async function deleteLead(leadId: number): Promise<void> {
     throw new Error('Failed to delete lead');
   }
 }
+
+// Alias for backward compatibility
+export type Lead = InboundLead;

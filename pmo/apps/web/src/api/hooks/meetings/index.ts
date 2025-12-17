@@ -28,10 +28,7 @@ import {
   type CreateTaskFromSelectionPayload,
   type MeetingUpdatePayload,
 } from '../../meetings';
-import type {
-  CreateMeetingInput,
-  Meeting,
-} from '../../../../packages/types/meeting';
+import type { CreateMeetingInput, Meeting } from '@pmo/types/meeting';
 
 // ============================================================================
 // Queries
@@ -200,7 +197,4 @@ export type {
   CreateTaskFromSelectionPayload,
   MeetingUpdatePayload,
 } from '../../meetings';
-export type {
-  CreateMeetingInput,
-  Meeting,
-} from '../../../../packages/types/meeting';
+export type { CreateMeetingInput, Meeting } from '@pmo/types/meeting';

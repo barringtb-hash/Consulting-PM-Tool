@@ -8,7 +8,13 @@ import React, {
 } from 'react';
 import { cn } from './utils';
 
-type ToastVariant = 'success' | 'error' | 'info';
+/**
+ * Toast variant types.
+ * Note: 'destructive' is accepted as input but internally maps to 'error' styling.
+ * This provides API compatibility with shadcn/ui conventions while using
+ * a simpler internal implementation.
+ */
+type ToastVariant = 'success' | 'error' | 'info' | 'destructive';
 
 interface Toast {
   id: string;
@@ -16,8 +22,16 @@ interface Toast {
   variant: ToastVariant;
 }
 
+interface ToastOptions {
+  message: string;
+  variant?: ToastVariant;
+}
+
 interface ToastContextValue {
-  showToast: (message: string, variant?: ToastVariant) => void;
+  showToast: (
+    messageOrOptions: string | ToastOptions,
+    variant?: ToastVariant,
+  ) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
@@ -38,7 +52,24 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback(
-    (message: string, variant: ToastVariant = 'info') => {
+    (
+      messageOrOptions: string | ToastOptions,
+      variantArg: ToastVariant = 'info',
+    ) => {
+      // Support both (message, variant) and ({ message, variant }) signatures
+      let message: string;
+      let variant: ToastVariant;
+
+      if (typeof messageOrOptions === 'string') {
+        message = messageOrOptions;
+        variant = variantArg;
+      } else {
+        message = messageOrOptions.message;
+        // Map 'destructive' to 'error' for display
+        const v = messageOrOptions.variant ?? 'info';
+        variant = v === 'destructive' ? 'error' : v;
+      }
+
       const id = Math.random().toString(36).substring(2, 9);
       setToasts((prev) => [...prev, { id, message, variant }]);
 
@@ -85,6 +116,8 @@ const variantStyles: Record<ToastVariant, string> = {
     'bg-success-50 dark:bg-success-900/80 text-success-800 dark:text-success-100 border-success-200 dark:border-success-700',
   error:
     'bg-danger-50 dark:bg-danger-900/80 text-danger-800 dark:text-danger-100 border-danger-200 dark:border-danger-700',
+  destructive:
+    'bg-danger-50 dark:bg-danger-900/80 text-danger-800 dark:text-danger-100 border-danger-200 dark:border-danger-700',
   info: 'bg-primary-50 dark:bg-primary-900/80 text-primary-800 dark:text-primary-100 border-primary-200 dark:border-primary-700',
 };
 
@@ -105,6 +138,21 @@ const iconPaths: Record<ToastVariant, JSX.Element> = {
     </svg>
   ),
   error: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  ),
+  destructive: (
     <svg
       className="w-5 h-5"
       fill="none"

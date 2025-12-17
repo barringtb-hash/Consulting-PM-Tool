@@ -11,7 +11,10 @@
  * - Large lists use virtualization for performance
  */
 
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
+// Note: Using aliased imports to work around TypeScript module resolution
+// with react-window types in bundler moduleResolution mode
+import type { ListChildComponentProps } from 'react-window';
+import { FixedSizeList } from 'react-window';
 import React, { memo, useCallback, useMemo } from 'react';
 
 // Lists smaller than this render without virtualization

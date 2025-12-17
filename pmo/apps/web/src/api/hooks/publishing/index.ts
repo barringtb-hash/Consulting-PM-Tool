@@ -29,7 +29,7 @@ import type {
   CreatePublishingConnectionInput,
   PublishingConnection,
   UpdatePublishingConnectionInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';
 
 // ============================================================================
 // Queries
@@ -147,4 +147,4 @@ export type {
   CreatePublishingConnectionInput,
   PublishingConnection,
   UpdatePublishingConnectionInput,
-} from '../../../../../packages/types/marketing';
+} from '@pmo/types/marketing';

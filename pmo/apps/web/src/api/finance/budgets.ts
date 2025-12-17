@@ -20,6 +20,9 @@ export interface Budget {
   alertThresholds: number[];
   allowRollover: boolean;
   rolloverAmount: number;
+  accountId?: number | null;
+  projectId?: number | null;
+  categoryId?: number | null;
   account?: { id: number; name: string } | null;
   project?: { id: number; name: string } | null;
   category?: { id: number; name: string; color: string } | null;

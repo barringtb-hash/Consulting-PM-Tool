@@ -54,12 +54,21 @@ export interface RecurringCost {
   department?: string | null;
   autoRenew: boolean;
   renewalAlertDays: number;
+  /** Expanded account relation from API response */
   account?: { id: number; name: string } | null;
+  /** Expanded project relation from API response */
+  project?: { id: number; name: string } | null;
+  /** Raw project ID for filtering/updates (redundant with project.id when project is expanded) */
+  projectId?: number | null;
   category: { id: number; name: string; color: string };
   employee?: { id: number; name: string } | null;
   owner: { id: number; name: string };
   _count: { expenses: number };
+  /** Calculated annual cost based on amount and frequency */
   annualCost: number;
+  notes?: string | null;
+  /** When true, automatically creates an expense when this recurring cost is due */
+  autoCreateExpense?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,6 +119,7 @@ export interface RecurringCostStats {
   activeCosts: number;
   monthlyTotal: number;
   annualTotal: number;
+  upcomingRenewalsCount?: number;
   byType: Array<{ type: string; count: number; monthlyTotal: number }>;
 }
 

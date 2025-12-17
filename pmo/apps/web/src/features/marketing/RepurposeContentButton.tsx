@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 
-import { Button } from '../../ui/Button';
+import { Button, type ButtonSize } from '../../ui/Button';
 import { RepurposeContentModal } from './RepurposeContentModal';
 import type { MarketingContent } from '../../../../../packages/types/marketing';
 
 interface RepurposeContentButtonProps {
   content: MarketingContent;
   variant?: 'primary' | 'secondary';
-  size?: 'small' | 'medium' | 'large';
+  size?: ButtonSize;
   className?: string;
 }
 
@@ -24,7 +24,7 @@ interface RepurposeContentButtonProps {
 export function RepurposeContentButton({
   content,
   variant = 'secondary',
-  size = 'medium',
+  size = 'default',
   className,
 }: RepurposeContentButtonProps): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
