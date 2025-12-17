@@ -513,79 +513,74 @@ export async function mergeAccounts(
 
 /**
  * Get account statistics for dashboard.
+ *
+ * OPTIMIZED: Fetches all accounts once and calculates stats in-memory
+ * instead of running 7 separate count queries.
  */
 export async function getAccountStats() {
   const tenantId = getTenantId();
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const baseWhere = { tenantId, archived: false };
-
-  const [
-    totalAccounts,
-    byType,
-    healthyCount,
-    atRiskCount,
-    criticalCount,
-    _unknownHealthCount,
-    recentlyEngaged,
-  ] = await Promise.all([
-    // Total accounts
-    prisma.account.count({
-      where: baseWhere,
-    }),
-
-    // By type
-    prisma.account.groupBy({
-      by: ['type'],
-      where: baseWhere,
-      _count: true,
-    }),
-
-    // Health score: healthy (>= 80)
-    prisma.account.count({
-      where: { ...baseWhere, healthScore: { gte: 80 } },
-    }),
-
-    // Health score: at_risk (50-79)
-    prisma.account.count({
-      where: { ...baseWhere, healthScore: { gte: 50, lt: 80 } },
-    }),
-
-    // Health score: critical (< 50, not null)
-    prisma.account.count({
-      where: { ...baseWhere, healthScore: { lt: 50, not: null } },
-    }),
-
-    // Health score: unknown (null)
-    prisma.account.count({
-      where: { ...baseWhere, healthScore: null },
-    }),
-
-    // Recently engaged - count accounts with recent activities
-    prisma.account.count({
-      where: {
-        ...baseWhere,
-        activities: {
-          some: {
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-            },
+  // SINGLE QUERY: Fetch all non-archived accounts with activity count
+  const accounts = await prisma.account.findMany({
+    where: { tenantId, archived: false },
+    select: {
+      id: true,
+      type: true,
+      healthScore: true,
+      _count: {
+        select: {
+          activities: {
+            where: { createdAt: { gte: thirtyDaysAgo } },
           },
         },
       },
-    }),
-  ]);
+    },
+  });
 
-  // Transform health score counts to match expected format
-  const healthDistribution = {
-    healthy: healthyCount,
-    atRisk: atRiskCount,
-    critical: criticalCount,
-  };
+  // Calculate all stats in a single pass through the data
+  let healthyCount = 0;
+  let atRiskCount = 0;
+  let criticalCount = 0;
+  let recentlyEngagedCount = 0;
+  const byType: { type: string; _count: number }[] = [];
+  const typeCountMap = new Map<string, number>();
+
+  for (const account of accounts) {
+    // Health distribution
+    if (account.healthScore === null) {
+      // Unknown - not counted in distribution
+    } else if (account.healthScore >= 80) {
+      healthyCount++;
+    } else if (account.healthScore >= 50) {
+      atRiskCount++;
+    } else {
+      criticalCount++;
+    }
+
+    // Type distribution
+    const currentTypeCount = typeCountMap.get(account.type) ?? 0;
+    typeCountMap.set(account.type, currentTypeCount + 1);
+
+    // Recently engaged (has activities in last 30 days)
+    if (account._count.activities > 0) {
+      recentlyEngagedCount++;
+    }
+  }
+
+  // Convert type map to array format expected by API
+  for (const [type, count] of typeCountMap) {
+    byType.push({ type, _count: count });
+  }
 
   return {
-    total: totalAccounts,
+    total: accounts.length,
     byType,
-    healthDistribution,
-    recentlyActive: recentlyEngaged,
+    healthDistribution: {
+      healthy: healthyCount,
+      atRisk: atRiskCount,
+      critical: criticalCount,
+    },
+    recentlyActive: recentlyEngagedCount,
   };
 }
