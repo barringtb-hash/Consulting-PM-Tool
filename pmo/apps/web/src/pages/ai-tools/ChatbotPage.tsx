@@ -273,6 +273,29 @@ async function createChatbotConfig(
   return result.config;
 }
 
+async function updateChatbotConfig(
+  configId: number,
+  data: Partial<ChatbotConfig>,
+): Promise<ChatbotConfig> {
+  const res = await fetch(
+    buildApiUrl(`/chatbot/configs/${configId}`),
+    buildOptions({
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const error = new Error(
+      errorData.message || errorData.error || 'Failed to update chatbot config',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.config;
+}
+
 // Test chat API functions
 async function startTestConversation(
   configId: number,
@@ -643,6 +666,21 @@ function ChatbotPage(): JSX.Element {
     onError: (error) => {
       showToast(
         error instanceof Error ? error.message : 'Failed to create config',
+        'error',
+      );
+    },
+  });
+
+  const updateConfigMutation = useMutation({
+    mutationFn: (data: Partial<ChatbotConfig>) =>
+      updateChatbotConfig(selectedConfigId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatbot-configs'] });
+      showToast('Chatbot configuration updated successfully', 'success');
+    },
+    onError: (error) => {
+      showToast(
+        error instanceof Error ? error.message : 'Failed to update config',
         'error',
       );
     },

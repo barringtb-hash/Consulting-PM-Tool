@@ -5,12 +5,12 @@
  * from projects and meetings using AI.
  */
 
-export { GenerateContentButton } from './GenerateContentButton';
+export { default as GenerateContentButton } from './GenerateContentButton';
 export { GenerateFromProjectButton } from './GenerateFromProjectButton';
 export { GenerateFromMeetingButton } from './GenerateFromMeetingButton';
 export { RepurposeContentButton } from './RepurposeContentButton';
 export { GenerateMarketingContentModal } from './GenerateMarketingContentModal';
 export { RepurposeContentModal } from './RepurposeContentModal';
-export { MarketingContentFormModal } from './MarketingContentFormModal';
-export { MarketingContentDetailModal } from './MarketingContentDetailModal';
-export { ContentQualityPanel } from './ContentQualityPanel';
+export { default as MarketingContentFormModal } from './MarketingContentFormModal';
+export { default as MarketingContentDetailModal } from './MarketingContentDetailModal';
+export { default as ContentQualityPanel } from './ContentQualityPanel';

@@ -9,6 +9,8 @@ export interface PageHeaderProps extends React.HTMLAttributes<HTMLElement> {
   /** Optional icon component to display next to the title */
   icon?: React.ComponentType<{ className?: string }>;
   actions?: React.ReactNode;
+  /** Alias for actions - used by some pages */
+  action?: React.ReactNode;
 }
 
 export function PageHeader({
@@ -17,11 +19,14 @@ export function PageHeader({
   subtitle,
   icon: Icon,
   actions,
+  action,
   className,
   ...props
 }: PageHeaderProps): JSX.Element {
   // Use subtitle as fallback for description
   const displayDescription = description || subtitle;
+  // Use action as fallback for actions
+  const displayActions = actions || action;
 
   return (
     <header
@@ -48,9 +53,9 @@ export function PageHeader({
               </p>
             )}
           </div>
-          {actions && (
+          {displayActions && (
             <div className="flex-shrink-0 flex items-center gap-3">
-              {actions}
+              {displayActions}
             </div>
           )}
         </div>

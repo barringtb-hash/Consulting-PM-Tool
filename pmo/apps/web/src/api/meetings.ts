@@ -13,7 +13,7 @@ import {
   type CreateTaskFromSelectionInput,
   type Meeting,
   type UpdateMeetingInput,
-} from '../../../packages/types/meeting';
+} from '@pmo/types/meeting';
 import { taskQueryKeys } from '../hooks/tasks';
 
 interface MeetingResponse extends Omit<
@@ -275,3 +275,6 @@ export function useCreateTaskFromSelection(): UseMutationResult<
     },
   });
 }
+
+// Re-export types for consumers
+export type { Meeting } from '@pmo/types/meeting';

@@ -388,6 +388,7 @@ export type {
   AccountFilters,
   AccountPayload,
   AccountStats,
+  AccountType,
   AccountUpdatePayload,
   PaginatedAccounts,
 } from '../../accounts';
