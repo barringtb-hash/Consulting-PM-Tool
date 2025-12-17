@@ -1,3 +1,32 @@
+/**
+ * Tool 3.4: Revenue Management Service
+ *
+ * Provides dynamic pricing and revenue optimization capabilities including:
+ * - Demand forecasting using historical data and ML
+ * - Dynamic pricing recommendations
+ * - Competitor rate monitoring
+ * - Occupancy/utilization optimization
+ * - Rate category management
+ * - Seasonal pricing adjustments
+ * - Revenue analytics and reporting
+ * - Price elasticity analysis
+ *
+ * Pricing Strategies:
+ * - DYNAMIC: AI-driven real-time pricing adjustments
+ * - FIXED: Static pricing with manual overrides
+ * - SEASONAL: Time-based pricing patterns
+ * - COMPETITOR_BASED: Pricing relative to competitors
+ * - DEMAND_BASED: Pricing tied to demand levels
+ *
+ * Industry Applications:
+ * - Hospitality: Hotel room pricing
+ * - Travel: Airline and rental car rates
+ * - Events: Ticket pricing optimization
+ * - Parking: Dynamic lot pricing
+ *
+ * @module modules/revenue-management
+ */
+
 import {
   PricingStrategy,
   DemandForecast,

@@ -1,3 +1,24 @@
+/**
+ * Tool 3.2: Compliance Monitor Service
+ *
+ * Provides regulatory compliance monitoring and reporting capabilities including:
+ * - Multi-framework support (HIPAA, SOX, GDPR, PCI-DSS, FINRA)
+ * - Real-time violation detection and alerting
+ * - Audit management and tracking
+ * - Risk assessment and scoring
+ * - Compliance rule engine with customizable rules
+ * - Document management for compliance evidence
+ * - Automated compliance reports and dashboards
+ *
+ * Industry Applications:
+ * - Healthcare: HIPAA compliance tracking
+ * - Finance: SOX and FINRA compliance
+ * - E-commerce: PCI-DSS compliance
+ * - International: GDPR data protection
+ *
+ * @module modules/compliance-monitor
+ */
+
 import {
   ViolationStatus,
   AuditStatus,

@@ -1,3 +1,48 @@
+/**
+ * Lead Service
+ *
+ * Manages inbound leads from website forms, referrals, and other sources.
+ * Provides the primary entry point for the sales funnel.
+ *
+ * Lead Lifecycle:
+ * 1. NEW → Initial capture from public form or manual entry
+ * 2. CONTACTED → First outreach made
+ * 3. QUALIFIED → Meets qualification criteria
+ * 4. CONVERTED → Converted to Account + Opportunity (and optionally Project)
+ * 5. REJECTED → Not a fit / spam / duplicate
+ *
+ * Conversion Workflow (convertLead):
+ * The convertLead function transforms a qualified lead into CRM entities:
+ *
+ * ┌─────────────┐
+ * │   Lead      │
+ * │ (InboundLead)
+ * └──────┬──────┘
+ *        │ convertLead()
+ *        ▼
+ * ┌──────────────────────────────────────────┐
+ * │              Transaction                  │
+ * │  ┌─────────────┐    ┌─────────────┐     │
+ * │  │   Account   │◄───│ Get/Create  │     │
+ * │  │   (CRM)     │    │ from company│     │
+ * │  └──────┬──────┘    └─────────────┘     │
+ * │         │                                │
+ * │         ▼                                │
+ * │  ┌─────────────┐    ┌─────────────┐     │
+ * │  │ Opportunity │◄───│Get/Create   │     │
+ * │  │  (Pipeline) │    │   Pipeline  │     │
+ * │  └─────────────┘    └─────────────┘     │
+ * │         │                                │
+ * │         ▼ (optional, if createProject)   │
+ * │  ┌─────────────┐                         │
+ * │  │   Project   │                         │
+ * │  │ (Delivery)  │                         │
+ * │  └─────────────┘                         │
+ * └──────────────────────────────────────────┘
+ *
+ * @module services/lead
+ */
+
 import { LeadSource, LeadStatus, Prisma, CRMLeadSource } from '@prisma/client';
 
 import prisma from '../prisma/client';
@@ -10,7 +55,8 @@ import {
 } from '../validation/lead.schema';
 
 /**
- * Maps legacy LeadSource enum to CRM LeadSource for Opportunity creation
+ * Maps legacy LeadSource enum to CRM LeadSource for Opportunity creation.
+ * Used during lead conversion to set the source on the resulting Opportunity.
  */
 const LEAD_SOURCE_TO_CRM: Record<LeadSource, CRMLeadSource> = {
   [LeadSource.WEBSITE_CONTACT]: CRMLeadSource.WEBSITE,
@@ -209,6 +255,45 @@ export const updateLead = async (id: number, data: LeadUpdateInput) => {
   });
 };
 
+/**
+ * Converts a qualified lead into CRM entities (Account, Opportunity, optionally Project).
+ *
+ * This is the primary sales funnel conversion function. It performs the following
+ * operations in a single transaction:
+ *
+ * 1. **Account Creation/Lookup**: Finds existing Account by company name or creates new one
+ * 2. **Pipeline Setup**: Ensures default sales pipeline exists with standard stages
+ * 3. **Opportunity Creation**: Creates Opportunity linked to Account in first pipeline stage
+ * 4. **Stage History**: Records initial stage for pipeline analytics
+ * 5. **Project Creation** (optional): Creates delivery Project if createProject=true
+ * 6. **Lead Update**: Marks lead as CONVERTED with links to created entities
+ *
+ * Default Behavior:
+ * - createOpportunity defaults to true (recommended path for sales tracking)
+ * - createProject defaults to false (only needed for immediate delivery tracking)
+ *
+ * @param id - The lead ID to convert
+ * @param conversion - Conversion options including:
+ *   - ownerId: User ID to own the created entities
+ *   - createOpportunity: Whether to create Opportunity (default: true)
+ *   - opportunityName: Custom name for the Opportunity
+ *   - opportunityAmount: Deal value
+ *   - opportunityProbability: Win probability override
+ *   - expectedCloseDate: Expected close date for forecasting
+ *   - createProject: Whether to create Project (default: false)
+ *   - projectName: Custom name for the Project
+ *   - createContact: Whether to create Contact from lead data
+ *   - contactRole: Role for the created Contact
+ *   - clientId: Legacy client ID (for backward compatibility)
+ * @returns Object containing:
+ *   - lead: Updated lead with CONVERTED status
+ *   - accountId: ID of created/found Account
+ *   - opportunityId: ID of created Opportunity (if createOpportunity=true)
+ *   - projectId: ID of created Project (if createProject=true)
+ *   - clientId: Legacy client ID
+ *   - contactId: ID of created/existing Contact
+ * @throws {Error} If lead not found, already converted, or missing required owner
+ */
 export const convertLead = async (id: number, conversion: LeadConvertInput) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;

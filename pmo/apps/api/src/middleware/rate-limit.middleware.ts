@@ -1,19 +1,63 @@
+/**
+ * Rate Limiting Middleware
+ *
+ * Provides request rate limiting to prevent abuse and ensure fair usage.
+ *
+ * Features:
+ * - Configurable time windows and request limits
+ * - In-memory storage (suitable for single-instance deployments)
+ * - Standard rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
+ * - Automatic cleanup of expired entries
+ * - IP-based client identification
+ *
+ * Response Headers:
+ * - X-RateLimit-Limit: Maximum requests allowed in window
+ * - X-RateLimit-Remaining: Requests remaining in current window
+ * - X-RateLimit-Reset: ISO timestamp when the window resets
+ * - Retry-After: Seconds until rate limit resets (only on 429 responses)
+ *
+ * Production Considerations:
+ * - For multi-instance deployments, use Redis-backed rate limiting
+ * - See tenant-rate-limit.middleware.ts for tenant-aware rate limiting
+ * - Consider using a CDN or API gateway for edge rate limiting
+ *
+ * @module middleware/rate-limit
+ */
+
 import { Request, Response, NextFunction } from 'express';
 
+/** Internal tracking entry for a single client's request count */
 interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
+/**
+ * Configuration options for rate limiting.
+ */
 interface RateLimitOptions {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Max requests per window
+  /** Time window in milliseconds (e.g., 60000 for 1 minute) */
+  windowMs: number;
+  /** Maximum requests allowed per window */
+  maxRequests: number;
+  /** Custom error message for rate limit exceeded */
   message?: string;
 }
 
 /**
- * Simple in-memory rate limiter
- * For production, consider using Redis or a database-backed solution
+ * In-memory rate limiter class.
+ *
+ * Creates a sliding window rate limiter that tracks request counts per client IP.
+ * Suitable for single-instance deployments; for clustered environments, use
+ * Redis-backed rate limiting instead.
+ *
+ * @example
+ * const limiter = new RateLimiter({
+ *   windowMs: 60000,    // 1 minute window
+ *   maxRequests: 100,   // 100 requests per window
+ *   message: 'Too many requests from this IP'
+ * });
+ * app.use('/api', limiter.middleware);
  */
 export class RateLimiter {
   private store: Map<string, RateLimitEntry> = new Map();

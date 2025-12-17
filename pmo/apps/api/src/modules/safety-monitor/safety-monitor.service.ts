@@ -1,3 +1,36 @@
+/**
+ * Tool 3.5: Safety Monitor Service
+ *
+ * Provides workplace safety monitoring and compliance capabilities including:
+ * - Incident reporting and investigation tracking
+ * - Hazard identification and risk assessment
+ * - Safety checklist management and completion tracking
+ * - Training requirement tracking and certification
+ * - OSHA compliance and reporting (300, 300A, 301 logs)
+ * - Safety inspection scheduling and documentation
+ * - Near-miss reporting and analysis
+ * - Safety metrics and trending dashboards
+ *
+ * Compliance Frameworks:
+ * - OSHA (Occupational Safety and Health Administration)
+ * - State-specific safety regulations
+ * - Industry-specific standards (ANSI, NFPA)
+ *
+ * Key Metrics:
+ * - TRIR (Total Recordable Incident Rate)
+ * - DART (Days Away, Restricted, Transferred)
+ * - Lost Time Incident Rate
+ * - Near Miss Frequency
+ *
+ * Industry Applications:
+ * - Manufacturing: Shop floor safety
+ * - Construction: Job site safety
+ * - Healthcare: Patient and worker safety
+ * - Logistics: Warehouse and fleet safety
+ *
+ * @module modules/safety-monitor
+ */
+
 import {
   IncidentSeverity,
   IncidentStatus,
