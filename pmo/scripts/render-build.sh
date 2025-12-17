@@ -32,14 +32,14 @@ echo "Dependencies installed"
 echo ""
 
 # Step 2: Generate Prisma client
-# Run from workspace root so prisma.config.ts is auto-detected (contains schema path and datasource url)
+# Prisma 6 uses the schema path from package.json#prisma or we specify it explicitly
 echo "Generating Prisma client..."
-npx prisma generate
+npx prisma generate --schema=prisma/schema.prisma
 echo "Prisma client generated"
 echo ""
 
 # Step 3: Run smart migration deployment (handles failed migrations)
-# Run from workspace root so prisma.config.ts is auto-detected
+# Uses explicit schema path for Prisma 6
 echo "Deploying database migrations..."
 if [ -f "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" ]; then
     bash "$WORKSPACE_ROOT/scripts/deploy-migrations.sh"
