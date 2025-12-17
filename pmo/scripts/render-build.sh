@@ -31,26 +31,21 @@ npm install
 echo "Dependencies installed"
 echo ""
 
-# Define schema path for Prisma 7 compatibility
-SCHEMA_PATH="$WORKSPACE_ROOT/prisma/schema.prisma"
-
 # Step 2: Generate Prisma client
+# Run from workspace root so prisma.config.ts is auto-detected (contains schema path and datasource url)
 echo "Generating Prisma client..."
-cd "$API_DIR"
-npx prisma generate --schema "$SCHEMA_PATH"
-cd "$WORKSPACE_ROOT"
+npx prisma generate
 echo "Prisma client generated"
 echo ""
 
 # Step 3: Run smart migration deployment (handles failed migrations)
+# Run from workspace root so prisma.config.ts is auto-detected
 echo "Deploying database migrations..."
-cd "$API_DIR"
 if [ -f "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" ]; then
-    bash "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" "$SCHEMA_PATH"
+    bash "$WORKSPACE_ROOT/scripts/deploy-migrations.sh"
 else
-    npx prisma migrate deploy --schema "$SCHEMA_PATH"
+    npx prisma migrate deploy
 fi
-cd "$WORKSPACE_ROOT"
 echo "Migrations deployed"
 echo ""
 
