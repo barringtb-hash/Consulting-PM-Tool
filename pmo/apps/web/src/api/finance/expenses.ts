@@ -5,7 +5,7 @@
 import { http } from '../http';
 
 // Types
-export interface ExpenseCategory {
+export interface ExpenseCategoryRef {
   id: number;
   name: string;
   color: string;
@@ -20,7 +20,7 @@ export interface Expense {
   currency: string;
   date: string;
   status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID' | 'CANCELLED';
-  category: ExpenseCategory;
+  category: ExpenseCategoryRef;
   account?: { id: number; name: string } | null;
   project?: { id: number; name: string } | null;
   budget?: { id: number; name: string } | null;

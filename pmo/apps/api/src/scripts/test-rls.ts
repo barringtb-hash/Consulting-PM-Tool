@@ -8,8 +8,22 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({
+  adapter,
+  log: ['error'],
+});
+
+async function cleanup() {
+  await prisma.$disconnect();
+  await pool.end();
+}
 
 interface TestResult {
   name: string;
@@ -150,6 +164,7 @@ async function runTests() {
           email: `rls-test-${Date.now()}@test.com`,
           passwordHash: 'test-hash',
           role: 'USER',
+          timezone: 'UTC',
         },
       });
     }
@@ -272,5 +287,5 @@ runTests()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await cleanup();
   });

@@ -27,6 +27,9 @@ export type {
   TaskWithProject,
 } from '../api/hooks/tasks';
 
+// Export types from the base tasks module
+export type { TaskStatus, TaskPriority } from '../api/tasks';
+
 // Legacy query keys for backwards compatibility
 // New code should use queryKeys from '../api/hooks/queryKeys'
 /**

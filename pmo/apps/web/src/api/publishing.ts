@@ -6,8 +6,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 
-import { buildApiUrl } from './config';
-import { buildOptions, handleResponse } from './http';
+import { http } from './http';
 import {
   type PublishingConnection,
   type CreatePublishingConnectionInput,
@@ -38,11 +37,9 @@ const mapPublishingConnection = (
 export async function fetchPublishingConnections(
   clientId: number,
 ): Promise<PublishingConnection[]> {
-  const url = buildApiUrl(`/clients/${clientId}/publishing-connections`);
-  const response = await fetch(url, buildOptions('GET'));
-  const data = await handleResponse<{
+  const data = await http.get<{
     connections: PublishingConnectionResponse[];
-  }>(response);
+  }>(`/clients/${clientId}/publishing-connections`);
   return data.connections.map(mapPublishingConnection);
 }
 
@@ -52,13 +49,9 @@ export async function fetchPublishingConnections(
 export async function createPublishingConnection(
   payload: CreatePublishingConnectionInput,
 ): Promise<PublishingConnection> {
-  const url = buildApiUrl(
-    `/clients/${payload.clientId}/publishing-connections`,
-  );
-  const response = await fetch(url, buildOptions('POST', payload));
-  const data = await handleResponse<{
+  const data = await http.post<{
     connection: PublishingConnectionResponse;
-  }>(response);
+  }>(`/clients/${payload.clientId}/publishing-connections`, payload);
   return mapPublishingConnection(data.connection);
 }
 
@@ -69,11 +62,9 @@ export async function updatePublishingConnection(
   id: number,
   payload: UpdatePublishingConnectionInput,
 ): Promise<PublishingConnection> {
-  const url = buildApiUrl(`/publishing-connections/${id}`);
-  const response = await fetch(url, buildOptions('PATCH', payload));
-  const data = await handleResponse<{
+  const data = await http.patch<{
     connection: PublishingConnectionResponse;
-  }>(response);
+  }>(`/publishing-connections/${id}`, payload);
   return mapPublishingConnection(data.connection);
 }
 
@@ -81,9 +72,7 @@ export async function updatePublishingConnection(
  * Delete a publishing connection
  */
 export async function deletePublishingConnection(id: number): Promise<void> {
-  const url = buildApiUrl(`/publishing-connections/${id}`);
-  const response = await fetch(url, buildOptions('DELETE'));
-  await handleResponse(response);
+  await http.delete(`/publishing-connections/${id}`);
 }
 
 /**
@@ -96,9 +85,7 @@ export async function publishContent(
     scheduledFor?: Date;
   },
 ): Promise<{ content: unknown }> {
-  const url = buildApiUrl(`/marketing-contents/${contentId}/publish`);
-  const response = await fetch(url, buildOptions('POST', payload));
-  return handleResponse(response);
+  return http.post(`/marketing-contents/${contentId}/publish`, payload);
 }
 
 /**
