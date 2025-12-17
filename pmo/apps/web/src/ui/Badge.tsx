@@ -1,6 +1,12 @@
 import React from 'react';
 import { cn } from './utils';
 
+/**
+ * Badge variant styles.
+ * Note: 'danger' and 'destructive' are semantic aliases with identical styling.
+ * - Use 'destructive' when following shadcn/ui conventions
+ * - Use 'danger' when following Bootstrap/Tailwind conventions
+ */
 export type BadgeVariant =
   | 'default'
   | 'primary'
@@ -8,7 +14,7 @@ export type BadgeVariant =
   | 'success'
   | 'warning'
   | 'danger'
-  | 'destructive'
+  | 'destructive' // Alias for 'danger' - same styling, different semantic naming
   | 'neutral';
 
 export type BadgeSize = 'sm' | 'default' | 'lg';
@@ -18,6 +24,10 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: BadgeSize;
   children: React.ReactNode;
 }
+
+// Shared danger/destructive styling extracted for DRY
+const DANGER_BADGE_STYLES =
+  'bg-danger-100 dark:bg-danger-900/50 text-danger-700 dark:text-danger-300';
 
 const variantStyles: Record<BadgeVariant, string> = {
   default:
@@ -30,10 +40,8 @@ const variantStyles: Record<BadgeVariant, string> = {
     'bg-success-100 dark:bg-success-900/50 text-success-700 dark:text-success-300',
   warning:
     'bg-warning-100 dark:bg-warning-900/50 text-warning-700 dark:text-warning-300',
-  danger:
-    'bg-danger-100 dark:bg-danger-900/50 text-danger-700 dark:text-danger-300',
-  destructive:
-    'bg-danger-100 dark:bg-danger-900/50 text-danger-700 dark:text-danger-300',
+  danger: DANGER_BADGE_STYLES,
+  destructive: DANGER_BADGE_STYLES, // Alias for danger
   neutral:
     'bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200',
 };

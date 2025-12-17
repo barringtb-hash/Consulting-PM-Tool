@@ -24,17 +24,24 @@ export interface Expense {
   account?: { id: number; name: string } | null;
   project?: { id: number; name: string } | null;
   budget?: { id: number; name: string } | null;
+  /** The user who created/owns this expense */
   owner: { id: number; name: string };
+  /** The designated approver assigned to review this expense (may differ from who actually approved) */
   approver?: { id: number; name: string } | null;
+  /** The user who actually approved/rejected this expense (populated after approval action) */
   approvedBy?: { id: number; name: string } | null;
+  /** Timestamp when the expense was approved */
   approvedAt?: string | null;
   vendorName?: string | null;
   invoiceNumber?: string | null;
   tags: string[];
   notes?: string | null;
   aiAnomalyFlag: boolean;
+  /** Reason provided when expense was rejected */
   rejectionReason?: string | null;
+  /** Notes provided by approver during approval */
   approvalNotes?: string | null;
+  /** Timestamp when the expense was marked as paid */
   paidAt?: string | null;
   createdAt: string;
   updatedAt: string;

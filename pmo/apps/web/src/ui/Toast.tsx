@@ -8,6 +8,12 @@ import React, {
 } from 'react';
 import { cn } from './utils';
 
+/**
+ * Toast variant types.
+ * Note: 'destructive' is accepted as input but internally maps to 'error' styling.
+ * This provides API compatibility with shadcn/ui conventions while using
+ * a simpler internal implementation.
+ */
 type ToastVariant = 'success' | 'error' | 'info' | 'destructive';
 
 interface Toast {
