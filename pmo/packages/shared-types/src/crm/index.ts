@@ -272,8 +272,9 @@ export interface CreateOpportunityInput {
 /**
  * Input for updating an opportunity.
  */
-export interface UpdateOpportunityInput
-  extends Partial<Omit<CreateOpportunityInput, 'accountId'>> {}
+export interface UpdateOpportunityInput extends Partial<
+  Omit<CreateOpportunityInput, 'accountId'>
+> {}
 
 /**
  * Filter parameters for listing opportunities.

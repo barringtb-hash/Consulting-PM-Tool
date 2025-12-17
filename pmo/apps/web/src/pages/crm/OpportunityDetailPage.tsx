@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import {
   Building2,
   DollarSign,

@@ -15,7 +15,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../../../auth/AuthContext';
 import { useProjects } from '../../../api/queries';
 import { useAccountStats } from '../../../api/hooks/crm';

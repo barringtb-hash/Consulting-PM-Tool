@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Trash2 } from 'lucide-react';
 
 import type { TaskWithProject } from '../api/tasks';

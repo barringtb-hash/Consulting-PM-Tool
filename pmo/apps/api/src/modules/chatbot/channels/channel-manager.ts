@@ -4,7 +4,7 @@
  * Central hub for managing channel adapters and routing messages.
  */
 
-import { ChatChannel, PrismaClient } from '@prisma/client';
+import { ChatChannel } from '@prisma/client';
 import {
   ChannelAdapter,
   ChannelCredentials,
@@ -14,8 +14,7 @@ import {
 import { smsAdapter, whatsAppAdapter } from './adapters/twilio.adapter';
 import { slackAdapter } from './adapters/slack.adapter';
 import * as chatbotService from '../chatbot.service';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../prisma/client';
 
 class ChannelManager {
   private adapters: Map<ChatChannel, ChannelAdapter> = new Map();

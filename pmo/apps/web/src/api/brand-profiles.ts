@@ -17,15 +17,19 @@ import {
   type UpdateBrandAssetInput,
 } from '../../../../packages/types/marketing';
 
-interface BrandProfileResponse
-  extends Omit<BrandProfile, 'createdAt' | 'updatedAt'> {
+interface BrandProfileResponse extends Omit<
+  BrandProfile,
+  'createdAt' | 'updatedAt'
+> {
   createdAt: string;
   updatedAt: string;
   assets?: BrandAssetResponse[];
 }
 
-interface BrandAssetResponse
-  extends Omit<BrandAsset, 'createdAt' | 'updatedAt'> {
+interface BrandAssetResponse extends Omit<
+  BrandAsset,
+  'createdAt' | 'updatedAt'
+> {
   createdAt: string;
   updatedAt: string;
 }

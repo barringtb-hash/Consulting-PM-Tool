@@ -5,7 +5,7 @@
  * spending trends, and budget status.
  */
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import {
   DollarSign,
   TrendingUp,

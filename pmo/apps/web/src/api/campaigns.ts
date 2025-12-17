@@ -14,8 +14,10 @@ import {
   type UpdateCampaignInput,
 } from '../../../../packages/types/marketing';
 
-interface CampaignResponse
-  extends Omit<Campaign, 'createdAt' | 'updatedAt' | 'startDate' | 'endDate'> {
+interface CampaignResponse extends Omit<
+  Campaign,
+  'createdAt' | 'updatedAt' | 'startDate' | 'endDate'
+> {
   createdAt: string;
   updatedAt: string;
   startDate?: string | null;

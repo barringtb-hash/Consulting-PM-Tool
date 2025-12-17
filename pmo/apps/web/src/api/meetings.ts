@@ -16,8 +16,10 @@ import {
 } from '../../../packages/types/meeting';
 import { taskQueryKeys } from '../hooks/tasks';
 
-interface MeetingResponse
-  extends Omit<Meeting, 'date' | 'createdAt' | 'updatedAt'> {
+interface MeetingResponse extends Omit<
+  Meeting,
+  'date' | 'createdAt' | 'updatedAt'
+> {
   date: string;
   createdAt: string;
   updatedAt: string;

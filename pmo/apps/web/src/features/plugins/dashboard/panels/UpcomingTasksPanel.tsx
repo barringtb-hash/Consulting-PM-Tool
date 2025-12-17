@@ -4,7 +4,7 @@
  * Displays a list of upcoming tasks sorted by due date.
  */
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Card, CardBody, CardTitle } from '../../../../ui/Card';
 import { Badge, type BadgeVariant } from '../../../../ui/Badge';
 import { useDashboardPluginContext } from '../DashboardPluginContext';

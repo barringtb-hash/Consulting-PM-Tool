@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Calendar, User, TrendingUp } from 'lucide-react';
 import { useClient, useProjectStatus } from '../../api/queries';
 import { type Project } from '../../api/projects';

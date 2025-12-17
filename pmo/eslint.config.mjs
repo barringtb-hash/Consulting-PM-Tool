@@ -6,31 +6,34 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierPlugin from 'eslint-plugin-prettier';
 
 export default [
+  // Global ignores (replaces .eslintignore)
+  {
+    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**'],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
-    ignores: ['**/dist/**', 'node_modules'],
     languageOptions: {
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname
+        tsconfigRootDir: import.meta.dirname,
       },
       globals: {
         ...globals.browser,
         ...globals.es2021,
-        ...globals.node
-      }
+        ...globals.node,
+      },
     },
     settings: {
       react: {
-        version: 'detect'
-      }
+        version: 'detect',
+      },
     },
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
-      prettier: prettierPlugin
+      prettier: prettierPlugin,
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
@@ -43,9 +46,19 @@ export default [
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_'
-        }
-      ]
-    }
-  }
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      // React Hooks core rules
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      // Disable React Compiler rules - codebase not using React Compiler yet
+      // These rules are included in eslint-plugin-react-hooks v7.x but require
+      // React Compiler setup to work properly. Can be re-enabled when migrating.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/incompatible-library': 'off',
+    },
+  },
 ];

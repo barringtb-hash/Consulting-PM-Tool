@@ -5,14 +5,11 @@
  * This ensures all legacy PMO tests properly establish tenant associations.
  */
 
-import { PrismaClient } from '@prisma/client';
 import type { Application } from 'express';
 import request from 'supertest';
 import { hashPassword } from '../../src/auth/password';
 import { signToken } from '../../src/auth/jwt';
-
-// Raw Prisma client for test setup/cleanup (bypasses tenant filtering)
-const rawPrisma = new PrismaClient();
+import { rawPrisma, disconnectRawPrisma } from './raw-prisma-client';
 
 /**
  * Test environment containing tenant, user, token, and pipeline
@@ -336,12 +333,4 @@ export function getRawPrisma() {
   return rawPrisma;
 }
 
-/**
- * Disconnect the raw Prisma client.
- * Call this in afterAll if you're managing the client lifecycle manually.
- */
-export async function disconnectRawPrisma() {
-  await rawPrisma.$disconnect();
-}
-
-export { rawPrisma };
+export { rawPrisma, disconnectRawPrisma };

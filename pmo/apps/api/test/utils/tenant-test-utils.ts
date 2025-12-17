@@ -14,14 +14,13 @@
  *    Example: Verifying tenant isolation works correctly
  */
 
-import { PrismaClient } from '@prisma/client';
 import { runWithTenantContextAsync } from '../../src/tenant/tenant.context';
 import type { TenantContext } from '../../src/tenant/tenant.types';
 import { prisma as extendedPrisma } from '../../src/prisma/client';
-
-// Raw Prisma client for test setup/cleanup (bypasses tenant filtering)
-// Use this for creating test data, tenants, users, and cross-tenant verification
-const rawPrisma = new PrismaClient();
+import {
+  rawPrisma,
+  disconnectRawPrisma as disconnectRawPrismaClient,
+} from './raw-prisma-client';
 
 /**
  * Generate a unique ID for test data to prevent collisions in parallel tests.
@@ -237,7 +236,7 @@ export function getTenantAwarePrisma() {
  * Disconnect test Prisma client.
  */
 export async function disconnectTestPrisma() {
-  await rawPrisma.$disconnect();
+  await disconnectRawPrismaClient();
 }
 
 // Export both clients for explicit usage

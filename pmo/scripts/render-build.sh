@@ -31,10 +31,13 @@ npm install
 echo "Dependencies installed"
 echo ""
 
+# Define schema path for Prisma 7 compatibility
+SCHEMA_PATH="$WORKSPACE_ROOT/prisma/schema.prisma"
+
 # Step 2: Generate Prisma client
 echo "Generating Prisma client..."
 cd "$API_DIR"
-npx prisma generate
+npx prisma generate --schema "$SCHEMA_PATH"
 cd "$WORKSPACE_ROOT"
 echo "Prisma client generated"
 echo ""
@@ -43,9 +46,9 @@ echo ""
 echo "Deploying database migrations..."
 cd "$API_DIR"
 if [ -f "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" ]; then
-    bash "$WORKSPACE_ROOT/scripts/deploy-migrations.sh"
+    bash "$WORKSPACE_ROOT/scripts/deploy-migrations.sh" "$SCHEMA_PATH"
 else
-    npx prisma migrate deploy
+    npx prisma migrate deploy --schema "$SCHEMA_PATH"
 fi
 cd "$WORKSPACE_ROOT"
 echo "Migrations deployed"

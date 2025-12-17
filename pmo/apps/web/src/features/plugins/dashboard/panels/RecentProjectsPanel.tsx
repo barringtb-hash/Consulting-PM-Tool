@@ -4,7 +4,7 @@
  * Displays a list of recently updated projects.
  */
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Card, CardBody, CardTitle } from '../../../../ui/Card';
 import { Badge, type BadgeVariant } from '../../../../ui/Badge';
 import { Button } from '../../../../ui/Button';

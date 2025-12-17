@@ -3,8 +3,22 @@ set -e
 
 echo "🔍 Checking migration status..."
 
-# Stay in the calling directory (apps/api) where node_modules with Prisma CLI exists
-# The Prisma schema path is configured in package.json: "prisma": { "schema": "../../prisma/schema.prisma" }
+# Accept schema path as first argument (required for Prisma 7)
+SCHEMA_PATH="${1:-}"
+
+if [ -z "$SCHEMA_PATH" ]; then
+    # Try to determine schema path relative to current directory
+    if [ -f "../../prisma/schema.prisma" ]; then
+        SCHEMA_PATH="$(cd ../.. && pwd)/prisma/schema.prisma"
+    else
+        echo "❌ Schema path not provided and could not be auto-detected"
+        echo "   Usage: deploy-migrations.sh /path/to/schema.prisma"
+        exit 1
+    fi
+fi
+
+echo "📁 Using schema: $SCHEMA_PATH"
+SCHEMA_FLAG="--schema \"$SCHEMA_PATH\""
 
 # Function to extract failed migration name from P3009 error output
 extract_failed_migration() {
@@ -26,13 +40,13 @@ resolve_failed_migration() {
 
     # Try marking as applied first (for partially applied migrations where columns already exist)
     echo "🔄 Attempt: Marking '$migration_name' as applied..."
-    if npx prisma migrate resolve --applied "$migration_name" 2>&1; then
+    if npx prisma migrate resolve --applied "$migration_name" --schema "$SCHEMA_PATH" 2>&1; then
         echo "✅ Migration '$migration_name' marked as applied"
         return 0
     fi
 
     echo "⚠️  Could not mark as applied, trying to mark as rolled back..."
-    if npx prisma migrate resolve --rolled-back "$migration_name" 2>&1; then
+    if npx prisma migrate resolve --rolled-back "$migration_name" --schema "$SCHEMA_PATH" 2>&1; then
         echo "✅ Migration '$migration_name' marked as rolled back"
         return 0
     fi
@@ -42,7 +56,7 @@ resolve_failed_migration() {
 }
 
 # Check migration status and capture output
-MIGRATION_STATUS=$(npx prisma migrate status 2>&1 || true)
+MIGRATION_STATUS=$(npx prisma migrate status --schema "$SCHEMA_PATH" 2>&1 || true)
 
 echo "$MIGRATION_STATUS"
 
@@ -62,7 +76,7 @@ echo ""
 echo "🚀 Deploying migrations..."
 
 # Capture deploy output to check for P3009 errors
-DEPLOY_OUTPUT=$(npx prisma migrate deploy 2>&1) && DEPLOY_SUCCESS=true || DEPLOY_SUCCESS=false
+DEPLOY_OUTPUT=$(npx prisma migrate deploy --schema "$SCHEMA_PATH" 2>&1) && DEPLOY_SUCCESS=true || DEPLOY_SUCCESS=false
 
 echo "$DEPLOY_OUTPUT"
 
@@ -89,7 +103,7 @@ if echo "$DEPLOY_OUTPUT" | grep -q "P3009"; then
 
         echo ""
         echo "🔄 Retrying migration deployment after resolution..."
-        DEPLOY_OUTPUT=$(npx prisma migrate deploy 2>&1) && DEPLOY_SUCCESS=true || DEPLOY_SUCCESS=false
+        DEPLOY_OUTPUT=$(npx prisma migrate deploy --schema "$SCHEMA_PATH" 2>&1) && DEPLOY_SUCCESS=true || DEPLOY_SUCCESS=false
         echo "$DEPLOY_OUTPUT"
 
         if [ "$DEPLOY_SUCCESS" = "true" ]; then
@@ -106,7 +120,7 @@ if echo "$DEPLOY_OUTPUT" | grep -q "P3009"; then
 
                 echo ""
                 echo "🔄 Final retry of migration deployment..."
-                if npx prisma migrate deploy; then
+                if npx prisma migrate deploy --schema "$SCHEMA_PATH"; then
                     echo ""
                     echo "✅ Migration deployment complete!"
                     exit 0
@@ -121,7 +135,7 @@ fi
 # Final status check
 echo ""
 echo "📊 Final migration status:"
-npx prisma migrate status 2>&1 || true
+npx prisma migrate status --schema "$SCHEMA_PATH" 2>&1 || true
 
 echo ""
 echo "❌ Migration deployment still failing. Manual intervention may be required."

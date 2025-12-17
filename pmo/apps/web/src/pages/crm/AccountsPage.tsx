@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Plus, Building2, Search, MoreHorizontal } from 'lucide-react';
 
 import {

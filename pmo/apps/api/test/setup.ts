@@ -1,7 +1,6 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
-import { afterAll, beforeAll, beforeEach } from 'vitest';
-import type { PrismaClient } from '@prisma/client';
+import { afterAll, beforeAll } from 'vitest';
 
 process.env.NODE_ENV = process.env.NODE_ENV ?? 'test';
 // JWT_SECRET must be at least 32 characters for security validation
@@ -52,27 +51,35 @@ process.env.DATABASE_URL = testDatabaseUrl.toString();
 const workspaceRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(workspaceRoot, '..', '..');
 const schemaPath = path.join(repoRoot, 'prisma', 'schema.prisma');
+const configPath = path.join(repoRoot, 'prisma.config.ts');
 
-let prismaClient: PrismaClient;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let prismaClient: { $disconnect: () => Promise<void> } | undefined;
 
 beforeAll(async () => {
   // In CI, migrations are already applied. Locally, we apply them.
   // Use 'migrate deploy' which is safer and doesn't drop data
+  // Prisma 7 requires --config flag to specify the config file with datasource
   try {
-    execSync(`npx prisma migrate deploy --schema "${schemaPath}"`, {
-      cwd: workspaceRoot,
-      env: {
-        ...process.env,
+    execSync(
+      `npx prisma migrate deploy --schema "${schemaPath}" --config "${configPath}"`,
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+        },
+        stdio: 'inherit',
       },
-      stdio: 'inherit',
-    });
+    );
   } catch (error) {
     // If migrate deploy fails, try reset (for local dev with schema changes)
+    // Note: Prisma 7 removed --skip-generate and --skip-seed flags
+    // Use migrate reset --force which applies migrations without seed
     console.warn('migrate deploy failed, trying migrate reset...');
     execSync(
-      `npx prisma migrate reset --force --skip-generate --skip-seed --schema "${schemaPath}"`,
+      `npx prisma migrate reset --force --schema "${schemaPath}" --config "${configPath}"`,
       {
-        cwd: workspaceRoot,
+        cwd: repoRoot,
         env: {
           ...process.env,
         },
