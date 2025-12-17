@@ -27,8 +27,19 @@ import {
   AccountType,
   AiMaturity,
 } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({
+  adapter,
+  log: ['error'],
+});
 
 // Mapping from legacy CompanySize to Account EmployeeCount
 const SIZE_MAPPING: Record<CompanySize, AccountEmployeeCount> = {
@@ -260,11 +271,16 @@ async function main() {
     console.log('3. Migrate Contacts to CRMContacts (separate migration).');
   }
 
-  await prisma.$disconnect();
+  await cleanup();
 }
 
-main().catch((error) => {
+async function cleanup() {
+  await prisma.$disconnect();
+  await pool.end();
+}
+
+main().catch(async (error) => {
   console.error('Migration failed:', error);
-  prisma.$disconnect();
+  await cleanup();
   process.exit(1);
 });

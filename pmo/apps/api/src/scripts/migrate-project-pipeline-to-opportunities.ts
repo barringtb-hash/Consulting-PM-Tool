@@ -23,8 +23,19 @@
  */
 
 import { PrismaClient, PipelineStageType } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({
+  adapter,
+  log: ['error'],
+});
 
 // Default pipeline stages for reference (matches CRM Pipeline model)
 const _DEFAULT_PIPELINE_STAGES = [
@@ -86,11 +97,16 @@ async function main() {
   console.log('');
   console.log('No migration performed.');
 
-  await prisma.$disconnect();
+  await cleanup();
 }
 
-main().catch((error) => {
+async function cleanup() {
+  await prisma.$disconnect();
+  await pool.end();
+}
+
+main().catch(async (error) => {
   console.error('Error:', error);
-  prisma.$disconnect();
+  await cleanup();
   process.exit(1);
 });
