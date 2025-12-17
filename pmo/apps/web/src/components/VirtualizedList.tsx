@@ -47,9 +47,21 @@ const Row = memo(function Row<T>({
  * @param items - Array of items to render
  * @param height - Total height of the list container (px)
  * @param itemHeight - Height of each item row (px)
- * @param renderItem - Function to render each item
+ * @param renderItem - Function to render each item. IMPORTANT: Wrap this function
+ *                     with useCallback in the parent component to prevent unnecessary
+ *                     re-renders of all visible items when the parent re-renders.
  * @param className - Optional CSS class for the container
  * @param overscanCount - Number of extra items to render outside visible area (default: 5)
+ *
+ * @example
+ * ```tsx
+ * // Good - renderItem is stable across re-renders
+ * const renderItem = useCallback((item: Item) => <ItemRow item={item} />, []);
+ * <VirtualizedList items={items} renderItem={renderItem} ... />
+ *
+ * // Bad - creates new function on every render, causing all rows to re-render
+ * <VirtualizedList items={items} renderItem={(item) => <ItemRow item={item} />} ... />
+ * ```
  */
 export function VirtualizedList<T>({
   items,

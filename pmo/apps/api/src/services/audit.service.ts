@@ -256,14 +256,24 @@ function deepEqual(a: unknown, b: unknown): boolean {
     return true;
   }
 
-  // Handle plain objects
+  // Handle plain objects only (not class instances)
+  // Check that both have Object as their constructor to avoid comparing
+  // class instances as if they were plain objects
   if (typeof a === 'object' && typeof b === 'object') {
-    const keysA = Object.keys(a as object);
-    const keysB = Object.keys(b as object);
+    const aObj = a as object;
+    const bObj = b as object;
+
+    // Only compare plain objects, not class instances
+    if (aObj.constructor !== Object || bObj.constructor !== Object) {
+      return false;
+    }
+
+    const keysA = Object.keys(aObj);
+    const keysB = Object.keys(bObj);
     if (keysA.length !== keysB.length) return false;
     for (const key of keysA) {
       if (
-        !Object.prototype.hasOwnProperty.call(b, key) ||
+        !Object.prototype.hasOwnProperty.call(bObj, key) ||
         !deepEqual(
           (a as Record<string, unknown>)[key],
           (b as Record<string, unknown>)[key],

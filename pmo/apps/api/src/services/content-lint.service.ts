@@ -29,7 +29,13 @@ export interface ContentLintResult {
  * reduces regex overhead significantly for large content.
  */
 
-// Helper to combine multiple patterns into a single regex with global flag
+/**
+ * Combine multiple patterns into a single regex with global and case-insensitive flags.
+ *
+ * NOTE: This function assumes all input patterns are intended to be case-insensitive.
+ * Individual pattern flags are NOT preserved - the combined pattern always uses 'gi'.
+ * This is safe for this file since all RISKY_PHRASES patterns use the 'i' flag.
+ */
 function combinePatterns(patterns: RegExp[]): RegExp {
   const sources = patterns.map((p) => `(?:${p.source})`);
   return new RegExp(sources.join('|'), 'gi');

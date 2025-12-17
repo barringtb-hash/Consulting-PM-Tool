@@ -61,9 +61,46 @@ export function buildOptions(options?: FetchOptions): RequestInit {
 }
 
 /**
+ * Combine multiple AbortSignals into one that aborts when any of them abort.
+ * Uses AbortSignal.any() if available (modern browsers), otherwise falls back
+ * to manual event listener approach.
+ */
+function combineSignals(signals: AbortSignal[]): AbortSignal {
+  // Filter out undefined/null signals
+  const validSignals = signals.filter(Boolean);
+  if (validSignals.length === 0) {
+    return new AbortController().signal;
+  }
+  if (validSignals.length === 1) {
+    return validSignals[0];
+  }
+
+  // Use AbortSignal.any() if available (Chrome 116+, Firefox 124+, Safari 17.4+)
+  if ('any' in AbortSignal && typeof AbortSignal.any === 'function') {
+    return AbortSignal.any(validSignals);
+  }
+
+  // Fallback for older browsers: create a combined controller
+  const controller = new AbortController();
+  for (const signal of validSignals) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      return controller.signal;
+    }
+    signal.addEventListener('abort', () => controller.abort(signal.reason), {
+      once: true,
+    });
+  }
+  return controller.signal;
+}
+
+/**
  * Create a fetch with timeout and abort support
  * OPTIMIZED: Supports cancellation to prevent unnecessary network calls
- * and automatic cleanup on component unmount
+ * and automatic cleanup on component unmount.
+ *
+ * Properly combines external abort signal with timeout signal so that
+ * either can cancel the request.
  */
 async function fetchWithAbort(
   url: string,
@@ -75,27 +112,28 @@ async function fetchWithAbort(
     ...fetchOptions
   } = options;
 
-  // Create internal abort controller for timeout
+  // Create timeout abort controller
   const timeoutController = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-  // If external signal provided, use it; otherwise use timeout signal
-  // If external signal aborts, abort the timeout controller too
-  if (externalSignal) {
-    externalSignal.addEventListener('abort', () => timeoutController.abort());
-  }
 
   // Set up timeout
   if (timeout > 0) {
     timeoutId = setTimeout(() => {
-      timeoutController.abort();
+      timeoutController.abort(new Error('Request timeout'));
     }, timeout);
   }
+
+  // Combine external signal with timeout signal so either can abort the request
+  const signalsToCombine: AbortSignal[] = [timeoutController.signal];
+  if (externalSignal) {
+    signalsToCombine.push(externalSignal);
+  }
+  const combinedSignal = combineSignals(signalsToCombine);
 
   try {
     const response = await fetch(url, {
       ...buildOptions(fetchOptions),
-      signal: timeoutController.signal,
+      signal: combinedSignal,
     });
     return response;
   } catch (error) {

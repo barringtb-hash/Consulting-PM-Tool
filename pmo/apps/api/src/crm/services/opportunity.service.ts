@@ -226,15 +226,16 @@ export async function listOpportunities(
     where.pipelineId = filters.pipelineId;
   }
 
-  if (filters.stageId) {
-    where.stageId = filters.stageId;
-  }
-
-  // OPTIMIZED: Server-side stageType filtering
-  // Filters by the stage's type (OPEN, WON, LOST) instead of client-side filtering
+  // OPTIMIZED: Combined stage filtering
+  // Handles both stageId and stageType in a single relation filter to avoid conflicts
   // Note: Prisma field is 'type', frontend uses 'stageType' for clarity
-  if (filters.stageType) {
-    where.stage = { is: { type: filters.stageType } };
+  if (filters.stageId || filters.stageType) {
+    where.stage = {
+      is: {
+        ...(filters.stageId ? { id: filters.stageId } : {}),
+        ...(filters.stageType ? { type: filters.stageType } : {}),
+      },
+    };
   }
 
   if (filters.accountId) {
