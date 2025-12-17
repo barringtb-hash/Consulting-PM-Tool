@@ -177,9 +177,10 @@ router.get(
 /**
  * GET /api/mcp/resources/:uri
  * Read a specific MCP resource
+ * Note: Express 5 uses {*param} syntax for wildcard path segments
  */
 router.get(
-  '/resources/:uri(*)',
+  '/resources/{*uri}',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.userId) {
