@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import { cn } from './utils';
 
 interface TabsContextValue {
@@ -34,15 +40,24 @@ export function Tabs({
   const [internalValue, setInternalValue] = useState(defaultValue);
 
   const activeTab = controlledValue ?? internalValue;
-  const setActiveTab = (newValue: string) => {
-    if (controlledValue === undefined) {
-      setInternalValue(newValue);
-    }
-    onValueChange?.(newValue);
-  };
+
+  const setActiveTab = useCallback(
+    (newValue: string) => {
+      if (controlledValue === undefined) {
+        setInternalValue(newValue);
+      }
+      onValueChange?.(newValue);
+    },
+    [controlledValue, onValueChange],
+  );
+
+  const contextValue = useMemo(
+    () => ({ activeTab, setActiveTab }),
+    [activeTab, setActiveTab],
+  );
 
   return (
-    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+    <TabsContext.Provider value={contextValue}>
       <div className={cn('w-full', className)}>{children}</div>
     </TabsContext.Provider>
   );

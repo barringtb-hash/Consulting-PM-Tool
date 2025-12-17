@@ -17,6 +17,28 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+
+// ============================================================================
+// Cache Configuration
+// ============================================================================
+
+/**
+ * Default cache times for CRM entities.
+ * - staleTime: How long data is considered fresh (won't refetch)
+ * - gcTime: How long to keep data in cache after it becomes inactive
+ */
+const CRM_CACHE_CONFIG = {
+  /** Data considered fresh for 30 seconds */
+  staleTime: 30_000,
+  /** Keep in cache for 5 minutes after becoming inactive */
+  gcTime: 300_000,
+} as const;
+
+/** Shorter cache for frequently changing data like stats */
+const STATS_CACHE_CONFIG = {
+  staleTime: 15_000,
+  gcTime: 120_000,
+} as const;
 import {
   archiveAccount,
   createAccount,
@@ -66,6 +88,7 @@ export function useAccounts(
   return useQuery({
     queryKey: queryKeys.accounts.list(filters),
     queryFn: () => fetchAccounts(filters),
+    ...CRM_CACHE_CONFIG,
   });
 }
 
@@ -77,6 +100,7 @@ export function useAccount(id?: number): UseQueryResult<Account, Error> {
     queryKey: id ? queryKeys.accounts.detail(id) : queryKeys.accounts.all,
     enabled: Boolean(id),
     queryFn: () => fetchAccountById(id as number),
+    ...CRM_CACHE_CONFIG,
   });
 }
 
@@ -87,6 +111,7 @@ export function useAccountStats(): UseQueryResult<AccountStats, Error> {
   return useQuery({
     queryKey: queryKeys.accounts.stats(),
     queryFn: fetchAccountStats,
+    ...STATS_CACHE_CONFIG,
   });
 }
 
@@ -190,6 +215,7 @@ export function useOpportunities(
   return useQuery({
     queryKey: queryKeys.opportunities.list(filters),
     queryFn: () => fetchOpportunities(filters),
+    ...CRM_CACHE_CONFIG,
   });
 }
 
@@ -205,6 +231,7 @@ export function useOpportunity(
       : queryKeys.opportunities.all,
     enabled: Boolean(id),
     queryFn: () => fetchOpportunityById(id as number),
+    ...CRM_CACHE_CONFIG,
   });
 }
 
@@ -217,6 +244,7 @@ export function usePipelineStats(
   return useQuery({
     queryKey: queryKeys.opportunities.pipelineStats(pipelineId),
     queryFn: () => fetchPipelineStats(pipelineId),
+    ...STATS_CACHE_CONFIG,
   });
 }
 
@@ -229,6 +257,7 @@ export function useClosingSoon(
   return useQuery({
     queryKey: queryKeys.opportunities.closingSoon(days),
     queryFn: () => fetchClosingSoon(days),
+    ...STATS_CACHE_CONFIG,
   });
 }
 

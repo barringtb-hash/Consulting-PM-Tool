@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import { cn } from './utils';
 
 type ToastVariant = 'success' | 'error' | 'info';
@@ -46,8 +52,10 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
+  const contextValue = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <div
         className="fixed top-4 right-4 z-50 flex flex-col gap-2"
