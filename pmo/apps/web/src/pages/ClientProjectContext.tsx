@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import { type Account } from '../api/accounts';
 import { type Project } from '../api/projects';
 
@@ -79,10 +85,10 @@ export function AccountProjectProvider({
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setSelectedAccount(null);
     setSelectedProject(null);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -92,7 +98,7 @@ export function AccountProjectProvider({
       setSelectedProject,
       reset,
     }),
-    [selectedAccount, selectedProject],
+    [selectedAccount, selectedProject, reset],
   );
 
   return (

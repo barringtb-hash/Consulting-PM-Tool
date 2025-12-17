@@ -4,7 +4,7 @@
  * List and manage budgets with status tracking and utilization visualization.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import {
   Plus,
@@ -132,13 +132,29 @@ interface BudgetActionsProps {
   onDelete: (id: number) => void;
 }
 
-function BudgetActions({ budget, onDelete }: BudgetActionsProps) {
+const BudgetActions = memo(function BudgetActions({
+  budget,
+  onDelete,
+}: BudgetActionsProps) {
   const [showMenu, setShowMenu] = useState(false);
+
+  const handleToggleMenu = useCallback(() => {
+    setShowMenu((prev) => !prev);
+  }, []);
+
+  const handleCloseMenu = useCallback(() => {
+    setShowMenu(false);
+  }, []);
+
+  const handleDeleteClick = useCallback(() => {
+    onDelete(budget.id);
+    setShowMenu(false);
+  }, [budget.id, onDelete]);
 
   return (
     <div className="relative">
       <button
-        onClick={() => setShowMenu(!showMenu)}
+        onClick={handleToggleMenu}
         className="p-1 text-gray-500 hover:bg-gray-100 rounded"
       >
         <MoreHorizontal className="h-4 w-4" />
@@ -146,10 +162,7 @@ function BudgetActions({ budget, onDelete }: BudgetActionsProps) {
 
       {showMenu && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowMenu(false)}
-          />
+          <div className="fixed inset-0 z-10" onClick={handleCloseMenu} />
           <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
             <Link
               to={`/finance/budgets/${budget.id}`}
@@ -169,10 +182,7 @@ function BudgetActions({ budget, onDelete }: BudgetActionsProps) {
             )}
             {budget.status === 'DRAFT' && (
               <button
-                onClick={() => {
-                  onDelete(budget.id);
-                  setShowMenu(false);
-                }}
+                onClick={handleDeleteClick}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
               >
                 <Trash2 className="h-4 w-4" />
@@ -184,7 +194,9 @@ function BudgetActions({ budget, onDelete }: BudgetActionsProps) {
       )}
     </div>
   );
-}
+});
+
+BudgetActions.displayName = 'BudgetActions';
 
 export default function BudgetsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -217,32 +229,35 @@ export default function BudgetsPage() {
   const { data: stats } = useBudgetStats();
   const deleteBudget = useDeleteBudget();
 
-  const updateParams = (updates: Record<string, string | undefined>) => {
-    const newParams = new URLSearchParams(searchParams);
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === '') {
-        newParams.delete(key);
-      } else {
-        newParams.set(key, value);
-      }
-    });
-    setSearchParams(newParams);
-  };
+  const updateParams = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const newParams = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined || value === '') {
+          newParams.delete(key);
+        } else {
+          newParams.set(key, value);
+        }
+      });
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams],
+  );
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     updateParams({ search: searchTerm, page: '1' });
-  };
+  }, [searchTerm, updateParams]);
 
-  const handleDelete = (id: number) => {
+  const handleDelete = useCallback((id: number) => {
     setDeleteConfirm(id);
-  };
+  }, []);
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     if (deleteConfirm) {
       deleteBudget.mutate(deleteConfirm);
       setDeleteConfirm(null);
     }
-  };
+  }, [deleteConfirm, deleteBudget]);
 
   const totalPages = data ? Math.ceil(data.total / queryParams.limit!) : 0;
 

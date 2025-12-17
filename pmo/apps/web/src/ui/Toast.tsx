@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import { cn } from './utils';
 
 type ToastVariant = 'success' | 'error' | 'info';
@@ -46,8 +53,10 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
+  const contextValue = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <div
         className="fixed top-4 right-4 z-50 flex flex-col gap-2"
@@ -127,7 +136,10 @@ const iconPaths: Record<ToastVariant, JSX.Element> = {
   ),
 };
 
-function ToastItem({ toast, onClose }: ToastItemProps): JSX.Element {
+const ToastItem = memo(function ToastItem({
+  toast,
+  onClose,
+}: ToastItemProps): JSX.Element {
   return (
     <div
       className={cn(
@@ -161,4 +173,6 @@ function ToastItem({ toast, onClose }: ToastItemProps): JSX.Element {
       </button>
     </div>
   );
-}
+});
+
+ToastItem.displayName = 'ToastItem';

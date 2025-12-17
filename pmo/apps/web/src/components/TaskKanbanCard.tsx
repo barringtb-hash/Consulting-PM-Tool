@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router';
@@ -38,7 +38,7 @@ function formatDate(value?: string | null): string {
   });
 }
 
-export function TaskKanbanCard({
+export const TaskKanbanCard = memo(function TaskKanbanCard({
   task,
   onDelete,
 }: TaskKanbanCardProps): JSX.Element {
@@ -51,16 +51,19 @@ export function TaskKanbanCard({
     isDragging,
   } = useSortable({ id: task.id });
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (
-      window.confirm(
-        `Are you sure you want to delete "${task.title}"? This action cannot be undone.`,
-      )
-    ) {
-      onDelete?.(task.id);
-    }
-  };
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (
+        window.confirm(
+          `Are you sure you want to delete "${task.title}"? This action cannot be undone.`,
+        )
+      ) {
+        onDelete?.(task.id);
+      }
+    },
+    [task.id, task.title, onDelete],
+  );
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -132,4 +135,6 @@ export function TaskKanbanCard({
       </div>
     </div>
   );
-}
+});
+
+TaskKanbanCard.displayName = 'TaskKanbanCard';

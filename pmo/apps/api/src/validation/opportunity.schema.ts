@@ -42,6 +42,7 @@ export const updateOpportunitySchema = createOpportunitySchema.partial().omit({
 
 export const listOpportunitiesSchema = z.object({
   status: opportunityStatusEnum.optional(),
+  stageType: opportunityStatusEnum.optional(), // OPTIMIZED: Server-side filtering by stage type
   pipelineId: z.coerce.number().int().positive().optional(),
   stageId: z.coerce.number().int().positive().optional(),
   accountId: z.coerce.number().int().positive().optional(),

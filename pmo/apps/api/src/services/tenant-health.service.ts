@@ -596,6 +596,10 @@ export async function incrementApiCalls(tenantId: string): Promise<void> {
 
 /**
  * Get all tenants' health summaries (for admin dashboard)
+ *
+ * OPTIMIZED: Batch fetches all tenant data in a few queries instead of
+ * calling getTenantHealth() per tenant which executed 11+ queries each.
+ * For 10 tenants, this reduces queries from 110+ to ~8.
  */
 export async function getAllTenantsHealth(): Promise<
   {
@@ -608,37 +612,194 @@ export async function getAllTenantsHealth(): Promise<
     lastActivityAt: Date | null;
   }[]
 > {
+  // BATCH QUERY 1: Get all active tenants with user counts
   const tenants = await prisma.tenant.findMany({
     where: { status: 'ACTIVE' },
-    select: { id: true, name: true, plan: true, status: true },
+    select: {
+      id: true,
+      name: true,
+      plan: true,
+      status: true,
+      users: { select: { id: true } },
+    },
   });
 
-  const summaries = await Promise.all(
-    tenants.map(async (tenant) => {
-      try {
-        const health = await getTenantHealth(tenant.id);
-        return {
-          tenantId: tenant.id,
-          tenantName: tenant.name,
-          plan: tenant.plan,
-          status: tenant.status,
-          healthScore: health.healthScore,
-          alertCount: health.alerts.length,
-          lastActivityAt: health.engagement.lastActivityAt,
-        };
-      } catch {
-        return {
-          tenantId: tenant.id,
-          tenantName: tenant.name,
-          plan: tenant.plan,
-          status: tenant.status,
-          healthScore: 0,
-          alertCount: 0,
-          lastActivityAt: null,
-        };
-      }
+  if (tenants.length === 0) {
+    return [];
+  }
+
+  const tenantIds = tenants.map((t) => t.id);
+
+  // BATCH QUERY 2: Get entity counts grouped by tenant
+  const [accountCounts, contactCounts, opportunityCounts] = await Promise.all([
+    prisma.account.groupBy({
+      by: ['tenantId'],
+      where: { tenantId: { in: tenantIds } },
+      _count: true,
     }),
+    prisma.cRMContact.groupBy({
+      by: ['tenantId'],
+      where: { tenantId: { in: tenantIds } },
+      _count: true,
+    }),
+    prisma.opportunity.groupBy({
+      by: ['tenantId'],
+      where: { tenantId: { in: tenantIds } },
+      _count: true,
+    }),
+  ]);
+
+  // Create lookup maps for entity counts
+  const accountCountMap = new Map(
+    accountCounts.map((c) => [c.tenantId, c._count]),
   );
+  const contactCountMap = new Map(
+    contactCounts.map((c) => [c.tenantId, c._count]),
+  );
+  const opportunityCountMap = new Map(
+    opportunityCounts.map((c) => [c.tenantId, c._count]),
+  );
+
+  // BATCH QUERY 3: Get latest health metrics for all tenants
+  // Using a subquery approach to get the most recent per tenant
+  const latestMetrics = await prisma.tenantHealthMetrics.findMany({
+    where: { tenantId: { in: tenantIds } },
+    orderBy: { recordedAt: 'desc' },
+    distinct: ['tenantId'],
+  });
+  const metricsMap = new Map(latestMetrics.map((m) => [m.tenantId, m]));
+
+  // BATCH QUERY 4: Get active user counts from audit logs (last 30 days)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  // Fetch distinct user counts per tenant
+  const activeUsersByTenant = await prisma.auditLog.findMany({
+    where: {
+      tenantId: { in: tenantIds },
+      createdAt: { gte: thirtyDaysAgo },
+      userId: { not: null },
+    },
+    select: { tenantId: true, userId: true },
+    distinct: ['tenantId', 'userId'],
+  });
+
+  // Count unique users per tenant
+  const activeUserCountMap = new Map<string, number>();
+  for (const entry of activeUsersByTenant) {
+    if (entry.tenantId) {
+      const current = activeUserCountMap.get(entry.tenantId) ?? 0;
+      activeUserCountMap.set(entry.tenantId, current + 1);
+    }
+  }
+
+  // BATCH QUERY 5: Get last activity per tenant
+  const lastActivities = await prisma.auditLog.findMany({
+    where: { tenantId: { in: tenantIds } },
+    orderBy: { createdAt: 'desc' },
+    distinct: ['tenantId'],
+    select: { tenantId: true, createdAt: true },
+  });
+  const lastActivityMap = new Map(
+    lastActivities.map((a) => [a.tenantId, a.createdAt]),
+  );
+
+  // Build results in-memory (no more queries)
+  const summaries = tenants.map((tenant) => {
+    const limits = getPlanLimits(tenant.plan);
+    const totalUsers = tenant.users.length;
+    const activeCount = activeUserCountMap.get(tenant.id) ?? 0;
+    const accountCount = accountCountMap.get(tenant.id) ?? 0;
+    const contactCount = contactCountMap.get(tenant.id) ?? 0;
+    const opportunityCount = opportunityCountMap.get(tenant.id) ?? 0;
+    const metrics = metricsMap.get(tenant.id);
+    const lastActivityAt = lastActivityMap.get(tenant.id) ?? null;
+
+    // Build usage metrics for health score calculation
+    const usage: UsageMetrics = {
+      users: {
+        total: totalUsers,
+        active: activeCount,
+        limit: limits.maxUsers,
+        percentage: calculatePercentage(totalUsers, limits.maxUsers),
+      },
+      accounts: {
+        total: accountCount,
+        limit: limits.maxAccounts,
+        percentage: calculatePercentage(accountCount, limits.maxAccounts),
+      },
+      contacts: {
+        total: contactCount,
+        limit: limits.maxContacts,
+        percentage: calculatePercentage(contactCount, limits.maxContacts),
+      },
+      opportunities: {
+        total: opportunityCount,
+        limit: limits.maxOpportunities,
+        percentage: calculatePercentage(
+          opportunityCount,
+          limits.maxOpportunities,
+        ),
+      },
+      storage: {
+        usedMB: metrics?.storageUsedMB ?? 0,
+        limitMB: limits.maxStorageMB,
+        percentage: calculatePercentage(
+          metrics?.storageUsedMB ?? 0,
+          limits.maxStorageMB,
+        ),
+      },
+      apiCalls: {
+        today: metrics?.apiCallsToday ?? 0,
+        thisMonth: metrics?.apiCallsMonth ?? 0,
+        dailyLimit: limits.maxApiCallsPerDay,
+        percentage: calculatePercentage(
+          metrics?.apiCallsToday ?? 0,
+          limits.maxApiCallsPerDay,
+        ),
+      },
+    };
+
+    // Build minimal engagement metrics for health score
+    const engagement: EngagementMetrics = {
+      dailyActiveUsers: 0,
+      weeklyActiveUsers: 0,
+      monthlyActiveUsers: activeCount,
+      avgSessionDuration: 0,
+      lastActivityAt,
+      activitiesCreatedThisWeek: 0,
+      opportunitiesUpdatedThisWeek: 0,
+    };
+
+    // Calculate health score
+    const healthScore = calculateHealthScore(usage, engagement, totalUsers);
+
+    // Count alerts
+    let alertCount = 0;
+    if (usage.users.percentage >= 90 && limits.maxUsers !== -1) alertCount++;
+    if (usage.accounts.percentage >= 80 && limits.maxAccounts !== -1)
+      alertCount++;
+    if (usage.storage.percentage >= 80 && limits.maxStorageMB !== -1)
+      alertCount++;
+    if (usage.apiCalls.percentage >= 80 && limits.maxApiCallsPerDay !== -1)
+      alertCount++;
+    if (activeCount === 0 && totalUsers > 0) alertCount++;
+    if (
+      lastActivityAt &&
+      Date.now() - lastActivityAt.getTime() > 7 * 24 * 60 * 60 * 1000
+    ) {
+      alertCount++;
+    }
+
+    return {
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      plan: tenant.plan,
+      status: tenant.status,
+      healthScore,
+      alertCount,
+      lastActivityAt,
+    };
+  });
 
   return summaries;
 }

@@ -65,11 +65,15 @@ function OpportunitiesPage(): JSX.Element {
     stageType: '',
   });
 
+  // OPTIMIZED: Send stageType to server instead of filtering client-side
+  // Previous: Filter N opportunities client-side after fetching all
+  // Now: Server filters at database level, returns only matching opportunities
   const filterParams = useMemo(
     () => ({
       search: filters.search || undefined,
+      stageType: filters.stageType || undefined,
     }),
-    [filters.search],
+    [filters.search, filters.stageType],
   );
 
   const opportunitiesQuery = useOpportunities(filterParams);
@@ -78,11 +82,8 @@ function OpportunitiesPage(): JSX.Element {
 
   useRedirectOnUnauthorized(opportunitiesQuery.error);
 
-  const opportunities = useMemo(() => {
-    const data = opportunitiesQuery.data?.data ?? [];
-    if (!filters.stageType) return data;
-    return data.filter((opp) => opp.stage?.stageType === filters.stageType);
-  }, [opportunitiesQuery.data, filters.stageType]);
+  // Now directly use server-filtered results
+  const opportunities = opportunitiesQuery.data?.data ?? [];
 
   const stats = statsQuery.data;
   const closingSoon = closingSoonQuery.data ?? [];

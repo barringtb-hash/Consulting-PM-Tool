@@ -284,6 +284,9 @@ export async function getCTAAnalytics(
 /**
  * Get CSM performance metrics
  * Uses Success Plans and CTAs to determine CSM ownership since health scores don't have owners
+ *
+ * OPTIMIZED: Batch fetches all data upfront to avoid N+1 query pattern.
+ * Previously executed 5+ queries per user inside a loop.
  */
 export async function getCSMPerformanceMetrics(): Promise<
   CSMPerformanceMetrics[]
@@ -299,69 +302,135 @@ export async function getCSMPerformanceMetrics(): Promise<
     },
   });
 
+  if (users.length === 0) {
+    return [];
+  }
+
+  const userIds = users.map((u) => u.id);
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const now = new Date();
 
+  // BATCH FETCH 1: Get all success plans for all users in one query
+  const allSuccessPlans = await prisma.successPlan.findMany({
+    where: { ownerId: { in: userIds } },
+    select: { ownerId: true, clientId: true, status: true },
+  });
+
+  // Group success plans by ownerId for O(1) lookup
+  const successPlansByOwner = new Map<
+    number,
+    Array<{ clientId: number; status: string }>
+  >();
+  for (const plan of allSuccessPlans) {
+    if (!successPlansByOwner.has(plan.ownerId)) {
+      successPlansByOwner.set(plan.ownerId, []);
+    }
+    successPlansByOwner.get(plan.ownerId)!.push(plan);
+  }
+
+  // Collect all unique client IDs across all users
+  const allClientIds = [...new Set(allSuccessPlans.map((sp) => sp.clientId))];
+
+  // BATCH FETCH 2: Get all CTAs for all users in one query
+  const allCTAs = await prisma.cTA.findMany({
+    where: { ownerId: { in: userIds } },
+    select: { ownerId: true, status: true, dueDate: true },
+  });
+
+  // Group CTAs by ownerId for O(1) lookup
+  const ctasByOwner = new Map<
+    number,
+    Array<{ status: string; dueDate: Date | null }>
+  >();
+  for (const cta of allCTAs) {
+    if (!ctasByOwner.has(cta.ownerId)) {
+      ctasByOwner.set(cta.ownerId, []);
+    }
+    ctasByOwner.get(cta.ownerId)!.push(cta);
+  }
+
+  // BATCH FETCH 3: Get all health scores for all clients in one query
+  const allHealthScores =
+    allClientIds.length > 0
+      ? await prisma.customerHealthScore.findMany({
+          where: { clientId: { in: allClientIds }, projectId: null },
+          select: { clientId: true, overallScore: true },
+        })
+      : [];
+
+  // Index health scores by clientId for O(1) lookup
+  const healthScoresByClient = new Map<number, number>();
+  for (const hs of allHealthScores) {
+    healthScoresByClient.set(hs.clientId, hs.overallScore);
+  }
+
+  // BATCH FETCH 4: Get all meetings in last 30 days with project-client mapping
+  const recentMeetings =
+    allClientIds.length > 0
+      ? await prisma.meeting.findMany({
+          where: {
+            project: { clientId: { in: allClientIds } },
+            date: { gte: thirtyDaysAgo },
+          },
+          select: { project: { select: { clientId: true } } },
+        })
+      : [];
+
+  // Count meetings per client
+  const meetingsByClient = new Map<number, number>();
+  for (const meeting of recentMeetings) {
+    if (meeting.project?.clientId) {
+      const count = meetingsByClient.get(meeting.project.clientId) ?? 0;
+      meetingsByClient.set(meeting.project.clientId, count + 1);
+    }
+  }
+
+  // Process all data in-memory (no more queries in loop)
   const metrics: CSMPerformanceMetrics[] = [];
 
   for (const user of users) {
-    // Get unique clients this user manages (via success plans)
-    const successPlans = await prisma.successPlan.findMany({
-      where: { ownerId: user.id },
-      select: { clientId: true, status: true },
-    });
+    const userSuccessPlans = successPlansByOwner.get(user.id) ?? [];
+    const uniqueClientIds = [
+      ...new Set(userSuccessPlans.map((sp) => sp.clientId)),
+    ];
 
-    const uniqueClientIds = [...new Set(successPlans.map((sp) => sp.clientId))];
-
-    // Get health scores for those clients
-    const healthScores = await prisma.customerHealthScore.findMany({
-      where: {
-        clientId: { in: uniqueClientIds },
-        projectId: null,
-      },
-      select: { overallScore: true },
-    });
+    // Calculate avg health score from pre-fetched data
+    const clientHealthScores = uniqueClientIds
+      .map((cid) => healthScoresByClient.get(cid))
+      .filter((s): s is number => s !== undefined);
 
     const avgHealthScore =
-      healthScores.length > 0
+      clientHealthScores.length > 0
         ? Math.round(
-            healthScores.reduce((sum, s) => sum + s.overallScore, 0) /
-              healthScores.length,
+            clientHealthScores.reduce((a, b) => a + b, 0) /
+              clientHealthScores.length,
           )
         : 0;
 
-    // Get CTA stats
-    const ctaStats = await prisma.cTA.groupBy({
-      by: ['status'],
-      where: { ownerId: user.id },
-      _count: true,
-    });
+    // Calculate CTA stats from pre-fetched data
+    const userCTAs = ctasByOwner.get(user.id) ?? [];
+    const ctasCompleted = userCTAs.filter(
+      (c) => c.status === 'COMPLETED',
+    ).length;
+    const ctasOverdue = userCTAs.filter(
+      (c) =>
+        c.dueDate &&
+        c.dueDate < now &&
+        c.status !== 'COMPLETED' &&
+        c.status !== 'CANCELLED',
+    ).length;
 
-    const ctasCompleted =
-      ctaStats.find((s) => s.status === 'COMPLETED')?._count ?? 0;
-
-    const overdueCTAs = await prisma.cTA.count({
-      where: {
-        ownerId: user.id,
-        dueDate: { lt: new Date() },
-        status: { notIn: ['COMPLETED', 'CANCELLED'] },
-      },
-    });
-
-    // Get active success plans
-    const successPlansActive = successPlans.filter(
+    // Active success plans from pre-fetched data
+    const successPlansActive = userSuccessPlans.filter(
       (sp) => sp.status === SuccessPlanStatus.ACTIVE,
     ).length;
 
-    // Get meetings in last 30 days for this user's clients
-    const meetingsLast30Days = await prisma.meeting.count({
-      where: {
-        project: {
-          clientId: { in: uniqueClientIds },
-        },
-        date: { gte: thirtyDaysAgo },
-      },
-    });
+    // Calculate meetings from pre-fetched data
+    const meetingsLast30Days = uniqueClientIds.reduce(
+      (sum, cid) => sum + (meetingsByClient.get(cid) ?? 0),
+      0,
+    );
 
     metrics.push({
       userId: user.id,
@@ -369,7 +438,7 @@ export async function getCSMPerformanceMetrics(): Promise<
       totalClients: uniqueClientIds.length,
       avgHealthScore,
       ctasCompleted,
-      ctasOverdue: overdueCTAs,
+      ctasOverdue,
       successPlansActive,
       meetingsLast30Days,
     });
@@ -380,6 +449,9 @@ export async function getCSMPerformanceMetrics(): Promise<
 
 /**
  * Get time-to-value metrics
+ *
+ * OPTIMIZED: Batch fetches all first completed tasks upfront to avoid N+1 query pattern.
+ * Previously executed a findFirst query for each project inside a loop.
  */
 export async function getTimeToValueMetrics(): Promise<TimeToValueMetrics> {
   // Get projects with their creation date and first "healthy" health score date
@@ -397,9 +469,44 @@ export async function getTimeToValueMetrics(): Promise<TimeToValueMetrics> {
     },
   });
 
+  if (projects.length === 0) {
+    return {
+      avgOnboardingDays: 0,
+      avgFirstValueDays: 0,
+      avgTimeToHealthy: 0,
+      onboardingFunnel: [
+        { stage: 'Project Created', count: 0, avgDays: 0 },
+        { stage: 'First Task Completed', count: 0, avgDays: 0 },
+        { stage: 'Healthy Status', count: 0, avgDays: 0 },
+      ],
+    };
+  }
+
+  const projectIds = projects.map((p) => p.id);
+
+  // BATCH FETCH: Get all completed tasks for all projects in one query
+  // Then group by projectId and keep only the earliest per project
+  const allCompletedTasks = await prisma.task.findMany({
+    where: {
+      projectId: { in: projectIds },
+      status: 'DONE',
+    },
+    orderBy: { updatedAt: 'asc' },
+    select: { projectId: true, updatedAt: true },
+  });
+
+  // Create Map keeping only the first (earliest) completed task per project
+  const firstTaskByProject = new Map<number, Date>();
+  for (const task of allCompletedTasks) {
+    if (!firstTaskByProject.has(task.projectId)) {
+      firstTaskByProject.set(task.projectId, task.updatedAt);
+    }
+  }
+
   const onboardingTimes: number[] = [];
   const timeToHealthy: number[] = [];
 
+  // Process all data in-memory (no more queries in loop)
   for (const project of projects) {
     const startDate = project.startDate || project.createdAt;
 
@@ -414,16 +521,11 @@ export async function getTimeToValueMetrics(): Promise<TimeToValueMetrics> {
       }
     }
 
-    // Onboarding time (from creation to first task completion)
-    const firstCompletedTask = await prisma.task.findFirst({
-      where: { projectId: project.id, status: 'DONE' },
-      orderBy: { updatedAt: 'asc' },
-    });
-
-    if (firstCompletedTask) {
+    // Onboarding time - use pre-fetched data instead of querying
+    const firstTaskDate = firstTaskByProject.get(project.id);
+    if (firstTaskDate) {
       const days = Math.floor(
-        (firstCompletedTask.updatedAt.getTime() - startDate.getTime()) /
-          (1000 * 60 * 60 * 24),
+        (firstTaskDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
       );
       if (days >= 0) {
         onboardingTimes.push(days);
