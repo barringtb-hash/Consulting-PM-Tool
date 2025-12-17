@@ -110,9 +110,14 @@ describe('auth routes', () => {
     const logoutResponse = await agent.post('/api/auth/logout');
 
     expect(logoutResponse.status).toBe(200);
+    const setCookie = logoutResponse.headers['set-cookie'];
+    const cookies = Array.isArray(setCookie)
+      ? setCookie
+      : [setCookie].filter(Boolean);
     expect(
-      logoutResponse.headers['set-cookie']?.some(
-        (cookie) => cookie.includes('token=') && cookie.includes('Expires'),
+      cookies.some(
+        (cookie: string) =>
+          cookie.includes('token=') && cookie.includes('Expires'),
       ),
     ).toBe(true);
   });
@@ -149,10 +154,15 @@ describe('auth routes', () => {
 
     expect(loginResponse.status).toBe(200);
 
-    const cookies = loginResponse.headers['set-cookie'];
-    expect(cookies).toBeDefined();
+    const setCookieHeader = loginResponse.headers['set-cookie'];
+    expect(setCookieHeader).toBeDefined();
+    const cookies = Array.isArray(setCookieHeader)
+      ? setCookieHeader
+      : [setCookieHeader].filter(Boolean);
 
-    const tokenCookie = cookies?.find((cookie) => cookie.startsWith('token='));
+    const tokenCookie = cookies.find((cookie: string) =>
+      cookie.startsWith('token='),
+    );
     expect(tokenCookie).toBeDefined();
     expect(tokenCookie).toContain('HttpOnly');
     expect(tokenCookie).toContain('Path=/');

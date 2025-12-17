@@ -179,17 +179,19 @@ describe('API Tenant Isolation', () => {
   describe('Opportunity API Isolation', () => {
     let accountAId: number;
     let opportunityAId: number;
-    let pipelineA: Awaited<
-      ReturnType<typeof getTestPrisma>['pipeline']['findFirst']
-    >;
+    let pipelineA: {
+      id: number;
+      stages: Array<{ id: number; name: string; order: number }>;
+    } | null = null;
 
     beforeAll(async () => {
       // Get pipeline for tenant A
       const testPrisma = getTestPrisma();
-      pipelineA = await testPrisma.pipeline.findFirst({
+      const pipeline = await testPrisma.pipeline.findFirst({
         where: { tenantId: tenantA.id, isDefault: true },
         include: { stages: true },
       });
+      pipelineA = pipeline;
 
       // Create account in tenant A
       const accountRes = await request(app)
