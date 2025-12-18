@@ -514,32 +514,37 @@ export function BulkJobPanel({
       {/* Actions Bar */}
       <Card>
         <CardBody className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
             {/* Import/Export Actions */}
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="secondary"
+                size="sm"
                 onClick={() => setShowUploadModal(true)}
               >
                 <Upload className="w-4 h-4" />
                 Import CSV
               </Button>
-              <Button variant="secondary" onClick={handleExport}>
+              <Button variant="secondary" size="sm" onClick={handleExport}>
                 <Download className="w-4 h-4" />
                 Export CSV
               </Button>
-              <Button variant="secondary" onClick={handleDownloadTemplate}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleDownloadTemplate}
+              >
                 <FileText className="w-4 h-4" />
                 Download Template
               </Button>
             </div>
 
             {/* Generate Actions */}
-            <div className="flex gap-3 items-center sm:ml-auto">
+            <div className="flex gap-2 items-center lg:ml-auto">
               <Select
                 value={selectedMarketplace}
                 onChange={(e) => setSelectedMarketplace(e.target.value)}
-                className="w-44"
+                className="w-36 text-sm"
               >
                 <option value="ALL">All Marketplaces</option>
                 <option value="GENERIC">Generic</option>
@@ -550,6 +555,7 @@ export function BulkJobPanel({
                 <option value="WALMART">Walmart</option>
               </Select>
               <Button
+                size="sm"
                 onClick={() =>
                   createJobMutation.mutate({
                     marketplace:

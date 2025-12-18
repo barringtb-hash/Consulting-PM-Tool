@@ -552,26 +552,26 @@ function ProductDescriptionsPage(): JSX.Element {
               }}
             />
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
               {/* Products List */}
-              <div className="lg:col-span-1 space-y-4">
-                <Card>
+              <div className="lg:col-span-1">
+                <Card className="h-full min-h-[400px] flex flex-col">
                   <CardHeader>
                     <h3 className="text-lg font-semibold flex items-center gap-2">
                       <Package className="w-5 h-5" />
                       Products ({products.length})
                     </h3>
                   </CardHeader>
-                  <CardBody className="p-0">
+                  <CardBody className="p-0 flex-1 flex flex-col">
                     {productsQuery.isLoading ? (
-                      <div className="p-6 text-center">
+                      <div className="p-6 text-center flex-1 flex flex-col items-center justify-center">
                         <RefreshCw className="w-5 h-5 text-neutral-400 animate-spin mx-auto mb-2" />
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
                           Loading products...
                         </p>
                       </div>
                     ) : products.length === 0 ? (
-                      <div className="p-6 text-center">
+                      <div className="p-6 text-center flex-1 flex flex-col items-center justify-center">
                         <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-3">
                           <Package className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
                         </div>
@@ -622,7 +622,7 @@ function ProductDescriptionsPage(): JSX.Element {
               </div>
 
               {/* Product Details & Descriptions */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="lg:col-span-2">
                 {!selectedProduct ? (
                   <Card className="h-full min-h-[400px] flex items-center justify-center">
                     <CardBody>
