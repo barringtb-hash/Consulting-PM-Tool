@@ -4,7 +4,7 @@
  * Tool 1.2: AI-powered product description generation for multiple marketplaces
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { buildOptions, ApiError } from '../../api/http';
@@ -222,6 +222,32 @@ function ProductDescriptionsPage(): JSX.Element {
     marketplace: string;
   } | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  // Handle escape key for modals
+  const handleEscapeKey = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showCreateProductModal) {
+          setShowCreateProductModal(false);
+        } else if (showCreateConfigModal) {
+          setShowCreateConfigModal(false);
+        }
+      }
+    },
+    [showCreateConfigModal, showCreateProductModal],
+  );
+
+  useEffect(() => {
+    if (showCreateConfigModal || showCreateProductModal) {
+      document.addEventListener('keydown', handleEscapeKey);
+      // Prevent background scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', handleEscapeKey);
+        document.body.style.overflow = '';
+      };
+    }
+  }, [showCreateConfigModal, showCreateProductModal, handleEscapeKey]);
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -553,87 +579,87 @@ function ProductDescriptionsPage(): JSX.Element {
           {/* Product Details & Descriptions */}
           <div className="lg:col-span-2 space-y-4">
             {!selectedProduct ? (
-              <Card className="h-full min-h-[400px] flex items-center justify-center">
-                <EmptyState
-                  icon={Package}
-                  title="Select a product"
-                  description="Choose a product from the list to view and generate marketplace descriptions."
-                />
+              <Card className="h-full min-h-[400px]">
+                <CardBody className="h-full flex items-center justify-center">
+                  <EmptyState
+                    icon={Package}
+                    title="Select a product"
+                    description="Choose a product from the list to view and generate marketplace descriptions."
+                  />
+                </CardBody>
               </Card>
             ) : (
               <>
                 {/* Product Info */}
-                <Card className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                        {selectedProduct.name}
-                      </h3>
-                      {selectedProduct.category && (
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          {selectedProduct.category}
-                        </p>
-                      )}
-                    </div>
-                    {selectedProduct.sku && (
-                      <Badge variant="secondary">
-                        SKU: {selectedProduct.sku}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                    {(selectedProduct.attributes as { brand?: string })
-                      ?.brand && (
-                      <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
-                        <dt className="text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">
-                          Brand
-                        </dt>
-                        <dd className="font-medium text-neutral-900 dark:text-white mt-1">
-                          {
-                            (
-                              selectedProduct.attributes as {
-                                brand?: string;
-                              }
-                            ).brand
-                          }
-                        </dd>
+                {(() => {
+                  // Extract typed attributes to reduce duplication
+                  const productBrand = (
+                    selectedProduct.attributes as { brand?: string } | null
+                  )?.brand;
+                  const productFeatures = (
+                    selectedProduct.attributes as { features?: string[] } | null
+                  )?.features;
+
+                  return (
+                    <Card className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                            {selectedProduct.name}
+                          </h3>
+                          {selectedProduct.category && (
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                              {selectedProduct.category}
+                            </p>
+                          )}
+                        </div>
+                        {selectedProduct.sku && (
+                          <Badge variant="secondary">
+                            SKU: {selectedProduct.sku}
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                    <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
-                      <dt className="text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">
-                        Descriptions
-                      </dt>
-                      <dd className="font-medium text-neutral-900 dark:text-white mt-1">
-                        {selectedProduct.descriptions?.length || 0} generated
-                      </dd>
-                    </div>
-                  </div>
-                  {selectedProduct.attributes &&
-                    (selectedProduct.attributes as { features?: string[] })
-                      .features &&
-                    (selectedProduct.attributes as { features?: string[] })
-                      .features!.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                          Features
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {(
-                            selectedProduct.attributes as {
-                              features?: string[];
-                            }
-                          ).features!.map((feature, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 text-sm bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded"
-                            >
-                              {feature}
-                            </span>
-                          ))}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                        {productBrand && (
+                          <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                            <dt className="text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">
+                              Brand
+                            </dt>
+                            <dd className="font-medium text-neutral-900 dark:text-white mt-1">
+                              {productBrand}
+                            </dd>
+                          </div>
+                        )}
+                        <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                          <dt className="text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">
+                            Descriptions
+                          </dt>
+                          <dd className="font-medium text-neutral-900 dark:text-white mt-1">
+                            {selectedProduct.descriptions?.length || 0}{' '}
+                            generated
+                          </dd>
                         </div>
                       </div>
-                    )}
-                </Card>
+                      {productFeatures && productFeatures.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                            Features
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {productFeatures.map((feature, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 text-sm bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded"
+                              >
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })()}
 
                 {/* Generate New Description */}
                 <Card className="p-6">
@@ -797,15 +823,24 @@ function ProductDescriptionsPage(): JSX.Element {
 
       {/* Create Config Modal */}
       {showCreateConfigModal && (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+        <div
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-config-modal-title"
+        >
           <Card className="w-full max-w-md">
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              <h2
+                id="create-config-modal-title"
+                className="text-lg font-semibold text-neutral-900 dark:text-white"
+              >
                 New Configuration
               </h2>
               <button
                 onClick={() => setShowCreateConfigModal(false)}
                 className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                aria-label="Close modal"
               >
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
@@ -855,15 +890,24 @@ function ProductDescriptionsPage(): JSX.Element {
 
       {/* Create Product Modal */}
       {showCreateProductModal && (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+        <div
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-product-modal-title"
+        >
           <Card className="w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700 shrink-0">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              <h2
+                id="create-product-modal-title"
+                className="text-lg font-semibold text-neutral-900 dark:text-white"
+              >
                 Add Product
               </h2>
               <button
                 onClick={() => setShowCreateProductModal(false)}
                 className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                aria-label="Close modal"
               >
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
