@@ -1944,8 +1944,8 @@ model CalendarIntegration {
   providerId Int? // If null, applies to all providers
 
   platform       CalendarPlatform
-  accessToken    String // Should be encrypted in production
-  refreshToken   String? // Should be encrypted in production
+  accessToken    String // Encrypted via AES-256-GCM in calendar.service.ts
+  refreshToken   String? // Encrypted via AES-256-GCM in calendar.service.ts
   tokenExpiresAt DateTime?
   calendarId     String // Selected calendar ID from provider
   syncEnabled    Boolean          @default(true)
@@ -1970,8 +1970,8 @@ model VideoMeetingConfig {
   configId Int
 
   platform        VideoPlatform
-  accessToken     String // Should be encrypted in production
-  refreshToken    String? // Should be encrypted in production
+  accessToken     String // MUST encrypt via utils/crypto.ts when service is implemented
+  refreshToken    String? // MUST encrypt via utils/crypto.ts when service is implemented
   tokenExpiresAt  DateTime?
   defaultSettings Json? // Platform-specific settings
 
