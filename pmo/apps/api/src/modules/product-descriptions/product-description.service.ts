@@ -41,6 +41,8 @@ import {
 // Re-export services for router access
 export * from './services/brand-voice.service';
 export * from './services/template.service';
+export * from './services/bulk-import.service';
+export * from './services/bulk-job.service';
 
 // ============================================================================
 // TYPES

@@ -677,6 +677,194 @@ router.post(
 );
 
 // ============================================================================
+// CSV IMPORT/EXPORT ROUTES
+// ============================================================================
+
+/**
+ * GET /api/product-descriptions/csv-template
+ * Download CSV template for import
+ */
+router.get(
+  '/product-descriptions/csv-template',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const template = productDescService.generateCSVTemplate();
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="product-import-template.csv"',
+    );
+    res.send(template);
+  },
+);
+
+/**
+ * POST /api/product-descriptions/:configId/import
+ * Import products from CSV
+ */
+router.post(
+  '/product-descriptions/:configId/import',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const { csvContent, skipDuplicates, updateExisting } = req.body as {
+      csvContent?: string;
+      skipDuplicates?: boolean;
+      updateExisting?: boolean;
+    };
+
+    if (!csvContent || typeof csvContent !== 'string') {
+      res.status(400).json({ error: 'CSV content is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.importProductsFromCSV(
+        configId,
+        csvContent,
+        { skipDuplicates, updateExisting },
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/:configId/validate-csv
+ * Validate CSV without importing
+ */
+router.post(
+  '/product-descriptions/:configId/validate-csv',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { csvContent } = req.body as { csvContent?: string };
+
+    if (!csvContent || typeof csvContent !== 'string') {
+      res.status(400).json({ error: 'CSV content is required' });
+      return;
+    }
+
+    const validation = productDescService.validateCSV(csvContent);
+    res.json(validation);
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/export
+ * Export products and descriptions to CSV
+ */
+router.get(
+  '/product-descriptions/:configId/export',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const marketplace = req.query.marketplace as
+      | 'GENERIC'
+      | 'AMAZON'
+      | 'EBAY'
+      | 'SHOPIFY'
+      | 'ETSY'
+      | 'WALMART'
+      | 'WOOCOMMERCE'
+      | undefined;
+    const includeMetrics = req.query.includeMetrics !== 'false';
+    const includeSEO = req.query.includeSEO !== 'false';
+
+    const result = await productDescService.exportProductsToCSV(configId, {
+      marketplace,
+      includeMetrics,
+      includeSEO,
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="products-export-${configId}-${new Date().toISOString().split('T')[0]}.csv"`,
+    );
+    res.send(result.csv);
+  },
+);
+
+/**
+ * POST /api/product-descriptions/:configId/import-and-generate
+ * Import products from CSV and create bulk generation job
+ */
+router.post(
+  '/product-descriptions/:configId/import-and-generate',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const { csvContent, marketplace, templateId, targetLanguages } =
+      req.body as {
+        csvContent?: string;
+        marketplace?:
+          | 'GENERIC'
+          | 'AMAZON'
+          | 'EBAY'
+          | 'SHOPIFY'
+          | 'ETSY'
+          | 'WALMART'
+          | 'WOOCOMMERCE';
+        templateId?: number;
+        targetLanguages?: string[];
+      };
+
+    if (!csvContent || typeof csvContent !== 'string') {
+      res.status(400).json({ error: 'CSV content is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.createBulkJobFromCSV(
+        configId,
+        csvContent,
+        { marketplace, templateId, targetLanguages },
+      );
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  },
+);
+
+// ============================================================================
 // BULK JOB ROUTES
 // ============================================================================
 
@@ -731,18 +919,21 @@ router.get(
 
     const status = req.query.status as
       | 'PENDING'
-      | 'PROCESSING'
+      | 'IN_PROGRESS'
       | 'COMPLETED'
+      | 'COMPLETED_WITH_ERRORS'
       | 'FAILED'
       | 'CANCELLED'
       | undefined;
     const limit = Number(req.query.limit) || 20;
+    const offset = Number(req.query.offset) || 0;
 
-    const jobs = await productDescService.getBulkJobs(configId, {
+    const result = await productDescService.getJobsForConfig(configId, {
       status,
       limit,
+      offset,
     });
-    res.json({ jobs });
+    res.json(result);
   },
 );
 
@@ -764,13 +955,13 @@ router.get(
       return;
     }
 
-    const job = await productDescService.getBulkJob(id);
+    const job = await productDescService.getJobStatus(id);
     if (!job) {
       res.status(404).json({ error: 'Job not found' });
       return;
     }
 
-    res.json({ job });
+    res.json(job);
   },
 );
 
@@ -792,8 +983,153 @@ router.post(
       return;
     }
 
-    const job = await productDescService.cancelBulkJob(id);
-    res.json({ job });
+    const success = await productDescService.cancelJob(id);
+    if (!success) {
+      res.status(400).json({
+        error: 'Cannot cancel job (may already be completed or cancelled)',
+      });
+      return;
+    }
+    res.json({ success: true });
+  },
+);
+
+/**
+ * POST /api/product-descriptions/bulk-jobs/:id/start
+ * Start processing a bulk job
+ */
+router.post(
+  '/product-descriptions/bulk-jobs/:id/start',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid job ID' });
+      return;
+    }
+
+    try {
+      // Start processing in background and return immediately
+      productDescService.startJobProcessing(id).catch((error) => {
+        console.error(`Job ${id} failed:`, error);
+      });
+
+      res.json({ message: 'Job processing started', jobId: id });
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/bulk-jobs/:id/retry
+ * Retry failed items in a bulk job
+ */
+router.post(
+  '/product-descriptions/bulk-jobs/:id/retry',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid job ID' });
+      return;
+    }
+
+    try {
+      // Start retry processing in background
+      productDescService.retryFailedItems(id).catch((error) => {
+        console.error(`Job ${id} retry failed:`, error);
+      });
+
+      res.json({ message: 'Retry started', jobId: id });
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/bulk-jobs/:id/progress/stream
+ * Get real-time progress updates via Server-Sent Events
+ */
+router.get(
+  '/product-descriptions/bulk-jobs/:id/progress/stream',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid job ID' });
+      return;
+    }
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    // Send initial status
+    const initialStatus = await productDescService.getJobStatus(id);
+    if (initialStatus) {
+      res.write(`data: ${JSON.stringify(initialStatus)}\n\n`);
+    }
+
+    // Listen for progress updates
+    const onProgress = (progress: productDescService.JobProgress) => {
+      if (progress.jobId === id) {
+        res.write(`data: ${JSON.stringify(progress)}\n\n`);
+      }
+    };
+
+    const onComplete = (result: productDescService.JobResult) => {
+      if (result.jobId === id) {
+        res.write(`event: complete\ndata: ${JSON.stringify(result)}\n\n`);
+        cleanup();
+        res.end();
+      }
+    };
+
+    const onError = (errorData: {
+      jobId: number;
+      error: productDescService.JobError;
+    }) => {
+      if (errorData.jobId === id) {
+        res.write(`event: error\ndata: ${JSON.stringify(errorData.error)}\n\n`);
+      }
+    };
+
+    const cleanup = () => {
+      productDescService.jobProgressEmitter.off(
+        `job:${id}:progress`,
+        onProgress,
+      );
+      productDescService.jobProgressEmitter.off(
+        `job:${id}:complete`,
+        onComplete,
+      );
+      productDescService.jobProgressEmitter.off(`job:${id}:error`, onError);
+    };
+
+    productDescService.jobProgressEmitter.on(`job:${id}:progress`, onProgress);
+    productDescService.jobProgressEmitter.on(`job:${id}:complete`, onComplete);
+    productDescService.jobProgressEmitter.on(`job:${id}:error`, onError);
+
+    // Handle client disconnect
+    req.on('close', () => {
+      cleanup();
+    });
   },
 );
 
