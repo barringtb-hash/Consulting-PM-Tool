@@ -872,3 +872,367 @@ BRAND VOICE GUIDELINES:
 ${instructions.map((i) => `- ${i}`).join('\n')}
 `;
 }
+
+// ============================================================================
+// DESCRIPTION GENERATION
+// ============================================================================
+
+interface Product {
+  name: string;
+  sku?: string | null;
+  category?: string | null;
+  sourceDescription?: string | null;
+  attributes?: Record<string, unknown> | null;
+}
+
+interface TemplateData {
+  titleTemplate: string;
+  shortDescTemplate: string;
+  longDescTemplate: string;
+  bulletTemplate: string;
+  metaTitleTemplate?: string;
+  metaDescTemplate?: string;
+}
+
+interface GenerationOptions {
+  marketplace?: string;
+  language?: string;
+  brandVoiceProfile?: BrandVoiceProfile;
+  template?: TemplateData | null;
+}
+
+interface GeneratedContent {
+  title: string;
+  shortDescription: string;
+  longDescription: string;
+  bulletPoints: string[];
+  keywords: string[];
+  metaTitle: string;
+  metaDescription: string;
+}
+
+/**
+ * Generate product description content
+ * Uses AI if available, otherwise uses templates or rule-based generation
+ */
+export async function generateDescriptionContent(
+  product: Product,
+  options: GenerationOptions = {},
+): Promise<GeneratedContent> {
+  const {
+    marketplace = 'GENERIC',
+    language = 'en',
+    brandVoiceProfile,
+    template,
+  } = options;
+
+  // Build brand voice instructions if profile exists
+  const brandVoiceInstructions = brandVoiceProfile
+    ? buildBrandVoicePrompt(brandVoiceProfile)
+    : '';
+
+  // If template exists, use template-based generation
+  if (template) {
+    return generateFromTemplate(product, template, brandVoiceInstructions);
+  }
+
+  // Try AI-powered generation if OpenAI is available
+  if (env.openaiApiKey) {
+    try {
+      return await generateWithAI(
+        product,
+        marketplace,
+        language,
+        brandVoiceInstructions,
+      );
+    } catch (error) {
+      console.error('AI generation failed, falling back to rule-based:', error);
+    }
+  }
+
+  // Fallback to rule-based generation
+  return generateWithRulesBasedApproach(product, marketplace, language);
+}
+
+/**
+ * Generate content using a template
+ */
+function generateFromTemplate(
+  product: Product,
+  template: TemplateData,
+  _brandVoiceInstructions: string, // Reserved for future AI-enhanced template generation
+): GeneratedContent {
+  const attributes = (product.attributes || {}) as Record<string, unknown>;
+  const features = (attributes.features as string[]) || [];
+  const brand = (attributes.brand as string) || '';
+
+  // Template variable replacements
+  const replacements: Record<string, string> = {
+    '{{product_name}}': product.name,
+    '{{brand}}': brand,
+    '{{category}}': product.category || '',
+    '{{sku}}': product.sku || '',
+    '{{feature_1}}': features[0] || '',
+    '{{feature_2}}': features[1] || '',
+    '{{feature_3}}': features[2] || '',
+    '{{benefit_1}}': extractBenefit(features[0]),
+    '{{benefit_2}}': extractBenefit(features[1]),
+    '{{bullet_points}}': features.map((f) => `• ${f}`).join('\n'),
+  };
+
+  const applyTemplate = (templateStr: string): string => {
+    let result = templateStr;
+    for (const [key, value] of Object.entries(replacements)) {
+      result = result.replace(
+        new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'),
+        value,
+      );
+    }
+    return result.trim();
+  };
+
+  const title = applyTemplate(template.titleTemplate);
+  const shortDescription = applyTemplate(template.shortDescTemplate);
+  const longDescription = applyTemplate(template.longDescTemplate);
+  const bulletPointsText = applyTemplate(template.bulletTemplate);
+  const metaTitle = template.metaTitleTemplate
+    ? applyTemplate(template.metaTitleTemplate)
+    : title.slice(0, 60);
+  const metaDescription = template.metaDescTemplate
+    ? applyTemplate(template.metaDescTemplate)
+    : shortDescription.slice(0, 155);
+
+  // Parse bullet points from template
+  const bulletPoints = bulletPointsText
+    .split('\n')
+    .map((line) => line.replace(/^[•\-*]\s*/, '').trim())
+    .filter(Boolean);
+
+  // Generate keywords from product data
+  const keywords = extractKeywords(product);
+
+  return {
+    title,
+    shortDescription,
+    longDescription,
+    bulletPoints: bulletPoints.length > 0 ? bulletPoints : features.slice(0, 5),
+    keywords,
+    metaTitle,
+    metaDescription,
+  };
+}
+
+/**
+ * Generate content using AI
+ */
+async function generateWithAI(
+  product: Product,
+  marketplace: string,
+  language: string,
+  brandVoiceInstructions: string,
+): Promise<GeneratedContent> {
+  const attributes = (product.attributes || {}) as Record<string, unknown>;
+  const features = (attributes.features as string[]) || [];
+  const brand = (attributes.brand as string) || '';
+
+  const prompt = `Generate a product description for the following product:
+
+PRODUCT DETAILS:
+- Name: ${product.name}
+- Brand: ${brand || 'Not specified'}
+- Category: ${product.category || 'Not specified'}
+- SKU: ${product.sku || 'Not specified'}
+- Features: ${features.join(', ') || 'Not specified'}
+- Source Description: ${product.sourceDescription || 'Not provided'}
+
+TARGET:
+- Marketplace: ${marketplace}
+- Language: ${language}
+
+${brandVoiceInstructions}
+
+Generate a JSON response with this exact structure:
+{
+  "title": "Product title (max 200 chars)",
+  "shortDescription": "Brief description (max 500 chars)",
+  "longDescription": "Detailed description (500-2000 chars)",
+  "bulletPoints": ["Feature 1", "Feature 2", "Feature 3", "Feature 4", "Feature 5"],
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+  "metaTitle": "SEO title (max 60 chars)",
+  "metaDescription": "SEO description (max 155 chars)"
+}`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${env.openaiApiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      max_tokens: 2000,
+      temperature: 0.7,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an expert e-commerce copywriter who creates compelling, SEO-optimized product descriptions. Always respond with valid JSON.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+  if (!jsonMatch) {
+    throw new Error('Failed to parse AI response');
+  }
+
+  return JSON.parse(jsonMatch[0]);
+}
+
+/**
+ * Generate content using rule-based approach (fallback)
+ */
+function generateWithRulesBasedApproach(
+  product: Product,
+  marketplace: string,
+  _language: string,
+): GeneratedContent {
+  const attributes = (product.attributes || {}) as Record<string, unknown>;
+  const features = (attributes.features as string[]) || [];
+  const brand = (attributes.brand as string) || '';
+
+  // Generate title
+  const title = brand ? `${brand} ${product.name}` : product.name;
+
+  // Generate short description
+  const shortDescription = product.sourceDescription
+    ? product.sourceDescription.slice(0, 500)
+    : `Discover the ${product.name}${product.category ? ` - perfect for ${product.category}` : ''}. ${features.length > 0 ? `Features include ${features.slice(0, 2).join(' and ')}.` : ''}`;
+
+  // Generate long description
+  const longDescription = `
+Introducing the ${title}${product.category ? `, a top choice in the ${product.category} category` : ''}.
+
+${product.sourceDescription || `This high-quality product is designed to meet your needs with exceptional performance and reliability.`}
+
+${features.length > 0 ? `KEY FEATURES:\n${features.map((f) => `• ${f}`).join('\n')}` : ''}
+
+${getMarketplaceTagline(marketplace)}
+  `.trim();
+
+  // Generate bullet points
+  const bulletPoints =
+    features.length > 0
+      ? features.slice(0, 5)
+      : [
+          `High-quality ${product.category || 'product'}`,
+          'Durable and reliable construction',
+          'Easy to use and maintain',
+          'Great value for money',
+          'Satisfaction guaranteed',
+        ];
+
+  // Generate keywords
+  const keywords = extractKeywords(product);
+
+  // Generate meta tags
+  const metaTitle = title.slice(0, 60);
+  const metaDescription = shortDescription.slice(0, 155);
+
+  return {
+    title,
+    shortDescription,
+    longDescription,
+    bulletPoints,
+    keywords,
+    metaTitle,
+    metaDescription,
+  };
+}
+
+/**
+ * Extract a benefit from a feature
+ */
+function extractBenefit(feature?: string): string {
+  if (!feature) return '';
+  // Simple heuristic: convert feature to benefit
+  if (feature.toLowerCase().includes('durable'))
+    return 'Long-lasting performance';
+  if (feature.toLowerCase().includes('lightweight'))
+    return 'Easy to carry and use';
+  if (feature.toLowerCase().includes('fast')) return 'Save time and effort';
+  if (feature.toLowerCase().includes('waterproof'))
+    return 'Use confidently in any weather';
+  return feature;
+}
+
+/**
+ * Extract keywords from product data
+ */
+function extractKeywords(product: Product): string[] {
+  const keywords: Set<string> = new Set();
+  const attributes = (product.attributes || {}) as Record<string, unknown>;
+  const brand = (attributes.brand as string) || '';
+
+  // Add product name words
+  product.name
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 3)
+    .forEach((w) => keywords.add(w));
+
+  // Add brand
+  if (brand) keywords.add(brand.toLowerCase());
+
+  // Add category
+  if (product.category) {
+    product.category
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3)
+      .forEach((w) => keywords.add(w));
+  }
+
+  // Add feature words
+  const features = (attributes.features as string[]) || [];
+  features.forEach((f) => {
+    f.toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3)
+      .forEach((w) => keywords.add(w));
+  });
+
+  return Array.from(keywords).slice(0, 10);
+}
+
+/**
+ * Get marketplace-specific tagline
+ */
+function getMarketplaceTagline(marketplace: string): string {
+  switch (marketplace) {
+    case 'AMAZON':
+      return "Shop with confidence with Amazon's A-to-z Guarantee.";
+    case 'EBAY':
+      return 'Trusted seller with fast shipping.';
+    case 'ETSY':
+      return 'Handcrafted with care and attention to detail.';
+    case 'SHOPIFY':
+      return 'Order now and experience the difference.';
+    case 'WALMART':
+      return 'Quality products at everyday low prices.';
+    default:
+      return 'Order now and enjoy fast, reliable shipping.';
+  }
+}
