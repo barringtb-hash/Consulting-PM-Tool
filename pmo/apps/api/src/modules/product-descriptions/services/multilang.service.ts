@@ -315,8 +315,21 @@ export async function translateDescription(
   const languageName = languageInfo?.name || targetLanguage;
 
   try {
+    // Prepare description data with defaults for nullable fields
+    const descriptionData = {
+      title: description.title || '',
+      shortDescription: description.shortDescription || '',
+      longDescription: description.longDescription || '',
+      bulletPoints: description.bulletPoints || [],
+      metaTitle: description.metaTitle || '',
+      metaDescription: description.metaDescription || '',
+      keywords: description.keywords || [],
+      language: description.language,
+      product: description.product,
+    };
+
     const prompt = buildTranslationPrompt(
-      description,
+      descriptionData,
       languageName,
       targetLanguage,
       culturalAdaptation,

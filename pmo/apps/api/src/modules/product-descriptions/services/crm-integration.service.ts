@@ -9,7 +9,12 @@
  */
 
 import { prisma } from '../../../prisma/client';
-import { ActivityType, ActivityStatus, Marketplace } from '@prisma/client';
+import {
+  CRMActivityType,
+  CRMActivityStatus,
+  Marketplace,
+} from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -63,6 +68,16 @@ export async function logProductDescriptionActivity(
   activity: ProductDescriptionActivity,
 ): Promise<{ success: boolean; activityId?: number; error?: string }> {
   try {
+    // Skip if no tenant context available (e.g., in some background jobs)
+    if (!hasTenantContext()) {
+      return {
+        success: false,
+        error: 'No tenant context available for CRM activity logging',
+      };
+    }
+
+    const tenantId = getTenantId();
+
     // Get account ID from config if not provided
     let accountId = activity.accountId;
     if (!accountId && activity.productId) {
@@ -85,20 +100,36 @@ export async function logProductDescriptionActivity(
       };
     }
 
+    // Get account owner for activity ownership
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
+      select: { ownerId: true },
+    });
+
+    if (!account?.ownerId) {
+      return {
+        success: false,
+        error: 'Account has no owner assigned',
+      };
+    }
+
     // Build activity details
     const { subject, description } = buildActivityDetails(activity);
 
     // Create CRM activity
     const crmActivity = await prisma.cRMActivity.create({
       data: {
+        tenantId,
         accountId,
         type: mapToActivityType(activity.type),
         subject,
         description,
-        status: ActivityStatus.COMPLETED,
+        status: CRMActivityStatus.COMPLETED,
         completedAt: new Date(),
-        // Store product description metadata in customFields
-        customFields: {
+        ownerId: account.ownerId,
+        createdById: account.ownerId,
+        // Store product description data in metadata
+        metadata: {
           source: 'product_descriptions',
           eventType: activity.type,
           productId: activity.productId,
@@ -288,7 +319,7 @@ export async function getAccountProductStats(
       prisma.cRMActivity.findMany({
         where: {
           accountId,
-          customFields: {
+          metadata: {
             path: ['source'],
             equals: 'product_descriptions',
           },
@@ -299,7 +330,7 @@ export async function getAccountProductStats(
           subject: true,
           description: true,
           createdAt: true,
-          customFields: true,
+          metadata: true,
         },
       }),
     ]);
@@ -337,9 +368,9 @@ export async function getAccountProductStats(
     complianceStatus,
     recentActivity: recentActivities.map((a) => ({
       type:
-        ((a.customFields as Record<string, unknown>)?.eventType as string) ||
+        ((a.metadata as Record<string, unknown>)?.eventType as string) ||
         'unknown',
-      description: a.description || a.subject,
+      description: a.description || a.subject || '',
       timestamp: a.createdAt,
     })),
   };
@@ -357,29 +388,43 @@ export async function getAccountsWithProductDescriptions(): Promise<
     lastActivity?: Date;
   }>
 > {
+  // Get configs that have an accountId set
   const configs = await prisma.productDescriptionConfig.findMany({
     where: {
-      accountId: { not: null },
-    },
-    include: {
-      account: {
-        select: { id: true, name: true },
-      },
-      _count: {
-        select: { products: true },
-      },
+      accountId: { not: undefined },
     },
   });
 
-  return configs
-    .filter((c) => c.account)
-    .map((c) => ({
-      accountId: c.account!.id,
-      accountName: c.account!.name,
-      configId: c.id,
-      productCount: c._count.products,
-      lastActivity: c.updatedAt,
-    }));
+  // Get product counts and account info for each config
+  const results: Array<{
+    accountId: number;
+    accountName: string;
+    configId: number;
+    productCount: number;
+    lastActivity?: Date;
+  }> = [];
+
+  for (const config of configs) {
+    const [productCount, account] = await Promise.all([
+      prisma.product.count({ where: { configId: config.id } }),
+      prisma.account.findUnique({
+        where: { id: config.accountId },
+        select: { id: true, name: true },
+      }),
+    ]);
+
+    if (account) {
+      results.push({
+        accountId: account.id,
+        accountName: account.name,
+        configId: config.id,
+        productCount,
+        lastActivity: config.updatedAt,
+      });
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -480,7 +525,7 @@ export async function getProductDescriptionTimeline(
         subject: true,
         description: true,
         createdAt: true,
-        customFields: true,
+        metadata: true,
       },
     }),
     prisma.cRMActivity.count({ where }),
@@ -490,12 +535,12 @@ export async function getProductDescriptionTimeline(
     activities: activities.map((a) => ({
       id: a.id,
       type:
-        ((a.customFields as Record<string, unknown>)?.eventType as string) ||
+        ((a.metadata as Record<string, unknown>)?.eventType as string) ||
         'unknown',
-      subject: a.subject,
+      subject: a.subject || '',
       description: a.description || '',
       timestamp: a.createdAt,
-      metadata: (a.customFields as Record<string, unknown>) || {},
+      metadata: (a.metadata as Record<string, unknown>) || {},
     })),
     total,
   };
@@ -507,7 +552,7 @@ export async function getProductDescriptionTimeline(
 
 function mapToActivityType(
   eventType: ProductDescriptionActivity['type'],
-): ActivityType {
+): CRMActivityType {
   // Map product description events to CRM activity types
   switch (eventType) {
     case 'description_generated':
@@ -515,14 +560,14 @@ function mapToActivityType(
     case 'bulk_job_started':
     case 'bulk_job_completed':
     case 'translated':
-      return ActivityType.TASK;
+      return CRMActivityType.TASK;
     case 'compliance_flagged':
     case 'compliance_approved':
-      return ActivityType.NOTE;
+      return CRMActivityType.NOTE;
     case 'seo_optimized':
-      return ActivityType.OTHER;
+      return CRMActivityType.OTHER;
     default:
-      return ActivityType.OTHER;
+      return CRMActivityType.OTHER;
   }
 }
 

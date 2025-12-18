@@ -8,6 +8,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { getTenantId } from '../../tenant/tenant.context';
 import * as productDescService from './product-description.service';
 
 const router = Router();
@@ -225,10 +226,15 @@ router.post(
     }
 
     try {
+      // For backward compatibility, use clientId as accountId in the legacy client-based API
+      // The tenantId is required for the new schema
+      const tenantId = getTenantId();
       const config = await productDescService.createProductDescriptionConfig(
-        clientId,
+        clientId, // Using clientId as accountId for legacy API compatibility
         {
           ...parsed.data,
+          tenantId,
+          clientId,
           brandVoiceProfile: parsed.data
             .brandVoiceProfile as Prisma.InputJsonValue,
         },
@@ -919,9 +925,8 @@ router.get(
 
     const status = req.query.status as
       | 'PENDING'
-      | 'IN_PROGRESS'
+      | 'PROCESSING'
       | 'COMPLETED'
-      | 'COMPLETED_WITH_ERRORS'
       | 'FAILED'
       | 'CANCELLED'
       | undefined;
@@ -1455,7 +1460,14 @@ router.get(
  */
 router.post(
   '/product-descriptions/descriptions/:id/compliance-check',
-  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+  async (
+    req: AuthenticatedRequest<
+      { id: string },
+      unknown,
+      { complianceMode?: string }
+    >,
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;

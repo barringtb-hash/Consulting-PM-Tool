@@ -249,7 +249,7 @@ export async function retryFailedItems(
   await prisma.bulkGenerationJob.update({
     where: { id: jobId },
     data: {
-      status: 'IN_PROGRESS',
+      status: 'PROCESSING',
       processedItems: job.processedItems - job.failedItems,
       failedItems: 0,
       errorLog: [],
@@ -303,7 +303,7 @@ export async function startJobProcessing(
   await prisma.bulkGenerationJob.update({
     where: { id: jobId },
     data: {
-      status: 'IN_PROGRESS',
+      status: 'PROCESSING',
       startedAt: new Date(),
       totalItems: productIds.length,
     },
@@ -434,7 +434,7 @@ async function processJobItems(
     // Emit progress
     const progress: JobProgress = {
       jobId,
-      status: 'IN_PROGRESS',
+      status: 'PROCESSING',
       totalItems: productIds.length,
       processedItems: processedCount,
       successfulItems: successCount,
@@ -455,12 +455,10 @@ async function processJobItems(
   }
 
   // Determine final status
+  // Note: If some items failed but not all, we still mark as COMPLETED
+  // The failedItems count indicates partial success
   const finalStatus: GenerationJobStatus =
-    failedCount === productIds.length
-      ? 'FAILED'
-      : failedCount > 0
-        ? 'COMPLETED_WITH_ERRORS'
-        : 'COMPLETED';
+    failedCount === productIds.length ? 'FAILED' : 'COMPLETED';
 
   // Update job completion
   await prisma.bulkGenerationJob.update({
@@ -516,7 +514,11 @@ async function processProductWithRetry(
       }
 
       // Generate description content
-      const content = await generateDescriptionContent(product, {
+      const productData = {
+        ...product,
+        attributes: product.attributes as Record<string, unknown> | null,
+      };
+      const content = await generateDescriptionContent(productData, {
         marketplace,
         language,
         brandVoiceProfile: brandVoice || undefined,

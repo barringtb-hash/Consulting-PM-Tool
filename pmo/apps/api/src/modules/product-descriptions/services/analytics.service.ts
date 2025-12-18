@@ -353,7 +353,7 @@ export async function getDescriptionPerformance(
     id: d.id,
     productId: d.productId,
     productName: d.product.name,
-    title: d.title,
+    title: d.title || '',
     variant: d.variant,
     isControl: d.isControl,
     marketplace: d.marketplace,
@@ -872,7 +872,7 @@ function toPerformanceMetrics(
   description: {
     id: number;
     productId: number;
-    title: string;
+    title: string | null;
     variant: string | null;
     isControl: boolean;
     marketplace: Marketplace;
@@ -889,7 +889,7 @@ function toPerformanceMetrics(
     id: description.id,
     productId: description.productId,
     productName,
-    title: description.title,
+    title: description.title || '',
     variant: description.variant,
     isControl: description.isControl,
     marketplace: description.marketplace,

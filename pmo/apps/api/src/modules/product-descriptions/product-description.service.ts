@@ -125,13 +125,16 @@ export async function listProductDescriptionConfigs(filters?: {
 }
 
 export async function createProductDescriptionConfig(
-  clientId: number,
-  data: ProductDescriptionConfigInput,
+  accountId: number,
+  data: ProductDescriptionConfigInput & { tenantId: string; clientId?: number },
 ) {
+  const { tenantId, clientId, ...configData } = data;
   return prisma.productDescriptionConfig.create({
     data: {
+      tenantId,
+      accountId,
       clientId,
-      ...data,
+      ...configData,
     },
   });
 }
@@ -995,7 +998,8 @@ export async function updateDescriptionPerformance(
   });
 }
 
-export async function getDescriptionPerformance(productId: number) {
+// Renamed to avoid collision with getDescriptionPerformance from analytics.service.ts
+export async function getProductVariantPerformance(productId: number) {
   const descriptions = await prisma.productDescription.findMany({
     where: { productId },
     select: {
