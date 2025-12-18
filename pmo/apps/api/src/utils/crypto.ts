@@ -15,10 +15,22 @@ const AUTH_TAG_LENGTH = 16;
 /**
  * Get encryption key derived from JWT secret.
  * Ensures consistent 32-byte key for AES-256.
+ *
+ * Note: JWT secret must be ASCII-only so that character count
+ * matches byte count when deriving the key.
  */
 function getEncryptionKey(): Buffer {
+  const secret = env.jwtSecret;
+
+  // Enforce ASCII-only secret to avoid multi-byte encoding length issues
+  if (!/^[\x20-\x7E]+$/.test(secret)) {
+    throw new Error(
+      'JWT_SECRET must contain only printable ASCII characters for encryption key derivation',
+    );
+  }
+
   // Use first 32 bytes of JWT secret (already validated to be >= 32 chars)
-  return Buffer.from(env.jwtSecret).slice(0, 32);
+  return Buffer.from(secret, 'ascii').slice(0, 32);
 }
 
 /**
@@ -47,7 +59,9 @@ export function decryptString(encryptedData: string): string {
   const parts = encryptedData.split(':');
 
   if (parts.length !== 3) {
-    throw new Error('Invalid encrypted data format');
+    throw new Error(
+      'Invalid encrypted data format: expected 3 colon-separated parts (iv:authTag:data)',
+    );
   }
 
   const [ivHex, authTagHex, encrypted] = parts;
@@ -56,7 +70,9 @@ export function decryptString(encryptedData: string): string {
   const authTag = Buffer.from(authTagHex, 'hex');
 
   if (iv.length !== IV_LENGTH || authTag.length !== AUTH_TAG_LENGTH) {
-    throw new Error('Invalid encrypted data format');
+    throw new Error(
+      `Invalid encrypted data format: IV must be ${IV_LENGTH} bytes and auth tag must be ${AUTH_TAG_LENGTH} bytes`,
+    );
   }
 
   const decipher = createDecipheriv(ALGORITHM, key, iv);
@@ -84,7 +100,17 @@ export function decryptCredentials(
   encryptedData: string,
 ): Record<string, unknown> {
   const decrypted = decryptString(encryptedData);
-  return JSON.parse(decrypted);
+
+  try {
+    return JSON.parse(decrypted);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(
+        'Decryption succeeded but credentials JSON is invalid or corrupted',
+      );
+    }
+    throw error;
+  }
 }
 
 /**
@@ -97,8 +123,14 @@ export function isEncrypted(value: string): boolean {
 
   const [ivHex, authTagHex] = parts;
 
-  // Check if IV and auth tag have correct hex lengths
+  // Validate hex format (only valid hex characters)
+  const hexRegex = /^[0-9a-f]+$/i;
+
+  // Check if IV and auth tag have correct hex lengths and valid hex characters
   return (
-    ivHex.length === IV_LENGTH * 2 && authTagHex.length === AUTH_TAG_LENGTH * 2
+    ivHex.length === IV_LENGTH * 2 &&
+    authTagHex.length === AUTH_TAG_LENGTH * 2 &&
+    hexRegex.test(ivHex) &&
+    hexRegex.test(authTagHex)
   );
 }
