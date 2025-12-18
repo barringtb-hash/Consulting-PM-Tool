@@ -51,6 +51,50 @@ const generateOptionsSchema = z.object({
   keywords: z.array(z.string()).optional(),
   generateVariants: z.boolean().optional(),
   variantCount: z.number().int().min(1).max(5).optional(),
+  templateId: z.number().int().optional(),
+  language: z.string().max(10).optional(),
+});
+
+const trainVoiceSchema = z.object({
+  sampleDescriptions: z.array(z.string().min(10).max(5000)).min(2).max(20),
+  manualGuidelines: z
+    .object({
+      tone: z.string().max(100).optional(),
+      prohibitedWords: z.array(z.string()).optional(),
+      preferredPhrases: z.array(z.string()).optional(),
+      formalityLevel: z
+        .enum(['casual', 'neutral', 'formal', 'professional'])
+        .optional(),
+      additionalInstructions: z.string().max(1000).optional(),
+    })
+    .optional(),
+});
+
+const updateVoiceSchema = z.object({
+  toneMarkers: z.array(z.string()).optional(),
+  preferredPhrases: z.array(z.string()).optional(),
+  prohibitedWords: z.array(z.string()).optional(),
+  styleRules: z
+    .object({
+      sentenceLength: z.enum(['short', 'medium', 'long', 'varied']).optional(),
+      usePunctuation: z.enum(['minimal', 'standard', 'expressive']).optional(),
+      useEmoji: z.boolean().optional(),
+      formalityLevel: z
+        .enum(['casual', 'neutral', 'formal', 'professional'])
+        .optional(),
+      useFirstPerson: z.boolean().optional(),
+      useSecondPerson: z.boolean().optional(),
+      technicalLevel: z.enum(['simple', 'moderate', 'technical']).optional(),
+    })
+    .optional(),
+  vocabulary: z
+    .object({
+      powerWords: z.array(z.string()).optional(),
+      avoidWords: z.array(z.string()).optional(),
+      industryTerms: z.array(z.string()).optional(),
+      callToActionStyle: z.string().optional(),
+    })
+    .optional(),
 });
 
 const bulkJobSchema = z.object({
@@ -494,6 +538,141 @@ router.post(
 
     await productDescService.updateDescriptionPerformance(id, parsed.data);
     res.json({ success: true });
+  },
+);
+
+// ============================================================================
+// BRAND VOICE ROUTES
+// ============================================================================
+
+/**
+ * POST /api/product-descriptions/:configId/brand-voice/train
+ * Train brand voice from sample descriptions
+ */
+router.post(
+  '/product-descriptions/:configId/brand-voice/train',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const parsed = trainVoiceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await productDescService.trainBrandVoice(
+        configId,
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      if ((error as Error).message === 'Configuration not found') {
+        res.status(404).json({ error: 'Configuration not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/brand-voice
+ * Get brand voice profile for a config
+ */
+router.get(
+  '/product-descriptions/:configId/brand-voice',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const profile = await productDescService.getBrandVoiceProfile(configId);
+    res.json({ profile });
+  },
+);
+
+/**
+ * PATCH /api/product-descriptions/:configId/brand-voice
+ * Manually update brand voice profile
+ */
+router.patch(
+  '/product-descriptions/:configId/brand-voice',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const parsed = updateVoiceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const profile = await productDescService.updateBrandVoiceProfile(
+      configId,
+      parsed.data as Partial<productDescService.BrandVoiceProfile>,
+    );
+    res.json({ profile });
+  },
+);
+
+/**
+ * POST /api/product-descriptions/:configId/brand-voice/analyze
+ * Analyze content for brand voice match
+ */
+router.post(
+  '/product-descriptions/:configId/brand-voice/analyze',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const { content } = req.body as { content?: string };
+    if (!content || typeof content !== 'string') {
+      res.status(400).json({ error: 'Content is required' });
+      return;
+    }
+
+    const analysis = await productDescService.analyzeVoiceMatch(
+      configId,
+      content,
+    );
+    res.json(analysis);
   },
 );
 
