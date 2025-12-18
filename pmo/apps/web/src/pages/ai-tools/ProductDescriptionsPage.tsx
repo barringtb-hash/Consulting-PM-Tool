@@ -213,7 +213,6 @@ function EmptyState({
 }
 
 function ProductDescriptionsPage(): JSX.Element {
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null,
@@ -288,12 +287,6 @@ function ProductDescriptionsPage(): JSX.Element {
     if (!selectedProductId) return null;
     return productList.find((p) => p.id === selectedProductId) || null;
   }, [selectedProductId, productsQuery.data]);
-
-  const filteredConfigs = useMemo(() => {
-    const configList = configsQuery.data ?? [];
-    if (!selectedClientId) return configList;
-    return configList.filter((c) => c.clientId === Number(selectedClientId));
-  }, [configsQuery.data, selectedClientId]);
 
   // Mutations
   const createConfigMutation = useMutation({
@@ -385,6 +378,22 @@ function ProductDescriptionsPage(): JSX.Element {
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+
+    // Parse target keywords from comma-separated string
+    const keywordsRaw = formData.get('targetKeywords') as string;
+    const targetKeywords = keywordsRaw
+      ? keywordsRaw
+          .split(',')
+          .map((k) => k.trim())
+          .filter(Boolean)
+      : [];
+
+    // Build brand voice profile from form data
+    const targetAudience = formData.get('targetAudience') as string;
+    const brandVoiceProfile = targetAudience
+      ? { targetAudience, toneMarkers: [], prohibitedWords: [] }
+      : undefined;
+
     createConfigMutation.mutate({
       clientId: Number(formData.get('clientId')),
       data: {
@@ -392,6 +401,9 @@ function ProductDescriptionsPage(): JSX.Element {
         defaultLength:
           (formData.get('defaultLength') as 'short' | 'medium' | 'long') ||
           undefined,
+        enableSEO: formData.get('enableSEO') === 'on',
+        targetKeywords: targetKeywords.length > 0 ? targetKeywords : undefined,
+        brandVoiceProfile,
       },
     });
   };
@@ -436,28 +448,16 @@ function ProductDescriptionsPage(): JSX.Element {
         </div>
         <Button onClick={() => setShowCreateConfigModal(true)}>
           <Plus className="w-4 h-4" />
-          New Configuration
+          New Profile
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Configuration Selector */}
       <Card className="p-4">
-        <div className="flex flex-col lg:flex-row lg:items-end gap-4">
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+          <div className="flex-1">
             <Select
-              label="Client"
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
-            >
-              <option value="">All Clients</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="Configuration"
+              label="Brand Profile"
               value={selectedConfigId?.toString() || ''}
               onChange={(e) => {
                 setSelectedConfigId(
@@ -466,10 +466,13 @@ function ProductDescriptionsPage(): JSX.Element {
                 setSelectedProductId(null);
               }}
             >
-              <option value="">Select a configuration...</option>
-              {filteredConfigs.map((config) => (
+              <option value="">Select a brand profile...</option>
+              {configsQuery.data?.map((config) => (
                 <option key={config.id} value={config.id}>
-                  {config.client?.name || `Config #${config.id}`}
+                  {config.client?.name || `Profile #${config.id}`}
+                  {config._count?.products
+                    ? ` (${config._count.products} products)`
+                    : ''}
                 </option>
               ))}
             </Select>
@@ -479,7 +482,7 @@ function ProductDescriptionsPage(): JSX.Element {
               variant="secondary"
               onClick={() => configsQuery.refetch()}
               disabled={configsQuery.isFetching}
-              title="Refresh configurations"
+              title="Refresh"
             >
               <RefreshCw
                 className={`w-4 h-4 ${configsQuery.isFetching ? 'animate-spin' : ''}`}
@@ -500,15 +503,15 @@ function ProductDescriptionsPage(): JSX.Element {
         <Card className="p-6">
           <EmptyState
             icon={FileText}
-            title="No configuration selected"
-            description="Select a configuration from the dropdown above to view and manage products, or create a new configuration to get started."
+            title="No brand profile selected"
+            description="Select a brand profile from the dropdown above to view and manage products, or create a new profile to get started."
             action={
               <Button
                 variant="secondary"
                 onClick={() => setShowCreateConfigModal(true)}
               >
                 <Plus className="w-4 h-4" />
-                Create Configuration
+                Create Profile
               </Button>
             }
           />
@@ -848,13 +851,13 @@ function ProductDescriptionsPage(): JSX.Element {
           aria-modal="true"
           aria-labelledby="create-config-modal-title"
         >
-          <Card className="w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700 shrink-0">
               <h2
                 id="create-config-modal-title"
                 className="text-lg font-semibold text-neutral-900 dark:text-white"
               >
-                New Configuration
+                New Brand Profile
               </h2>
               <button
                 onClick={() => setShowCreateConfigModal(false)}
@@ -864,31 +867,97 @@ function ProductDescriptionsPage(): JSX.Element {
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
-            <form onSubmit={handleCreateConfig}>
-              <div className="p-4 space-y-4">
-                <Select label="Client" name="clientId" required>
-                  <option value="">Select a client...</option>
+            <form
+              onSubmit={handleCreateConfig}
+              className="flex flex-col flex-1 overflow-hidden"
+            >
+              <div className="p-4 space-y-5 overflow-y-auto flex-1">
+                {/* Account Selection */}
+                <Select label="Account" name="clientId" required>
+                  <option value="">Select an account...</option>
                   {accounts.map((account) => (
                     <option key={account.id} value={account.id}>
                       {account.name}
                     </option>
                   ))}
                 </Select>
-                <Select label="Default Tone" name="defaultTone">
-                  <option value="">Select a tone...</option>
-                  <option value="professional">Professional</option>
-                  <option value="casual">Casual</option>
-                  <option value="enthusiastic">Enthusiastic</option>
-                  <option value="luxury">Luxury</option>
-                </Select>
-                <Select label="Default Length" name="defaultLength">
-                  <option value="">Select a length...</option>
-                  <option value="short">Short</option>
-                  <option value="medium">Medium</option>
-                  <option value="long">Long</option>
-                </Select>
+
+                {/* Brand Voice Section */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Brand Voice
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Select label="Tone" name="defaultTone">
+                      <option value="">Select tone...</option>
+                      <option value="professional">Professional</option>
+                      <option value="casual">Casual</option>
+                      <option value="enthusiastic">Enthusiastic</option>
+                      <option value="luxury">Luxury</option>
+                      <option value="playful">Playful</option>
+                      <option value="technical">Technical</option>
+                    </Select>
+                    <Select label="Length" name="defaultLength">
+                      <option value="">Select length...</option>
+                      <option value="short">Short (50-100 words)</option>
+                      <option value="medium">Medium (100-200 words)</option>
+                      <option value="long">Long (200+ words)</option>
+                    </Select>
+                  </div>
+                  <Input
+                    label="Target Audience"
+                    name="targetAudience"
+                    placeholder="e.g., Tech-savvy millennials, Budget-conscious parents"
+                  />
+                </div>
+
+                {/* SEO Settings */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      SEO Optimization
+                    </h3>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="enableSEO"
+                        defaultChecked
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-500"></div>
+                    </label>
+                  </div>
+                  <Input
+                    label="Target Keywords"
+                    name="targetKeywords"
+                    placeholder="keyword1, keyword2, keyword3"
+                  />
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Separate keywords with commas
+                  </p>
+                </div>
+
+                {/* Language & Compliance */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Select label="Language" name="defaultLanguage">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                  </Select>
+                  <Select label="Compliance" name="complianceMode">
+                    <option value="NONE">None</option>
+                    <option value="FTC">FTC Guidelines</option>
+                    <option value="FDA">FDA Compliant</option>
+                    <option value="CUSTOM">Custom Rules</option>
+                  </Select>
+                </div>
               </div>
-              <div className="flex gap-3 justify-end p-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 rounded-b-lg">
+              <div className="flex gap-3 justify-end p-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 shrink-0">
                 <Button
                   type="button"
                   variant="secondary"
@@ -899,7 +968,7 @@ function ProductDescriptionsPage(): JSX.Element {
                 <Button type="submit" disabled={createConfigMutation.isPending}>
                   {createConfigMutation.isPending
                     ? 'Creating...'
-                    : 'Create Configuration'}
+                    : 'Create Profile'}
                 </Button>
               </div>
             </form>
