@@ -260,14 +260,14 @@ function ProgressBar({
   successRate: number;
 }) {
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs text-neutral-600">
-        <span>{percentage}% complete</span>
+    <div className="space-y-2">
+      <div className="flex justify-between text-xs text-neutral-600 dark:text-neutral-400">
+        <span className="font-medium">{percentage}% complete</span>
         <span>{successRate}% success rate</span>
       </div>
-      <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
+      <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-primary-500 transition-all duration-300"
+          className="h-full bg-primary-500 dark:bg-primary-400 transition-all duration-300 ease-out"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -510,13 +510,17 @@ export function BulkJobPanel({
     liveProgress || jobs.find((j) => j.status === 'IN_PROGRESS');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 mt-6">
       {/* Actions Bar */}
       <Card>
-        <CardBody>
-          <div className="flex flex-wrap gap-3 items-center justify-between">
-            <div className="flex gap-2">
-              <Button onClick={() => setShowUploadModal(true)}>
+        <CardBody className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Import/Export Actions */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setShowUploadModal(true)}
+              >
                 <Upload className="w-4 h-4" />
                 Import CSV
               </Button>
@@ -529,11 +533,13 @@ export function BulkJobPanel({
                 Download Template
               </Button>
             </div>
-            <div className="flex gap-2 items-center">
+
+            {/* Generate Actions */}
+            <div className="flex gap-3 items-center sm:ml-auto">
               <Select
                 value={selectedMarketplace}
                 onChange={(e) => setSelectedMarketplace(e.target.value)}
-                className="w-40"
+                className="w-44"
               >
                 <option value="ALL">All Marketplaces</option>
                 <option value="GENERIC">Generic</option>
@@ -544,7 +550,6 @@ export function BulkJobPanel({
                 <option value="WALMART">Walmart</option>
               </Select>
               <Button
-                variant="primary"
                 onClick={() =>
                   createJobMutation.mutate({
                     marketplace:
@@ -555,7 +560,11 @@ export function BulkJobPanel({
                 }
                 disabled={createJobMutation.isPending}
               >
-                <Play className="w-4 h-4" />
+                {createJobMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Play className="w-4 h-4" />
+                )}
                 Generate All
               </Button>
             </div>
@@ -565,24 +574,22 @@ export function BulkJobPanel({
 
       {/* Active Job Progress */}
       {activeJob && (
-        <Card className="border-primary-200 bg-primary-50">
+        <Card className="border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/30">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
+              <h3 className="font-semibold flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
+                <Loader2 className="w-4 h-4 animate-spin text-primary-600 dark:text-primary-400" />
                 Job #{activeJob.jobId} in Progress
               </h3>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => cancelMutation.mutate(activeJob.jobId)}
-                  disabled={cancelMutation.isPending}
-                >
-                  <Pause className="w-3 h-3" />
-                  Cancel
-                </Button>
-              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => cancelMutation.mutate(activeJob.jobId)}
+                disabled={cancelMutation.isPending}
+              >
+                <Pause className="w-3 h-3" />
+                Cancel
+              </Button>
             </div>
           </CardHeader>
           <CardBody>
@@ -597,38 +604,50 @@ export function BulkJobPanel({
                   : 100
               }
             />
-            <div className="mt-3 grid grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-neutral-500">Total:</span>{' '}
-                <span className="font-medium">{activeJob.totalItems}</span>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+              <div className="bg-white/50 dark:bg-neutral-800/50 rounded-lg p-3">
+                <span className="text-neutral-500 dark:text-neutral-400 block text-xs mb-1">
+                  Total
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  {activeJob.totalItems}
+                </span>
               </div>
-              <div>
-                <span className="text-neutral-500">Processed:</span>{' '}
-                <span className="font-medium">{activeJob.processedItems}</span>
+              <div className="bg-white/50 dark:bg-neutral-800/50 rounded-lg p-3">
+                <span className="text-neutral-500 dark:text-neutral-400 block text-xs mb-1">
+                  Processed
+                </span>
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  {activeJob.processedItems}
+                </span>
               </div>
-              <div>
-                <span className="text-neutral-500">Success:</span>{' '}
-                <span className="font-medium text-green-600">
+              <div className="bg-white/50 dark:bg-neutral-800/50 rounded-lg p-3">
+                <span className="text-neutral-500 dark:text-neutral-400 block text-xs mb-1">
+                  Success
+                </span>
+                <span className="font-semibold text-green-600 dark:text-green-400">
                   {activeJob.successfulItems}
                 </span>
               </div>
-              <div>
-                <span className="text-neutral-500">Failed:</span>{' '}
-                <span className="font-medium text-red-600">
+              <div className="bg-white/50 dark:bg-neutral-800/50 rounded-lg p-3">
+                <span className="text-neutral-500 dark:text-neutral-400 block text-xs mb-1">
+                  Failed
+                </span>
+                <span className="font-semibold text-red-600 dark:text-red-400">
                   {activeJob.failedItems}
                 </span>
               </div>
             </div>
             {activeJob.errors.length > 0 && (
               <div className="mt-4">
-                <h4 className="text-sm font-medium text-red-600 mb-2">
+                <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
                   Recent Errors:
                 </h4>
-                <div className="max-h-32 overflow-y-auto space-y-1">
+                <div className="max-h-32 overflow-y-auto space-y-2">
                   {activeJob.errors.slice(-5).map((err, idx) => (
                     <div
                       key={idx}
-                      className="text-xs bg-red-100 text-red-700 p-2 rounded"
+                      className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-2 rounded-lg"
                     >
                       <span className="font-medium">{err.productName}:</span>{' '}
                       {err.error}
@@ -645,12 +664,15 @@ export function BulkJobPanel({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Recent Jobs</h3>
+            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
+              Recent Jobs
+            </h3>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => jobsQuery.refetch()}
               disabled={jobsQuery.isFetching}
+              title="Refresh jobs"
             >
               <RefreshCw
                 className={`w-3 h-3 ${jobsQuery.isFetching ? 'animate-spin' : ''}`}
@@ -660,17 +682,29 @@ export function BulkJobPanel({
         </CardHeader>
         <CardBody className="p-0">
           {jobs.length === 0 ? (
-            <div className="p-6 text-center text-neutral-500">
-              No jobs yet. Import a CSV or click &quot;Generate All&quot; to
-              start.
+            <div className="p-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
+              </div>
+              <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                No jobs yet
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                Import a CSV or click &quot;Generate All&quot; to start.
+              </p>
             </div>
           ) : (
-            <div className="divide-y divide-neutral-200">
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-700">
               {jobs.map((job) => (
-                <div key={job.jobId} className="p-4">
+                <div
+                  key={job.jobId}
+                  className="p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">Job #{job.jobId}</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        Job #{job.jobId}
+                      </span>
                       <StatusBadge status={job.status} />
                     </div>
                     <div className="flex gap-2">
@@ -701,19 +735,30 @@ export function BulkJobPanel({
                         )}
                     </div>
                   </div>
-                  <div className="text-sm text-neutral-600">
-                    {job.successfulItems} / {job.totalItems} successful
+                  <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <span className="text-green-600 dark:text-green-400 font-medium">
+                      {job.successfulItems}
+                    </span>
+                    <span className="text-neutral-400 dark:text-neutral-500">
+                      {' '}
+                      /{' '}
+                    </span>
+                    <span>{job.totalItems}</span>
+                    <span className="text-neutral-400 dark:text-neutral-500">
+                      {' '}
+                      successful
+                    </span>
                     {job.failedItems > 0 && (
-                      <span className="text-red-600 ml-2">
+                      <span className="text-red-600 dark:text-red-400 ml-2">
                         ({job.failedItems} failed)
                       </span>
                     )}
                   </div>
                   {job.percentage > 0 && job.percentage < 100 && (
                     <div className="mt-2">
-                      <div className="h-1 bg-neutral-200 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-primary-500"
+                          className="h-full bg-primary-500 dark:bg-primary-400 transition-all duration-300"
                           style={{ width: `${job.percentage}%` }}
                         />
                       </div>
@@ -728,13 +773,25 @@ export function BulkJobPanel({
 
       {/* CSV Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">Import CSV</h2>
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between shrink-0">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                Import CSV
+              </h2>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setCsvContent('');
+                  setValidation(null);
+                }}
+                className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
+                <XCircle className="w-5 h-5 text-neutral-500" />
+              </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-6 text-center hover:border-primary-400 dark:hover:border-primary-500 transition-colors">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -742,23 +799,25 @@ export function BulkJobPanel({
                   onChange={handleFileSelect}
                   className="hidden"
                 />
+                <Upload className="w-8 h-8 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
                 <Button
                   variant="secondary"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
                 >
-                  <Upload className="w-4 h-4" />
                   Select CSV File
                 </Button>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                  or drag and drop your CSV file here
+                </p>
               </div>
 
               {csvContent && (
                 <>
-                  <div className="bg-neutral-100 rounded p-4">
-                    <p className="text-sm text-neutral-600 mb-2">
+                  <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-4">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-2 font-medium">
                       File loaded ({csvContent.split('\n').length - 1} rows)
                     </p>
-                    <pre className="text-xs overflow-x-auto max-h-32">
+                    <pre className="text-xs text-neutral-600 dark:text-neutral-400 overflow-x-auto max-h-32 font-mono">
                       {csvContent.slice(0, 500)}
                       {csvContent.length > 500 ? '...' : ''}
                     </pre>
@@ -780,35 +839,43 @@ export function BulkJobPanel({
 
                   {validation && (
                     <div
-                      className={`p-4 rounded ${
+                      className={`p-4 rounded-lg ${
                         validation.valid
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                       }`}
                     >
-                      <div className="font-medium mb-2">
+                      <div className="font-medium mb-2 flex items-center gap-2">
+                        {validation.valid ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4" />
+                        )}
                         {validation.valid
-                          ? `✓ Valid: ${validation.validRows} products ready for import`
-                          : `✗ ${validation.errors.length} errors found`}
+                          ? `Valid: ${validation.validRows} products ready for import`
+                          : `${validation.errors.length} errors found`}
                       </div>
                       {validation.errors.length > 0 && (
-                        <ul className="text-sm space-y-1">
+                        <ul className="text-sm space-y-1 ml-6">
                           {validation.errors.slice(0, 5).map((err, idx) => (
                             <li key={idx}>
                               Row {err.row}, {err.column}: {err.message}
                             </li>
                           ))}
                           {validation.errors.length > 5 && (
-                            <li>
+                            <li className="text-neutral-500 dark:text-neutral-400">
                               ... and {validation.errors.length - 5} more errors
                             </li>
                           )}
                         </ul>
                       )}
                       {validation.warnings.length > 0 && (
-                        <div className="mt-2 text-yellow-800">
-                          <div className="font-medium">Warnings:</div>
-                          <ul className="text-sm space-y-1">
+                        <div className="mt-3 text-yellow-800 dark:text-yellow-300">
+                          <div className="font-medium flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Warnings:
+                          </div>
+                          <ul className="text-sm space-y-1 ml-5">
                             {validation.warnings
                               .slice(0, 3)
                               .map((warn, idx) => (
@@ -837,7 +904,7 @@ export function BulkJobPanel({
                 </>
               )}
             </div>
-            <div className="p-6 border-t flex justify-end gap-3">
+            <div className="p-5 border-t border-neutral-200 dark:border-neutral-700 flex justify-end gap-3 bg-neutral-50 dark:bg-neutral-800/50 shrink-0">
               <Button
                 variant="secondary"
                 onClick={() => {

@@ -516,27 +516,27 @@ function ProductDescriptionsPage(): JSX.Element {
       ) : (
         <>
           {/* Tab Navigation */}
-          <div className="flex gap-2 border-b border-neutral-200 mb-4">
+          <div className="flex border-b border-neutral-200 dark:border-neutral-700">
             <button
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-5 py-3 font-medium text-sm border-b-2 -mb-px transition-all ${
                 activeTab === 'products'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-900/20'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
               }`}
               onClick={() => setActiveTab('products')}
             >
-              <Package className="w-4 h-4 inline mr-2" />
+              <Package className="w-4 h-4" />
               Products
             </button>
             <button
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-5 py-3 font-medium text-sm border-b-2 -mb-px transition-all ${
                 activeTab === 'bulk'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-900/20'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
               }`}
               onClick={() => setActiveTab('bulk')}
             >
-              <Upload className="w-4 h-4 inline mr-2" />
+              <Upload className="w-4 h-4" />
               Bulk Operations
             </button>
           </div>
@@ -564,13 +564,32 @@ function ProductDescriptionsPage(): JSX.Element {
                   </CardHeader>
                   <CardBody className="p-0">
                     {productsQuery.isLoading ? (
-                      <p className="p-4 text-center text-neutral-500">
-                        Loading...
-                      </p>
+                      <div className="p-6 text-center">
+                        <RefreshCw className="w-5 h-5 text-neutral-400 animate-spin mx-auto mb-2" />
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Loading products...
+                        </p>
+                      </div>
                     ) : products.length === 0 ? (
-                      <p className="p-4 text-center text-neutral-500">
-                        No products yet.
-                      </p>
+                      <div className="p-6 text-center">
+                        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-3">
+                          <Package className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
+                        </div>
+                        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                          No products yet
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+                          Add products to start generating descriptions
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setShowCreateProductModal(true)}
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add Product
+                        </Button>
+                      </div>
                     ) : (
                       <div className="divide-y divide-neutral-100 dark:divide-neutral-700">
                         {products.map((product) => (
@@ -605,12 +624,18 @@ function ProductDescriptionsPage(): JSX.Element {
               {/* Product Details & Descriptions */}
               <div className="lg:col-span-2 space-y-4">
                 {!selectedProduct ? (
-                  <Card>
+                  <Card className="h-full min-h-[400px] flex items-center justify-center">
                     <CardBody>
-                      <div className="text-center py-8">
-                        <Package className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                        <p className="text-neutral-600">
-                          Select a product to view descriptions.
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
+                          <Package className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                        </div>
+                        <p className="font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                          Select a product to view descriptions
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs mx-auto">
+                          Choose a product from the list to view, generate, or
+                          edit its marketplace descriptions
                         </p>
                       </div>
                     </CardBody>
