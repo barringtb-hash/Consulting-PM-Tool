@@ -135,25 +135,28 @@ function StatCard({
             {subtitle}
           </p>
         )}
-        {trend !== undefined && (
-          <div className="mt-2 flex items-center gap-1.5">
-            {trend >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-red-500" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-green-500" />
-            )}
-            <span
-              className={`text-sm font-medium ${trend >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}
-            >
-              {Math.abs(trend)}%
-            </span>
-            {trendLabel && (
-              <span className="text-sm text-gray-400 dark:text-neutral-500">
-                {trendLabel}
+        {/* Always render trend row to maintain consistent height */}
+        <div className="mt-2 flex items-center gap-1.5 min-h-[20px]">
+          {trend !== undefined && (
+            <>
+              {trend >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-red-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-green-500" />
+              )}
+              <span
+                className={`text-sm font-medium ${trend >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}
+              >
+                {Math.abs(trend)}%
               </span>
-            )}
-          </div>
-        )}
+              {trendLabel && (
+                <span className="text-sm text-gray-400 dark:text-neutral-500">
+                  {trendLabel}
+                </span>
+              )}
+            </>
+          )}
+        </div>
       </div>
       <div className={`rounded-xl p-3 shrink-0 ${iconColorClasses[iconColor]}`}>
         <Icon className="h-6 w-6" />
@@ -330,9 +333,9 @@ export default function FinanceDashboardPage() {
       )}
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Spending by Category */}
-        <Card className="lg:col-span-2 p-6">
+        <Card className="lg:col-span-2 p-6 h-full">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
               Spending by Category
@@ -359,7 +362,7 @@ export default function FinanceDashboardPage() {
         </Card>
 
         {/* Quick Actions & Alerts */}
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           {/* Pending Approvals */}
           {(pendingExpenses?.expenses?.length ?? 0) > 0 && (
             <Card className="p-6">
@@ -468,7 +471,7 @@ export default function FinanceDashboardPage() {
           {(pendingExpenses?.expenses?.length ?? 0) === 0 &&
             (upcomingRenewals?.costs?.length ?? 0) === 0 &&
             (budgetStats?.overBudgetCount ?? 0) === 0 && (
-              <Card className="p-6">
+              <Card className="p-6 flex-1 flex items-center justify-center">
                 <EmptyState
                   icon={AlertCircle}
                   title="No alerts"
