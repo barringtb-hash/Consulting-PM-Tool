@@ -114,7 +114,7 @@ Our existing scheduling module has solid foundations for **Type A (Appointments)
 |----|-------------|-------------|---------------------|
 | F2.1 | **Video Conferencing Integration** | Auto-generate Zoom/Meet/Teams links | Create meeting on booking, include link in confirmations and reminders |
 | F2.2 | **Custom Intake Forms** | Collect customer information at booking | Form builder UI, required/optional fields, conditional logic, data storage |
-| F2.3 | **Payment/Deposit Collection** | Stripe integration for payments | Collect deposit at booking, full payment option, refund on cancellation | **[DECISION PENDING]** |
+| F2.3 | **Payment/Deposit Collection** | Stripe integration for payments | Collect deposit at booking, full payment option, refund on cancellation | ✅ **Moved to Phase 1** |
 | F2.4 | **Rescheduling Self-Service** | Customer can reschedule without calling | Link in confirmation email, shows available alternatives, sends update notifications |
 | F2.5 | **Cancellation Self-Service** | Customer can cancel without calling | Link in confirmation, captures reason, triggers waitlist notification |
 | F2.6 | **Buffer Time Configuration** | Time between appointments | Per-provider and per-appointment-type buffers, travel time support |
@@ -964,7 +964,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 
 ## Part 3: Implementation Plan
 
-### Phase 1: MVP Foundation (Weeks 1-4)
+### Phase 1: MVP Foundation + Payment (Weeks 1-5)
 
 #### Sprint 1.1: Public Booking Infrastructure (Week 1-2)
 
@@ -1019,15 +1019,31 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Real email confirmations/reminders via SendGrid
 - Customers can reply to confirm/cancel
 
-#### Sprint 1.4: Embeddable Widget (Week 4)
+#### Sprint 1.4: Payment Integration (Week 4)
 
 | Task | Description | Effort |
 |------|-------------|--------|
-| 1.4.1 | Create scheduling widget npm package | M |
-| 1.4.2 | Build widget UI (React, compiled to vanilla JS) | L |
-| 1.4.3 | Implement widget configuration options | M |
-| 1.4.4 | Add widget embed code generator in admin | S |
-| 1.4.5 | Test cross-origin embedding | M |
+| 1.4.1 | Add PaymentConfig and PaymentTransaction models | S |
+| 1.4.2 | Implement Stripe Connect onboarding flow | L |
+| 1.4.3 | Integrate Stripe Elements into booking flow | L |
+| 1.4.4 | Implement deposit collection at booking | M |
+| 1.4.5 | Implement refund on cancellation | M |
+| 1.4.6 | Build payment settings UI in admin | M |
+
+**Deliverables:**
+- Businesses can connect Stripe account
+- Collect deposits/full payment at booking
+- Automatic refunds on cancellation
+
+#### Sprint 1.5: Embeddable Widget (Week 5)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 1.5.1 | Create scheduling widget npm package | M |
+| 1.5.2 | Build widget UI (React, compiled to vanilla JS) | L |
+| 1.5.3 | Implement widget configuration options | M |
+| 1.5.4 | Add widget embed code generator in admin | S |
+| 1.5.5 | Test cross-origin embedding | M |
 
 **Deliverables:**
 - Embeddable booking widget
@@ -1036,9 +1052,9 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 
 ---
 
-### Phase 2: Competitive Features (Weeks 5-8)
+### Phase 2: Competitive Features (Weeks 6-9)
 
-#### Sprint 2.1: Video Conferencing (Week 5)
+#### Sprint 2.1: Video Conferencing (Week 6)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1052,7 +1068,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Auto-generate video meeting links on booking
 - Meeting links included in confirmations/reminders
 
-#### Sprint 2.2: Intake Forms (Week 5-6)
+#### Sprint 2.2: Intake Forms (Week 6-7)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1067,45 +1083,40 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Forms display during booking
 - Responses stored with appointments
 
-#### Sprint 2.3: Payment Integration (Week 6-7) **[DECISION PENDING]**
-
-> **⚠️ OPEN ITEM:** Payment integration scope and timing to be determined.
-> Options include: deposits at booking, full payment, or deferring to later phase.
+#### Sprint 2.3: Self-Service Features (Week 7-8)
 
 | Task | Description | Effort |
 |------|-------------|--------|
-| 2.3.1 | Add PaymentConfig and PaymentTransaction models | S |
-| 2.3.2 | Implement Stripe Connect onboarding | L |
-| 2.3.3 | Integrate Stripe Elements into booking | L |
-| 2.3.4 | Implement deposit/full payment collection | M |
-| 2.3.5 | Implement refund on cancellation | M |
-| 2.3.6 | Build payment reporting in admin | M |
-
-**Deliverables (if approved):**
-- Collect deposits/payments at booking
-- Automatic refunds on cancellation
-- Payment history and reporting
-
-#### Sprint 2.4: Self-Service Features (Week 7-8)
-
-| Task | Description | Effort |
-|------|-------------|--------|
-| 2.4.1 | Build self-service reschedule page | M |
-| 2.4.2 | Build self-service cancellation page | M |
-| 2.4.3 | Add reschedule/cancel links to reminders | S |
-| 2.4.4 | Implement booking modification rules | M |
-| 2.4.5 | Trigger waitlist on cancellation | M |
+| 2.3.1 | Build self-service reschedule page | M |
+| 2.3.2 | Build self-service cancellation page | M |
+| 2.3.3 | Add reschedule/cancel links to reminders | S |
+| 2.3.4 | Implement booking modification rules | M |
+| 2.3.5 | Trigger waitlist on cancellation | M |
 
 **Deliverables:**
 - Customers can reschedule without calling
 - Customers can cancel with reason capture
 - Waitlist automatically notified of openings
 
+#### Sprint 2.4: Advanced Booking Features (Week 8-9)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 2.4.1 | Implement buffer time configuration | M |
+| 2.4.2 | Build booking rules engine | L |
+| 2.4.3 | Add payment reporting and analytics | M |
+| 2.4.4 | Implement blackout dates and recurring availability | M |
+
+**Deliverables:**
+- Per-provider and per-type buffer times
+- Min/max notice, daily/weekly booking limits
+- Payment history and reporting dashboard
+
 ---
 
-### Phase 3: AI-Powered Features (Weeks 9-12)
+### Phase 3: AI-Powered Features (Weeks 10-13)
 
-#### Sprint 3.1: Enhanced No-Show Prediction (Week 9-10)
+#### Sprint 3.1: Enhanced No-Show Prediction (Week 10-11)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1119,7 +1130,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - ML-based no-show prediction (80%+ accuracy)
 - Continuous model improvement
 
-#### Sprint 3.2: Smart Scheduling (Week 10-11)
+#### Sprint 3.2: Smart Scheduling (Week 11-12)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1132,7 +1143,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - AI suggests optimal booking times
 - Smart overbooking to maximize utilization
 
-#### Sprint 3.3: Natural Language Booking (Week 11-12)
+#### Sprint 3.3: Natural Language Booking (Week 12-13)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1147,23 +1158,60 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 
 ---
 
-### Phase 4: Industry Templates - Type A (Weeks 13-16)
+### Phase 4: Industry Templates - Type A (Weeks 14-17)
 
-| Template | Key Features | Target Industry |
-|----------|--------------|-----------------|
-| Healthcare | HIPAA, patient intake, insurance | Medical, dental, therapy |
-| Professional Services | Consultation types, documents | Legal, consulting, accounting |
-| Home Services | Service areas, travel time | HVAC, plumbing, contractors |
-| Beauty/Wellness | Service menu, packages | Salons, spas, fitness |
-| Restaurant | Party size, tables, occasions | Food service, hospitality |
+> **Building ALL 5 templates as decided by stakeholder**
+
+#### Sprint 4.1: Healthcare & Professional Services Templates (Week 14-15)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 4.1.1 | Build Healthcare template (HIPAA, patient intake, insurance) | L |
+| 4.1.2 | Build Professional Services template (consultation types, documents) | L |
+| 4.1.3 | Create template selection/onboarding UI | M |
+| 4.1.4 | Implement template-specific intake forms | M |
+
+**Deliverables:**
+- Healthcare template with HIPAA compliance
+- Professional Services template with intake questionnaires
+
+#### Sprint 4.2: Home Services & Beauty/Wellness Templates (Week 15-16)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 4.2.1 | Build Home Services template (service areas, travel time) | L |
+| 4.2.2 | Build Beauty/Wellness template (service menu, packages) | L |
+| 4.2.3 | Implement location/travel time configuration | M |
+| 4.2.4 | Add service package and add-on booking | M |
+
+**Deliverables:**
+- Home Services template with service area management
+- Beauty/Wellness template with service menus
+
+#### Sprint 4.3: Restaurant Template & Template System (Week 16-17)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 4.3.1 | Build Restaurant template (party size, tables, occasions) | L |
+| 4.3.2 | Implement table/resource assignment | M |
+| 4.3.3 | Build template customization UI | M |
+| 4.3.4 | Create template marketplace/gallery | M |
+
+**Deliverables:**
+- Restaurant template with table management
+- Template customization capabilities
+- All 5 industry templates complete
 
 ---
 
 ## Type B: Employee/Shift Scheduling Implementation
 
-### Phase 5: Shift Scheduling MVP (Weeks 17-20)
+> **PARALLEL DEVELOPMENT:** Type B runs simultaneously with Type A using a separate development team.
+> Week numbers below are relative to Type B team start (same as Type A Week 1).
 
-#### Sprint 5.1: Core Infrastructure (Week 17-18)
+### Phase 5: Shift Scheduling MVP (Weeks 1-4) [PARALLEL WITH TYPE A]
+
+#### Sprint 5.1: Core Infrastructure (Week 1-2)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1178,7 +1226,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Basic configuration management
 - Employee/Location/Role CRUD
 
-#### Sprint 5.2: Schedule Builder (Week 18-19)
+#### Sprint 5.2: Schedule Builder (Week 2-3)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1193,7 +1241,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Create and assign shifts to employees
 - Week view calendar
 
-#### Sprint 5.3: Availability & Publishing (Week 19-20)
+#### Sprint 5.3: Availability & Publishing (Week 3-4)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1208,7 +1256,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Conflicts detected during scheduling
 - Draft → Published workflow with notifications
 
-#### Sprint 5.4: Employee Mobile View (Week 20)
+#### Sprint 5.4: Employee Mobile View (Week 4)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1224,9 +1272,9 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 
 ---
 
-### Phase 6: Competitive Shift Features (Weeks 21-24)
+### Phase 6: Competitive Shift Features (Weeks 5-8) [PARALLEL WITH TYPE A]
 
-#### Sprint 6.1: Time-Off Management (Week 21)
+#### Sprint 6.1: Time-Off Management (Week 5)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1240,7 +1288,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Managers approve/deny requests
 - Approved time-off blocks scheduling
 
-#### Sprint 6.2: Shift Swaps (Week 21-22)
+#### Sprint 6.2: Shift Swaps (Week 5-6)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1255,7 +1303,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Peer + optional manager approval
 - Notifications throughout process
 
-#### Sprint 6.3: Open Shifts & Coverage (Week 22-23)
+#### Sprint 6.3: Open Shifts & Coverage (Week 6-7)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1269,7 +1317,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Employees claim available shifts
 - Coverage gaps visualization
 
-#### Sprint 6.4: Labor Cost & Overtime (Week 23-24)
+#### Sprint 6.4: Labor Cost & Overtime (Week 7-8)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1285,9 +1333,9 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 
 ---
 
-### Phase 7: AI-Powered Shift Features (Weeks 25-28)
+### Phase 7: AI-Powered Shift Features (Weeks 9-12) [PARALLEL WITH TYPE A]
 
-#### Sprint 7.1: Auto-Scheduling (Week 25-26)
+#### Sprint 7.1: Auto-Scheduling (Week 9-10)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1301,7 +1349,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - One-click schedule generation
 - Manual adjustments after auto-fill
 
-#### Sprint 7.2: Demand Forecasting (Week 26-27)
+#### Sprint 7.2: Demand Forecasting (Week 10-11)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1315,7 +1363,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Staffing level recommendations
 - Visual demand forecast
 
-#### Sprint 7.3: Smart Shift Filling (Week 27-28)
+#### Sprint 7.3: Smart Shift Filling (Week 11-12)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1331,9 +1379,9 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 
 ---
 
-### Phase 8: Compliance & Advanced Features (Weeks 29-32)
+### Phase 8: Compliance & Advanced Features (Weeks 13-16) [PARALLEL WITH TYPE A]
 
-#### Sprint 8.1: Labor Law Compliance (Week 29-30)
+#### Sprint 8.1: Labor Law Compliance (Week 13-14)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1347,7 +1395,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Real-time compliance checking
 - Compliance violation alerts
 
-#### Sprint 8.2: Advanced Scheduling (Week 30-31)
+#### Sprint 8.2: Advanced Scheduling (Week 14-15)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1361,7 +1409,7 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 - Rotating schedule patterns
 - Cross-location scheduling
 
-#### Sprint 8.3: Reporting & Analytics (Week 31-32)
+#### Sprint 8.3: Reporting & Analytics (Week 15-16)
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -1380,23 +1428,44 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 
 ## Implementation Timeline Summary
 
+### Parallel Development Model (APPROVED)
+
+```
+Week:    1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17
+         │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │
+TEAM A:  ├───Phase 1────┤├───Phase 2────┤├───Phase 3────┤├───Phase 4────┤
+         │ MVP + Payment ││  Competitive  ││  AI Features  ││  Templates   │
+         │               ││               ││               ││              │
+TEAM B:  ├───Phase 5────┤├───Phase 6────┤├───Phase 7────┤├───Phase 8────┤
+         │  Shift MVP   ││ Shift Features││  AI Shifts    ││  Compliance  │
+```
+
+### Type A: Appointment Scheduling (Team A)
+
 | Phase | Focus | Weeks | Duration |
 |-------|-------|-------|----------|
-| **Type A: Appointment Scheduling** |
-| Phase 1 | MVP Foundation | 1-4 | 4 weeks |
-| Phase 2 | Competitive Features | 5-8 | 4 weeks |
-| Phase 3 | AI-Powered Features | 9-12 | 4 weeks |
-| Phase 4 | Industry Templates | 13-16 | 4 weeks |
-| **Type B: Employee/Shift Scheduling** |
-| Phase 5 | Shift MVP | 17-20 | 4 weeks |
-| Phase 6 | Competitive Shift Features | 21-24 | 4 weeks |
-| Phase 7 | AI-Powered Shift Features | 25-28 | 4 weeks |
-| Phase 8 | Compliance & Advanced | 29-32 | 4 weeks |
+| Phase 1 | MVP Foundation + Payment | 1-5 | 5 weeks |
+| Phase 2 | Competitive Features | 6-9 | 4 weeks |
+| Phase 3 | AI-Powered Features | 10-13 | 4 weeks |
+| Phase 4 | Industry Templates (ALL 5) | 14-17 | 4 weeks |
 
-**Total Timeline: 32 weeks (~8 months)**
+### Type B: Employee/Shift Scheduling (Team B)
 
-> Note: Phases can be parallelized with additional development resources.
-> Type A and Type B development can overlap if separate teams work on each.
+| Phase | Focus | Weeks | Duration |
+|-------|-------|-------|----------|
+| Phase 5 | Shift Scheduling MVP | 1-4 | 4 weeks |
+| Phase 6 | Competitive Shift Features | 5-8 | 4 weeks |
+| Phase 7 | AI-Powered Shift Features | 9-12 | 4 weeks |
+| Phase 8 | Compliance & Advanced | 13-16 | 4 weeks |
+
+### Total Timeline
+
+| Scenario | Duration | Notes |
+|----------|----------|-------|
+| **Parallel Development (2 teams)** | **17 weeks (~4 months)** | Both types complete simultaneously |
+| Sequential Development (1 team) | 33 weeks (~8 months) | Type A then Type B |
+
+**✅ APPROVED: Parallel Development with 2 teams**
 
 ---
 
@@ -1478,24 +1547,20 @@ POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 | # | Question | Decision | Notes |
 |---|----------|----------|-------|
 | 1 | **Scope Priority:** Type A only or include Type B? | ✅ **BOTH** | Implementing both appointment scheduling AND employee shift scheduling |
+| 2 | **Booking Page Hosting:** Subdomains or paths? | ✅ **Paths** | `/book/acme` format, custom domains as future feature |
+| 3 | **Customer Payment Collection:** When to implement Stripe? | ✅ **Phase 1** | As early as possible - moving to Phase 1 |
+| 4 | **Widget vs. Page:** Which to prioritize? | ✅ **Page first** | Standalone page first, widget in Phase 1 Week 4 |
+| 5 | **Industry Templates:** Which template first? | ✅ **ALL** | Build all 5 templates in Phase 4 |
+| 6 | **SaaS Pricing Model:** How to charge businesses? | ✅ **Flat monthly** | Per market research, customers prefer predictable pricing |
+| 7 | **Employee Portal:** Separate app or integrated? | ✅ **Responsive web** | Mobile-responsive web for MVP |
+| 8 | **Type A + B Sequencing:** Sequential or parallel? | ✅ **PARALLEL** | Both types developed simultaneously with separate teams |
 
-### Pending Decisions
-
-| # | Question | Options | Recommendation |
-|---|----------|---------|----------------|
-| 2 | **Booking Page Hosting:** Subdomains or paths? | `acme.book.pmo.com` vs `/book/acme` | Paths for simpler implementation, custom domains as future feature |
-| 3 | **Customer Payment Collection:** When to implement Stripe? | Phase 1, Phase 2, or defer | **OPEN** - To be determined |
-| 4 | **Widget vs. Page:** Which to prioritize? | Widget first vs Page first | Standalone page first (simpler), widget in Phase 1 Week 4 |
-| 5 | **Industry Templates:** Which template first? | Healthcare, Professional Services, Home Services, Beauty/Wellness, Restaurant | **NEEDS INPUT** - Which industry to target first? |
-| 6 | **SaaS Pricing Model:** How to charge businesses? | Per-booking fees vs flat monthly | **OPEN** - To be determined |
-
-### New Questions from Type B Scope
+### Remaining Open Questions
 
 | # | Question | Options | Notes |
 |---|----------|---------|-------|
-| 7 | **Employee Portal:** Separate app or integrated? | Mobile app vs responsive web | Responsive web recommended for MVP |
-| 8 | **Type A + B Sequencing:** Sequential or parallel? | Type A first then B, or parallel development | Parallel possible with separate teams |
 | 9 | **Labor Law Templates:** Which states/countries first? | US federal, California, NY, EU | Affects Phase 8 compliance engine |
+| 10 | **Pricing Tiers:** What features in each tier? | Basic/Pro/Enterprise | Needs pricing strategy session |
 
 ---
 
