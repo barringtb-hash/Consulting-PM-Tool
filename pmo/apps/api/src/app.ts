@@ -53,6 +53,7 @@ import schedulingRouter from './modules/scheduling/scheduling.router';
 import bookingRouter from './modules/scheduling/booking.router';
 import calendarRouter from './modules/scheduling/calendar.router';
 import paymentRouter from './modules/scheduling/payment.router';
+import shiftRouter from './modules/scheduling/shift.router';
 import intakeRouter from './modules/intake/intake.router';
 // Phase 2 AI Tools
 import documentAnalyzerRouter from './modules/document-analyzer/document-analyzer.router';
@@ -424,6 +425,9 @@ export function createApp(): express.Express {
     requireModule('scheduling'),
     paymentRouter,
   );
+
+  // Type B Shift Scheduling API - requires scheduling module
+  app.use('/api/scheduling/shifts', requireModule('scheduling'), shiftRouter);
 
   // Client Intake Automator module (Tool 1.4)
   app.use('/api', requireModule('intake'), intakeRouter);
