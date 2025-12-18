@@ -4,7 +4,7 @@
  * Handles applying industry templates to scheduling configurations
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../prisma/client';
 import {
   IndustryTemplate,
   industryTemplates,
@@ -12,8 +12,6 @@ import {
   getTemplateById,
   getTemplatesByCategory,
 } from './industry-templates';
-
-const prisma = new PrismaClient();
 
 // ============================================================================
 // TYPES
