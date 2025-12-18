@@ -43,6 +43,8 @@ export * from './services/brand-voice.service';
 export * from './services/template.service';
 export * from './services/bulk-import.service';
 export * from './services/bulk-job.service';
+export * from './services/seo.service';
+export * from './services/compliance.service';
 
 // ============================================================================
 // TYPES
@@ -211,6 +213,29 @@ export async function deleteProduct(id: number) {
   return prisma.product.update({
     where: { id },
     data: { isActive: false },
+  });
+}
+
+export async function getDescription(id: number) {
+  return prisma.productDescription.findUnique({
+    where: { id },
+  });
+}
+
+export async function updateDescriptionSEOScore(id: number, seoScore: number) {
+  return prisma.productDescription.update({
+    where: { id },
+    data: { seoScore },
+  });
+}
+
+export async function updateDescriptionComplianceStatus(
+  id: number,
+  complianceStatus: 'PENDING' | 'APPROVED' | 'FLAGGED' | 'REQUIRES_REVIEW',
+) {
+  return prisma.productDescription.update({
+    where: { id },
+    data: { complianceStatus },
   });
 }
 

@@ -1262,4 +1262,340 @@ router.delete(
   },
 );
 
+// ============================================================================
+// SEO ROUTES
+// ============================================================================
+
+/**
+ * POST /api/product-descriptions/descriptions/:id/seo-score
+ * Calculate SEO score for a description
+ */
+router.post(
+  '/product-descriptions/descriptions/:id/seo-score',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid description ID' });
+      return;
+    }
+
+    try {
+      const description = await productDescService.getDescription(id);
+      if (!description) {
+        res.status(404).json({ error: 'Description not found' });
+        return;
+      }
+
+      const product = await productDescService.getProduct(
+        description.productId,
+      );
+      if (!product) {
+        res.status(404).json({ error: 'Product not found' });
+        return;
+      }
+
+      const score = productDescService.calculateSEOScore({
+        title: description.title || '',
+        shortDescription: description.shortDescription || '',
+        longDescription: description.longDescription || '',
+        bulletPoints: description.bulletPoints || [],
+        keywords: description.keywords || [],
+        metaTitle: description.metaTitle || undefined,
+        metaDescription: description.metaDescription || undefined,
+        marketplace: description.marketplace,
+        category: product.category || undefined,
+        productName: product.name,
+      });
+
+      // Update the description with the SEO score
+      await productDescService.updateDescriptionSEOScore(id, score.overall);
+
+      res.json(score);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/seo-analyze
+ * Analyze content for SEO without saving
+ */
+router.post(
+  '/product-descriptions/seo-analyze',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const {
+      title,
+      shortDescription,
+      longDescription,
+      bulletPoints,
+      keywords,
+      metaTitle,
+      metaDescription,
+      marketplace,
+      category,
+      productName,
+    } = req.body as {
+      title: string;
+      shortDescription: string;
+      longDescription: string;
+      bulletPoints: string[];
+      keywords: string[];
+      metaTitle?: string;
+      metaDescription?: string;
+      marketplace: string;
+      category?: string;
+      productName: string;
+    };
+
+    if (!title || !longDescription || !productName) {
+      res.status(400).json({
+        error: 'Title, longDescription, and productName are required',
+      });
+      return;
+    }
+
+    try {
+      const score = productDescService.calculateSEOScore({
+        title,
+        shortDescription: shortDescription || '',
+        longDescription,
+        bulletPoints: bulletPoints || [],
+        keywords: keywords || [],
+        metaTitle,
+        metaDescription,
+        marketplace:
+          (marketplace as
+            | 'GENERIC'
+            | 'AMAZON'
+            | 'EBAY'
+            | 'SHOPIFY'
+            | 'ETSY'
+            | 'WALMART') || 'GENERIC',
+        category,
+        productName,
+      });
+
+      res.json(score);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/products/:productId/keyword-suggestions
+ * Get keyword suggestions for a product
+ */
+router.get(
+  '/product-descriptions/products/:productId/keyword-suggestions',
+  async (req: AuthenticatedRequest<{ productId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const productId = Number(req.params.productId);
+    if (Number.isNaN(productId)) {
+      res.status(400).json({ error: 'Invalid product ID' });
+      return;
+    }
+
+    const marketplace =
+      (req.query.marketplace as
+        | 'GENERIC'
+        | 'AMAZON'
+        | 'EBAY'
+        | 'SHOPIFY'
+        | 'ETSY'
+        | 'WALMART') || 'GENERIC';
+
+    try {
+      const product = await productDescService.getProduct(productId);
+      if (!product) {
+        res.status(404).json({ error: 'Product not found' });
+        return;
+      }
+
+      const existingKeywords = (req.query.existing as string)?.split(',') || [];
+      const attributes = (product.attributes || {}) as Record<string, string>;
+
+      const suggestions = productDescService.generateKeywordSuggestions(
+        product.name,
+        product.category || undefined,
+        attributes,
+        existingKeywords,
+        marketplace,
+      );
+
+      res.json({ suggestions });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+// ============================================================================
+// COMPLIANCE ROUTES
+// ============================================================================
+
+/**
+ * POST /api/product-descriptions/descriptions/:id/compliance-check
+ * Check description for compliance violations
+ */
+router.post(
+  '/product-descriptions/descriptions/:id/compliance-check',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid description ID' });
+      return;
+    }
+
+    try {
+      const description = await productDescService.getDescription(id);
+      if (!description) {
+        res.status(404).json({ error: 'Description not found' });
+        return;
+      }
+
+      const product = await productDescService.getProduct(
+        description.productId,
+      );
+      if (!product || !product.config) {
+        res.status(404).json({ error: 'Product or config not found' });
+        return;
+      }
+
+      const complianceMode =
+        (req.body.complianceMode as
+          | 'NONE'
+          | 'FOOD'
+          | 'SUPPLEMENTS'
+          | 'COSMETICS'
+          | 'AUTOMOTIVE'
+          | 'MEDICAL') ||
+        product.config.complianceMode ||
+        'NONE';
+
+      const result = productDescService.checkCompliance({
+        title: description.title || '',
+        shortDescription: description.shortDescription || '',
+        longDescription: description.longDescription || '',
+        bulletPoints: description.bulletPoints || [],
+        category: product.category || undefined,
+        complianceMode,
+      });
+
+      // Update description with compliance status
+      await productDescService.updateDescriptionComplianceStatus(
+        id,
+        result.status,
+      );
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/compliance-analyze
+ * Analyze content for compliance without saving
+ */
+router.post(
+  '/product-descriptions/compliance-analyze',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const {
+      title,
+      shortDescription,
+      longDescription,
+      bulletPoints,
+      category,
+      complianceMode,
+    } = req.body as {
+      title: string;
+      shortDescription: string;
+      longDescription: string;
+      bulletPoints: string[];
+      category?: string;
+      complianceMode:
+        | 'NONE'
+        | 'FOOD'
+        | 'SUPPLEMENTS'
+        | 'COSMETICS'
+        | 'AUTOMOTIVE'
+        | 'MEDICAL';
+    };
+
+    if (!complianceMode) {
+      res.status(400).json({ error: 'complianceMode is required' });
+      return;
+    }
+
+    try {
+      const result = productDescService.checkCompliance({
+        title: title || '',
+        shortDescription: shortDescription || '',
+        longDescription: longDescription || '',
+        bulletPoints: bulletPoints || [],
+        category,
+        complianceMode,
+      });
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/detect-claims
+ * Detect claim types in text
+ */
+router.post(
+  '/product-descriptions/detect-claims',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { text } = req.body as { text: string };
+    if (!text) {
+      res.status(400).json({ error: 'text is required' });
+      return;
+    }
+
+    try {
+      const claims = productDescService.detectClaimTypes(text);
+      res.json(claims);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
 export default router;
