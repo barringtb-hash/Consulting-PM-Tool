@@ -45,6 +45,10 @@ export * from './services/bulk-import.service';
 export * from './services/bulk-job.service';
 export * from './services/seo.service';
 export * from './services/compliance.service';
+export * from './services/image-analysis.service';
+export * from './services/analytics.service';
+export * from './services/multilang.service';
+export * from './services/crm-integration.service';
 
 // ============================================================================
 // TYPES

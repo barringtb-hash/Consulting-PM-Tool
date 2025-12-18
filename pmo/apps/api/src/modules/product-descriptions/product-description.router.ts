@@ -1598,4 +1598,794 @@ router.post(
   },
 );
 
+// ============================================================================
+// IMAGE ANALYSIS ROUTES
+// ============================================================================
+
+/**
+ * POST /api/product-descriptions/analyze-image
+ * Analyze a product image using GPT-4 Vision
+ */
+router.post(
+  '/product-descriptions/analyze-image',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { imageUrl, productName, category, additionalContext } = req.body as {
+      imageUrl: string;
+      productName?: string;
+      category?: string;
+      additionalContext?: string;
+    };
+
+    if (!imageUrl) {
+      res.status(400).json({ error: 'imageUrl is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.analyzeProductImage(imageUrl, {
+        productName,
+        category,
+        additionalContext,
+      });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/analyze-multiple-images
+ * Analyze multiple product images and aggregate results
+ */
+router.post(
+  '/product-descriptions/analyze-multiple-images',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { imageUrls, productName, category, additionalContext } =
+      req.body as {
+        imageUrls: string[];
+        productName?: string;
+        category?: string;
+        additionalContext?: string;
+      };
+
+    if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+      res.status(400).json({ error: 'imageUrls array is required' });
+      return;
+    }
+
+    if (imageUrls.length > 10) {
+      res.status(400).json({ error: 'Maximum 10 images allowed' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.analyzeMultipleImages(imageUrls, {
+        productName,
+        category,
+        additionalContext,
+      });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/generate-from-image
+ * Generate a complete product description from an image
+ */
+router.post(
+  '/product-descriptions/generate-from-image',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { imageUrl, marketplace, tone, keywords, language } = req.body as {
+      imageUrl: string;
+      marketplace?:
+        | 'GENERIC'
+        | 'AMAZON'
+        | 'EBAY'
+        | 'SHOPIFY'
+        | 'ETSY'
+        | 'WALMART';
+      tone?: string;
+      keywords?: string[];
+      language?: string;
+    };
+
+    if (!imageUrl) {
+      res.status(400).json({ error: 'imageUrl is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.generateDescriptionFromImage(
+        imageUrl,
+        { marketplace, tone, keywords, language },
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+// ============================================================================
+// ANALYTICS ROUTES
+// ============================================================================
+
+/**
+ * GET /api/product-descriptions/:configId/analytics/overview
+ * Get overview analytics for a config
+ */
+router.get(
+  '/product-descriptions/:configId/analytics/overview',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const analytics = await productDescService.getOverviewAnalytics(configId);
+      res.json(analytics);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/analytics/performance
+ * Get description performance metrics
+ */
+router.get(
+  '/product-descriptions/:configId/analytics/performance',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const productId = req.query.productId
+      ? Number(req.query.productId)
+      : undefined;
+    const marketplace = req.query.marketplace as
+      | 'GENERIC'
+      | 'AMAZON'
+      | 'EBAY'
+      | 'SHOPIFY'
+      | 'ETSY'
+      | 'WALMART'
+      | 'WOOCOMMERCE'
+      | undefined;
+    const limit = Number(req.query.limit) || 50;
+    const offset = Number(req.query.offset) || 0;
+    const sortBy = (req.query.sortBy as string) || 'createdAt';
+    const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
+
+    try {
+      const result = await productDescService.getDescriptionPerformance(
+        configId,
+        {
+          productId,
+          marketplace,
+          limit,
+          offset,
+          sortBy: sortBy as
+            | 'ctr'
+            | 'conversions'
+            | 'impressions'
+            | 'seoScore'
+            | 'createdAt',
+          sortOrder,
+        },
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/analytics/ab-tests
+ * Get A/B test results
+ */
+router.get(
+  '/product-descriptions/:configId/analytics/ab-tests',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const results = await productDescService.getAllABTestResults(configId);
+      res.json({ abTests: results });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/products/:productId/ab-test
+ * Get A/B test result for a specific product
+ */
+router.get(
+  '/product-descriptions/products/:productId/ab-test',
+  async (req: AuthenticatedRequest<{ productId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const productId = Number(req.params.productId);
+    if (Number.isNaN(productId)) {
+      res.status(400).json({ error: 'Invalid product ID' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.getABTestResults(productId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/analytics/marketplaces
+ * Get analytics by marketplace
+ */
+router.get(
+  '/product-descriptions/:configId/analytics/marketplaces',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const analytics =
+        await productDescService.getMarketplaceAnalytics(configId);
+      res.json({ marketplaces: analytics });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/analytics/trends
+ * Get performance trends over time
+ */
+router.get(
+  '/product-descriptions/:configId/analytics/trends',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate as string)
+      : undefined;
+    const endDate = req.query.endDate
+      ? new Date(req.query.endDate as string)
+      : undefined;
+    const granularity =
+      (req.query.granularity as 'day' | 'week' | 'month') || 'day';
+
+    try {
+      const trends = await productDescService.getPerformanceTrends(configId, {
+        startDate,
+        endDate,
+        granularity,
+      });
+      res.json({ trends });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/analytics/generation-stats
+ * Get bulk generation job statistics
+ */
+router.get(
+  '/product-descriptions/:configId/analytics/generation-stats',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const stats = await productDescService.getGenerationStats(configId);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/analytics/seo-distribution
+ * Get SEO score distribution
+ */
+router.get(
+  '/product-descriptions/:configId/analytics/seo-distribution',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const distribution =
+        await productDescService.getSEODistribution(configId);
+      res.json(distribution);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+// ============================================================================
+// MULTI-LANGUAGE ROUTES
+// ============================================================================
+
+/**
+ * GET /api/product-descriptions/languages
+ * Get list of supported languages
+ */
+router.get(
+  '/product-descriptions/languages',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const marketplace = req.query.marketplace as
+      | 'GENERIC'
+      | 'AMAZON'
+      | 'EBAY'
+      | 'SHOPIFY'
+      | 'ETSY'
+      | 'WALMART'
+      | 'WOOCOMMERCE'
+      | undefined;
+
+    const languages = productDescService.getSupportedLanguages(marketplace);
+    res.json({ languages });
+  },
+);
+
+/**
+ * POST /api/product-descriptions/descriptions/:id/translate
+ * Translate a description to another language
+ */
+router.post(
+  '/product-descriptions/descriptions/:id/translate',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid description ID' });
+      return;
+    }
+
+    const {
+      targetLanguage,
+      culturalAdaptation,
+      preserveKeywords,
+      marketplace,
+    } = req.body as {
+      targetLanguage: string;
+      culturalAdaptation?: boolean;
+      preserveKeywords?: boolean;
+      marketplace?:
+        | 'GENERIC'
+        | 'AMAZON'
+        | 'EBAY'
+        | 'SHOPIFY'
+        | 'ETSY'
+        | 'WALMART'
+        | 'WOOCOMMERCE';
+    };
+
+    if (!targetLanguage) {
+      res.status(400).json({ error: 'targetLanguage is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.translateDescription(
+        id,
+        targetLanguage,
+        {
+          culturalAdaptation,
+          preserveKeywords,
+          marketplace,
+        },
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/descriptions/:id/create-translation
+ * Create a translated copy of a description
+ */
+router.post(
+  '/product-descriptions/descriptions/:id/create-translation',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid description ID' });
+      return;
+    }
+
+    const {
+      targetLanguage,
+      culturalAdaptation,
+      preserveKeywords,
+      marketplace,
+    } = req.body as {
+      targetLanguage: string;
+      culturalAdaptation?: boolean;
+      preserveKeywords?: boolean;
+      marketplace?:
+        | 'GENERIC'
+        | 'AMAZON'
+        | 'EBAY'
+        | 'SHOPIFY'
+        | 'ETSY'
+        | 'WALMART'
+        | 'WOOCOMMERCE';
+    };
+
+    if (!targetLanguage) {
+      res.status(400).json({ error: 'targetLanguage is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.createTranslatedDescription(
+        id,
+        targetLanguage,
+        { culturalAdaptation, preserveKeywords, marketplace },
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/batch-translate
+ * Batch translate multiple descriptions to multiple languages
+ */
+router.post(
+  '/product-descriptions/batch-translate',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const {
+      descriptionIds,
+      targetLanguages,
+      culturalAdaptation,
+      preserveKeywords,
+    } = req.body as {
+      descriptionIds: number[];
+      targetLanguages: string[];
+      culturalAdaptation?: boolean;
+      preserveKeywords?: boolean;
+    };
+
+    if (
+      !descriptionIds ||
+      !Array.isArray(descriptionIds) ||
+      descriptionIds.length === 0
+    ) {
+      res.status(400).json({ error: 'descriptionIds array is required' });
+      return;
+    }
+
+    if (
+      !targetLanguages ||
+      !Array.isArray(targetLanguages) ||
+      targetLanguages.length === 0
+    ) {
+      res.status(400).json({ error: 'targetLanguages array is required' });
+      return;
+    }
+
+    if (descriptionIds.length > 50) {
+      res.status(400).json({ error: 'Maximum 50 descriptions per batch' });
+      return;
+    }
+
+    if (targetLanguages.length > 10) {
+      res.status(400).json({ error: 'Maximum 10 target languages per batch' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.batchTranslateDescriptions(
+        descriptionIds,
+        targetLanguages,
+        { culturalAdaptation, preserveKeywords },
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/detect-language
+ * Detect the language of text
+ */
+router.post(
+  '/product-descriptions/detect-language',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { text } = req.body as { text: string };
+    if (!text) {
+      res.status(400).json({ error: 'text is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.detectLanguage(text);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/:configId/language-stats
+ * Get language statistics for a config
+ */
+router.get(
+  '/product-descriptions/:configId/language-stats',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const stats = await productDescService.getLanguageStats(configId);
+      res.json({ languages: stats });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+// ============================================================================
+// CRM INTEGRATION ROUTES
+// ============================================================================
+
+/**
+ * GET /api/product-descriptions/crm/accounts
+ * Get accounts with product description configs
+ */
+router.get(
+  '/product-descriptions/crm/accounts',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    try {
+      const accounts =
+        await productDescService.getAccountsWithProductDescriptions();
+      res.json({ accounts });
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/crm/accounts/:accountId/stats
+ * Get product description stats for an account
+ */
+router.get(
+  '/product-descriptions/crm/accounts/:accountId/stats',
+  async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const accountId = Number(req.params.accountId);
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    try {
+      const stats = await productDescService.getAccountProductStats(accountId);
+      if (!stats) {
+        res.status(404).json({ error: 'Account not found' });
+        return;
+      }
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * GET /api/product-descriptions/crm/accounts/:accountId/timeline
+ * Get product description activity timeline for an account
+ */
+router.get(
+  '/product-descriptions/crm/accounts/:accountId/timeline',
+  async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const accountId = Number(req.params.accountId);
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    const limit = Number(req.query.limit) || 50;
+    const offset = Number(req.query.offset) || 0;
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate as string)
+      : undefined;
+    const endDate = req.query.endDate
+      ? new Date(req.query.endDate as string)
+      : undefined;
+
+    try {
+      const timeline = await productDescService.getProductDescriptionTimeline(
+        accountId,
+        { limit, offset, startDate, endDate },
+      );
+      res.json(timeline);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/product-descriptions/:configId/link-account
+ * Link a product description config to an account
+ */
+router.post(
+  '/product-descriptions/:configId/link-account',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const { accountId } = req.body as { accountId: number };
+    if (!accountId || typeof accountId !== 'number') {
+      res.status(400).json({ error: 'accountId is required' });
+      return;
+    }
+
+    try {
+      const result = await productDescService.linkConfigToAccount(
+        configId,
+        accountId,
+      );
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  },
+);
+
 export default router;
