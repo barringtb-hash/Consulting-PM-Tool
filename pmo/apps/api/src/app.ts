@@ -51,6 +51,7 @@ import chatbotChannelRouter from './modules/chatbot/channels/channel.router';
 import productDescriptionRouter from './modules/product-descriptions/product-description.router';
 import schedulingRouter from './modules/scheduling/scheduling.router';
 import bookingRouter from './modules/scheduling/booking.router';
+import calendarRouter from './modules/scheduling/calendar.router';
 import intakeRouter from './modules/intake/intake.router';
 // Phase 2 AI Tools
 import documentAnalyzerRouter from './modules/document-analyzer/document-analyzer.router';
@@ -408,6 +409,13 @@ export function createApp(): express.Express {
 
   // Public Booking API (no auth required) - requires scheduling module
   app.use('/api/booking', requireModule('scheduling'), bookingRouter);
+
+  // Calendar Integration API - requires scheduling module
+  app.use(
+    '/api/scheduling/calendar',
+    requireModule('scheduling'),
+    calendarRouter,
+  );
 
   // Client Intake Automator module (Tool 1.4)
   app.use('/api', requireModule('intake'), intakeRouter);
