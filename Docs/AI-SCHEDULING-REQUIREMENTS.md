@@ -1,6 +1,6 @@
 # AI Scheduling Module - Requirements & Implementation Plan
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Date:** December 2025
 **Status:** Pending Review
 **Based On:** SMB Market Research Report, December 2025
@@ -11,12 +11,23 @@
 
 This document outlines the requirements and implementation plan to evolve our AI Scheduling module from a healthcare-focused internal tool into a comprehensive, market-competitive scheduling solution for small to medium businesses.
 
+### Scope Decision
+
+**This implementation will cover BOTH scheduling types:**
+
+| Type | Description | Primary Users |
+|------|-------------|---------------|
+| **Type A: Appointment Scheduling** | Booking appointments with external clients/customers | Professional services, healthcare, beauty/wellness, consultants |
+| **Type B: Employee/Shift Scheduling** | Managing internal staff schedules and shifts | Retail, restaurants, healthcare facilities, manufacturing |
+
 ### Current State Assessment
 
-Our existing scheduling module has solid foundations:
+Our existing scheduling module has solid foundations for **Type A (Appointments)**:
 - **Implemented:** Appointment CRUD, provider management, appointment types, availability slots, no-show prediction (rule-based), reminder scheduling (simulated), waitlist management, analytics dashboard, HIPAA compliance framework
 - **Database Ready:** 7 comprehensive Prisma models with full lifecycle tracking
 - **Frontend:** Tab-based dashboard with calendar view, appointment lists, provider management, and analytics
+
+**Type B (Employee Scheduling):** Not yet implemented - greenfield development required.
 
 ### Critical Gaps (Based on Market Research)
 
@@ -26,7 +37,8 @@ Our existing scheduling module has solid foundations:
 | Calendar integrations not active | Critical | 82% cite Google Calendar as top requirement |
 | Reminders are simulated only | Critical | 23-40% no-show reduction depends on this |
 | No video conferencing integration | High | Required for virtual appointments |
-| No payment/deposit collection | High | Revenue protection and commitment |
+| No employee shift scheduling | High | Blocks retail/restaurant/healthcare facility use cases |
+| Payment/deposit collection | TBD | Revenue protection - decision pending |
 | Generic, not industry-specific | Medium | Competitors offer templates |
 
 ---
@@ -35,29 +47,55 @@ Our existing scheduling module has solid foundations:
 
 ### 1.1 User Personas
 
-**Persona A: Business Owner/Admin**
+#### Type A: Appointment Scheduling Personas
+
+**Persona A1: Business Owner/Admin**
 - Configures scheduling settings
 - Manages providers and appointment types
 - Views analytics and reports
 - Needs: Simple setup (<30 min), mobile access, bulk actions
 
-**Persona B: Service Provider (Staff)**
+**Persona A2: Service Provider (Staff)**
 - Views their schedule
 - Confirms/reschedules appointments
 - Adds notes to appointments
 - Needs: Clear calendar view, quick status updates
 
-**Persona C: Customer/Client (End User)**
+**Persona A3: Customer/Client (End User)**
 - Books appointments online
 - Receives and responds to reminders
 - Reschedules or cancels
 - Needs: <60 second booking, no login required, mobile-friendly
 
+#### Type B: Employee/Shift Scheduling Personas
+
+**Persona B1: Manager/Scheduler**
+- Creates and publishes weekly/monthly schedules
+- Handles time-off requests and shift swaps
+- Monitors overtime and labor compliance
+- Needs: Drag-drop schedule builder, templates, conflict alerts
+
+**Persona B2: Employee**
+- Views assigned shifts on mobile
+- Submits availability preferences
+- Requests time off and shift swaps
+- Needs: Mobile app, push notifications, easy swap requests
+
+**Persona B3: HR/Compliance Officer**
+- Reviews overtime reports
+- Monitors labor law compliance
+- Audits schedule changes
+- Needs: Reports, alerts, audit trail
+
 ---
 
 ### 1.2 Functional Requirements
 
-#### Tier 1: MVP Critical (Phase 1)
+---
+
+## Type A: Appointment Scheduling Requirements
+
+#### Tier 1A: MVP Critical (Phase 1)
 
 | ID | Requirement | Description | Acceptance Criteria |
 |----|-------------|-------------|---------------------|
@@ -70,19 +108,19 @@ Our existing scheduling module has solid foundations:
 | F1.7 | **Automatic Time Zone Handling** | Detect and convert customer time zones | Auto-detect from browser, display in customer's local time, store in UTC |
 | F1.8 | **Booking Confirmation Page** | Post-booking confirmation with details | Shows appointment details, calendar add buttons (Google/Outlook/iCal), modify/cancel links |
 
-#### Tier 2: Competitive Features (Phase 2)
+#### Tier 2A: Competitive Features (Phase 2)
 
 | ID | Requirement | Description | Acceptance Criteria |
 |----|-------------|-------------|---------------------|
 | F2.1 | **Video Conferencing Integration** | Auto-generate Zoom/Meet/Teams links | Create meeting on booking, include link in confirmations and reminders |
 | F2.2 | **Custom Intake Forms** | Collect customer information at booking | Form builder UI, required/optional fields, conditional logic, data storage |
-| F2.3 | **Payment/Deposit Collection** | Stripe integration for payments | Collect deposit at booking, full payment option, refund on cancellation |
+| F2.3 | **Payment/Deposit Collection** | Stripe integration for payments | Collect deposit at booking, full payment option, refund on cancellation | **[DECISION PENDING]** |
 | F2.4 | **Rescheduling Self-Service** | Customer can reschedule without calling | Link in confirmation email, shows available alternatives, sends update notifications |
 | F2.5 | **Cancellation Self-Service** | Customer can cancel without calling | Link in confirmation, captures reason, triggers waitlist notification |
 | F2.6 | **Buffer Time Configuration** | Time between appointments | Per-provider and per-appointment-type buffers, travel time support |
 | F2.7 | **Booking Rules Engine** | Advanced booking constraints | Min/max notice, daily/weekly limits, blackout dates, recurring availability |
 
-#### Tier 3: AI-Powered Features (Phase 3)
+#### Tier 3A: AI-Powered Appointment Features (Phase 3)
 
 | ID | Requirement | Description | Acceptance Criteria |
 |----|-------------|-------------|---------------------|
@@ -92,7 +130,7 @@ Our existing scheduling module has solid foundations:
 | F3.4 | **Intelligent Overbooking** | Smart overbooking based on predictions | Calculate optimal overbooking rate, minimize customer impact |
 | F3.5 | **Automated Waitlist Matching** | Auto-offer cancelled slots to waitlist | Match preferences, priority-based notification, first-come booking |
 
-#### Tier 4: Industry Templates (Phase 4)
+#### Tier 4A: Industry Templates (Phase 4)
 
 | ID | Requirement | Description |
 |----|-------------|-------------|
@@ -101,6 +139,54 @@ Our existing scheduling module has solid foundations:
 | F4.3 | **Home Services Template** | Service areas, travel time, job categorization |
 | F4.4 | **Beauty/Wellness Template** | Service menu, multiple providers, package booking |
 | F4.5 | **Restaurant Template** | Party size, table assignment, special occasions |
+
+---
+
+## Type B: Employee/Shift Scheduling Requirements
+
+#### Tier 1B: MVP Critical (Phase 5)
+
+| ID | Requirement | Description | Acceptance Criteria |
+|----|-------------|-------------|---------------------|
+| S1.1 | **Employee Management** | Add/manage employees with roles and skills | Create employees, assign roles, set hourly rates, track certifications |
+| S1.2 | **Shift Creation** | Create individual shifts with time/location/role | Define start/end time, location, required role/skills, employee assignment |
+| S1.3 | **Schedule Builder UI** | Drag-and-drop weekly schedule builder | Visual calendar grid, drag shifts, copy/paste, week templates |
+| S1.4 | **Availability Preferences** | Employees submit preferred/unavailable times | Weekly recurring availability, one-time blocks, preference vs hard unavailable |
+| S1.5 | **Schedule Publishing** | Publish schedules to employees | Draft → Published workflow, notification on publish, locked once published |
+| S1.6 | **Employee Mobile View** | Employees view their schedules on mobile | Mobile-responsive schedule view, upcoming shifts, push notifications |
+| S1.7 | **Basic Conflict Detection** | Prevent double-booking and availability conflicts | Alert on conflicts, prevent scheduling during unavailable times |
+
+#### Tier 2B: Competitive Features (Phase 6)
+
+| ID | Requirement | Description | Acceptance Criteria |
+|----|-------------|-------------|---------------------|
+| S2.1 | **Time-Off Requests** | Employees request PTO/vacation | Submit request, manager approval workflow, calendar integration |
+| S2.2 | **Shift Swap Requests** | Employees trade shifts with each other | Request swap, peer approval, manager approval (optional), notification |
+| S2.3 | **Open Shift Board** | Post unfilled shifts for employees to claim | Manager posts open shifts, qualified employees see and claim |
+| S2.4 | **Overtime Alerts** | Warn when approaching overtime thresholds | Configurable thresholds (40hr/week), alert before scheduling, reports |
+| S2.5 | **Labor Cost Tracking** | Calculate labor costs per schedule | Hourly rates × hours, overtime premiums, budget vs actual |
+| S2.6 | **Schedule Templates** | Save and reuse schedule patterns | Save week as template, apply template, rotate templates |
+| S2.7 | **Multi-Location Support** | Manage schedules across locations | Location-based views, transfer shifts between locations |
+
+#### Tier 3B: AI-Powered Shift Features (Phase 7)
+
+| ID | Requirement | Description | Acceptance Criteria |
+|----|-------------|-------------|---------------------|
+| S3.1 | **Auto-Scheduling** | AI generates optimal schedules | Input requirements, AI assigns shifts respecting constraints |
+| S3.2 | **Demand Forecasting** | Predict staffing needs based on history | Analyze past data, predict busy periods, recommend staffing levels |
+| S3.3 | **Smart Shift Filling** | AI suggests best employees for open shifts | Consider skills, availability, preferences, fairness, overtime |
+| S3.4 | **Fatigue/Compliance Monitoring** | Track rest periods and compliance | Alert on insufficient rest between shifts, break compliance |
+| S3.5 | **Schedule Optimization** | Optimize existing schedules for cost/coverage | Minimize labor cost while maintaining coverage, balance workload |
+
+#### Tier 4B: Advanced Compliance (Phase 8)
+
+| ID | Requirement | Description |
+|----|-------------|-------------|
+| S4.1 | **Labor Law Compliance Engine** | Configurable rules for state/federal labor laws |
+| S4.2 | **Break Scheduling** | Automatic break insertion per legal requirements |
+| S4.3 | **Minor Work Restrictions** | Enforce hour limits for employees under 18 |
+| S4.4 | **Predictive Scheduling Compliance** | Support fair workweek laws (advance notice, etc.) |
+| S4.5 | **Audit Trail & Reporting** | Complete history of schedule changes for compliance |
 
 ---
 
@@ -373,6 +459,339 @@ enum PaymentType {
   FULL
   REFUND
 }
+
+// ============================================
+// TYPE B: EMPLOYEE/SHIFT SCHEDULING MODELS
+// ============================================
+
+// Shift scheduling configuration (separate from appointment config)
+model ShiftSchedulingConfig {
+  id              String   @id @default(cuid())
+  tenantId        String
+  accountId       String?  // Link to Account/business
+
+  // Business settings
+  businessName    String
+  timezone        String   @default("America/New_York")
+  weekStartDay    Int      @default(0)  // 0 = Sunday, 1 = Monday
+
+  // Overtime rules
+  weeklyOvertimeThreshold  Int @default(40)  // Hours before overtime
+  dailyOvertimeThreshold   Int?              // Optional daily threshold
+  overtimeMultiplier       Decimal @default(1.5)
+
+  // Compliance settings
+  minRestBetweenShifts     Int @default(8)   // Minimum hours between shifts
+  maxConsecutiveDays       Int @default(6)   // Max days without day off
+  requireBreaks            Boolean @default(true)
+  breakDurationMinutes     Int @default(30)
+  breakAfterHours          Int @default(6)   // Require break after X hours
+
+  // Notification settings
+  schedulePublishLeadDays  Int @default(7)   // Days in advance to publish
+  enableShiftReminders     Boolean @default(true)
+  reminderHoursBefore      Int @default(12)
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employees       Employee[]
+  shifts          Shift[]
+  schedules       Schedule[]
+  locations       ShiftLocation[]
+  roles           ShiftRole[]
+
+  @@index([tenantId])
+  @@index([accountId])
+}
+
+// Employee record for shift scheduling
+model Employee {
+  id              String   @id @default(cuid())
+  configId        String
+  config          ShiftSchedulingConfig @relation(fields: [configId], references: [id])
+  userId          String?  // Link to User if they have system access
+
+  // Basic info
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  employeeNumber  String?  // External employee ID
+
+  // Employment details
+  roleId          String?
+  role            ShiftRole? @relation(fields: [roleId], references: [id])
+  hourlyRate      Decimal?
+  employmentType  EmploymentType @default(FULL_TIME)
+  hireDate        DateTime?
+
+  // Skills and certifications
+  skills          Json?    // Array of skill tags
+  certifications  Json?    // Array of { name, expiresAt }
+
+  // Scheduling preferences
+  maxHoursPerWeek Int?
+  minHoursPerWeek Int?
+  preferredLocations Json? // Array of location IDs
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shifts          Shift[]
+  availability    EmployeeAvailability[]
+  timeOffRequests TimeOffRequest[]
+  swapRequestsFrom ShiftSwapRequest[] @relation("SwapRequester")
+  swapRequestsTo   ShiftSwapRequest[] @relation("SwapTarget")
+
+  @@unique([configId, email])
+  @@index([configId])
+  @@index([roleId])
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACTOR
+  SEASONAL
+  TEMPORARY
+}
+
+// Locations/departments for multi-location scheduling
+model ShiftLocation {
+  id              String   @id @default(cuid())
+  configId        String
+  config          ShiftSchedulingConfig @relation(fields: [configId], references: [id])
+
+  name            String
+  address         String?
+  timezone        String?  // Override config timezone
+  color           String   @default("#3B82F6")
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shifts          Shift[]
+
+  @@index([configId])
+}
+
+// Job roles/positions
+model ShiftRole {
+  id              String   @id @default(cuid())
+  configId        String
+  config          ShiftSchedulingConfig @relation(fields: [configId], references: [id])
+
+  name            String   // e.g., "Server", "Manager", "Cashier"
+  description     String?
+  color           String   @default("#10B981")
+  defaultHourlyRate Decimal?
+
+  // Requirements
+  requiredSkills  Json?    // Skills needed for this role
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  employees       Employee[]
+  shifts          Shift[]
+
+  @@index([configId])
+}
+
+// Weekly/monthly schedule container
+model Schedule {
+  id              String   @id @default(cuid())
+  configId        String
+  config          ShiftSchedulingConfig @relation(fields: [configId], references: [id])
+
+  name            String?  // e.g., "Week of Dec 16, 2025"
+  startDate       DateTime
+  endDate         DateTime
+  status          ScheduleStatus @default(DRAFT)
+
+  publishedAt     DateTime?
+  publishedBy     String?  // User ID who published
+
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shifts          Shift[]
+
+  @@index([configId])
+  @@index([startDate, endDate])
+}
+
+enum ScheduleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// Individual shift assignment
+model Shift {
+  id              String   @id @default(cuid())
+  configId        String
+  config          ShiftSchedulingConfig @relation(fields: [configId], references: [id])
+  scheduleId      String?
+  schedule        Schedule? @relation(fields: [scheduleId], references: [id])
+
+  // Assignment
+  employeeId      String?
+  employee        Employee? @relation(fields: [employeeId], references: [id])
+  roleId          String?
+  role            ShiftRole? @relation(fields: [roleId], references: [id])
+  locationId      String?
+  location        ShiftLocation? @relation(fields: [locationId], references: [id])
+
+  // Timing
+  startTime       DateTime
+  endTime         DateTime
+  breakMinutes    Int      @default(0)
+
+  // Status
+  status          ShiftStatus @default(SCHEDULED)
+  isOpen          Boolean  @default(false)  // Open for claiming
+
+  // Notes
+  notes           String?
+  color           String?  // Override role/location color
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  swapRequests    ShiftSwapRequest[]
+
+  @@index([configId])
+  @@index([scheduleId])
+  @@index([employeeId])
+  @@index([startTime, endTime])
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+// Employee availability preferences
+model EmployeeAvailability {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+
+  // Recurring weekly availability
+  dayOfWeek       Int?     // 0-6 (Sunday-Saturday), null for specific date
+  specificDate    DateTime? // For one-time availability/unavailability
+
+  startTime       String   // "09:00" format
+  endTime         String   // "17:00" format
+
+  type            AvailabilityType @default(AVAILABLE)
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([dayOfWeek])
+  @@index([specificDate])
+}
+
+enum AvailabilityType {
+  AVAILABLE
+  PREFERRED
+  UNAVAILABLE
+}
+
+// Time-off requests (PTO, vacation, sick)
+model TimeOffRequest {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+
+  startDate       DateTime
+  endDate         DateTime
+  type            TimeOffType
+  reason          String?
+
+  status          TimeOffStatus @default(PENDING)
+  reviewedBy      String?  // User ID of reviewer
+  reviewedAt      DateTime?
+  reviewNotes     String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([startDate, endDate])
+  @@index([status])
+}
+
+enum TimeOffType {
+  VACATION
+  SICK
+  PERSONAL
+  BEREAVEMENT
+  JURY_DUTY
+  UNPAID
+  OTHER
+}
+
+enum TimeOffStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CANCELLED
+}
+
+// Shift swap requests between employees
+model ShiftSwapRequest {
+  id              String   @id @default(cuid())
+  shiftId         String
+  shift           Shift    @relation(fields: [shiftId], references: [id])
+
+  requesterId     String
+  requester       Employee @relation("SwapRequester", fields: [requesterId], references: [id])
+  targetEmployeeId String?  // Null if open swap (anyone can take)
+  targetEmployee  Employee? @relation("SwapTarget", fields: [targetEmployeeId], references: [id])
+
+  offeredShiftId  String?  // Shift offered in exchange (null for giveaway)
+
+  status          SwapStatus @default(PENDING)
+  reason          String?
+
+  // Approval chain
+  peerApprovedAt  DateTime?
+  managerApprovedAt DateTime?
+  managerApprovedBy String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([shiftId])
+  @@index([requesterId])
+  @@index([targetEmployeeId])
+  @@index([status])
+}
+
+enum SwapStatus {
+  PENDING
+  PEER_APPROVED
+  APPROVED
+  DENIED
+  CANCELLED
+  EXPIRED
+}
 ```
 
 ### 2.3 New API Endpoints
@@ -427,6 +846,96 @@ GET /api/scheduling/calendar/outlook/callback
 GET /api/scheduling/:configId/calendar/integrations
 POST /api/scheduling/:configId/calendar/sync  // Trigger manual sync
 DELETE /api/scheduling/:configId/calendar/:integrationId
+```
+
+#### Type B: Shift Scheduling API (Authenticated)
+
+```typescript
+// Configuration
+GET /api/shifts/configs                        // List configs
+POST /api/shifts/configs                       // Create config
+GET /api/shifts/configs/:configId              // Get config
+PATCH /api/shifts/configs/:configId            // Update config
+
+// Employees
+GET /api/shifts/:configId/employees            // List employees
+POST /api/shifts/:configId/employees           // Create employee
+GET /api/shifts/employees/:id                  // Get employee
+PATCH /api/shifts/employees/:id                // Update employee
+DELETE /api/shifts/employees/:id               // Soft delete
+
+// Locations
+GET /api/shifts/:configId/locations            // List locations
+POST /api/shifts/:configId/locations           // Create location
+PATCH /api/shifts/locations/:id                // Update location
+DELETE /api/shifts/locations/:id               // Delete location
+
+// Roles
+GET /api/shifts/:configId/roles                // List roles
+POST /api/shifts/:configId/roles               // Create role
+PATCH /api/shifts/roles/:id                    // Update role
+DELETE /api/shifts/roles/:id                   // Delete role
+
+// Schedules
+GET /api/shifts/:configId/schedules            // List schedules
+POST /api/shifts/:configId/schedules           // Create schedule
+GET /api/shifts/schedules/:id                  // Get schedule with shifts
+PATCH /api/shifts/schedules/:id                // Update schedule
+POST /api/shifts/schedules/:id/publish         // Publish schedule
+DELETE /api/shifts/schedules/:id               // Delete draft schedule
+
+// Shifts
+GET /api/shifts/:configId/shifts               // List shifts (with date filters)
+POST /api/shifts/:configId/shifts              // Create shift
+GET /api/shifts/shifts/:id                     // Get shift
+PATCH /api/shifts/shifts/:id                   // Update shift
+DELETE /api/shifts/shifts/:id                  // Delete shift
+POST /api/shifts/shifts/:id/assign             // Assign employee
+POST /api/shifts/shifts/:id/unassign           // Unassign employee
+
+// Open Shifts
+GET /api/shifts/:configId/open-shifts          // List open shifts
+POST /api/shifts/shifts/:id/claim              // Employee claims shift
+
+// Employee Availability
+GET /api/shifts/employees/:id/availability     // Get employee availability
+POST /api/shifts/employees/:id/availability    // Add availability
+PATCH /api/shifts/availability/:id             // Update availability
+DELETE /api/shifts/availability/:id            // Delete availability
+
+// Time-Off Requests
+GET /api/shifts/:configId/time-off             // List time-off requests
+POST /api/shifts/employees/:id/time-off        // Request time off
+PATCH /api/shifts/time-off/:id                 // Update request
+POST /api/shifts/time-off/:id/approve          // Approve request
+POST /api/shifts/time-off/:id/deny             // Deny request
+
+// Shift Swaps
+GET /api/shifts/:configId/swap-requests        // List swap requests
+POST /api/shifts/shifts/:id/swap-request       // Create swap request
+POST /api/shifts/swap-requests/:id/approve     // Approve swap (peer or manager)
+POST /api/shifts/swap-requests/:id/deny        // Deny swap
+
+// Analytics & Reports
+GET /api/shifts/:configId/analytics            // Dashboard stats
+GET /api/shifts/:configId/labor-costs          // Labor cost report
+GET /api/shifts/:configId/overtime-alerts      // Overtime warnings
+GET /api/shifts/:configId/coverage             // Coverage analysis
+```
+
+#### Employee Self-Service API (Limited Auth - Employee Portal)
+
+```typescript
+// Employee views their own data
+GET /api/employee-portal/my-shifts             // My upcoming shifts
+GET /api/employee-portal/my-schedule           // My schedule view
+GET /api/employee-portal/my-availability       // My availability
+POST /api/employee-portal/my-availability      // Update my availability
+GET /api/employee-portal/my-time-off           // My time-off requests
+POST /api/employee-portal/my-time-off          // Request time off
+GET /api/employee-portal/open-shifts           // Available open shifts
+POST /api/employee-portal/open-shifts/:id/claim // Claim open shift
+POST /api/employee-portal/shifts/:id/swap      // Request shift swap
 ```
 
 ### 2.4 Booking Widget Architecture
@@ -558,7 +1067,10 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 - Forms display during booking
 - Responses stored with appointments
 
-#### Sprint 2.3: Payment Integration (Week 6-7)
+#### Sprint 2.3: Payment Integration (Week 6-7) **[DECISION PENDING]**
+
+> **⚠️ OPEN ITEM:** Payment integration scope and timing to be determined.
+> Options include: deposits at booking, full payment, or deferring to later phase.
 
 | Task | Description | Effort |
 |------|-------------|--------|
@@ -569,7 +1081,7 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 | 2.3.5 | Implement refund on cancellation | M |
 | 2.3.6 | Build payment reporting in admin | M |
 
-**Deliverables:**
+**Deliverables (if approved):**
 - Collect deposits/payments at booking
 - Automatic refunds on cancellation
 - Payment history and reporting
@@ -635,7 +1147,7 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 
 ---
 
-### Phase 4: Industry Templates (Weeks 13-16)
+### Phase 4: Industry Templates - Type A (Weeks 13-16)
 
 | Template | Key Features | Target Industry |
 |----------|--------------|-----------------|
@@ -647,9 +1159,250 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 
 ---
 
+## Type B: Employee/Shift Scheduling Implementation
+
+### Phase 5: Shift Scheduling MVP (Weeks 17-20)
+
+#### Sprint 5.1: Core Infrastructure (Week 17-18)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 5.1.1 | Add all Type B models to Prisma schema | M |
+| 5.1.2 | Create ShiftSchedulingConfig CRUD endpoints | M |
+| 5.1.3 | Build Employee management API | M |
+| 5.1.4 | Build Location and Role management API | M |
+| 5.1.5 | Create admin dashboard shell for shift scheduling | L |
+
+**Deliverables:**
+- Database models migrated
+- Basic configuration management
+- Employee/Location/Role CRUD
+
+#### Sprint 5.2: Schedule Builder (Week 18-19)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 5.2.1 | Build Schedule model API (create, list, get) | M |
+| 5.2.2 | Build Shift CRUD API | M |
+| 5.2.3 | Create drag-and-drop schedule builder UI | XL |
+| 5.2.4 | Implement week view calendar component | L |
+| 5.2.5 | Add shift assignment functionality | M |
+
+**Deliverables:**
+- Visual schedule builder with drag-and-drop
+- Create and assign shifts to employees
+- Week view calendar
+
+#### Sprint 5.3: Availability & Publishing (Week 19-20)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 5.3.1 | Build Employee Availability API | M |
+| 5.3.2 | Create availability input UI (employee view) | L |
+| 5.3.3 | Implement conflict detection logic | L |
+| 5.3.4 | Build schedule publish workflow | M |
+| 5.3.5 | Send notifications on schedule publish | M |
+
+**Deliverables:**
+- Employees can set weekly availability
+- Conflicts detected during scheduling
+- Draft → Published workflow with notifications
+
+#### Sprint 5.4: Employee Mobile View (Week 20)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 5.4.1 | Build employee portal API endpoints | M |
+| 5.4.2 | Create mobile-responsive employee schedule view | L |
+| 5.4.3 | Implement push notification setup | M |
+| 5.4.4 | Add shift reminder notifications | M |
+
+**Deliverables:**
+- Employees view their schedules on mobile
+- Push notifications for schedule changes
+- Shift reminders
+
+---
+
+### Phase 6: Competitive Shift Features (Weeks 21-24)
+
+#### Sprint 6.1: Time-Off Management (Week 21)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 6.1.1 | Build Time-Off Request API | M |
+| 6.1.2 | Create time-off request UI (employee) | M |
+| 6.1.3 | Build manager approval workflow UI | M |
+| 6.1.4 | Integrate time-off with schedule builder | M |
+
+**Deliverables:**
+- Employees request time off
+- Managers approve/deny requests
+- Approved time-off blocks scheduling
+
+#### Sprint 6.2: Shift Swaps (Week 21-22)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 6.2.1 | Build Shift Swap Request API | M |
+| 6.2.2 | Create swap request UI | M |
+| 6.2.3 | Implement peer approval flow | M |
+| 6.2.4 | Add manager approval option | M |
+| 6.2.5 | Send notifications for swap requests | S |
+
+**Deliverables:**
+- Employees request shift swaps
+- Peer + optional manager approval
+- Notifications throughout process
+
+#### Sprint 6.3: Open Shifts & Coverage (Week 22-23)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 6.3.1 | Build open shift board API | M |
+| 6.3.2 | Create open shift posting UI (manager) | M |
+| 6.3.3 | Build open shift claiming UI (employee) | M |
+| 6.3.4 | Implement coverage analysis report | L |
+
+**Deliverables:**
+- Managers post open shifts
+- Employees claim available shifts
+- Coverage gaps visualization
+
+#### Sprint 6.4: Labor Cost & Overtime (Week 23-24)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 6.4.1 | Implement labor cost calculation engine | L |
+| 6.4.2 | Build overtime detection and alerts | M |
+| 6.4.3 | Create labor cost reporting UI | L |
+| 6.4.4 | Add budget vs actual comparison | M |
+
+**Deliverables:**
+- Real-time labor cost tracking
+- Overtime warnings during scheduling
+- Labor cost reports and forecasts
+
+---
+
+### Phase 7: AI-Powered Shift Features (Weeks 25-28)
+
+#### Sprint 7.1: Auto-Scheduling (Week 25-26)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 7.1.1 | Define scheduling constraints model | M |
+| 7.1.2 | Build constraint satisfaction solver | XL |
+| 7.1.3 | Implement "auto-fill" schedule feature | L |
+| 7.1.4 | Add manual override capabilities | M |
+
+**Deliverables:**
+- AI generates schedules respecting all constraints
+- One-click schedule generation
+- Manual adjustments after auto-fill
+
+#### Sprint 7.2: Demand Forecasting (Week 26-27)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 7.2.1 | Build historical data analysis pipeline | L |
+| 7.2.2 | Implement demand prediction model | L |
+| 7.2.3 | Create staffing recommendations UI | M |
+| 7.2.4 | Integrate with schedule builder | M |
+
+**Deliverables:**
+- Predict busy periods from history
+- Staffing level recommendations
+- Visual demand forecast
+
+#### Sprint 7.3: Smart Shift Filling (Week 27-28)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 7.3.1 | Build employee ranking algorithm | L |
+| 7.3.2 | Implement fairness balancing | M |
+| 7.3.3 | Add skill-based matching | M |
+| 7.3.4 | Create "suggested employees" for open shifts | M |
+
+**Deliverables:**
+- AI suggests best employees for shifts
+- Fairness in shift distribution
+- Skill-based recommendations
+
+---
+
+### Phase 8: Compliance & Advanced Features (Weeks 29-32)
+
+#### Sprint 8.1: Labor Law Compliance (Week 29-30)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 8.1.1 | Build configurable compliance rules engine | L |
+| 8.1.2 | Implement common labor law templates | L |
+| 8.1.3 | Add compliance violation alerts | M |
+| 8.1.4 | Create compliance dashboard | M |
+
+**Deliverables:**
+- Configurable labor law rules
+- Real-time compliance checking
+- Compliance violation alerts
+
+#### Sprint 8.2: Advanced Scheduling (Week 30-31)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 8.2.1 | Implement schedule templates | M |
+| 8.2.2 | Add rotating schedule support | L |
+| 8.2.3 | Build multi-location scheduling | L |
+| 8.2.4 | Implement schedule versioning | M |
+
+**Deliverables:**
+- Reusable schedule templates
+- Rotating schedule patterns
+- Cross-location scheduling
+
+#### Sprint 8.3: Reporting & Analytics (Week 31-32)
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| 8.3.1 | Build comprehensive analytics dashboard | L |
+| 8.3.2 | Create exportable reports | M |
+| 8.3.3 | Implement audit trail | M |
+| 8.3.4 | Add payroll integration exports | M |
+
+**Deliverables:**
+- Full analytics dashboard
+- Exportable reports (PDF, CSV)
+- Complete audit trail
+- Payroll system exports
+
+---
+
+## Implementation Timeline Summary
+
+| Phase | Focus | Weeks | Duration |
+|-------|-------|-------|----------|
+| **Type A: Appointment Scheduling** |
+| Phase 1 | MVP Foundation | 1-4 | 4 weeks |
+| Phase 2 | Competitive Features | 5-8 | 4 weeks |
+| Phase 3 | AI-Powered Features | 9-12 | 4 weeks |
+| Phase 4 | Industry Templates | 13-16 | 4 weeks |
+| **Type B: Employee/Shift Scheduling** |
+| Phase 5 | Shift MVP | 17-20 | 4 weeks |
+| Phase 6 | Competitive Shift Features | 21-24 | 4 weeks |
+| Phase 7 | AI-Powered Shift Features | 25-28 | 4 weeks |
+| Phase 8 | Compliance & Advanced | 29-32 | 4 weeks |
+
+**Total Timeline: 32 weeks (~8 months)**
+
+> Note: Phases can be parallelized with additional development resources.
+> Type A and Type B development can overlap if separate teams work on each.
+
+---
+
 ## Part 4: Success Metrics
 
-### Key Performance Indicators
+### Type A: Appointment Scheduling KPIs
 
 | Metric | Current | Phase 1 Target | Phase 2 Target |
 |--------|---------|----------------|----------------|
@@ -659,6 +1412,19 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 | Calendar sync reliability | 0% | 95% | 99.9% |
 | Reminder delivery rate | 0% | 95% | 98% |
 | Customer satisfaction | N/A | 4.0/5 | 4.5/5 |
+
+### Type B: Employee/Shift Scheduling KPIs
+
+| Metric | Current | Phase 5 Target | Phase 6 Target |
+|--------|---------|----------------|----------------|
+| Schedule creation time | N/A | <30 min/week | <15 min/week |
+| Schedule conflict rate | N/A | <5% | <2% |
+| Time-off request turnaround | N/A | <24 hours | <4 hours |
+| Shift swap completion rate | N/A | 70% | 85% |
+| Open shift fill rate | N/A | 80% | 95% |
+| Employee schedule view adoption | N/A | 60% | 90% |
+| Labor law compliance rate | N/A | 95% | 99% |
+| Overtime violations prevented | N/A | 80% | 95% |
 
 ### Tracking Implementation
 
@@ -707,27 +1473,35 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 
 ## Part 7: Open Questions for Review
 
-1. **Scope Priority:** Should we focus on appointment scheduling (Type A) only, or include employee shift scheduling (Type B)?
-   - *Recommendation:* Type A first - faster ROI, broader market applicability
+### Resolved Decisions
 
-2. **Booking Page Hosting:** Should booking pages be subdomains (acme.book.pmo.com) or paths (/book/acme)?
-   - *Recommendation:* Paths for simpler implementation, custom domains as future feature
+| # | Question | Decision | Notes |
+|---|----------|----------|-------|
+| 1 | **Scope Priority:** Type A only or include Type B? | ✅ **BOTH** | Implementing both appointment scheduling AND employee shift scheduling |
 
-3. **Payment Model:** Should payment processing be included in Phase 1 or deferred to Phase 2?
-   - *Recommendation:* Phase 2 - adds complexity, not critical for initial launch
+### Pending Decisions
 
-4. **Widget vs. Page:** Should we prioritize the embeddable widget or standalone booking page?
-   - *Recommendation:* Standalone page first (simpler), widget in Phase 1 Week 4
+| # | Question | Options | Recommendation |
+|---|----------|---------|----------------|
+| 2 | **Booking Page Hosting:** Subdomains or paths? | `acme.book.pmo.com` vs `/book/acme` | Paths for simpler implementation, custom domains as future feature |
+| 3 | **Customer Payment Collection:** When to implement Stripe? | Phase 1, Phase 2, or defer | **OPEN** - To be determined |
+| 4 | **Widget vs. Page:** Which to prioritize? | Widget first vs Page first | Standalone page first (simpler), widget in Phase 1 Week 4 |
+| 5 | **Industry Templates:** Which template first? | Healthcare, Professional Services, Home Services, Beauty/Wellness, Restaurant | **NEEDS INPUT** - Which industry to target first? |
+| 6 | **SaaS Pricing Model:** How to charge businesses? | Per-booking fees vs flat monthly | **OPEN** - To be determined |
 
-5. **Industry Templates:** Which template should be built first?
-   - *Recommendation:* Professional Services (aligns with consulting focus)
+### New Questions from Type B Scope
 
-6. **Pricing Model:** Per-booking fees vs. flat monthly?
-   - *Recommendation:* Flat monthly (market research shows customers dislike per-booking)
+| # | Question | Options | Notes |
+|---|----------|---------|-------|
+| 7 | **Employee Portal:** Separate app or integrated? | Mobile app vs responsive web | Responsive web recommended for MVP |
+| 8 | **Type A + B Sequencing:** Sequential or parallel? | Type A first then B, or parallel development | Parallel possible with separate teams |
+| 9 | **Labor Law Templates:** Which states/countries first? | US federal, California, NY, EU | Affects Phase 8 compliance engine |
 
 ---
 
 ## Appendix A: Competitive Feature Comparison
+
+### Type A: Appointment Scheduling Competitors
 
 | Feature | Calendly | Acuity | Cal.com | Our Tool (Current) | Our Tool (Phase 2) |
 |---------|----------|--------|---------|--------------------|--------------------|
@@ -736,7 +1510,7 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 | Outlook Sync | ✅ | ✅ | ✅ | ❌ | ✅ |
 | SMS Reminders | ✅ | ✅ | ✅ | Simulated | ✅ |
 | Email Reminders | ✅ | ✅ | ✅ | Simulated | ✅ |
-| Payment Collection | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Payment Collection | ✅ | ✅ | ✅ | ❌ | TBD |
 | No-Show Prediction | ❌ | ❌ | ❌ | ✅ | ✅ (ML) |
 | Waitlist | ❌ | ✅ | ❌ | ✅ | ✅ |
 | Intake Forms | Limited | ✅ | ✅ | ❌ | ✅ |
@@ -744,6 +1518,26 @@ DELETE /api/scheduling/:configId/calendar/:integrationId
 | Embeddable Widget | ✅ | ✅ | ✅ | ❌ | ✅ |
 | AI Suggestions | ❌ | ❌ | ❌ | ❌ | ✅ |
 | NL Booking | ❌ | ❌ | ❌ | ❌ | ✅ (Phase 3) |
+
+### Type B: Employee/Shift Scheduling Competitors
+
+| Feature | When I Work | Deputy | Homebase | 7shifts | Our Tool (Phase 6) |
+|---------|-------------|--------|----------|---------|-------------------|
+| Schedule Builder | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Employee App | ✅ | ✅ | ✅ | ✅ | ✅ (Web) |
+| Availability Mgmt | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Time-Off Requests | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Shift Swaps | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Open Shifts | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Overtime Alerts | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Labor Costing | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Auto-Scheduling | Limited | ✅ | ❌ | Limited | ✅ (AI) |
+| Demand Forecasting | ❌ | ✅ | ❌ | ✅ | ✅ (AI) |
+| Compliance Engine | Basic | ✅ | Basic | ✅ | ✅ |
+| Multi-Location | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Combined A+B** | ❌ | ❌ | ❌ | ❌ | **✅ Unique** |
+
+**Our Differentiator:** Single platform offering both appointment scheduling (Type A) AND employee shift scheduling (Type B) - competitors typically only offer one.
 
 ---
 
