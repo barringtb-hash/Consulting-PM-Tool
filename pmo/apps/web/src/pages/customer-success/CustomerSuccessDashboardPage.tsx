@@ -266,9 +266,7 @@ function CockpitSection(): JSX.Element {
           <p className="font-medium text-neutral-900 dark:text-neutral-100">
             No CTAs to action
           </p>
-          <p className="text-sm mt-1">
-            Great job! You&apos;re all caught up.
-          </p>
+          <p className="text-sm mt-1">Great job! You&apos;re all caught up.</p>
         </div>
       ) : (
         <div className="space-y-3">
