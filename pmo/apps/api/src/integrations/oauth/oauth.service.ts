@@ -9,59 +9,15 @@
  */
 
 import { prisma } from '../../prisma/client';
-import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
-import { env } from '../../config/env';
+import { randomBytes } from 'crypto';
 import { getProviderConfig } from './provider-configs';
+import { encryptCredentials, decryptCredentials } from '../../utils/crypto';
 import type {
   IntegrationProvider,
   IntegrationStatus,
   OAuthTokens,
   SyncSettings,
 } from '../integration.types';
-
-// Encryption settings
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;
-
-// ============================================================================
-// CREDENTIAL ENCRYPTION
-// ============================================================================
-
-/**
- * Encrypt sensitive credentials for storage.
- */
-function encryptCredentials(data: Record<string, unknown>): string {
-  const key = Buffer.from(env.jwtSecret).slice(0, 32);
-  const iv = randomBytes(IV_LENGTH);
-  const cipher = createCipheriv(ALGORITHM, key, iv);
-
-  const jsonData = JSON.stringify(data);
-  let encrypted = cipher.update(jsonData, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-
-  const authTag = cipher.getAuthTag();
-
-  // Combine IV + auth tag + encrypted data
-  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
-}
-
-/**
- * Decrypt stored credentials.
- */
-function decryptCredentials(encryptedData: string): Record<string, unknown> {
-  const key = Buffer.from(env.jwtSecret).slice(0, 32);
-  const [ivHex, authTagHex, encrypted] = encryptedData.split(':');
-
-  const iv = Buffer.from(ivHex, 'hex');
-  const authTag = Buffer.from(authTagHex, 'hex');
-  const decipher = createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-
-  return JSON.parse(decrypted);
-}
 
 // ============================================================================
 // OAUTH FLOWS

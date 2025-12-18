@@ -11,6 +11,7 @@
 
 import { prisma } from '../../prisma/client';
 import { CalendarPlatform } from '@prisma/client';
+import { encryptString, decryptString, isEncrypted } from '../../utils/crypto';
 
 // ============================================================================
 // TYPES
@@ -168,6 +169,11 @@ async function getValidAccessToken(
     return null;
   }
 
+  // Decrypt access token (supports both encrypted and legacy plaintext)
+  const accessToken = isEncrypted(integration.accessToken)
+    ? decryptString(integration.accessToken)
+    : integration.accessToken;
+
   // Check if token is expired (with 5 minute buffer)
   const now = new Date();
   const expiresAt = integration.tokenExpiresAt
@@ -176,7 +182,7 @@ async function getValidAccessToken(
   const isExpired = expiresAt.getTime() - 5 * 60 * 1000 < now.getTime();
 
   if (!isExpired) {
-    return integration.accessToken;
+    return accessToken;
   }
 
   // Token expired, try to refresh
@@ -192,13 +198,21 @@ async function getValidAccessToken(
   }
 
   try {
-    const tokens = await refreshGoogleToken(integration.refreshToken);
+    // Decrypt refresh token (supports both encrypted and legacy plaintext)
+    const refreshToken = isEncrypted(integration.refreshToken)
+      ? decryptString(integration.refreshToken)
+      : integration.refreshToken;
 
+    const tokens = await refreshGoogleToken(refreshToken);
+
+    // Encrypt new tokens before storage
     await prisma.calendarIntegration.update({
       where: { id: integrationId },
       data: {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token || integration.refreshToken,
+        accessToken: encryptString(tokens.access_token),
+        refreshToken: tokens.refresh_token
+          ? encryptString(tokens.refresh_token)
+          : integration.refreshToken, // Keep existing encrypted refresh token
         tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
         lastSyncError: null,
       },
@@ -241,9 +255,12 @@ export async function saveCalendarIntegration(
     },
   });
 
+  // Encrypt tokens before storage
   const data = {
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token || null,
+    accessToken: encryptString(tokens.access_token),
+    refreshToken: tokens.refresh_token
+      ? encryptString(tokens.refresh_token)
+      : null,
     tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
     calendarId,
     syncEnabled: true,
