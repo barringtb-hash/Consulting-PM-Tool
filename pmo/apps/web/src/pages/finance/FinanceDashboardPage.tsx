@@ -482,7 +482,7 @@ export default function FinanceDashboardPage() {
       {/* AI Insights & Forecast */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Spending Forecast */}
-        <Card className="p-6">
+        <Card className="p-6 h-full">
           <div className="flex items-center gap-2 mb-6">
             <div className="rounded-lg bg-purple-50 dark:bg-purple-900/30 p-2">
               <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -595,7 +595,7 @@ export default function FinanceDashboardPage() {
         </Card>
 
         {/* AI Insights */}
-        <Card className="p-6">
+        <Card className="p-6 h-full">
           <div className="flex items-center gap-2 mb-6">
             <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 p-2">
               <Lightbulb className="h-5 w-5 text-amber-600 dark:text-amber-400" />
