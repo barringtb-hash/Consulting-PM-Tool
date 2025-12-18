@@ -174,11 +174,7 @@ function StatCard({
     );
   }
 
-  return (
-    <Card className="p-6 h-full">
-      {cardContent}
-    </Card>
-  );
+  return <Card className="p-6 h-full">{cardContent}</Card>;
 }
 
 function CategoryBreakdown({
