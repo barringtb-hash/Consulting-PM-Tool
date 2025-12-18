@@ -52,6 +52,7 @@ import productDescriptionRouter from './modules/product-descriptions/product-des
 import schedulingRouter from './modules/scheduling/scheduling.router';
 import bookingRouter from './modules/scheduling/booking.router';
 import calendarRouter from './modules/scheduling/calendar.router';
+import paymentRouter from './modules/scheduling/payment.router';
 import intakeRouter from './modules/intake/intake.router';
 // Phase 2 AI Tools
 import documentAnalyzerRouter from './modules/document-analyzer/document-analyzer.router';
@@ -415,6 +416,13 @@ export function createApp(): express.Express {
     '/api/scheduling/calendar',
     requireModule('scheduling'),
     calendarRouter,
+  );
+
+  // Payment Integration API - requires scheduling module
+  app.use(
+    '/api/scheduling/payments',
+    requireModule('scheduling'),
+    paymentRouter,
   );
 
   // Client Intake Automator module (Tool 1.4)
