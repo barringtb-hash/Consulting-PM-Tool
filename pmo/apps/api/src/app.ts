@@ -50,6 +50,11 @@ import chatbotWebhookRouter from './modules/chatbot/webhooks/webhook.router';
 import chatbotChannelRouter from './modules/chatbot/channels/channel.router';
 import productDescriptionRouter from './modules/product-descriptions/product-description.router';
 import schedulingRouter from './modules/scheduling/scheduling.router';
+import bookingRouter from './modules/scheduling/booking.router';
+import calendarRouter from './modules/scheduling/calendar.router';
+import paymentRouter from './modules/scheduling/payment.router';
+import shiftRouter from './modules/scheduling/shift.router';
+import { templateRouter } from './modules/scheduling/templates';
 import intakeRouter from './modules/intake/intake.router';
 // Phase 2 AI Tools
 import documentAnalyzerRouter from './modules/document-analyzer/document-analyzer.router';
@@ -404,6 +409,33 @@ export function createApp(): express.Express {
 
   // AI Scheduling Assistant module (Tool 1.3)
   app.use('/api', requireModule('scheduling'), schedulingRouter);
+
+  // Public Booking API (no auth required) - requires scheduling module
+  app.use('/api/booking', requireModule('scheduling'), bookingRouter);
+
+  // Calendar Integration API - requires scheduling module
+  app.use(
+    '/api/scheduling/calendar',
+    requireModule('scheduling'),
+    calendarRouter,
+  );
+
+  // Payment Integration API - requires scheduling module
+  app.use(
+    '/api/scheduling/payments',
+    requireModule('scheduling'),
+    paymentRouter,
+  );
+
+  // Type B Shift Scheduling API - requires scheduling module
+  app.use('/api/scheduling/shifts', requireModule('scheduling'), shiftRouter);
+
+  // Industry Templates API - requires scheduling module
+  app.use(
+    '/api/scheduling/templates',
+    requireModule('scheduling'),
+    templateRouter,
+  );
 
   // Client Intake Automator module (Tool 1.4)
   app.use('/api', requireModule('intake'), intakeRouter);

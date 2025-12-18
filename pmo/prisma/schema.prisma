@@ -254,6 +254,9 @@ model User {
   ownedRecurringCosts RecurringCost[] @relation("RecurringCostOwner")
   employeeCosts       RecurringCost[] @relation("EmployeeCost")
   financeAlerts       FinanceAlert[]
+
+  // Shift Scheduling relations
+  shiftEmployees ShiftEmployee[]
 }
 
 model Client {
@@ -1401,6 +1404,95 @@ enum ReminderStatus {
   FAILED
 }
 
+// New enums for enhanced scheduling features
+enum CalendarPlatform {
+  GOOGLE
+  OUTLOOK
+}
+
+enum VideoPlatform {
+  ZOOM
+  GOOGLE_MEET
+  TEAMS
+}
+
+enum PaymentTiming {
+  BOOKING // Collect at time of booking
+  APPOINTMENT // Collect at appointment time
+  NONE // No payment collection
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentType {
+  DEPOSIT
+  FULL
+  REFUND
+}
+
+// Type B: Employee/Shift Scheduling enums
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACTOR
+  SEASONAL
+  TEMPORARY
+}
+
+enum ScheduleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+enum AvailabilityType {
+  AVAILABLE
+  PREFERRED
+  UNAVAILABLE
+}
+
+enum TimeOffType {
+  VACATION
+  SICK
+  PERSONAL
+  BEREAVEMENT
+  JURY_DUTY
+  UNPAID
+  OTHER
+}
+
+enum TimeOffStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CANCELLED
+}
+
+enum SwapStatus {
+  PENDING
+  PEER_APPROVED
+  APPROVED
+  DENIED
+  CANCELLED
+  EXPIRED
+}
+
 /**
  * SchedulingConfig - Configuration for scheduling assistant per client
  */
@@ -1408,15 +1500,28 @@ model SchedulingConfig {
   id       Int @id @default(autoincrement())
   clientId Int @unique
 
+  // Multi-tenant support (optional - inherited from Client if not set)
+  tenantId  String?
+  accountId Int? // Links to CRM Account model for new implementations
+
   // Practice/Business info
   practiceName String?
   timezone     String  @default("America/New_York")
 
   // Booking settings
-  minAdvanceBookingHours Int @default(24)
-  maxAdvanceBookingDays  Int @default(90)
-  defaultSlotDurationMin Int @default(30)
-  bufferBetweenSlotsMin  Int @default(0)
+  minAdvanceBookingHours Int     @default(24)
+  maxAdvanceBookingDays  Int     @default(90)
+  defaultSlotDurationMin Int     @default(30)
+  bufferBetweenSlotsMin  Int     @default(0)
+  allowWalkIns           Boolean @default(false)
+  requirePhone           Boolean @default(true)
+  autoConfirm            Boolean @default(false)
+
+  // Booking page settings
+  showProviderSelection Boolean @default(true)
+  showAppointmentTypes  Boolean @default(true)
+  requireIntakeForm     Boolean @default(false)
+  cancellationPolicy    String?
 
   // Reminder settings
   enableReminders     Boolean @default(true)
@@ -1432,6 +1537,10 @@ model SchedulingConfig {
 
   // HIPAA compliance
   isHipaaEnabled Boolean @default(false)
+
+  // Industry template settings
+  industryTemplate String? // healthcare, professional_services, home_services, beauty_wellness, restaurant
+  templateSettings Json? // Stores template-specific configuration
 
   // Integration credentials (encrypted)
   twilioAccountSid     String?
@@ -1449,12 +1558,23 @@ model SchedulingConfig {
   updatedAt DateTime @updatedAt
 
   client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account          Account?          @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providers        Provider[]
   appointmentTypes AppointmentType[]
   appointments     Appointment[]
   waitlistEntries  WaitlistEntry[]
+  intakeFormFields SchedulingIntakeField[]
+
+  // New public booking and integration relations
+  bookingPages         BookingPage[]
+  calendarIntegrations CalendarIntegration[]
+  videoMeetingConfigs  VideoMeetingConfig[]
+  paymentConfig        PaymentConfig?
 
   @@index([clientId, isActive])
+  @@index([accountId])
+  @@index([tenantId])
 }
 
 /**
@@ -1485,8 +1605,9 @@ model Provider {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  config       SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
+  config               SchedulingConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
+  appointments         Appointment[]
+  calendarIntegrations CalendarIntegration[]
 
   @@index([configId, isActive])
 }
@@ -1509,6 +1630,7 @@ model AppointmentType {
   // Booking rules
   requiresDeposit Boolean  @default(false)
   depositAmount   Decimal? @db.Decimal(10, 2)
+  depositPercent  Int? // Percentage-based deposit (0-100)
 
   // Display
   color    String?
@@ -1524,6 +1646,37 @@ model AppointmentType {
 }
 
 /**
+ * SchedulingIntakeField - Custom intake form fields for scheduling
+ * These are lightweight intake fields specific to booking appointments,
+ * distinct from the full IntakeForm system.
+ */
+model SchedulingIntakeField {
+  id       Int @id @default(autoincrement())
+  configId Int
+
+  // Field definition
+  name        String
+  label       String
+  type        String // text, email, phone, textarea, select, checkbox, date
+  placeholder String?
+
+  // Validation
+  required Boolean  @default(false)
+  options  String[] @default([]) // For select/radio fields
+
+  // Layout
+  sortOrder Int @default(0)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, sortOrder])
+}
+
+/**
  * Appointment - Scheduled appointments
  */
 model Appointment {
@@ -1531,12 +1684,17 @@ model Appointment {
   configId          Int
   providerId        Int?
   appointmentTypeId Int?
+  bookingPageId     Int?
 
   // Patient/Client info
   patientName       String
   patientEmail      String?
   patientPhone      String?
   externalPatientId String?
+
+  // Public booking fields
+  confirmationCode String? @unique // For self-service access
+  customerTimezone String? // Customer's timezone at booking
 
   // Scheduling
   scheduledAt     DateTime
@@ -1572,21 +1730,29 @@ model Appointment {
   outlookEventId   String?
   ehrAppointmentId String?
 
+  // Video meeting
+  videoMeetingUrl String?
+  videoMeetingId  String?
+
   // HIPAA compliance - encrypted notes
   encryptedNotes String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  config          SchedulingConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
-  provider        Provider?             @relation(fields: [providerId], references: [id], onDelete: SetNull)
-  appointmentType AppointmentType?      @relation(fields: [appointmentTypeId], references: [id], onDelete: SetNull)
-  reminders       AppointmentReminder[]
+  config              SchedulingConfig            @relation(fields: [configId], references: [id], onDelete: Cascade)
+  provider            Provider?                   @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  appointmentType     AppointmentType?            @relation(fields: [appointmentTypeId], references: [id], onDelete: SetNull)
+  bookingPage         BookingPage?                @relation(fields: [bookingPageId], references: [id], onDelete: SetNull)
+  reminders           AppointmentReminder[]
+  intakeFormResponses BookingIntakeFormResponse[]
+  paymentTransactions PaymentTransaction[]
 
   @@index([configId, scheduledAt])
   @@index([configId, status])
   @@index([providerId, scheduledAt])
   @@index([patientEmail])
+  @@index([confirmationCode])
 }
 
 /**
@@ -1686,6 +1852,482 @@ model NoShowPredictionLog {
 
   @@index([configId, predictedAt(sort: Desc)])
   @@index([appointmentId])
+}
+
+// ============================================================================
+// SCHEDULING ASSISTANT - PUBLIC BOOKING & INTEGRATIONS (Phase 1 Extensions)
+// ============================================================================
+
+/**
+ * BookingPage - Public booking page configuration
+ * Enables customer-facing self-service booking
+ */
+model BookingPage {
+  id       Int @id @default(autoincrement())
+  configId Int
+
+  // URL and branding
+  slug         String  @unique // e.g., "acme-consulting" -> /book/acme-consulting
+  title        String
+  description  String?
+  logoUrl      String?
+  primaryColor String  @default("#3B82F6")
+
+  // Booking settings
+  showProviderSelection Boolean @default(true)
+  showAppointmentTypes  Boolean @default(true)
+  requirePhone          Boolean @default(true)
+  requireIntakeForm     Boolean @default(false)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config       SchedulingConfig    @relation(fields: [configId], references: [id], onDelete: Cascade)
+  intakeForms  BookingIntakeForm[]
+  appointments Appointment[]
+
+  @@index([slug])
+  @@index([configId])
+}
+
+/**
+ * BookingIntakeForm - Custom intake forms for booking pages
+ */
+model BookingIntakeForm {
+  id            Int @id @default(autoincrement())
+  bookingPageId Int
+
+  name         String
+  description  String?
+  fields       Json // Array of field definitions: [{ name, type, label, required, options? }]
+  isRequired   Boolean @default(false)
+  displayOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookingPage BookingPage                 @relation(fields: [bookingPageId], references: [id], onDelete: Cascade)
+  responses   BookingIntakeFormResponse[]
+
+  @@index([bookingPageId])
+}
+
+/**
+ * BookingIntakeFormResponse - Responses to booking intake forms
+ */
+model BookingIntakeFormResponse {
+  id            Int @id @default(autoincrement())
+  formId        Int
+  appointmentId Int
+
+  responses   Json // Field ID -> value mapping
+  submittedAt DateTime @default(now())
+
+  form        BookingIntakeForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  appointment Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([appointmentId])
+}
+
+/**
+ * CalendarIntegration - OAuth tokens for calendar sync
+ */
+model CalendarIntegration {
+  id         Int  @id @default(autoincrement())
+  configId   Int
+  providerId Int? // If null, applies to all providers
+
+  platform       CalendarPlatform
+  accessToken    String // Should be encrypted in production
+  refreshToken   String? // Should be encrypted in production
+  tokenExpiresAt DateTime?
+  calendarId     String // Selected calendar ID from provider
+  syncEnabled    Boolean          @default(true)
+  lastSyncAt     DateTime?
+  lastSyncError  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config   SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  provider Provider?        @relation(fields: [providerId], references: [id], onDelete: SetNull)
+
+  @@unique([configId, providerId, platform])
+  @@index([configId])
+}
+
+/**
+ * VideoMeetingConfig - Video conferencing integration settings
+ */
+model VideoMeetingConfig {
+  id       Int @id @default(autoincrement())
+  configId Int
+
+  platform        VideoPlatform
+  accessToken     String // Should be encrypted in production
+  refreshToken    String? // Should be encrypted in production
+  tokenExpiresAt  DateTime?
+  defaultSettings Json? // Platform-specific settings
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, platform])
+}
+
+/**
+ * PaymentConfig - Stripe payment configuration for scheduling
+ */
+model PaymentConfig {
+  id       Int @id @default(autoincrement())
+  configId Int @unique
+
+  stripeAccountId  String? // Connected Stripe account ID
+  stripeOnboarded  Boolean       @default(false)
+  currency         String        @default("USD")
+  collectPaymentAt PaymentTiming @default(BOOKING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * PaymentTransaction - Payment records for appointments
+ */
+model PaymentTransaction {
+  id            Int @id @default(autoincrement())
+  appointmentId Int
+
+  stripePaymentIntentId String?
+  stripeChargeId        String?
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String
+  status                PaymentStatus
+  type                  PaymentType // DEPOSIT, FULL, REFUND
+
+  processedAt   DateTime?
+  refundedAt    DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@index([stripePaymentIntentId])
+}
+
+// ============================================================================
+// TYPE B: EMPLOYEE/SHIFT SCHEDULING (Phase 5+)
+// ============================================================================
+
+/**
+ * ShiftSchedulingConfig - Configuration for employee/shift scheduling
+ */
+model ShiftSchedulingConfig {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  accountId Int? // Link to CRM Account/business
+
+  // Business settings
+  businessName String
+  timezone     String @default("America/New_York")
+  weekStartDay Int    @default(0) // 0 = Sunday, 1 = Monday
+
+  // Overtime rules
+  weeklyOvertimeThreshold Int     @default(40) // Hours before overtime
+  dailyOvertimeThreshold  Int? // Optional daily threshold
+  overtimeMultiplier      Decimal @default(1.5) @db.Decimal(3, 2)
+
+  // Compliance settings
+  minRestBetweenShifts Int     @default(8) // Minimum hours between shifts
+  maxConsecutiveDays   Int     @default(6) // Max days without day off
+  requireBreaks        Boolean @default(true)
+  breakDurationMinutes Int     @default(30)
+  breakAfterHours      Int     @default(6) // Require break after X hours
+
+  // Notification settings
+  schedulePublishLeadDays Int     @default(7) // Days in advance to publish
+  enableShiftReminders    Boolean @default(true)
+  reminderHoursBefore     Int     @default(12)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account   Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  employees ShiftEmployee[]
+  shifts    Shift[]
+  schedules ShiftSchedule[]
+  locations ShiftLocation[]
+  roles     ShiftRole[]
+
+  @@index([tenantId])
+  @@index([accountId])
+}
+
+/**
+ * ShiftEmployee - Employee records for shift scheduling
+ */
+model ShiftEmployee {
+  id       Int  @id @default(autoincrement())
+  configId Int
+  userId   Int? // Link to User if they have system access
+
+  // Basic info
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  employeeNumber String? // External employee ID
+
+  // Employment details
+  roleId         Int?
+  hourlyRate     Decimal?       @db.Decimal(10, 2)
+  employmentType EmploymentType @default(FULL_TIME)
+  hireDate       DateTime?
+
+  // Skills and certifications
+  skills         Json? // Array of skill tags
+  certifications Json? // Array of { name, expiresAt }
+
+  // Scheduling preferences
+  maxHoursPerWeek    Int?
+  minHoursPerWeek    Int?
+  preferredLocations Json? // Array of location IDs
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config           ShiftSchedulingConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+  role             ShiftRole?             @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  user             User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  shifts           Shift[]
+  availability     EmployeeAvailability[]
+  timeOffRequests  TimeOffRequest[]
+  swapRequestsFrom ShiftSwapRequest[]     @relation("SwapRequester")
+  swapRequestsTo   ShiftSwapRequest[]     @relation("SwapTarget")
+
+  @@unique([configId, email])
+  @@index([configId])
+  @@index([roleId])
+}
+
+/**
+ * ShiftLocation - Locations/departments for multi-location scheduling
+ */
+model ShiftLocation {
+  id       Int @id @default(autoincrement())
+  configId Int
+
+  name     String
+  address  String?
+  timezone String? // Override config timezone
+  color    String  @default("#3B82F6")
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config ShiftSchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  shifts Shift[]
+
+  @@index([configId])
+}
+
+/**
+ * ShiftRole - Job roles/positions for scheduling
+ */
+model ShiftRole {
+  id       Int @id @default(autoincrement())
+  configId Int
+
+  name              String // e.g., "Server", "Manager", "Cashier"
+  description       String?
+  color             String   @default("#10B981")
+  defaultHourlyRate Decimal? @db.Decimal(10, 2)
+
+  // Requirements
+  requiredSkills Json? // Skills needed for this role
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config    ShiftSchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  employees ShiftEmployee[]
+  shifts    Shift[]
+
+  @@index([configId])
+}
+
+/**
+ * ShiftSchedule - Weekly/monthly schedule container
+ */
+model ShiftSchedule {
+  id       Int @id @default(autoincrement())
+  configId Int
+
+  name      String? // e.g., "Week of Dec 16, 2025"
+  startDate DateTime
+  endDate   DateTime
+  status    ScheduleStatus @default(DRAFT)
+
+  publishedAt DateTime?
+  publishedBy Int? // User ID who published
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config ShiftSchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  shifts Shift[]
+
+  @@index([configId])
+  @@index([startDate, endDate])
+}
+
+/**
+ * Shift - Individual shift assignments
+ */
+model Shift {
+  id         Int  @id @default(autoincrement())
+  configId   Int
+  scheduleId Int?
+
+  // Assignment
+  employeeId Int?
+  roleId     Int?
+  locationId Int?
+
+  // Timing
+  startTime    DateTime
+  endTime      DateTime
+  breakMinutes Int      @default(0)
+
+  // Status
+  status ShiftStatus @default(SCHEDULED)
+  isOpen Boolean     @default(false) // Open for claiming
+
+  // Notes
+  notes String?
+  color String? // Override role/location color
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config       ShiftSchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  schedule     ShiftSchedule?        @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  employee     ShiftEmployee?        @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  role         ShiftRole?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  location     ShiftLocation?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  swapRequests ShiftSwapRequest[]
+
+  @@index([configId])
+  @@index([scheduleId])
+  @@index([employeeId])
+  @@index([startTime, endTime])
+}
+
+/**
+ * EmployeeAvailability - Employee availability preferences
+ */
+model EmployeeAvailability {
+  id         Int @id @default(autoincrement())
+  employeeId Int
+
+  // Recurring weekly availability
+  dayOfWeek    Int? // 0-6 (Sunday-Saturday), null for specific date
+  specificDate DateTime? // For one-time availability/unavailability
+
+  startTime String // "09:00" format
+  endTime   String // "17:00" format
+
+  type  AvailabilityType @default(AVAILABLE)
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee ShiftEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([dayOfWeek])
+  @@index([specificDate])
+}
+
+/**
+ * TimeOffRequest - Time-off requests (PTO, vacation, sick)
+ */
+model TimeOffRequest {
+  id         Int @id @default(autoincrement())
+  employeeId Int
+
+  startDate DateTime
+  endDate   DateTime
+  type      TimeOffType
+  reason    String?
+
+  status      TimeOffStatus @default(PENDING)
+  reviewedBy  Int? // User ID of reviewer
+  reviewedAt  DateTime?
+  reviewNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee ShiftEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([startDate, endDate])
+  @@index([status])
+}
+
+/**
+ * ShiftSwapRequest - Shift swap requests between employees
+ */
+model ShiftSwapRequest {
+  id      Int @id @default(autoincrement())
+  shiftId Int
+
+  requesterId      Int
+  targetEmployeeId Int? // Null if open swap (anyone can take)
+
+  offeredShiftId Int? // Shift offered in exchange (null for giveaway)
+
+  status SwapStatus @default(PENDING)
+  reason String?
+
+  // Approval chain
+  peerApprovedAt    DateTime?
+  managerApprovedAt DateTime?
+  managerApprovedBy Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shift          Shift          @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  requester      ShiftEmployee  @relation("SwapRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  targetEmployee ShiftEmployee? @relation("SwapTarget", fields: [targetEmployeeId], references: [id], onDelete: SetNull)
+
+  @@index([shiftId])
+  @@index([requesterId])
+  @@index([targetEmployeeId])
+  @@index([status])
 }
 
 // ============================================================================
@@ -5956,37 +6598,38 @@ model Tenant {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  users             TenantUser[]
-  domains           TenantDomain[]
-  branding          TenantBranding?
-  modules           TenantModule[]
-  accounts          Account[]
-  crmContacts       CRMContact[]
-  opportunities     Opportunity[]
-  pipelines         Pipeline[]
-  activities        CRMActivity[]
-  notifications     Notification[]
+  users                     TenantUser[]
+  domains                   TenantDomain[]
+  branding                  TenantBranding?
+  modules                   TenantModule[]
+  accounts                  Account[]
+  crmContacts               CRMContact[]
+  opportunities             Opportunity[]
+  pipelines                 Pipeline[]
+  activities                CRMActivity[]
+  notifications             Notification[]
   // CRM Phase 3-6 relations
-  integrations      Integration[]
-  usageEvents       UsageEvent[]
-  usageSummaries    UsageSummary[]
-  savedReports      SavedReport[]
+  integrations              Integration[]
+  usageEvents               UsageEvent[]
+  usageSummaries            UsageSummary[]
+  savedReports              SavedReport[]
   // Legacy PMO models (tenant-scoped)
-  clients           Client[]
-  contacts          Contact[]
-  projects          Project[]
-  tasks             Task[]
-  milestones        Milestone[]
-  meetings          Meeting[]
-  aiAssets          AIAsset[]
-  marketingContents MarketingContent[]
-  campaigns         Campaign[]
-  inboundLeads      InboundLead[]
+  clients                   Client[]
+  contacts                  Contact[]
+  projects                  Project[]
+  tasks                     Task[]
+  milestones                Milestone[]
+  meetings                  Meeting[]
+  aiAssets                  AIAsset[]
+  marketingContents         MarketingContent[]
+  campaigns                 Campaign[]
+  inboundLeads              InboundLead[]
   // AI Tool configurations (tenant-scoped)
   productDescriptionConfigs ProductDescriptionConfig[]
+  schedulingConfigs         SchedulingConfig[]
   // Audit and health metrics
-  auditLogs         AuditLog[]
-  healthMetrics     TenantHealthMetrics[]
+  auditLogs                 AuditLog[]
+  healthMetrics             TenantHealthMetrics[]
 
   // Finance Tracking relations
   financeConfig        FinanceConfig?
@@ -6147,9 +6790,9 @@ model Account {
   meetings          Meeting[]
 
   // AI Tool configurations (replaces legacy Client relations)
-  chatbotConfig             ChatbotConfig?
-  documentAnalyzerConfig    DocumentAnalyzerConfig?
-  productDescriptionConfig  ProductDescriptionConfig?
+  chatbotConfig            ChatbotConfig?
+  documentAnalyzerConfig   DocumentAnalyzerConfig?
+  productDescriptionConfig ProductDescriptionConfig?
 
   // Finance Tracking relations
   budgets         Budget[]
@@ -6157,6 +6800,10 @@ model Account {
   recurringCosts  RecurringCost[]
   profitability   AccountProfitability[]
   financeInsights FinanceInsight[]
+
+  // Scheduling relations
+  schedulingConfigs      SchedulingConfig[] // Type A: Appointment scheduling
+  shiftSchedulingConfigs ShiftSchedulingConfig[] // Type B: Shift scheduling
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])

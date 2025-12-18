@@ -64,6 +64,11 @@ const TenantHealthPage = lazy(() =>
   })),
 );
 
+// Public pages (no auth required)
+const PublicBookingPage = lazy(
+  () => import('./pages/public/PublicBookingPage'),
+);
+
 // Phase 1 AI Tools pages
 const ChatbotPage = lazy(() => import('./pages/ai-tools/ChatbotPage'));
 const ProductDescriptionsPage = lazy(
@@ -203,6 +208,20 @@ function App(): JSX.Element {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/book/:slug"
+          element={
+            <Suspense
+              fallback={
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              }
+            >
+              <PublicBookingPage />
+            </Suspense>
+          }
+        />
 
         {/* Protected routes with layout */}
         <Route element={<ProtectedRoute />}>
