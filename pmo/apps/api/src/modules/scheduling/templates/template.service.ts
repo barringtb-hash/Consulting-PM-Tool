@@ -21,7 +21,7 @@ const prisma = new PrismaClient();
 
 export interface ApplyTemplateResult {
   success: boolean;
-  configId: string;
+  configId: number;
   template: IndustryTemplate;
   appointmentTypesCreated: number;
   intakeFieldsConfigured: number;
@@ -83,12 +83,18 @@ export class TemplateService {
 
   /**
    * Apply a template to create a new scheduling configuration
+   * @param clientId - The Client ID (legacy model)
+   * @param tenantId - Optional tenant ID for multi-tenant support
+   * @param accountId - Optional Account ID (new CRM model)
    */
   async applyTemplate(
-    tenantId: string,
-    accountId: string,
+    clientId: number,
     templateId: string,
-    customizations?: Partial<IndustryTemplate['schedulingConfig']>,
+    options?: {
+      tenantId?: string;
+      accountId?: number;
+      customizations?: Partial<IndustryTemplate['schedulingConfig']>;
+    },
   ): Promise<ApplyTemplateResult> {
     const template = getTemplateById(templateId);
     if (!template) {
@@ -98,20 +104,20 @@ export class TemplateService {
     // Merge template defaults with any customizations
     const schedulingConfig = {
       ...template.schedulingConfig,
-      ...customizations,
+      ...options?.customizations,
     };
 
     // Create or update the scheduling config
     const config = await prisma.schedulingConfig.upsert({
       where: {
-        accountId,
+        clientId,
       },
       create: {
-        tenantId,
-        accountId,
-        enabled: true,
+        clientId,
+        tenantId: options?.tenantId,
+        accountId: options?.accountId,
         defaultSlotDurationMin: schedulingConfig.defaultSlotDurationMin,
-        bufferMinutes: schedulingConfig.bufferMinutes,
+        bufferBetweenSlotsMin: schedulingConfig.bufferMinutes,
         minAdvanceBookingHours: schedulingConfig.minAdvanceBookingHours,
         maxAdvanceBookingDays: schedulingConfig.maxAdvanceBookingDays,
         allowWalkIns: schedulingConfig.allowWalkIns,
@@ -126,16 +132,21 @@ export class TemplateService {
         cancellationPolicy: template.bookingPageConfig.cancellationPolicy,
         // Store template metadata
         industryTemplate: template.id,
-        customFields: {
+        templateSettings: {
           templateApplied: template.id,
           templateName: template.name,
           industrySettings: template.industrySettings,
           bookingPageFields: template.bookingPageConfig.customFields,
+          providerRoles: template.providerRoles,
         },
+        // HIPAA setting from industry settings
+        isHipaaEnabled: template.industrySettings.hipaaCompliant === true,
       },
       update: {
+        tenantId: options?.tenantId,
+        accountId: options?.accountId,
         defaultSlotDurationMin: schedulingConfig.defaultSlotDurationMin,
-        bufferMinutes: schedulingConfig.bufferMinutes,
+        bufferBetweenSlotsMin: schedulingConfig.bufferMinutes,
         minAdvanceBookingHours: schedulingConfig.minAdvanceBookingHours,
         maxAdvanceBookingDays: schedulingConfig.maxAdvanceBookingDays,
         allowWalkIns: schedulingConfig.allowWalkIns,
@@ -148,12 +159,14 @@ export class TemplateService {
         requireIntakeForm: template.bookingPageConfig.requireIntakeForm,
         cancellationPolicy: template.bookingPageConfig.cancellationPolicy,
         industryTemplate: template.id,
-        customFields: {
+        templateSettings: {
           templateApplied: template.id,
           templateName: template.name,
           industrySettings: template.industrySettings,
           bookingPageFields: template.bookingPageConfig.customFields,
+          providerRoles: template.providerRoles,
         },
+        isHipaaEnabled: template.industrySettings.hipaaCompliant === true,
       },
     });
 
@@ -162,7 +175,6 @@ export class TemplateService {
     for (const apt of template.appointmentTypes) {
       await prisma.appointmentType.create({
         data: {
-          tenantId,
           configId: config.id,
           name: apt.name,
           description: apt.description,
@@ -180,9 +192,8 @@ export class TemplateService {
     // Configure intake form fields
     let intakeFieldsConfigured = 0;
     for (const field of template.intakeFormFields) {
-      await prisma.intakeFormField.create({
+      await prisma.schedulingIntakeField.create({
         data: {
-          tenantId,
           configId: config.id,
           name: field.name,
           type: field.type,
@@ -210,11 +221,11 @@ export class TemplateService {
    * Reset a config to template defaults
    */
   async resetToTemplateDefaults(
-    accountId: string,
+    clientId: number,
     templateId: string,
   ): Promise<ApplyTemplateResult> {
     const config = await prisma.schedulingConfig.findUnique({
-      where: { accountId },
+      where: { clientId },
     });
 
     if (!config) {
@@ -226,19 +237,22 @@ export class TemplateService {
       where: { configId: config.id },
     });
 
-    await prisma.intakeFormField.deleteMany({
+    await prisma.schedulingIntakeField.deleteMany({
       where: { configId: config.id },
     });
 
     // Re-apply the template
-    return this.applyTemplate(config.tenantId, accountId, templateId);
+    return this.applyTemplate(clientId, templateId, {
+      tenantId: config.tenantId || undefined,
+      accountId: config.accountId || undefined,
+    });
   }
 
   /**
    * Compare current config with template defaults
    */
   async compareWithTemplate(
-    accountId: string,
+    clientId: number,
     templateId: string,
   ): Promise<{
     differences: Array<{
@@ -261,7 +275,7 @@ export class TemplateService {
     }
 
     const config = await prisma.schedulingConfig.findUnique({
-      where: { accountId },
+      where: { clientId },
       include: {
         appointmentTypes: true,
         intakeFormFields: true,
@@ -278,27 +292,36 @@ export class TemplateService {
       templateValue: unknown;
     }> = [];
 
-    // Compare scheduling config fields
-    const configFields = [
-      'defaultSlotDurationMin',
-      'bufferMinutes',
-      'minAdvanceBookingHours',
-      'maxAdvanceBookingDays',
-      'allowWalkIns',
-      'enableReminders',
-      'requirePhone',
-      'autoConfirm',
-    ] as const;
+    // Map schema fields to template fields
+    const fieldMappings: Array<{
+      schemaField: keyof typeof config;
+      templateField: keyof typeof template.schedulingConfig;
+    }> = [
+      {
+        schemaField: 'defaultSlotDurationMin',
+        templateField: 'defaultSlotDurationMin',
+      },
+      { schemaField: 'bufferBetweenSlotsMin', templateField: 'bufferMinutes' },
+      {
+        schemaField: 'minAdvanceBookingHours',
+        templateField: 'minAdvanceBookingHours',
+      },
+      {
+        schemaField: 'maxAdvanceBookingDays',
+        templateField: 'maxAdvanceBookingDays',
+      },
+      { schemaField: 'allowWalkIns', templateField: 'allowWalkIns' },
+      { schemaField: 'enableReminders', templateField: 'enableReminders' },
+      { schemaField: 'requirePhone', templateField: 'requirePhone' },
+      { schemaField: 'autoConfirm', templateField: 'autoConfirm' },
+    ];
 
-    for (const field of configFields) {
-      const currentValue = config[field];
-      const templateValue =
-        template.schedulingConfig[
-          field as keyof typeof template.schedulingConfig
-        ];
+    for (const mapping of fieldMappings) {
+      const currentValue = config[mapping.schemaField];
+      const templateValue = template.schedulingConfig[mapping.templateField];
       if (currentValue !== templateValue) {
         differences.push({
-          field,
+          field: mapping.schemaField,
           currentValue,
           templateValue,
         });
@@ -316,6 +339,22 @@ export class TemplateService {
         template: template.intakeFormFields.length,
       },
     };
+  }
+
+  /**
+   * Get the template applied to a config
+   */
+  async getAppliedTemplate(clientId: number): Promise<IndustryTemplate | null> {
+    const config = await prisma.schedulingConfig.findUnique({
+      where: { clientId },
+      select: { industryTemplate: true },
+    });
+
+    if (!config?.industryTemplate) {
+      return null;
+    }
+
+    return getTemplateById(config.industryTemplate);
   }
 
   // ============================================================================

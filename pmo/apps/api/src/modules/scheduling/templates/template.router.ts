@@ -16,8 +16,9 @@ const router = Router();
 // ============================================================================
 
 const applyTemplateSchema = z.object({
-  accountId: z.string().uuid(),
+  clientId: z.number().int().positive(),
   templateId: z.string(),
+  accountId: z.number().int().positive().optional(),
   customizations: z
     .object({
       defaultSlotDurationMin: z.number().optional(),
@@ -34,7 +35,7 @@ const applyTemplateSchema = z.object({
 });
 
 const compareTemplateSchema = z.object({
-  accountId: z.string().uuid(),
+  clientId: z.number().int().positive(),
   templateId: z.string(),
 });
 
@@ -150,10 +151,10 @@ router.get('/:templateId/preview', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/scheduling/templates/category/:category
+ * GET /api/scheduling/templates/by-category/:category
  * Get templates by category
  */
-router.get('/category/:category', async (req: Request, res: Response) => {
+router.get('/by-category/:category', async (req: Request, res: Response) => {
   try {
     const { category } = req.params;
     const validCategories = [
@@ -194,15 +195,14 @@ router.post('/apply', requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
-    const { accountId, templateId, customizations } = parsed.data;
+    const { clientId, templateId, accountId, customizations } = parsed.data;
     const tenantId = req.user!.tenantId;
 
-    const result = await templateService.applyTemplate(
+    const result = await templateService.applyTemplate(clientId, templateId, {
       tenantId,
       accountId,
-      templateId,
       customizations,
-    );
+    });
 
     res.json({ data: result });
   } catch (error) {
@@ -225,10 +225,10 @@ router.post('/reset', requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
-    const { accountId, templateId } = parsed.data;
+    const { clientId, templateId } = parsed.data;
 
     const result = await templateService.resetToTemplateDefaults(
-      accountId,
+      clientId,
       templateId,
     );
 
@@ -253,10 +253,10 @@ router.post('/compare', requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
-    const { accountId, templateId } = parsed.data;
+    const { clientId, templateId } = parsed.data;
 
     const result = await templateService.compareWithTemplate(
-      accountId,
+      clientId,
       templateId,
     );
 
@@ -269,6 +269,30 @@ router.post('/compare', requireAuth, async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to compare with template' });
   }
 });
+
+/**
+ * GET /api/scheduling/templates/applied/:clientId
+ * Get the template currently applied to a client's config
+ */
+router.get(
+  '/applied/:clientId',
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const clientId = parseInt(req.params.clientId, 10);
+      if (isNaN(clientId)) {
+        return res.status(400).json({ error: 'Invalid client ID' });
+      }
+
+      const template = await templateService.getAppliedTemplate(clientId);
+
+      res.json({ data: template });
+    } catch (error) {
+      console.error('Error fetching applied template:', error);
+      res.status(500).json({ error: 'Failed to fetch applied template' });
+    }
+  },
+);
 
 // ============================================================================
 // HELPER FUNCTIONS

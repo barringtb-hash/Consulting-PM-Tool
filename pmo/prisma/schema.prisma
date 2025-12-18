@@ -1500,15 +1500,28 @@ model SchedulingConfig {
   id       Int @id @default(autoincrement())
   clientId Int @unique
 
+  // Multi-tenant support (optional - inherited from Client if not set)
+  tenantId  String?
+  accountId Int? // Links to CRM Account model for new implementations
+
   // Practice/Business info
   practiceName String?
   timezone     String  @default("America/New_York")
 
   // Booking settings
-  minAdvanceBookingHours Int @default(24)
-  maxAdvanceBookingDays  Int @default(90)
-  defaultSlotDurationMin Int @default(30)
-  bufferBetweenSlotsMin  Int @default(0)
+  minAdvanceBookingHours Int     @default(24)
+  maxAdvanceBookingDays  Int     @default(90)
+  defaultSlotDurationMin Int     @default(30)
+  bufferBetweenSlotsMin  Int     @default(0)
+  allowWalkIns           Boolean @default(false)
+  requirePhone           Boolean @default(true)
+  autoConfirm            Boolean @default(false)
+
+  // Booking page settings
+  showProviderSelection Boolean @default(true)
+  showAppointmentTypes  Boolean @default(true)
+  requireIntakeForm     Boolean @default(false)
+  cancellationPolicy    String?
 
   // Reminder settings
   enableReminders     Boolean @default(true)
@@ -1524,6 +1537,10 @@ model SchedulingConfig {
 
   // HIPAA compliance
   isHipaaEnabled Boolean @default(false)
+
+  // Industry template settings
+  industryTemplate String? // healthcare, professional_services, home_services, beauty_wellness, restaurant
+  templateSettings Json? // Stores template-specific configuration
 
   // Integration credentials (encrypted)
   twilioAccountSid     String?
@@ -1541,10 +1558,13 @@ model SchedulingConfig {
   updatedAt DateTime @updatedAt
 
   client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account          Account?          @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providers        Provider[]
   appointmentTypes AppointmentType[]
   appointments     Appointment[]
   waitlistEntries  WaitlistEntry[]
+  intakeFormFields SchedulingIntakeField[]
 
   // New public booking and integration relations
   bookingPages         BookingPage[]
@@ -1553,6 +1573,8 @@ model SchedulingConfig {
   paymentConfig        PaymentConfig?
 
   @@index([clientId, isActive])
+  @@index([accountId])
+  @@index([tenantId])
 }
 
 /**
@@ -1608,6 +1630,7 @@ model AppointmentType {
   // Booking rules
   requiresDeposit Boolean  @default(false)
   depositAmount   Decimal? @db.Decimal(10, 2)
+  depositPercent  Int? // Percentage-based deposit (0-100)
 
   // Display
   color    String?
@@ -1620,6 +1643,37 @@ model AppointmentType {
   appointments Appointment[]
 
   @@index([configId, isActive])
+}
+
+/**
+ * SchedulingIntakeField - Custom intake form fields for scheduling
+ * These are lightweight intake fields specific to booking appointments,
+ * distinct from the full IntakeForm system.
+ */
+model SchedulingIntakeField {
+  id       Int @id @default(autoincrement())
+  configId Int
+
+  // Field definition
+  name        String
+  label       String
+  type        String // text, email, phone, textarea, select, checkbox, date
+  placeholder String?
+
+  // Validation
+  required Boolean  @default(false)
+  options  String[] @default([]) // For select/radio fields
+
+  // Layout
+  sortOrder Int @default(0)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  config SchedulingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId, sortOrder])
 }
 
 /**
@@ -6572,6 +6626,7 @@ model Tenant {
   inboundLeads              InboundLead[]
   // AI Tool configurations (tenant-scoped)
   productDescriptionConfigs ProductDescriptionConfig[]
+  schedulingConfigs         SchedulingConfig[]
   // Audit and health metrics
   auditLogs                 AuditLog[]
   healthMetrics             TenantHealthMetrics[]
@@ -6746,8 +6801,9 @@ model Account {
   profitability   AccountProfitability[]
   financeInsights FinanceInsight[]
 
-  // Shift Scheduling relations
-  shiftSchedulingConfigs ShiftSchedulingConfig[]
+  // Scheduling relations
+  schedulingConfigs      SchedulingConfig[] // Type A: Appointment scheduling
+  shiftSchedulingConfigs ShiftSchedulingConfig[] // Type B: Shift scheduling
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
