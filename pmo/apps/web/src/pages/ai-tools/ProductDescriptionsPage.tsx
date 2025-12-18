@@ -16,6 +16,7 @@ import { Select } from '../../ui/Select';
 import { Badge } from '../../ui/Badge';
 import { useToast } from '../../ui/Toast';
 import { useAccounts } from '../../api/hooks/crm';
+import { BulkJobPanel } from '../../components/product-descriptions/BulkJobPanel';
 import {
   Plus,
   FileText,
@@ -24,6 +25,7 @@ import {
   RefreshCw,
   Copy,
   Check,
+  Upload,
   X,
 } from 'lucide-react';
 
@@ -164,8 +166,9 @@ async function createProduct(
 
 /**
  * Loading skeleton for the products list
+ * @internal Reserved for future use
  */
-function ProductsListSkeleton(): JSX.Element {
+function _ProductsListSkeleton(): JSX.Element {
   return (
     <div className="animate-pulse space-y-0 divide-y divide-neutral-100 dark:divide-neutral-700">
       {[1, 2, 3].map((i) => (
@@ -210,7 +213,6 @@ function EmptyState({
 }
 
 function ProductDescriptionsPage(): JSX.Element {
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null,
@@ -222,6 +224,7 @@ function ProductDescriptionsPage(): JSX.Element {
     marketplace: string;
   } | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'products' | 'bulk'>('products');
 
   // Handle escape key for modals
   const handleEscapeKey = useCallback(
@@ -284,12 +287,6 @@ function ProductDescriptionsPage(): JSX.Element {
     if (!selectedProductId) return null;
     return productList.find((p) => p.id === selectedProductId) || null;
   }, [selectedProductId, productsQuery.data]);
-
-  const filteredConfigs = useMemo(() => {
-    const configList = configsQuery.data ?? [];
-    if (!selectedClientId) return configList;
-    return configList.filter((c) => c.clientId === Number(selectedClientId));
-  }, [configsQuery.data, selectedClientId]);
 
   // Mutations
   const createConfigMutation = useMutation({
@@ -381,6 +378,22 @@ function ProductDescriptionsPage(): JSX.Element {
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+
+    // Parse target keywords from comma-separated string
+    const keywordsRaw = formData.get('targetKeywords') as string;
+    const targetKeywords = keywordsRaw
+      ? keywordsRaw
+          .split(',')
+          .map((k) => k.trim())
+          .filter(Boolean)
+      : [];
+
+    // Build brand voice profile from form data
+    const targetAudience = formData.get('targetAudience') as string;
+    const brandVoiceProfile = targetAudience
+      ? { targetAudience, toneMarkers: [], prohibitedWords: [] }
+      : undefined;
+
     createConfigMutation.mutate({
       clientId: Number(formData.get('clientId')),
       data: {
@@ -388,6 +401,9 @@ function ProductDescriptionsPage(): JSX.Element {
         defaultLength:
           (formData.get('defaultLength') as 'short' | 'medium' | 'long') ||
           undefined,
+        enableSEO: formData.get('enableSEO') === 'on',
+        targetKeywords: targetKeywords.length > 0 ? targetKeywords : undefined,
+        brandVoiceProfile,
       },
     });
   };
@@ -432,28 +448,16 @@ function ProductDescriptionsPage(): JSX.Element {
         </div>
         <Button onClick={() => setShowCreateConfigModal(true)}>
           <Plus className="w-4 h-4" />
-          New Configuration
+          New Profile
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Configuration Selector */}
       <Card className="p-4">
-        <div className="flex flex-col lg:flex-row lg:items-end gap-4">
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+          <div className="flex-1">
             <Select
-              label="Client"
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
-            >
-              <option value="">All Clients</option>
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="Configuration"
+              label="Brand Profile"
               value={selectedConfigId?.toString() || ''}
               onChange={(e) => {
                 setSelectedConfigId(
@@ -462,10 +466,13 @@ function ProductDescriptionsPage(): JSX.Element {
                 setSelectedProductId(null);
               }}
             >
-              <option value="">Select a configuration...</option>
-              {filteredConfigs.map((config) => (
+              <option value="">Select a brand profile...</option>
+              {configsQuery.data?.map((config) => (
                 <option key={config.id} value={config.id}>
-                  {config.client?.name || `Config #${config.id}`}
+                  {config.client?.name || `Profile #${config.id}`}
+                  {config._count?.products
+                    ? ` (${config._count.products} products)`
+                    : ''}
                 </option>
               ))}
             </Select>
@@ -475,7 +482,7 @@ function ProductDescriptionsPage(): JSX.Element {
               variant="secondary"
               onClick={() => configsQuery.refetch()}
               disabled={configsQuery.isFetching}
-              title="Refresh configurations"
+              title="Refresh"
             >
               <RefreshCw
                 className={`w-4 h-4 ${configsQuery.isFetching ? 'animate-spin' : ''}`}
@@ -496,329 +503,344 @@ function ProductDescriptionsPage(): JSX.Element {
         <Card className="p-6">
           <EmptyState
             icon={FileText}
-            title="No configuration selected"
-            description="Select a configuration from the dropdown above to view and manage products, or create a new configuration to get started."
+            title="No brand profile selected"
+            description="Select a brand profile from the dropdown above to view and manage products, or create a new profile to get started."
             action={
               <Button
                 variant="secondary"
                 onClick={() => setShowCreateConfigModal(true)}
               >
                 <Plus className="w-4 h-4" />
-                Create Configuration
+                Create Profile
               </Button>
             }
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Products List */}
-          <div className="lg:col-span-1">
-            <Card className="h-full">
-              <CardHeader>
-                <h3 className="text-lg font-semibold flex items-center gap-2 text-neutral-900 dark:text-white">
-                  <Package className="w-5 h-5" />
-                  Products ({products.length})
-                </h3>
-              </CardHeader>
-              <CardBody className="p-0">
-                {productsQuery.isLoading ? (
-                  <ProductsListSkeleton />
-                ) : products.length === 0 ? (
-                  <EmptyState
-                    icon={Package}
-                    title="No products yet"
-                    description="Add your first product to start generating AI-powered descriptions."
-                    action={
-                      <Button
-                        size="sm"
-                        onClick={() => setShowCreateProductModal(true)}
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Product
-                      </Button>
-                    }
-                  />
-                ) : (
-                  <div className="divide-y divide-neutral-100 dark:divide-neutral-700 max-h-[500px] overflow-y-auto">
-                    {products.map((product) => (
-                      <button
-                        key={product.id}
-                        onClick={() => setSelectedProductId(product.id)}
-                        className={`w-full text-left p-4 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors ${
-                          selectedProductId === product.id
-                            ? 'bg-primary-50 dark:bg-primary-900/30 border-l-2 border-primary-500'
-                            : ''
-                        }`}
-                      >
-                        <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">
-                          {product.name}
-                        </p>
-                        {product.sku && (
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            SKU: {product.sku}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {product.descriptions?.length || 0} descriptions
-                          </Badge>
-                          {product.category && (
-                            <span className="text-xs text-neutral-400 dark:text-neutral-500 truncate">
-                              {product.category}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </CardBody>
-            </Card>
+        <>
+          {/* Tab Navigation */}
+          <div className="flex border-b border-neutral-200 dark:border-neutral-700">
+            <button
+              className={`flex items-center gap-2 px-5 py-3 font-medium text-sm border-b-2 -mb-px transition-all ${
+                activeTab === 'products'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-900/20'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
+              }`}
+              onClick={() => setActiveTab('products')}
+            >
+              <Package className="w-4 h-4" />
+              Products
+            </button>
+            <button
+              className={`flex items-center gap-2 px-5 py-3 font-medium text-sm border-b-2 -mb-px transition-all ${
+                activeTab === 'bulk'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-900/20'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
+              }`}
+              onClick={() => setActiveTab('bulk')}
+            >
+              <Upload className="w-4 h-4" />
+              Bulk Operations
+            </button>
           </div>
 
-          {/* Product Details & Descriptions */}
-          <div className="lg:col-span-2 space-y-4">
-            {!selectedProduct ? (
-              <Card className="h-full min-h-[400px]">
-                <CardBody className="h-full flex items-center justify-center">
-                  <EmptyState
-                    icon={Package}
-                    title="Select a product"
-                    description="Choose a product from the list to view and generate marketplace descriptions."
-                  />
-                </CardBody>
-              </Card>
-            ) : (
-              <>
-                {/* Product Info */}
-                {(() => {
-                  // Extract typed attributes to reduce duplication
-                  const productBrand = (
-                    selectedProduct.attributes as { brand?: string } | null
-                  )?.brand;
-                  const productFeatures = (
-                    selectedProduct.attributes as { features?: string[] } | null
-                  )?.features;
-
-                  return (
-                    <Card className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                            {selectedProduct.name}
-                          </h3>
-                          {selectedProduct.category && (
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                              {selectedProduct.category}
-                            </p>
-                          )}
-                        </div>
-                        {selectedProduct.sku && (
-                          <Badge variant="secondary">
-                            SKU: {selectedProduct.sku}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                        {productBrand && (
-                          <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
-                            <dt className="text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">
-                              Brand
-                            </dt>
-                            <dd className="font-medium text-neutral-900 dark:text-white mt-1">
-                              {productBrand}
-                            </dd>
-                          </div>
-                        )}
-                        <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
-                          <dt className="text-neutral-500 dark:text-neutral-400 text-xs uppercase tracking-wide">
-                            Descriptions
-                          </dt>
-                          <dd className="font-medium text-neutral-900 dark:text-white mt-1">
-                            {selectedProduct.descriptions?.length || 0}{' '}
-                            generated
-                          </dd>
-                        </div>
-                      </div>
-                      {productFeatures && productFeatures.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                            Features
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {productFeatures.map((feature, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 text-sm bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded"
-                              >
-                                {feature}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </Card>
-                  );
-                })()}
-
-                {/* Generate New Description */}
-                <Card className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                      <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-neutral-900 dark:text-white">
-                        Generate Description
-                      </h3>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Select a marketplace to generate an optimized
-                        description
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {Object.entries(MARKETPLACE_LABELS).map(([key, label]) => (
-                      <Button
-                        key={key}
-                        variant="secondary"
-                        size="sm"
-                        className="justify-center"
-                        onClick={() => handleGenerate(selectedProduct.id, key)}
-                        disabled={
-                          generatingFor?.productId === selectedProduct.id &&
-                          generatingFor?.marketplace === key
-                        }
-                      >
-                        {generatingFor?.productId === selectedProduct.id &&
-                        generatingFor?.marketplace === key ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          label
-                        )}
-                      </Button>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* Existing Descriptions */}
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Generated Descriptions
+          {/* Tab Content */}
+          {activeTab === 'bulk' ? (
+            <BulkJobPanel
+              configId={selectedConfigId}
+              onJobComplete={() => {
+                queryClient.invalidateQueries({
+                  queryKey: ['product-desc-products', selectedConfigId],
+                });
+              }}
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              {/* Products List */}
+              <div className="lg:col-span-1">
+                <Card className="h-full min-h-[400px] flex flex-col">
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Package className="w-5 h-5" />
+                      Products ({products.length})
                     </h3>
-                    {(selectedProduct.descriptions?.length ?? 0) > 0 && (
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                        {selectedProduct.descriptions?.length} description
-                        {selectedProduct.descriptions?.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
-                  {(selectedProduct.descriptions?.length ?? 0) === 0 ? (
-                    <div className="text-center py-8 border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">
-                      <FileText className="w-10 h-10 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
-                      <p className="text-neutral-600 dark:text-neutral-400 font-medium">
-                        No descriptions generated yet
-                      </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-1">
-                        Click a marketplace button above to generate your first
-                        description
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {selectedProduct.descriptions?.map((desc) => (
-                        <div
-                          key={desc.id}
-                          className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors"
+                  </CardHeader>
+                  <CardBody className="p-0 flex-1 flex flex-col">
+                    {productsQuery.isLoading ? (
+                      <div className="p-6 text-center flex-1 flex flex-col items-center justify-center">
+                        <RefreshCw className="w-5 h-5 text-neutral-400 animate-spin mx-auto mb-2" />
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Loading products...
+                        </p>
+                      </div>
+                    ) : products.length === 0 ? (
+                      <div className="p-6 text-center flex-1 flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-3">
+                          <Package className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
+                        </div>
+                        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                          No products yet
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+                          Add products to start generating descriptions
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setShowCreateProductModal(true)}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <Badge variant="primary">
-                              {MARKETPLACE_LABELS[desc.marketplace] ||
-                                desc.marketplace}
-                            </Badge>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() =>
-                                handleCopy(
-                                  `${desc.title}\n\n${desc.description}`,
-                                  desc.id,
-                                )
-                              }
-                              title="Copy to clipboard"
-                            >
-                              {copiedId === desc.id ? (
-                                <>
-                                  <Check className="w-4 h-4 text-success-500" />
-                                  <span className="text-success-500">
-                                    Copied!
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-4 h-4" />
-                                  Copy
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                          <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">
-                            {desc.title}
-                          </h4>
-                          <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed">
-                            {desc.description}
-                          </p>
-                          {desc.bulletPoints.length > 0 && (
-                            <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-700">
-                              <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">
-                                Key Points
+                          <Plus className="w-3 h-3" />
+                          Add Product
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                        {products.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => setSelectedProductId(product.id)}
+                            className={`w-full text-left p-4 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors ${
+                              selectedProductId === product.id
+                                ? 'bg-primary-50 dark:bg-primary-900/30'
+                                : ''
+                            }`}
+                          >
+                            <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">
+                              {product.name}
+                            </p>
+                            {product.sku && (
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                SKU: {product.sku}
                               </p>
-                              <ul className="space-y-1.5">
-                                {desc.bulletPoints.map((point, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300"
-                                  >
-                                    <span className="text-primary-500 mt-1">
-                                      •
-                                    </span>
-                                    {point}
-                                  </li>
+                            )}
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                              {product.descriptions?.length || 0} descriptions
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
+
+              {/* Product Details & Descriptions */}
+              <div className="lg:col-span-2">
+                {!selectedProduct ? (
+                  <Card className="h-full min-h-[400px] flex items-center justify-center">
+                    <CardBody>
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
+                          <Package className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                        </div>
+                        <p className="font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                          Select a product to view descriptions
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs mx-auto">
+                          Choose a product from the list to view, generate, or
+                          edit its marketplace descriptions
+                        </p>
+                      </div>
+                    </CardBody>
+                  </Card>
+                ) : (
+                  <>
+                    {/* Product Info */}
+                    <Card>
+                      <CardHeader>
+                        <h3 className="text-lg font-semibold">
+                          {selectedProduct.name}
+                        </h3>
+                      </CardHeader>
+                      <CardBody>
+                        <dl className="grid grid-cols-2 gap-4 text-sm">
+                          {selectedProduct.sku && (
+                            <div>
+                              <dt className="text-neutral-500">SKU</dt>
+                              <dd className="font-medium">
+                                {selectedProduct.sku}
+                              </dd>
+                            </div>
+                          )}
+                          {selectedProduct.category && (
+                            <div>
+                              <dt className="text-neutral-500">Category</dt>
+                              <dd className="font-medium">
+                                {selectedProduct.category}
+                              </dd>
+                            </div>
+                          )}
+                          {(selectedProduct.attributes as { brand?: string })
+                            ?.brand && (
+                            <div>
+                              <dt className="text-neutral-500">Brand</dt>
+                              <dd className="font-medium">
+                                {
+                                  (
+                                    selectedProduct.attributes as {
+                                      brand?: string;
+                                    }
+                                  ).brand
+                                }
+                              </dd>
+                            </div>
+                          )}
+                        </dl>
+                        {selectedProduct.attributes &&
+                          (
+                            selectedProduct.attributes as {
+                              features?: string[];
+                            }
+                          ).features &&
+                          (
+                            selectedProduct.attributes as {
+                              features?: string[];
+                            }
+                          ).features!.length > 0 && (
+                            <div className="mt-4">
+                              <p className="text-sm text-neutral-500 mb-2">
+                                Features
+                              </p>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {(
+                                  selectedProduct.attributes as {
+                                    features?: string[];
+                                  }
+                                ).features!.map((feature, idx) => (
+                                  <li key={idx}>{feature}</li>
                                 ))}
                               </ul>
                             </div>
                           )}
-                          {desc.keywords.length > 0 && (
-                            <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-700">
-                              <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">
-                                SEO Keywords
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {desc.keywords.map((keyword, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-full"
-                                  >
-                                    {keyword}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
+                      </CardBody>
+                    </Card>
+
+                    {/* Generate New Description */}
+                    <Card>
+                      <CardHeader>
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                          <Sparkles className="w-5 h-5" />
+                          Generate Description
+                        </h3>
+                      </CardHeader>
+                      <CardBody>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(MARKETPLACE_LABELS).map(
+                            ([key, label]) => (
+                              <Button
+                                key={key}
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  handleGenerate(selectedProduct.id, key)
+                                }
+                                disabled={
+                                  generatingFor?.productId ===
+                                    selectedProduct.id &&
+                                  generatingFor?.marketplace === key
+                                }
+                              >
+                                {generatingFor?.productId ===
+                                  selectedProduct.id &&
+                                generatingFor?.marketplace === key ? (
+                                  <>
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-4 h-4" />
+                                    {label}
+                                  </>
+                                )}
+                              </Button>
+                            ),
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              </>
-            )}
-          </div>
-        </div>
+                      </CardBody>
+                    </Card>
+
+                    {/* Existing Descriptions */}
+                    <Card>
+                      <CardHeader>
+                        <h3 className="text-lg font-semibold">
+                          Generated Descriptions
+                        </h3>
+                      </CardHeader>
+                      <CardBody>
+                        {(selectedProduct.descriptions?.length ?? 0) === 0 ? (
+                          <p className="text-neutral-500 text-center py-4">
+                            No descriptions generated yet. Click a marketplace
+                            button above to generate.
+                          </p>
+                        ) : (
+                          <div className="space-y-4">
+                            {selectedProduct.descriptions?.map((desc) => (
+                              <div
+                                key={desc.id}
+                                className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <Badge variant="primary">
+                                    {MARKETPLACE_LABELS[desc.marketplace] ||
+                                      desc.marketplace}
+                                  </Badge>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() =>
+                                        handleCopy(
+                                          `${desc.title}\n\n${desc.description}`,
+                                          desc.id,
+                                        )
+                                      }
+                                    >
+                                      {copiedId === desc.id ? (
+                                        <Check className="w-4 h-4 text-green-500" />
+                                      ) : (
+                                        <Copy className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                                <h4 className="font-semibold mb-2">
+                                  {desc.title}
+                                </h4>
+                                <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                                  {desc.description}
+                                </p>
+                                {desc.bulletPoints.length > 0 && (
+                                  <ul className="mt-3 list-disc list-inside text-sm space-y-1">
+                                    {desc.bulletPoints.map((point, idx) => (
+                                      <li key={idx}>{point}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                                {desc.keywords.length > 0 && (
+                                  <div className="mt-3 flex flex-wrap gap-1">
+                                    {desc.keywords.map((keyword, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-2 py-0.5 text-xs bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded"
+                                      >
+                                        {keyword}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardBody>
+                    </Card>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Config Modal */}
@@ -829,13 +851,13 @@ function ProductDescriptionsPage(): JSX.Element {
           aria-modal="true"
           aria-labelledby="create-config-modal-title"
         >
-          <Card className="w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700 shrink-0">
               <h2
                 id="create-config-modal-title"
                 className="text-lg font-semibold text-neutral-900 dark:text-white"
               >
-                New Configuration
+                New Brand Profile
               </h2>
               <button
                 onClick={() => setShowCreateConfigModal(false)}
@@ -845,31 +867,97 @@ function ProductDescriptionsPage(): JSX.Element {
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
-            <form onSubmit={handleCreateConfig}>
-              <div className="p-4 space-y-4">
-                <Select label="Client" name="clientId" required>
-                  <option value="">Select a client...</option>
+            <form
+              onSubmit={handleCreateConfig}
+              className="flex flex-col flex-1 overflow-hidden"
+            >
+              <div className="p-4 space-y-5 overflow-y-auto flex-1">
+                {/* Account Selection */}
+                <Select label="Account" name="clientId" required>
+                  <option value="">Select an account...</option>
                   {accounts.map((account) => (
                     <option key={account.id} value={account.id}>
                       {account.name}
                     </option>
                   ))}
                 </Select>
-                <Select label="Default Tone" name="defaultTone">
-                  <option value="">Select a tone...</option>
-                  <option value="professional">Professional</option>
-                  <option value="casual">Casual</option>
-                  <option value="enthusiastic">Enthusiastic</option>
-                  <option value="luxury">Luxury</option>
-                </Select>
-                <Select label="Default Length" name="defaultLength">
-                  <option value="">Select a length...</option>
-                  <option value="short">Short</option>
-                  <option value="medium">Medium</option>
-                  <option value="long">Long</option>
-                </Select>
+
+                {/* Brand Voice Section */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Brand Voice
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Select label="Tone" name="defaultTone">
+                      <option value="">Select tone...</option>
+                      <option value="professional">Professional</option>
+                      <option value="casual">Casual</option>
+                      <option value="enthusiastic">Enthusiastic</option>
+                      <option value="luxury">Luxury</option>
+                      <option value="playful">Playful</option>
+                      <option value="technical">Technical</option>
+                    </Select>
+                    <Select label="Length" name="defaultLength">
+                      <option value="">Select length...</option>
+                      <option value="short">Short (50-100 words)</option>
+                      <option value="medium">Medium (100-200 words)</option>
+                      <option value="long">Long (200+ words)</option>
+                    </Select>
+                  </div>
+                  <Input
+                    label="Target Audience"
+                    name="targetAudience"
+                    placeholder="e.g., Tech-savvy millennials, Budget-conscious parents"
+                  />
+                </div>
+
+                {/* SEO Settings */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      SEO Optimization
+                    </h3>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="enableSEO"
+                        defaultChecked
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-neutral-600 peer-checked:bg-primary-500"></div>
+                    </label>
+                  </div>
+                  <Input
+                    label="Target Keywords"
+                    name="targetKeywords"
+                    placeholder="keyword1, keyword2, keyword3"
+                  />
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Separate keywords with commas
+                  </p>
+                </div>
+
+                {/* Language & Compliance */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Select label="Language" name="defaultLanguage">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                  </Select>
+                  <Select label="Compliance" name="complianceMode">
+                    <option value="NONE">None</option>
+                    <option value="FTC">FTC Guidelines</option>
+                    <option value="FDA">FDA Compliant</option>
+                    <option value="CUSTOM">Custom Rules</option>
+                  </Select>
+                </div>
               </div>
-              <div className="flex gap-3 justify-end p-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 rounded-b-lg">
+              <div className="flex gap-3 justify-end p-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 shrink-0">
                 <Button
                   type="button"
                   variant="secondary"
@@ -880,7 +968,7 @@ function ProductDescriptionsPage(): JSX.Element {
                 <Button type="submit" disabled={createConfigMutation.isPending}>
                   {createConfigMutation.isPending
                     ? 'Creating...'
-                    : 'Create Configuration'}
+                    : 'Create Profile'}
                 </Button>
               </div>
             </form>

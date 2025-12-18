@@ -1124,23 +1124,54 @@ enum GenerationJobStatus {
   CANCELLED
 }
 
+enum ComplianceMode {
+  NONE
+  FOOD
+  SUPPLEMENTS
+  COSMETICS
+  AUTOMOTIVE
+  MEDICAL
+}
+
+enum ComplianceStatus {
+  PENDING
+  APPROVED
+  FLAGGED
+  REQUIRES_REVIEW
+}
+
 /**
  * ProductDescriptionConfig - Configuration for product description generation
+ * Enhanced with multi-tenancy, compliance, and language support
  */
 model ProductDescriptionConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int    @id @default(autoincrement())
+  tenantId String
+
+  // Account relationship (replaces legacy Client)
+  accountId Int @unique
+
+  // Legacy client relationship (deprecated - use accountId)
+  clientId Int? @unique
 
   // Default settings
   defaultTone   String? // professional, casual, luxurious, etc.
   defaultLength String? // short, medium, long
 
   // Brand voice settings (trained from examples)
+  // Structure: { toneMarkers: string[], prohibitedWords: string[], preferredPhrases: string[], styleRules: object, sampleIds: string[], trainingStatus: string }
   brandVoiceProfile Json?
 
   // SEO settings
   enableSEO      Boolean  @default(true)
   targetKeywords String[] @default([])
+
+  // Compliance settings
+  complianceMode ComplianceMode @default(NONE)
+
+  // Language settings
+  defaultLanguage    String   @default("en")
+  supportedLanguages String[] @default(["en"])
 
   // Integration credentials
   shopifyApiKey        String?
@@ -1150,12 +1181,15 @@ model ProductDescriptionConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client    Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenant    Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account   Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  client    Client?               @relation(fields: [clientId], references: [id], onDelete: SetNull)
   products  Product[]
   templates DescriptionTemplate[]
   bulkJobs  BulkGenerationJob[]
 
-  @@index([clientId, isActive])
+  @@index([tenantId])
+  @@index([accountId, isActive])
 }
 
 /**
@@ -1197,6 +1231,7 @@ model Product {
 
 /**
  * ProductDescription - Generated product descriptions
+ * Enhanced with multi-language, SEO scoring, and compliance tracking
  */
 model ProductDescription {
   id        Int @id @default(autoincrement())
@@ -1215,6 +1250,20 @@ model ProductDescription {
 
   // Marketplace-specific
   marketplace Marketplace @default(GENERIC)
+
+  // Language support
+  language String @default("en")
+
+  // SEO scoring (0-100)
+  seoScore         Int?
+  readabilityScore Float?
+
+  // Compliance tracking
+  complianceStatus ComplianceStatus @default(PENDING)
+  complianceNotes  String[]         @default([])
+
+  // Template used for generation
+  templateId Int?
 
   // A/B testing
   variant   String? // A, B, C, etc.
@@ -1236,6 +1285,7 @@ model ProductDescription {
 
   @@index([productId, marketplace])
   @@index([productId, variant])
+  @@index([productId, language])
 }
 
 /**
@@ -1274,6 +1324,7 @@ model DescriptionTemplate {
 
 /**
  * BulkGenerationJob - Batch processing for bulk description generation
+ * Enhanced with multi-language targeting and resume capability
  */
 model BulkGenerationJob {
   id       Int @id @default(autoincrement())
@@ -1292,13 +1343,21 @@ model BulkGenerationJob {
   templateId  Int?
   settings    Json?
 
-  // Input file
-  inputFileUrl String?
+  // Language targeting for multi-language generation
+  targetLanguages String[] @default(["en"])
 
-  // Output file
-  outputFileUrl String?
+  // Resume capability - track last processed position
+  lastProcessedIndex Int @default(0)
 
-  // Error log
+  // Input file (for CSV import)
+  inputFileUrl  String?
+  inputFileName String?
+
+  // Output file (for CSV export)
+  outputFileUrl  String?
+  outputFileName String?
+
+  // Error log with detailed error information
   errorLog Json?
 
   // Timing
@@ -5923,6 +5982,8 @@ model Tenant {
   marketingContents MarketingContent[]
   campaigns         Campaign[]
   inboundLeads      InboundLead[]
+  // AI Tool configurations (tenant-scoped)
+  productDescriptionConfigs ProductDescriptionConfig[]
   // Audit and health metrics
   auditLogs         AuditLog[]
   healthMetrics     TenantHealthMetrics[]
@@ -6086,8 +6147,9 @@ model Account {
   meetings          Meeting[]
 
   // AI Tool configurations (replaces legacy Client relations)
-  chatbotConfig          ChatbotConfig?
-  documentAnalyzerConfig DocumentAnalyzerConfig?
+  chatbotConfig             ChatbotConfig?
+  documentAnalyzerConfig    DocumentAnalyzerConfig?
+  productDescriptionConfig  ProductDescriptionConfig?
 
   // Finance Tracking relations
   budgets         Budget[]

@@ -4,14 +4,51 @@
  * AI-powered product description generation with:
  * - SEO-optimized content generation
  * - Multi-marketplace formatting
- * - Brand voice matching
+ * - Brand voice matching (enhanced)
+ * - Template-driven generation
  * - Bulk processing capabilities
  * - A/B testing variants
+ * - Multi-language support
+ * - Compliance checking
  */
 
 import { prisma } from '../../prisma/client';
 import { env } from '../../config/env';
-import { Marketplace, GenerationJobStatus, Prisma } from '@prisma/client';
+import {
+  Marketplace,
+  GenerationJobStatus,
+  Prisma,
+  ComplianceMode as _ComplianceMode,
+} from '@prisma/client';
+
+// Re-export for future use
+export { _ComplianceMode as ComplianceMode };
+
+// Import brand voice and template services
+import {
+  getBrandVoiceProfile,
+  buildBrandVoicePrompt,
+  BrandVoiceProfile,
+} from './services/brand-voice.service';
+import {
+  getMatchingTemplate,
+  getTemplateById,
+  buildTemplatePrompt,
+  ensureBuiltInTemplates,
+  AppliedTemplate,
+} from './services/template.service';
+
+// Re-export services for router access
+export * from './services/brand-voice.service';
+export * from './services/template.service';
+export * from './services/bulk-import.service';
+export * from './services/bulk-job.service';
+export * from './services/seo.service';
+export * from './services/compliance.service';
+export * from './services/image-analysis.service';
+export * from './services/analytics.service';
+export * from './services/multilang.service';
+export * from './services/crm-integration.service';
 
 // ============================================================================
 // TYPES
@@ -42,6 +79,8 @@ interface GenerationOptions {
   keywords?: string[];
   generateVariants?: boolean;
   variantCount?: number;
+  templateId?: number;
+  language?: string;
 }
 
 interface GeneratedDescription {
@@ -86,13 +125,16 @@ export async function listProductDescriptionConfigs(filters?: {
 }
 
 export async function createProductDescriptionConfig(
-  clientId: number,
-  data: ProductDescriptionConfigInput,
+  accountId: number,
+  data: ProductDescriptionConfigInput & { tenantId: string; clientId?: number },
 ) {
+  const { tenantId, clientId, ...configData } = data;
   return prisma.productDescriptionConfig.create({
     data: {
+      tenantId,
+      accountId,
       clientId,
-      ...data,
+      ...configData,
     },
   });
 }
@@ -181,6 +223,29 @@ export async function deleteProduct(id: number) {
   });
 }
 
+export async function getDescription(id: number) {
+  return prisma.productDescription.findUnique({
+    where: { id },
+  });
+}
+
+export async function updateDescriptionSEOScore(id: number, seoScore: number) {
+  return prisma.productDescription.update({
+    where: { id },
+    data: { seoScore },
+  });
+}
+
+export async function updateDescriptionComplianceStatus(
+  id: number,
+  complianceStatus: 'PENDING' | 'APPROVED' | 'FLAGGED' | 'REQUIRES_REVIEW',
+) {
+  return prisma.productDescription.update({
+    where: { id },
+    data: { complianceStatus },
+  });
+}
+
 // ============================================================================
 // DESCRIPTION GENERATION
 // ============================================================================
@@ -204,16 +269,39 @@ export async function generateDescription(
     marketplace = 'GENERIC',
     generateVariants = false,
     variantCount = 2,
+    templateId,
+    language = 'en',
   } = options;
 
   // Get marketplace constraints
   const constraints = getMarketplaceConstraints(marketplace);
 
-  // Generate main description
+  // Ensure built-in templates exist for this config
+  await ensureBuiltInTemplates(product.configId);
+
+  // Get brand voice profile
+  const brandVoiceProfile = await getBrandVoiceProfile(product.configId);
+
+  // Get template (from templateId or matching template)
+  let template: AppliedTemplate | null = null;
+  if (templateId) {
+    template = await getTemplateById(templateId);
+  }
+  if (!template) {
+    template = await getMatchingTemplate(
+      product.configId,
+      marketplace,
+      product.category || undefined,
+    );
+  }
+
+  // Generate main description with brand voice and template
   const generated = await generateDescriptionContent(
     product,
     options,
     constraints,
+    brandVoiceProfile,
+    template,
   );
 
   // Save main description
@@ -222,6 +310,8 @@ export async function generateDescription(
       productId,
       ...generated,
       marketplace,
+      language,
+      templateId: templateId || undefined,
       isControl: true,
     },
   });
@@ -229,11 +319,14 @@ export async function generateDescription(
   // Generate variants if requested
   const variants: unknown[] = [];
   if (generateVariants) {
+    const variantTones = ['casual', 'enthusiastic', 'professional', 'playful'];
     for (let i = 0; i < variantCount; i++) {
       const variantContent = await generateDescriptionContent(
         product,
-        { ...options, tone: i === 0 ? 'casual' : 'enthusiastic' },
+        { ...options, tone: variantTones[i % variantTones.length] },
         constraints,
+        brandVoiceProfile,
+        template,
       );
 
       const variant = await prisma.productDescription.create({
@@ -241,6 +334,8 @@ export async function generateDescription(
           productId,
           ...variantContent,
           marketplace,
+          language,
+          templateId: templateId || undefined,
           variant: String.fromCharCode(65 + i + 1), // B, C, D, etc.
           isControl: false,
         },
@@ -268,9 +363,12 @@ async function generateDescriptionContent(
   },
   options: GenerationOptions,
   constraints: MarketplaceConstraints,
+  brandVoiceProfile: BrandVoiceProfile | null = null,
+  template: AppliedTemplate | null = null,
 ): Promise<GeneratedDescription> {
   const tone = options.tone || product.config.defaultTone || 'professional';
   const length = options.length || 'medium';
+  const language = options.language || 'en';
   const keywords = [
     ...(options.keywords || []),
     ...product.config.targetKeywords,
@@ -284,7 +382,19 @@ async function generateDescriptionContent(
         length,
         keywords,
         constraints,
+        template,
+        language,
       );
+
+      // Build brand voice instructions
+      const brandVoiceInstructions = brandVoiceProfile
+        ? buildBrandVoicePrompt(brandVoiceProfile)
+        : '';
+
+      // Build template instructions
+      const templateInstructions = template
+        ? buildTemplatePrompt(template)
+        : '';
 
       const response = await fetch(
         'https://api.openai.com/v1/chat/completions',
@@ -309,8 +419,9 @@ IMPORTANT GUIDELINES:
 3. Use natural language that includes target keywords
 4. Follow marketplace-specific character limits strictly
 5. Write unique content - don't copy source descriptions verbatim
-
-${product.config.brandVoiceProfile ? `Brand Voice Guidelines: ${JSON.stringify(product.config.brandVoiceProfile)}` : ''}`,
+6. Generate content in the specified language
+${brandVoiceInstructions}
+${templateInstructions}`,
               },
               {
                 role: 'user',
@@ -332,7 +443,7 @@ ${product.config.brandVoiceProfile ? `Brand Voice Guidelines: ${JSON.stringify(p
   }
 
   // Fallback to template-based generation
-  return generateTemplateDescription(product, tone, constraints);
+  return generateTemplateDescription(product, tone, constraints, template);
 }
 
 function buildGenerationPrompt(
@@ -347,7 +458,24 @@ function buildGenerationPrompt(
   length: string,
   keywords: string[],
   constraints: MarketplaceConstraints,
+  template: AppliedTemplate | null = null,
+  language: string = 'en',
 ): string {
+  const languageInstruction =
+    language !== 'en'
+      ? `\nIMPORTANT: Generate all content in ${getLanguageName(language)} (language code: ${language}). Ensure proper grammar, idioms, and cultural appropriateness for ${language} speakers.`
+      : '';
+
+  const templateInstruction = template
+    ? `\nTemplate Structure to Follow:
+- Title Format: ${template.titleTemplate || 'Standard format'}
+- Short Description Format: ${template.shortDescTemplate || 'Standard format'}
+- Long Description Format: ${template.longDescTemplate || 'Standard format'}
+- Bullet Format: ${template.bulletTemplate || 'Standard format'}
+
+Replace {{variable}} placeholders with appropriate product information.`
+    : '';
+
   return `Generate a product description for the following product:
 
 Product Name: ${product.name}
@@ -359,6 +487,8 @@ Requirements:
 - Tone: ${tone}
 - Length: ${length}
 - Target Keywords: ${keywords.join(', ') || 'None specified'}
+${languageInstruction}
+${templateInstruction}
 
 Marketplace Constraints:
 - Title: max ${constraints.titleMaxLength} characters
@@ -376,6 +506,30 @@ Response Format (JSON):
   "metaDescription": "SEO meta description (max 155 chars)",
   "keywords": ["keyword1", "keyword2", ...]
 }`;
+}
+
+// Language name mapping
+function getLanguageName(code: string): string {
+  const languages: Record<string, string> = {
+    en: 'English',
+    es: 'Spanish',
+    fr: 'French',
+    de: 'German',
+    it: 'Italian',
+    pt: 'Portuguese',
+    ja: 'Japanese',
+    zh: 'Chinese',
+    ko: 'Korean',
+    ar: 'Arabic',
+    nl: 'Dutch',
+    ru: 'Russian',
+    pl: 'Polish',
+    sv: 'Swedish',
+    da: 'Danish',
+    no: 'Norwegian',
+    fi: 'Finnish',
+  };
+  return languages[code] || code;
 }
 
 function parseGeneratedContent(
@@ -435,12 +589,101 @@ function generateTemplateDescription(
   },
   tone: string,
   constraints: MarketplaceConstraints,
+  template: AppliedTemplate | null = null,
 ): GeneratedDescription {
   const attrs = (product.attributes || {}) as Record<string, string>;
   const attrList = Object.entries(attrs)
     .map(([key, value]) => `${key}: ${value}`)
     .join(', ');
 
+  // Extract features and benefits from attributes
+  const features = Object.entries(attrs)
+    .slice(0, 5)
+    .map(([key, value]) => `${key}: ${value}`);
+  const benefits = [
+    attrs.benefit1 || `Quality ${product.category || 'product'}`,
+    attrs.benefit2 || 'Exceptional value',
+    attrs.benefit3 || 'Built to last',
+  ];
+
+  // If template is provided, use template variables
+  if (template && template.titleTemplate) {
+    const variables: Record<string, string> = {
+      product_name: product.name,
+      category: product.category || 'Product',
+      subcategory: '',
+      brand: attrs.brand || attrs.Brand || 'Brand',
+      feature_1: features[0] || '',
+      feature_2: features[1] || '',
+      feature_3: features[2] || '',
+      feature_4: features[3] || '',
+      feature_5: features[4] || '',
+      benefit_1: benefits[0] || '',
+      benefit_2: benefits[1] || '',
+      benefit_3: benefits[2] || '',
+      bullet_points: features.map((f) => `• ${f}`).join('\n'),
+    };
+
+    // Add all attributes as variables
+    for (const [key, value] of Object.entries(attrs)) {
+      const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
+      if (typeof value === 'string') {
+        variables[normalizedKey] = value;
+      }
+    }
+
+    const applyVars = (templateStr: string): string => {
+      return templateStr.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+        return variables[varName] || match;
+      });
+    };
+
+    const title = applyVars(template.titleTemplate).substring(
+      0,
+      constraints.titleMaxLength,
+    );
+    const shortDesc = applyVars(template.shortDescTemplate).substring(
+      0,
+      constraints.shortDescMaxLength,
+    );
+    const longDesc = applyVars(template.longDescTemplate).substring(
+      0,
+      constraints.longDescMaxLength,
+    );
+
+    // Generate bullet points using template
+    const bulletPoints = features
+      .slice(0, constraints.bulletPointCount)
+      .map((feature) => {
+        const bulletVars = {
+          ...variables,
+          feature,
+          benefit: `Provides ${feature.split(':')[0]}`,
+        };
+        return template.bulletTemplate
+          ? template.bulletTemplate
+              .replace(/\{\{feature\}\}/g, feature)
+              .replace(/\{\{benefit\}\}/g, bulletVars.benefit)
+              .replace(
+                /\{\{feature_label\}\}/g,
+                feature.split(':')[0]?.toUpperCase() || 'FEATURE',
+              )
+              .substring(0, constraints.bulletPointMaxLength)
+          : feature.substring(0, constraints.bulletPointMaxLength);
+      });
+
+    return {
+      title,
+      shortDescription: shortDesc,
+      longDescription: longDesc,
+      bulletPoints,
+      metaTitle: title.substring(0, 60),
+      metaDescription: shortDesc.substring(0, 155),
+      keywords: [product.name, product.category || ''].filter(Boolean),
+    };
+  }
+
+  // Fallback to basic template generation (no template provided)
   const title = product.name.substring(0, constraints.titleMaxLength);
 
   const shortDesc = product.sourceDescription
@@ -456,7 +699,7 @@ ${product.sourceDescription || `This ${product.category || 'product'} offers exc
 
 ${attrList ? `Features: ${attrList}` : ''}
 
-[This is placeholder content. Configure OPENAI_API_KEY for AI-generated descriptions.]`.substring(
+[Template-based content. Configure OPENAI_API_KEY for AI-generated descriptions.]`.substring(
     0,
     constraints.longDescMaxLength,
   );
@@ -755,7 +998,8 @@ export async function updateDescriptionPerformance(
   });
 }
 
-export async function getDescriptionPerformance(productId: number) {
+// Renamed to avoid collision with getDescriptionPerformance from analytics.service.ts
+export async function getProductVariantPerformance(productId: number) {
   const descriptions = await prisma.productDescription.findMany({
     where: { productId },
     select: {
