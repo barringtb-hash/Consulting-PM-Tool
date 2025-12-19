@@ -262,7 +262,8 @@ router.post(
   async (req, res) => {
     try {
       const configId = parseInt(req.params.configId);
-      const { slot, providerId } = req.body;
+      const body = req.body as { slot?: string; providerId?: number };
+      const { slot, providerId } = body;
 
       if (!slot || !providerId) {
         return res

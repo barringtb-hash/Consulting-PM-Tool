@@ -222,7 +222,7 @@ export async function checkModificationEligibility(
 
   const paidAmount =
     appointment.paymentTransactions
-      ?.filter((t) => t.status === 'COMPLETED' && t.type === 'CHARGE')
+      ?.filter((t) => t.status === 'SUCCEEDED' && t.type === 'FULL')
       ?.reduce((sum, t) => sum + (t.amount?.toNumber() || 0), 0) || 0;
 
   const refundAmount = (paidAmount * refundPercent) / 100;

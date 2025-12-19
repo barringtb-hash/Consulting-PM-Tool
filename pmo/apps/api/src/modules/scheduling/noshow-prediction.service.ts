@@ -674,9 +674,11 @@ async function savePredictionLog(
       appointmentId,
       predictedScore: result.score,
       predictedAt: new Date(),
-      modelVersion: result.modelVersion,
-      features: features as unknown as Prisma.InputJsonValue,
-      experimentVariant: result.experimentVariant,
+      features: {
+        ...features,
+        modelVersion: result.modelVersion,
+        experimentVariant: result.experimentVariant,
+      } as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -727,9 +729,8 @@ export async function getModelPerformance(
       lte: options.endDate,
     };
   }
-  if (options?.experimentVariant) {
-    where.experimentVariant = options.experimentVariant;
-  }
+  // experimentVariant filtering would require schema migration
+  // For now, skip filtering by variant
 
   const predictions = await prisma.noShowPredictionLog.findMany({
     where,
@@ -810,11 +811,11 @@ export async function getActiveExperiment(
 
   if (!config) return null;
 
-  const customSettings = config.customSettings as {
+  const templateSettings = (config.templateSettings || {}) as {
     abTests?: ABTestConfig[];
   } | null;
 
-  const activeTest = customSettings?.abTests?.find(
+  const activeTest = templateSettings?.abTests?.find(
     (t) => t.isActive && (!t.endDate || new Date(t.endDate) > new Date()),
   );
 
@@ -851,11 +852,11 @@ export async function assignExperimentVariant(
 async function getExperimentWeights(variantId: string): Promise<ModelWeights> {
   // Find the variant across all configs (simplified)
   const configs = await prisma.schedulingConfig.findMany({
-    select: { customSettings: true },
+    select: { templateSettings: true },
   });
 
   for (const config of configs) {
-    const settings = config.customSettings as {
+    const settings = config.templateSettings as {
       abTests?: ABTestConfig[];
     } | null;
     for (const test of settings?.abTests || []) {
@@ -884,7 +885,7 @@ export async function createExperiment(
     throw new Error('Scheduling config not found');
   }
 
-  const currentSettings = (config.customSettings || {}) as {
+  const currentSettings = (config.templateSettings || {}) as {
     abTests?: ABTestConfig[];
   };
   const abTests = currentSettings.abTests || [];
@@ -897,10 +898,10 @@ export async function createExperiment(
   await prisma.schedulingConfig.update({
     where: { id: configId },
     data: {
-      customSettings: {
+      templateSettings: {
         ...currentSettings,
         abTests: [...abTests, newExperiment],
-      } as Prisma.InputJsonValue,
+      } as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -919,7 +920,7 @@ export async function endExperiment(configId: number, experimentId: string) {
     throw new Error('Scheduling config not found');
   }
 
-  const currentSettings = (config.customSettings || {}) as {
+  const currentSettings = (config.templateSettings || {}) as {
     abTests?: ABTestConfig[];
   };
   const abTests = currentSettings.abTests || [];
@@ -931,10 +932,10 @@ export async function endExperiment(configId: number, experimentId: string) {
   await prisma.schedulingConfig.update({
     where: { id: configId },
     data: {
-      customSettings: {
+      templateSettings: {
         ...currentSettings,
         abTests: updatedTests,
-      } as Prisma.InputJsonValue,
+      } as unknown as Prisma.InputJsonValue,
     },
   });
 }

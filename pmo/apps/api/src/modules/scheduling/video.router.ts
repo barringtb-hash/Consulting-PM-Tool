@@ -77,7 +77,8 @@ router.post(
     try {
       const configId = parseInt(req.params.configId);
       const platform = req.params.platform.toUpperCase() as VideoPlatform;
-      const { code } = req.body;
+      const body = req.body as { code?: string };
+      const { code } = body;
 
       if (!code) {
         return res.status(400).json({ error: 'Authorization code required' });

@@ -19,6 +19,7 @@ import {
   EmploymentType,
   AvailabilityType,
   TimeOffStatus,
+  TimeOffType,
   SwapStatus,
   ScheduleStatus,
 } from '@prisma/client';
@@ -28,21 +29,23 @@ import {
 // ============================================================================
 
 interface CreateEmployeeInput {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string;
   employmentType: EmploymentType;
   hourlyRate?: number;
   maxHoursPerWeek?: number;
-  roleIds: number[];
-  locationIds?: number[];
+  roleId?: number; // Single role, not array
+  preferredLocations?: number[]; // Stored as JSON
 }
 
 interface CreateShiftInput {
-  scheduleId: number;
+  configId: number;
+  scheduleId?: number;
   employeeId?: number;
-  locationId: number;
-  roleId: number;
+  locationId?: number;
+  roleId?: number;
   startTime: Date;
   endTime: Date;
   breakMinutes?: number;
@@ -69,7 +72,7 @@ interface TimeOffInput {
   employeeId: number;
   startDate: Date;
   endDate: Date;
-  type: string;
+  type: TimeOffType;
   reason?: string;
 }
 
@@ -78,26 +81,39 @@ interface TimeOffInput {
 // ============================================================================
 
 /**
+ * Get shift scheduling config by ID
+ */
+export async function getShiftConfig(configId: number) {
+  return prisma.shiftSchedulingConfig.findFirst({
+    where: { id: configId },
+  });
+}
+
+/**
  * Get or create shift scheduling config
  */
-export async function getOrCreateShiftConfig(configId: number) {
+export async function getOrCreateShiftConfig(
+  configId: number,
+  tenantId?: string,
+) {
   const existing = await prisma.shiftSchedulingConfig.findFirst({
-    where: { configId },
+    where: { id: configId },
   });
 
   if (existing) {
     return existing;
   }
 
+  // Can't create without tenantId
+  if (!tenantId) {
+    return null;
+  }
+
   return prisma.shiftSchedulingConfig.create({
     data: {
-      configId,
-      defaultShiftDuration: 480, // 8 hours
-      minHoursBetweenShifts: 8,
-      maxHoursPerDay: 10,
-      maxHoursPerWeek: 40,
-      overtimeThreshold: 40,
-      enableAutoScheduling: false,
+      tenantId,
+      businessName: 'Default Business',
+      weeklyOvertimeThreshold: 40,
     },
   });
 }
@@ -108,19 +124,25 @@ export async function getOrCreateShiftConfig(configId: number) {
 export async function updateShiftConfig(
   configId: number,
   data: {
-    defaultShiftDuration?: number;
-    minHoursBetweenShifts?: number;
-    maxHoursPerDay?: number;
-    maxHoursPerWeek?: number;
-    overtimeThreshold?: number;
-    enableAutoScheduling?: boolean;
-    autoSchedulingRules?: object;
+    businessName?: string;
+    timezone?: string;
+    weekStartDay?: number;
+    weeklyOvertimeThreshold?: number;
+    dailyOvertimeThreshold?: number;
+    overtimeMultiplier?: number;
+    minRestBetweenShifts?: number;
+    maxConsecutiveDays?: number;
+    requireBreaks?: boolean;
+    breakDurationMinutes?: number;
+    breakAfterHours?: number;
+    schedulePublishLeadDays?: number;
+    enableShiftReminders?: boolean;
+    reminderHoursBefore?: number;
+    isActive?: boolean;
   },
 ) {
-  const config = await getOrCreateShiftConfig(configId);
-
   return prisma.shiftSchedulingConfig.update({
-    where: { id: config.id },
+    where: { id: configId },
     data,
   });
 }
@@ -258,24 +280,17 @@ export async function createEmployee(
   configId: number,
   input: CreateEmployeeInput,
 ) {
-  const { roleIds, locationIds, ...employeeData } = input;
+  const { roleId, preferredLocations, ...employeeData } = input;
 
   return prisma.shiftEmployee.create({
     data: {
       configId,
       ...employeeData,
-      roles: {
-        connect: roleIds.map((id) => ({ id })),
-      },
-      locations: locationIds?.length
-        ? {
-            connect: locationIds.map((id) => ({ id })),
-          }
-        : undefined,
+      roleId,
+      preferredLocations: preferredLocations || [],
     },
     include: {
-      roles: true,
-      locations: true,
+      role: true,
     },
   });
 }
@@ -297,22 +312,13 @@ export async function getEmployees(
       configId,
       isActive: filters?.isActive,
       employmentType: filters?.employmentType,
-      roles: filters?.roleId
-        ? {
-            some: { id: filters.roleId },
-          }
-        : undefined,
-      locations: filters?.locationId
-        ? {
-            some: { id: filters.locationId },
-          }
-        : undefined,
+      roleId: filters?.roleId,
+      // Note: locationId filtering would require JSON path query on preferredLocations
     },
     include: {
-      roles: true,
-      locations: true,
+      role: true,
     },
-    orderBy: { name: 'asc' },
+    orderBy: { firstName: 'asc' },
   });
 }
 
@@ -323,8 +329,7 @@ export async function getEmployeeById(id: number) {
   return prisma.shiftEmployee.findUnique({
     where: { id },
     include: {
-      roles: true,
-      locations: true,
+      role: true,
       availability: true,
     },
   });
@@ -337,26 +342,17 @@ export async function updateEmployee(
   id: number,
   input: Partial<CreateEmployeeInput>,
 ) {
-  const { roleIds, locationIds, ...employeeData } = input;
+  const { roleId, preferredLocations, ...employeeData } = input;
 
   return prisma.shiftEmployee.update({
     where: { id },
     data: {
       ...employeeData,
-      roles: roleIds
-        ? {
-            set: roleIds.map((id) => ({ id })),
-          }
-        : undefined,
-      locations: locationIds
-        ? {
-            set: locationIds.map((id) => ({ id })),
-          }
-        : undefined,
+      roleId,
+      preferredLocations: preferredLocations,
     },
     include: {
-      roles: true,
-      locations: true,
+      role: true,
     },
   });
 }
@@ -446,8 +442,7 @@ export async function getTimeOffRequests(
       endDate: filters?.endDate ? { lte: filters.endDate } : undefined,
     },
     include: {
-      employee: { select: { id: true, name: true } },
-      reviewer: { select: { id: true, name: true } },
+      employee: { select: { id: true, firstName: true, lastName: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -465,7 +460,7 @@ export async function approveTimeOffRequest(
     where: { id },
     data: {
       status: 'APPROVED',
-      reviewedById: reviewerId,
+      reviewedBy: reviewerId,
       reviewedAt: new Date(),
       reviewNotes,
     },
@@ -484,7 +479,7 @@ export async function denyTimeOffRequest(
     where: { id },
     data: {
       status: 'DENIED',
-      reviewedById: reviewerId,
+      reviewedBy: reviewerId,
       reviewedAt: new Date(),
       reviewNotes,
     },
@@ -541,7 +536,7 @@ export async function getScheduleById(id: number) {
     include: {
       shifts: {
         include: {
-          employee: { select: { id: true, name: true } },
+          employee: { select: { id: true, firstName: true, lastName: true } },
           location: { select: { id: true, name: true } },
           role: { select: { id: true, name: true, color: true } },
         },
@@ -611,7 +606,7 @@ export async function createShift(input: CreateShiftInput) {
       status: 'SCHEDULED',
     },
     include: {
-      employee: { select: { id: true, name: true } },
+      employee: { select: { id: true, firstName: true, lastName: true } },
       location: { select: { id: true, name: true } },
       role: { select: { id: true, name: true, color: true } },
     },
@@ -652,7 +647,7 @@ export async function getShifts(
       ...dateFilter,
     },
     include: {
-      employee: { select: { id: true, name: true } },
+      employee: { select: { id: true, firstName: true, lastName: true } },
       location: { select: { id: true, name: true } },
       role: { select: { id: true, name: true, color: true } },
     },
@@ -680,7 +675,7 @@ export async function updateShift(
     where: { id },
     data,
     include: {
-      employee: { select: { id: true, name: true } },
+      employee: { select: { id: true, firstName: true, lastName: true } },
       location: { select: { id: true, name: true } },
       role: { select: { id: true, name: true, color: true } },
     },
@@ -707,7 +702,7 @@ export async function assignEmployeeToShift(
     where: { id: shiftId },
     data: { employeeId },
     include: {
-      employee: { select: { id: true, name: true } },
+      employee: { select: { id: true, firstName: true, lastName: true } },
       location: { select: { id: true, name: true } },
       role: { select: { id: true, name: true, color: true } },
     },
@@ -752,8 +747,8 @@ export async function createShiftSwapRequest(
           role: { select: { name: true } },
         },
       },
-      requester: { select: { id: true, name: true } },
-      targetEmployee: { select: { id: true, name: true } },
+      requester: { select: { id: true, firstName: true, lastName: true } },
+      targetEmployee: { select: { id: true, firstName: true, lastName: true } },
     },
   });
 }
@@ -783,8 +778,8 @@ export async function getShiftSwapRequests(
           role: { select: { name: true } },
         },
       },
-      requester: { select: { id: true, name: true } },
-      targetEmployee: { select: { id: true, name: true } },
+      requester: { select: { id: true, firstName: true, lastName: true } },
+      targetEmployee: { select: { id: true, firstName: true, lastName: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -796,7 +791,7 @@ export async function getShiftSwapRequests(
 export async function approveShiftSwapRequest(
   id: number,
   approverId: number,
-  approverNotes?: string,
+  _approverNotes?: string,
 ) {
   const swapRequest = await prisma.shiftSwapRequest.findUnique({
     where: { id },
@@ -819,9 +814,8 @@ export async function approveShiftSwapRequest(
     where: { id },
     data: {
       status: 'APPROVED',
-      approvedById: approverId,
-      approvedAt: new Date(),
-      approverNotes,
+      managerApprovedBy: approverId,
+      managerApprovedAt: new Date(),
     },
   });
 }
@@ -832,15 +826,14 @@ export async function approveShiftSwapRequest(
 export async function denyShiftSwapRequest(
   id: number,
   approverId: number,
-  approverNotes?: string,
+  _approverNotes?: string,
 ) {
   return prisma.shiftSwapRequest.update({
     where: { id },
     data: {
       status: 'DENIED',
-      approvedById: approverId,
-      approvedAt: new Date(),
-      approverNotes,
+      managerApprovedBy: approverId,
+      managerApprovedAt: new Date(),
     },
   });
 }
@@ -1106,7 +1099,7 @@ export async function calculateLaborCosts(
           employeeId: { not: null },
         },
       },
-      shiftConfig: { select: { overtimeThreshold: true } },
+      config: { select: { weeklyOvertimeThreshold: true } },
     },
   });
 
@@ -1114,7 +1107,7 @@ export async function calculateLaborCosts(
     throw new Error('Schedule not found');
   }
 
-  const overtimeThreshold = schedule.shiftConfig?.overtimeThreshold || 40;
+  const overtimeThreshold = schedule.config?.weeklyOvertimeThreshold || 40;
 
   // Group shifts by employee
   const employeeShifts = new Map<
@@ -1307,11 +1300,11 @@ export async function getOvertimeAlerts(
   weekEndDate.setDate(weekEndDate.getDate() + 7);
 
   const config = await prisma.shiftSchedulingConfig.findFirst({
-    where: { configId },
-    select: { overtimeThreshold: true },
+    where: { id: configId },
+    select: { weeklyOvertimeThreshold: true },
   });
 
-  const overtimeThreshold = config?.overtimeThreshold || 40;
+  const overtimeThreshold = config?.weeklyOvertimeThreshold || 40;
   const warningThreshold = overtimeThreshold * 0.9; // 90% of threshold
 
   const employees = await prisma.shiftEmployee.findMany({
@@ -1355,7 +1348,7 @@ export async function getOvertimeAlerts(
 
       alerts.push({
         employeeId: employee.id,
-        employeeName: employee.name,
+        employeeName: `${employee.firstName} ${employee.lastName}`,
         currentHours,
         projectedHours,
         overtimeThreshold,
@@ -1402,11 +1395,11 @@ export async function checkOvertimeImpact(
   }
 
   const config = await prisma.shiftSchedulingConfig.findFirst({
-    where: { configId: employee.configId },
-    select: { overtimeThreshold: true },
+    where: { id: employee.configId },
+    select: { weeklyOvertimeThreshold: true },
   });
 
-  const overtimeThreshold = config?.overtimeThreshold || 40;
+  const overtimeThreshold = config?.weeklyOvertimeThreshold || 40;
 
   // Get week boundaries
   const weekStart = new Date(shiftStartTime);
@@ -1464,11 +1457,11 @@ export async function getWeeklyOvertimeSummary(
   const alerts = await getOvertimeAlerts(configId, weekStartDate);
 
   const config = await prisma.shiftSchedulingConfig.findFirst({
-    where: { configId },
-    select: { overtimeThreshold: true },
+    where: { id: configId },
+    select: { weeklyOvertimeThreshold: true },
   });
 
-  const overtimeThreshold = config?.overtimeThreshold || 40;
+  const overtimeThreshold = config?.weeklyOvertimeThreshold || 40;
 
   const employeesAtRisk = alerts.filter(
     (a) => a.alertLevel === 'warning',
@@ -1529,7 +1522,7 @@ export async function getEmployeeHours(
 
     return {
       employeeId: employee.id,
-      employeeName: employee.name,
+      employeeName: `${employee.firstName} ${employee.lastName}`,
       totalHours: totalMinutes / 60,
       shiftCount: employee.shifts.length,
       overtimeHours: Math.max(
@@ -1567,7 +1560,7 @@ export async function getScheduleCoverage(scheduleId: number) {
   // Group by role
   const byRole = schedule.shifts.reduce(
     (acc, shift) => {
-      const roleName = shift.role.name;
+      const roleName = shift.role?.name || 'Unassigned';
       if (!acc[roleName]) {
         acc[roleName] = { total: 0, assigned: 0, open: 0 };
       }
@@ -1585,7 +1578,7 @@ export async function getScheduleCoverage(scheduleId: number) {
   // Group by location
   const byLocation = schedule.shifts.reduce(
     (acc, shift) => {
-      const locationName = shift.location.name;
+      const locationName = shift.location?.name || 'Unassigned';
       if (!acc[locationName]) {
         acc[locationName] = { total: 0, assigned: 0, open: 0 };
       }

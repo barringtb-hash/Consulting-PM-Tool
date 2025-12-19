@@ -33,7 +33,7 @@ const createBookingSchema = z.object({
   patientEmail: z.string().email().optional(),
   patientPhone: z.string().max(20).optional(),
   timezone: z.string().optional(),
-  intakeFormResponses: z.record(z.unknown()).optional(),
+  intakeFormResponses: z.record(z.string(), z.unknown()).optional(),
 });
 
 const rescheduleSchema = z.object({

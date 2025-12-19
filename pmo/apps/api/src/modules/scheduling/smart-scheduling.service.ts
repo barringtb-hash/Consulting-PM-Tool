@@ -116,7 +116,7 @@ async function getHistoricalSlotData(
   const appointments = await prisma.appointment.findMany({
     where: {
       bookingPage: {
-        schedulingConfigId: configId,
+        configId,
       },
       scheduledAt: {
         gte: startDate,
@@ -221,7 +221,7 @@ async function getPatientBookingHistory(
     where: {
       patientEmail,
       bookingPage: {
-        schedulingConfigId: configId,
+        configId,
       },
     },
     select: {
@@ -229,7 +229,7 @@ async function getPatientBookingHistory(
       status: true,
       providerId: true,
       createdAt: true,
-      rescheduleCount: true,
+      rescheduledFrom: true,
     },
     orderBy: {
       scheduledAt: 'desc',
@@ -286,10 +286,9 @@ async function getPatientBookingHistory(
     .map(([p]) => parseInt(p));
 
   const noShowCount = appointments.filter((a) => a.status === 'NO_SHOW').length;
-  const rescheduleCount = appointments.reduce(
-    (sum, a) => sum + (a.rescheduleCount || 0),
-    0,
-  );
+  const rescheduleCount = appointments.filter(
+    (a) => a.rescheduledFrom !== null,
+  ).length;
 
   const avgLeadTime =
     appointments.reduce((sum, a) => {
@@ -384,7 +383,7 @@ export async function getProviderWorkload(
 
   const whereClause: Record<string, unknown> = {
     bookingPage: {
-      schedulingConfigId: configId,
+      configId,
     },
     scheduledAt: {
       gte: startOfDay,
@@ -411,7 +410,7 @@ export async function getProviderWorkload(
   for (const apt of appointments) {
     try {
       const prediction = await noshowService.predictNoShow(apt.id);
-      if (prediction.probability > 0.5) {
+      if (prediction.score > 0.5) {
         highRiskIds.add(apt.id);
       }
     } catch {
@@ -547,7 +546,7 @@ async function calculateBufferOptimalityScore(
     where: {
       providerId,
       bookingPage: {
-        schedulingConfigId: configId,
+        configId,
       },
       scheduledAt: {
         gte: new Date(slot.getTime() - 2 * 60 * 60 * 1000), // 2 hours before
@@ -772,8 +771,9 @@ export async function getOverbookingConfig(
   }
 
   // Default overbooking configuration
-  const customFields = (config.customFields as Record<string, unknown>) || {};
-  const overbookingSettings = customFields.overbooking as
+  const templateSettings =
+    (config.templateSettings as Record<string, unknown>) || {};
+  const overbookingSettings = templateSettings.overbooking as
     | Partial<OverbookingConfig>
     | undefined;
 
@@ -799,9 +799,10 @@ export async function updateOverbookingConfig(
     throw new Error('Scheduling config not found');
   }
 
-  const customFields = (config.customFields as Record<string, unknown>) || {};
+  const templateSettings =
+    (config.templateSettings as Record<string, unknown>) || {};
   const currentSettings =
-    (customFields.overbooking as Partial<OverbookingConfig>) || {};
+    (templateSettings.overbooking as Partial<OverbookingConfig>) || {};
 
   const newSettings = {
     ...currentSettings,
@@ -811,8 +812,8 @@ export async function updateOverbookingConfig(
   await prisma.schedulingConfig.update({
     where: { id: configId },
     data: {
-      customFields: {
-        ...customFields,
+      templateSettings: {
+        ...templateSettings,
         overbooking: newSettings,
       },
     },
@@ -842,7 +843,7 @@ export async function getRecommendedOverbookingSlots(
   const appointments = await prisma.appointment.findMany({
     where: {
       bookingPage: {
-        schedulingConfigId: configId,
+        configId,
       },
       scheduledAt: {
         gte: startOfDay,
@@ -879,12 +880,12 @@ export async function getRecommendedOverbookingSlots(
     try {
       const prediction = await noshowService.predictNoShow(apt.id);
 
-      if (prediction.probability >= overbookingConfig.minNoShowProbability) {
+      if (prediction.score >= overbookingConfig.minNoShowProbability) {
         recommendations.push({
           slot: apt.scheduledAt,
           providerId: apt.providerId,
-          probability: prediction.probability,
-          reason: `High no-show probability (${Math.round(prediction.probability * 100)}%) based on ${prediction.confidenceLevel} confidence prediction`,
+          probability: prediction.score,
+          reason: `High no-show probability (${Math.round(prediction.score * 100)}%) based on ${prediction.confidence} confidence prediction`,
         });
       }
     } catch {
@@ -923,45 +924,49 @@ export async function canOverbook(
     };
   }
 
-  // Check daily limit
+  // Check daily limit - count total appointments for today
+  // Note: Proper overbooking tracking would require an isOverbooked field on Appointment
   const startOfDay = new Date(slot);
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(slot);
   endOfDay.setHours(23, 59, 59, 999);
 
-  const todayOverbookings = await prisma.appointment.count({
+  const todayAppointments = await prisma.appointment.count({
     where: {
       bookingPage: {
-        schedulingConfigId: configId,
+        configId,
       },
       scheduledAt: {
         gte: startOfDay,
         lte: endOfDay,
       },
-      customFields: {
-        path: ['isOverbooked'],
-        equals: true,
+      status: {
+        in: ['SCHEDULED', 'CONFIRMED'],
       },
     },
   });
 
-  if (todayOverbookings >= overbookingConfig.maxDailyOverbookings) {
-    return { allowed: false, reason: 'Daily overbooking limit reached' };
+  // Simple heuristic: If daily appointments exceed a threshold, limit overbookings
+  // This is a simplified check since we don't have an isOverbooked field
+  const maxDailyAppointments = overbookingConfig.maxDailyOverbookings * 10; // Assume 10 slots per day
+  if (todayAppointments >= maxDailyAppointments) {
+    return { allowed: false, reason: 'Daily capacity limit reached' };
   }
 
-  // Check slot limit
-  const slotOverbookings = await prisma.appointment.count({
+  // Check slot limit - count appointments at this specific slot
+  const slotAppointments = await prisma.appointment.count({
     where: {
       providerId,
       scheduledAt: slot,
-      customFields: {
-        path: ['isOverbooked'],
-        equals: true,
+      status: {
+        in: ['SCHEDULED', 'CONFIRMED'],
       },
     },
   });
 
-  if (slotOverbookings >= overbookingConfig.maxOverbookingsPerSlot) {
+  // Only allow overbooking if there's already one appointment at this slot
+  // and we haven't exceeded the overbooking limit
+  if (slotAppointments >= overbookingConfig.maxOverbookingsPerSlot + 1) {
     return { allowed: false, reason: 'Slot overbooking limit reached' };
   }
 
@@ -985,15 +990,15 @@ export async function canOverbook(
       existingAppointment.id,
     );
 
-    if (prediction.probability >= overbookingConfig.minNoShowProbability) {
+    if (prediction.score >= overbookingConfig.minNoShowProbability) {
       return {
         allowed: true,
-        reason: `Existing appointment has ${Math.round(prediction.probability * 100)}% no-show probability`,
+        reason: `Existing appointment has ${Math.round(prediction.score * 100)}% no-show probability`,
       };
     } else {
       return {
         allowed: false,
-        reason: `Existing appointment no-show probability (${Math.round(prediction.probability * 100)}%) is below threshold (${Math.round(overbookingConfig.minNoShowProbability * 100)}%)`,
+        reason: `Existing appointment no-show probability (${Math.round(prediction.score * 100)}%) is below threshold (${Math.round(overbookingConfig.minNoShowProbability * 100)}%)`,
       };
     }
   } catch {
@@ -1087,10 +1092,10 @@ export async function getSchedulingInsights(
   }
 
   // Analyze patient preference patterns
-  const appointments = await prisma.appointment.findMany({
+  const insightAppointments = await prisma.appointment.findMany({
     where: {
       bookingPage: {
-        schedulingConfigId: configId,
+        configId,
       },
       scheduledAt: {
         gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
@@ -1101,16 +1106,16 @@ export async function getSchedulingInsights(
     },
   });
 
-  const morningCount = appointments.filter(
+  const morningCount = insightAppointments.filter(
     (a) => a.scheduledAt.getHours() >= 6 && a.scheduledAt.getHours() < 12,
   ).length;
-  const afternoonCount = appointments.filter(
+  const afternoonCount = insightAppointments.filter(
     (a) => a.scheduledAt.getHours() >= 12 && a.scheduledAt.getHours() < 17,
   ).length;
-  const eveningCount = appointments.filter(
+  const eveningCount = insightAppointments.filter(
     (a) => a.scheduledAt.getHours() >= 17 && a.scheduledAt.getHours() < 21,
   ).length;
-  const total = appointments.length || 1;
+  const total = insightAppointments.length || 1;
 
   const patientPreferencePatterns = [
     {

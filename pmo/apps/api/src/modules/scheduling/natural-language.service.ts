@@ -968,7 +968,7 @@ async function handleConfirmBooking(
   // Get booking page for this config
   const bookingPage = await prisma.bookingPage.findFirst({
     where: {
-      schedulingConfigId: state.configId,
+      configId: state.configId,
       isActive: true,
     },
   });

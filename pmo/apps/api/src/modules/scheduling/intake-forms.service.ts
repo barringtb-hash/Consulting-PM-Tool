@@ -129,7 +129,7 @@ export async function createIntakeForm(
       bookingPageId,
       name: input.name,
       description: input.description || null,
-      fields: processedFields as Prisma.InputJsonValue,
+      fields: processedFields as unknown as Prisma.InputJsonValue,
       isRequired: input.isRequired ?? false,
       displayOrder: input.displayOrder ?? 0,
     },
@@ -154,7 +154,9 @@ export async function updateIntakeForm(
   }
 
   if (input.fields !== undefined) {
-    updateData.fields = processFields(input.fields) as Prisma.InputJsonValue;
+    updateData.fields = processFields(
+      input.fields,
+    ) as unknown as Prisma.InputJsonValue;
   }
 
   if (input.isRequired !== undefined) {
@@ -685,7 +687,7 @@ export async function validateFormResponses(
     throw new Error('Form not found');
   }
 
-  const fields = form.fields as IntakeFormField[];
+  const fields = form.fields as unknown as IntakeFormField[];
   const errors: ValidationError[] = [];
 
   for (const field of fields) {
@@ -694,7 +696,8 @@ export async function validateFormResponses(
       continue;
     }
 
-    const value = responses[field.id];
+    const fieldKey = field.id || field.name;
+    const value = responses[fieldKey];
     const isVisible = evaluateConditionalLogic(field, responses, fields);
 
     // Skip validation if field is hidden
@@ -708,7 +711,7 @@ export async function validateFormResponses(
     // Required validation
     if (isRequired && isEmpty(value)) {
       errors.push({
-        fieldId: field.id,
+        fieldId: fieldKey,
         fieldName: field.name,
         message: `${field.label} is required`,
       });
@@ -724,7 +727,7 @@ export async function validateFormResponses(
     const typeError = validateFieldType(field, value);
     if (typeError) {
       errors.push({
-        fieldId: field.id,
+        fieldId: fieldKey,
         fieldName: field.name,
         message: typeError,
       });
@@ -735,7 +738,7 @@ export async function validateFormResponses(
       const ruleError = validateFieldRules(field, value);
       if (ruleError) {
         errors.push({
-          fieldId: field.id,
+          fieldId: fieldKey,
           fieldName: field.name,
           message: ruleError,
         });
@@ -1055,7 +1058,8 @@ export function getFieldsVisibility(
   const visibility: Record<string, boolean> = {};
 
   for (const field of fields) {
-    visibility[field.id] = evaluateConditionalLogic(field, responses, fields);
+    const fieldKey = field.id || field.name;
+    visibility[fieldKey] = evaluateConditionalLogic(field, responses, fields);
   }
 
   return visibility;
@@ -1072,7 +1076,7 @@ export function getRequiredFields(
 
   for (const field of fields) {
     if (evaluateConditionalRequirement(field, responses, fields)) {
-      required.push(field.id);
+      required.push(field.id || field.name);
     }
   }
 

@@ -104,7 +104,8 @@ router.post(
   async (req, res) => {
     try {
       const appointmentId = parseInt(req.params.appointmentId);
-      const { wasNoShow } = req.body;
+      const body = req.body as { wasNoShow?: boolean };
+      const { wasNoShow } = body;
 
       if (typeof wasNoShow !== 'boolean') {
         return res.status(400).json({ error: 'wasNoShow must be a boolean' });
@@ -242,9 +243,14 @@ router.post('/:configId/noshow/experiments', requireAuth, async (req, res) => {
     }
 
     const experiment = await noshowService.createExperiment(configId, {
-      ...parsed.data,
+      name: parsed.data.name,
+      variants: parsed.data.variants.map((v) => ({
+        ...v,
+        weights: v.weights || {},
+      })),
       startDate: new Date(parsed.data.startDate),
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : undefined,
+      isActive: parsed.data.isActive,
     });
 
     return res.status(201).json({ data: experiment });

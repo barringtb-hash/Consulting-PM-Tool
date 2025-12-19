@@ -13,6 +13,7 @@ import {
   AvailabilityType,
   ScheduleStatus,
   TimeOffStatus,
+  TimeOffType,
   SwapStatus,
 } from '@prisma/client';
 
@@ -37,14 +38,15 @@ const createRoleSchema = z.object({
 });
 
 const createEmployeeSchema = z.object({
-  name: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional(),
   employmentType: z.nativeEnum(EmploymentType),
   hourlyRate: z.number().positive().optional(),
   maxHoursPerWeek: z.number().int().positive().optional(),
-  roleIds: z.array(z.number().int()),
-  locationIds: z.array(z.number().int()).optional(),
+  roleId: z.number().int().optional(),
+  preferredLocations: z.array(z.number().int()).optional(),
 });
 
 const availabilitySchema = z.object({
@@ -79,7 +81,7 @@ const createShiftSchema = z.object({
 const timeOffRequestSchema = z.object({
   startDate: z.string().transform((s) => new Date(s)),
   endDate: z.string().transform((s) => new Date(s)),
-  type: z.string(),
+  type: z.nativeEnum(TimeOffType),
   reason: z.string().optional(),
 });
 
@@ -89,13 +91,21 @@ const shiftSwapRequestSchema = z.object({
 });
 
 const updateConfigSchema = z.object({
-  defaultShiftDuration: z.number().int().positive().optional(),
-  minHoursBetweenShifts: z.number().int().min(0).optional(),
-  maxHoursPerDay: z.number().int().positive().optional(),
-  maxHoursPerWeek: z.number().int().positive().optional(),
-  overtimeThreshold: z.number().int().positive().optional(),
-  enableAutoScheduling: z.boolean().optional(),
-  autoSchedulingRules: z.record(z.unknown()).optional(),
+  businessName: z.string().min(1).optional(),
+  timezone: z.string().optional(),
+  weekStartDay: z.number().int().min(0).max(6).optional(),
+  weeklyOvertimeThreshold: z.number().int().positive().optional(),
+  dailyOvertimeThreshold: z.number().int().positive().optional(),
+  overtimeMultiplier: z.number().positive().optional(),
+  minRestBetweenShifts: z.number().int().min(0).optional(),
+  maxConsecutiveDays: z.number().int().positive().optional(),
+  requireBreaks: z.boolean().optional(),
+  breakDurationMinutes: z.number().int().min(0).optional(),
+  breakAfterHours: z.number().positive().optional(),
+  schedulePublishLeadDays: z.number().int().min(0).optional(),
+  enableShiftReminders: z.boolean().optional(),
+  reminderHoursBefore: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
 });
 
 // ============================================================================
@@ -117,7 +127,11 @@ router.get(
         return;
       }
 
-      const config = await shiftService.getOrCreateShiftConfig(configId);
+      const config = await shiftService.getShiftConfig(configId);
+      if (!config) {
+        res.status(404).json({ error: 'Shift configuration not found' });
+        return;
+      }
       res.json({ data: config });
     } catch (error) {
       console.error('Error getting shift config:', error);
@@ -674,10 +688,11 @@ router.post(
         return;
       }
 
+      const body = req.body as { notes?: string };
       const request = await shiftService.approveTimeOffRequest(
         id,
-        req.user!.id,
-        req.body.notes,
+        req.userId!,
+        body.notes,
       );
       res.json({ data: request });
     } catch (error) {
@@ -702,10 +717,11 @@ router.post(
         return;
       }
 
+      const body = req.body as { notes?: string };
       const request = await shiftService.denyTimeOffRequest(
         id,
-        req.user!.id,
-        req.body.notes,
+        req.userId!,
+        body.notes,
       );
       res.json({ data: request });
     } catch (error) {
@@ -969,7 +985,15 @@ router.post(
         return;
       }
 
+      // Get the schedule to get configId
+      const schedule = await shiftService.getScheduleById(scheduleId);
+      if (!schedule) {
+        res.status(404).json({ error: 'Schedule not found' });
+        return;
+      }
+
       const shift = await shiftService.createShift({
+        configId: schedule.configId,
         scheduleId,
         ...parsed.data,
       });
@@ -1050,7 +1074,8 @@ router.post(
         return;
       }
 
-      const { employeeId } = req.body;
+      const body = req.body as { employeeId?: number };
+      const { employeeId } = body;
       if (!employeeId) {
         res.status(400).json({ error: 'Employee ID is required' });
         return;
@@ -1142,7 +1167,8 @@ router.post(
 
       // Get the requester's employee ID
       // In a real app, this would be looked up from the user
-      const requesterId = req.body.requesterId;
+      const body = req.body as { requesterId?: number };
+      const requesterId = body.requesterId;
       if (!requesterId) {
         res.status(400).json({ error: 'Requester ID is required' });
         return;
@@ -1177,10 +1203,11 @@ router.post(
         return;
       }
 
+      const body = req.body as { notes?: string };
       const request = await shiftService.approveShiftSwapRequest(
         id,
-        req.user!.id,
-        req.body.notes,
+        req.userId!,
+        body.notes,
       );
       res.json({ data: request });
     } catch (error) {
@@ -1205,10 +1232,11 @@ router.post(
         return;
       }
 
+      const body = req.body as { notes?: string };
       const request = await shiftService.denyShiftSwapRequest(
         id,
-        req.user!.id,
-        req.body.notes,
+        req.userId!,
+        body.notes,
       );
       res.json({ data: request });
     } catch (error) {
