@@ -338,3 +338,166 @@ export {
   useConfigureTenantModule,
   useUpdateTenantBranding,
 } from './useTenantAdmin';
+
+// ============================================================================
+// Scheduling Module
+// ============================================================================
+
+export {
+  // Query Keys
+  schedulingKeys,
+  shiftKeys,
+  // Appointment Scheduling - Configs
+  useSchedulingConfigs,
+  useSchedulingConfig,
+  useCreateSchedulingConfig,
+  useUpdateSchedulingConfig,
+  // Appointment Scheduling - Providers
+  useProviders,
+  useProvider,
+  useCreateProvider,
+  useUpdateProvider,
+  useDeleteProvider,
+  // Appointment Scheduling - Appointment Types
+  useAppointmentTypes,
+  useCreateAppointmentType,
+  useUpdateAppointmentType,
+  useDeleteAppointmentType,
+  // Appointment Scheduling - Appointments
+  useAppointments,
+  useAppointment,
+  useCreateAppointment,
+  useUpdateAppointmentStatus,
+  useRescheduleAppointment,
+  // Appointment Scheduling - Availability
+  useAvailability,
+  // Appointment Scheduling - Waitlist
+  useWaitlist,
+  useAddToWaitlist,
+  useRemoveFromWaitlist,
+  // Appointment Scheduling - Analytics
+  useSchedulingAnalytics,
+  useHighRiskAppointments,
+  // AI Features
+  useSmartRecommendations,
+  useOptimalSlots,
+  useScheduleOptimization,
+  useNoShowPrediction,
+  useNoShowPredictions,
+  useNoShowStats,
+  useSendNLMessage,
+  useClearNLConversation,
+  // Shift Scheduling - Config
+  useShiftConfig,
+  useUpdateShiftConfig,
+  // Shift Scheduling - Locations
+  useShiftLocations,
+  useCreateShiftLocation,
+  useUpdateShiftLocation,
+  useDeleteShiftLocation,
+  // Shift Scheduling - Roles
+  useShiftRoles,
+  useCreateShiftRole,
+  useUpdateShiftRole,
+  useDeleteShiftRole,
+  // Shift Scheduling - Employees
+  useShiftEmployees,
+  useShiftEmployee,
+  useCreateShiftEmployee,
+  useUpdateShiftEmployee,
+  useDeactivateShiftEmployee,
+  useEmployeeAvailability,
+  useSetEmployeeAvailability,
+  // Shift Scheduling - Time-Off
+  useTimeOffRequests,
+  useCreateTimeOffRequest,
+  useApproveTimeOffRequest,
+  useDenyTimeOffRequest,
+  // Shift Scheduling - Schedules
+  useShiftSchedules,
+  useShiftSchedule,
+  useCreateShiftSchedule,
+  useUpdateShiftSchedule,
+  usePublishShiftSchedule,
+  useDeleteShiftSchedule,
+  useScheduleCoverage,
+  // Shift Scheduling - Shifts
+  useShifts,
+  useCreateShift,
+  useUpdateShift,
+  useDeleteShift,
+  useAssignEmployeeToShift,
+  useUnassignEmployeeFromShift,
+  // Shift Scheduling - Swap Requests
+  useSwapRequests,
+  useCreateSwapRequest,
+  useApproveSwapRequest,
+  useDenySwapRequest,
+  // Shift Scheduling - Open Shifts
+  useOpenShifts,
+  usePostShiftToOpenBoard,
+  useRemoveShiftFromOpenBoard,
+  useClaimOpenShift,
+  useEligibleEmployeesForShift,
+  // Shift Scheduling - Analytics
+  useEmployeeHours,
+  useLaborCosts,
+  useLaborProjection,
+  useOvertimeAlerts,
+  useOvertimeSummary,
+  useCheckOvertimeImpact,
+} from './scheduling';
+
+export type {
+  // Appointment Types
+  SchedulingConfig,
+  Provider,
+  AppointmentType,
+  Appointment,
+  ListAppointmentsParams,
+  AvailabilityParams,
+  TimeSlot,
+  WaitlistEntry,
+  SchedulingAnalytics,
+  CreateConfigInput,
+  CreateProviderInput,
+  CreateAppointmentTypeInput,
+  CreateAppointmentInput,
+  AppointmentStatus,
+  // Shift Types
+  ShiftSchedulingConfig,
+  ShiftLocation,
+  ShiftRole,
+  ShiftEmployee,
+  ShiftSchedule,
+  Shift,
+  TimeOffRequest,
+  ShiftSwapRequest,
+  ScheduleCoverage,
+  EmployeeHours,
+  LaborCost,
+  OvertimeAlert,
+  OvertimeSummary,
+  OvertimeImpact,
+  UpdateShiftConfigInput,
+  CreateLocationInput,
+  CreateRoleInput,
+  CreateEmployeeInput,
+  AvailabilityInput,
+  CreateScheduleInput,
+  CreateShiftInput,
+  ListShiftsParams,
+  TimeOffRequestInput,
+  OpenShiftFilters,
+  EmploymentType,
+  TimeOffStatus,
+  ScheduleStatus,
+  SwapStatus,
+  // AI Types
+  SmartSchedulingRecommendation,
+  NoShowPrediction,
+  NoShowStats,
+  OptimalTimeSlot,
+  ScheduleOptimization,
+  NLBookingResponse,
+} from './scheduling';
