@@ -84,7 +84,7 @@ interface AllBookingRules {
 async function fetchBookingRules(configId: number): Promise<AllBookingRules> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/booking-rules`),
-    buildOptions('GET'),
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch booking rules');
   const data = await res.json();
@@ -97,7 +97,11 @@ async function updateBookingRules(
 ): Promise<AllBookingRules> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/booking-rules`),
-    buildOptions('PATCH', updates),
+    {
+      ...buildOptions(),
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    },
   );
   if (!res.ok) throw new Error('Failed to update booking rules');
   const data = await res.json();
@@ -107,7 +111,7 @@ async function updateBookingRules(
 async function fetchBlackoutDates(configId: number): Promise<BlackoutDate[]> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/booking-rules/blackout-dates`),
-    buildOptions('GET'),
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch blackout dates');
   const data = await res.json();
@@ -120,7 +124,11 @@ async function addBlackoutDate(
 ): Promise<BlackoutDate> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/booking-rules/blackout-dates`),
-    buildOptions('POST', blackout),
+    {
+      ...buildOptions(),
+      method: 'POST',
+      body: JSON.stringify(blackout),
+    },
   );
   if (!res.ok) throw new Error('Failed to add blackout date');
   const data = await res.json();
@@ -135,7 +143,10 @@ async function removeBlackoutDate(
     buildApiUrl(
       `/scheduling/${configId}/booking-rules/blackout-dates/${blackoutId}`,
     ),
-    buildOptions('DELETE'),
+    {
+      ...buildOptions(),
+      method: 'DELETE',
+    },
   );
   if (!res.ok) throw new Error('Failed to remove blackout date');
 }

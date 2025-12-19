@@ -70,7 +70,7 @@ async function fetchCalendarIntegrations(
 ): Promise<CalendarIntegration[]> {
   const res = await fetch(
     buildApiUrl(`/scheduling/calendar/integrations/${configId}`),
-    buildOptions('GET'),
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch calendar integrations');
   const data = await res.json();
@@ -81,10 +81,11 @@ async function initiateCalendarOAuth(
   configId: number,
   platform: 'GOOGLE' | 'OUTLOOK',
 ): Promise<{ authUrl: string }> {
-  const res = await fetch(
-    buildApiUrl('/scheduling/calendar/oauth/initiate'),
-    buildOptions('POST', { configId, platform }),
-  );
+  const res = await fetch(buildApiUrl('/scheduling/calendar/oauth/initiate'), {
+    ...buildOptions(),
+    method: 'POST',
+    body: JSON.stringify({ configId, platform }),
+  });
   if (!res.ok) throw new Error('Failed to initiate OAuth');
   const data = await res.json();
   return data.data;
@@ -93,7 +94,10 @@ async function initiateCalendarOAuth(
 async function deleteCalendarIntegration(integrationId: number): Promise<void> {
   const res = await fetch(
     buildApiUrl(`/scheduling/calendar/integrations/${integrationId}`),
-    buildOptions('DELETE'),
+    {
+      ...buildOptions(),
+      method: 'DELETE',
+    },
   );
   if (!res.ok) throw new Error('Failed to delete integration');
 }
@@ -101,7 +105,7 @@ async function deleteCalendarIntegration(integrationId: number): Promise<void> {
 async function fetchVideoConfigs(configId: number): Promise<VideoConfig[]> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/video/config`),
-    buildOptions('GET'),
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch video configs');
   const data = await res.json();
@@ -114,7 +118,7 @@ async function getVideoOAuthUrl(
 ): Promise<{ authUrl: string }> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/video/oauth/${platform}`),
-    buildOptions('GET'),
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to get OAuth URL');
   const data = await res.json();
@@ -127,7 +131,10 @@ async function deleteVideoConfig(
 ): Promise<void> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/video/config/${videoConfigId}`),
-    buildOptions('DELETE'),
+    {
+      ...buildOptions(),
+      method: 'DELETE',
+    },
   );
   if (!res.ok) throw new Error('Failed to delete video config');
 }
@@ -137,7 +144,7 @@ async function fetchPaymentConfig(
 ): Promise<PaymentConfig | null> {
   const res = await fetch(
     buildApiUrl(`/scheduling/payments/config/${configId}`),
-    buildOptions('GET'),
+    buildOptions(),
   );
   if (!res.ok) throw new Error('Failed to fetch payment config');
   const data = await res.json();
@@ -150,7 +157,11 @@ async function updatePaymentConfig(
 ): Promise<PaymentConfig> {
   const res = await fetch(
     buildApiUrl(`/scheduling/payments/config/${configId}`),
-    buildOptions('PUT', updates),
+    {
+      ...buildOptions(),
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    },
   );
   if (!res.ok) throw new Error('Failed to update payment config');
   const data = await res.json();
