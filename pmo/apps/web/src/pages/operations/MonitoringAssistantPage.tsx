@@ -78,13 +78,18 @@ export function MonitoringAssistantPage(): JSX.Element {
       setConversationId(data.conversationId);
       setMessages((prev) => [...prev, data.message]);
       setSuggestedFollowUps(data.suggestedFollowUps || []);
-    } catch (_error) {
-      // Add error message
+    } catch (error) {
+      // Log error for debugging
+      console.error('Monitoring assistant chat error:', error);
+
+      // Extract error message if available
+      const errorDetail =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+
       const errorMessage: AssistantMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content:
-          'Sorry, I encountered an error processing your request. Please try again.',
+        content: `Sorry, I encountered an error processing your request: ${errorDetail}. Please try again.`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -189,6 +194,7 @@ export function MonitoringAssistantPage(): JSX.Element {
                         key={idx}
                         onClick={() => handleSend(suggestion)}
                         disabled={chatMutation.isPending}
+                        aria-label={`Ask: ${suggestion}`}
                         className="w-full text-left p-2 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                       >
                         &quot;{suggestion}&quot;
@@ -304,6 +310,13 @@ export function MonitoringAssistantPage(): JSX.Element {
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || chatMutation.isPending}
+                aria-label={
+                  !input.trim()
+                    ? 'Cannot send empty message'
+                    : chatMutation.isPending
+                      ? 'Sending message...'
+                      : 'Send message'
+                }
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-blue-600 hover:text-blue-700 disabled:text-neutral-400 disabled:cursor-not-allowed transition-colors"
               >
                 <Send className="w-5 h-5" />

@@ -62,10 +62,20 @@ async function isMonitoringAssistantEnabled(
       return config.enabled;
     }
 
-    // Check for default tenant config
+    // No tenant-specific config found; fall back to the default tenant config.
+    // The default tenant is identified by slug = 'default', not by a literal
+    // tenantId of 'default'.
+    const defaultTenant = await prisma.tenant.findFirst({
+      where: { slug: 'default' },
+    });
+
+    if (!defaultTenant) {
+      return false;
+    }
+
     const defaultConfig = await prisma.tenantModuleConfig.findFirst({
       where: {
-        tenantId: 'default',
+        tenantId: defaultTenant.id,
         moduleId: MONITORING_ASSISTANT_MODULE_ID,
       },
     });

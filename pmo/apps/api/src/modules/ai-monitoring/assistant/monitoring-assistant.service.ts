@@ -24,7 +24,18 @@ import {
 } from './monitoring-assistant.types';
 
 // ============================================================================
-// Conversation Store (in-memory for now, can be moved to DB)
+// Conversation Store
+// ============================================================================
+//
+// NOTE: This is an in-memory implementation with the following limitations:
+// - Conversations are lost on server restart
+// - Does not scale horizontally across multiple server instances
+// - No persistence guarantee
+//
+// For production use at scale, consider migrating to:
+// - Redis for distributed caching with TTL support
+// - Database (PostgreSQL) for persistent conversation history
+// - Add proper locking for concurrent access if needed
 // ============================================================================
 
 interface StoredConversation {
@@ -36,6 +47,7 @@ interface StoredConversation {
   updatedAt: Date;
 }
 
+// In-memory store - suitable for single-instance deployments
 const conversationStore = new Map<string, StoredConversation>();
 
 // Cleanup old conversations (older than 24 hours)
