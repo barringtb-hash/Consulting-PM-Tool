@@ -29,24 +29,31 @@ ALTER TABLE "SchedulingConfig" ALTER COLUMN "clientId" DROP NOT NULL;
 -- Step 7: Add unique constraint on accountId
 CREATE UNIQUE INDEX IF NOT EXISTS "SchedulingConfig_accountId_key" ON "SchedulingConfig"("accountId") WHERE "accountId" IS NOT NULL;
 
--- Step 8: Add foreign key constraint for accountId -> Account
+-- Step 8: Add foreign key constraint for accountId -> Account (SetNull allows config to survive account deletion)
 ALTER TABLE "SchedulingConfig" DROP CONSTRAINT IF EXISTS "SchedulingConfig_accountId_fkey";
 ALTER TABLE "SchedulingConfig" ADD CONSTRAINT "SchedulingConfig_accountId_fkey"
-    FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Step 9: Add foreign key constraint for tenantId -> Tenant
 ALTER TABLE "SchedulingConfig" DROP CONSTRAINT IF EXISTS "SchedulingConfig_tenantId_fkey";
 ALTER TABLE "SchedulingConfig" ADD CONSTRAINT "SchedulingConfig_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Step 10: Drop old indexes and create new ones
-DROP INDEX IF EXISTS "SchedulingConfig_clientId_isActive_idx";
+-- Step 10: Drop old standalone accountId index if exists (will be replaced with composite)
 DROP INDEX IF EXISTS "SchedulingConfig_accountId_idx";
 
--- Step 11: Create new indexes
+-- Step 11: Create indexes (using IF NOT EXISTS for idempotency)
 CREATE INDEX IF NOT EXISTS "SchedulingConfig_accountId_isActive_idx" ON "SchedulingConfig"("accountId", "isActive");
 CREATE INDEX IF NOT EXISTS "SchedulingConfig_clientId_isActive_idx" ON "SchedulingConfig"("clientId", "isActive");
 CREATE INDEX IF NOT EXISTS "SchedulingConfig_tenantId_idx" ON "SchedulingConfig"("tenantId");
 
--- Note: Data migration (linking existing SchedulingConfigs to Accounts via Client relationships)
--- should be done via a separate script after this schema migration.
+-- Note: Data migration to link existing SchedulingConfigs to Accounts requires manual steps:
+-- 1. First, ensure Accounts have been created/migrated from Clients
+-- 2. Then run a script to find matching Account IDs via Client relationships
+-- 3. Example query (adjust based on your Client->Account mapping):
+--    UPDATE "SchedulingConfig" sc
+--    SET "accountId" = a.id
+--    FROM "Account" a
+--    WHERE a."customFields"->>'legacyClientId' = sc."clientId"::text
+--      AND sc."accountId" IS NULL;
+-- This cannot be done automatically because Account-Client relationships vary by tenant.
