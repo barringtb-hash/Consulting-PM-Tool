@@ -12,6 +12,7 @@ import {
 import * as appointmentApi from '../../scheduling/appointments';
 import * as shiftApi from '../../scheduling/shifts';
 import * as aiApi from '../../scheduling/ai';
+import * as templateApi from '../../scheduling/templates';
 import type {
   SchedulingConfig,
   Provider,
@@ -66,6 +67,15 @@ import type {
   ScheduleOptimization,
   NLBookingResponse,
 } from '../../scheduling/ai';
+import type {
+  IndustryTemplate,
+  TemplateSimplified,
+  TemplateCategory,
+  TemplatePreview,
+  ApplyTemplateInput,
+  ApplyTemplateResult,
+  TemplateComparison,
+} from '../../scheduling/templates';
 
 // ============================================================================
 // QUERY KEYS
@@ -180,6 +190,22 @@ export const shiftKeys = {
     [...shiftKeys.all, 'overtimeAlerts', configId, weekStart] as const,
   overtimeSummary: (configId: number, weekStart?: string) =>
     [...shiftKeys.all, 'overtimeSummary', configId, weekStart] as const,
+};
+
+export const templateKeys = {
+  all: ['templates'] as const,
+  list: () => [...templateKeys.all, 'list'] as const,
+  categories: () => [...templateKeys.all, 'categories'] as const,
+  template: (templateId: string) =>
+    [...templateKeys.all, 'detail', templateId] as const,
+  preview: (templateId: string) =>
+    [...templateKeys.all, 'preview', templateId] as const,
+  byCategory: (category: string) =>
+    [...templateKeys.all, 'byCategory', category] as const,
+  applied: (clientId: number) =>
+    [...templateKeys.all, 'applied', clientId] as const,
+  comparison: (clientId: number, templateId: string) =>
+    [...templateKeys.all, 'comparison', clientId, templateId] as const,
 };
 
 // ============================================================================
@@ -1618,6 +1644,135 @@ export function useCheckOvertimeImpact() {
   });
 }
 
+// ============================================================================
+// INDUSTRY TEMPLATES HOOKS
+// ============================================================================
+
+export function useTemplates(
+  options?: Omit<UseQueryOptions<TemplateSimplified[]>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: templateKeys.list(),
+    queryFn: () => templateApi.listTemplates(),
+    ...options,
+  });
+}
+
+export function useTemplateCategories(
+  options?: Omit<UseQueryOptions<TemplateCategory[]>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: templateKeys.categories(),
+    queryFn: () => templateApi.getTemplateCategories(),
+    ...options,
+  });
+}
+
+export function useTemplate(
+  templateId: string,
+  options?: Omit<UseQueryOptions<IndustryTemplate>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: templateKeys.template(templateId),
+    queryFn: () => templateApi.getTemplate(templateId),
+    enabled: !!templateId,
+    ...options,
+  });
+}
+
+export function useTemplatePreview(
+  templateId: string,
+  options?: Omit<UseQueryOptions<TemplatePreview>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: templateKeys.preview(templateId),
+    queryFn: () => templateApi.previewTemplate(templateId),
+    enabled: !!templateId,
+    ...options,
+  });
+}
+
+export function useTemplatesByCategory(
+  category: string,
+  options?: Omit<UseQueryOptions<IndustryTemplate[]>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: templateKeys.byCategory(category),
+    queryFn: () => templateApi.getTemplatesByCategory(category),
+    enabled: !!category,
+    ...options,
+  });
+}
+
+export function useAppliedTemplate(
+  clientId: number,
+  options?: Omit<
+    UseQueryOptions<IndustryTemplate | null>,
+    'queryKey' | 'queryFn'
+  >,
+) {
+  return useQuery({
+    queryKey: templateKeys.applied(clientId),
+    queryFn: () => templateApi.getAppliedTemplate(clientId),
+    enabled: !!clientId,
+    ...options,
+  });
+}
+
+export function useApplyTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ApplyTemplateInput) => templateApi.applyTemplate(input),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: templateKeys.applied(variables.clientId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: schedulingKeys.config(variables.clientId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: schedulingKeys.configs(),
+      });
+    },
+  });
+}
+
+export function useResetToTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      clientId,
+      templateId,
+    }: {
+      clientId: number;
+      templateId: string;
+    }) => templateApi.resetToTemplate(clientId, templateId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: templateKeys.applied(variables.clientId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: schedulingKeys.config(variables.clientId),
+      });
+    },
+  });
+}
+
+export function useCompareWithTemplate(
+  clientId: number,
+  templateId: string,
+  options?: Omit<UseQueryOptions<TemplateComparison>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: templateKeys.comparison(clientId, templateId),
+    queryFn: () => templateApi.compareWithTemplate(clientId, templateId),
+    enabled: !!clientId && !!templateId,
+    ...options,
+  });
+}
+
 // Re-export types
 export type {
   SchedulingConfig,
@@ -1668,4 +1823,11 @@ export type {
   OptimalTimeSlot,
   ScheduleOptimization,
   NLBookingResponse,
+  IndustryTemplate,
+  TemplateSimplified,
+  TemplateCategory,
+  TemplatePreview,
+  ApplyTemplateInput,
+  ApplyTemplateResult,
+  TemplateComparison,
 };

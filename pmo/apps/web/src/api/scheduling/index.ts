@@ -10,3 +10,6 @@ export * from './shifts';
 
 // AI Features
 export * from './ai';
+
+// Industry Templates
+export * from './templates';
