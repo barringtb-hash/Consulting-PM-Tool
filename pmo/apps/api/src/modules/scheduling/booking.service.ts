@@ -14,6 +14,7 @@ import crypto from 'crypto';
 import * as calendarService from './calendar.service';
 import * as notificationsService from './notifications.service';
 import * as paymentService from './payment.service';
+import * as videoService from './video.service';
 
 // ============================================================================
 // TYPES
@@ -458,6 +459,14 @@ export async function createPublicBooking(
     // Don't fail the booking if calendar sync fails
   }
 
+  // Create video meeting if configured
+  try {
+    await videoService.createMeetingForAppointment(appointment.id);
+  } catch (error) {
+    console.error('Failed to create video meeting:', error);
+    // Don't fail the booking if video meeting creation fails
+  }
+
   // Check if payment is required and return payment info
   let paymentRequired = false;
   let paymentInfo: {
@@ -631,6 +640,13 @@ export async function rescheduleByConfirmationCode(
     console.error('Failed to update calendar event:', error);
   }
 
+  // Update video meeting
+  try {
+    await videoService.updateMeetingForAppointment(updatedAppointment.id);
+  } catch (error) {
+    console.error('Failed to update video meeting:', error);
+  }
+
   // Send reschedule confirmation notification
   try {
     await notificationsService.sendAppointmentReschedule(updatedAppointment.id);
@@ -674,6 +690,13 @@ export async function cancelByConfirmationCode(code: string, reason?: string) {
     );
   } catch (error) {
     console.error('Failed to delete calendar event:', error);
+  }
+
+  // Delete video meeting
+  try {
+    await videoService.deleteMeetingForAppointment(cancelledAppointment.id);
+  } catch (error) {
+    console.error('Failed to delete video meeting:', error);
   }
 
   // Send cancellation confirmation notification

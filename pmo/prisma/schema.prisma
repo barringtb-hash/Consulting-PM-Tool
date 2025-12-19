@@ -1731,8 +1731,9 @@ model Appointment {
   ehrAppointmentId String?
 
   // Video meeting
-  videoMeetingUrl String?
-  videoMeetingId  String?
+  videoMeetingUrl      String?
+  videoMeetingId       String?
+  videoMeetingPassword String?
 
   // HIPAA compliance - encrypted notes
   encryptedNotes String?

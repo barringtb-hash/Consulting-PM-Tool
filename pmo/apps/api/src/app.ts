@@ -54,6 +54,12 @@ import bookingRouter from './modules/scheduling/booking.router';
 import calendarRouter from './modules/scheduling/calendar.router';
 import paymentRouter from './modules/scheduling/payment.router';
 import shiftRouter from './modules/scheduling/shift.router';
+import { videoRouter } from './modules/scheduling/video.router';
+import { intakeFormsRouter } from './modules/scheduling/intake-forms.router';
+import { bookingRulesRouter } from './modules/scheduling/booking-rules.router';
+import { noshowPredictionRouter } from './modules/scheduling/noshow-prediction.router';
+import { smartSchedulingRouter } from './modules/scheduling/smart-scheduling.router';
+import { naturalLanguageRouter } from './modules/scheduling/natural-language.router';
 import { templateRouter } from './modules/scheduling/templates';
 import intakeRouter from './modules/intake/intake.router';
 // Phase 2 AI Tools
@@ -435,6 +441,32 @@ export function createApp(): express.Express {
     '/api/scheduling/templates',
     requireModule('scheduling'),
     templateRouter,
+  );
+
+  // Video Conferencing Integration API - requires scheduling module
+  app.use('/api/scheduling', requireModule('scheduling'), videoRouter);
+
+  // Intake Forms API for Scheduling - requires scheduling module
+  app.use('/api/scheduling', requireModule('scheduling'), intakeFormsRouter);
+
+  // Booking Rules API - requires scheduling module
+  app.use('/api/scheduling', requireModule('scheduling'), bookingRulesRouter);
+
+  // No-Show Prediction API - requires scheduling module
+  app.use(
+    '/api/scheduling',
+    requireModule('scheduling'),
+    noshowPredictionRouter,
+  );
+  app.use(
+    '/api/scheduling',
+    requireModule('scheduling'),
+    smartSchedulingRouter,
+  );
+  app.use(
+    '/api/scheduling',
+    requireModule('scheduling'),
+    naturalLanguageRouter,
   );
 
   // Client Intake Automator module (Tool 1.4)
