@@ -102,6 +102,8 @@ import auditRouter from './routes/audit.routes';
 import tenantHealthRouter from './routes/tenant-health.routes';
 // AI Monitoring Routes
 import aiMonitoringRouter from './modules/ai-monitoring/ai-monitoring.routes';
+// Monitoring Assistant Routes
+import { monitoringAssistantRouter } from './modules/ai-monitoring/assistant';
 // Infrastructure Monitoring Routes
 import { monitoringRouter, apiMetricsMiddleware } from './modules/monitoring';
 import projectsRouter from './routes/projects';
@@ -323,6 +325,10 @@ export function createApp(): express.Express {
   // ============ AI MONITORING ============
   // AI usage tracking and monitoring
   app.use('/api/ai-monitoring', aiMonitoringRouter);
+
+  // ============ MONITORING ASSISTANT ============
+  // AI-powered assistant for monitoring queries (tenant-specific)
+  app.use('/api/ai-monitoring/assistant', monitoringAssistantRouter);
 
   // ============ INFRASTRUCTURE MONITORING ============
   // Infrastructure metrics, anomaly detection, and alerting

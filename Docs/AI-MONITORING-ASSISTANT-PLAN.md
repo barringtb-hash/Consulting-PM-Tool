@@ -4,7 +4,12 @@
 
 This document outlines the requirements and implementation plan for integrating an AI-powered assistant into the AI Monitoring system. The assistant will provide conversational access to monitoring data, help diagnose issues, and provide real-time status information through natural language interactions.
 
-**Key Constraint:** This feature will be enabled only for a specific tenant (your tenant), not available to all tenants.
+**Key Constraint:** This feature will be enabled only for the `default` tenant (Launchpad Consulting Partners), not available to other tenants.
+
+**Tenant Configuration:**
+- **Tenant Name:** Launchpad Consulting Partners
+- **Tenant Slug:** `default`
+- **Tenant Plan:** PROFESSIONAL
 
 ---
 
@@ -20,6 +25,9 @@ This document outlines the requirements and implementation plan for integrating 
 | **R4: Trend Analysis** | Assistant can analyze usage trends and cost patterns over time | P1 |
 | **R5: Proactive Recommendations** | Assistant provides actionable recommendations for cost optimization and issue resolution | P1 |
 | **R6: Historical Context** | Assistant can reference historical data to contextualize current issues | P2 |
+| **R7: Database Monitoring** | Track and report on database usage, query performance, connection pools | P0 |
+| **R8: External Service Health** | Monitor API connections to Vercel, Render, and OpenAI | P0 |
+| **R9: Tenant Usage Trends** | Analyze customer tenant usage patterns and trends | P1 |
 
 ### 1.2 Data Access Requirements
 
@@ -37,20 +45,36 @@ The assistant must be able to query:
    - System health (memory, CPU, event loop)
    - Slow database queries
 
-3. **Anomaly Data**
+3. **Database Monitoring** (NEW)
+   - Connection pool status (active, idle, waiting)
+   - Query execution times and slow query log
+   - Database size and growth trends
+   - Table-level statistics
+
+4. **External Service Connections** (NEW)
+   - **Vercel**: Deployment status, edge function performance
+   - **Render**: Service health, memory/CPU usage, deployment logs
+   - **OpenAI**: API health, rate limits, token usage, model availability
+
+5. **Anomaly Data**
    - Open anomalies with severity levels
    - Recent resolved anomalies
    - Anomaly patterns and frequency
 
-4. **Alert Information**
+6. **Alert Information**
    - Active alert rules
    - Alert history and delivery status
    - Cost threshold status
 
-5. **Predictive Data**
+7. **Predictive Data**
    - Cost forecasts (current month, next month)
    - Usage projections by tool
    - Budget recommendations
+
+8. **Tenant Usage Trends** (NEW)
+   - Per-tenant usage patterns over time
+   - Cross-tenant comparative analytics
+   - Tenant health scores and engagement metrics
 
 ### 1.3 Tenant-Specific Enablement
 

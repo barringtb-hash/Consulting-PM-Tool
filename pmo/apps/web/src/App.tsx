@@ -95,6 +95,11 @@ const CostAnalysisPage = lazy(() =>
     default: m.CostAnalysisPage,
   })),
 );
+const MonitoringAssistantPage = lazy(() =>
+  import('./pages/operations/MonitoringAssistantPage').then((m) => ({
+    default: m.MonitoringAssistantPage,
+  })),
+);
 
 // Public pages (no auth required)
 const PublicBookingPage = lazy(
@@ -459,6 +464,14 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <CostAnalysisPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/operations/assistant"
+                  element={
+                    <LazyPage>
+                      <MonitoringAssistantPage />
                     </LazyPage>
                   }
                 />
