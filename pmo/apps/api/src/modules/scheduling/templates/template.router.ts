@@ -6,8 +6,12 @@
 
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../../../auth/auth.middleware';
+import {
+  requireAuth,
+  AuthenticatedRequest,
+} from '../../../auth/auth.middleware';
 import { templateService, IndustryTemplate } from './template.service';
+import { prisma } from '../../../prisma/client';
 
 const router = Router();
 
@@ -188,31 +192,42 @@ router.get('/by-category/:category', async (req: Request, res: Response) => {
  * POST /api/scheduling/templates/apply
  * Apply a template to create/update scheduling config
  */
-router.post('/apply', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const parsed = applyTemplateSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ errors: parsed.error.flatten() });
+router.post(
+  '/apply',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const parsed = applyTemplateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ errors: parsed.error.flatten() });
+        return;
+      }
+
+      const { clientId, templateId, accountId, customizations } = parsed.data;
+
+      // Look up client to get tenantId
+      const client = await prisma.client.findUnique({
+        where: { id: clientId },
+        select: { tenantId: true },
+      });
+
+      const result = await templateService.applyTemplate(clientId, templateId, {
+        tenantId: client?.tenantId || undefined,
+        accountId,
+        customizations,
+      });
+
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Error applying template:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to apply template' });
     }
-
-    const { clientId, templateId, accountId, customizations } = parsed.data;
-    const tenantId = req.user!.tenantId;
-
-    const result = await templateService.applyTemplate(clientId, templateId, {
-      tenantId,
-      accountId,
-      customizations,
-    });
-
-    res.json({ data: result });
-  } catch (error) {
-    console.error('Error applying template:', error);
-    if (error instanceof Error && error.message.includes('not found')) {
-      return res.status(404).json({ error: error.message });
-    }
-    res.status(500).json({ error: 'Failed to apply template' });
-  }
-});
+  },
+);
 
 /**
  * POST /api/scheduling/templates/reset

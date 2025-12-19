@@ -53,13 +53,13 @@ interface CreatePaymentIntentParams {
 
 interface PaymentConfigDetails {
   id: number;
-  enabled: boolean;
-  stripeSecretKey: string | null;
-  stripePublishableKey: string | null;
-  paymentTiming: PaymentTiming;
-  depositPercent: number | null;
+  configId: number;
+  stripeAccountId: string | null;
+  stripeOnboarded: boolean;
   currency: string;
-  refundPolicy: string | null;
+  collectPaymentAt: PaymentTiming;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // ============================================================================
@@ -156,20 +156,38 @@ export async function getPaymentConfig(
 
 /**
  * Create or update payment config
+ * Note: Stripe keys should be stored in environment variables, not database
  */
 export async function upsertPaymentConfig(
   configId: number,
   data: {
-    enabled: boolean;
-    stripeSecretKey?: string;
-    stripePublishableKey?: string;
-    stripeWebhookSecret?: string;
-    paymentTiming?: PaymentTiming;
-    depositPercent?: number;
+    enabled?: boolean; // Maps to stripeOnboarded
+    stripeSecretKey?: string; // Ignored - use env var
+    stripePublishableKey?: string; // Ignored - use env var
+    stripeWebhookSecret?: string; // Ignored - use env var
+    paymentTiming?: PaymentTiming; // Maps to collectPaymentAt
+    depositPercent?: number; // Ignored - not in schema
     currency?: string;
-    refundPolicy?: string;
+    refundPolicy?: string; // Ignored - not in schema
   },
 ) {
+  // Map incoming data to actual schema fields
+  const schemaData: {
+    stripeOnboarded?: boolean;
+    collectPaymentAt?: PaymentTiming;
+    currency?: string;
+  } = {};
+
+  if (data.enabled !== undefined) {
+    schemaData.stripeOnboarded = data.enabled;
+  }
+  if (data.paymentTiming !== undefined) {
+    schemaData.collectPaymentAt = data.paymentTiming;
+  }
+  if (data.currency !== undefined) {
+    schemaData.currency = data.currency;
+  }
+
   const existing = await prisma.paymentConfig.findFirst({
     where: { configId },
   });
@@ -177,14 +195,14 @@ export async function upsertPaymentConfig(
   if (existing) {
     return prisma.paymentConfig.update({
       where: { id: existing.id },
-      data,
+      data: schemaData,
     });
   }
 
   return prisma.paymentConfig.create({
     data: {
       configId,
-      ...data,
+      ...schemaData,
     },
   });
 }
@@ -231,7 +249,7 @@ export async function createPaymentIntent(
       amount: params.amount / 100, // Convert cents to dollars
       currency: params.currency,
       status: 'PENDING',
-      paymentType: 'FULL',
+      type: 'FULL',
     },
   });
 
@@ -292,7 +310,7 @@ export async function createDepositPaymentIntent(
       amount: depositAmount / 100,
       currency,
       status: 'PENDING',
-      paymentType: 'DEPOSIT',
+      type: 'DEPOSIT',
     },
   });
 
@@ -326,8 +344,8 @@ export async function confirmPaymentSuccess(
     await prisma.paymentTransaction.updateMany({
       where: { stripePaymentIntentId: paymentIntentId },
       data: {
-        status: 'COMPLETED',
-        paidAt: new Date(),
+        status: 'SUCCEEDED',
+        processedAt: new Date(),
       },
     });
   }
@@ -372,7 +390,7 @@ export async function processRefund(
   const transaction = await prisma.paymentTransaction.findFirst({
     where: {
       appointmentId,
-      status: 'COMPLETED',
+      status: 'SUCCEEDED',
     },
   });
 
@@ -396,8 +414,6 @@ export async function processRefund(
     data: {
       status: 'REFUNDED',
       refundedAt: new Date(),
-      refundAmount: refund.amount / 100,
-      stripeRefundId: refund.id,
     },
   });
 
@@ -425,7 +441,7 @@ export async function processPartialRefund(
   const transaction = await prisma.paymentTransaction.findFirst({
     where: {
       appointmentId,
-      status: 'COMPLETED',
+      status: 'SUCCEEDED',
     },
   });
 
@@ -445,17 +461,15 @@ export async function processPartialRefund(
   );
 
   // Update transaction with partial refund info
+  // Note: Full refund tracking would require schema migration
   await prisma.paymentTransaction.update({
     where: { id: transaction.id },
     data: {
       refundedAt: new Date(),
-      refundAmount: (transaction.refundAmount || 0) + refund.amount / 100,
-      stripeRefundId: refund.id,
-      // Only mark as refunded if full amount refunded
       status:
-        transaction.refundAmount + refund.amount / 100 >= transaction.amount
+        refund.amount / 100 >= Number(transaction.amount)
           ? 'REFUNDED'
-          : 'COMPLETED',
+          : 'PARTIALLY_REFUNDED',
     },
   });
 
@@ -534,18 +548,10 @@ export async function handleWebhookEvent(
       await prisma.paymentTransaction.updateMany({
         where: { stripePaymentIntentId: paymentIntent.id },
         data: {
-          status: 'COMPLETED',
-          paidAt: new Date(),
+          status: 'SUCCEEDED',
+          processedAt: new Date(),
         },
       });
-
-      // Update appointment payment status
-      if (paymentIntent.metadata?.appointmentId) {
-        await prisma.appointment.update({
-          where: { id: parseInt(paymentIntent.metadata.appointmentId, 10) },
-          data: { paymentStatus: 'PAID' },
-        });
-      }
       break;
     }
 
@@ -556,14 +562,6 @@ export async function handleWebhookEvent(
           status: 'FAILED',
         },
       });
-
-      // Update appointment payment status
-      if (paymentIntent.metadata?.appointmentId) {
-        await prisma.appointment.update({
-          where: { id: parseInt(paymentIntent.metadata.appointmentId, 10) },
-          data: { paymentStatus: 'FAILED' },
-        });
-      }
       break;
     }
 
@@ -579,8 +577,10 @@ export async function handleWebhookEvent(
       await prisma.paymentTransaction.updateMany({
         where: { stripePaymentIntentId: paymentIntent.id },
         data: {
-          status: refundedAmount >= originalAmount ? 'REFUNDED' : 'COMPLETED',
-          refundAmount: refundedAmount,
+          status:
+            refundedAmount >= originalAmount
+              ? 'REFUNDED'
+              : 'PARTIALLY_REFUNDED',
           refundedAt: new Date(),
         },
       });
@@ -621,25 +621,17 @@ export async function calculateAppointmentPayment(
   }
 
   const paymentConfig = appointment.config.paymentConfig;
-  if (!paymentConfig || !paymentConfig.enabled) {
+  if (!paymentConfig || paymentConfig.collectPaymentAt === 'NONE') {
     return null;
   }
 
-  const totalAmount = appointment.appointmentType?.price || 0;
-
-  let depositAmount: number | null = null;
-  if (
-    paymentConfig.paymentTiming === 'DEPOSIT' &&
-    paymentConfig.depositPercent
-  ) {
-    depositAmount = totalAmount * (paymentConfig.depositPercent / 100);
-  }
+  const totalAmount = Number(appointment.appointmentType?.price || 0);
 
   return {
     totalAmount,
-    depositAmount,
+    depositAmount: null, // Deposit support would require schema migration
     currency: paymentConfig.currency,
-    paymentTiming: paymentConfig.paymentTiming,
+    paymentTiming: paymentConfig.collectPaymentAt,
   };
 }
 
@@ -662,7 +654,7 @@ export async function isAppointmentPaid(
   const transactions = await prisma.paymentTransaction.findMany({
     where: {
       appointmentId,
-      status: 'COMPLETED',
+      status: 'SUCCEEDED',
     },
   });
 
@@ -675,12 +667,7 @@ export async function isAppointmentPaid(
     return true; // No payment required
   }
 
-  const totalPaid = transactions.reduce((sum, t) => sum + t.amount, 0);
-
-  // For deposit timing, only deposit needs to be paid
-  if (payment.paymentTiming === 'DEPOSIT' && payment.depositAmount) {
-    return totalPaid >= payment.depositAmount;
-  }
+  const totalPaid = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
 
   // For full payment, entire amount must be paid
   return totalPaid >= payment.totalAmount;

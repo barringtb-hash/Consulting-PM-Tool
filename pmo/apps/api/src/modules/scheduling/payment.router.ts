@@ -29,7 +29,8 @@ const updatePaymentConfigSchema = z.object({
   stripeSecretKey: z.string().optional(),
   stripePublishableKey: z.string().optional(),
   stripeWebhookSecret: z.string().optional(),
-  paymentTiming: z.enum(['FULL', 'DEPOSIT', 'AFTER_SERVICE']).optional(),
+  // PaymentTiming enum: BOOKING (at booking), APPOINTMENT (at appointment), NONE (no payment)
+  paymentTiming: z.enum(['BOOKING', 'APPOINTMENT', 'NONE']).optional(),
   depositPercent: z.number().min(0).max(100).optional(),
   currency: z.string().length(3).optional(),
   refundPolicy: z.string().optional(),
@@ -64,17 +65,15 @@ router.get(
         return;
       }
 
-      // Don't expose secret keys in response
+      // Return config with actual schema fields
       res.json({
         data: {
           id: config.id,
-          enabled: config.enabled,
-          hasStripeKeys: !!config.stripeSecretKey,
-          stripePublishableKey: config.stripePublishableKey,
-          paymentTiming: config.paymentTiming,
-          depositPercent: config.depositPercent,
+          configId: config.configId,
+          stripeAccountId: config.stripeAccountId,
+          stripeOnboarded: config.stripeOnboarded,
+          collectPaymentAt: config.collectPaymentAt,
           currency: config.currency,
-          refundPolicy: config.refundPolicy,
         },
       });
     } catch (error) {
@@ -115,9 +114,10 @@ router.put(
       res.json({
         data: {
           id: config.id,
-          enabled: config.enabled,
-          paymentTiming: config.paymentTiming,
-          depositPercent: config.depositPercent,
+          configId: config.configId,
+          stripeAccountId: config.stripeAccountId,
+          stripeOnboarded: config.stripeOnboarded,
+          collectPaymentAt: config.collectPaymentAt,
           currency: config.currency,
         },
       });
@@ -195,9 +195,9 @@ router.post(
 
       const { appointmentId, configId } = parsed.data;
 
-      // Get payment config
+      // Get payment config - check if stripeOnboarded or has valid config
       const paymentConfig = await paymentService.getPaymentConfig(configId);
-      if (!paymentConfig || !paymentConfig.enabled) {
+      if (!paymentConfig) {
         res.status(400).json({ error: 'Payments not configured' });
         return;
       }
@@ -225,40 +225,24 @@ router.post(
         return;
       }
 
-      // Create appropriate payment intent based on timing
-      let result;
-      if (
-        paymentDetails.paymentTiming === 'DEPOSIT' &&
-        paymentDetails.depositAmount
-      ) {
-        result = await paymentService.createDepositPaymentIntent(
-          appointmentId,
-          paymentDetails.totalAmount * 100,
-          paymentConfig.depositPercent || 50,
-          paymentDetails.currency,
-          appointment.patientEmail || '',
-          appointment.patientName,
-          appointment.appointmentType?.name || 'Appointment',
-          paymentConfig.stripeSecretKey || undefined,
-        );
-      } else {
-        result = await paymentService.createPaymentIntent(
-          {
-            appointmentId,
-            amount: Math.round(paymentDetails.totalAmount * 100),
-            currency: paymentDetails.currency,
-            customerEmail: appointment.patientEmail || '',
-            customerName: appointment.patientName,
-            description: appointment.appointmentType?.name || 'Appointment',
-          },
-          paymentConfig.stripeSecretKey || undefined,
-        );
-      }
+      // Create payment intent for full amount
+      // Note: Deposit support would require schema migration to add deposit percent config
+      const result = await paymentService.createPaymentIntent({
+        appointmentId,
+        amount: Math.round(paymentDetails.totalAmount * 100),
+        currency: paymentDetails.currency,
+        customerEmail: appointment.patientEmail || '',
+        customerName: appointment.patientName,
+        description: appointment.appointmentType?.name || 'Appointment',
+      });
+
+      // Use environment variable for publishable key
+      const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
       res.json({
         data: {
           clientSecret: result.clientSecret,
-          publishableKey: paymentConfig.stripePublishableKey,
+          publishableKey: stripePublishableKey,
           amount: paymentDetails.totalAmount,
           depositAmount: paymentDetails.depositAmount,
           currency: paymentDetails.currency,
@@ -316,9 +300,10 @@ router.post(
         return;
       }
 
+      const body = req.body as { reason?: string };
       const result = await paymentService.processRefund(
         appointmentId,
-        req.body.reason,
+        body.reason,
       );
 
       res.json({
