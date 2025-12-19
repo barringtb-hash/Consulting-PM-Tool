@@ -28,7 +28,10 @@ import {
   User,
   CheckCircle,
   XCircle,
+  Briefcase,
+  Brain,
 } from 'lucide-react';
+import { ShiftSchedulingTab, AIInsightsTab } from './scheduling';
 
 // Types
 interface SchedulingConfig {
@@ -188,7 +191,12 @@ function SchedulingPage(): JSX.Element {
   const [selectedProviderId, setSelectedProviderId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [activeTab, setActiveTab] = useState<
-    'calendar' | 'appointments' | 'providers' | 'analytics'
+    | 'calendar'
+    | 'appointments'
+    | 'providers'
+    | 'analytics'
+    | 'shifts'
+    | 'ai-insights'
   >('calendar');
   const [showCreateConfigModal, setShowCreateConfigModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
@@ -398,6 +406,8 @@ function SchedulingPage(): JSX.Element {
               { id: 'calendar', label: 'Calendar', icon: Calendar },
               { id: 'appointments', label: 'Appointments', icon: Clock },
               { id: 'providers', label: 'Providers', icon: Users },
+              { id: 'shifts', label: 'Shift Scheduling', icon: Briefcase },
+              { id: 'ai-insights', label: 'AI Insights', icon: Brain },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
             ].map(({ id, label, icon: Icon }) => (
               <button
@@ -789,6 +799,16 @@ function SchedulingPage(): JSX.Element {
                   )}
                 </CardBody>
               </Card>
+            )}
+
+            {/* Shift Scheduling Tab */}
+            {activeTab === 'shifts' && (
+              <ShiftSchedulingTab configId={selectedConfig.id} />
+            )}
+
+            {/* AI Insights Tab */}
+            {activeTab === 'ai-insights' && (
+              <AIInsightsTab configId={selectedConfig.id} />
             )}
 
             {/* Analytics Tab */}
