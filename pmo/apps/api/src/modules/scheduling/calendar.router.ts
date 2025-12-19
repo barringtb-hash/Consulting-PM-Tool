@@ -49,7 +49,7 @@ router.post(
           configId,
           providerId: providerId || null,
           platform,
-          userId: req.user!.id,
+          userId: req.userId!,
         }),
       ).toString('base64');
 
@@ -57,11 +57,10 @@ router.post(
 
       if (platform === 'GOOGLE') {
         authUrl = calendarService.getGoogleAuthUrl(state);
+      } else if (platform === 'OUTLOOK') {
+        authUrl = calendarService.getMicrosoftAuthUrl(state);
       } else {
-        // TODO: Implement Outlook OAuth
-        res
-          .status(400)
-          .json({ error: 'Outlook integration not yet supported' });
+        res.status(400).json({ error: 'Invalid calendar platform' });
         return;
       }
 
@@ -143,6 +142,79 @@ router.get('/google/callback', async (req, res): Promise<void> => {
     console.error('Google OAuth callback error:', error);
     res.redirect(
       `/ai-tools/scheduling?calendarError=${encodeURIComponent('Failed to connect Google Calendar')}`,
+    );
+  }
+});
+
+/**
+ * GET /api/scheduling/calendar/outlook/callback
+ * Microsoft/Outlook OAuth callback handler
+ */
+router.get('/outlook/callback', async (req, res): Promise<void> => {
+  try {
+    const { code, state, error, error_description } = req.query;
+
+    if (error) {
+      const errorMsg = error_description
+        ? String(error_description)
+        : String(error);
+      res.redirect(
+        `/ai-tools/scheduling?calendarError=${encodeURIComponent(errorMsg)}`,
+      );
+      return;
+    }
+
+    if (!code || !state) {
+      res.redirect('/ai-tools/scheduling?calendarError=Missing+parameters');
+      return;
+    }
+
+    // Decode state
+    let stateData: {
+      configId: number;
+      providerId: number | null;
+      platform: string;
+      userId: number;
+    };
+
+    try {
+      stateData = JSON.parse(Buffer.from(String(state), 'base64').toString());
+    } catch {
+      res.redirect('/ai-tools/scheduling?calendarError=Invalid+state');
+      return;
+    }
+
+    // Exchange code for tokens
+    const tokens = await calendarService.exchangeMicrosoftCode(String(code));
+
+    // Get available calendars
+    const calendars = await calendarService.listOutlookCalendars(
+      tokens.access_token,
+    );
+
+    // Store temporary tokens in session or return for calendar selection
+    // For simplicity, we'll auto-select the default calendar
+    const defaultCalendar = calendars.find((c) => c.isDefault) || calendars[0];
+
+    if (!defaultCalendar) {
+      res.redirect('/ai-tools/scheduling?calendarError=No+calendars+found');
+      return;
+    }
+
+    // Save the integration
+    await calendarService.saveCalendarIntegration(
+      stateData.configId,
+      stateData.providerId,
+      'OUTLOOK',
+      tokens,
+      defaultCalendar.id,
+    );
+
+    res.redirect('/ai-tools/scheduling?calendarConnected=true');
+  } catch (error) {
+    console.error('Outlook OAuth callback error:', error);
+    res.redirect(
+      `/ai-tools/scheduling?calendarError=${encodeURIComponent('Failed to connect Outlook Calendar')}`,
     );
   }
 });

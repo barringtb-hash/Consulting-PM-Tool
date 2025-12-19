@@ -1257,4 +1257,342 @@ router.get(
   },
 );
 
+// ============================================================================
+// OPEN SHIFT BOARD ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/scheduling/shifts/:configId/open-shifts
+ * Get open shifts available for claiming
+ */
+router.get(
+  '/:configId/open-shifts',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const configId = parseInt(req.params.configId, 10);
+      if (isNaN(configId)) {
+        res.status(400).json({ error: 'Invalid config ID' });
+        return;
+      }
+
+      const filters = {
+        locationId: req.query.locationId
+          ? parseInt(req.query.locationId as string, 10)
+          : undefined,
+        roleId: req.query.roleId
+          ? parseInt(req.query.roleId as string, 10)
+          : undefined,
+        startDate: req.query.startDate
+          ? new Date(req.query.startDate as string)
+          : undefined,
+        endDate: req.query.endDate
+          ? new Date(req.query.endDate as string)
+          : undefined,
+      };
+
+      const shifts = await shiftService.getOpenShifts(configId, filters);
+      res.json({ data: shifts });
+    } catch (error) {
+      console.error('Error getting open shifts:', error);
+      res.status(500).json({ error: 'Failed to get open shifts' });
+    }
+  },
+);
+
+/**
+ * POST /api/scheduling/shifts/shift/:id/post-open
+ * Post a shift to the open board
+ */
+router.post(
+  '/shift/:id/post-open',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid shift ID' });
+        return;
+      }
+
+      const shift = await shiftService.postShiftToOpenBoard(id, req.userId!);
+      res.json({ data: shift });
+    } catch (error) {
+      console.error('Error posting shift to open board:', error);
+      res.status(500).json({ error: 'Failed to post shift to open board' });
+    }
+  },
+);
+
+/**
+ * POST /api/scheduling/shifts/shift/:id/remove-open
+ * Remove a shift from the open board
+ */
+router.post(
+  '/shift/:id/remove-open',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid shift ID' });
+        return;
+      }
+
+      const shift = await shiftService.removeShiftFromOpenBoard(id);
+      res.json({ data: shift });
+    } catch (error) {
+      console.error('Error removing shift from open board:', error);
+      res.status(500).json({ error: 'Failed to remove shift from open board' });
+    }
+  },
+);
+
+/**
+ * POST /api/scheduling/shifts/shift/:id/claim
+ * Claim an open shift (employee self-assigns)
+ */
+router.post(
+  '/shift/:id/claim',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid shift ID' });
+        return;
+      }
+
+      const { employeeId } = req.body as { employeeId?: number };
+      if (!employeeId) {
+        res.status(400).json({ error: 'Employee ID is required' });
+        return;
+      }
+
+      const result = await shiftService.claimOpenShift(id, employeeId);
+
+      if (!result.success) {
+        res.status(400).json({ error: result.error });
+        return;
+      }
+
+      res.json({ data: result.shift });
+    } catch (error) {
+      console.error('Error claiming shift:', error);
+      res.status(500).json({ error: 'Failed to claim shift' });
+    }
+  },
+);
+
+/**
+ * GET /api/scheduling/shifts/shift/:id/eligible-employees
+ * Get employees eligible to claim an open shift
+ */
+router.get(
+  '/shift/:id/eligible-employees',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid shift ID' });
+        return;
+      }
+
+      const employees = await shiftService.getEligibleEmployeesForShift(id);
+      res.json({ data: employees });
+    } catch (error) {
+      console.error('Error getting eligible employees:', error);
+      res.status(500).json({ error: 'Failed to get eligible employees' });
+    }
+  },
+);
+
+// ============================================================================
+// LABOR COST ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/scheduling/shifts/schedules/:id/labor-costs
+ * Calculate labor costs for a schedule
+ */
+router.get(
+  '/schedules/:id/labor-costs',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid schedule ID' });
+        return;
+      }
+
+      const overtimeMultiplier = req.query.overtimeMultiplier
+        ? parseFloat(req.query.overtimeMultiplier as string)
+        : 1.5;
+
+      const costs = await shiftService.calculateLaborCosts(
+        id,
+        overtimeMultiplier,
+      );
+      res.json({ data: costs });
+    } catch (error) {
+      console.error('Error calculating labor costs:', error);
+      res.status(500).json({ error: 'Failed to calculate labor costs' });
+    }
+  },
+);
+
+/**
+ * GET /api/scheduling/shifts/:configId/labor-projection
+ * Get labor cost projection for a date range
+ */
+router.get(
+  '/:configId/labor-projection',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const configId = parseInt(req.params.configId, 10);
+      if (isNaN(configId)) {
+        res.status(400).json({ error: 'Invalid config ID' });
+        return;
+      }
+
+      const startDate = req.query.startDate
+        ? new Date(req.query.startDate as string)
+        : new Date();
+      const endDate = req.query.endDate
+        ? new Date(req.query.endDate as string)
+        : new Date();
+
+      const projection = await shiftService.getLaborCostProjection(
+        configId,
+        startDate,
+        endDate,
+      );
+      res.json({ data: projection });
+    } catch (error) {
+      console.error('Error getting labor projection:', error);
+      res.status(500).json({ error: 'Failed to get labor cost projection' });
+    }
+  },
+);
+
+// ============================================================================
+// OVERTIME ALERT ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/scheduling/shifts/:configId/overtime-alerts
+ * Get overtime alerts for employees
+ */
+router.get(
+  '/:configId/overtime-alerts',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const configId = parseInt(req.params.configId, 10);
+      if (isNaN(configId)) {
+        res.status(400).json({ error: 'Invalid config ID' });
+        return;
+      }
+
+      // Get week start date (default to current week)
+      const weekStartDate = req.query.weekStart
+        ? new Date(req.query.weekStart as string)
+        : (() => {
+            const now = new Date();
+            now.setDate(now.getDate() - now.getDay());
+            now.setHours(0, 0, 0, 0);
+            return now;
+          })();
+
+      const alerts = await shiftService.getOvertimeAlerts(
+        configId,
+        weekStartDate,
+      );
+      res.json({ data: alerts });
+    } catch (error) {
+      console.error('Error getting overtime alerts:', error);
+      res.status(500).json({ error: 'Failed to get overtime alerts' });
+    }
+  },
+);
+
+/**
+ * GET /api/scheduling/shifts/:configId/overtime-summary
+ * Get weekly overtime summary
+ */
+router.get(
+  '/:configId/overtime-summary',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const configId = parseInt(req.params.configId, 10);
+      if (isNaN(configId)) {
+        res.status(400).json({ error: 'Invalid config ID' });
+        return;
+      }
+
+      // Get week start date (default to current week)
+      const weekStartDate = req.query.weekStart
+        ? new Date(req.query.weekStart as string)
+        : (() => {
+            const now = new Date();
+            now.setDate(now.getDate() - now.getDay());
+            now.setHours(0, 0, 0, 0);
+            return now;
+          })();
+
+      const summary = await shiftService.getWeeklyOvertimeSummary(
+        configId,
+        weekStartDate,
+      );
+      res.json({ data: summary });
+    } catch (error) {
+      console.error('Error getting overtime summary:', error);
+      res.status(500).json({ error: 'Failed to get overtime summary' });
+    }
+  },
+);
+
+/**
+ * POST /api/scheduling/shifts/employees/:id/check-overtime
+ * Check if assigning a shift would cause overtime
+ */
+router.post(
+  '/employees/:id/check-overtime',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const employeeId = parseInt(req.params.id, 10);
+      if (isNaN(employeeId)) {
+        res.status(400).json({ error: 'Invalid employee ID' });
+        return;
+      }
+
+      const { startTime, endTime, breakMinutes } = req.body as {
+        startTime?: string;
+        endTime?: string;
+        breakMinutes?: number;
+      };
+      if (!startTime || !endTime) {
+        res.status(400).json({ error: 'Start time and end time are required' });
+        return;
+      }
+
+      const impact = await shiftService.checkOvertimeImpact(
+        employeeId,
+        new Date(startTime),
+        new Date(endTime),
+        breakMinutes || 0,
+      );
+      res.json({ data: impact });
+    } catch (error) {
+      console.error('Error checking overtime impact:', error);
+      res.status(500).json({ error: 'Failed to check overtime impact' });
+    }
+  },
+);
+
 export default router;

@@ -75,6 +75,54 @@ const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
 ];
 
+// Microsoft/Outlook OAuth configuration
+const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
+const MICROSOFT_CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET || '';
+const MICROSOFT_REDIRECT_URI =
+  process.env.MICROSOFT_REDIRECT_URI ||
+  'http://localhost:3001/api/scheduling/calendar/outlook/callback';
+const MICROSOFT_TENANT = process.env.MICROSOFT_TENANT || 'common';
+
+const MICROSOFT_SCOPES = ['openid', 'offline_access', 'Calendars.ReadWrite'];
+
+// ============================================================================
+// MICROSOFT TYPES
+// ============================================================================
+
+interface MicrosoftTokenResponse {
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
+  token_type: string;
+  scope: string;
+}
+
+interface OutlookCalendarEvent {
+  id?: string;
+  subject: string;
+  body?: {
+    contentType: 'HTML' | 'Text';
+    content: string;
+  };
+  start: {
+    dateTime: string;
+    timeZone: string;
+  };
+  end: {
+    dateTime: string;
+    timeZone: string;
+  };
+  attendees?: Array<{
+    emailAddress: {
+      address: string;
+      name?: string;
+    };
+    type: 'required' | 'optional';
+  }>;
+  reminderMinutesBeforeStart?: number;
+  isReminderOn?: boolean;
+}
+
 // ============================================================================
 // GOOGLE OAUTH FLOW
 // ============================================================================
@@ -157,6 +205,7 @@ export async function refreshGoogleToken(
 
 /**
  * Get valid access token (refresh if needed)
+ * Supports both Google and Microsoft/Outlook tokens
  */
 async function getValidAccessToken(
   integrationId: number,
@@ -203,7 +252,13 @@ async function getValidAccessToken(
       ? decryptString(integration.refreshToken)
       : integration.refreshToken;
 
-    const tokens = await refreshGoogleToken(refreshToken);
+    // Use appropriate refresh function based on platform
+    let tokens;
+    if (integration.platform === 'OUTLOOK') {
+      tokens = await refreshMicrosoftToken(refreshToken);
+    } else {
+      tokens = await refreshGoogleToken(refreshToken);
+    }
 
     // Encrypt new tokens before storage
     await prisma.calendarIntegration.update({
@@ -478,6 +533,289 @@ export async function deleteGoogleCalendarEvent(
 }
 
 // ============================================================================
+// MICROSOFT OAUTH FLOW
+// ============================================================================
+
+/**
+ * Generate Microsoft OAuth authorization URL
+ */
+export function getMicrosoftAuthUrl(state: string): string {
+  const params = new URLSearchParams({
+    client_id: MICROSOFT_CLIENT_ID,
+    redirect_uri: MICROSOFT_REDIRECT_URI,
+    response_type: 'code',
+    scope: MICROSOFT_SCOPES.join(' '),
+    response_mode: 'query',
+    state,
+  });
+
+  return `https://login.microsoftonline.com/${MICROSOFT_TENANT}/oauth2/v2.0/authorize?${params.toString()}`;
+}
+
+/**
+ * Exchange Microsoft authorization code for tokens
+ */
+export async function exchangeMicrosoftCode(
+  code: string,
+): Promise<MicrosoftTokenResponse> {
+  const response = await fetch(
+    `https://login.microsoftonline.com/${MICROSOFT_TENANT}/oauth2/v2.0/token`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: MICROSOFT_CLIENT_ID,
+        client_secret: MICROSOFT_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: MICROSOFT_REDIRECT_URI,
+        scope: MICROSOFT_SCOPES.join(' '),
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(
+      `Microsoft OAuth error: ${error.error_description || error.error}`,
+    );
+  }
+
+  return response.json();
+}
+
+/**
+ * Refresh Microsoft access token using refresh token
+ */
+export async function refreshMicrosoftToken(
+  refreshToken: string,
+): Promise<MicrosoftTokenResponse> {
+  const response = await fetch(
+    `https://login.microsoftonline.com/${MICROSOFT_TENANT}/oauth2/v2.0/token`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: MICROSOFT_CLIENT_ID,
+        client_secret: MICROSOFT_CLIENT_SECRET,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+        scope: MICROSOFT_SCOPES.join(' '),
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(
+      `Microsoft token refresh error: ${error.error_description || error.error}`,
+    );
+  }
+
+  return response.json();
+}
+
+// ============================================================================
+// OUTLOOK CALENDAR API
+// ============================================================================
+
+/**
+ * List Outlook calendars for the connected account
+ */
+export async function listOutlookCalendars(
+  accessToken: string,
+): Promise<Array<{ id: string; name: string; isDefault: boolean }>> {
+  const response = await fetch(
+    'https://graph.microsoft.com/v1.0/me/calendars',
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to list Outlook calendars');
+  }
+
+  const data = await response.json();
+  return data.value.map(
+    (cal: { id: string; name: string; isDefaultCalendar?: boolean }) => ({
+      id: cal.id,
+      name: cal.name,
+      isDefault: cal.isDefaultCalendar || false,
+    }),
+  );
+}
+
+/**
+ * Create an Outlook Calendar event
+ */
+export async function createOutlookCalendarEvent(
+  accessToken: string,
+  calendarId: string,
+  event: CalendarEventInput,
+): Promise<string> {
+  // Convert timezone to Windows format if needed
+  const windowsTimezone = convertToWindowsTimezone(event.timezone);
+
+  const outlookEvent: OutlookCalendarEvent = {
+    subject: event.title,
+    body: event.description
+      ? {
+          contentType: 'HTML',
+          content: event.description.replace(/\n/g, '<br>'),
+        }
+      : undefined,
+    start: {
+      dateTime: event.startTime.toISOString().replace('Z', ''),
+      timeZone: windowsTimezone,
+    },
+    end: {
+      dateTime: event.endTime.toISOString().replace('Z', ''),
+      timeZone: windowsTimezone,
+    },
+    reminderMinutesBeforeStart: 30,
+    isReminderOn: true,
+  };
+
+  if (event.attendeeEmail) {
+    outlookEvent.attendees = [
+      {
+        emailAddress: {
+          address: event.attendeeEmail,
+          name: event.attendeeName,
+        },
+        type: 'required',
+      },
+    ];
+  }
+
+  const response = await fetch(
+    `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(outlookEvent),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(
+      `Failed to create Outlook event: ${error.error?.message || 'Unknown error'}`,
+    );
+  }
+
+  const createdEvent = await response.json();
+  return createdEvent.id;
+}
+
+/**
+ * Update an Outlook Calendar event
+ */
+export async function updateOutlookCalendarEvent(
+  accessToken: string,
+  calendarId: string,
+  eventId: string,
+  event: CalendarEventInput,
+): Promise<void> {
+  const windowsTimezone = convertToWindowsTimezone(event.timezone);
+
+  const outlookEvent: OutlookCalendarEvent = {
+    subject: event.title,
+    body: event.description
+      ? {
+          contentType: 'HTML',
+          content: event.description.replace(/\n/g, '<br>'),
+        }
+      : undefined,
+    start: {
+      dateTime: event.startTime.toISOString().replace('Z', ''),
+      timeZone: windowsTimezone,
+    },
+    end: {
+      dateTime: event.endTime.toISOString().replace('Z', ''),
+      timeZone: windowsTimezone,
+    },
+  };
+
+  const response = await fetch(
+    `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(outlookEvent),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(
+      `Failed to update Outlook event: ${error.error?.message || 'Unknown error'}`,
+    );
+  }
+}
+
+/**
+ * Delete an Outlook Calendar event
+ */
+export async function deleteOutlookCalendarEvent(
+  accessToken: string,
+  calendarId: string,
+  eventId: string,
+): Promise<void> {
+  const response = await fetch(
+    `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Failed to delete Outlook event');
+  }
+}
+
+/**
+ * Convert IANA timezone to Windows timezone format
+ */
+function convertToWindowsTimezone(ianaTimezone: string): string {
+  // Common IANA to Windows timezone mappings
+  const timezoneMap: Record<string, string> = {
+    'America/New_York': 'Eastern Standard Time',
+    'America/Chicago': 'Central Standard Time',
+    'America/Denver': 'Mountain Standard Time',
+    'America/Los_Angeles': 'Pacific Standard Time',
+    'America/Phoenix': 'US Mountain Standard Time',
+    'America/Anchorage': 'Alaskan Standard Time',
+    'Pacific/Honolulu': 'Hawaiian Standard Time',
+    'Europe/London': 'GMT Standard Time',
+    'Europe/Paris': 'Romance Standard Time',
+    'Europe/Berlin': 'W. Europe Standard Time',
+    'Asia/Tokyo': 'Tokyo Standard Time',
+    'Asia/Shanghai': 'China Standard Time',
+    'Australia/Sydney': 'AUS Eastern Standard Time',
+    UTC: 'UTC',
+  };
+
+  return timezoneMap[ianaTimezone] || 'UTC';
+}
+
+// ============================================================================
 // APPOINTMENT SYNC
 // ============================================================================
 
@@ -534,8 +872,10 @@ export async function syncAppointmentToCalendar(
   };
 
   try {
+    let eventId: string;
+
     if (integration.platform === 'GOOGLE') {
-      const eventId = await createGoogleCalendarEvent(
+      eventId = await createGoogleCalendarEvent(
         accessToken,
         integration.calendarId,
         eventInput,
@@ -545,8 +885,18 @@ export async function syncAppointmentToCalendar(
         where: { id: appointmentId },
         data: { googleEventId: eventId },
       });
+    } else if (integration.platform === 'OUTLOOK') {
+      eventId = await createOutlookCalendarEvent(
+        accessToken,
+        integration.calendarId,
+        eventInput,
+      );
+
+      await prisma.appointment.update({
+        where: { id: appointmentId },
+        data: { outlookEventId: eventId },
+      });
     }
-    // TODO: Add Outlook support
 
     await prisma.calendarIntegration.update({
       where: { id: integration.id },
@@ -568,6 +918,7 @@ export async function syncAppointmentToCalendar(
 
 /**
  * Update calendar event when appointment is rescheduled
+ * Supports both Google and Outlook calendars
  */
 export async function updateAppointmentCalendarEvent(
   appointmentId: number,
@@ -580,70 +931,130 @@ export async function updateAppointmentCalendarEvent(
     },
   });
 
-  if (!appointment || !appointment.googleEventId) {
+  if (!appointment) {
     return;
   }
 
-  const integration = await prisma.calendarIntegration.findFirst({
-    where: {
-      configId: appointment.configId,
-      providerId: appointment.providerId || null,
-      syncEnabled: true,
-      platform: 'GOOGLE',
-    },
-  });
-
-  if (!integration) {
-    return;
-  }
-
-  const accessToken = await getValidAccessToken(integration.id);
-  if (!accessToken) {
-    return;
-  }
-
-  const endTime = new Date(
-    appointment.scheduledAt.getTime() + appointment.durationMinutes * 60 * 1000,
-  );
-
-  const eventInput: CalendarEventInput = {
-    title: `${appointment.appointmentType?.name || 'Appointment'} - ${appointment.patientName}`,
-    description: `Patient: ${appointment.patientName}\nEmail: ${appointment.patientEmail || 'N/A'}\nPhone: ${appointment.patientPhone || 'N/A'}`,
-    startTime: appointment.scheduledAt,
-    endTime,
-    timezone: appointment.config.timezone || 'America/New_York',
-    attendeeEmail: appointment.patientEmail || undefined,
-    attendeeName: appointment.patientName,
-  };
-
-  try {
-    await updateGoogleCalendarEvent(
-      accessToken,
-      integration.calendarId,
-      appointment.googleEventId,
-      eventInput,
-    );
-
-    await prisma.calendarIntegration.update({
-      where: { id: integration.id },
-      data: {
-        lastSyncAt: new Date(),
-        lastSyncError: null,
+  // Check for Google event
+  if (appointment.googleEventId) {
+    const googleIntegration = await prisma.calendarIntegration.findFirst({
+      where: {
+        configId: appointment.configId,
+        providerId: appointment.providerId || null,
+        syncEnabled: true,
+        platform: 'GOOGLE',
       },
     });
-  } catch (error) {
-    console.error('Calendar update error:', error);
-    await prisma.calendarIntegration.update({
-      where: { id: integration.id },
-      data: {
-        lastSyncError: error instanceof Error ? error.message : 'Update failed',
+
+    if (googleIntegration) {
+      const accessToken = await getValidAccessToken(googleIntegration.id);
+      if (accessToken) {
+        const endTime = new Date(
+          appointment.scheduledAt.getTime() +
+            appointment.durationMinutes * 60 * 1000,
+        );
+
+        const eventInput: CalendarEventInput = {
+          title: `${appointment.appointmentType?.name || 'Appointment'} - ${appointment.patientName}`,
+          description: `Patient: ${appointment.patientName}\nEmail: ${appointment.patientEmail || 'N/A'}\nPhone: ${appointment.patientPhone || 'N/A'}`,
+          startTime: appointment.scheduledAt,
+          endTime,
+          timezone: appointment.config.timezone || 'America/New_York',
+          attendeeEmail: appointment.patientEmail || undefined,
+          attendeeName: appointment.patientName,
+        };
+
+        try {
+          await updateGoogleCalendarEvent(
+            accessToken,
+            googleIntegration.calendarId,
+            appointment.googleEventId,
+            eventInput,
+          );
+
+          await prisma.calendarIntegration.update({
+            where: { id: googleIntegration.id },
+            data: {
+              lastSyncAt: new Date(),
+              lastSyncError: null,
+            },
+          });
+        } catch (error) {
+          console.error('Google calendar update error:', error);
+          await prisma.calendarIntegration.update({
+            where: { id: googleIntegration.id },
+            data: {
+              lastSyncError:
+                error instanceof Error ? error.message : 'Update failed',
+            },
+          });
+        }
+      }
+    }
+  }
+
+  // Check for Outlook event
+  if (appointment.outlookEventId) {
+    const outlookIntegration = await prisma.calendarIntegration.findFirst({
+      where: {
+        configId: appointment.configId,
+        providerId: appointment.providerId || null,
+        syncEnabled: true,
+        platform: 'OUTLOOK',
       },
     });
+
+    if (outlookIntegration) {
+      const accessToken = await getValidAccessToken(outlookIntegration.id);
+      if (accessToken) {
+        const endTime = new Date(
+          appointment.scheduledAt.getTime() +
+            appointment.durationMinutes * 60 * 1000,
+        );
+
+        const eventInput: CalendarEventInput = {
+          title: `${appointment.appointmentType?.name || 'Appointment'} - ${appointment.patientName}`,
+          description: `Patient: ${appointment.patientName}\nEmail: ${appointment.patientEmail || 'N/A'}\nPhone: ${appointment.patientPhone || 'N/A'}`,
+          startTime: appointment.scheduledAt,
+          endTime,
+          timezone: appointment.config.timezone || 'America/New_York',
+          attendeeEmail: appointment.patientEmail || undefined,
+          attendeeName: appointment.patientName,
+        };
+
+        try {
+          await updateOutlookCalendarEvent(
+            accessToken,
+            outlookIntegration.calendarId,
+            appointment.outlookEventId,
+            eventInput,
+          );
+
+          await prisma.calendarIntegration.update({
+            where: { id: outlookIntegration.id },
+            data: {
+              lastSyncAt: new Date(),
+              lastSyncError: null,
+            },
+          });
+        } catch (error) {
+          console.error('Outlook calendar update error:', error);
+          await prisma.calendarIntegration.update({
+            where: { id: outlookIntegration.id },
+            data: {
+              lastSyncError:
+                error instanceof Error ? error.message : 'Update failed',
+            },
+          });
+        }
+      }
+    }
   }
 }
 
 /**
  * Delete calendar event when appointment is cancelled
+ * Supports both Google and Outlook calendars
  */
 export async function deleteAppointmentCalendarEvent(
   appointmentId: number,
@@ -655,40 +1066,71 @@ export async function deleteAppointmentCalendarEvent(
     },
   });
 
-  if (!appointment || !appointment.googleEventId) {
+  if (!appointment) {
     return;
   }
 
-  const integration = await prisma.calendarIntegration.findFirst({
-    where: {
-      configId: appointment.configId,
-      providerId: appointment.providerId || null,
-      syncEnabled: true,
-      platform: 'GOOGLE',
-    },
-  });
-
-  if (!integration) {
-    return;
-  }
-
-  const accessToken = await getValidAccessToken(integration.id);
-  if (!accessToken) {
-    return;
-  }
-
-  try {
-    await deleteGoogleCalendarEvent(
-      accessToken,
-      integration.calendarId,
-      appointment.googleEventId,
-    );
-
-    await prisma.appointment.update({
-      where: { id: appointmentId },
-      data: { googleEventId: null },
+  // Delete Google event if exists
+  if (appointment.googleEventId) {
+    const googleIntegration = await prisma.calendarIntegration.findFirst({
+      where: {
+        configId: appointment.configId,
+        providerId: appointment.providerId || null,
+        syncEnabled: true,
+        platform: 'GOOGLE',
+      },
     });
-  } catch (error) {
-    console.error('Calendar delete error:', error);
+
+    if (googleIntegration) {
+      const accessToken = await getValidAccessToken(googleIntegration.id);
+      if (accessToken) {
+        try {
+          await deleteGoogleCalendarEvent(
+            accessToken,
+            googleIntegration.calendarId,
+            appointment.googleEventId,
+          );
+
+          await prisma.appointment.update({
+            where: { id: appointmentId },
+            data: { googleEventId: null },
+          });
+        } catch (error) {
+          console.error('Google calendar delete error:', error);
+        }
+      }
+    }
+  }
+
+  // Delete Outlook event if exists
+  if (appointment.outlookEventId) {
+    const outlookIntegration = await prisma.calendarIntegration.findFirst({
+      where: {
+        configId: appointment.configId,
+        providerId: appointment.providerId || null,
+        syncEnabled: true,
+        platform: 'OUTLOOK',
+      },
+    });
+
+    if (outlookIntegration) {
+      const accessToken = await getValidAccessToken(outlookIntegration.id);
+      if (accessToken) {
+        try {
+          await deleteOutlookCalendarEvent(
+            accessToken,
+            outlookIntegration.calendarId,
+            appointment.outlookEventId,
+          );
+
+          await prisma.appointment.update({
+            where: { id: appointmentId },
+            data: { outlookEventId: null },
+          });
+        } catch (error) {
+          console.error('Outlook calendar delete error:', error);
+        }
+      }
+    }
   }
 }

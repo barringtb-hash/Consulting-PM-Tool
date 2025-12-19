@@ -11,6 +11,9 @@
 import { prisma } from '../../prisma/client';
 import { Prisma } from '@prisma/client';
 import crypto from 'crypto';
+import * as calendarService from './calendar.service';
+import * as notificationsService from './notifications.service';
+import * as paymentService from './payment.service';
 
 // ============================================================================
 // TYPES
@@ -438,13 +441,54 @@ export async function createPublicBooking(
     }
   }
 
-  // TODO: Schedule reminders via Twilio/SendGrid
-  // TODO: Sync to calendar if integration is configured
-  // TODO: Process payment if required
+  // Schedule reminders and send confirmation notifications
+  try {
+    await notificationsService.scheduleReminders(appointment.id);
+    await notificationsService.sendAppointmentConfirmation(appointment.id);
+  } catch (error) {
+    console.error('Failed to schedule reminders:', error);
+    // Don't fail the booking if notifications fail
+  }
+
+  // Sync to calendar if integration is configured
+  try {
+    await calendarService.syncAppointmentToCalendar(appointment.id);
+  } catch (error) {
+    console.error('Failed to sync to calendar:', error);
+    // Don't fail the booking if calendar sync fails
+  }
+
+  // Check if payment is required and return payment info
+  let paymentRequired = false;
+  let paymentInfo: {
+    clientSecret?: string;
+    paymentIntentId?: string;
+    amount?: number;
+    currency?: string;
+  } | null = null;
+
+  try {
+    const paymentDetails = await paymentService.calculateAppointmentPayment(
+      appointment.id,
+    );
+    if (paymentDetails && paymentDetails.totalAmount > 0) {
+      paymentRequired = true;
+      // Note: Actual payment intent creation happens in payment.router.ts
+      // We just flag that payment is required
+      paymentInfo = {
+        amount: paymentDetails.depositAmount || paymentDetails.totalAmount,
+        currency: paymentDetails.currency,
+      };
+    }
+  } catch (error) {
+    console.error('Failed to check payment requirements:', error);
+  }
 
   return {
     appointment,
     confirmationCode,
+    paymentRequired,
+    paymentInfo,
   };
 }
 
@@ -580,8 +624,21 @@ export async function rescheduleByConfirmationCode(
     },
   });
 
-  // TODO: Update calendar event
-  // TODO: Send reschedule confirmation
+  // Update calendar event
+  try {
+    await calendarService.updateAppointmentCalendarEvent(updatedAppointment.id);
+  } catch (error) {
+    console.error('Failed to update calendar event:', error);
+  }
+
+  // Send reschedule confirmation notification
+  try {
+    await notificationsService.sendAppointmentReschedule(updatedAppointment.id);
+    // Re-schedule reminders for the new time
+    await notificationsService.scheduleReminders(updatedAppointment.id);
+  } catch (error) {
+    console.error('Failed to send reschedule notification:', error);
+  }
 
   return updatedAppointment;
 }
@@ -610,11 +667,134 @@ export async function cancelByConfirmationCode(code: string, reason?: string) {
     },
   });
 
-  // TODO: Delete calendar event
-  // TODO: Send cancellation confirmation
-  // TODO: Notify waitlist
+  // Delete calendar event
+  try {
+    await calendarService.deleteAppointmentCalendarEvent(
+      cancelledAppointment.id,
+    );
+  } catch (error) {
+    console.error('Failed to delete calendar event:', error);
+  }
+
+  // Send cancellation confirmation notification
+  try {
+    await notificationsService.sendAppointmentCancellation(
+      cancelledAppointment.id,
+    );
+  } catch (error) {
+    console.error('Failed to send cancellation notification:', error);
+  }
+
+  // Process refund if payment was made
+  try {
+    const isPaid = await paymentService.isAppointmentPaid(
+      cancelledAppointment.id,
+    );
+    if (isPaid) {
+      await paymentService.processRefund(
+        cancelledAppointment.id,
+        'Appointment cancelled by customer',
+      );
+    }
+  } catch (error) {
+    console.error('Failed to process refund:', error);
+    // Don't fail the cancellation if refund fails - handle manually
+  }
+
+  // Notify waitlist about the now-available slot
+  try {
+    await notifyWaitlistOfOpening(
+      cancelledAppointment.configId,
+      cancelledAppointment.providerId,
+      cancelledAppointment.scheduledAt,
+      cancelledAppointment.durationMinutes,
+    );
+  } catch (error) {
+    console.error('Failed to notify waitlist:', error);
+  }
 
   return cancelledAppointment;
+}
+
+/**
+ * Notify waitlist entries about an opening
+ */
+async function notifyWaitlistOfOpening(
+  configId: number,
+  providerId: number | null,
+  scheduledAt: Date,
+  durationMinutes: number,
+): Promise<void> {
+  // Find matching waitlist entries
+  const entries = await prisma.waitlistEntry.findMany({
+    where: {
+      configId,
+      isActive: true,
+      OR: [{ preferredProviderId: providerId }, { preferredProviderId: null }],
+    },
+    orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+    take: 5, // Notify top 5 matches
+  });
+
+  if (entries.length === 0) {
+    return;
+  }
+
+  // Get config for practice name and timezone
+  const config = await prisma.schedulingConfig.findUnique({
+    where: { id: configId },
+    select: { practiceName: true, timezone: true },
+  });
+
+  const dateTime = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: config?.timezone || 'America/New_York',
+  }).format(scheduledAt);
+
+  const practice = config?.practiceName || 'Our office';
+
+  for (const entry of entries) {
+    // Send SMS notification if phone provided
+    if (entry.patientPhone) {
+      const message =
+        `${practice}: A ${durationMinutes}-minute appointment slot just opened up ` +
+        `for ${dateTime}. Book now before it's taken! Reply BOOK to claim this slot.`;
+
+      await notificationsService.sendSMS(entry.patientPhone, message);
+    }
+
+    // Send email notification if email provided
+    if (entry.patientEmail) {
+      const subject = `Appointment Opening - ${practice}`;
+      const html = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Appointment Opening Available!</h2>
+          <p>Hello ${entry.patientName},</p>
+          <p>Great news! A ${durationMinutes}-minute appointment slot has just become available:</p>
+          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Date & Time:</strong> ${dateTime}</p>
+            <p style="margin: 5px 0;"><strong>Duration:</strong> ${durationMinutes} minutes</p>
+          </div>
+          <p>This slot is available on a first-come, first-served basis.</p>
+          <p style="color: #666; margin-top: 30px;">Thank you for your patience!</p>
+        </div>
+      `;
+
+      await notificationsService.sendEmail(entry.patientEmail, subject, html);
+    }
+
+    // Mark entry as notified
+    await prisma.waitlistEntry.update({
+      where: { id: entry.id },
+      data: {
+        notifiedAt: new Date(),
+      },
+    });
+  }
 }
 
 // ============================================================================

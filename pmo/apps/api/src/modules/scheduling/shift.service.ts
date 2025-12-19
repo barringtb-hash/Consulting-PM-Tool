@@ -846,6 +846,657 @@ export async function denyShiftSwapRequest(
 }
 
 // ============================================================================
+// OPEN SHIFT BOARD
+// ============================================================================
+
+/**
+ * Get open shifts (unassigned shifts available for claiming)
+ */
+export async function getOpenShifts(
+  configId: number,
+  filters?: {
+    locationId?: number;
+    roleId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  },
+) {
+  return prisma.shift.findMany({
+    where: {
+      schedule: {
+        configId,
+        status: 'PUBLISHED',
+      },
+      employeeId: null, // Open shifts have no employee assigned
+      isOpen: true,
+      locationId: filters?.locationId,
+      roleId: filters?.roleId,
+      startTime: filters?.startDate ? { gte: filters.startDate } : undefined,
+      endTime: filters?.endDate ? { lte: filters.endDate } : undefined,
+    },
+    include: {
+      location: { select: { id: true, name: true } },
+      role: { select: { id: true, name: true, color: true } },
+      schedule: { select: { id: true, name: true } },
+    },
+    orderBy: { startTime: 'asc' },
+  });
+}
+
+/**
+ * Post a shift to the open board for employees to claim
+ */
+export async function postShiftToOpenBoard(
+  shiftId: number,
+  _postedById: number,
+) {
+  return prisma.shift.update({
+    where: { id: shiftId },
+    data: {
+      isOpen: true,
+      employeeId: null, // Unassign any current employee
+    },
+    include: {
+      location: { select: { name: true } },
+      role: { select: { name: true } },
+    },
+  });
+}
+
+/**
+ * Remove a shift from the open board
+ */
+export async function removeShiftFromOpenBoard(shiftId: number) {
+  return prisma.shift.update({
+    where: { id: shiftId },
+    data: {
+      isOpen: false,
+    },
+  });
+}
+
+/**
+ * Claim an open shift (employee self-assigns)
+ */
+export async function claimOpenShift(
+  shiftId: number,
+  employeeId: number,
+): Promise<{
+  success: boolean;
+  shift?: Awaited<ReturnType<typeof prisma.shift.update>>;
+  error?: string;
+}> {
+  const shift = await prisma.shift.findUnique({
+    where: { id: shiftId },
+    include: {
+      schedule: { select: { configId: true } },
+      role: true,
+    },
+  });
+
+  if (!shift) {
+    return { success: false, error: 'Shift not found' };
+  }
+
+  if (!shift.isOpen) {
+    return { success: false, error: 'Shift is not open for claiming' };
+  }
+
+  if (shift.employeeId) {
+    return { success: false, error: 'Shift has already been claimed' };
+  }
+
+  // Verify employee has the required role
+  const employee = await prisma.shiftEmployee.findUnique({
+    where: { id: employeeId },
+    include: { role: true },
+  });
+
+  if (!employee) {
+    return { success: false, error: 'Employee not found' };
+  }
+
+  if (shift.schedule && employee.configId !== shift.schedule.configId) {
+    return {
+      success: false,
+      error: 'Employee does not belong to this organization',
+    };
+  }
+
+  // Check if employee has the required role
+  if (employee.roleId !== shift.roleId) {
+    return {
+      success: false,
+      error: `Employee is not qualified for the ${shift.role?.name || 'required'} role`,
+    };
+  }
+
+  // Check for shift conflicts
+  const conflictingShift = await prisma.shift.findFirst({
+    where: {
+      employeeId,
+      OR: [
+        {
+          startTime: { lt: shift.endTime },
+          endTime: { gt: shift.startTime },
+        },
+      ],
+      status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+    },
+  });
+
+  if (conflictingShift) {
+    return { success: false, error: 'Employee has a conflicting shift' };
+  }
+
+  // Assign the shift
+  const updatedShift = await prisma.shift.update({
+    where: { id: shiftId },
+    data: {
+      employeeId,
+      isOpen: false,
+    },
+    include: {
+      employee: { select: { id: true, firstName: true, lastName: true } },
+      location: { select: { id: true, name: true } },
+      role: { select: { id: true, name: true, color: true } },
+    },
+  });
+
+  return { success: true, shift: updatedShift };
+}
+
+/**
+ * Get employees eligible to claim a specific open shift
+ */
+export async function getEligibleEmployeesForShift(shiftId: number) {
+  const shift = await prisma.shift.findUnique({
+    where: { id: shiftId },
+    include: {
+      schedule: { select: { configId: true } },
+    },
+  });
+
+  if (!shift || !shift.schedule) {
+    return [];
+  }
+
+  // Get employees with the required role who don't have conflicts
+  const employees = await prisma.shiftEmployee.findMany({
+    where: {
+      configId: shift.schedule.configId,
+      isActive: true,
+      roleId: shift.roleId,
+    },
+    include: {
+      shifts: {
+        where: {
+          OR: [
+            {
+              startTime: { lt: shift.endTime },
+              endTime: { gt: shift.startTime },
+            },
+          ],
+          status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+        },
+      },
+    },
+  });
+
+  // Filter out employees with conflicts
+  return employees
+    .filter((emp) => emp.shifts.length === 0)
+    .map((emp) => ({
+      id: emp.id,
+      name: `${emp.firstName} ${emp.lastName}`,
+      email: emp.email,
+    }));
+}
+
+// ============================================================================
+// LABOR COST CALCULATIONS
+// ============================================================================
+
+interface LaborCostResult {
+  totalCost: number;
+  regularCost: number;
+  overtimeCost: number;
+  totalHours: number;
+  regularHours: number;
+  overtimeHours: number;
+  employeeCount: number;
+  byEmployee: Array<{
+    employeeId: number;
+    employeeName: string;
+    regularHours: number;
+    overtimeHours: number;
+    regularCost: number;
+    overtimeCost: number;
+    totalCost: number;
+  }>;
+  byRole: Record<string, { hours: number; cost: number }>;
+  byLocation: Record<string, { hours: number; cost: number }>;
+}
+
+/**
+ * Calculate labor costs for a schedule
+ */
+export async function calculateLaborCosts(
+  scheduleId: number,
+  overtimeMultiplier: number = 1.5,
+): Promise<LaborCostResult> {
+  const schedule = await prisma.shiftSchedule.findUnique({
+    where: { id: scheduleId },
+    include: {
+      shifts: {
+        include: {
+          employee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              hourlyRate: true,
+            },
+          },
+          location: { select: { id: true, name: true } },
+          role: { select: { id: true, name: true } },
+        },
+        where: {
+          status: { in: ['SCHEDULED', 'COMPLETED'] },
+          employeeId: { not: null },
+        },
+      },
+      shiftConfig: { select: { overtimeThreshold: true } },
+    },
+  });
+
+  if (!schedule) {
+    throw new Error('Schedule not found');
+  }
+
+  const overtimeThreshold = schedule.shiftConfig?.overtimeThreshold || 40;
+
+  // Group shifts by employee
+  const employeeShifts = new Map<
+    number,
+    {
+      employee: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        hourlyRate: unknown;
+      };
+      shifts: typeof schedule.shifts;
+    }
+  >();
+
+  for (const shift of schedule.shifts) {
+    if (!shift.employee) continue;
+
+    const existing = employeeShifts.get(shift.employee.id);
+    if (existing) {
+      existing.shifts.push(shift);
+    } else {
+      employeeShifts.set(shift.employee.id, {
+        employee: shift.employee,
+        shifts: [shift],
+      });
+    }
+  }
+
+  // Calculate costs per employee
+  const byEmployee: LaborCostResult['byEmployee'] = [];
+  const byRole: Record<string, { hours: number; cost: number }> = {};
+  const byLocation: Record<string, { hours: number; cost: number }> = {};
+
+  let totalCost = 0;
+  let totalRegularCost = 0;
+  let totalOvertimeCost = 0;
+  let totalHours = 0;
+  let totalRegularHours = 0;
+  let totalOvertimeHours = 0;
+
+  for (const [, data] of employeeShifts) {
+    const hourlyRate = Number(data.employee.hourlyRate) || 0;
+    let employeeHours = 0;
+
+    for (const shift of data.shifts) {
+      const shiftDuration =
+        (shift.endTime.getTime() - shift.startTime.getTime()) /
+        (1000 * 60 * 60);
+      const workHours = shiftDuration - (shift.breakMinutes || 0) / 60;
+      employeeHours += workHours;
+
+      // Track by role
+      const roleName = shift.role?.name || 'Unknown';
+      if (!byRole[roleName]) {
+        byRole[roleName] = { hours: 0, cost: 0 };
+      }
+      byRole[roleName].hours += workHours;
+
+      // Track by location
+      const locationName = shift.location?.name || 'Unknown';
+      if (!byLocation[locationName]) {
+        byLocation[locationName] = { hours: 0, cost: 0 };
+      }
+      byLocation[locationName].hours += workHours;
+    }
+
+    // Calculate regular vs overtime
+    const regularHours = Math.min(employeeHours, overtimeThreshold);
+    const overtimeHours = Math.max(0, employeeHours - overtimeThreshold);
+
+    const regularCost = regularHours * hourlyRate;
+    const overtimeCost = overtimeHours * hourlyRate * overtimeMultiplier;
+    const totalEmployeeCost = regularCost + overtimeCost;
+
+    byEmployee.push({
+      employeeId: data.employee.id,
+      employeeName: `${data.employee.firstName} ${data.employee.lastName}`,
+      regularHours,
+      overtimeHours,
+      regularCost,
+      overtimeCost,
+      totalCost: totalEmployeeCost,
+    });
+
+    // Update totals
+    totalCost += totalEmployeeCost;
+    totalRegularCost += regularCost;
+    totalOvertimeCost += overtimeCost;
+    totalHours += employeeHours;
+    totalRegularHours += regularHours;
+    totalOvertimeHours += overtimeHours;
+
+    // Update role/location costs
+    for (const shift of data.shifts) {
+      const shiftDuration =
+        (shift.endTime.getTime() - shift.startTime.getTime()) /
+        (1000 * 60 * 60);
+      const workHours = shiftDuration - (shift.breakMinutes || 0) / 60;
+      const shiftCost = workHours * hourlyRate;
+
+      const roleName = shift.role?.name || 'Unknown';
+      byRole[roleName].cost += shiftCost;
+
+      const locationName = shift.location?.name || 'Unknown';
+      byLocation[locationName].cost += shiftCost;
+    }
+  }
+
+  return {
+    totalCost,
+    regularCost: totalRegularCost,
+    overtimeCost: totalOvertimeCost,
+    totalHours,
+    regularHours: totalRegularHours,
+    overtimeHours: totalOvertimeHours,
+    employeeCount: employeeShifts.size,
+    byEmployee,
+    byRole,
+    byLocation,
+  };
+}
+
+/**
+ * Get labor cost projection for a date range
+ */
+export async function getLaborCostProjection(
+  configId: number,
+  startDate: Date,
+  endDate: Date,
+  _overtimeMultiplier: number = 1.5,
+) {
+  const shifts = await prisma.shift.findMany({
+    where: {
+      schedule: { configId },
+      startTime: { gte: startDate },
+      endTime: { lte: endDate },
+      employeeId: { not: null },
+      status: { in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] },
+    },
+    include: {
+      employee: { select: { hourlyRate: true } },
+    },
+  });
+
+  let totalCost = 0;
+  let totalHours = 0;
+
+  for (const shift of shifts) {
+    const hourlyRate = Number(shift.employee?.hourlyRate) || 0;
+    const shiftDuration =
+      (shift.endTime.getTime() - shift.startTime.getTime()) / (1000 * 60 * 60);
+    const workHours = shiftDuration - (shift.breakMinutes || 0) / 60;
+
+    totalHours += workHours;
+    totalCost += workHours * hourlyRate;
+  }
+
+  return {
+    projectedCost: totalCost,
+    projectedHours: totalHours,
+    averageCostPerHour: totalHours > 0 ? totalCost / totalHours : 0,
+    shiftCount: shifts.length,
+  };
+}
+
+// ============================================================================
+// OVERTIME ALERTS
+// ============================================================================
+
+interface OvertimeAlert {
+  employeeId: number;
+  employeeName: string;
+  currentHours: number;
+  projectedHours: number;
+  overtimeThreshold: number;
+  hoursOverThreshold: number;
+  projectedOvertimeCost: number;
+  alertLevel: 'warning' | 'critical';
+}
+
+/**
+ * Get employees approaching or exceeding overtime threshold
+ */
+export async function getOvertimeAlerts(
+  configId: number,
+  weekStartDate: Date,
+): Promise<OvertimeAlert[]> {
+  const weekEndDate = new Date(weekStartDate);
+  weekEndDate.setDate(weekEndDate.getDate() + 7);
+
+  const config = await prisma.shiftSchedulingConfig.findFirst({
+    where: { configId },
+    select: { overtimeThreshold: true },
+  });
+
+  const overtimeThreshold = config?.overtimeThreshold || 40;
+  const warningThreshold = overtimeThreshold * 0.9; // 90% of threshold
+
+  const employees = await prisma.shiftEmployee.findMany({
+    where: { configId, isActive: true },
+    include: {
+      shifts: {
+        where: {
+          startTime: { gte: weekStartDate },
+          endTime: { lte: weekEndDate },
+          status: { in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] },
+        },
+      },
+    },
+  });
+
+  const alerts: OvertimeAlert[] = [];
+
+  for (const employee of employees) {
+    let currentHours = 0;
+    let projectedHours = 0;
+    const now = new Date();
+
+    for (const shift of employee.shifts) {
+      const shiftDuration =
+        (shift.endTime.getTime() - shift.startTime.getTime()) /
+        (1000 * 60 * 60);
+      const workHours = shiftDuration - (shift.breakMinutes || 0) / 60;
+
+      projectedHours += workHours;
+
+      // Count hours already worked
+      if (shift.status === 'COMPLETED' || shift.endTime < now) {
+        currentHours += workHours;
+      }
+    }
+
+    // Check if approaching or exceeding overtime
+    if (projectedHours >= warningThreshold) {
+      const hoursOver = Math.max(0, projectedHours - overtimeThreshold);
+      const hourlyRate = Number(employee.hourlyRate) || 0;
+
+      alerts.push({
+        employeeId: employee.id,
+        employeeName: employee.name,
+        currentHours,
+        projectedHours,
+        overtimeThreshold,
+        hoursOverThreshold: hoursOver,
+        projectedOvertimeCost: hoursOver * hourlyRate * 0.5, // OT premium only
+        alertLevel:
+          projectedHours >= overtimeThreshold ? 'critical' : 'warning',
+      });
+    }
+  }
+
+  // Sort by severity (critical first) then by hours over
+  return alerts.sort((a, b) => {
+    if (a.alertLevel === b.alertLevel) {
+      return b.hoursOverThreshold - a.hoursOverThreshold;
+    }
+    return a.alertLevel === 'critical' ? -1 : 1;
+  });
+}
+
+/**
+ * Check if assigning a shift would cause overtime
+ */
+export async function checkOvertimeImpact(
+  employeeId: number,
+  shiftStartTime: Date,
+  shiftEndTime: Date,
+  breakMinutes: number = 0,
+): Promise<{
+  wouldCauseOvertime: boolean;
+  currentWeekHours: number;
+  shiftHours: number;
+  projectedWeekHours: number;
+  overtimeThreshold: number;
+  hoursOverThreshold: number;
+}> {
+  const employee = await prisma.shiftEmployee.findUnique({
+    where: { id: employeeId },
+    select: { configId: true },
+  });
+
+  if (!employee) {
+    throw new Error('Employee not found');
+  }
+
+  const config = await prisma.shiftSchedulingConfig.findFirst({
+    where: { configId: employee.configId },
+    select: { overtimeThreshold: true },
+  });
+
+  const overtimeThreshold = config?.overtimeThreshold || 40;
+
+  // Get week boundaries
+  const weekStart = new Date(shiftStartTime);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  // Get existing hours for the week
+  const existingShifts = await prisma.shift.findMany({
+    where: {
+      employeeId,
+      startTime: { gte: weekStart },
+      endTime: { lte: weekEnd },
+      status: { in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] },
+    },
+  });
+
+  let currentWeekHours = 0;
+  for (const shift of existingShifts) {
+    const shiftDuration =
+      (shift.endTime.getTime() - shift.startTime.getTime()) / (1000 * 60 * 60);
+    currentWeekHours += shiftDuration - (shift.breakMinutes || 0) / 60;
+  }
+
+  // Calculate new shift hours
+  const shiftHours =
+    (shiftEndTime.getTime() - shiftStartTime.getTime()) / (1000 * 60 * 60) -
+    breakMinutes / 60;
+
+  const projectedWeekHours = currentWeekHours + shiftHours;
+  const hoursOverThreshold = Math.max(
+    0,
+    projectedWeekHours - overtimeThreshold,
+  );
+
+  return {
+    wouldCauseOvertime: projectedWeekHours > overtimeThreshold,
+    currentWeekHours,
+    shiftHours,
+    projectedWeekHours,
+    overtimeThreshold,
+    hoursOverThreshold,
+  };
+}
+
+/**
+ * Get weekly overtime summary for all employees
+ */
+export async function getWeeklyOvertimeSummary(
+  configId: number,
+  weekStartDate: Date,
+) {
+  const alerts = await getOvertimeAlerts(configId, weekStartDate);
+
+  const config = await prisma.shiftSchedulingConfig.findFirst({
+    where: { configId },
+    select: { overtimeThreshold: true },
+  });
+
+  const overtimeThreshold = config?.overtimeThreshold || 40;
+
+  const employeesAtRisk = alerts.filter(
+    (a) => a.alertLevel === 'warning',
+  ).length;
+  const employeesOvertime = alerts.filter(
+    (a) => a.alertLevel === 'critical',
+  ).length;
+  const totalOvertimeHours = alerts.reduce(
+    (sum, a) => sum + a.hoursOverThreshold,
+    0,
+  );
+  const totalOvertimeCost = alerts.reduce(
+    (sum, a) => sum + a.projectedOvertimeCost,
+    0,
+  );
+
+  return {
+    weekStart: weekStartDate,
+    overtimeThreshold,
+    employeesAtRisk,
+    employeesOvertime,
+    totalOvertimeHours,
+    totalOvertimeCost,
+    alerts,
+  };
+}
+
+// ============================================================================
 // ANALYTICS & REPORTS
 // ============================================================================
 
