@@ -6,11 +6,8 @@
  */
 
 import { prisma } from '../../../prisma/client';
-import {
-  getRealtimeUsageStats,
-  getAICostBreakdown,
-  getCostForecast,
-} from '../ai-usage.service';
+import { getRealtimeUsageStats, getAICostBreakdown } from '../ai-usage.service';
+import { getCostForecast } from '../predictive.service';
 import {
   getAPILatencyStats,
   getErrorRates,
@@ -84,26 +81,36 @@ export function detectIntent(message: string): AssistantIntent {
 async function buildUsageContext(
   tenantId: string,
 ): Promise<Partial<AssistantContext>> {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
   const [usage, costBreakdown, forecast] = await Promise.all([
     getRealtimeUsageStats(tenantId, 24).catch(() => null),
-    getAICostBreakdown(tenantId, 30).catch(() => null),
+    getAICostBreakdown(tenantId, thirtyDaysAgo, now).catch(() => null),
     getCostForecast(tenantId).catch(() => null),
   ]);
 
   const context: Partial<AssistantContext> = {};
 
   if (usage) {
+    // Calculate success/failed calls from errorRate
+    const errorRate = usage.errorRate || 0;
+    const failedCalls = Math.round(usage.totalCalls * errorRate);
+    const successfulCalls = usage.totalCalls - failedCalls;
+    const successRate =
+      usage.totalCalls > 0 ? (successfulCalls / usage.totalCalls) * 100 : 100;
+
     context.currentUsage = {
       totalCalls: usage.totalCalls,
-      successfulCalls: usage.successfulCalls,
-      failedCalls: usage.failedCalls,
-      successRate: usage.successRate,
+      successfulCalls,
+      failedCalls,
+      successRate,
       totalTokens: usage.totalTokens,
       totalCost: usage.totalCost,
       avgLatencyMs: usage.avgLatencyMs,
       period: {
-        start: usage.period.start,
-        end: usage.period.end,
+        start: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+        end: now,
         hours: 24,
       },
     };
@@ -151,21 +158,22 @@ async function buildUsageContext(
  * Build context for system health queries
  */
 async function buildSystemContext(): Promise<Partial<AssistantContext>> {
-  const [health, latency, errors, slowQueries] = await Promise.all([
-    getSystemHealth().catch(() => null),
-    getAPILatencyStats().catch(() => null),
-    getErrorRates().catch(() => null),
-    getSlowQueries(10).catch(() => []),
-  ]);
+  // These are synchronous functions that return directly
+  const health = getSystemHealth();
+  const latencyStats = getAPILatencyStats();
+  const errorStats = getErrorRates();
+
+  // getSlowQueries is async
+  const slowQueries = await getSlowQueries(10).catch(() => []);
 
   const context: Partial<AssistantContext> = {};
 
   if (health) {
     context.systemHealth = {
       memory: {
-        used: health.heapUsedMb,
-        total: health.heapTotalMb,
-        percentage: (health.heapUsedMb / health.heapTotalMb) * 100,
+        used: health.memory.heapUsedMB,
+        total: health.memory.heapTotalMB,
+        percentage: health.memory.heapUsagePercent,
       },
       cpu: {
         usage: 0, // CPU usage not directly available
@@ -174,41 +182,38 @@ async function buildSystemContext(): Promise<Partial<AssistantContext>> {
         lag: health.eventLoopLagMs,
         utilization: 0,
       },
-      uptime: health.uptimeSeconds,
+      uptime: health.uptime,
     };
   }
 
-  if (latency) {
+  if (latencyStats && latencyStats.length > 0) {
     context.apiLatency = {
-      endpoints: Object.entries(latency).map(([endpoint, stats]) => {
-        const s = stats as {
-          count: number;
-          avg: number;
-          p95: number;
-          p99?: number;
-        };
+      endpoints: latencyStats.map((stat) => {
+        const [method, ...pathParts] = stat.endpoint.split(' ');
+        const path = pathParts.join(' ') || stat.endpoint;
         return {
-          path: endpoint.split(' ')[1] || endpoint,
-          method: endpoint.split(' ')[0] || 'GET',
-          avgMs: s.avg,
-          p95Ms: s.p95,
-          p99Ms: s.p99 || s.p95,
-          requestCount: s.count,
+          path,
+          method: method || 'GET',
+          avgMs: stat.avgMs,
+          p95Ms: stat.p95Ms,
+          p99Ms: stat.p99Ms,
+          requestCount: stat.count,
         };
       }),
     };
   }
 
-  if (errors) {
+  if (errorStats && errorStats.length > 0) {
     context.errorRates = {
-      endpoints: Object.entries(errors).map(([endpoint, data]) => {
-        const e = data as { total: number; errors: number };
+      endpoints: errorStats.map((stat) => {
+        const [method, ...pathParts] = stat.endpoint.split(' ');
+        const path = pathParts.join(' ') || stat.endpoint;
         return {
-          path: endpoint.split(' ')[1] || endpoint,
-          method: endpoint.split(' ')[0] || 'GET',
-          errorRate: e.total > 0 ? (e.errors / e.total) * 100 : 0,
-          totalRequests: e.total,
-          errorCount: e.errors,
+          path,
+          method: method || 'GET',
+          errorRate: stat.errorRate,
+          totalRequests: stat.totalRequests,
+          errorCount: stat.errorCount,
         };
       }),
     };
@@ -225,7 +230,7 @@ async function buildSystemContext(): Promise<Partial<AssistantContext>> {
       slowQueries: slowQueries.map((q) => ({
         query: q.query,
         duration: q.durationMs,
-        timestamp: q.timestamp,
+        timestamp: q.createdAt,
       })),
       queryStats: {
         avgDuration:
@@ -247,24 +252,26 @@ async function buildAnomalyContext(
   tenantId: string,
 ): Promise<Partial<AssistantContext>> {
   const [anomalies, _stats] = await Promise.all([
-    getOpenAnomalies({ tenantId, limit: 20 }).catch(() => []),
-    getAnomalyStats(tenantId).catch(() => null),
+    getOpenAnomalies({ tenantId }).catch(() => []),
+    getAnomalyStats().catch(() => null),
   ]);
 
   const context: Partial<AssistantContext> = {};
 
   if (anomalies && anomalies.length > 0) {
-    context.anomalies = anomalies.map((a) => ({
+    // Map anomaly fields to expected format
+    // The actual API returns: type, metric (not title, description)
+    context.anomalies = anomalies.slice(0, 20).map((a) => ({
       id: a.id,
       category: a.category,
       severity: a.severity,
       status: a.status,
-      title: a.title,
-      description: a.description,
+      // Use type and metric as title/description since those fields don't exist
+      title: `${a.type}: ${a.metric}`,
+      description: `Actual value: ${a.actualValue}${a.expectedValue !== null ? `, Expected: ${a.expectedValue}` : ''}${a.deviation !== null ? `, Deviation: ${a.deviation}` : ''}`,
       detectedAt: a.detectedAt,
       entityType: a.entityType || undefined,
       entityId: a.entityId || undefined,
-      metadata: a.metadata as Record<string, unknown> | undefined,
     }));
   }
 
@@ -275,11 +282,11 @@ async function buildAnomalyContext(
  * Build context for alert queries
  */
 async function buildAlertContext(
-  tenantId: string,
+  _tenantId: string,
 ): Promise<Partial<AssistantContext>> {
   const [rules, history] = await Promise.all([
-    getAlertRules(tenantId).catch(() => []),
-    getAlertHistory(tenantId, { limit: 20 }).catch(() => []),
+    getAlertRules().catch(() => []),
+    getAlertHistory({ limit: 20 }).catch(() => []),
   ]);
 
   const context: Partial<AssistantContext> = {};
@@ -290,15 +297,17 @@ async function buildAlertContext(
       .map((r) => ({
         id: r.id,
         name: r.name,
-        condition: r.condition,
-        severity: r.severity,
-        lastTriggered: r.lastTriggeredAt || undefined,
+        // Build condition from available fields
+        condition: r.anomalyType || r.category || 'Custom',
+        // Use first severity from array or default
+        severity: r.severities[0] || 'INFO',
+        lastTriggered: undefined, // Not available in current API
       }));
   }
 
   if (history && history.length > 0) {
     context.recentAlertHistory = history.map((h) => ({
-      alertName: h.alertName,
+      alertName: h.subject, // Use subject as alert name
       deliveredAt: h.sentAt,
       channel: h.channel,
       status: h.status,
@@ -355,6 +364,8 @@ async function buildTenantTrendsContext(
   });
 
   const trends: TenantUsageTrend[] = [];
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   for (const tenant of tenants) {
     const usage = await getRealtimeUsageStats(tenant.id, 24 * 7).catch(
@@ -365,8 +376,8 @@ async function buildTenantTrendsContext(
         tenantId: tenant.id,
         tenantName: tenant.name,
         period: {
-          start: usage.period.start,
-          end: usage.period.end,
+          start: weekAgo,
+          end: now,
         },
         usage: {
           totalCalls: usage.totalCalls,
@@ -507,13 +518,11 @@ export async function getSuggestedQueries(tenantId: string): Promise<{
   };
 
   // Check for anomalies
-  const anomalies = await getOpenAnomalies({ tenantId, limit: 5 }).catch(
-    () => [],
-  );
+  const anomalies = await getOpenAnomalies({ tenantId }).catch(() => []);
   if (anomalies && anomalies.length > 0) {
     basedOn.hasAnomalies = true;
     suggestions.push('What anomalies need my attention?');
-    suggestions.push(`Tell me about the ${anomalies[0].title}`);
+    suggestions.push(`Tell me about the ${anomalies[0].type} anomaly`);
   }
 
   // Check cost forecast
@@ -524,11 +533,10 @@ export async function getSuggestedQueries(tenantId: string): Promise<{
     suggestions.push("What's driving our AI spending?");
   }
 
-  // Check for performance issues
-  const errors = await getErrorRates().catch(() => ({}));
-  const highErrorEndpoints = Object.entries(errors).filter(([_, data]) => {
-    const e = data as { total: number; errors: number };
-    return e.total > 10 && e.errors / e.total > 0.05;
+  // Check for performance issues (synchronous call)
+  const errors = getErrorRates();
+  const highErrorEndpoints = errors.filter((e) => {
+    return e.totalRequests > 10 && e.errorRate > 5;
   });
   if (highErrorEndpoints.length > 0) {
     basedOn.hasPerformanceIssues = true;

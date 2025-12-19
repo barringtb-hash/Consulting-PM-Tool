@@ -4,9 +4,12 @@
  * API endpoints for the AI-powered monitoring assistant.
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../../../auth/auth.middleware';
+import {
+  requireAuth,
+  AuthenticatedRequest,
+} from '../../../auth/auth.middleware';
 import { getTenantId, hasTenantContext } from '../../../tenant/tenant.context';
 import { prisma } from '../../../prisma/client';
 import {
@@ -82,7 +85,7 @@ async function isMonitoringAssistantEnabled(
 // ============================================================================
 
 async function requireMonitoringAssistant(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ) {
@@ -120,10 +123,10 @@ router.post(
   '/chat',
   requireAuth,
   requireMonitoringAssistant,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const tenantId = getTenantId();
-      const userId = req.user!.id;
+      const userId = req.userId!;
 
       // Validate request body
       const parsed = chatRequestSchema.safeParse(req.body);
@@ -160,7 +163,7 @@ router.get(
   '/suggestions',
   requireAuth,
   requireMonitoringAssistant,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const tenantId = getTenantId();
       const suggestions = await getSuggestions(tenantId);
@@ -180,10 +183,10 @@ router.get(
   '/conversations',
   requireAuth,
   requireMonitoringAssistant,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const tenantId = getTenantId();
-      const userId = req.user!.id;
+      const userId = req.userId!;
 
       const conversations = getUserConversations(tenantId, userId);
 
@@ -215,7 +218,7 @@ router.get(
   '/conversations/:id',
   requireAuth,
   requireMonitoringAssistant,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const tenantId = getTenantId();
       const conversationId = req.params.id;
@@ -227,7 +230,7 @@ router.get(
       }
 
       // Ensure user owns this conversation
-      if (conversation.userId !== req.user!.id) {
+      if (conversation.userId !== req.userId!) {
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -247,7 +250,7 @@ router.delete(
   '/conversations/:id',
   requireAuth,
   requireMonitoringAssistant,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const tenantId = getTenantId();
       const conversationId = req.params.id;
@@ -258,7 +261,7 @@ router.delete(
         return res.status(404).json({ error: 'Conversation not found' });
       }
 
-      if (conversation.userId !== req.user!.id) {
+      if (conversation.userId !== req.userId!) {
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -280,7 +283,7 @@ router.delete(
  * GET /health
  * Health check for the assistant module
  */
-router.get('/health', async (req: Request, res: Response) => {
+router.get('/health', async (_req: AuthenticatedRequest, res: Response) => {
   res.json({
     status: 'healthy',
     module: 'monitoring-assistant',

@@ -372,7 +372,7 @@ export interface AssistantContext {
 
   // Alert data
   activeAlerts?: Array<{
-    id: number;
+    id: string;
     name: string;
     condition: string;
     severity: string;
