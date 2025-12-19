@@ -9,7 +9,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { recordAPIMetrics } from './metrics.service';
-import { getTenantId } from '../../tenant/tenant.context';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 /**
  * Normalize path by removing IDs to group similar endpoints
@@ -40,7 +40,8 @@ export function apiMetricsMiddleware(
   res.on('finish', () => {
     const duration = Date.now() - startTime;
     const normalizedPath = normalizePath(req.path);
-    const tenantId = getTenantId();
+    // Safely get tenant ID - may not exist for unauthenticated requests
+    const tenantId = hasTenantContext() ? getTenantId() : 'anonymous';
 
     recordAPIMetrics(
       req.method,
