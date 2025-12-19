@@ -13,8 +13,6 @@ import {
   RefreshCw,
   AlertCircle,
   Sparkles,
-  MessageSquare,
-  ChevronDown,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Card, Button, Badge } from '../../ui';
@@ -32,7 +30,10 @@ const QUICK_ACTIONS = [
   { label: 'Check Anomalies', query: 'Are there any anomalies or issues?' },
   { label: 'Usage Trends', query: 'Show me usage trends for the past week' },
   { label: 'Performance', query: 'How is API performance looking?' },
-  { label: 'Recommendations', query: 'What recommendations do you have for cost optimization?' },
+  {
+    label: 'Recommendations',
+    query: 'What recommendations do you have for cost optimization?',
+  },
 ];
 
 export function MonitoringAssistantPage(): JSX.Element {
@@ -77,12 +78,13 @@ export function MonitoringAssistantPage(): JSX.Element {
       setConversationId(data.conversationId);
       setMessages((prev) => [...prev, data.message]);
       setSuggestedFollowUps(data.suggestedFollowUps || []);
-    } catch (error) {
+    } catch (_error) {
       // Add error message
       const errorMessage: AssistantMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
+        content:
+          'Sorry, I encountered an error processing your request. Please try again.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -150,8 +152,8 @@ export function MonitoringAssistantPage(): JSX.Element {
               How can I help you today?
             </h2>
             <p className="text-neutral-500 text-center max-w-md mb-6">
-              I can help you understand your AI usage, analyze costs, diagnose issues,
-              and provide recommendations for optimization.
+              I can help you understand your AI usage, analyze costs, diagnose
+              issues, and provide recommendations for optimization.
             </p>
 
             {/* Quick Actions */}
@@ -180,26 +182,34 @@ export function MonitoringAssistantPage(): JSX.Element {
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {suggestions.suggestions.slice(0, 3).map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSend(suggestion)}
-                      disabled={chatMutation.isPending}
-                      className="w-full text-left p-2 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-                    >
-                      "{suggestion}"
-                    </button>
-                  ))}
+                  {suggestions.suggestions
+                    .slice(0, 3)
+                    .map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSend(suggestion)}
+                        disabled={chatMutation.isPending}
+                        className="w-full text-left p-2 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                      >
+                        &quot;{suggestion}&quot;
+                      </button>
+                    ))}
                 </div>
                 <div className="flex gap-2 mt-3">
                   {suggestions.basedOn.hasAnomalies && (
-                    <Badge color="red" size="sm">Anomalies Detected</Badge>
+                    <Badge color="red" size="sm">
+                      Anomalies Detected
+                    </Badge>
                   )}
                   {suggestions.basedOn.hasCostWarning && (
-                    <Badge color="amber" size="sm">Cost Warning</Badge>
+                    <Badge color="amber" size="sm">
+                      Cost Warning
+                    </Badge>
                   )}
                   {suggestions.basedOn.hasPerformanceIssues && (
-                    <Badge color="orange" size="sm">Performance Issues</Badge>
+                    <Badge color="orange" size="sm">
+                      Performance Issues
+                    </Badge>
                   )}
                 </div>
               </Card>

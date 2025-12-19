@@ -9,7 +9,11 @@ import { randomUUID } from 'crypto';
 import { trackedChatCompletion } from '../ai-client';
 import { trackAIUsage } from '../ai-usage.service';
 import { logger } from '../../../utils/logger';
-import { buildAssistantContext, detectIntent, getSuggestedQueries } from './assistant-context.builder';
+import {
+  buildAssistantContext,
+  detectIntent,
+  getSuggestedQueries,
+} from './assistant-context.builder';
 import {
   AssistantContext,
   AssistantMessage,
@@ -35,14 +39,17 @@ interface StoredConversation {
 const conversationStore = new Map<string, StoredConversation>();
 
 // Cleanup old conversations (older than 24 hours)
-setInterval(() => {
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  for (const [id, conv] of conversationStore.entries()) {
-    if (conv.updatedAt.getTime() < cutoff) {
-      conversationStore.delete(id);
+setInterval(
+  () => {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    for (const [id, conv] of conversationStore.entries()) {
+      if (conv.updatedAt.getTime() < cutoff) {
+        conversationStore.delete(id);
+      }
     }
-  }
-}, 60 * 60 * 1000); // Run every hour
+  },
+  60 * 60 * 1000,
+); // Run every hour
 
 // ============================================================================
 // System Prompt Builder
@@ -85,7 +92,10 @@ ${context.timestamp.toISOString()}
     parts.push(`
 ## Cost Breakdown by Tool (Last 30 Days)
 ${context.costBreakdown
-  .map((t) => `- ${t.toolName}: $${t.cost.toFixed(2)} (${t.percentage.toFixed(1)}%) - ${t.calls.toLocaleString()} calls`)
+  .map(
+    (t) =>
+      `- ${t.toolName}: $${t.cost.toFixed(2)} (${t.percentage.toFixed(1)}%) - ${t.calls.toLocaleString()} calls`,
+  )
   .join('\n')}
 `);
   }
@@ -125,7 +135,10 @@ ${context.costBreakdown
     parts.push(`
 ## API Latency (Top Endpoints)
 ${topEndpoints
-  .map((e) => `- ${e.method} ${e.path}: avg ${e.avgMs.toFixed(0)}ms, P95 ${e.p95Ms.toFixed(0)}ms (${e.requestCount} requests)`)
+  .map(
+    (e) =>
+      `- ${e.method} ${e.path}: avg ${e.avgMs.toFixed(0)}ms, P95 ${e.p95Ms.toFixed(0)}ms (${e.requestCount} requests)`,
+  )
   .join('\n')}
 `);
   }
@@ -140,7 +153,10 @@ ${topEndpoints
       parts.push(`
 ## Endpoints with Elevated Error Rates
 ${highErrorEndpoints
-  .map((e) => `- ${e.method} ${e.path}: ${e.errorRate.toFixed(1)}% error rate (${e.errorCount}/${e.totalRequests})`)
+  .map(
+    (e) =>
+      `- ${e.method} ${e.path}: ${e.errorRate.toFixed(1)}% error rate (${e.errorCount}/${e.totalRequests})`,
+  )
   .join('\n')}
 `);
     }
@@ -151,7 +167,10 @@ ${highErrorEndpoints
     parts.push(`
 ## Active Anomalies (${context.anomalies.length})
 ${context.anomalies
-  .map((a) => `- [${a.severity}] ${a.title}: ${a.description} (detected ${formatTimeAgo(a.detectedAt)})`)
+  .map(
+    (a) =>
+      `- [${a.severity}] ${a.title}: ${a.description} (detected ${formatTimeAgo(a.detectedAt)})`,
+  )
   .join('\n')}
 `);
   }
@@ -196,7 +215,10 @@ ${context.activeAlerts
     parts.push(`
 ## Tenant Usage Trends
 ${context.tenantTrends
-  .map((t) => `- ${t.tenantName}: ${t.usage.totalCalls} calls, $${t.usage.totalCost.toFixed(2)} (${t.trend.direction})`)
+  .map(
+    (t) =>
+      `- ${t.tenantName}: ${t.usage.totalCalls} calls, $${t.usage.totalCost.toFixed(2)} (${t.trend.direction})`,
+  )
   .join('\n')}
 `);
   }
@@ -261,9 +283,10 @@ export async function chat(
   const systemPrompt = buildSystemPrompt(context);
 
   // Prepare messages for OpenAI
-  const openaiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-    { role: 'system', content: systemPrompt },
-  ];
+  const openaiMessages: Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+  }> = [{ role: 'system', content: systemPrompt }];
 
   // Add conversation history (limited to last N messages)
   const historyLimit = config.conversationHistoryLimit;
@@ -292,7 +315,9 @@ export async function chat(
       },
     );
 
-    const assistantContent = response.result.choices[0]?.message?.content || 'I apologize, but I could not generate a response.';
+    const assistantContent =
+      response.result.choices[0]?.message?.content ||
+      'I apologize, but I could not generate a response.';
 
     // Create assistant message
     const assistantMessage: AssistantMessage = {
@@ -302,7 +327,9 @@ export async function chat(
       timestamp: new Date(),
       metadata: {
         intent,
-        dataFetched: Object.keys(context).filter((k) => context[k as keyof AssistantContext] !== undefined),
+        dataFetched: Object.keys(context).filter(
+          (k) => context[k as keyof AssistantContext] !== undefined,
+        ),
         tokensUsed: response.usage.totalTokens,
         latencyMs: response.usage.latencyMs,
       },
@@ -321,7 +348,11 @@ export async function chat(
       suggestedFollowUps,
     };
   } catch (error) {
-    logger.error('Error in monitoring assistant chat', { error, tenantId, conversationId });
+    logger.error('Error in monitoring assistant chat', {
+      error,
+      tenantId,
+      conversationId,
+    });
 
     // Track failed attempt
     await trackAIUsage({
@@ -341,7 +372,8 @@ export async function chat(
     const errorMessage: AssistantMessage = {
       id: randomUUID(),
       role: 'assistant',
-      content: 'I apologize, but I encountered an error while processing your request. Please try again or rephrase your question.',
+      content:
+        'I apologize, but I encountered an error while processing your request. Please try again or rephrase your question.',
       timestamp: new Date(),
       metadata: { intent },
     };
@@ -352,7 +384,10 @@ export async function chat(
     return {
       conversationId,
       message: errorMessage,
-      suggestedFollowUps: ["What's the system status?", 'Show me AI usage summary'],
+      suggestedFollowUps: [
+        "What's the system status?",
+        'Show me AI usage summary',
+      ],
     };
   }
 }
@@ -360,7 +395,10 @@ export async function chat(
 /**
  * Generate follow-up suggestions based on intent and context
  */
-function generateFollowUps(intent: string, context: AssistantContext): string[] {
+function generateFollowUps(
+  intent: string,
+  context: AssistantContext,
+): string[] {
   const followUps: string[] = [];
 
   switch (intent) {
@@ -415,7 +453,10 @@ export async function getSuggestions(tenantId: string) {
 /**
  * Get conversation history
  */
-export function getConversation(conversationId: string, tenantId: string): StoredConversation | null {
+export function getConversation(
+  conversationId: string,
+  tenantId: string,
+): StoredConversation | null {
   const conversation = conversationStore.get(conversationId);
   if (conversation && conversation.tenantId === tenantId) {
     return conversation;
@@ -426,20 +467,28 @@ export function getConversation(conversationId: string, tenantId: string): Store
 /**
  * Get all conversations for a user
  */
-export function getUserConversations(tenantId: string, userId: number): StoredConversation[] {
+export function getUserConversations(
+  tenantId: string,
+  userId: number,
+): StoredConversation[] {
   const conversations: StoredConversation[] = [];
   for (const conv of conversationStore.values()) {
     if (conv.tenantId === tenantId && conv.userId === userId) {
       conversations.push(conv);
     }
   }
-  return conversations.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  return conversations.sort(
+    (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+  );
 }
 
 /**
  * Clear a conversation
  */
-export function clearConversation(conversationId: string, tenantId: string): boolean {
+export function clearConversation(
+  conversationId: string,
+  tenantId: string,
+): boolean {
   const conversation = conversationStore.get(conversationId);
   if (conversation && conversation.tenantId === tenantId) {
     conversationStore.delete(conversationId);

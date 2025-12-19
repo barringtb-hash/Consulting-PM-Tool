@@ -43,7 +43,9 @@ const chatRequestSchema = z.object({
  * This is a custom check that bypasses the global ModuleId type since this
  * is a tenant-specific feature not in the global module system.
  */
-async function isMonitoringAssistantEnabled(tenantId: string): Promise<boolean> {
+async function isMonitoringAssistantEnabled(
+  tenantId: string,
+): Promise<boolean> {
   try {
     // Check for tenant-specific config first
     const config = await prisma.tenantModuleConfig.findFirst({
@@ -67,7 +69,10 @@ async function isMonitoringAssistantEnabled(tenantId: string): Promise<boolean> 
 
     return defaultConfig?.enabled ?? false;
   } catch (error) {
-    logger.error('Error checking monitoring assistant config', { error, tenantId });
+    logger.error('Error checking monitoring assistant config', {
+      error,
+      tenantId,
+    });
     return false;
   }
 }
@@ -76,7 +81,11 @@ async function isMonitoringAssistantEnabled(tenantId: string): Promise<boolean> 
 // Middleware - Check if monitoring assistant is enabled for tenant
 // ============================================================================
 
-async function requireMonitoringAssistant(req: Request, res: Response, next: NextFunction) {
+async function requireMonitoringAssistant(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     if (!hasTenantContext()) {
       return res.status(400).json({ error: 'Tenant context required' });
@@ -107,137 +116,165 @@ async function requireMonitoringAssistant(req: Request, res: Response, next: Nex
  * POST /chat
  * Send a message to the monitoring assistant
  */
-router.post('/chat', requireAuth, requireMonitoringAssistant, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const tenantId = getTenantId();
-    const userId = req.user!.id;
+router.post(
+  '/chat',
+  requireAuth,
+  requireMonitoringAssistant,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = getTenantId();
+      const userId = req.user!.id;
 
-    // Validate request body
-    const parsed = chatRequestSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'Invalid request',
-        details: parsed.error.flatten(),
-      });
+      // Validate request body
+      const parsed = chatRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: 'Invalid request',
+          details: parsed.error.flatten(),
+        });
+      }
+
+      const { message, conversationId } = parsed.data;
+
+      // Process the chat message
+      const response = await chat(
+        tenantId,
+        userId,
+        { message, conversationId },
+        DEFAULT_ASSISTANT_CONFIG,
+      );
+
+      res.json({ data: response });
+    } catch (error) {
+      logger.error('Error in monitoring assistant chat', { error });
+      next(error);
     }
-
-    const { message, conversationId } = parsed.data;
-
-    // Process the chat message
-    const response = await chat(
-      tenantId,
-      userId,
-      { message, conversationId },
-      DEFAULT_ASSISTANT_CONFIG,
-    );
-
-    res.json({ data: response });
-  } catch (error) {
-    logger.error('Error in monitoring assistant chat', { error });
-    next(error);
-  }
-});
+  },
+);
 
 /**
  * GET /suggestions
  * Get suggested queries based on current system state
  */
-router.get('/suggestions', requireAuth, requireMonitoringAssistant, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const tenantId = getTenantId();
-    const suggestions = await getSuggestions(tenantId);
-    res.json({ data: suggestions });
-  } catch (error) {
-    logger.error('Error getting assistant suggestions', { error });
-    next(error);
-  }
-});
+router.get(
+  '/suggestions',
+  requireAuth,
+  requireMonitoringAssistant,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = getTenantId();
+      const suggestions = await getSuggestions(tenantId);
+      res.json({ data: suggestions });
+    } catch (error) {
+      logger.error('Error getting assistant suggestions', { error });
+      next(error);
+    }
+  },
+);
 
 /**
  * GET /conversations
  * Get all conversations for the current user
  */
-router.get('/conversations', requireAuth, requireMonitoringAssistant, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const tenantId = getTenantId();
-    const userId = req.user!.id;
+router.get(
+  '/conversations',
+  requireAuth,
+  requireMonitoringAssistant,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = getTenantId();
+      const userId = req.user!.id;
 
-    const conversations = getUserConversations(tenantId, userId);
+      const conversations = getUserConversations(tenantId, userId);
 
-    // Return summary of each conversation
-    const summaries = conversations.map((conv) => ({
-      id: conv.id,
-      messageCount: conv.messages.length,
-      lastMessage: conv.messages[conv.messages.length - 1]?.content.substring(0, 100),
-      createdAt: conv.createdAt,
-      updatedAt: conv.updatedAt,
-    }));
+      // Return summary of each conversation
+      const summaries = conversations.map((conv) => ({
+        id: conv.id,
+        messageCount: conv.messages.length,
+        lastMessage: conv.messages[conv.messages.length - 1]?.content.substring(
+          0,
+          100,
+        ),
+        createdAt: conv.createdAt,
+        updatedAt: conv.updatedAt,
+      }));
 
-    res.json({ data: summaries });
-  } catch (error) {
-    logger.error('Error getting conversations', { error });
-    next(error);
-  }
-});
+      res.json({ data: summaries });
+    } catch (error) {
+      logger.error('Error getting conversations', { error });
+      next(error);
+    }
+  },
+);
 
 /**
  * GET /conversations/:id
  * Get a specific conversation
  */
-router.get('/conversations/:id', requireAuth, requireMonitoringAssistant, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const tenantId = getTenantId();
-    const conversationId = req.params.id;
+router.get(
+  '/conversations/:id',
+  requireAuth,
+  requireMonitoringAssistant,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = getTenantId();
+      const conversationId = req.params.id;
 
-    const conversation = getConversation(conversationId, tenantId);
+      const conversation = getConversation(conversationId, tenantId);
 
-    if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+
+      // Ensure user owns this conversation
+      if (conversation.userId !== req.user!.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      res.json({ data: conversation });
+    } catch (error) {
+      logger.error('Error getting conversation', { error });
+      next(error);
     }
-
-    // Ensure user owns this conversation
-    if (conversation.userId !== req.user!.id) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    res.json({ data: conversation });
-  } catch (error) {
-    logger.error('Error getting conversation', { error });
-    next(error);
-  }
-});
+  },
+);
 
 /**
  * DELETE /conversations/:id
  * Delete a conversation
  */
-router.delete('/conversations/:id', requireAuth, requireMonitoringAssistant, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const tenantId = getTenantId();
-    const conversationId = req.params.id;
+router.delete(
+  '/conversations/:id',
+  requireAuth,
+  requireMonitoringAssistant,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tenantId = getTenantId();
+      const conversationId = req.params.id;
 
-    // Get conversation to check ownership
-    const conversation = getConversation(conversationId, tenantId);
-    if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
+      // Get conversation to check ownership
+      const conversation = getConversation(conversationId, tenantId);
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+
+      if (conversation.userId !== req.user!.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      const deleted = clearConversation(conversationId, tenantId);
+
+      if (deleted) {
+        res.json({ data: { success: true } });
+      } else {
+        res.status(500).json({ error: 'Failed to delete conversation' });
+      }
+    } catch (error) {
+      logger.error('Error deleting conversation', { error });
+      next(error);
     }
-
-    if (conversation.userId !== req.user!.id) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    const deleted = clearConversation(conversationId, tenantId);
-
-    if (deleted) {
-      res.json({ data: { success: true } });
-    } else {
-      res.status(500).json({ error: 'Failed to delete conversation' });
-    }
-  } catch (error) {
-    logger.error('Error deleting conversation', { error });
-    next(error);
-  }
-});
+  },
+);
 
 /**
  * GET /health

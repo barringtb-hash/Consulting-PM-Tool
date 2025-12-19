@@ -165,8 +165,7 @@ export function OperationsDashboardPage(): JSX.Element {
   const { data: alertHistory, isLoading: alertLoading } = useAlertHistory({
     limit: 5,
   });
-  const { data: assistantHealth, isSuccess: assistantAvailable } =
-    useMonitoringAssistantHealth();
+  const { isSuccess: assistantAvailable } = useMonitoringAssistantHealth();
 
   const isLoading =
     statsLoading ||

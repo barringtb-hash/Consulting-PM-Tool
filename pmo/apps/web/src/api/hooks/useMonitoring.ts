@@ -482,7 +482,10 @@ export function useMonitoringAssistantChat() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (request: ChatRequest) =>
-      http.post<{ data: ChatResponse }>('/ai-monitoring/assistant/chat', request),
+      http.post<{ data: ChatResponse }>(
+        '/ai-monitoring/assistant/chat',
+        request,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assistant-conversations'] });
     },
@@ -496,7 +499,9 @@ export function useMonitoringAssistantSuggestions() {
   return useQuery({
     queryKey: ['assistant-suggestions'],
     queryFn: () =>
-      http.get<{ data: SuggestionsResponse }>('/ai-monitoring/assistant/suggestions'),
+      http.get<{ data: SuggestionsResponse }>(
+        '/ai-monitoring/assistant/suggestions',
+      ),
     staleTime: 60000, // Cache for 1 minute
     refetchInterval: 60000, // Refresh every minute
   });
@@ -509,7 +514,9 @@ export function useMonitoringAssistantConversations() {
   return useQuery({
     queryKey: ['assistant-conversations'],
     queryFn: () =>
-      http.get<{ data: ConversationSummary[] }>('/ai-monitoring/assistant/conversations'),
+      http.get<{ data: ConversationSummary[] }>(
+        '/ai-monitoring/assistant/conversations',
+      ),
     staleTime: 30000,
   });
 }

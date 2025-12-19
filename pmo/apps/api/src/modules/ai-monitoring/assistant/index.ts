@@ -8,7 +8,11 @@
 export * from './monitoring-assistant.types';
 
 // Context Builder
-export { buildAssistantContext, detectIntent, getSuggestedQueries } from './assistant-context.builder';
+export {
+  buildAssistantContext,
+  detectIntent,
+  getSuggestedQueries,
+} from './assistant-context.builder';
 
 // Service
 export {

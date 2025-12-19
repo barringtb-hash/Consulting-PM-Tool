@@ -18,7 +18,9 @@ async function main() {
   });
 
   if (!tenant) {
-    console.error('Error: Default tenant not found. Please run the seed script first.');
+    console.error(
+      'Error: Default tenant not found. Please run the seed script first.',
+    );
     process.exit(1);
   }
 
@@ -72,7 +74,9 @@ async function main() {
   console.log('\nCurrent Configuration:');
   console.log(JSON.stringify(config, null, 2));
 
-  console.log('\n✅ Done! The Monitoring Assistant is now available at /operations/assistant');
+  console.log(
+    '\n✅ Done! The Monitoring Assistant is now available at /operations/assistant',
+  );
 }
 
 main()

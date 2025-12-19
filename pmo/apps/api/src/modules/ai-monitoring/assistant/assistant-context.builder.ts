@@ -17,19 +17,15 @@ import {
   getSystemHealth,
   getSlowQueries,
 } from '../../monitoring/metrics.service';
-import { getOpenAnomalies, getAnomalyStats } from '../../monitoring/anomaly-detection.service';
+import {
+  getOpenAnomalies,
+  getAnomalyStats,
+} from '../../monitoring/anomaly-detection.service';
 import { getAlertRules, getAlertHistory } from '../../monitoring/alert.service';
 import { logger } from '../../../utils/logger';
 import {
   AssistantContext,
   AssistantIntent,
-  RealtimeUsageStats,
-  CostBreakdownItem,
-  SystemHealthMetrics,
-  DatabaseMetrics,
-  ExternalServiceStatus,
-  AnomalySummary,
-  CostForecast,
   TenantUsageTrend,
   INTENT_KEYWORDS,
 } from './monitoring-assistant.types';
@@ -45,7 +41,10 @@ export function detectIntent(message: string): AssistantIntent {
   const lowerMessage = message.toLowerCase();
 
   // Check each intent's keywords
-  const intentScores: Record<AssistantIntent, number> = {} as Record<AssistantIntent, number>;
+  const intentScores: Record<AssistantIntent, number> = {} as Record<
+    AssistantIntent,
+    number
+  >;
 
   for (const [intent, keywords] of Object.entries(INTENT_KEYWORDS)) {
     let score = 0;
@@ -82,7 +81,9 @@ export function detectIntent(message: string): AssistantIntent {
 /**
  * Build context for AI usage/cost queries
  */
-async function buildUsageContext(tenantId: string): Promise<Partial<AssistantContext>> {
+async function buildUsageContext(
+  tenantId: string,
+): Promise<Partial<AssistantContext>> {
   const [usage, costBreakdown, forecast] = await Promise.all([
     getRealtimeUsageStats(tenantId, 24).catch(() => null),
     getAICostBreakdown(tenantId, 30).catch(() => null),
@@ -180,7 +181,12 @@ async function buildSystemContext(): Promise<Partial<AssistantContext>> {
   if (latency) {
     context.apiLatency = {
       endpoints: Object.entries(latency).map(([endpoint, stats]) => {
-        const s = stats as { count: number; avg: number; p95: number; p99?: number };
+        const s = stats as {
+          count: number;
+          avg: number;
+          p95: number;
+          p99?: number;
+        };
         return {
           path: endpoint.split(' ')[1] || endpoint,
           method: endpoint.split(' ')[0] || 'GET',
@@ -222,7 +228,9 @@ async function buildSystemContext(): Promise<Partial<AssistantContext>> {
         timestamp: q.timestamp,
       })),
       queryStats: {
-        avgDuration: slowQueries.reduce((sum, q) => sum + q.durationMs, 0) / slowQueries.length,
+        avgDuration:
+          slowQueries.reduce((sum, q) => sum + q.durationMs, 0) /
+          slowQueries.length,
         p95Duration: 0,
         totalQueries: slowQueries.length,
       },
@@ -235,8 +243,10 @@ async function buildSystemContext(): Promise<Partial<AssistantContext>> {
 /**
  * Build context for anomaly queries
  */
-async function buildAnomalyContext(tenantId: string): Promise<Partial<AssistantContext>> {
-  const [anomalies, stats] = await Promise.all([
+async function buildAnomalyContext(
+  tenantId: string,
+): Promise<Partial<AssistantContext>> {
+  const [anomalies, _stats] = await Promise.all([
     getOpenAnomalies({ tenantId, limit: 20 }).catch(() => []),
     getAnomalyStats(tenantId).catch(() => null),
   ]);
@@ -264,7 +274,9 @@ async function buildAnomalyContext(tenantId: string): Promise<Partial<AssistantC
 /**
  * Build context for alert queries
  */
-async function buildAlertContext(tenantId: string): Promise<Partial<AssistantContext>> {
+async function buildAlertContext(
+  tenantId: string,
+): Promise<Partial<AssistantContext>> {
   const [rules, history] = await Promise.all([
     getAlertRules(tenantId).catch(() => []),
     getAlertHistory(tenantId, { limit: 20 }).catch(() => []),
@@ -299,7 +311,9 @@ async function buildAlertContext(tenantId: string): Promise<Partial<AssistantCon
 /**
  * Build context for external service status
  */
-async function buildExternalServicesContext(): Promise<Partial<AssistantContext>> {
+async function buildExternalServicesContext(): Promise<
+  Partial<AssistantContext>
+> {
   // In a real implementation, these would call actual health check endpoints
   // For now, we provide placeholder data that can be extended
   const context: Partial<AssistantContext> = {
@@ -328,7 +342,9 @@ async function buildExternalServicesContext(): Promise<Partial<AssistantContext>
 /**
  * Build context for tenant trends (admin-level data)
  */
-async function buildTenantTrendsContext(tenantId: string): Promise<Partial<AssistantContext>> {
+async function buildTenantTrendsContext(
+  _tenantId: string,
+): Promise<Partial<AssistantContext>> {
   // Get all tenants with their usage data
   const tenants = await prisma.tenant.findMany({
     select: {
@@ -341,7 +357,9 @@ async function buildTenantTrendsContext(tenantId: string): Promise<Partial<Assis
   const trends: TenantUsageTrend[] = [];
 
   for (const tenant of tenants) {
-    const usage = await getRealtimeUsageStats(tenant.id, 24 * 7).catch(() => null);
+    const usage = await getRealtimeUsageStats(tenant.id, 24 * 7).catch(
+      () => null,
+    );
     if (usage) {
       trends.push({
         tenantId: tenant.id,
@@ -396,7 +414,7 @@ export async function buildAssistantContext(
   // Build context based on intent
   try {
     switch (intent) {
-      case 'status_overview':
+      case 'status_overview': {
         // Gather everything for a comprehensive overview
         const [usageCtx, systemCtx, anomalyCtx] = await Promise.all([
           buildUsageContext(tenantId),
@@ -404,30 +422,33 @@ export async function buildAssistantContext(
           buildAnomalyContext(tenantId),
         ]);
         return { ...baseContext, ...usageCtx, ...systemCtx, ...anomalyCtx };
+      }
 
       case 'cost_inquiry':
       case 'usage_inquiry':
         return { ...baseContext, ...(await buildUsageContext(tenantId)) };
 
       case 'issue_diagnosis':
-      case 'performance_inquiry':
+      case 'performance_inquiry': {
         const [sysCtx, anomCtx] = await Promise.all([
           buildSystemContext(),
           buildAnomalyContext(tenantId),
         ]);
         return { ...baseContext, ...sysCtx, ...anomCtx };
+      }
 
       case 'anomaly_check':
         return { ...baseContext, ...(await buildAnomalyContext(tenantId)) };
 
-      case 'trend_analysis':
+      case 'trend_analysis': {
         const [trendUsage, trendTenants] = await Promise.all([
           buildUsageContext(tenantId),
           buildTenantTrendsContext(tenantId),
         ]);
         return { ...baseContext, ...trendUsage, ...trendTenants };
+      }
 
-      case 'recommendation':
+      case 'recommendation': {
         // Need full context for recommendations
         const [recUsage, recSystem, recAnomaly] = await Promise.all([
           buildUsageContext(tenantId),
@@ -435,6 +456,7 @@ export async function buildAssistantContext(
           buildAnomalyContext(tenantId),
         ]);
         return { ...baseContext, ...recUsage, ...recSystem, ...recAnomaly };
+      }
 
       case 'alert_status':
         return { ...baseContext, ...(await buildAlertContext(tenantId)) };
@@ -446,7 +468,10 @@ export async function buildAssistantContext(
         return { ...baseContext, ...(await buildExternalServicesContext()) };
 
       case 'tenant_trends':
-        return { ...baseContext, ...(await buildTenantTrendsContext(tenantId)) };
+        return {
+          ...baseContext,
+          ...(await buildTenantTrendsContext(tenantId)),
+        };
 
       case 'general_question':
       default:
@@ -454,7 +479,11 @@ export async function buildAssistantContext(
         return { ...baseContext, ...(await buildUsageContext(tenantId)) };
     }
   } catch (error) {
-    logger.error('Error building assistant context', { error, tenantId, intent });
+    logger.error('Error building assistant context', {
+      error,
+      tenantId,
+      intent,
+    });
     return baseContext;
   }
 }
@@ -478,7 +507,9 @@ export async function getSuggestedQueries(tenantId: string): Promise<{
   };
 
   // Check for anomalies
-  const anomalies = await getOpenAnomalies({ tenantId, limit: 5 }).catch(() => []);
+  const anomalies = await getOpenAnomalies({ tenantId, limit: 5 }).catch(
+    () => [],
+  );
   if (anomalies && anomalies.length > 0) {
     basedOn.hasAnomalies = true;
     suggestions.push('What anomalies need my attention?');

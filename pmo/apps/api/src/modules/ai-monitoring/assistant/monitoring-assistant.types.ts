@@ -4,7 +4,11 @@
  * Type definitions for the AI-powered monitoring assistant
  */
 
-import type { AnomalyCategory, AnomalySeverity, AnomalyStatus } from '@prisma/client';
+import type {
+  AnomalyCategory,
+  AnomalySeverity,
+  AnomalyStatus,
+} from '@prisma/client';
 
 // ============================================================================
 // Assistant Message Types
