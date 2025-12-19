@@ -229,7 +229,7 @@ async function createInAppNotification(
   tenantId: string | null,
   title: string,
   message: string,
-  metadata?: Record<string, unknown>,
+  _metadata?: Record<string, unknown>,
 ): Promise<boolean> {
   try {
     // Find admin users to notify
@@ -247,7 +247,6 @@ async function createInAppNotification(
           type: 'USAGE_LIMIT_WARNING',
           title,
           message,
-          data: metadata as Prisma.InputJsonValue,
         },
       });
     }

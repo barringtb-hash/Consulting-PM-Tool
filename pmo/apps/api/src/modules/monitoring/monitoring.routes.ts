@@ -271,7 +271,11 @@ router.post(
  */
 router.post(
   '/anomalies/:id/resolve',
-  async (req: AuthenticatedRequest<{ id: string }>, res, next) => {
+  async (
+    req: AuthenticatedRequest<{ id: string }, unknown, { resolution?: string }>,
+    res,
+    next,
+  ) => {
     try {
       if (!req.userId) {
         return res.status(401).json({ error: 'User not authenticated' });

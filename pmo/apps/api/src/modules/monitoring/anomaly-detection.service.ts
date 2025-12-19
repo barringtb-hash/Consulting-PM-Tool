@@ -453,8 +453,8 @@ export async function runHealthAnomalyDetection(): Promise<void> {
       );
     }
 
-    // High churn risk (category is AT_RISK or CHURNING)
-    if (score.category === 'CHURNING') {
+    // High churn risk (category is AT_RISK - needs attention)
+    if (score.category === 'AT_RISK') {
       const churnRule = ANOMALY_RULES.find((r) => r.type === 'CHURN_RISK_HIGH');
       if (churnRule) {
         await createAnomaly(
