@@ -79,21 +79,61 @@ interface TimeSlot {
 // CONFIG MANAGEMENT
 // ============================================================================
 
-export async function getSchedulingConfig(clientId: number) {
+/**
+ * Standard includes for scheduling config queries
+ */
+const configIncludes = {
+  account: { select: { id: true, name: true, industry: true, tenantId: true } },
+  client: { select: { id: true, name: true, industry: true } },
+  providers: { where: { isActive: true } },
+  appointmentTypes: { where: { isActive: true } },
+};
+
+/**
+ * Get scheduling config by Account ID (preferred)
+ */
+export async function getSchedulingConfigByAccount(accountId: number) {
   return prisma.schedulingConfig.findUnique({
-    where: { clientId },
-    include: {
-      client: { select: { id: true, name: true, industry: true } },
-      providers: { where: { isActive: true } },
-      appointmentTypes: { where: { isActive: true } },
-    },
+    where: { accountId },
+    include: configIncludes,
   });
 }
 
-export async function listSchedulingConfigs(filters?: { clientId?: number }) {
+/**
+ * Get scheduling config by Client ID (legacy - for backward compatibility)
+ * @deprecated Use getSchedulingConfigByAccount instead
+ */
+export async function getSchedulingConfig(clientId: number) {
+  return prisma.schedulingConfig.findUnique({
+    where: { clientId },
+    include: configIncludes,
+  });
+}
+
+/**
+ * List scheduling configs with optional filters
+ */
+export async function listSchedulingConfigs(filters?: {
+  clientId?: number;
+  accountId?: number;
+  tenantId?: string;
+}) {
+  const where: Prisma.SchedulingConfigWhereInput = {};
+
+  if (filters?.accountId) {
+    where.accountId = filters.accountId;
+  }
+  if (filters?.clientId) {
+    where.clientId = filters.clientId;
+  }
+  if (filters?.tenantId) {
+    where.tenantId = filters.tenantId;
+  }
+
   return prisma.schedulingConfig.findMany({
-    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    where: Object.keys(where).length > 0 ? where : undefined,
     include: {
+      account: { select: { id: true, name: true, industry: true } },
       client: { select: { id: true, name: true, industry: true } },
       _count: { select: { providers: true, appointments: true } },
     },
@@ -101,6 +141,28 @@ export async function listSchedulingConfigs(filters?: { clientId?: number }) {
   });
 }
 
+/**
+ * Create scheduling config for an Account (preferred)
+ */
+export async function createSchedulingConfigForAccount(
+  accountId: number,
+  data: SchedulingConfigInput,
+  tenantId?: string,
+) {
+  return prisma.schedulingConfig.create({
+    data: {
+      accountId,
+      tenantId,
+      ...data,
+    },
+    include: configIncludes,
+  });
+}
+
+/**
+ * Create scheduling config for a Client (legacy - for backward compatibility)
+ * @deprecated Use createSchedulingConfigForAccount instead
+ */
 export async function createSchedulingConfig(
   clientId: number,
   data: SchedulingConfigInput,
@@ -110,9 +172,28 @@ export async function createSchedulingConfig(
       clientId,
       ...data,
     },
+    include: configIncludes,
   });
 }
 
+/**
+ * Update scheduling config by Account ID (preferred)
+ */
+export async function updateSchedulingConfigByAccount(
+  accountId: number,
+  data: Partial<SchedulingConfigInput>,
+) {
+  return prisma.schedulingConfig.update({
+    where: { accountId },
+    data,
+    include: configIncludes,
+  });
+}
+
+/**
+ * Update scheduling config by Client ID (legacy - for backward compatibility)
+ * @deprecated Use updateSchedulingConfigByAccount instead
+ */
 export async function updateSchedulingConfig(
   clientId: number,
   data: Partial<SchedulingConfigInput>,
@@ -120,6 +201,7 @@ export async function updateSchedulingConfig(
   return prisma.schedulingConfig.update({
     where: { clientId },
     data,
+    include: configIncludes,
   });
 }
 

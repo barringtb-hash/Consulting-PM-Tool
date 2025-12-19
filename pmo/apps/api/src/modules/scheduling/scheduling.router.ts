@@ -122,12 +122,21 @@ router.use(requireAuth);
 /**
  * GET /api/scheduling/configs
  * List all scheduling configurations (with optional filtering)
+ * Supports both accountId (preferred) and clientId (legacy) filtering
  */
 router.get(
   '/scheduling/configs',
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const accountId = req.query.accountId
+      ? Number(req.query.accountId)
+      : undefined;
+    if (req.query.accountId && Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
       return;
     }
 
@@ -139,14 +148,129 @@ router.get(
       return;
     }
 
-    const configs = await schedulingService.listSchedulingConfigs({ clientId });
+    const configs = await schedulingService.listSchedulingConfigs({
+      accountId,
+      clientId,
+    });
     res.json({ configs });
   },
 );
 
+// ============================================================================
+// ACCOUNT-BASED CONFIG ROUTES (Preferred - CRM Integration)
+// ============================================================================
+
+/**
+ * GET /api/accounts/:accountId/scheduling
+ * Get scheduling config for a CRM Account
+ */
+router.get(
+  '/accounts/:accountId/scheduling',
+  async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const accountId = Number(req.params.accountId);
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    const config =
+      await schedulingService.getSchedulingConfigByAccount(accountId);
+    res.json({ config });
+  },
+);
+
+/**
+ * POST /api/accounts/:accountId/scheduling
+ * Create scheduling config for a CRM Account
+ */
+router.post(
+  '/accounts/:accountId/scheduling',
+  async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const accountId = Number(req.params.accountId);
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    const parsed = configSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const config = await schedulingService.createSchedulingConfigForAccount(
+        accountId,
+        parsed.data,
+        req.tenantId, // Pass tenant ID from auth context
+      );
+      res.status(201).json({ config });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        res
+          .status(409)
+          .json({ error: 'Config already exists for this account' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * PATCH /api/accounts/:accountId/scheduling
+ * Update scheduling config for a CRM Account
+ */
+router.patch(
+  '/accounts/:accountId/scheduling',
+  async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const accountId = Number(req.params.accountId);
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    const parsed = configSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const config = await schedulingService.updateSchedulingConfigByAccount(
+      accountId,
+      parsed.data,
+    );
+    res.json({ config });
+  },
+);
+
+// ============================================================================
+// LEGACY CLIENT-BASED CONFIG ROUTES (Deprecated - for backward compatibility)
+// ============================================================================
+
 /**
  * GET /api/clients/:clientId/scheduling
  * Get scheduling config for a client
+ * @deprecated Use GET /api/accounts/:accountId/scheduling instead
  */
 router.get(
   '/clients/:clientId/scheduling',
@@ -169,7 +293,8 @@ router.get(
 
 /**
  * POST /api/clients/:clientId/scheduling
- * Create scheduling config
+ * Create scheduling config for a client
+ * @deprecated Use POST /api/accounts/:accountId/scheduling instead
  */
 router.post(
   '/clients/:clientId/scheduling',
@@ -213,7 +338,8 @@ router.post(
 
 /**
  * PATCH /api/clients/:clientId/scheduling
- * Update scheduling config
+ * Update scheduling config for a client
+ * @deprecated Use PATCH /api/accounts/:accountId/scheduling instead
  */
 router.patch(
   '/clients/:clientId/scheduling',

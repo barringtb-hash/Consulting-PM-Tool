@@ -36,12 +36,14 @@ import { ShiftSchedulingTab, AIInsightsTab } from './scheduling';
 // Types
 interface SchedulingConfig {
   id: number;
-  clientId: number;
+  accountId: number | null; // Primary reference (preferred)
+  clientId: number | null; // Legacy reference (deprecated)
   practiceName: string | null;
   timezone: string;
   enableNoShowPrediction: boolean;
   enableReminders: boolean;
   enableWaitlist: boolean;
+  account?: { id: number; name: string; industry: string | null };
   client?: { id: number; name: string };
   _count?: {
     providers: number;
@@ -162,12 +164,12 @@ async function updateAppointmentStatus(
   return result.appointment;
 }
 
-async function createConfig(
-  clientId: number,
+async function createConfigForAccount(
+  accountId: number,
   data: Partial<SchedulingConfig>,
 ): Promise<SchedulingConfig> {
   const res = await fetch(
-    buildApiUrl(`/clients/${clientId}/scheduling`),
+    buildApiUrl(`/accounts/${accountId}/scheduling`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify(data),
@@ -267,12 +269,12 @@ function SchedulingPage(): JSX.Element {
   // Mutations
   const createConfigMutation = useMutation({
     mutationFn: ({
-      clientId,
+      accountId,
       data,
     }: {
-      clientId: number;
+      accountId: number;
       data: Partial<SchedulingConfig>;
-    }) => createConfig(clientId, data),
+    }) => createConfigForAccount(accountId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduling-configs'] });
       setShowCreateConfigModal(false);
@@ -314,7 +316,7 @@ function SchedulingPage(): JSX.Element {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     createConfigMutation.mutate({
-      clientId: Number(formData.get('clientId')),
+      accountId: Number(formData.get('accountId')),
       data: {
         practiceName: formData.get('practiceName') as string,
         timezone: formData.get('timezone') as string,
@@ -372,6 +374,7 @@ function SchedulingPage(): JSX.Element {
                 {filteredConfigs.map((config) => (
                   <option key={config.id} value={config.id}>
                     {config.practiceName ||
+                      config.account?.name ||
                       config.client?.name ||
                       `Config ${config.id}`}
                   </option>
@@ -871,8 +874,8 @@ function SchedulingPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <form onSubmit={handleCreateConfig} className="space-y-4">
-                <Select label="Client" name="clientId" required>
-                  <option value="">Select a client...</option>
+                <Select label="Account" name="accountId" required>
+                  <option value="">Select an account...</option>
                   {accounts.map((account) => (
                     <option key={account.id} value={account.id}>
                       {account.name}
