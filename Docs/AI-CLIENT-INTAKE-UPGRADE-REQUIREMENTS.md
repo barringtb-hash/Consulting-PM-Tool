@@ -23,6 +23,8 @@ The existing intake module provides a solid foundation with:
 - ✅ Storage provider integration (S3, GCS, SharePoint, etc.)
 - ✅ Basic analytics (completion rate, approval rate)
 
+**Important Note:** The existing intake module currently links to the deprecated `Client` model via `clientId`. As part of this upgrade, intake configurations will be migrated to link to **CRM Account** (`accountId`) instead. The `Account` model is the primary CRM entity for companies/organizations, with full support for hierarchy, health scores, and engagement tracking.
+
 ### Key Gaps Identified (Market Research vs. Current State)
 
 | Gap Area | Market Requirement | Current State |
@@ -239,6 +241,18 @@ POST /api/intake/submissions/:id/recalculate-score
 
 ### Phase 2: Deep CRM Integration (Priority: High)
 
+**Prerequisite Migration:** Before implementing Phase 2 features, migrate IntakeConfig from `clientId` (deprecated Client model) to `accountId` (CRM Account model). This aligns intake with the current CRM architecture where Account is the primary organizational entity.
+
+```typescript
+// Migration script: migrate-intake-to-accounts.ts
+// 1. Add accountId column to IntakeConfig (nullable initially)
+// 2. For each IntakeConfig with clientId:
+//    - Find or create corresponding Account (matching by name/domain)
+//    - Set accountId to the Account.id
+// 3. Update all IntakeConfig API endpoints to use accountId
+// 4. Remove clientId after validation
+```
+
 #### 2.1 Automatic CRM Entity Creation
 
 **User Story:** As a consultant, I want intake submissions to automatically create CRM records (leads, contacts, accounts, opportunities), so I don't have to manually transfer data between systems.
@@ -346,13 +360,13 @@ GET /api/intake/submissions/:id/crm-entities
 
 | ID | Requirement | Priority | Acceptance Criteria |
 |----|-------------|----------|---------------------|
-| LEG-COI-01 | Client name conflict check | Must Have | Search existing clients/matters for name matches |
+| LEG-COI-01 | Account/party name conflict check | Must Have | Search existing accounts/matters for name matches |
 | LEG-COI-02 | Related party check | Must Have | Check adverse parties, co-defendants, etc. |
 | LEG-COI-03 | Fuzzy matching | Must Have | Catch spelling variations and nicknames |
 | LEG-COI-04 | Conflict report generation | Must Have | Generate detailed conflict check report |
 | LEG-COI-05 | Conflict workflow | Should Have | Route conflicts for attorney review |
 | LEG-COI-06 | Waiver management | Should Have | Track conflict waivers and consents |
-| LEG-COI-07 | Historical check | Should Have | Include archived/former clients |
+| LEG-COI-07 | Historical check | Should Have | Include archived/churned accounts |
 
 **New Data Model:**
 ```prisma
@@ -628,7 +642,7 @@ enum PaymentStatus {
 | ID | Requirement | Priority | Acceptance Criteria |
 |----|-------------|----------|---------------------|
 | PM-01 | Clio Manage integration | Should Have | Sync contacts and matters |
-| PM-02 | MyCase integration | Should Have | Create clients and cases |
+| PM-02 | MyCase integration | Should Have | Create accounts and cases |
 | PM-03 | PracticePanther integration | Could Have | Bi-directional sync |
 | PM-04 | Generic webhook for others | Must Have | Allow custom integrations |
 
@@ -1203,8 +1217,8 @@ The implementation is organized into 4 development phases spanning approximately
 | Sync status dashboard | `components/intake/IntegrationSyncStatus.tsx` | 1 day |
 
 **Deliverables:**
-- Clio Manage client/matter sync
-- MyCase client/case sync
+- Clio Manage account/matter sync
+- MyCase account/case sync
 - Generic webhook for custom integrations
 - Integration status monitoring
 
