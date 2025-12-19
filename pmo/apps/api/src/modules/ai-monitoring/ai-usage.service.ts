@@ -32,7 +32,7 @@ import { logger } from '../../utils/logger';
  * Track a single AI usage event
  */
 export async function trackAIUsage(
-  input: AIUsageEventInput
+  input: AIUsageEventInput,
 ): Promise<AIUsageEventResult> {
   const toolDef = AI_TOOLS[input.toolId as AIToolId];
   const toolName = toolDef?.name || input.toolId;
@@ -40,7 +40,7 @@ export async function trackAIUsage(
   const estimatedCost = calculateAICost(
     input.model,
     input.promptTokens,
-    input.completionTokens
+    input.completionTokens,
   );
 
   try {
@@ -90,7 +90,7 @@ export async function trackAIUsage(
  * Track multiple AI usage events in batch
  */
 export async function trackAIUsageBatch(
-  inputs: AIUsageEventInput[]
+  inputs: AIUsageEventInput[],
 ): Promise<number> {
   const data = inputs.map((input) => {
     const toolDef = AI_TOOLS[input.toolId as AIToolId];
@@ -99,7 +99,7 @@ export async function trackAIUsageBatch(
     const estimatedCost = calculateAICost(
       input.model,
       input.promptTokens,
-      input.completionTokens
+      input.completionTokens,
     );
 
     return {
@@ -134,7 +134,7 @@ export async function trackAIUsageBatch(
  * Get usage summary for a tenant
  */
 export async function getAIUsageSummary(
-  filters: AIUsageSummaryFilters
+  filters: AIUsageSummaryFilters,
 ): Promise<AIUsageSummaryResult[]> {
   const { tenantId, toolId, periodType, startDate, endDate } = filters;
 
@@ -176,7 +176,7 @@ export async function getAIUsageSummary(
  */
 export async function getRealtimeUsageStats(
   tenantId: string,
-  periodHours: number = 24
+  periodHours: number = 24,
 ): Promise<{
   totalCalls: number;
   totalTokens: number;
@@ -249,7 +249,7 @@ export async function getRealtimeUsageStats(
 export async function getAICostBreakdown(
   tenantId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<AIUsageCostBreakdown> {
   const events = await prisma.aIUsageEvent.findMany({
     where: {
@@ -306,8 +306,10 @@ export async function getAICostBreakdown(
     .sort((a, b) => b.cost - a.cost);
 
   // Aggregate by day
-  const dayStats: Record<string, { cost: number; tokens: number; calls: number }> =
-    {};
+  const dayStats: Record<
+    string,
+    { cost: number; tokens: number; calls: number }
+  > = {};
   for (const event of events) {
     const day = event.createdAt.toISOString().split('T')[0];
     if (!dayStats[day]) {
@@ -342,7 +344,7 @@ export async function getAICostBreakdown(
  */
 export async function getGlobalCostBreakdown(
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<
   Array<{
     tenantId: string;
@@ -396,7 +398,7 @@ export async function getGlobalCostBreakdown(
 export async function getAIUsageTrends(
   tenantId: string,
   toolId: string,
-  days: number = 30
+  days: number = 30,
 ): Promise<AIUsageTrends> {
   const endDate = new Date();
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -442,7 +444,8 @@ export async function getAIUsageTrends(
       cost: stats.cost,
       tokens: stats.tokens,
       calls: stats.calls,
-      avgLatencyMs: stats.calls > 0 ? Math.round(stats.latencySum / stats.calls) : 0,
+      avgLatencyMs:
+        stats.calls > 0 ? Math.round(stats.latencySum / stats.calls) : 0,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -450,7 +453,8 @@ export async function getAIUsageTrends(
   const totalCost = dataPoints.reduce((sum, p) => sum + p.cost, 0);
   const totalTokens = dataPoints.reduce((sum, p) => sum + p.tokens, 0);
   const totalCalls = dataPoints.reduce((sum, p) => sum + p.calls, 0);
-  const avgDailyCost = dataPoints.length > 0 ? totalCost / dataPoints.length : 0;
+  const avgDailyCost =
+    dataPoints.length > 0 ? totalCost / dataPoints.length : 0;
 
   // Compare first half to second half for trend
   const midpoint = Math.floor(dataPoints.length / 2);
@@ -465,7 +469,8 @@ export async function getAIUsageTrends(
   let costTrendPercentage = 0;
 
   if (firstHalfCost > 0 && secondHalfCost > 0) {
-    costTrendPercentage = ((secondHalfCost - firstHalfCost) / firstHalfCost) * 100;
+    costTrendPercentage =
+      ((secondHalfCost - firstHalfCost) / firstHalfCost) * 100;
     if (costTrendPercentage > 10) costTrend = 'UP';
     else if (costTrendPercentage < -10) costTrend = 'DOWN';
   }
@@ -856,7 +861,11 @@ export async function getMonthlySystemCost(): Promise<{
   const previousCost = Number(previousEvents._sum.estimatedCost || 0);
 
   // Project month-end cost based on current rate
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysInMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+  ).getDate();
   const dayOfMonth = now.getDate();
   const projectedMonthEnd =
     dayOfMonth > 0 ? (currentCost / dayOfMonth) * daysInMonth : 0;

@@ -10,7 +10,11 @@
  * and falls back to simple setInterval when Redis is not configured.
  */
 
-import { aggregateHourlyUsage, aggregateDailyUsage, checkCostThresholds } from './ai-usage.service';
+import {
+  aggregateHourlyUsage,
+  aggregateDailyUsage,
+  checkCostThresholds,
+} from './ai-usage.service';
 import { logger } from '../../utils/logger';
 
 // Simple in-memory scheduler when Redis is not available
@@ -153,7 +157,9 @@ async function runCostThresholdCheck(): Promise<void> {
 /**
  * Manually trigger aggregation (useful for testing or catch-up)
  */
-export async function manualAggregation(type: 'hourly' | 'daily' | 'both'): Promise<void> {
+export async function manualAggregation(
+  type: 'hourly' | 'daily' | 'both',
+): Promise<void> {
   if (type === 'hourly' || type === 'both') {
     await runHourlyAggregation();
   }

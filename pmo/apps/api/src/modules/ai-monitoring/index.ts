@@ -12,7 +12,13 @@
  */
 
 // Configuration
-export { AI_MODEL_PRICING, AI_COST_THRESHOLDS, calculateAICost, getModelPricing, getKnownModels } from './ai-pricing.config';
+export {
+  AI_MODEL_PRICING,
+  AI_COST_THRESHOLDS,
+  calculateAICost,
+  getModelPricing,
+  getKnownModels,
+} from './ai-pricing.config';
 
 // Types
 export * from './ai-monitoring.types';

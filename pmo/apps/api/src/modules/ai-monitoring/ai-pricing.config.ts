@@ -112,7 +112,7 @@ export const AI_COST_THRESHOLDS = {
 export function calculateAICost(
   model: string,
   promptTokens: number,
-  completionTokens: number
+  completionTokens: number,
 ): number {
   const pricing = AI_MODEL_PRICING[model] || AI_MODEL_PRICING['unknown'];
 

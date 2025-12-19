@@ -67,7 +67,7 @@ interface ChatCompletionRequest {
  */
 export async function trackedChatCompletion(
   request: ChatCompletionRequest,
-  options: AICallOptions
+  options: AICallOptions,
 ): Promise<TrackedAICallResult<OpenAIChatCompletionResponse>> {
   const startTime = Date.now();
   let success = true;
@@ -88,7 +88,7 @@ export async function trackedChatCompletion(
           Authorization: `Bearer ${env.openaiApiKey}`,
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!fetchResponse.ok) {
@@ -96,7 +96,7 @@ export async function trackedChatCompletion(
       success = false;
       errorType = `HTTP_${fetchResponse.status}`;
       throw new Error(
-        `OpenAI API error: ${fetchResponse.status} - ${errorBody}`
+        `OpenAI API error: ${fetchResponse.status} - ${errorBody}`,
       );
     }
 
@@ -161,8 +161,11 @@ export async function trackedChatCompletion(
  */
 export async function trackedChatCompletionSimple(
   request: ChatCompletionRequest,
-  options: AICallOptions
-): Promise<{ content: string; usage: TrackedAICallResult<OpenAIChatCompletionResponse>['usage'] }> {
+  options: AICallOptions,
+): Promise<{
+  content: string;
+  usage: TrackedAICallResult<OpenAIChatCompletionResponse>['usage'];
+}> {
   const result = await trackedChatCompletion(request, options);
   const content = result.result.choices[0]?.message?.content || '';
   return { content, usage: result.usage };
@@ -182,8 +185,11 @@ export async function simplePrompt(
     systemPrompt?: string;
     temperature?: number;
     maxTokens?: number;
-  }
-): Promise<{ content: string; usage: TrackedAICallResult<OpenAIChatCompletionResponse>['usage'] }> {
+  },
+): Promise<{
+  content: string;
+  usage: TrackedAICallResult<OpenAIChatCompletionResponse>['usage'];
+}> {
   const messages: ChatCompletionMessage[] = [];
 
   if (options.systemPrompt) {
@@ -199,7 +205,7 @@ export async function simplePrompt(
       temperature: options.temperature,
       max_tokens: options.maxTokens,
     },
-    options
+    options,
   );
 }
 
@@ -213,8 +219,11 @@ export async function jsonPrompt<T>(
     systemPrompt?: string;
     temperature?: number;
     maxTokens?: number;
-  }
-): Promise<{ data: T; usage: TrackedAICallResult<OpenAIChatCompletionResponse>['usage'] }> {
+  },
+): Promise<{
+  data: T;
+  usage: TrackedAICallResult<OpenAIChatCompletionResponse>['usage'];
+}> {
   const systemPrompt = options.systemPrompt
     ? `${options.systemPrompt}\n\nRespond only with valid JSON.`
     : 'Respond only with valid JSON.';
@@ -272,7 +281,7 @@ export async function jsonPrompt<T>(
  */
 export async function trackedOpenAIFetch(
   body: ChatCompletionRequest,
-  options: AICallOptions
+  options: AICallOptions,
 ): Promise<OpenAIChatCompletionResponse> {
   const result = await trackedChatCompletion(body, options);
   return result.result;
@@ -296,7 +305,7 @@ export function estimateTokens(text: string): number {
 export function estimateCost(
   model: string,
   promptText: string,
-  expectedCompletionTokens: number = 500
+  expectedCompletionTokens: number = 500,
 ): number {
   const promptTokens = estimateTokens(promptText);
   return calculateAICost(model, promptTokens, expectedCompletionTokens);

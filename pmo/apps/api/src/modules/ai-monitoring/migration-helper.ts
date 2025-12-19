@@ -94,7 +94,7 @@ import { logger } from '../../utils/logger';
 export function wrapWithTracking<TArgs extends unknown[], TResult>(
   fn: (...args: TArgs) => Promise<TResult>,
   toolId: AIToolId | string,
-  operation: string
+  operation: string,
 ): (
   context: { tenantId: string; userId?: number },
   ...args: TArgs
@@ -182,7 +182,7 @@ export async function manualTrack(params: {
 export function preflightCostEstimate(
   model: string,
   estimatedPromptTokens: number,
-  estimatedCompletionTokens: number
+  estimatedCompletionTokens: number,
 ): {
   estimatedCost: number;
   model: string;
@@ -191,7 +191,7 @@ export function preflightCostEstimate(
   const estimatedCost = calculateAICost(
     model,
     estimatedPromptTokens,
-    estimatedCompletionTokens
+    estimatedCompletionTokens,
   );
 
   return {
@@ -210,19 +210,75 @@ export function preflightCostEstimate(
  * Use this to track migration progress
  */
 export const MODULES_TO_INSTRUMENT = [
-  { module: 'chatbot', file: 'modules/chatbot/chatbot.service.ts', status: 'pending' },
-  { module: 'document-analyzer', file: 'modules/document-analyzer/document-analyzer.service.ts', status: 'pending' },
-  { module: 'content-generator', file: 'modules/content-generator/content-generator.service.ts', status: 'pending' },
-  { module: 'lead-scoring', file: 'modules/lead-scoring/lead-scoring.service.ts', status: 'pending' },
-  { module: 'product-descriptions', file: 'modules/product-descriptions/product-description.service.ts', status: 'pending' },
-  { module: 'scheduling', file: 'modules/scheduling/scheduling.service.ts', status: 'pending' },
-  { module: 'intake', file: 'modules/intake/intake.service.ts', status: 'pending' },
-  { module: 'prior-auth', file: 'modules/prior-auth/prior-auth.service.ts', status: 'pending' },
-  { module: 'inventory-forecasting', file: 'modules/inventory-forecasting/inventory-forecasting.service.ts', status: 'pending' },
-  { module: 'compliance-monitor', file: 'modules/compliance-monitor/compliance-monitor.service.ts', status: 'pending' },
-  { module: 'predictive-maintenance', file: 'modules/predictive-maintenance/predictive-maintenance.service.ts', status: 'pending' },
-  { module: 'revenue-management', file: 'modules/revenue-management/revenue-management.service.ts', status: 'pending' },
-  { module: 'safety-monitor', file: 'modules/safety-monitor/safety-monitor.service.ts', status: 'pending' },
-  { module: 'finance', file: 'modules/finance-tracking/ai/*.service.ts', status: 'pending' },
+  {
+    module: 'chatbot',
+    file: 'modules/chatbot/chatbot.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'document-analyzer',
+    file: 'modules/document-analyzer/document-analyzer.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'content-generator',
+    file: 'modules/content-generator/content-generator.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'lead-scoring',
+    file: 'modules/lead-scoring/lead-scoring.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'product-descriptions',
+    file: 'modules/product-descriptions/product-description.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'scheduling',
+    file: 'modules/scheduling/scheduling.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'intake',
+    file: 'modules/intake/intake.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'prior-auth',
+    file: 'modules/prior-auth/prior-auth.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'inventory-forecasting',
+    file: 'modules/inventory-forecasting/inventory-forecasting.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'compliance-monitor',
+    file: 'modules/compliance-monitor/compliance-monitor.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'predictive-maintenance',
+    file: 'modules/predictive-maintenance/predictive-maintenance.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'revenue-management',
+    file: 'modules/revenue-management/revenue-management.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'safety-monitor',
+    file: 'modules/safety-monitor/safety-monitor.service.ts',
+    status: 'pending',
+  },
+  {
+    module: 'finance',
+    file: 'modules/finance-tracking/ai/*.service.ts',
+    status: 'pending',
+  },
   { module: 'mcp', file: 'modules/mcp/ai-query.service.ts', status: 'pending' },
 ] as const;
