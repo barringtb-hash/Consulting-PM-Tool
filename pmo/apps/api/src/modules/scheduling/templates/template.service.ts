@@ -162,86 +162,78 @@ export class TemplateService {
       },
     });
 
-    // Create appointment types and intake fields
+    // Create appointment types (find existing by name, then create or update)
     let appointmentTypesCreated = 0;
     for (const apptType of template.appointmentTypes) {
-      await prisma.appointmentType.upsert({
-        where: {
-          configId_name: {
+      const existing = await prisma.appointmentType.findFirst({
+        where: { configId: config.id, name: apptType.name },
+      });
+
+      if (existing) {
+        await prisma.appointmentType.update({
+          where: { id: existing.id },
+          data: {
+            description: apptType.description,
+            durationMinutes: apptType.durationMinutes,
+            price: apptType.price,
+            requiresDeposit: apptType.requiresDeposit || false,
+            depositPercent: apptType.depositPercent,
+            color: apptType.color,
+          },
+        });
+      } else {
+        await prisma.appointmentType.create({
+          data: {
             configId: config.id,
             name: apptType.name,
+            description: apptType.description,
+            durationMinutes: apptType.durationMinutes,
+            price: apptType.price,
+            currency: 'USD',
+            requiresDeposit: apptType.requiresDeposit || false,
+            depositPercent: apptType.depositPercent,
+            color: apptType.color,
+            isActive: true,
           },
-        },
-        create: {
-          configId: config.id,
-          name: apptType.name,
-          description: apptType.description,
-          durationMinutes: apptType.duration,
-          price: apptType.defaultPrice,
-          currency: 'USD',
-          requiresDeposit: apptType.requiresDeposit || false,
-          depositPercent: apptType.depositPercent,
-          color: apptType.color,
-          isActive: true,
-        },
-        update: {
-          description: apptType.description,
-          durationMinutes: apptType.duration,
-          price: apptType.defaultPrice,
-          requiresDeposit: apptType.requiresDeposit || false,
-          depositPercent: apptType.depositPercent,
-          color: apptType.color,
-        },
-      });
-      appointmentTypesCreated++;
+        });
+        appointmentTypesCreated++;
+      }
     }
 
-    // Create intake form fields
+    // Create intake form fields (find existing by name, then create or update)
     let intakeFieldsConfigured = 0;
     for (const field of template.intakeFormFields) {
-      await prisma.schedulingIntakeField.upsert({
-        where: {
-          configId_fieldName: {
-            configId: config.id,
-            fieldName: field.name,
-          },
-        },
-        create: {
-          configId: config.id,
-          fieldName: field.name,
-          fieldType: field.type.toUpperCase() as
-            | 'TEXT'
-            | 'TEXTAREA'
-            | 'SELECT'
-            | 'CHECKBOX'
-            | 'DATE'
-            | 'PHONE'
-            | 'EMAIL'
-            | 'NUMBER',
-          label: field.label,
-          isRequired: field.required,
-          options: field.options || [],
-          placeholder: field.placeholder,
-          sortOrder: intakeFieldsConfigured,
-          isActive: true,
-        },
-        update: {
-          fieldType: field.type.toUpperCase() as
-            | 'TEXT'
-            | 'TEXTAREA'
-            | 'SELECT'
-            | 'CHECKBOX'
-            | 'DATE'
-            | 'PHONE'
-            | 'EMAIL'
-            | 'NUMBER',
-          label: field.label,
-          isRequired: field.required,
-          options: field.options || [],
-          placeholder: field.placeholder,
-        },
+      const existing = await prisma.schedulingIntakeField.findFirst({
+        where: { configId: config.id, name: field.name },
       });
-      intakeFieldsConfigured++;
+
+      if (existing) {
+        await prisma.schedulingIntakeField.update({
+          where: { id: existing.id },
+          data: {
+            type: field.type,
+            label: field.label,
+            required: field.required,
+            options: field.options || [],
+            placeholder: field.placeholder,
+          },
+        });
+      } else {
+        await prisma.schedulingIntakeField.create({
+          data: {
+            configId: config.id,
+            name: field.name,
+            type: field.type,
+            label: field.label,
+            required: field.required,
+            options: field.options || [],
+            placeholder: field.placeholder,
+            sortOrder: intakeFieldsConfigured,
+            isActive: true,
+          },
+        });
+        intakeFieldsConfigured++;
+      }
     }
 
     return {

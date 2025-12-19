@@ -8,6 +8,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { hasTenantContext, getTenantId } from '../../tenant/tenant.context';
 import * as schedulingService from './scheduling.service';
 
 const router = Router();
@@ -211,10 +212,11 @@ router.post(
     }
 
     try {
+      const tenantId = hasTenantContext() ? getTenantId() : undefined;
       const config = await schedulingService.createSchedulingConfigForAccount(
         accountId,
         parsed.data,
-        req.tenantId, // Pass tenant ID from auth context
+        tenantId,
       );
       res.status(201).json({ config });
     } catch (error) {
