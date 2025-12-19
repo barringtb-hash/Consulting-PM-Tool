@@ -80,10 +80,177 @@ export class TemplateService {
   }
 
   /**
+   * Apply a template to create a new scheduling configuration for an Account (preferred)
+   * @param accountId - The CRM Account ID
+   * @param tenantId - Optional tenant ID for multi-tenant support
+   * @param customizations - Optional customizations to apply to the template
+   */
+  async applyTemplateToAccount(
+    accountId: number,
+    templateId: string,
+    options?: {
+      tenantId?: string;
+      customizations?: Partial<IndustryTemplate['schedulingConfig']>;
+    },
+  ): Promise<ApplyTemplateResult> {
+    const template = getTemplateById(templateId);
+    if (!template) {
+      throw new Error(`Template not found: ${templateId}`);
+    }
+
+    // Merge template defaults with any customizations
+    const schedulingConfig = {
+      ...template.schedulingConfig,
+      ...options?.customizations,
+    };
+
+    // Create or update the scheduling config
+    const config = await prisma.schedulingConfig.upsert({
+      where: {
+        accountId,
+      },
+      create: {
+        accountId,
+        tenantId: options?.tenantId,
+        defaultSlotDurationMin: schedulingConfig.defaultSlotDurationMin,
+        bufferBetweenSlotsMin: schedulingConfig.bufferMinutes,
+        minAdvanceBookingHours: schedulingConfig.minAdvanceBookingHours,
+        maxAdvanceBookingDays: schedulingConfig.maxAdvanceBookingDays,
+        allowWalkIns: schedulingConfig.allowWalkIns,
+        enableReminders: schedulingConfig.enableReminders,
+        reminderHoursBefore: schedulingConfig.reminderHoursBefore,
+        requirePhone: schedulingConfig.requirePhone,
+        autoConfirm: schedulingConfig.autoConfirm,
+        showProviderSelection: template.bookingPageConfig.showProviderSelection,
+        showAppointmentTypes: template.bookingPageConfig.showAppointmentTypes,
+        requireIntakeForm: template.bookingPageConfig.requireIntakeForm,
+        cancellationPolicy: template.bookingPageConfig.cancellationPolicy,
+        industryTemplate: template.id,
+        templateSettings: {
+          templateApplied: template.id,
+          templateName: template.name,
+          industrySettings: template.industrySettings,
+          bookingPageFields: template.bookingPageConfig.customFields,
+          providerRoles: template.providerRoles,
+        },
+        isHipaaEnabled: template.industrySettings.hipaaCompliant === true,
+      },
+      update: {
+        tenantId: options?.tenantId,
+        defaultSlotDurationMin: schedulingConfig.defaultSlotDurationMin,
+        bufferBetweenSlotsMin: schedulingConfig.bufferMinutes,
+        minAdvanceBookingHours: schedulingConfig.minAdvanceBookingHours,
+        maxAdvanceBookingDays: schedulingConfig.maxAdvanceBookingDays,
+        allowWalkIns: schedulingConfig.allowWalkIns,
+        enableReminders: schedulingConfig.enableReminders,
+        reminderHoursBefore: schedulingConfig.reminderHoursBefore,
+        requirePhone: schedulingConfig.requirePhone,
+        autoConfirm: schedulingConfig.autoConfirm,
+        showProviderSelection: template.bookingPageConfig.showProviderSelection,
+        showAppointmentTypes: template.bookingPageConfig.showAppointmentTypes,
+        requireIntakeForm: template.bookingPageConfig.requireIntakeForm,
+        cancellationPolicy: template.bookingPageConfig.cancellationPolicy,
+        industryTemplate: template.id,
+        templateSettings: {
+          templateApplied: template.id,
+          templateName: template.name,
+          industrySettings: template.industrySettings,
+          bookingPageFields: template.bookingPageConfig.customFields,
+          providerRoles: template.providerRoles,
+        },
+        isHipaaEnabled: template.industrySettings.hipaaCompliant === true,
+      },
+    });
+
+    // Create appointment types (find existing by name, then create or update)
+    let appointmentTypesCreated = 0;
+    for (const apptType of template.appointmentTypes) {
+      const existing = await prisma.appointmentType.findFirst({
+        where: { configId: config.id, name: apptType.name },
+      });
+
+      if (existing) {
+        await prisma.appointmentType.update({
+          where: { id: existing.id },
+          data: {
+            description: apptType.description,
+            durationMinutes: apptType.durationMinutes,
+            price: apptType.price,
+            requiresDeposit: apptType.requiresDeposit || false,
+            depositPercent: apptType.depositPercent,
+            color: apptType.color,
+          },
+        });
+      } else {
+        await prisma.appointmentType.create({
+          data: {
+            configId: config.id,
+            name: apptType.name,
+            description: apptType.description,
+            durationMinutes: apptType.durationMinutes,
+            price: apptType.price,
+            currency: 'USD',
+            requiresDeposit: apptType.requiresDeposit || false,
+            depositPercent: apptType.depositPercent,
+            color: apptType.color,
+            isActive: true,
+          },
+        });
+        appointmentTypesCreated++;
+      }
+    }
+
+    // Create intake form fields (find existing by name, then create or update)
+    let intakeFieldsConfigured = 0;
+    for (const field of template.intakeFormFields) {
+      const existing = await prisma.schedulingIntakeField.findFirst({
+        where: { configId: config.id, name: field.name },
+      });
+
+      if (existing) {
+        await prisma.schedulingIntakeField.update({
+          where: { id: existing.id },
+          data: {
+            type: field.type,
+            label: field.label,
+            required: field.required,
+            options: field.options || [],
+            placeholder: field.placeholder,
+          },
+        });
+      } else {
+        await prisma.schedulingIntakeField.create({
+          data: {
+            configId: config.id,
+            name: field.name,
+            type: field.type,
+            label: field.label,
+            required: field.required,
+            options: field.options || [],
+            placeholder: field.placeholder,
+            sortOrder: intakeFieldsConfigured,
+            isActive: true,
+          },
+        });
+        intakeFieldsConfigured++;
+      }
+    }
+
+    return {
+      success: true,
+      configId: config.id,
+      template,
+      appointmentTypesCreated,
+      intakeFieldsConfigured,
+    };
+  }
+
+  /**
    * Apply a template to create a new scheduling configuration
    * @param clientId - The Client ID (legacy model)
    * @param tenantId - Optional tenant ID for multi-tenant support
    * @param accountId - Optional Account ID (new CRM model)
+   * @deprecated Use applyTemplateToAccount instead
    */
   async applyTemplate(
     clientId: number,
@@ -216,7 +383,38 @@ export class TemplateService {
   }
 
   /**
+   * Reset an account config to template defaults
+   */
+  async resetToTemplateDefaultsByAccount(
+    accountId: number,
+    templateId: string,
+  ): Promise<ApplyTemplateResult> {
+    const config = await prisma.schedulingConfig.findUnique({
+      where: { accountId },
+    });
+
+    if (!config) {
+      throw new Error('Scheduling config not found');
+    }
+
+    // Delete existing appointment types and intake fields
+    await prisma.appointmentType.deleteMany({
+      where: { configId: config.id },
+    });
+
+    await prisma.schedulingIntakeField.deleteMany({
+      where: { configId: config.id },
+    });
+
+    // Re-apply the template
+    return this.applyTemplateToAccount(accountId, templateId, {
+      tenantId: config.tenantId || undefined,
+    });
+  }
+
+  /**
    * Reset a config to template defaults
+   * @deprecated Use resetToTemplateDefaultsByAccount instead
    */
   async resetToTemplateDefaults(
     clientId: number,
@@ -340,7 +538,26 @@ export class TemplateService {
   }
 
   /**
+   * Get the template applied to a config by Account ID
+   */
+  async getAppliedTemplateByAccount(
+    accountId: number,
+  ): Promise<IndustryTemplate | null> {
+    const config = await prisma.schedulingConfig.findUnique({
+      where: { accountId },
+      select: { industryTemplate: true },
+    });
+
+    if (!config?.industryTemplate) {
+      return null;
+    }
+
+    return getTemplateById(config.industryTemplate);
+  }
+
+  /**
    * Get the template applied to a config
+   * @deprecated Use getAppliedTemplateByAccount instead
    */
   async getAppliedTemplate(clientId: number): Promise<IndustryTemplate | null> {
     const config = await prisma.schedulingConfig.findUnique({

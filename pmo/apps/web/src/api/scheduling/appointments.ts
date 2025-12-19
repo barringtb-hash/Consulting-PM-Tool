@@ -12,7 +12,8 @@ import { buildApiUrl } from '../config';
 
 export interface SchedulingConfig {
   id: number;
-  clientId: number;
+  accountId: number | null; // Primary reference (preferred for new implementations)
+  clientId: number | null; // Legacy reference (deprecated)
   practiceName: string | null;
   timezone: string;
   minAdvanceBookingHours: number;
@@ -26,6 +27,7 @@ export interface SchedulingConfig {
   enableOverbooking: boolean;
   enableWaitlist: boolean;
   isHipaaEnabled: boolean;
+  account?: { id: number; name: string; industry: string | null };
   client?: { id: number; name: string };
   _count?: {
     providers: number;
@@ -202,13 +204,19 @@ export interface AvailabilityParams {
 }
 
 // ============================================================================
-// API FUNCTIONS - CONFIGS
+// API FUNCTIONS - CONFIGS (Account-based - Preferred)
 // ============================================================================
 
+/**
+ * List scheduling configs with optional filtering
+ */
 export async function listConfigs(params?: {
+  accountId?: number;
   clientId?: number;
 }): Promise<SchedulingConfig[]> {
   const searchParams = new URLSearchParams();
+  if (params?.accountId)
+    searchParams.set('accountId', params.accountId.toString());
   if (params?.clientId)
     searchParams.set('clientId', params.clientId.toString());
 
@@ -225,6 +233,30 @@ export async function listConfigs(params?: {
   return data.configs || [];
 }
 
+/**
+ * Get scheduling config by Account ID (preferred)
+ */
+export async function getConfigByAccount(
+  accountId: number,
+): Promise<SchedulingConfig | null> {
+  const res = await fetch(
+    buildApiUrl(`/accounts/${accountId}/scheduling`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    const error = new Error('Failed to fetch config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.config;
+}
+
+/**
+ * Get scheduling config by Client ID
+ * @deprecated Use getConfigByAccount instead
+ */
 export async function getConfig(
   clientId: number,
 ): Promise<SchedulingConfig | null> {
@@ -242,6 +274,36 @@ export async function getConfig(
   return data.config;
 }
 
+/**
+ * Create scheduling config for an Account (preferred)
+ */
+export async function createConfigForAccount(
+  accountId: number,
+  input: CreateConfigInput,
+): Promise<SchedulingConfig> {
+  const res = await fetch(
+    buildApiUrl(`/accounts/${accountId}/scheduling`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  );
+  if (!res.ok) {
+    const data = await res.json();
+    const error = new Error(
+      data.error || 'Failed to create config',
+    ) as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.config;
+}
+
+/**
+ * Create scheduling config for a Client
+ * @deprecated Use createConfigForAccount instead
+ */
 export async function createConfig(
   clientId: number,
   input: CreateConfigInput,
@@ -265,6 +327,33 @@ export async function createConfig(
   return data.config;
 }
 
+/**
+ * Update scheduling config for an Account (preferred)
+ */
+export async function updateConfigForAccount(
+  accountId: number,
+  input: Partial<CreateConfigInput>,
+): Promise<SchedulingConfig> {
+  const res = await fetch(
+    buildApiUrl(`/accounts/${accountId}/scheduling`),
+    buildOptions({
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to update config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.config;
+}
+
+/**
+ * Update scheduling config for a Client
+ * @deprecated Use updateConfigForAccount instead
+ */
 export async function updateConfig(
   clientId: number,
   input: Partial<CreateConfigInput>,

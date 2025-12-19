@@ -1494,15 +1494,19 @@ enum SwapStatus {
 }
 
 /**
- * SchedulingConfig - Configuration for scheduling assistant per client
+ * SchedulingConfig - Configuration for scheduling assistant per account
+ *
+ * NOTE: This model has been migrated from Client to Account as the primary reference.
+ * - accountId is now the preferred reference for new implementations
+ * - clientId is kept for backward compatibility with existing data
  */
 model SchedulingConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id        Int  @id @default(autoincrement())
+  accountId Int? @unique // Primary reference - links to CRM Account (preferred for new implementations)
+  clientId  Int? @unique // Legacy reference - kept for backward compatibility
 
-  // Multi-tenant support (optional - inherited from Client if not set)
-  tenantId  String?
-  accountId Int? // Links to CRM Account model for new implementations
+  // Multi-tenant support
+  tenantId String?
 
   // Practice/Business info
   practiceName String?
@@ -1557,8 +1561,8 @@ model SchedulingConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
   account          Account?          @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  client           Client?           @relation(fields: [clientId], references: [id], onDelete: Cascade)
   tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providers        Provider[]
   appointmentTypes AppointmentType[]
@@ -1572,8 +1576,8 @@ model SchedulingConfig {
   videoMeetingConfigs  VideoMeetingConfig[]
   paymentConfig        PaymentConfig?
 
+  @@index([accountId, isActive])
   @@index([clientId, isActive])
-  @@index([accountId])
   @@index([tenantId])
 }
 
@@ -6803,7 +6807,7 @@ model Account {
   financeInsights FinanceInsight[]
 
   // Scheduling relations
-  schedulingConfigs      SchedulingConfig[] // Type A: Appointment scheduling
+  schedulingConfig       SchedulingConfig? // Type A: Appointment scheduling (one-to-one with Account)
   shiftSchedulingConfigs ShiftSchedulingConfig[] // Type B: Shift scheduling
 
   @@index([tenantId, type])

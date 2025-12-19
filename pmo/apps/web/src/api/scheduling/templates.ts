@@ -96,6 +96,14 @@ export interface TemplatePreview {
   recommendedFor: string[];
 }
 
+/** Input for applying template to an Account (preferred) */
+export interface ApplyTemplateToAccountInput {
+  accountId: number;
+  templateId: string;
+  customizations?: Partial<IndustryTemplate['schedulingConfig']>;
+}
+
+/** Input for applying template to a Client (legacy) */
 export interface ApplyTemplateInput {
   clientId: number;
   templateId: string;
@@ -221,8 +229,80 @@ export async function getTemplatesByCategory(
   return data.data;
 }
 
+// ============================================================================
+// ACCOUNT-BASED API FUNCTIONS (Preferred)
+// ============================================================================
+
+/**
+ * Apply a template to an Account (preferred)
+ */
+export async function applyTemplateToAccount(
+  input: ApplyTemplateToAccountInput,
+): Promise<ApplyTemplateResult> {
+  const res = await fetch(
+    buildApiUrl('/scheduling/templates/apply-to-account'),
+    {
+      ...buildOptions(),
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to apply template') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+/**
+ * Reset account config to template defaults (preferred)
+ */
+export async function resetAccountToTemplate(
+  accountId: number,
+  templateId: string,
+): Promise<ApplyTemplateResult> {
+  const res = await fetch(buildApiUrl('/scheduling/templates/reset-account'), {
+    ...buildOptions(),
+    method: 'POST',
+    body: JSON.stringify({ accountId, templateId }),
+  });
+  if (!res.ok) {
+    const error = new Error('Failed to reset to template') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+/**
+ * Get the template applied to an account's config (preferred)
+ */
+export async function getAppliedTemplateByAccount(
+  accountId: number,
+): Promise<IndustryTemplate | null> {
+  const res = await fetch(
+    buildApiUrl(`/scheduling/templates/applied-account/${accountId}`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch applied template') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+// ============================================================================
+// LEGACY CLIENT-BASED API FUNCTIONS (Deprecated)
+// ============================================================================
+
 /**
  * Apply a template to create/update scheduling config
+ * @deprecated Use applyTemplateToAccount instead
  */
 export async function applyTemplate(
   input: ApplyTemplateInput,
@@ -243,6 +323,7 @@ export async function applyTemplate(
 
 /**
  * Reset config to template defaults
+ * @deprecated Use resetAccountToTemplate instead
  */
 export async function resetToTemplate(
   clientId: number,
@@ -285,6 +366,7 @@ export async function compareWithTemplate(
 
 /**
  * Get the template applied to a client's config
+ * @deprecated Use getAppliedTemplateByAccount instead
  */
 export async function getAppliedTemplate(
   clientId: number,
