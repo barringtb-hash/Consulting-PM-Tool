@@ -20,6 +20,7 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
+  Bot,
 } from 'lucide-react';
 import { Card, Badge, Button } from '../../ui';
 import {
@@ -28,6 +29,7 @@ import {
   useSystemHealth,
   useAnomalyStats,
   useAlertHistory,
+  useMonitoringAssistantHealth,
 } from '../../api/hooks/useMonitoring';
 
 function formatCurrency(value: number): string {
@@ -163,6 +165,7 @@ export function OperationsDashboardPage(): JSX.Element {
   const { data: alertHistory, isLoading: alertLoading } = useAlertHistory({
     limit: 5,
   });
+  const { isSuccess: assistantAvailable } = useMonitoringAssistantHealth();
 
   const isLoading =
     statsLoading ||
@@ -186,6 +189,14 @@ export function OperationsDashboardPage(): JSX.Element {
         <div className="flex items-center gap-4">
           {systemHealth?.data && (
             <SystemHealthGauge health={systemHealth.data} />
+          )}
+          {assistantAvailable && (
+            <Link to="/operations/assistant">
+              <Button variant="primary" className="gap-2">
+                <Bot className="w-4 h-4" />
+                AI Assistant
+              </Button>
+            </Link>
           )}
           <Button
             variant="outline"

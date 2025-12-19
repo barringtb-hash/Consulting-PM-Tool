@@ -424,3 +424,142 @@ export function useSendDailyDigest() {
     mutationFn: () => http.post('/monitoring/alerts/digest'),
   });
 }
+
+// ============================================================================
+// Monitoring Assistant Types
+// ============================================================================
+
+export interface AssistantMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+  metadata?: {
+    intent?: string;
+    dataFetched?: string[];
+    tokensUsed?: number;
+    latencyMs?: number;
+  };
+}
+
+export interface ChatRequest {
+  message: string;
+  conversationId?: string;
+  includeContext?: boolean;
+}
+
+export interface ChatResponse {
+  conversationId: string;
+  message: AssistantMessage;
+  suggestedFollowUps?: string[];
+}
+
+export interface ConversationSummary {
+  id: string;
+  messageCount: number;
+  lastMessage: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SuggestionsResponse {
+  suggestions: string[];
+  basedOn: {
+    hasAnomalies: boolean;
+    hasCostWarning: boolean;
+    hasPerformanceIssues: boolean;
+  };
+}
+
+// ============================================================================
+// Monitoring Assistant Hooks
+// ============================================================================
+
+/**
+ * Send a chat message to the monitoring assistant
+ */
+export function useMonitoringAssistantChat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: ChatRequest) =>
+      http.post<{ data: ChatResponse }>(
+        '/ai-monitoring/assistant/chat',
+        request,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistant-conversations'] });
+    },
+  });
+}
+
+/**
+ * Get suggested queries based on current system state
+ */
+export function useMonitoringAssistantSuggestions() {
+  return useQuery({
+    queryKey: ['assistant-suggestions'],
+    queryFn: () =>
+      http.get<{ data: SuggestionsResponse }>(
+        '/ai-monitoring/assistant/suggestions',
+      ),
+    staleTime: 60000, // Cache for 1 minute
+    refetchInterval: 60000, // Refresh every minute
+  });
+}
+
+/**
+ * Get all conversations for the current user
+ */
+export function useMonitoringAssistantConversations() {
+  return useQuery({
+    queryKey: ['assistant-conversations'],
+    queryFn: () =>
+      http.get<{ data: ConversationSummary[] }>(
+        '/ai-monitoring/assistant/conversations',
+      ),
+    staleTime: 30000,
+  });
+}
+
+/**
+ * Get a specific conversation
+ */
+export function useMonitoringAssistantConversation(conversationId: string) {
+  return useQuery({
+    queryKey: ['assistant-conversation', conversationId],
+    queryFn: () =>
+      http.get<{ data: { id: string; messages: AssistantMessage[] } }>(
+        `/ai-monitoring/assistant/conversations/${conversationId}`,
+      ),
+    enabled: !!conversationId,
+  });
+}
+
+/**
+ * Delete a conversation
+ */
+export function useDeleteMonitoringAssistantConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      http.delete(`/ai-monitoring/assistant/conversations/${conversationId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistant-conversations'] });
+    },
+  });
+}
+
+/**
+ * Check if monitoring assistant is available (enabled for tenant)
+ */
+export function useMonitoringAssistantHealth() {
+  return useQuery({
+    queryKey: ['assistant-health'],
+    queryFn: () =>
+      http.get<{ status: string; module: string; timestamp: string }>(
+        '/ai-monitoring/assistant/health',
+      ),
+    staleTime: 300000, // Cache for 5 minutes
+    retry: false, // Don't retry on failure (might mean module not enabled)
+  });
+}
