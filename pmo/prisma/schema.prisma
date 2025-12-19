@@ -257,6 +257,11 @@ model User {
 
   // Shift Scheduling relations
   shiftEmployees ShiftEmployee[]
+
+  // AI Monitoring relations
+  aiUsageEvents        AIUsageEvent[]
+  acknowledgedAnomalies Anomaly[]      @relation("AnomalyAcknowledgedBy")
+  resolvedAnomalies    Anomaly[]      @relation("AnomalyResolvedBy")
 }
 
 model Client {
@@ -6642,6 +6647,10 @@ model Tenant {
   financeAlerts        FinanceAlert[]
   financeInsights      FinanceInsight[]
 
+  // AI Monitoring relations
+  aiUsageEvents   AIUsageEvent[]
+  aiUsageSummaries AIUsageSummary[]
+
   @@index([slug])
   @@index([status])
 }
@@ -7797,4 +7806,290 @@ model FinanceInsight {
   account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, type, isActive])
+}
+
+// ============================================================================
+// AI MONITORING MODELS
+// ============================================================================
+
+/**
+ * AIUsageEvent - Individual AI tool call tracking
+ * Records every AI API call for cost allocation, billing, and analytics
+ */
+model AIUsageEvent {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Tool identification
+  toolId    String // e.g., "chatbot", "document-analyzer", "lead-scoring"
+  toolName  String // Human-readable name
+  operation String // e.g., "chat", "analyze", "score", "generate"
+
+  // Token tracking
+  promptTokens     Int @default(0)
+  completionTokens Int @default(0)
+  totalTokens      Int @default(0)
+
+  // Cost tracking (USD with 6 decimal precision)
+  model         String // e.g., "gpt-4-turbo", "gpt-4o-mini"
+  estimatedCost Decimal @db.Decimal(10, 6)
+
+  // Performance
+  latencyMs Int     @default(0) // Response time in milliseconds
+  success   Boolean @default(true)
+  errorType String? // If failed, error classification
+
+  // Context
+  userId     Int?
+  entityType String? // e.g., "Account", "Lead", "Document"
+  entityId   String?
+  metadata   Json? // Additional context
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, toolId])
+  @@index([tenantId, toolId, createdAt])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+/**
+ * AIUsageSummary - Aggregated AI usage metrics
+ * Pre-computed summaries for efficient dashboard queries
+ */
+model AIUsageSummary {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Aggregation period
+  periodStart DateTime
+  periodEnd   DateTime
+  periodType  AIUsagePeriodType // HOURLY, DAILY, MONTHLY
+
+  // Per-tool breakdown
+  toolId String
+
+  // Aggregated metrics
+  totalCalls      Int @default(0)
+  successfulCalls Int @default(0)
+  failedCalls     Int @default(0)
+
+  totalPromptTokens     Int @default(0)
+  totalCompletionTokens Int @default(0)
+  totalTokens           Int @default(0)
+
+  totalCost Decimal @db.Decimal(10, 4)
+
+  avgLatencyMs Int @default(0)
+  p95LatencyMs Int @default(0)
+  p99LatencyMs Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, periodStart, periodType, toolId])
+  @@index([tenantId, periodType, periodStart])
+}
+
+enum AIUsagePeriodType {
+  HOURLY
+  DAILY
+  MONTHLY
+}
+
+/**
+ * InfrastructureMetric - API and system performance metrics
+ */
+model InfrastructureMetric {
+  id String @id @default(cuid())
+
+  metricType String // "API_LATENCY", "DB_QUERY", "MEMORY", "CPU", "ERROR_RATE"
+  metricName String // Specific metric (e.g., "POST /api/chatbot/chat")
+
+  // Aggregated values
+  count Int   @default(0)
+  sum   Float @default(0)
+  min   Float?
+  max   Float?
+  avg   Float?
+  p50   Float?
+  p95   Float?
+  p99   Float?
+
+  // Time window
+  windowStart DateTime
+  windowEnd   DateTime
+  windowSize  String // "1m", "5m", "1h", "1d"
+
+  // Optional tenant scope (null = system-wide)
+  tenantId String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([metricType, windowStart])
+  @@index([tenantId, metricType, windowStart])
+}
+
+/**
+ * SlowQueryLog - Database slow query tracking
+ */
+model SlowQueryLog {
+  id String @id @default(cuid())
+
+  query      String @db.Text // Sanitized query (no values)
+  model      String // Prisma model
+  operation  String // findMany, create, etc.
+  durationMs Int
+
+  tenantId String?
+  userId   Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([durationMs])
+  @@index([tenantId])
+}
+
+/**
+ * Anomaly - Detected anomalies across all monitoring domains
+ */
+model Anomaly {
+  id       String  @id @default(cuid())
+  tenantId String? // null for system-wide anomalies
+
+  // Classification
+  type     String // USAGE_SPIKE, HEALTH_DECLINE, AI_COST_SPIKE, etc.
+  severity AnomalySeverity
+  category AnomalyCategory
+
+  // Detection details
+  metric        String
+  expectedValue Float?
+  actualValue   Float
+  deviation     Float? // How far from expected (%)
+
+  // Context
+  entityType String? // e.g., "Tenant", "User", "Endpoint"
+  entityId   String?
+  metadata   Json?
+
+  // Status
+  status         AnomalyStatus @default(OPEN)
+  acknowledgedAt DateTime?
+  acknowledgedBy Int?
+  resolvedAt     DateTime?
+  resolvedBy     Int?
+  resolution     String? // Notes on how it was resolved
+
+  detectedAt DateTime @default(now())
+
+  acknowledgedByUser User? @relation("AnomalyAcknowledgedBy", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
+  resolvedByUser     User? @relation("AnomalyResolvedBy", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@index([status, severity])
+  @@index([tenantId, status])
+  @@index([category, detectedAt])
+  @@index([detectedAt])
+}
+
+enum AnomalySeverity {
+  CRITICAL
+  WARNING
+  INFO
+}
+
+enum AnomalyCategory {
+  USAGE
+  HEALTH
+  COST
+  SECURITY
+  INFRASTRUCTURE
+  DATA_QUALITY
+}
+
+enum AnomalyStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  FALSE_POSITIVE
+}
+
+/**
+ * AlertRule - Alert configuration for monitoring
+ */
+model AlertRule {
+  id String @id @default(cuid())
+
+  name        String
+  description String?
+
+  // Trigger conditions
+  anomalyType String? // Link to specific anomaly type
+  category    AnomalyCategory?
+  severities  AnomalySeverity[] // Which severities trigger this
+
+  // Actions
+  channels   AlertChannel[]
+  recipients String[] // Email addresses, Slack channels, webhook URLs
+
+  // Throttling
+  cooldownMinutes Int @default(60)
+  maxAlertsPerDay Int @default(10)
+
+  // Status
+  enabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  alerts AlertHistory[]
+}
+
+enum AlertChannel {
+  EMAIL
+  SLACK
+  WEBHOOK
+  IN_APP
+}
+
+/**
+ * AlertHistory - Record of sent alerts
+ */
+model AlertHistory {
+  id String @id @default(cuid())
+
+  alertRuleId String
+  anomalyId   String?
+
+  // What was sent
+  channel   AlertChannel
+  recipient String
+  subject   String
+  body      String @db.Text
+
+  // Delivery status
+  status       AlertDeliveryStatus
+  errorMessage String?
+
+  sentAt DateTime @default(now())
+
+  alertRule AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+
+  @@index([alertRuleId, sentAt])
+  @@index([sentAt])
+}
+
+enum AlertDeliveryStatus {
+  SENT
+  FAILED
+  THROTTLED
 }

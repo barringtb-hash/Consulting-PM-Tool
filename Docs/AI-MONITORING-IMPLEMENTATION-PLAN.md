@@ -895,21 +895,25 @@ pmo/apps/web/src/pages/monitoring/
 | Risk | Mitigation |
 |------|------------|
 | High cardinality metrics | Aggregate by tenant, use time windows |
-| Database bloat | Retention policies (90 days detailed, 1 year aggregated) |
+| Database bloat | Retention policy: 1 year for all data |
 | Alert fatigue | Throttling, severity levels, digest mode |
 | Performance impact | Async tracking, batch writes, sampling for high-volume |
 | False positives | Baseline learning period, manual tuning, false positive feedback |
 
 ---
 
-## Open Questions for Review
+## Configuration Decisions (Confirmed)
 
-1. **Retention Policy**: How long should we keep detailed metrics vs. aggregated data? (Suggested: 90 days detailed, 1 year aggregated)
+1. **Retention Policy**: 1 year for all data (detailed and aggregated)
 
-2. **Alert Recipients**: Who should receive critical alerts? (Suggested: Start with email to ops team lead)
+2. **Alert Recipients**: Bryant.barrington@icloud.com (critical alerts)
 
-3. **AI Cost Thresholds**: What daily/monthly AI spend triggers warnings? (Suggested: Warning at 80% of budget, critical at 100%)
+3. **AI Cost Thresholds**:
+   - Warning: $100/month
+   - Critical: $150/month
 
-4. **Dashboard Access**: Admin-only, or should power users see limited monitoring? (Suggested: Admin-only for now)
+4. **Dashboard Access**: Admin-only
 
-5. **Sampling Rate**: For very high-volume tenants, should we sample AI tracking? (Suggested: Track 100% initially, add sampling if needed)
+5. **Baseline Period**: 7-day learning period for anomaly detection
+
+6. **Sampling Rate**: Track 100% of AI calls initially

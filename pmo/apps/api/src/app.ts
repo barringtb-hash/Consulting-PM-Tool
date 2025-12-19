@@ -100,6 +100,8 @@ import { tenantAdminRouter } from './admin';
 import auditRouter from './routes/audit.routes';
 // Tenant Health Routes
 import tenantHealthRouter from './routes/tenant-health.routes';
+// AI Monitoring Routes
+import aiMonitoringRouter from './modules/ai-monitoring/ai-monitoring.routes';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -311,6 +313,10 @@ export function createApp(): express.Express {
   // ============ TENANT HEALTH ROUTES ============
   // Tenant health monitoring and metrics
   app.use('/api/tenant-health', tenantHealthRouter);
+
+  // ============ AI MONITORING ============
+  // AI usage tracking and monitoring
+  app.use('/api/ai-monitoring', aiMonitoringRouter);
 
   // ============ CRM ROUTES ============
   // CRM module routes for accounts, opportunities, and activities
