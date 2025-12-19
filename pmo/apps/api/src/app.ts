@@ -102,6 +102,8 @@ import auditRouter from './routes/audit.routes';
 import tenantHealthRouter from './routes/tenant-health.routes';
 // AI Monitoring Routes
 import aiMonitoringRouter from './modules/ai-monitoring/ai-monitoring.routes';
+// Infrastructure Monitoring Routes
+import { monitoringRouter, apiMetricsMiddleware } from './modules/monitoring';
 import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
@@ -286,6 +288,10 @@ export function createApp(): express.Express {
   app.use(express.json());
   app.use(cookieParser());
 
+  // ============ API METRICS MIDDLEWARE ============
+  // Collect API latency, error rates, and throughput metrics
+  app.use(apiMetricsMiddleware);
+
   // ============ CORE ROUTES (always enabled) ============
   app.use('/api', authRouter);
   app.use('/api/clients', clientsRouter);
@@ -317,6 +323,10 @@ export function createApp(): express.Express {
   // ============ AI MONITORING ============
   // AI usage tracking and monitoring
   app.use('/api/ai-monitoring', aiMonitoringRouter);
+
+  // ============ INFRASTRUCTURE MONITORING ============
+  // Infrastructure metrics, anomaly detection, and alerting
+  app.use('/api/monitoring', monitoringRouter);
 
   // ============ CRM ROUTES ============
   // CRM module routes for accounts, opportunities, and activities

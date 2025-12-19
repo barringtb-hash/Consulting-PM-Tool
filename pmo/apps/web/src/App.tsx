@@ -64,6 +64,38 @@ const TenantHealthPage = lazy(() =>
   })),
 );
 
+// Operations Dashboard pages (admin only)
+const OperationsDashboardPage = lazy(() =>
+  import('./pages/operations/OperationsDashboardPage').then((m) => ({
+    default: m.OperationsDashboardPage,
+  })),
+);
+const AIUsagePage = lazy(() =>
+  import('./pages/operations/AIUsagePage').then((m) => ({
+    default: m.AIUsagePage,
+  })),
+);
+const OperationsInfrastructurePage = lazy(() =>
+  import('./pages/operations/InfrastructurePage').then((m) => ({
+    default: m.InfrastructurePage,
+  })),
+);
+const AnomaliesPage = lazy(() =>
+  import('./pages/operations/AnomaliesPage').then((m) => ({
+    default: m.AnomaliesPage,
+  })),
+);
+const AlertsPage = lazy(() =>
+  import('./pages/operations/AlertsPage').then((m) => ({
+    default: m.AlertsPage,
+  })),
+);
+const CostAnalysisPage = lazy(() =>
+  import('./pages/operations/CostAnalysisPage').then((m) => ({
+    default: m.CostAnalysisPage,
+  })),
+);
+
 // Public pages (no auth required)
 const PublicBookingPage = lazy(
   () => import('./pages/public/PublicBookingPage'),
@@ -377,6 +409,56 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <TenantHealthPage />
+                    </LazyPage>
+                  }
+                />
+
+                {/* Operations Dashboard - AI & Infrastructure Monitoring */}
+                <Route
+                  path="/operations"
+                  element={
+                    <LazyPage>
+                      <OperationsDashboardPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/operations/ai-usage"
+                  element={
+                    <LazyPage>
+                      <AIUsagePage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/operations/infrastructure"
+                  element={
+                    <LazyPage>
+                      <OperationsInfrastructurePage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/operations/anomalies"
+                  element={
+                    <LazyPage>
+                      <AnomaliesPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/operations/alerts"
+                  element={
+                    <LazyPage>
+                      <AlertsPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/operations/costs"
+                  element={
+                    <LazyPage>
+                      <CostAnalysisPage />
                     </LazyPage>
                   }
                 />

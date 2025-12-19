@@ -18,6 +18,13 @@ import {
   aggregateHourlyUsage,
   aggregateDailyUsage,
 } from './ai-usage.service';
+import {
+  getCostForecast,
+  getUsageForecast,
+  getToolPredictions,
+  getSeasonalPatterns,
+  getBudgetRecommendations,
+} from './predictive.service';
 import { AI_TOOLS, AI_COST_THRESHOLDS } from './index';
 import { AIUsagePeriodType } from '@prisma/client';
 import { getTenantId } from '../../tenant/tenant.context';
@@ -287,6 +294,117 @@ router.post('/admin/aggregate/daily', async (_req, res, next) => {
     logger.info('Manual daily aggregation triggered');
     await aggregateDailyUsage();
     res.json({ message: 'Daily aggregation completed' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============================================================================
+// PREDICTIVE ANALYTICS
+// ============================================================================
+
+/**
+ * GET /api/ai-monitoring/forecast/costs
+ * Get cost forecast for current tenant
+ */
+router.get('/forecast/costs', async (req, res, next) => {
+  try {
+    const tenantId = getTenantId();
+    const forecast = await getCostForecast(tenantId || undefined);
+
+    res.json({ data: forecast });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/ai-monitoring/forecast/usage
+ * Get usage forecast for current tenant
+ */
+router.get('/forecast/usage', async (req, res, next) => {
+  try {
+    const tenantId = getTenantId();
+    const forecast = await getUsageForecast(tenantId || undefined);
+
+    res.json({ data: forecast });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/ai-monitoring/forecast/tools
+ * Get predictions for each AI tool
+ */
+router.get('/forecast/tools', async (req, res, next) => {
+  try {
+    const tenantId = getTenantId();
+    const predictions = await getToolPredictions(tenantId || undefined);
+
+    res.json({ data: predictions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/ai-monitoring/patterns/seasonal
+ * Get seasonal usage patterns
+ */
+router.get('/patterns/seasonal', async (req, res, next) => {
+  try {
+    const tenantId = getTenantId();
+    const patterns = await getSeasonalPatterns(tenantId || undefined);
+
+    res.json({ data: patterns });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/ai-monitoring/recommendations/budget
+ * Get budget recommendations based on usage patterns
+ */
+router.get('/recommendations/budget', async (req, res, next) => {
+  try {
+    const tenantId = getTenantId();
+    const recommendations = await getBudgetRecommendations(
+      tenantId || undefined,
+    );
+
+    res.json({ data: recommendations });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/ai-monitoring/admin/forecast/costs
+ * Get global cost forecast (admin only)
+ */
+router.get('/admin/forecast/costs', async (_req, res, next) => {
+  try {
+    // TODO: Add admin role check
+    const forecast = await getCostForecast();
+
+    res.json({ data: forecast });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/ai-monitoring/admin/recommendations/budget
+ * Get global budget recommendations (admin only)
+ */
+router.get('/admin/recommendations/budget', async (_req, res, next) => {
+  try {
+    // TODO: Add admin role check
+    const recommendations = await getBudgetRecommendations();
+
+    res.json({ data: recommendations });
   } catch (error) {
     next(error);
   }

@@ -64,3 +64,12 @@ export {
   stopAggregationScheduler,
   manualAggregation,
 } from './aggregation-scheduler';
+
+// Predictive Analytics
+export {
+  getCostForecast,
+  getUsageForecast,
+  getToolPredictions,
+  getSeasonalPatterns,
+  getBudgetRecommendations,
+} from './predictive.service';
