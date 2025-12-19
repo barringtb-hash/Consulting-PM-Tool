@@ -2569,11 +2569,57 @@ model IntakeSubmission {
   documents        IntakeDocument[]
   complianceChecks ComplianceCheck[]
   workflowProgress WorkflowProgress[]
+  conversation     IntakeConversation?
 
   @@index([configId, status])
   @@index([formId, status])
   @@index([submitterEmail])
   @@index([accessToken])
+}
+
+/**
+ * IntakeConversationStatus - Status of an intake conversation
+ */
+enum IntakeConversationStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABANDONED
+}
+
+/**
+ * IntakeConversation - Conversational intake session linked to submission
+ */
+model IntakeConversation {
+  id           Int @id @default(autoincrement())
+  submissionId Int @unique
+
+  // Conversation messages: [{ role: 'user' | 'assistant', content, timestamp, extractedData? }]
+  messages Json @default("[]")
+
+  // Current field being collected
+  currentFieldId String?
+
+  // Fields that have been completed with extracted data
+  completedFields Json @default("[]") // Array of field IDs
+
+  // Conversation status
+  status IntakeConversationStatus @default(ACTIVE)
+
+  // Session metadata
+  lastActivityAt DateTime @default(now())
+  messageCount   Int      @default(0)
+
+  // AI model used for this conversation
+  aiModel String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submission IntakeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([status])
 }
 
 /**

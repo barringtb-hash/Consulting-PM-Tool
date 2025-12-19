@@ -4,7 +4,7 @@
  * API endpoints for intake forms, submissions, and workflows
  */
 
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
@@ -15,6 +15,7 @@ import {
   getClientIdFromIntakeForm,
 } from '../../auth/client-auth.helper';
 import * as intakeService from './intake.service';
+import * as conversationService from './conversation';
 
 const router = Router();
 
@@ -1315,6 +1316,415 @@ router.get(
     });
 
     res.json(analytics);
+  },
+);
+
+// ============================================================================
+// AI FORM GENERATION ROUTES
+// ============================================================================
+
+import * as aiService from './ai';
+
+const aiGenerateFormSchema = z.object({
+  description: z.string().min(10).max(2000),
+  industry: z.enum([
+    'legal', 'healthcare', 'financial', 'consulting', 'real_estate',
+    'insurance', 'education', 'technology', 'retail', 'manufacturing',
+    'hospitality', 'nonprofit', 'general'
+  ]).optional(),
+  formName: z.string().max(200).optional(),
+  includeCompliance: z.boolean().optional(),
+  maxFields: z.number().int().min(1).max(50).optional(),
+});
+
+const aiSuggestFieldsSchema = z.object({
+  existingFields: z.array(z.string()),
+  formName: z.string().min(1).max(200),
+  industry: z.enum([
+    'legal', 'healthcare', 'financial', 'consulting', 'real_estate',
+    'insurance', 'education', 'technology', 'retail', 'manufacturing',
+    'hospitality', 'nonprofit', 'general'
+  ]).optional(),
+  description: z.string().max(1000).optional(),
+});
+
+/**
+ * POST /api/intake/ai/generate-form
+ * Generate an intake form from natural language description
+ */
+router.post(
+  '/intake/ai/generate-form',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parsed = aiGenerateFormSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const generatedForm = await aiService.generateForm(parsed.data);
+      res.json({ data: generatedForm });
+    } catch (error) {
+      console.error('Error generating form:', error);
+      res.status(500).json({ error: 'Failed to generate form' });
+    }
+  },
+);
+
+/**
+ * POST /api/intake/ai/suggest-fields
+ * Suggest additional fields for an existing form
+ */
+router.post(
+  '/intake/ai/suggest-fields',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parsed = aiSuggestFieldsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const suggestions = await aiService.suggestFields(parsed.data);
+      res.json({ data: suggestions });
+    } catch (error) {
+      console.error('Error suggesting fields:', error);
+      res.status(500).json({ error: 'Failed to suggest fields' });
+    }
+  },
+);
+
+/**
+ * POST /api/intake/ai/detect-industry
+ * Detect industry from description text
+ */
+router.post(
+  '/intake/ai/detect-industry',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const body = req.body as { description?: string };
+    const { description } = body;
+    if (!description || typeof description !== 'string') {
+      res.status(400).json({ error: 'Description is required' });
+      return;
+    }
+
+    try {
+      const result = await aiService.detectIndustryWithDetails(description);
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Error detecting industry:', error);
+      res.status(500).json({ error: 'Failed to detect industry' });
+    }
+  },
+);
+
+/**
+ * GET /api/intake/ai/industries
+ * Get list of available industries
+ */
+router.get(
+  '/intake/ai/industries',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const industries = aiService.getAvailableIndustries().map(industry => ({
+      value: industry,
+      label: aiService.getIndustryDisplayName(industry),
+    }));
+
+    res.json({ data: industries });
+  },
+);
+
+/**
+ * POST /api/intake/:configId/forms/generate
+ * Generate and save a new form from AI description
+ */
+router.post(
+  '/intake/:configId/forms/generate',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Check client access
+    const clientId = await getClientIdFromIntakeConfig(configId);
+    if (!clientId || !(await hasClientAccess(req.userId, clientId))) {
+      res.status(403).json({ error: 'Access denied to this intake configuration' });
+      return;
+    }
+
+    const parsed = aiGenerateFormSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      // Generate the form using AI
+      const generatedForm = await aiService.generateForm(parsed.data);
+
+      // Create the form in the database
+      const form = await intakeService.createForm(configId, {
+        name: generatedForm.name,
+        description: generatedForm.description,
+        slug: generatedForm.slug,
+        isMultiPage: generatedForm.isMultiPage,
+      });
+
+      // Add all the generated fields
+      for (const field of generatedForm.fields) {
+        await intakeService.addFormField(form.id, {
+          name: field.name,
+          label: field.label,
+          type: field.type,
+          placeholder: field.placeholder,
+          helpText: field.helpText,
+          isRequired: field.isRequired,
+          validationRules: field.validationRules as Prisma.InputJsonValue,
+          options: field.options,
+          conditionalLogic: field.conditionalLogic as Prisma.InputJsonValue,
+          pageNumber: field.pageNumber,
+          sortOrder: field.sortOrder,
+          width: field.width,
+        });
+      }
+
+      // Fetch the complete form with fields
+      const completeForm = await intakeService.getForm(form.id);
+
+      res.status(201).json({
+        data: completeForm,
+        meta: {
+          generatedFieldCount: generatedForm.fields.length,
+          detectedIndustry: generatedForm.detectedIndustry,
+          confidence: generatedForm.confidence,
+          suggestedCompliance: generatedForm.suggestedCompliance,
+        },
+      });
+    } catch (error) {
+      console.error('Error generating and saving form:', error);
+      res.status(500).json({ error: 'Failed to generate and save form' });
+    }
+  },
+);
+
+// ============================================================================
+// CONVERSATIONAL INTAKE ENDPOINTS (PUBLIC)
+// ============================================================================
+
+// Validation schemas for conversation endpoints
+const startConversationSchema = z.object({
+  formSlug: z.string().min(1),
+  configId: z.number().int().positive(),
+  submitterEmail: z.string().email().optional(),
+  submitterName: z.string().max(200).optional(),
+});
+
+const sendMessageSchema = z.object({
+  message: z.string().min(1).max(5000),
+});
+
+/**
+ * POST /api/public/intake/conversation/start
+ * Start a new conversational intake session
+ */
+router.post(
+  '/public/intake/conversation/start',
+  async (req: Request, res: Response) => {
+    const parsed = startConversationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const result = await conversationService.startConversation(parsed.data);
+      res.status(201).json({ data: result });
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      const message = error instanceof Error ? error.message : 'Failed to start conversation';
+      res.status(500).json({ error: message });
+    }
+  },
+);
+
+/**
+ * POST /api/public/intake/conversation/:token/message
+ * Send a message in a conversation
+ */
+router.post(
+  '/public/intake/conversation/:token/message',
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+    const parsed = sendMessageSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const result = await conversationService.processMessage(token, parsed.data.message);
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Error processing message:', error);
+      const message = error instanceof Error ? error.message : 'Failed to process message';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else if (message.includes('not active')) {
+        res.status(400).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * GET /api/public/intake/conversation/:token/summary
+ * Get conversation summary and collected data
+ */
+router.get(
+  '/public/intake/conversation/:token/summary',
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+
+    try {
+      const summary = await conversationService.getConversationSummary(token);
+      res.json({ data: summary });
+    } catch (error) {
+      console.error('Error getting conversation summary:', error);
+      const message = error instanceof Error ? error.message : 'Failed to get summary';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * GET /api/public/intake/conversation/:token/history
+ * Get full conversation history
+ */
+router.get(
+  '/public/intake/conversation/:token/history',
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+
+    try {
+      const history = await conversationService.getConversationHistory(token);
+      res.json({ data: history });
+    } catch (error) {
+      console.error('Error getting conversation history:', error);
+      const message = error instanceof Error ? error.message : 'Failed to get history';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * POST /api/public/intake/conversation/:token/pause
+ * Pause an active conversation
+ */
+router.post(
+  '/public/intake/conversation/:token/pause',
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+
+    try {
+      await conversationService.pauseConversation(token);
+      res.json({ data: { success: true, message: 'Conversation paused' } });
+    } catch (error) {
+      console.error('Error pausing conversation:', error);
+      const message = error instanceof Error ? error.message : 'Failed to pause conversation';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * POST /api/public/intake/conversation/:token/resume
+ * Resume a paused conversation
+ */
+router.post(
+  '/public/intake/conversation/:token/resume',
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+
+    try {
+      const result = await conversationService.resumeConversation(token);
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Error resuming conversation:', error);
+      const message = error instanceof Error ? error.message : 'Failed to resume conversation';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else if (message.includes('not paused')) {
+        res.status(400).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * POST /api/public/intake/conversation/:token/abandon
+ * Abandon a conversation
+ */
+router.post(
+  '/public/intake/conversation/:token/abandon',
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+
+    try {
+      await conversationService.abandonConversation(token);
+      res.json({ data: { success: true, message: 'Conversation abandoned' } });
+    } catch (error) {
+      console.error('Error abandoning conversation:', error);
+      const message = error instanceof Error ? error.message : 'Failed to abandon conversation';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
   },
 );
 
