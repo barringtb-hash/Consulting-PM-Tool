@@ -150,17 +150,17 @@ export async function getCostForecast(
     orderBy: { periodStart: 'asc' },
   });
 
-  // Calculate current month actual
+  // Calculate current month actual (convert Decimal to number)
   const currentMonthSummaries = dailySummaries.filter(
     (s) => s.periodStart >= startOfMonth,
   );
   const currentMonthActual = currentMonthSummaries.reduce(
-    (sum, s) => sum + s.totalCost,
+    (sum, s) => sum + Number(s.totalCost),
     0,
   );
 
-  // Calculate daily average
-  const dailyCosts = dailySummaries.map((s) => s.totalCost);
+  // Calculate daily average (convert Decimal to number)
+  const dailyCosts = dailySummaries.map((s) => Number(s.totalCost));
   const dailyAverage =
     dailyCosts.length > 0
       ? dailyCosts.reduce((a, b) => a + b, 0) / dailyCosts.length
@@ -332,7 +332,10 @@ export async function getToolPredictions(
 
   for (const [toolId, data] of Object.entries(byTool)) {
     const recentCalls = data.recent.reduce((sum, s) => sum + s.totalCalls, 0);
-    const recentCost = data.recent.reduce((sum, s) => sum + s.totalCost, 0);
+    const recentCost = data.recent.reduce(
+      (sum, s) => sum + Number(s.totalCost),
+      0,
+    );
     const olderCalls = data.older.reduce((sum, s) => sum + s.totalCalls, 0);
 
     // Calculate averages

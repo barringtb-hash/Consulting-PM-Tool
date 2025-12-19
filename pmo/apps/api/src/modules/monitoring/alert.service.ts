@@ -244,7 +244,7 @@ async function createInAppNotification(
         data: {
           tenantId: tenantId || 'system',
           userId: user.id,
-          type: 'ALERT',
+          type: 'USAGE_LIMIT_WARNING',
           title,
           message,
           data: metadata as Prisma.InputJsonValue,

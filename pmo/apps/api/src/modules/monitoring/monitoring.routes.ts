@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { requireAuth } from '../../auth/auth.middleware';
+import { requireAuth, AuthenticatedRequest } from '../../auth/auth.middleware';
 import {
   getAPILatencyStats,
   getErrorRates,
@@ -249,56 +249,62 @@ router.get('/anomalies/:id', async (req, res, next) => {
  * POST /api/monitoring/anomalies/:id/acknowledge
  * Acknowledge an anomaly
  */
-router.post('/anomalies/:id/acknowledge', async (req, res, next) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
+router.post(
+  '/anomalies/:id/acknowledge',
+  async (req: AuthenticatedRequest<{ id: string }>, res, next) => {
+    try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
 
-    await acknowledgeAnomaly(req.params.id, userId);
-    res.json({ message: 'Anomaly acknowledged' });
-  } catch (error) {
-    next(error);
-  }
-});
+      await acknowledgeAnomaly(req.params.id, req.userId);
+      res.json({ message: 'Anomaly acknowledged' });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 /**
  * POST /api/monitoring/anomalies/:id/resolve
  * Resolve an anomaly
  */
-router.post('/anomalies/:id/resolve', async (req, res, next) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
+router.post(
+  '/anomalies/:id/resolve',
+  async (req: AuthenticatedRequest<{ id: string }>, res, next) => {
+    try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
 
-    const { resolution } = req.body;
-    await resolveAnomaly(req.params.id, userId, resolution);
-    res.json({ message: 'Anomaly resolved' });
-  } catch (error) {
-    next(error);
-  }
-});
+      const { resolution } = req.body;
+      await resolveAnomaly(req.params.id, req.userId, resolution);
+      res.json({ message: 'Anomaly resolved' });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 /**
  * POST /api/monitoring/anomalies/:id/false-positive
  * Mark anomaly as false positive
  */
-router.post('/anomalies/:id/false-positive', async (req, res, next) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
+router.post(
+  '/anomalies/:id/false-positive',
+  async (req: AuthenticatedRequest<{ id: string }>, res, next) => {
+    try {
+      if (!req.userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
 
-    await markFalsePositive(req.params.id, userId);
-    res.json({ message: 'Anomaly marked as false positive' });
-  } catch (error) {
-    next(error);
-  }
-});
+      await markFalsePositive(req.params.id, req.userId);
+      res.json({ message: 'Anomaly marked as false positive' });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 /**
  * POST /api/monitoring/anomalies/detect

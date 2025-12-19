@@ -431,10 +431,9 @@ export async function runHealthAnomalyDetection(): Promise<void> {
     where: { overallScore: { lte: 30 } },
     select: {
       id: true,
-      tenantId: true,
-      accountId: true,
+      clientId: true,
       overallScore: true,
-      churnRisk: true,
+      category: true,
     },
   });
 
@@ -446,25 +445,25 @@ export async function runHealthAnomalyDetection(): Promise<void> {
     if (criticalRule) {
       await createAnomaly(
         criticalRule,
-        score.tenantId,
+        null, // No tenantId on CustomerHealthScore
         score.overallScore,
         30,
-        'Account',
-        String(score.accountId),
+        'Client',
+        String(score.clientId),
       );
     }
 
-    // High churn risk
-    if (score.churnRisk && score.churnRisk >= 0.7) {
+    // High churn risk (category is AT_RISK or CHURNING)
+    if (score.category === 'CHURNING') {
       const churnRule = ANOMALY_RULES.find((r) => r.type === 'CHURN_RISK_HIGH');
       if (churnRule) {
         await createAnomaly(
           churnRule,
-          score.tenantId,
-          score.churnRisk,
-          0.7,
-          'Account',
-          String(score.accountId),
+          null, // No tenantId on CustomerHealthScore
+          score.overallScore,
+          30,
+          'Client',
+          String(score.clientId),
         );
       }
     }
