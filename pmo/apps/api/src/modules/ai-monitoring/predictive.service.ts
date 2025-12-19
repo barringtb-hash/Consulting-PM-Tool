@@ -478,7 +478,7 @@ export async function getBudgetRecommendations(
 
   // Analyze current usage
   const monthlyProjected = forecast.currentMonthProjected;
-  const trend = forecast.trend;
+  const _trend = forecast.trend;
 
   // Recommend new thresholds
   let recommendedWarning = AI_COST_THRESHOLDS.warningMonthly;

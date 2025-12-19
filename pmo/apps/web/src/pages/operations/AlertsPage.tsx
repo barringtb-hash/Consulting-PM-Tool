@@ -301,7 +301,7 @@ export function AlertsPage(): JSX.Element {
   const [showRuleModal, setShowRuleModal] = useState(false);
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
 
-  const { data: rules, isLoading: rulesLoading, refetch } = useAlertRules();
+  const { data: rules, isLoading: rulesLoading } = useAlertRules();
   const { data: history, isLoading: historyLoading } = useAlertHistory({
     limit: 50,
   });
@@ -312,7 +312,7 @@ export function AlertsPage(): JSX.Element {
   const testAlert = useTestAlert();
   const sendDigest = useSendDailyDigest();
 
-  const isLoading = rulesLoading || historyLoading;
+  const _isLoading = rulesLoading || historyLoading;
 
   const handleSaveRule = async (data: Partial<AlertRule>) => {
     if (editingRule?.id) {

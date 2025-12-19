@@ -25,9 +25,9 @@ import { logger } from '../../utils/logger';
 // Confirmed alert recipient
 const DEFAULT_ALERT_EMAIL = 'Bryant.barrington@icloud.com';
 
-// Throttling settings
-const THROTTLE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-const MAX_ALERTS_PER_HOUR = 10;
+// Throttling settings (reserved for future use)
+const _THROTTLE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const _MAX_ALERTS_PER_HOUR = 10;
 
 // ============================================================================
 // ALERT RULES MANAGEMENT
@@ -183,7 +183,7 @@ async function shouldThrottle(ruleId: string): Promise<boolean> {
 async function sendEmailAlert(
   recipient: string,
   subject: string,
-  body: string,
+  _body: string,
 ): Promise<boolean> {
   // In production, integrate with SendGrid, SES, etc.
   // For now, just log

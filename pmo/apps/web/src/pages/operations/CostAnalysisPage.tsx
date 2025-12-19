@@ -14,7 +14,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react';
-import { Card, Badge, Button } from '../../ui';
+import { Card, Button } from '../../ui';
 import {
   useAICostBreakdown,
   useGlobalCostBreakdown,
@@ -294,7 +294,7 @@ export function CostAnalysisPage(): JSX.Element {
               </div>
             ) : (costs?.data?.byTool?.length || 0) > 0 ? (
               <div className="space-y-3">
-                {costs?.data?.byTool?.map((item, index) => (
+                {costs?.data?.byTool?.map((item) => (
                   <div key={item.toolId}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-neutral-700 dark:text-neutral-300">
@@ -335,7 +335,7 @@ export function CostAnalysisPage(): JSX.Element {
               </div>
             ) : (costs?.data?.byModel?.length || 0) > 0 ? (
               <div className="space-y-3">
-                {costs?.data?.byModel?.map((item, index) => (
+                {costs?.data?.byModel?.map((item) => (
                   <div key={item.model}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm text-neutral-700 dark:text-neutral-300 font-mono">

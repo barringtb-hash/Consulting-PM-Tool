@@ -8,16 +8,14 @@ import React, { useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Clock,
   RefreshCw,
-  Search,
   Filter,
   Play,
   Eye,
   ThumbsDown,
 } from 'lucide-react';
-import { Card, Badge, Button, Input, Modal } from '../../ui';
+import { Card, Badge, Button, Modal } from '../../ui';
 import {
   useAnomalies,
   useAnomalyStats,

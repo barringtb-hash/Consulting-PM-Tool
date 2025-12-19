@@ -203,9 +203,9 @@ interface Baseline {
  * Calculate baseline statistics for a metric
  */
 async function calculateBaseline(
-  tenantId: string | null,
-  metric: string,
-  lookbackDays: number,
+  _tenantId: string | null,
+  _metric: string,
+  _lookbackDays: number,
 ): Promise<Baseline | null> {
   // This is a simplified version - in production, you'd query from
   // historical metric tables or pre-computed baselines

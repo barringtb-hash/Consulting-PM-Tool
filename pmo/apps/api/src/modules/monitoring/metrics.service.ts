@@ -15,7 +15,7 @@ import { logger } from '../../utils/logger';
 // IN-MEMORY METRICS STORE (for real-time aggregation)
 // ============================================================================
 
-interface MetricPoint {
+interface _MetricPoint {
   value: number;
   timestamp: number;
 }

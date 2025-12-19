@@ -45,7 +45,7 @@ export function AIUsagePage(): JSX.Element {
   } = useAIUsageSummary(period);
   const { data: realtime, isLoading: realtimeLoading } =
     useRealtimeUsageStats();
-  const { data: costs, isLoading: costsLoading } = useAICostBreakdown(period);
+  const { isLoading: costsLoading } = useAICostBreakdown(period);
   const { data: trends, isLoading: trendsLoading } =
     useAIUsageTrends(trendDays);
 

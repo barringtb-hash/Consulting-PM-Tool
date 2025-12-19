@@ -6,14 +6,11 @@
 
 import React from 'react';
 import {
-  Server,
   Activity,
   AlertTriangle,
   Clock,
   Database,
   RefreshCw,
-  Cpu,
-  HardDrive,
 } from 'lucide-react';
 import { Card, Badge, Button } from '../../ui';
 import {
@@ -27,7 +24,7 @@ function formatMs(ms: number): string {
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
-function formatBytes(mb: number): string {
+function _formatBytes(mb: number): string {
   if (mb < 1024) return `${Math.round(mb)}MB`;
   return `${(mb / 1024).toFixed(2)}GB`;
 }
