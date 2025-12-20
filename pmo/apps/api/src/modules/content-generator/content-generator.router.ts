@@ -9,6 +9,10 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as contentGeneratorService from './content-generator.service';
+import * as intakeContentService from './services/intake-content.service';
+import * as sequenceService from './services/sequence.service';
+import * as translationService from './services/translation.service';
+import * as complianceService from './services/compliance.service';
 import {
   hasClientAccess,
   getClientIdFromContentGeneratorConfig,
@@ -57,6 +61,12 @@ const contentGenerationSchema = z.object({
     'PRESS_RELEASE',
     'PRODUCT_COPY',
     'VIDEO_SCRIPT',
+    // Phase 1 additions - Business document content types
+    'PROPOSAL',
+    'CASE_STUDY',
+    'FAQ_CONTENT',
+    'WELCOME_PACKET',
+    'WHITEPAPER',
   ]),
   prompt: z.string().max(5000).optional(),
   templateId: z.number().int().optional(),
@@ -80,6 +90,12 @@ const contentTemplateSchema = z.object({
     'PRESS_RELEASE',
     'PRODUCT_COPY',
     'VIDEO_SCRIPT',
+    // Phase 1 additions - Business document content types
+    'PROPOSAL',
+    'CASE_STUDY',
+    'FAQ_CONTENT',
+    'WELCOME_PACKET',
+    'WHITEPAPER',
   ]),
   template: z.string().min(1).max(10000),
   placeholders: z
@@ -1091,6 +1107,1430 @@ router.post(
       samples,
     );
     res.json({ config });
+  },
+);
+
+// ============================================================================
+// CRM INTEGRATION ROUTES
+// ============================================================================
+
+/**
+ * GET /api/content-generator/crm-placeholders
+ * Get available CRM placeholders for content templates
+ */
+router.get(
+  '/content-generator/crm-placeholders',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const placeholders = contentGeneratorService.getAvailableCRMPlaceholders();
+    res.json({ placeholders });
+  },
+);
+
+/**
+ * GET /api/content-generator/crm-placeholders/account/:accountId
+ * Get CRM data preview for a specific account
+ */
+router.get(
+  '/content-generator/crm-placeholders/account/:accountId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    const accountId = Number(req.params.accountId);
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    try {
+      const crmData =
+        await contentGeneratorService.getCRMPlaceholdersForAccount(accountId);
+      res.json({ crmData });
+    } catch (_error) {
+      res.status(404).json({ error: 'Account not found' });
+    }
+  },
+);
+
+/**
+ * GET /api/content-generator/crm-placeholders/opportunity/:opportunityId
+ * Get CRM data preview for a specific opportunity
+ */
+router.get(
+  '/content-generator/crm-placeholders/opportunity/:opportunityId',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest<{ opportunityId: string }>,
+    res: Response,
+  ) => {
+    const opportunityId = Number(req.params.opportunityId);
+    if (Number.isNaN(opportunityId)) {
+      res.status(400).json({ error: 'Invalid opportunity ID' });
+      return;
+    }
+
+    try {
+      const crmData =
+        await contentGeneratorService.getCRMPlaceholdersForOpportunity(
+          opportunityId,
+        );
+      res.json({ crmData });
+    } catch (_error) {
+      res.status(404).json({ error: 'Opportunity not found' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/generate-for-account/:accountId
+ * Generate content personalized for a specific account
+ */
+router.post(
+  '/content-generator/:configId/generate-for-account/:accountId',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest<{ configId: string; accountId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    const accountId = Number(req.params.accountId);
+
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
+    const parsed = contentGenerationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await contentGeneratorService.generateContentForAccount(
+        configId,
+        accountId,
+        parsed.data,
+      );
+      res.status(201).json(result);
+    } catch (error) {
+      if ((error as Error).message === 'Account not found') {
+        res.status(404).json({ error: 'Account not found' });
+        return;
+      }
+      if ((error as Error).message === 'Config not found') {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/generate-for-opportunity/:opportunityId
+ * Generate content personalized for a specific opportunity
+ */
+router.post(
+  '/content-generator/:configId/generate-for-opportunity/:opportunityId',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest<{ configId: string; opportunityId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    const opportunityId = Number(req.params.opportunityId);
+
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    if (Number.isNaN(opportunityId)) {
+      res.status(400).json({ error: 'Invalid opportunity ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
+    const parsed = contentGenerationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result =
+        await contentGeneratorService.generateContentForOpportunity(
+          configId,
+          opportunityId,
+          parsed.data,
+        );
+      res.status(201).json(result);
+    } catch (error) {
+      if ((error as Error).message === 'Opportunity not found') {
+        res.status(404).json({ error: 'Opportunity not found' });
+        return;
+      }
+      if ((error as Error).message === 'Config not found') {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+// ============================================================================
+// INTAKE CONTENT INTEGRATION ROUTES
+// ============================================================================
+
+const intakeQuestionSchema = z.object({
+  industry: z.string().min(1),
+  questionType: z.enum([
+    'qualification',
+    'discovery',
+    'screening',
+    'onboarding',
+  ]),
+  targetCount: z.number().int().min(1).max(20).default(5),
+  existingQuestions: z.array(z.string()).optional(),
+  customContext: z.string().max(1000).optional(),
+  includeFollowUps: z.boolean().optional(),
+});
+
+const chatbotFlowSchema = z.object({
+  industry: z.string().min(1),
+  flowType: z.enum([
+    'greeting',
+    'qualification',
+    'faq',
+    'scheduling',
+    'support',
+  ]),
+  intents: z.array(z.string()).min(1),
+  personality: z
+    .enum(['professional', 'friendly', 'casual', 'formal'])
+    .default('professional'),
+  maxTurns: z.number().int().min(1).max(10).optional(),
+});
+
+const faqGenerationSchema = z.object({
+  submissionIds: z.array(z.number()).optional(),
+  industry: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  maxItems: z.number().int().min(1).max(50).default(10),
+});
+
+/**
+ * POST /api/content-generator/:configId/intake-questions
+ * Generate intake form questions by industry
+ */
+router.post(
+  '/content-generator/:configId/intake-questions',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = intakeQuestionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await intakeContentService.generateIntakeQuestions(
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating intake questions:', error);
+      res.status(500).json({ error: 'Failed to generate questions' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/chatbot-flow
+ * Generate chatbot conversation flow
+ */
+router.post(
+  '/content-generator/:configId/chatbot-flow',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = chatbotFlowSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await intakeContentService.generateChatbotFlow(
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating chatbot flow:', error);
+      res.status(500).json({ error: 'Failed to generate chatbot flow' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/faq-from-intake
+ * Generate FAQ content from intake submissions
+ */
+router.post(
+  '/content-generator/:configId/faq-from-intake',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = faqGenerationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await intakeContentService.generateFAQFromIntakeData(
+        configId,
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating FAQ content:', error);
+      res.status(500).json({ error: 'Failed to generate FAQ content' });
+    }
+  },
+);
+
+/**
+ * GET /api/content-generator/engagement-letter-templates
+ * Get available engagement letter templates (shared with Intake module)
+ */
+router.get(
+  '/content-generator/engagement-letter-templates',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const industry = req.query.industry as string | undefined;
+    const templates =
+      intakeContentService.getEngagementLetterTemplates(industry);
+    res.json({ templates });
+  },
+);
+
+/**
+ * GET /api/content-generator/engagement-letter-templates/:templateId
+ * Get a specific engagement letter template
+ */
+router.get(
+  '/content-generator/engagement-letter-templates/:templateId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ templateId: string }>, res: Response) => {
+    const template = intakeContentService.getEngagementLetterTemplate(
+      req.params.templateId,
+    );
+    if (!template) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    res.json({ template });
+  },
+);
+
+/**
+ * POST /api/content-generator/engagement-letter-templates/:templateId/preview
+ * Preview an engagement letter with sample data
+ */
+router.post(
+  '/content-generator/engagement-letter-templates/:templateId/preview',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ templateId: string }>, res: Response) => {
+    const sampleData = req.body as Record<string, string>;
+
+    try {
+      const preview = intakeContentService.previewEngagementLetter(
+        req.params.templateId,
+        sampleData,
+      );
+      res.json({ preview });
+    } catch (error) {
+      if ((error as Error).message === 'Template not found') {
+        res.status(404).json({ error: 'Template not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+// ============================================================================
+// CONTENT SEQUENCE ROUTES
+// ============================================================================
+
+const createSequenceSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  type: z.enum(['ONBOARDING', 'NURTURE', 'FOLLOW_UP', 'DRIP', 'REENGAGEMENT']),
+  triggerEvent: z.string().optional(),
+  pieces: z
+    .array(
+      z.object({
+        order: z.number().int().min(1),
+        delayDays: z.number().int().min(0),
+        purpose: z.string().min(1),
+        subject: z.string().optional(),
+        contentType: z
+          .enum([
+            'SOCIAL_POST',
+            'EMAIL',
+            'BLOG_POST',
+            'AD_COPY',
+            'LANDING_PAGE',
+            'NEWSLETTER',
+            'PRESS_RELEASE',
+            'PRODUCT_COPY',
+            'VIDEO_SCRIPT',
+            'PROPOSAL',
+            'CASE_STUDY',
+            'FAQ_CONTENT',
+            'WELCOME_PACKET',
+            'WHITEPAPER',
+          ])
+          .optional(),
+        promptHints: z.string().optional(),
+        keywords: z.array(z.string()).optional(),
+      }),
+    )
+    .min(1),
+});
+
+const generateSequenceSchema = z.object({
+  type: z.enum(['ONBOARDING', 'NURTURE', 'FOLLOW_UP', 'DRIP', 'REENGAGEMENT']),
+  industry: z.string().optional(),
+  pieceCount: z.number().int().min(1).max(10).default(5),
+  totalDurationDays: z.number().int().min(1).optional(),
+  tone: z.string().optional(),
+  brandContext: z.string().max(1000).optional(),
+});
+
+/**
+ * GET /api/content-generator/sequence-templates
+ * Get available sequence templates
+ */
+router.get(
+  '/content-generator/sequence-templates',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const templates = sequenceService.getSequenceTemplates();
+    res.json({ templates });
+  },
+);
+
+/**
+ * GET /api/content-generator/:configId/sequences
+ * List sequences for a config
+ */
+router.get(
+  '/content-generator/:configId/sequences',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const type = req.query.type as string | undefined;
+    const status = req.query.status as string | undefined;
+
+    const sequences = await sequenceService.listSequences(configId, {
+      type: type as
+        | 'ONBOARDING'
+        | 'NURTURE'
+        | 'FOLLOW_UP'
+        | 'DRIP'
+        | 'REENGAGEMENT'
+        | undefined,
+      status: status as
+        | 'DRAFT'
+        | 'ACTIVE'
+        | 'PAUSED'
+        | 'COMPLETED'
+        | 'ARCHIVED'
+        | undefined,
+    });
+    res.json({ sequences });
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/sequences
+ * Create a new sequence
+ */
+router.post(
+  '/content-generator/:configId/sequences',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = createSequenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const sequence = await sequenceService.createSequence(
+      configId,
+      parsed.data,
+    );
+    res.status(201).json({ sequence });
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/sequences/generate
+ * Generate a sequence from template or AI
+ */
+router.post(
+  '/content-generator/:configId/sequences/generate',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = generateSequenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    // Generate sequence definition
+    const sequenceInput = await sequenceService.generateCustomSequence(
+      configId,
+      parsed.data,
+    );
+
+    // Create the sequence
+    const sequence = await sequenceService.createSequence(
+      configId,
+      sequenceInput,
+    );
+    res.status(201).json({ sequence });
+  },
+);
+
+/**
+ * GET /api/content-generator/sequences/:sequenceId
+ * Get a specific sequence
+ */
+router.get(
+  '/content-generator/sequences/:sequenceId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    res.json({ sequence });
+  },
+);
+
+/**
+ * PATCH /api/content-generator/sequences/:sequenceId
+ * Update a sequence
+ */
+router.patch(
+  '/content-generator/sequences/:sequenceId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const updateSchema = z.object({
+      name: z.string().min(1).max(200).optional(),
+      description: z.string().max(1000).optional(),
+      triggerEvent: z.string().optional(),
+      status: z
+        .enum(['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED'])
+        .optional(),
+      isActive: z.boolean().optional(),
+    });
+
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const updated = await sequenceService.updateSequence(
+      sequenceId,
+      parsed.data,
+    );
+    res.json({ sequence: updated });
+  },
+);
+
+/**
+ * DELETE /api/content-generator/sequences/:sequenceId
+ * Delete a sequence
+ */
+router.delete(
+  '/content-generator/sequences/:sequenceId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    await sequenceService.deleteSequence(sequenceId);
+    res.status(204).send();
+  },
+);
+
+/**
+ * POST /api/content-generator/sequences/:sequenceId/generate-content
+ * Generate content for all pieces in a sequence
+ */
+router.post(
+  '/content-generator/sequences/:sequenceId/generate-content',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const options = req.body as { tone?: string; brandContext?: string };
+
+    try {
+      const result = await sequenceService.generateSequenceContent(
+        sequenceId,
+        options,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating sequence content:', error);
+      res.status(500).json({ error: 'Failed to generate sequence content' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/sequences/:sequenceId/activate
+ * Activate a sequence
+ */
+router.post(
+  '/content-generator/sequences/:sequenceId/activate',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    try {
+      const activated = await sequenceService.activateSequence(sequenceId);
+      res.json({ sequence: activated });
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/sequences/:sequenceId/pause
+ * Pause a sequence
+ */
+router.post(
+  '/content-generator/sequences/:sequenceId/pause',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const paused = await sequenceService.pauseSequence(sequenceId);
+    res.json({ sequence: paused });
+  },
+);
+
+// ============================================================================
+// TRANSLATION ROUTES (Phase 4: Multi-Language Support)
+// ============================================================================
+
+/**
+ * GET /languages
+ * Get list of supported languages for translation
+ */
+router.get(
+  '/languages',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const languages = translationService.getSupportedLanguages();
+    res.json({ languages });
+  },
+);
+
+/**
+ * POST /contents/:contentId/translate
+ * Translate content to a target language
+ */
+router.post(
+  '/contents/:contentId/translate',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const contentId = parseInt(req.params.contentId, 10);
+    if (isNaN(contentId)) {
+      res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Verify client access via content
+    const clientId = await getClientIdFromGeneratedContent(contentId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId!, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Access denied to this content' });
+      return;
+    }
+
+    const translateSchema = z.object({
+      targetLanguage: z.string().min(2).max(10),
+      preserveFormatting: z.boolean().optional(),
+      preservePlaceholders: z.boolean().optional(),
+      customInstructions: z.string().max(500).optional(),
+    });
+
+    const parsed = translateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getContent(contentId);
+    if (!content) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const result = await translationService.translateContent(
+      content.configId,
+      contentId,
+      parsed.data,
+    );
+
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    res.json({
+      success: true,
+      translatedContentId: result.translatedContentId,
+    });
+  },
+);
+
+/**
+ * POST /batch-translate
+ * Batch translate multiple contents to multiple languages
+ */
+router.post(
+  '/batch-translate',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const batchTranslateSchema = z.object({
+      contentIds: z.array(z.number().int().positive()).min(1).max(50),
+      targetLanguages: z.array(z.string().min(2).max(10)).min(1).max(10),
+      preserveFormatting: z.boolean().optional(),
+      preservePlaceholders: z.boolean().optional(),
+    });
+
+    const parsed = batchTranslateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Verify access to all contents
+    for (const contentId of parsed.data.contentIds) {
+      const clientId = await getClientIdFromGeneratedContent(contentId);
+      if (!clientId) {
+        res.status(403).json({ error: `Content ID ${contentId} not found` });
+        return;
+      }
+      const canAccess = await hasClientAccess(req.userId!, clientId);
+      if (!canAccess) {
+        res
+          .status(403)
+          .json({ error: `Access denied to content ID ${contentId}` });
+        return;
+      }
+    }
+
+    // Get configId from first content
+    const firstContent = await contentGeneratorService.getContent(
+      parsed.data.contentIds[0],
+    );
+    if (!firstContent) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const result = await translationService.batchTranslate(
+      firstContent.configId,
+      parsed.data,
+    );
+
+    res.json(result);
+  },
+);
+
+/**
+ * GET /contents/:contentId/translations
+ * Get all translations of a content piece
+ */
+router.get(
+  '/contents/:contentId/translations',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const contentId = parseInt(req.params.contentId, 10);
+    if (isNaN(contentId)) {
+      res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Verify client access
+    const clientId = await getClientIdFromGeneratedContent(contentId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId!, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Access denied to this content' });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getContent(contentId);
+    if (!content) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const translations = await translationService.getContentTranslations(
+      content.configId,
+      contentId,
+    );
+
+    res.json({ translations });
+  },
+);
+
+/**
+ * DELETE /translations/:translationId
+ * Delete a translation (not the original content)
+ */
+router.delete(
+  '/translations/:translationId',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const translationId = parseInt(req.params.translationId, 10);
+    if (isNaN(translationId)) {
+      res.status(400).json({ error: 'Invalid translation ID' });
+      return;
+    }
+
+    // Verify client access
+    const clientId = await getClientIdFromGeneratedContent(translationId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId!, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Access denied to this translation' });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getContent(translationId);
+    if (!content) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+
+    const result = await translationService.deleteTranslation(
+      content.configId,
+      translationId,
+    );
+
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    res.json({ success: true });
+  },
+);
+
+// ============================================================================
+// COMPLIANCE ROUTES (Phase 5: Basic Compliance Warnings)
+// ============================================================================
+
+/**
+ * GET /compliance/industries
+ * Get list of supported industries for compliance checking
+ */
+router.get(
+  '/compliance/industries',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const industries = complianceService.getSupportedIndustries();
+    res.json({ industries });
+  },
+);
+
+/**
+ * GET /compliance/rules/:industry
+ * Get compliance rules for a specific industry
+ */
+router.get(
+  '/compliance/rules/:industry',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const industry = req.params.industry as complianceService.IndustryType;
+
+    const validIndustries = [
+      'legal',
+      'healthcare',
+      'financial',
+      'real_estate',
+      'insurance',
+      'general',
+    ];
+    if (!validIndustries.includes(industry)) {
+      res.status(400).json({
+        error: `Invalid industry. Must be one of: ${validIndustries.join(', ')}`,
+      });
+      return;
+    }
+
+    const rules = complianceService.getIndustryRules(industry);
+    res.json({ industry, rules });
+  },
+);
+
+/**
+ * POST /compliance/analyze
+ * Analyze text for compliance issues without saving
+ */
+router.post(
+  '/compliance/analyze',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const analyzeSchema = z.object({
+      content: z.string().min(10).max(50000),
+      industry: z.enum([
+        'legal',
+        'healthcare',
+        'financial',
+        'real_estate',
+        'insurance',
+        'general',
+      ]),
+      strictMode: z.boolean().optional(),
+      useAI: z.boolean().optional(),
+    });
+
+    const parsed = analyzeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    let result: complianceService.ComplianceCheckResult;
+
+    if (parsed.data.useAI) {
+      result = await complianceService.enhancedComplianceCheck(
+        parsed.data.content,
+        parsed.data.industry,
+      );
+    } else {
+      result = complianceService.checkContentCompliance({
+        industry: parsed.data.industry,
+        content: parsed.data.content,
+        strictMode: parsed.data.strictMode,
+      });
+    }
+
+    res.json(result);
+  },
+);
+
+/**
+ * POST /contents/:contentId/compliance-check
+ * Check compliance for a specific stored content
+ */
+router.post(
+  '/contents/:contentId/compliance-check',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const contentId = parseInt(req.params.contentId, 10);
+    if (isNaN(contentId)) {
+      res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Verify client access
+    const clientId = await getClientIdFromGeneratedContent(contentId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId!, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Access denied to this content' });
+      return;
+    }
+
+    const checkSchema = z.object({
+      industry: z.enum([
+        'legal',
+        'healthcare',
+        'financial',
+        'real_estate',
+        'insurance',
+        'general',
+      ]),
+      strictMode: z.boolean().optional(),
+    });
+
+    const parsed = checkSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getContent(contentId);
+    if (!content) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const result = await complianceService.checkStoredContentCompliance(
+      content.configId,
+      contentId,
+      parsed.data.industry,
+      parsed.data.strictMode,
+    );
+
+    if (!result) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    res.json(result);
+  },
+);
+
+/**
+ * POST /compliance/batch-check
+ * Check compliance for multiple contents
+ */
+router.post(
+  '/compliance/batch-check',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const batchCheckSchema = z.object({
+      contentIds: z.array(z.number().int().positive()).min(1).max(100),
+      industry: z.enum([
+        'legal',
+        'healthcare',
+        'financial',
+        'real_estate',
+        'insurance',
+        'general',
+      ]),
+    });
+
+    const parsed = batchCheckSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Verify access to all contents
+    for (const contentId of parsed.data.contentIds) {
+      const clientId = await getClientIdFromGeneratedContent(contentId);
+      if (!clientId) {
+        res.status(403).json({ error: `Content ID ${contentId} not found` });
+        return;
+      }
+      const canAccess = await hasClientAccess(req.userId!, clientId);
+      if (!canAccess) {
+        res
+          .status(403)
+          .json({ error: `Access denied to content ID ${contentId}` });
+        return;
+      }
+    }
+
+    // Get configId from first content
+    const firstContent = await contentGeneratorService.getContent(
+      parsed.data.contentIds[0],
+    );
+    if (!firstContent) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const summary = await complianceService.getComplianceSummary(
+      firstContent.configId,
+      parsed.data.contentIds,
+      parsed.data.industry,
+    );
+
+    res.json(summary);
   },
 );
 

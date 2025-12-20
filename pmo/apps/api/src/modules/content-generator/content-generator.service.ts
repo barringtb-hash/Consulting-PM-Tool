@@ -18,6 +18,7 @@ import {
   ContentApprovalStatus,
   Prisma,
 } from '@prisma/client';
+import * as crmIntegration from './services/crm-integration.service';
 
 // ============================================================================
 // TYPES
@@ -48,6 +49,11 @@ interface ContentGenerationInput {
   targetLength?: 'short' | 'medium' | 'long';
   tone?: string;
   generateVariants?: number;
+  // CRM integration fields
+  accountId?: number;
+  contactId?: number;
+  opportunityId?: number;
+  crmContext?: string; // Pre-built CRM context for AI
 }
 
 interface GeneratedContentResult {
@@ -252,6 +258,11 @@ async function generateContentWithAI(
     systemPrompt += `\nWords/phrases to avoid: ${config.avoidKeywords.join(', ')}`;
   }
 
+  // Add CRM context if available (for personalized content)
+  if (input.crmContext) {
+    systemPrompt += input.crmContext;
+  }
+
   // Build the user prompt
   let userPrompt =
     input.prompt ||
@@ -343,6 +354,17 @@ function getDefaultSystemPrompt(type: ContentGenerationType): string {
       'You are an expert product copywriter. Create compelling product descriptions that highlight benefits and drive purchases.',
     VIDEO_SCRIPT:
       'You are an expert video scriptwriter. Create engaging video scripts with clear narratives and visual cues.',
+    // Phase 1 additions - Business document content types
+    PROPOSAL:
+      'You are an expert business proposal writer. Create professional, persuasive proposals with clear structure including: Executive Summary, Scope of Work, Timeline, Deliverables, Pricing, and Terms. Focus on articulating value and addressing client needs.',
+    CASE_STUDY:
+      'You are an expert B2B case study writer. Create compelling client success stories following the Problem-Solution-Results format. Include specific metrics and outcomes. Make it relatable to prospects facing similar challenges.',
+    FAQ_CONTENT:
+      'You are an expert at creating clear, helpful FAQ content. Write concise question-and-answer pairs that anticipate user needs. Use natural language and organize by topic. Each answer should be complete but brief.',
+    WELCOME_PACKET:
+      'You are an expert at client onboarding content. Create warm, professional welcome materials that set expectations, explain next steps, and make new clients feel valued. Include key contacts, timelines, and what to expect.',
+    WHITEPAPER:
+      'You are an expert thought leadership writer. Create authoritative, research-backed whitepapers that establish expertise and provide genuine value. Structure with: Title, Abstract, Key Sections, Conclusion, and Call-to-Action. Maintain a professional, educational tone.',
   };
 
   return (
@@ -760,4 +782,131 @@ export async function trainBrandVoice(
       voiceTrainedAt: new Date(),
     },
   });
+}
+
+// ============================================================================
+// CRM INTEGRATION - Content Generation with CRM Data
+// ============================================================================
+
+/**
+ * Generate content personalized for a specific account
+ */
+export async function generateContentForAccount(
+  configId: number,
+  accountId: number,
+  input: Omit<ContentGenerationInput, 'accountId' | 'crmContext'>,
+): Promise<{ contents: unknown[]; crmData: crmIntegration.CRMPlaceholders }> {
+  // Fetch CRM data for the account
+  const crmData = await crmIntegration.getCRMPlaceholdersForAccount(accountId);
+
+  if (!crmData.account) {
+    throw new Error('Account not found');
+  }
+
+  // Build CRM context for AI
+  const crmContext = crmIntegration.buildCRMContext(crmData);
+
+  // Resolve CRM placeholders in prompt if present
+  let resolvedPrompt = input.prompt || '';
+  if (resolvedPrompt) {
+    resolvedPrompt = crmIntegration.resolveCRMPlaceholders(
+      resolvedPrompt,
+      crmData,
+    );
+  }
+
+  // Resolve CRM placeholders in placeholder values
+  const resolvedPlaceholderValues: Record<string, string> = {};
+  if (input.placeholderValues) {
+    for (const [key, value] of Object.entries(input.placeholderValues)) {
+      resolvedPlaceholderValues[key] = crmIntegration.resolveCRMPlaceholders(
+        value,
+        crmData,
+      );
+    }
+  }
+
+  // Generate content with CRM context
+  const result = await generateContent(configId, {
+    ...input,
+    prompt: resolvedPrompt,
+    placeholderValues: resolvedPlaceholderValues,
+    accountId,
+    crmContext,
+  });
+
+  return { ...result, crmData };
+}
+
+/**
+ * Generate content personalized for a specific opportunity
+ */
+export async function generateContentForOpportunity(
+  configId: number,
+  opportunityId: number,
+  input: Omit<ContentGenerationInput, 'opportunityId' | 'crmContext'>,
+): Promise<{ contents: unknown[]; crmData: crmIntegration.CRMPlaceholders }> {
+  // Fetch CRM data for the opportunity
+  const crmData =
+    await crmIntegration.getCRMPlaceholdersForOpportunity(opportunityId);
+
+  if (!crmData.opportunity) {
+    throw new Error('Opportunity not found');
+  }
+
+  // Build CRM context for AI
+  const crmContext = crmIntegration.buildCRMContext(crmData);
+
+  // Resolve CRM placeholders in prompt if present
+  let resolvedPrompt = input.prompt || '';
+  if (resolvedPrompt) {
+    resolvedPrompt = crmIntegration.resolveCRMPlaceholders(
+      resolvedPrompt,
+      crmData,
+    );
+  }
+
+  // Resolve CRM placeholders in placeholder values
+  const resolvedPlaceholderValues: Record<string, string> = {};
+  if (input.placeholderValues) {
+    for (const [key, value] of Object.entries(input.placeholderValues)) {
+      resolvedPlaceholderValues[key] = crmIntegration.resolveCRMPlaceholders(
+        value,
+        crmData,
+      );
+    }
+  }
+
+  // Generate content with CRM context
+  const result = await generateContent(configId, {
+    ...input,
+    prompt: resolvedPrompt,
+    placeholderValues: resolvedPlaceholderValues,
+    opportunityId,
+    accountId: crmData.account?.id,
+    crmContext,
+  });
+
+  return { ...result, crmData };
+}
+
+/**
+ * Get available CRM placeholders for content templates
+ */
+export function getAvailableCRMPlaceholders() {
+  return crmIntegration.getAvailablePlaceholders();
+}
+
+/**
+ * Get CRM data preview for an account
+ */
+export async function getCRMPlaceholdersForAccount(accountId: number) {
+  return crmIntegration.getCRMPlaceholdersForAccount(accountId);
+}
+
+/**
+ * Get CRM data preview for an opportunity
+ */
+export async function getCRMPlaceholdersForOpportunity(opportunityId: number) {
+  return crmIntegration.getCRMPlaceholdersForOpportunity(opportunityId);
 }
