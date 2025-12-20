@@ -4,11 +4,42 @@
  * Business logic for Account (Company/Organization) management.
  * Accounts are the core entity in the CRM representing companies
  * that are prospects, customers, partners, or competitors.
+ *
+ * NOTE: When an Account is created, a corresponding legacy Client record
+ * is also created to support modules that still depend on Client (e.g., Intake).
+ * The Client ID is stored in Account.customFields.legacyClientId.
  */
 
-import { Prisma } from '@prisma/client';
+import { CompanySize, Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { getTenantId } from '../../tenant/tenant.context';
+
+// ============================================================================
+// HELPER: Map Account employeeCount to Client companySize
+// ============================================================================
+
+function mapEmployeeCountToCompanySize(
+  employeeCount?: string,
+): CompanySize | undefined {
+  if (!employeeCount) return undefined;
+
+  // Map Account.employeeCount to Client.companySize
+  // Account: SOLO, MICRO, SMALL, MEDIUM, LARGE, ENTERPRISE
+  // Client: MICRO, SMALL, MEDIUM
+  switch (employeeCount) {
+    case 'SOLO':
+    case 'MICRO':
+      return 'MICRO';
+    case 'SMALL':
+      return 'SMALL';
+    case 'MEDIUM':
+    case 'LARGE':
+    case 'ENTERPRISE':
+      return 'MEDIUM';
+    default:
+      return undefined;
+  }
+}
 
 // ============================================================================
 // TYPES
@@ -122,41 +153,67 @@ export interface PaginationOptions {
 
 /**
  * Create a new account.
+ *
+ * Also creates a corresponding legacy Client record for backwards compatibility
+ * with modules that depend on Client (e.g., Intake, Chatbot, etc.).
+ * The Client ID is stored in Account.customFields.legacyClientId.
  */
 export async function createAccount(input: CreateAccountInput) {
   const tenantId = getTenantId();
 
-  return prisma.account.create({
-    data: {
-      tenantId,
-      name: input.name,
-      website: input.website,
-      phone: input.phone,
-      parentAccountId: input.parentAccountId,
-      type: input.type || 'PROSPECT',
-      industry: input.industry,
-      employeeCount: input.employeeCount,
-      annualRevenue: input.annualRevenue,
-      billingAddress: input.billingAddress as Prisma.InputJsonValue,
-      shippingAddress: input.shippingAddress as Prisma.InputJsonValue,
-      ownerId: input.ownerId,
-      tags: input.tags || [],
-      customFields: input.customFields as Prisma.InputJsonValue,
-    },
-    include: {
-      owner: {
-        select: { id: true, name: true, email: true },
+  return prisma.$transaction(async (tx) => {
+    // 1. Create the legacy Client record for backwards compatibility
+    const client = await tx.client.create({
+      data: {
+        tenantId,
+        name: input.name,
+        industry: input.industry,
+        companySize: mapEmployeeCountToCompanySize(input.employeeCount),
+        notes: input.website ? `Website: ${input.website}` : undefined,
       },
-      parentAccount: {
-        select: { id: true, name: true },
+    });
+
+    // 2. Merge legacyClientId into customFields
+    const customFields = {
+      ...(input.customFields || {}),
+      legacyClientId: client.id,
+    };
+
+    // 3. Create the Account with reference to the Client
+    const account = await tx.account.create({
+      data: {
+        tenantId,
+        name: input.name,
+        website: input.website,
+        phone: input.phone,
+        parentAccountId: input.parentAccountId,
+        type: input.type || 'PROSPECT',
+        industry: input.industry,
+        employeeCount: input.employeeCount,
+        annualRevenue: input.annualRevenue,
+        billingAddress: input.billingAddress as Prisma.InputJsonValue,
+        shippingAddress: input.shippingAddress as Prisma.InputJsonValue,
+        ownerId: input.ownerId,
+        tags: input.tags || [],
+        customFields: customFields as Prisma.InputJsonValue,
       },
-      _count: {
-        select: {
-          crmContacts: true,
-          opportunities: true,
+      include: {
+        owner: {
+          select: { id: true, name: true, email: true },
+        },
+        parentAccount: {
+          select: { id: true, name: true },
+        },
+        _count: {
+          select: {
+            crmContacts: true,
+            opportunities: true,
+          },
         },
       },
-    },
+    });
+
+    return account;
   });
 }
 
@@ -299,76 +356,214 @@ export async function listAccounts(
 
 /**
  * Update an account.
+ * Also syncs relevant changes to the linked legacy Client if one exists.
  */
 export async function updateAccount(id: number, input: UpdateAccountInput) {
   const tenantId = getTenantId();
 
-  return prisma.account.update({
-    where: { id, tenantId },
-    data: {
-      name: input.name,
-      website: input.website,
-      phone: input.phone,
-      parentAccountId: input.parentAccountId,
-      type: input.type,
-      industry: input.industry,
-      employeeCount: input.employeeCount,
-      annualRevenue: input.annualRevenue,
-      billingAddress: input.billingAddress as Prisma.InputJsonValue,
-      shippingAddress: input.shippingAddress as Prisma.InputJsonValue,
-      healthScore: input.healthScore,
-      engagementScore: input.engagementScore,
-      churnRisk: input.churnRisk,
-      ownerId: input.ownerId,
-      tags: input.tags,
-      customFields: input.customFields as Prisma.InputJsonValue,
-      archived: input.archived,
-    },
-    include: {
-      owner: {
-        select: { id: true, name: true, email: true },
+  return prisma.$transaction(async (tx) => {
+    // 1. Get current account to find linked Client and preserve customFields
+    const currentAccount = await tx.account.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!currentAccount) {
+      throw new Error('Account not found');
+    }
+
+    // 2. Preserve legacyClientId in customFields if updating customFields
+    const currentCustomFields =
+      (currentAccount.customFields as Record<string, unknown>) || {};
+    const legacyClientId = currentCustomFields.legacyClientId as
+      | number
+      | undefined;
+
+    let finalCustomFields = input.customFields;
+    if (input.customFields !== undefined && legacyClientId) {
+      finalCustomFields = {
+        ...(input.customFields || {}),
+        legacyClientId,
+      };
+    }
+
+    // 3. Update the linked legacy Client if it exists
+    if (legacyClientId) {
+      const clientUpdateData: Record<string, unknown> = {};
+
+      if (input.name !== undefined) {
+        clientUpdateData.name = input.name;
+      }
+      if (input.industry !== undefined) {
+        clientUpdateData.industry = input.industry;
+      }
+      if (input.employeeCount !== undefined) {
+        clientUpdateData.companySize = mapEmployeeCountToCompanySize(
+          input.employeeCount,
+        );
+      }
+      if (input.archived !== undefined) {
+        clientUpdateData.archived = input.archived;
+      }
+
+      if (Object.keys(clientUpdateData).length > 0) {
+        await tx.client
+          .update({
+            where: { id: legacyClientId },
+            data: clientUpdateData,
+          })
+          .catch(() => {
+            // Client may have been deleted separately - ignore error
+          });
+      }
+    }
+
+    // 4. Update the account
+    return tx.account.update({
+      where: { id, tenantId },
+      data: {
+        name: input.name,
+        website: input.website,
+        phone: input.phone,
+        parentAccountId: input.parentAccountId,
+        type: input.type,
+        industry: input.industry,
+        employeeCount: input.employeeCount,
+        annualRevenue: input.annualRevenue,
+        billingAddress: input.billingAddress as Prisma.InputJsonValue,
+        shippingAddress: input.shippingAddress as Prisma.InputJsonValue,
+        healthScore: input.healthScore,
+        engagementScore: input.engagementScore,
+        churnRisk: input.churnRisk,
+        ownerId: input.ownerId,
+        tags: input.tags,
+        customFields: finalCustomFields as Prisma.InputJsonValue,
+        archived: input.archived,
       },
-    },
+      include: {
+        owner: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
   });
 }
 
 /**
  * Archive an account (soft delete).
+ * Also archives the linked legacy Client if one exists.
  */
 export async function archiveAccount(id: number) {
   const tenantId = getTenantId();
 
-  return prisma.account.update({
-    where: { id, tenantId },
-    data: {
-      archived: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    // 1. Get the account to find the linked Client
+    const account = await tx.account.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    // 2. Archive the linked legacy Client if it exists
+    const customFields = account.customFields as Record<string, unknown> | null;
+    const legacyClientId = customFields?.legacyClientId as number | undefined;
+
+    if (legacyClientId) {
+      await tx.client
+        .update({
+          where: { id: legacyClientId },
+          data: { archived: true },
+        })
+        .catch(() => {
+          // Client may have been deleted separately - ignore error
+        });
+    }
+
+    // 3. Archive the account
+    return tx.account.update({
+      where: { id, tenantId },
+      data: { archived: true },
+    });
   });
 }
 
 /**
  * Restore an archived account.
+ * Also restores the linked legacy Client if one exists.
  */
 export async function restoreAccount(id: number) {
   const tenantId = getTenantId();
 
-  return prisma.account.update({
-    where: { id, tenantId },
-    data: {
-      archived: false,
-    },
+  return prisma.$transaction(async (tx) => {
+    // 1. Get the account to find the linked Client
+    const account = await tx.account.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    // 2. Restore the linked legacy Client if it exists
+    const customFields = account.customFields as Record<string, unknown> | null;
+    const legacyClientId = customFields?.legacyClientId as number | undefined;
+
+    if (legacyClientId) {
+      await tx.client
+        .update({
+          where: { id: legacyClientId },
+          data: { archived: false },
+        })
+        .catch(() => {
+          // Client may have been deleted separately - ignore error
+        });
+    }
+
+    // 3. Restore the account
+    return tx.account.update({
+      where: { id, tenantId },
+      data: { archived: false },
+    });
   });
 }
 
 /**
  * Delete an account permanently.
  * Use with caution - this cascades to all related data.
+ * Also deletes the linked legacy Client if one exists.
  */
 export async function deleteAccount(id: number) {
   const tenantId = getTenantId();
 
-  return prisma.account.delete({
-    where: { id, tenantId },
+  return prisma.$transaction(async (tx) => {
+    // 1. Get the account to find the linked Client
+    const account = await tx.account.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    // 2. Delete the linked legacy Client if it exists
+    const customFields = account.customFields as Record<string, unknown> | null;
+    const legacyClientId = customFields?.legacyClientId as number | undefined;
+
+    if (legacyClientId) {
+      await tx.client
+        .delete({
+          where: { id: legacyClientId },
+        })
+        .catch(() => {
+          // Client may have been deleted separately - ignore error
+        });
+    }
+
+    // 3. Delete the account
+    return tx.account.delete({
+      where: { id, tenantId },
+    });
   });
 }
 
