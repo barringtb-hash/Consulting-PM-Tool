@@ -30,6 +30,7 @@ import {
   Badge,
   Input,
   Modal,
+  useToast,
 } from '../../ui';
 import {
   useTenant,
@@ -76,6 +77,7 @@ export function TenantDetailPage(): JSX.Element {
 
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const { showToast } = useToast();
 
   const { data: tenant, isLoading, error } = useTenant(tenantId);
   const suspendMutation = useSuspendTenant();
@@ -1341,13 +1343,13 @@ export function TenantDetailPage(): JSX.Element {
 
           <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <p className="text-sm text-red-800 dark:text-red-200">
-              Type <strong>DELETE</strong> to confirm permanent deletion:
+              Type <strong>{tenant.slug}</strong> to confirm permanent deletion:
             </p>
             <Input
               type="text"
               value={forceDeleteConfirmText}
               onChange={(e) => setForceDeleteConfirmText(e.target.value)}
-              placeholder="DELETE"
+              placeholder={tenant.slug}
               className="mt-2"
               autoComplete="off"
             />
@@ -1366,18 +1368,23 @@ export function TenantDetailPage(): JSX.Element {
           </Button>
           <Button
             variant="destructive"
-            disabled={forceDeleteConfirmText !== 'DELETE'}
+            disabled={forceDeleteConfirmText !== tenant.slug}
             isLoading={forceDeleteMutation.isPending}
             onClick={async () => {
-              if (!tenantId || forceDeleteConfirmText !== 'DELETE') return;
+              if (!tenantId || forceDeleteConfirmText !== tenant.slug) return;
               try {
-                await forceDeleteMutation.mutateAsync(tenantId);
+                await forceDeleteMutation.mutateAsync({
+                  tenantId,
+                  confirmSlug: tenant.slug,
+                });
+                showToast('Tenant permanently deleted', 'success');
                 navigate('/admin/tenants');
               } catch (err) {
-                alert(
+                showToast(
                   err instanceof Error
                     ? err.message
                     : 'Failed to delete tenant',
+                  'error',
                 );
               }
             }}

@@ -445,16 +445,17 @@ export interface ForceDeleteTenantResult {
 /**
  * Force delete a tenant permanently (Super Admin only).
  * This bypasses the 30-day retention period and cannot be undone.
- * Requires explicit confirmation.
+ * Requires explicit confirmation by providing the tenant's slug.
  */
 export async function forceDeleteTenant(
   tenantId: string,
+  confirmSlug: string,
 ): Promise<ForceDeleteTenantResult> {
   const response = await fetch(
     `${API_BASE}/admin/tenants/${tenantId}/force`,
     buildOptions({
       method: 'DELETE',
-      body: JSON.stringify({ confirm: 'PERMANENTLY_DELETE' }),
+      body: JSON.stringify({ confirmSlug }),
     }),
   );
   const result = await handleResponse<{ data: ForceDeleteTenantResult }>(

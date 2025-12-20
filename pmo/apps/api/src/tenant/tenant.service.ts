@@ -698,6 +698,20 @@ export async function permanentlyDeleteTenant(tenantId: string) {
     // Delete CRM Contacts
     await tx.cRMContact.deleteMany({ where: { tenantId } });
 
+    // Delete Finance module data (order matters for FK constraints)
+    await tx.financeAlert.deleteMany({ where: { tenantId } });
+    await tx.financeInsight.deleteMany({ where: { tenantId } });
+    await tx.accountProfitability.deleteMany({ where: { tenantId } });
+    await tx.expense.deleteMany({ where: { tenantId } });
+    await tx.recurringCost.deleteMany({ where: { tenantId } });
+    await tx.budget.deleteMany({ where: { tenantId } });
+    await tx.expenseCategory.deleteMany({ where: { tenantId } });
+    await tx.financeConfig.deleteMany({ where: { tenantId } });
+
+    // Delete AI monitoring data
+    await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
+    await tx.aIUsageSummary.deleteMany({ where: { tenantId } });
+
     // Delete Accounts
     await tx.account.deleteMany({ where: { tenantId } });
 
@@ -896,6 +910,20 @@ export async function forceDeleteTenant(tenantId: string) {
 
     // Delete CRM Contacts
     await tx.cRMContact.deleteMany({ where: { tenantId } });
+
+    // Delete Finance module data (order matters for FK constraints)
+    await tx.financeAlert.deleteMany({ where: { tenantId } });
+    await tx.financeInsight.deleteMany({ where: { tenantId } });
+    await tx.accountProfitability.deleteMany({ where: { tenantId } });
+    await tx.expense.deleteMany({ where: { tenantId } });
+    await tx.recurringCost.deleteMany({ where: { tenantId } });
+    await tx.budget.deleteMany({ where: { tenantId } });
+    await tx.expenseCategory.deleteMany({ where: { tenantId } });
+    await tx.financeConfig.deleteMany({ where: { tenantId } });
+
+    // Delete AI monitoring data
+    await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
+    await tx.aIUsageSummary.deleteMany({ where: { tenantId } });
 
     // Delete Accounts
     await tx.account.deleteMany({ where: { tenantId } });

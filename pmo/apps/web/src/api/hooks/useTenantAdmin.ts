@@ -284,13 +284,19 @@ export function useUpdateTenantBranding() {
 /**
  * Hook to force delete a tenant (Super Admin only).
  * This permanently deletes a tenant, bypassing the 30-day retention period.
+ * Requires the tenant slug as confirmation to prevent accidental deletion.
  */
 export function useForceDeleteTenant() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (tenantId: string) =>
-      tenantAdminApi.forceDeleteTenant(tenantId),
+    mutationFn: ({
+      tenantId,
+      confirmSlug,
+    }: {
+      tenantId: string;
+      confirmSlug: string;
+    }) => tenantAdminApi.forceDeleteTenant(tenantId, confirmSlug),
     onSuccess: () => {
       // Invalidate all tenant queries since the tenant no longer exists
       queryClient.invalidateQueries({ queryKey: queryKeys.tenantAdmin.all });

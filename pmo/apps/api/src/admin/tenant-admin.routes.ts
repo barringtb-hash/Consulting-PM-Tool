@@ -592,18 +592,19 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { tenantId } = req.params;
-      const body = req.body as { confirm?: string };
+      const body = req.body as { confirmSlug?: string };
 
-      // Require explicit confirmation
-      if (body.confirm !== 'PERMANENTLY_DELETE') {
+      // Get tenant info for audit and validation
+      const tenant = await tenantAdminService.getTenantDetailsById(tenantId);
+
+      // Require confirmation by matching tenant slug
+      // This ensures the user explicitly knows which tenant they're deleting
+      if (!body.confirmSlug || body.confirmSlug !== tenant.slug) {
         return res.status(400).json({
-          error:
-            'Confirmation required. Set confirm: "PERMANENTLY_DELETE" in request body.',
+          error: `Confirmation required. Provide confirmSlug matching the tenant slug.`,
         });
       }
 
-      // Get tenant info for audit before deletion
-      const tenant = await tenantAdminService.getTenantDetailsById(tenantId);
       const tenantName = tenant.name;
 
       // Force delete the tenant
@@ -615,7 +616,7 @@ router.delete(
         action: AuditAction.DELETE,
         entityType: 'Tenant',
         entityId: tenantId,
-        before: { name: tenantName, status: tenant.status },
+        before: { name: tenantName, slug: tenant.slug, status: tenant.status },
         after: { deleted: true, forceDeleted: true },
         metadata: {
           adminAction: 'force-delete',
