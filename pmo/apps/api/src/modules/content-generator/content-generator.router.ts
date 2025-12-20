@@ -1106,4 +1106,219 @@ router.post(
   },
 );
 
+// ============================================================================
+// CRM INTEGRATION ROUTES
+// ============================================================================
+
+/**
+ * GET /api/content-generator/crm-placeholders
+ * Get available CRM placeholders for content templates
+ */
+router.get(
+  '/content-generator/crm-placeholders',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const placeholders = contentGeneratorService.getAvailableCRMPlaceholders();
+    res.json({ placeholders });
+  },
+);
+
+/**
+ * GET /api/content-generator/crm-placeholders/account/:accountId
+ * Get CRM data preview for a specific account
+ */
+router.get(
+  '/content-generator/crm-placeholders/account/:accountId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    const accountId = Number(req.params.accountId);
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    try {
+      const crmData =
+        await contentGeneratorService.getCRMPlaceholdersForAccount(accountId);
+      res.json({ crmData });
+    } catch (_error) {
+      res.status(404).json({ error: 'Account not found' });
+    }
+  },
+);
+
+/**
+ * GET /api/content-generator/crm-placeholders/opportunity/:opportunityId
+ * Get CRM data preview for a specific opportunity
+ */
+router.get(
+  '/content-generator/crm-placeholders/opportunity/:opportunityId',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest<{ opportunityId: string }>,
+    res: Response,
+  ) => {
+    const opportunityId = Number(req.params.opportunityId);
+    if (Number.isNaN(opportunityId)) {
+      res.status(400).json({ error: 'Invalid opportunity ID' });
+      return;
+    }
+
+    try {
+      const crmData =
+        await contentGeneratorService.getCRMPlaceholdersForOpportunity(
+          opportunityId,
+        );
+      res.json({ crmData });
+    } catch (_error) {
+      res.status(404).json({ error: 'Opportunity not found' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/generate-for-account/:accountId
+ * Generate content personalized for a specific account
+ */
+router.post(
+  '/content-generator/:configId/generate-for-account/:accountId',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest<{ configId: string; accountId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    const accountId = Number(req.params.accountId);
+
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    if (Number.isNaN(accountId)) {
+      res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
+    const parsed = contentGenerationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await contentGeneratorService.generateContentForAccount(
+        configId,
+        accountId,
+        parsed.data,
+      );
+      res.status(201).json(result);
+    } catch (error) {
+      if ((error as Error).message === 'Account not found') {
+        res.status(404).json({ error: 'Account not found' });
+        return;
+      }
+      if ((error as Error).message === 'Config not found') {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/generate-for-opportunity/:opportunityId
+ * Generate content personalized for a specific opportunity
+ */
+router.post(
+  '/content-generator/:configId/generate-for-opportunity/:opportunityId',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest<{ configId: string; opportunityId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    const opportunityId = Number(req.params.opportunityId);
+
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    if (Number.isNaN(opportunityId)) {
+      res.status(400).json({ error: 'Invalid opportunity ID' });
+      return;
+    }
+
+    // Authorization check via config
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this client' });
+      return;
+    }
+
+    const parsed = contentGenerationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result =
+        await contentGeneratorService.generateContentForOpportunity(
+          configId,
+          opportunityId,
+          parsed.data,
+        );
+      res.status(201).json(result);
+    } catch (error) {
+      if ((error as Error).message === 'Opportunity not found') {
+        res.status(404).json({ error: 'Opportunity not found' });
+        return;
+      }
+      if ((error as Error).message === 'Config not found') {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
 export default router;

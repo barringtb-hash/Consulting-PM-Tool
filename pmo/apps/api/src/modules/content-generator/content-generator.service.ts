@@ -18,6 +18,7 @@ import {
   ContentApprovalStatus,
   Prisma,
 } from '@prisma/client';
+import * as crmIntegration from './services/crm-integration.service';
 
 // ============================================================================
 // TYPES
@@ -48,6 +49,11 @@ interface ContentGenerationInput {
   targetLength?: 'short' | 'medium' | 'long';
   tone?: string;
   generateVariants?: number;
+  // CRM integration fields
+  accountId?: number;
+  contactId?: number;
+  opportunityId?: number;
+  crmContext?: string; // Pre-built CRM context for AI
 }
 
 interface GeneratedContentResult {
@@ -250,6 +256,11 @@ async function generateContentWithAI(
 
   if (config.avoidKeywords.length > 0) {
     systemPrompt += `\nWords/phrases to avoid: ${config.avoidKeywords.join(', ')}`;
+  }
+
+  // Add CRM context if available (for personalized content)
+  if (input.crmContext) {
+    systemPrompt += input.crmContext;
   }
 
   // Build the user prompt
@@ -771,4 +782,131 @@ export async function trainBrandVoice(
       voiceTrainedAt: new Date(),
     },
   });
+}
+
+// ============================================================================
+// CRM INTEGRATION - Content Generation with CRM Data
+// ============================================================================
+
+/**
+ * Generate content personalized for a specific account
+ */
+export async function generateContentForAccount(
+  configId: number,
+  accountId: number,
+  input: Omit<ContentGenerationInput, 'accountId' | 'crmContext'>,
+): Promise<{ contents: unknown[]; crmData: crmIntegration.CRMPlaceholders }> {
+  // Fetch CRM data for the account
+  const crmData = await crmIntegration.getCRMPlaceholdersForAccount(accountId);
+
+  if (!crmData.account) {
+    throw new Error('Account not found');
+  }
+
+  // Build CRM context for AI
+  const crmContext = crmIntegration.buildCRMContext(crmData);
+
+  // Resolve CRM placeholders in prompt if present
+  let resolvedPrompt = input.prompt || '';
+  if (resolvedPrompt) {
+    resolvedPrompt = crmIntegration.resolveCRMPlaceholders(
+      resolvedPrompt,
+      crmData,
+    );
+  }
+
+  // Resolve CRM placeholders in placeholder values
+  const resolvedPlaceholderValues: Record<string, string> = {};
+  if (input.placeholderValues) {
+    for (const [key, value] of Object.entries(input.placeholderValues)) {
+      resolvedPlaceholderValues[key] = crmIntegration.resolveCRMPlaceholders(
+        value,
+        crmData,
+      );
+    }
+  }
+
+  // Generate content with CRM context
+  const result = await generateContent(configId, {
+    ...input,
+    prompt: resolvedPrompt,
+    placeholderValues: resolvedPlaceholderValues,
+    accountId,
+    crmContext,
+  });
+
+  return { ...result, crmData };
+}
+
+/**
+ * Generate content personalized for a specific opportunity
+ */
+export async function generateContentForOpportunity(
+  configId: number,
+  opportunityId: number,
+  input: Omit<ContentGenerationInput, 'opportunityId' | 'crmContext'>,
+): Promise<{ contents: unknown[]; crmData: crmIntegration.CRMPlaceholders }> {
+  // Fetch CRM data for the opportunity
+  const crmData =
+    await crmIntegration.getCRMPlaceholdersForOpportunity(opportunityId);
+
+  if (!crmData.opportunity) {
+    throw new Error('Opportunity not found');
+  }
+
+  // Build CRM context for AI
+  const crmContext = crmIntegration.buildCRMContext(crmData);
+
+  // Resolve CRM placeholders in prompt if present
+  let resolvedPrompt = input.prompt || '';
+  if (resolvedPrompt) {
+    resolvedPrompt = crmIntegration.resolveCRMPlaceholders(
+      resolvedPrompt,
+      crmData,
+    );
+  }
+
+  // Resolve CRM placeholders in placeholder values
+  const resolvedPlaceholderValues: Record<string, string> = {};
+  if (input.placeholderValues) {
+    for (const [key, value] of Object.entries(input.placeholderValues)) {
+      resolvedPlaceholderValues[key] = crmIntegration.resolveCRMPlaceholders(
+        value,
+        crmData,
+      );
+    }
+  }
+
+  // Generate content with CRM context
+  const result = await generateContent(configId, {
+    ...input,
+    prompt: resolvedPrompt,
+    placeholderValues: resolvedPlaceholderValues,
+    opportunityId,
+    accountId: crmData.account?.id,
+    crmContext,
+  });
+
+  return { ...result, crmData };
+}
+
+/**
+ * Get available CRM placeholders for content templates
+ */
+export function getAvailableCRMPlaceholders() {
+  return crmIntegration.getAvailablePlaceholders();
+}
+
+/**
+ * Get CRM data preview for an account
+ */
+export async function getCRMPlaceholdersForAccount(accountId: number) {
+  return crmIntegration.getCRMPlaceholdersForAccount(accountId);
+}
+
+/**
+ * Get CRM data preview for an opportunity
+ */
+export async function getCRMPlaceholdersForOpportunity(opportunityId: number) {
+  return crmIntegration.getCRMPlaceholdersForOpportunity(opportunityId);
 }
