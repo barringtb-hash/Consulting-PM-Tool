@@ -250,6 +250,11 @@ export async function resetPasswordWithToken(
  * Admin-initiated password reset for a user.
  * Requires ADMIN or SUPER_ADMIN role (checked at route level).
  *
+ * Authorization rules:
+ * - Super Admins can reset any user's password (cross-tenant)
+ * - Admins can only reset passwords for users within their tenant(s)
+ * - No one except Super Admins can reset Super Admin passwords
+ *
  * @param adminUserId - The ID of the admin performing the reset
  * @param targetUserId - The ID of the user whose password is being reset
  * @param newPassword - The new password (already validated)
@@ -273,18 +278,54 @@ export async function adminResetPassword(
     };
   }
 
-  // Get admin user for logging
+  // Get admin user with their tenant memberships
   const adminUser = await prisma.user.findUnique({
     where: { id: adminUserId },
-    select: { email: true, role: true },
+    select: {
+      email: true,
+      role: true,
+      tenantMemberships: {
+        select: { tenantId: true },
+      },
+    },
   });
 
+  if (!adminUser) {
+    return {
+      success: false,
+      message: 'Admin user not found.',
+    };
+  }
+
   // Prevent non-super-admins from resetting super admin passwords
-  if (targetUser.role === 'SUPER_ADMIN' && adminUser?.role !== 'SUPER_ADMIN') {
+  if (targetUser.role === 'SUPER_ADMIN' && adminUser.role !== 'SUPER_ADMIN') {
     return {
       success: false,
       message: 'Only Super Admins can reset other Super Admin passwords.',
     };
+  }
+
+  // For non-super-admins, verify tenant membership
+  // Admins can only reset passwords for users within their tenant(s)
+  if (adminUser.role !== 'SUPER_ADMIN') {
+    // Get tenant IDs that the admin belongs to
+    const adminTenantIds = adminUser.tenantMemberships.map((m) => m.tenantId);
+
+    // Check if target user shares at least one tenant with the admin
+    const sharedTenantCount = await prisma.tenantUser.count({
+      where: {
+        userId: targetUserId,
+        tenantId: { in: adminTenantIds },
+      },
+    });
+
+    if (sharedTenantCount === 0) {
+      return {
+        success: false,
+        message:
+          'You can only reset passwords for users within your organization.',
+      };
+    }
   }
 
   // Hash the new password
@@ -308,7 +349,7 @@ export async function adminResetPassword(
   });
 
   console.log(
-    `[Password Reset] Admin ${adminUser?.email} reset password for user: ${targetUser.email}`,
+    `[Password Reset] Admin ${adminUser.email} reset password for user: ${targetUser.email}`,
   );
 
   return {
