@@ -11,6 +11,7 @@ import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as contentGeneratorService from './content-generator.service';
 import * as intakeContentService from './services/intake-content.service';
 import * as sequenceService from './services/sequence.service';
+import * as translationService from './services/translation.service';
 import {
   hasClientAccess,
   getClientIdFromContentGeneratorConfig,
@@ -2082,6 +2083,233 @@ router.post(
 
     const paused = await sequenceService.pauseSequence(sequenceId);
     res.json({ sequence: paused });
+  },
+);
+
+// ============================================================================
+// TRANSLATION ROUTES (Phase 4: Multi-Language Support)
+// ============================================================================
+
+/**
+ * GET /languages
+ * Get list of supported languages for translation
+ */
+router.get(
+  '/languages',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const languages = translationService.getSupportedLanguages();
+    res.json({ languages });
+  },
+);
+
+/**
+ * POST /contents/:contentId/translate
+ * Translate content to a target language
+ */
+router.post(
+  '/contents/:contentId/translate',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const contentId = parseInt(req.params.contentId, 10);
+    if (isNaN(contentId)) {
+      res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Verify client access via content
+    const clientId = await getClientIdFromGeneratedContent(contentId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    if (!hasClientAccess(req.user!, clientId)) {
+      res.status(403).json({ error: 'Access denied to this content' });
+      return;
+    }
+
+    const translateSchema = z.object({
+      targetLanguage: z.string().min(2).max(10),
+      preserveFormatting: z.boolean().optional(),
+      preservePlaceholders: z.boolean().optional(),
+      customInstructions: z.string().max(500).optional(),
+    });
+
+    const parsed = translateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getGeneratedContent(
+      contentId,
+      0,
+    );
+    if (!content) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const result = await translationService.translateContent(
+      content.configId,
+      contentId,
+      parsed.data,
+    );
+
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    res.json({
+      success: true,
+      translatedContentId: result.translatedContentId,
+    });
+  },
+);
+
+/**
+ * POST /batch-translate
+ * Batch translate multiple contents to multiple languages
+ */
+router.post(
+  '/batch-translate',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const batchTranslateSchema = z.object({
+      contentIds: z.array(z.number().int().positive()).min(1).max(50),
+      targetLanguages: z.array(z.string().min(2).max(10)).min(1).max(10),
+      preserveFormatting: z.boolean().optional(),
+      preservePlaceholders: z.boolean().optional(),
+    });
+
+    const parsed = batchTranslateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Verify access to all contents
+    for (const contentId of parsed.data.contentIds) {
+      const clientId = await getClientIdFromGeneratedContent(contentId);
+      if (!clientId || !hasClientAccess(req.user!, clientId)) {
+        res
+          .status(403)
+          .json({ error: `Access denied to content ID ${contentId}` });
+        return;
+      }
+    }
+
+    // Get configId from first content
+    const firstContent = await contentGeneratorService.getGeneratedContent(
+      parsed.data.contentIds[0],
+      0,
+    );
+    if (!firstContent) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const result = await translationService.batchTranslate(
+      firstContent.configId,
+      parsed.data,
+    );
+
+    res.json(result);
+  },
+);
+
+/**
+ * GET /contents/:contentId/translations
+ * Get all translations of a content piece
+ */
+router.get(
+  '/contents/:contentId/translations',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const contentId = parseInt(req.params.contentId, 10);
+    if (isNaN(contentId)) {
+      res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Verify client access
+    const clientId = await getClientIdFromGeneratedContent(contentId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    if (!hasClientAccess(req.user!, clientId)) {
+      res.status(403).json({ error: 'Access denied to this content' });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getGeneratedContent(
+      contentId,
+      0,
+    );
+    if (!content) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const translations = await translationService.getContentTranslations(
+      content.configId,
+      contentId,
+    );
+
+    res.json({ translations });
+  },
+);
+
+/**
+ * DELETE /translations/:translationId
+ * Delete a translation (not the original content)
+ */
+router.delete(
+  '/translations/:translationId',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const translationId = parseInt(req.params.translationId, 10);
+    if (isNaN(translationId)) {
+      res.status(400).json({ error: 'Invalid translation ID' });
+      return;
+    }
+
+    // Verify client access
+    const clientId = await getClientIdFromGeneratedContent(translationId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+    if (!hasClientAccess(req.user!, clientId)) {
+      res.status(403).json({ error: 'Access denied to this translation' });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getGeneratedContent(
+      translationId,
+      0,
+    );
+    if (!content) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+
+    const result = await translationService.deleteTranslation(
+      content.configId,
+      translationId,
+    );
+
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    res.json({ success: true });
   },
 );
 

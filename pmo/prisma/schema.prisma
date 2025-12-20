@@ -3422,6 +3422,12 @@ model GeneratedContent {
   clicks         Int    @default(0)
   engagementRate Float?
 
+  // Multi-language support (Phase 4)
+  language            String            @default("en") // ISO 639-1 code
+  parentTranslationId Int? // Links to original content for translations
+  parentTranslation   GeneratedContent? @relation("ContentTranslations", fields: [parentTranslationId], references: [id])
+  translations        GeneratedContent[] @relation("ContentTranslations")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -3431,6 +3437,8 @@ model GeneratedContent {
   @@index([configId, type])
   @@index([configId, approvalStatus])
   @@index([createdAt(sort: Desc)])
+  @@index([parentTranslationId])
+  @@index([language])
 }
 
 /**
