@@ -13,6 +13,9 @@
 import { CompanySize, Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { getTenantId } from '../../tenant/tenant.context';
+import { createChildLogger } from '../../utils/logger';
+
+const log = createChildLogger({ module: 'account-service' });
 
 // ============================================================================
 // HELPER: Map Account employeeCount to Client companySize
@@ -371,18 +374,19 @@ export async function updateAccount(id: number, input: UpdateAccountInput) {
       throw new Error('Account not found');
     }
 
-    // 2. Preserve legacyClientId in customFields if updating customFields
+    // 2. Preserve legacyClientId in customFields
     const currentCustomFields =
       (currentAccount.customFields as Record<string, unknown>) || {};
     const legacyClientId = currentCustomFields.legacyClientId as
       | number
       | undefined;
 
-    let finalCustomFields = input.customFields;
-    if (input.customFields !== undefined && legacyClientId) {
+    // Only update customFields if explicitly provided; always preserve legacyClientId
+    let finalCustomFields: Record<string, unknown> | undefined;
+    if (input.customFields !== undefined) {
       finalCustomFields = {
         ...(input.customFields || {}),
-        legacyClientId,
+        ...(legacyClientId !== undefined ? { legacyClientId } : {}),
       };
     }
 
@@ -411,8 +415,12 @@ export async function updateAccount(id: number, input: UpdateAccountInput) {
             where: { id: legacyClientId },
             data: clientUpdateData,
           })
-          .catch(() => {
-            // Client may have been deleted separately - ignore error
+          .catch((error) => {
+            // Client may have been deleted separately - log warning for diagnostics
+            log.warn(
+              `Failed to update legacy Client ${legacyClientId} for Account ${id}`,
+              error,
+            );
           });
       }
     }
@@ -436,7 +444,10 @@ export async function updateAccount(id: number, input: UpdateAccountInput) {
         churnRisk: input.churnRisk,
         ownerId: input.ownerId,
         tags: input.tags,
-        customFields: finalCustomFields as Prisma.InputJsonValue,
+        // Only update customFields if explicitly provided
+        ...(finalCustomFields !== undefined
+          ? { customFields: finalCustomFields as Prisma.InputJsonValue }
+          : {}),
         archived: input.archived,
       },
       include: {
@@ -475,8 +486,12 @@ export async function archiveAccount(id: number) {
           where: { id: legacyClientId },
           data: { archived: true },
         })
-        .catch(() => {
-          // Client may have been deleted separately - ignore error
+        .catch((error) => {
+          // Client may have been deleted separately - log warning for diagnostics
+          log.warn(
+            `Failed to archive legacy Client ${legacyClientId} for Account ${id}`,
+            error,
+          );
         });
     }
 
@@ -515,8 +530,12 @@ export async function restoreAccount(id: number) {
           where: { id: legacyClientId },
           data: { archived: false },
         })
-        .catch(() => {
-          // Client may have been deleted separately - ignore error
+        .catch((error) => {
+          // Client may have been deleted separately - log warning for diagnostics
+          log.warn(
+            `Failed to restore legacy Client ${legacyClientId} for Account ${id}`,
+            error,
+          );
         });
     }
 
@@ -555,8 +574,12 @@ export async function deleteAccount(id: number) {
         .delete({
           where: { id: legacyClientId },
         })
-        .catch(() => {
-          // Client may have been deleted separately - ignore error
+        .catch((error) => {
+          // Client may have been deleted separately - log warning for diagnostics
+          log.warn(
+            `Failed to delete legacy Client ${legacyClientId} for Account ${id}`,
+            error,
+          );
         });
     }
 
