@@ -6,6 +6,15 @@ import { signToken } from './jwt';
 import { AuthenticatedRequest, optionalAuth } from './auth.middleware';
 import { buildAuthCookieOptions } from './cookies';
 import { createRateLimiter } from '../middleware/rate-limit.middleware';
+import {
+  requestPasswordReset,
+  validateResetToken,
+  resetPasswordWithToken,
+} from './password-reset.service';
+import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from '../validation/password-reset.schema';
 
 const router = Router();
 
@@ -19,6 +28,14 @@ const loginRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   maxRequests: isTestEnv ? 1000 : 5,
   message: 'Too many login attempts. Please try again in 15 minutes.',
+});
+
+// Rate limit password reset requests: 3 per hour per IP
+// More restrictive to prevent abuse while still allowing legitimate use
+const passwordResetRateLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxRequests: isTestEnv ? 1000 : 3,
+  message: 'Too many password reset attempts. Please try again later.',
 });
 
 // Pre-computed dummy hash for timing attack prevention
@@ -123,6 +140,95 @@ router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+/**
+ * POST /api/auth/forgot-password
+ * Request a password reset link
+ * Rate limited to prevent abuse
+ */
+router.post(
+  '/auth/forgot-password',
+  passwordResetRateLimiter,
+  async (req, res) => {
+    try {
+      const parsed = forgotPasswordSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({ errors: parsed.error.flatten() });
+        return;
+      }
+
+      const result = await requestPasswordReset(parsed.data.email);
+
+      // Always return success to prevent email enumeration
+      // In development, include resetUrl for testing
+      if (process.env.NODE_ENV !== 'production' && result.resetUrl) {
+        res.json({
+          message: result.message,
+          resetUrl: result.resetUrl, // Only in development
+        });
+      } else {
+        res.json({ message: result.message });
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res
+        .status(500)
+        .json({ error: 'Failed to process password reset request' });
+    }
+  },
+);
+
+/**
+ * GET /api/auth/verify-reset-token
+ * Verify if a password reset token is valid
+ */
+router.get('/auth/verify-reset-token', async (req, res) => {
+  try {
+    const token = req.query.token as string;
+
+    if (!token) {
+      res.status(400).json({ valid: false, message: 'Token is required' });
+      return;
+    }
+
+    const result = await validateResetToken(token);
+    res.json(result);
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    res.status(500).json({ valid: false, message: 'Failed to verify token' });
+  }
+});
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using a valid token
+ */
+router.post('/auth/reset-password', async (req, res) => {
+  try {
+    const parsed = resetPasswordSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    const result = await resetPasswordWithToken(
+      parsed.data.token,
+      parsed.data.password,
+    );
+
+    if (!result.success) {
+      res.status(400).json({ error: result.message });
+      return;
+    }
+
+    res.json({ message: result.message });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 

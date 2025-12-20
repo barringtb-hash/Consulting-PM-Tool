@@ -8,7 +8,9 @@ import {
   getUserById,
   updateUser,
 } from '../services/user.service';
+import { adminResetPassword } from '../auth/password-reset.service';
 import { createUserSchema, updateUserSchema } from '../validation/user.schema';
+import { adminResetPasswordSchema } from '../validation/password-reset.schema';
 
 const router = express.Router();
 
@@ -182,6 +184,57 @@ router.delete(
         return;
       }
       console.error('Unknown error deleting user:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * POST /api/users/:id/reset-password
+ * Reset a user's password (Admin only)
+ * Super Admins can reset any password, Admins cannot reset Super Admin passwords
+ */
+router.post(
+  '/:id/reset-password',
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+
+      if (isNaN(id)) {
+        res.status(400).json({ error: 'Invalid user ID' });
+        return;
+      }
+
+      // Validate request body
+      const body = req.body as { newPassword?: string };
+      const validation = adminResetPasswordSchema.safeParse({
+        userId: id,
+        newPassword: body.newPassword,
+      });
+
+      if (!validation.success) {
+        res.status(400).json({
+          error: 'Validation failed',
+          details: validation.error.format(),
+        });
+        return;
+      }
+
+      const result = await adminResetPassword(
+        req.userId!,
+        validation.data.userId,
+        validation.data.newPassword,
+      );
+
+      if (!result.success) {
+        res.status(400).json({ error: result.message });
+        return;
+      }
+
+      res.json({ message: result.message });
+    } catch (err: unknown) {
+      console.error('Error resetting user password:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

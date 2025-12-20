@@ -80,3 +80,69 @@ export async function logout(): Promise<void> {
 
   await handleResponse<void>(response);
 }
+
+export interface ForgotPasswordResponse {
+  message: string;
+  resetUrl?: string; // Only in development
+}
+
+export interface VerifyResetTokenResponse {
+  valid: boolean;
+  message?: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+/**
+ * Request a password reset link
+ */
+export async function forgotPassword(
+  email: string,
+): Promise<ForgotPasswordResponse> {
+  const response = await fetch(
+    `${AUTH_BASE_PATH}/forgot-password`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  );
+
+  return handleResponse<ForgotPasswordResponse>(response);
+}
+
+/**
+ * Verify if a password reset token is valid
+ */
+export async function verifyResetToken(
+  token: string,
+): Promise<VerifyResetTokenResponse> {
+  const response = await fetch(
+    `${AUTH_BASE_PATH}/verify-reset-token?token=${encodeURIComponent(token)}`,
+    buildOptions({
+      method: 'GET',
+    }),
+  );
+
+  return handleResponse<VerifyResetTokenResponse>(response);
+}
+
+/**
+ * Reset password using a valid token
+ */
+export async function resetPassword(
+  token: string,
+  password: string,
+  confirmPassword: string,
+): Promise<ResetPasswordResponse> {
+  const response = await fetch(
+    `${AUTH_BASE_PATH}/reset-password`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify({ token, password, confirmPassword }),
+    }),
+  );
+
+  return handleResponse<ResetPasswordResponse>(response);
+}
