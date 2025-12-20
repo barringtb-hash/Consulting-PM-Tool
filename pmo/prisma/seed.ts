@@ -37,6 +37,13 @@ type SeedUser = {
 
 const users: SeedUser[] = [
   {
+    name: 'Bryant Barrington',
+    email: 'Bryant.Barrington@elipseconsulting.ai',
+    password: 'ElipseAdmin2024!',
+    timezone: 'America/Chicago',
+    role: UserRole.SUPER_ADMIN,
+  },
+  {
     name: 'Avery Chen',
     email: 'avery.chen@pmo.test',
     password: 'PmoDemo123!',
@@ -117,7 +124,7 @@ const clients = [
     ],
   },
   {
-    name: 'Launchpad Consulting Partners',
+    name: 'Elipse Consulting',
     industry: 'Consulting',
     companySize: CompanySize.SMALL,
     timezone: 'America/New_York',
@@ -131,7 +138,7 @@ const projectSeeds = [
   // Admin-owned project for demo purposes
   {
     name: 'AI Strategy Roadmap',
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     ownerEmail: 'admin@pmo.test',
     status: ProjectStatus.IN_PROGRESS,
     startDate: new Date('2024-01-01'),
@@ -486,21 +493,21 @@ const aiAssetSeeds = [
 
 const brandProfileSeeds = [
   {
-    clientName: 'Launchpad Consulting Partners',
-    name: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
+    name: 'Elipse Consulting',
     description:
-      'A rising sun/sunrise icon with radiating rays above a horizon line, paired with "LAUNCHPAD" in bold text and "CONSULTING PARTNERS" as a subtitle with letter spacing.',
-    primaryColor: '#9F1239', // Rose - used for main headings and "LAUNCHPAD" text
+      'A modern consulting brand with "ELIPSE" in bold text and "CONSULTING" as a subtitle with letter spacing.',
+    primaryColor: '#9F1239', // Rose - used for main headings and "ELIPSE" text
     secondaryColor: '#F97316', // Orange - central color in the sunrise gradient
     accentColor: '#FCD34D', // Yellow - sun rays/accents
     fonts: {
       primary: {
         name: 'Primary Font',
-        usage: 'LAUNCHPAD heading text - bold weight',
+        usage: 'ELIPSE heading text - bold weight',
       },
       secondary: {
         name: 'Secondary Font',
-        usage: 'CONSULTING PARTNERS subtitle - letter spacing applied',
+        usage: 'CONSULTING subtitle - letter spacing applied',
       },
     },
     toneVoiceGuidelines:
@@ -559,7 +566,7 @@ const brandProfileSeeds = [
         name: 'Primary Logo (Light Background)',
         type: BrandAssetType.LOGO,
         description:
-          'Primary horizontal logo for light backgrounds - full color sunrise with LAUNCHPAD text',
+          'Primary horizontal logo for light backgrounds - full color with ELIPSE text',
         tags: ['primary', 'horizontal', 'light-bg'],
       },
       {
@@ -612,7 +619,7 @@ const marketingContentSeeds = [
     type: ContentType.LINKEDIN_POST,
     channel: ContentChannel.LINKEDIN,
     status: ContentStatus.PUBLISHED,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Case study highlighting AI chatbot implementation results',
@@ -638,7 +645,7 @@ Want to learn how AI can transform your business? Drop a comment below or visit 
     type: ContentType.BLOG_POST,
     channel: ContentChannel.WEB,
     status: ContentStatus.PUBLISHED,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Comprehensive guide to AI in customer service',
@@ -676,7 +683,7 @@ The future of customer service isn't about replacing humans with machines - it's
     type: ContentType.LINKEDIN_POST,
     channel: ContentChannel.LINKEDIN,
     status: ContentStatus.READY,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Sharing insights from our predictive maintenance project',
@@ -702,7 +709,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.CASE_STUDY,
     channel: ContentChannel.WEB,
     status: ContentStatus.READY,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Detailed case study on healthcare AI implementation',
@@ -735,7 +742,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.NEWSLETTER,
     channel: ContentChannel.EMAIL,
     status: ContentStatus.DRAFT,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Monthly newsletter showcasing AI trends and company updates',
@@ -760,7 +767,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.TWITTER_POST,
     channel: ContentChannel.TWITTER,
     status: ContentStatus.DRAFT,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Thread sharing practical AI implementation advice',
@@ -782,7 +789,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.EMAIL_TEMPLATE,
     channel: ContentChannel.EMAIL,
     status: ContentStatus.IN_REVIEW,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Lead nurture email offering free AI readiness assessment',
@@ -803,7 +810,7 @@ No sales pitch. Just actionable insights.
 [Take the Assessment →]
 
 Best,
-The Launchpad Team`,
+The Elipse Team`,
     },
     tags: ['email', 'lead-nurture', 'assessment', 'marketing'],
   },
@@ -813,7 +820,7 @@ The Launchpad Team`,
     type: ContentType.VIDEO_SCRIPT,
     channel: ContentChannel.WEB,
     status: ContentStatus.IDEA,
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Webinar concept targeting small business owners',
@@ -836,8 +843,8 @@ const campaignSeeds = [
   {
     name: 'Q1 2024 Thought Leadership',
     description:
-      'Establish Launchpad as the go-to AI consulting firm through thought leadership content',
-    clientName: 'Launchpad Consulting Partners',
+      'Establish Elipse as the go-to AI consulting firm through thought leadership content',
+    clientName: 'Elipse Consulting',
     status: CampaignStatus.ACTIVE,
     startDate: new Date('2024-01-01'),
     endDate: new Date('2024-03-31'),
@@ -852,7 +859,7 @@ const campaignSeeds = [
     name: 'Manufacturing AI Solutions Launch',
     description:
       'Launch campaign for predictive maintenance and industrial AI solutions',
-    clientName: 'Launchpad Consulting Partners',
+    clientName: 'Elipse Consulting',
     status: CampaignStatus.PLANNING,
     startDate: new Date('2024-02-15'),
     endDate: new Date('2024-05-15'),
@@ -899,10 +906,10 @@ async function main() {
   const defaultTenant = await prisma.tenant.upsert({
     where: { slug: 'default' },
     update: {
-      name: 'Launchpad Consulting Partners',
+      name: 'Elipse Consulting',
     },
     create: {
-      name: 'Launchpad Consulting Partners',
+      name: 'Elipse Consulting',
       slug: 'default',
       plan: 'PROFESSIONAL',
       status: 'ACTIVE',
@@ -912,8 +919,9 @@ async function main() {
 
   // Link all users to the default tenant
   for (const [email, userId] of userMap) {
-    const isAdmin =
-      users.find((u) => u.email === email)?.role === UserRole.ADMIN;
+    const userRole = users.find((u) => u.email === email)?.role;
+    const isOwner =
+      userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
     await prisma.tenantUser.upsert({
       where: {
         tenantId_userId: {
@@ -922,12 +930,12 @@ async function main() {
         },
       },
       update: {
-        role: isAdmin ? TenantRole.OWNER : TenantRole.MEMBER,
+        role: isOwner ? TenantRole.OWNER : TenantRole.MEMBER,
       },
       create: {
         tenantId: defaultTenant.id,
         userId,
-        role: isAdmin ? TenantRole.OWNER : TenantRole.MEMBER,
+        role: isOwner ? TenantRole.OWNER : TenantRole.MEMBER,
         acceptedAt: new Date(),
       },
     });
