@@ -1328,11 +1328,23 @@ import * as aiService from './ai';
 
 const aiGenerateFormSchema = z.object({
   description: z.string().min(10).max(2000),
-  industry: z.enum([
-    'legal', 'healthcare', 'financial', 'consulting', 'real_estate',
-    'insurance', 'education', 'technology', 'retail', 'manufacturing',
-    'hospitality', 'nonprofit', 'general'
-  ]).optional(),
+  industry: z
+    .enum([
+      'legal',
+      'healthcare',
+      'financial',
+      'consulting',
+      'real_estate',
+      'insurance',
+      'education',
+      'technology',
+      'retail',
+      'manufacturing',
+      'hospitality',
+      'nonprofit',
+      'general',
+    ])
+    .optional(),
   formName: z.string().max(200).optional(),
   includeCompliance: z.boolean().optional(),
   maxFields: z.number().int().min(1).max(50).optional(),
@@ -1341,11 +1353,23 @@ const aiGenerateFormSchema = z.object({
 const aiSuggestFieldsSchema = z.object({
   existingFields: z.array(z.string()),
   formName: z.string().min(1).max(200),
-  industry: z.enum([
-    'legal', 'healthcare', 'financial', 'consulting', 'real_estate',
-    'insurance', 'education', 'technology', 'retail', 'manufacturing',
-    'hospitality', 'nonprofit', 'general'
-  ]).optional(),
+  industry: z
+    .enum([
+      'legal',
+      'healthcare',
+      'financial',
+      'consulting',
+      'real_estate',
+      'insurance',
+      'education',
+      'technology',
+      'retail',
+      'manufacturing',
+      'hospitality',
+      'nonprofit',
+      'general',
+    ])
+    .optional(),
   description: z.string().max(1000).optional(),
 });
 
@@ -1446,7 +1470,7 @@ router.get(
       return;
     }
 
-    const industries = aiService.getAvailableIndustries().map(industry => ({
+    const industries = aiService.getAvailableIndustries().map((industry) => ({
       value: industry,
       label: aiService.getIndustryDisplayName(industry),
     }));
@@ -1476,7 +1500,9 @@ router.post(
     // Check client access
     const clientId = await getClientIdFromIntakeConfig(configId);
     if (!clientId || !(await hasClientAccess(req.userId, clientId))) {
-      res.status(403).json({ error: 'Access denied to this intake configuration' });
+      res
+        .status(403)
+        .json({ error: 'Access denied to this intake configuration' });
       return;
     }
 
@@ -1569,7 +1595,8 @@ router.post(
       res.status(201).json({ data: result });
     } catch (error) {
       console.error('Error starting conversation:', error);
-      const message = error instanceof Error ? error.message : 'Failed to start conversation';
+      const message =
+        error instanceof Error ? error.message : 'Failed to start conversation';
       res.status(500).json({ error: message });
     }
   },
@@ -1591,11 +1618,15 @@ router.post(
     }
 
     try {
-      const result = await conversationService.processMessage(token, parsed.data.message);
+      const result = await conversationService.processMessage(
+        token,
+        parsed.data.message,
+      );
       res.json({ data: result });
     } catch (error) {
       console.error('Error processing message:', error);
-      const message = error instanceof Error ? error.message : 'Failed to process message';
+      const message =
+        error instanceof Error ? error.message : 'Failed to process message';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else if (message.includes('not active')) {
@@ -1621,7 +1652,8 @@ router.get(
       res.json({ data: summary });
     } catch (error) {
       console.error('Error getting conversation summary:', error);
-      const message = error instanceof Error ? error.message : 'Failed to get summary';
+      const message =
+        error instanceof Error ? error.message : 'Failed to get summary';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -1645,7 +1677,8 @@ router.get(
       res.json({ data: history });
     } catch (error) {
       console.error('Error getting conversation history:', error);
-      const message = error instanceof Error ? error.message : 'Failed to get history';
+      const message =
+        error instanceof Error ? error.message : 'Failed to get history';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -1669,7 +1702,8 @@ router.post(
       res.json({ data: { success: true, message: 'Conversation paused' } });
     } catch (error) {
       console.error('Error pausing conversation:', error);
-      const message = error instanceof Error ? error.message : 'Failed to pause conversation';
+      const message =
+        error instanceof Error ? error.message : 'Failed to pause conversation';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -1693,7 +1727,10 @@ router.post(
       res.json({ data: result });
     } catch (error) {
       console.error('Error resuming conversation:', error);
-      const message = error instanceof Error ? error.message : 'Failed to resume conversation';
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to resume conversation';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else if (message.includes('not paused')) {
@@ -1719,7 +1756,10 @@ router.post(
       res.json({ data: { success: true, message: 'Conversation abandoned' } });
     } catch (error) {
       console.error('Error abandoning conversation:', error);
-      const message = error instanceof Error ? error.message : 'Failed to abandon conversation';
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to abandon conversation';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -1889,7 +1929,10 @@ router.post(
       res.json({ data: result });
     } catch (error) {
       console.error('Conflict check error:', error);
-      const message = error instanceof Error ? error.message : 'Failed to perform conflict check';
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to perform conflict check';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -1970,7 +2013,10 @@ router.post(
       res.json({ data: letter });
     } catch (error) {
       console.error('Engagement letter generation error:', error);
-      const message = error instanceof Error ? error.message : 'Failed to generate engagement letter';
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to generate engagement letter';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -2042,7 +2088,8 @@ router.post(
       res.json({ data: { content } });
     } catch (error) {
       console.error('Template preview error:', error);
-      const message = error instanceof Error ? error.message : 'Failed to preview template';
+      const message =
+        error instanceof Error ? error.message : 'Failed to preview template';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -2057,12 +2104,16 @@ router.post(
 // ============================================================================
 
 const screeningConfigSchema = z.object({
-  practiceAreas: z.array(z.object({
-    name: z.string(),
-    aliases: z.array(z.string()),
-    acceptNew: z.boolean(),
-    minimumValue: z.number().optional(),
-  })).optional(),
+  practiceAreas: z
+    .array(
+      z.object({
+        name: z.string(),
+        aliases: z.array(z.string()),
+        acceptNew: z.boolean(),
+        minimumValue: z.number().optional(),
+      }),
+    )
+    .optional(),
   jurisdictions: z.array(z.string()).optional(),
   autoDeclineReasons: z.array(z.string()).optional(),
 });
@@ -2102,7 +2153,8 @@ router.post(
       res.json({ data: result });
     } catch (error) {
       console.error('Screening error:', error);
-      const message = error instanceof Error ? error.message : 'Failed to perform screening';
+      const message =
+        error instanceof Error ? error.message : 'Failed to perform screening';
       if (message.includes('not found')) {
         res.status(404).json({ error: message });
       } else {
@@ -2307,10 +2359,16 @@ router.get(
 
       if (format === 'json') {
         res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', 'attachment; filename="intake-analytics.json"');
+        res.setHeader(
+          'Content-Disposition',
+          'attachment; filename="intake-analytics.json"',
+        );
       } else {
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename="intake-analytics.csv"');
+        res.setHeader(
+          'Content-Disposition',
+          'attachment; filename="intake-analytics.csv"',
+        );
       }
 
       res.send(report);
@@ -2331,13 +2389,15 @@ import * as channelService from './channels';
 const channelConfigUpdateSchema = z.object({
   channel: z.enum(['SMS', 'WHATSAPP', 'WIDGET']),
   isEnabled: z.boolean().optional(),
-  credentials: z.object({
-    type: z.enum(['twilio', 'whatsapp_business']),
-    accountSid: z.string().optional(),
-    authToken: z.string().optional(),
-    phoneNumber: z.string().optional(),
-    messagingServiceSid: z.string().optional(),
-  }).optional(),
+  credentials: z
+    .object({
+      type: z.enum(['twilio', 'whatsapp_business']),
+      accountSid: z.string().optional(),
+      authToken: z.string().optional(),
+      phoneNumber: z.string().optional(),
+      messagingServiceSid: z.string().optional(),
+    })
+    .optional(),
   settings: z.record(z.string(), z.unknown()).optional(),
   welcomeMessage: z.string().max(1000).optional(),
   completionMessage: z.string().max(1000).optional(),
@@ -2345,7 +2405,9 @@ const channelConfigUpdateSchema = z.object({
 });
 
 const widgetConfigUpdateSchema = z.object({
-  position: z.enum(['bottom-right', 'bottom-left', 'top-right', 'top-left']).optional(),
+  position: z
+    .enum(['bottom-right', 'bottom-left', 'top-right', 'top-left'])
+    .optional(),
   primaryColor: z.string().max(20).optional(),
   textColor: z.string().max(20).optional(),
   buttonText: z.string().max(50).optional(),
@@ -2356,12 +2418,16 @@ const widgetConfigUpdateSchema = z.object({
   defaultMode: z.enum(['form', 'chat']).optional(),
   autoOpen: z.boolean().optional(),
   openDelay: z.number().int().min(0).max(60000).optional(),
-  triggers: z.array(z.object({
-    type: z.enum(['time', 'scroll', 'exit_intent', 'page_view']),
-    delay: z.number().optional(),
-    scrollPercent: z.number().optional(),
-    pagePattern: z.string().optional(),
-  })).optional(),
+  triggers: z
+    .array(
+      z.object({
+        type: z.enum(['time', 'scroll', 'exit_intent', 'page_view']),
+        delay: z.number().optional(),
+        scrollPercent: z.number().optional(),
+        pagePattern: z.string().optional(),
+      }),
+    )
+    .optional(),
   preFillFromUrl: z.boolean().optional(),
   trackAnalytics: z.boolean().optional(),
   googleAnalyticsId: z.string().max(50).optional(),
@@ -2399,14 +2465,23 @@ router.get(
         return;
       }
 
-      const storedSettings = (config.storageCredentials || {}) as Record<string, unknown>;
+      const storedSettings = (config.storageCredentials || {}) as Record<
+        string,
+        unknown
+      >;
       const channelSettings = storedSettings.channelSettings || {};
 
       res.json({
         data: {
-          sms: (channelSettings as Record<string, unknown>).sms || { isEnabled: false },
-          whatsapp: (channelSettings as Record<string, unknown>).whatsapp || { isEnabled: false },
-          widget: (channelSettings as Record<string, unknown>).widget || { isEnabled: false },
+          sms: (channelSettings as Record<string, unknown>).sms || {
+            isEnabled: false,
+          },
+          whatsapp: (channelSettings as Record<string, unknown>).whatsapp || {
+            isEnabled: false,
+          },
+          widget: (channelSettings as Record<string, unknown>).widget || {
+            isEnabled: false,
+          },
         },
       });
     } catch (error) {
@@ -2439,12 +2514,17 @@ router.put(
 
     const channel = req.params.channel.toUpperCase();
     if (!['SMS', 'WHATSAPP', 'WIDGET'].includes(channel)) {
-      res.status(400).json({ error: 'Invalid channel. Must be SMS, WHATSAPP, or WIDGET' });
+      res
+        .status(400)
+        .json({ error: 'Invalid channel. Must be SMS, WHATSAPP, or WIDGET' });
       return;
     }
 
     const bodyData = (req.body || {}) as Record<string, unknown>;
-    const parsed = channelConfigUpdateSchema.safeParse({ ...bodyData, channel });
+    const parsed = channelConfigUpdateSchema.safeParse({
+      ...bodyData,
+      channel,
+    });
     if (!parsed.success) {
       res.status(400).json({ errors: parsed.error.flatten() });
       return;
@@ -2460,10 +2540,17 @@ router.put(
         return;
       }
 
-      const storedSettings = (config.storageCredentials || {}) as Record<string, unknown>;
-      const channelSettings = (storedSettings.channelSettings || {}) as Record<string, unknown>;
+      const storedSettings = (config.storageCredentials || {}) as Record<
+        string,
+        unknown
+      >;
+      const channelSettings = (storedSettings.channelSettings || {}) as Record<
+        string,
+        unknown
+      >;
 
-      const existingChannelConfig = (channelSettings[channel.toLowerCase()] || {}) as Record<string, unknown>;
+      const existingChannelConfig = (channelSettings[channel.toLowerCase()] ||
+        {}) as Record<string, unknown>;
       channelSettings[channel.toLowerCase()] = {
         ...existingChannelConfig,
         ...parsed.data,
@@ -2511,7 +2598,8 @@ router.get(
     }
 
     try {
-      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      const widgetConfig =
+        await channelService.widgetService.getWidgetConfig(configId);
       if (!widgetConfig) {
         res.status(404).json({ error: 'Config not found' });
         return;
@@ -2550,14 +2638,18 @@ router.put(
     }
 
     try {
-      const widgetConfig = await channelService.widgetService.updateWidgetConfig(
-        configId,
-        parsed.data,
-      );
+      const widgetConfig =
+        await channelService.widgetService.updateWidgetConfig(
+          configId,
+          parsed.data,
+        );
       res.json({ data: widgetConfig });
     } catch (error) {
       console.error('Error updating widget config:', error);
-      const message = error instanceof Error ? error.message : 'Failed to update widget configuration';
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to update widget configuration';
       res.status(500).json({ error: message });
     }
   },
@@ -2582,7 +2674,8 @@ router.get(
     }
 
     try {
-      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const apiBaseUrl =
+        process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
       const formSlug = req.query.formSlug as string | undefined;
 
       const embed = channelService.widgetService.generateEmbedCode(
@@ -2613,14 +2706,19 @@ router.get(
     }
 
     try {
-      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      const widgetConfig =
+        await channelService.widgetService.getWidgetConfig(configId);
       if (!widgetConfig) {
         res.status(404).send('// Config not found');
         return;
       }
 
-      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
-      const script = channelService.widgetService.generateWidgetScript(widgetConfig, apiBaseUrl);
+      const apiBaseUrl =
+        process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const script = channelService.widgetService.generateWidgetScript(
+        widgetConfig,
+        apiBaseUrl,
+      );
 
       res.setHeader('Content-Type', 'application/javascript');
       res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
@@ -2646,14 +2744,19 @@ router.get(
     }
 
     try {
-      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      const widgetConfig =
+        await channelService.widgetService.getWidgetConfig(configId);
       if (!widgetConfig) {
         res.status(404).send('Config not found');
         return;
       }
 
-      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
-      const html = channelService.widgetService.generateChatPageHtml(widgetConfig, apiBaseUrl);
+      const apiBaseUrl =
+        process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const html = channelService.widgetService.generateChatPageHtml(
+        widgetConfig,
+        apiBaseUrl,
+      );
 
       res.setHeader('Content-Type', 'text/html');
       res.send(html);
@@ -2678,14 +2781,19 @@ router.get(
     }
 
     try {
-      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      const widgetConfig =
+        await channelService.widgetService.getWidgetConfig(configId);
       if (!widgetConfig) {
         res.status(404).send('Config not found');
         return;
       }
 
-      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
-      const html = channelService.widgetService.generateFormPageHtml(widgetConfig, apiBaseUrl);
+      const apiBaseUrl =
+        process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const html = channelService.widgetService.generateFormPageHtml(
+        widgetConfig,
+        apiBaseUrl,
+      );
 
       res.setHeader('Content-Type', 'text/html');
       res.send(html);
@@ -2709,14 +2817,21 @@ router.post(
       return;
     }
 
-    const { event, data } = req.body as { event?: string; data?: Record<string, unknown> };
+    const { event, data } = req.body as {
+      event?: string;
+      data?: Record<string, unknown>;
+    };
     if (!event) {
       res.status(400).json({ error: 'Event is required' });
       return;
     }
 
     try {
-      await channelService.widgetService.trackWidgetEvent(configId, event, data);
+      await channelService.widgetService.trackWidgetEvent(
+        configId,
+        event,
+        data,
+      );
       res.json({ success: true });
     } catch (error) {
       console.error('Error tracking widget event:', error);

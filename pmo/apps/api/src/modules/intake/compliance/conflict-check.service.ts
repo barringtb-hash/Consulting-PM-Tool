@@ -64,7 +64,7 @@ const DEFAULT_CONFIG: ConflictCheckConfig = {
  */
 export async function checkForConflicts(
   submissionId: number,
-  config?: Partial<ConflictCheckConfig>
+  config?: Partial<ConflictCheckConfig>,
 ): Promise<ConflictCheckResult> {
   const checkConfig = { ...DEFAULT_CONFIG, ...config };
 
@@ -114,7 +114,7 @@ export async function checkForConflicts(
     const accountMatches = await checkAgainstAccounts(
       tenantId,
       searchCriteria,
-      checkConfig
+      checkConfig,
     );
     matches.push(...accountMatches);
   }
@@ -124,7 +124,7 @@ export async function checkForConflicts(
     const contactMatches = await checkAgainstContacts(
       tenantId,
       searchCriteria,
-      checkConfig
+      checkConfig,
     );
     matches.push(...contactMatches);
   }
@@ -134,7 +134,7 @@ export async function checkForConflicts(
     const opportunityMatches = await checkAgainstOpportunities(
       tenantId,
       searchCriteria,
-      checkConfig
+      checkConfig,
     );
     matches.push(...opportunityMatches);
   }
@@ -144,7 +144,7 @@ export async function checkForConflicts(
     const adverseMatches = await checkAdverseParties(
       tenantId,
       formData,
-      checkConfig
+      checkConfig,
     );
     matches.push(...adverseMatches);
   }
@@ -170,7 +170,7 @@ export async function checkForConflicts(
  */
 export async function quickConflictCheck(
   tenantId: string,
-  names: string[]
+  names: string[],
 ): Promise<{ hasConflicts: boolean; matchCount: number }> {
   if (names.length === 0) {
     return { hasConflicts: false, matchCount: 0 };
@@ -223,12 +223,23 @@ function extractSearchCriteria(formData: Record<string, unknown>): string[] {
 
   // Fields that typically contain names to check
   const nameFields = [
-    'full_name', 'name', 'client_name', 'contact_name',
-    'company_name', 'business_name', 'organization',
-    'first_name', 'last_name',
-    'opposing_party', 'adverse_party', 'defendant', 'plaintiff',
-    'other_parties', 'related_parties',
-    'spouse_name', 'partner_name',
+    'full_name',
+    'name',
+    'client_name',
+    'contact_name',
+    'company_name',
+    'business_name',
+    'organization',
+    'first_name',
+    'last_name',
+    'opposing_party',
+    'adverse_party',
+    'defendant',
+    'plaintiff',
+    'other_parties',
+    'related_parties',
+    'spouse_name',
+    'partner_name',
   ];
 
   for (const field of nameFields) {
@@ -243,7 +254,12 @@ function extractSearchCriteria(formData: Record<string, unknown>): string[] {
   }
 
   // Check for arrays of parties
-  const partyArrayFields = ['parties', 'defendants', 'plaintiffs', 'other_parties'];
+  const partyArrayFields = [
+    'parties',
+    'defendants',
+    'plaintiffs',
+    'other_parties',
+  ];
   for (const field of partyArrayFields) {
     const value = formData[field];
     if (Array.isArray(value)) {
@@ -291,7 +307,7 @@ function normalizeName(name: string): string | null {
 async function checkAgainstAccounts(
   tenantId: string,
   criteria: string[],
-  config: ConflictCheckConfig
+  config: ConflictCheckConfig,
 ): Promise<ConflictMatch[]> {
   const matches: ConflictMatch[] = [];
 
@@ -311,7 +327,7 @@ async function checkAgainstAccounts(
     for (const account of accounts) {
       const similarity = calculateSimilarity(
         normalizedCriterion,
-        normalizeName(account.name) || ''
+        normalizeName(account.name) || '',
       );
 
       if (similarity >= config.minimumSimilarity) {
@@ -338,7 +354,7 @@ async function checkAgainstAccounts(
 async function checkAgainstContacts(
   tenantId: string,
   criteria: string[],
-  config: ConflictCheckConfig
+  config: ConflictCheckConfig,
 ): Promise<ConflictMatch[]> {
   const matches: ConflictMatch[] = [];
 
@@ -358,7 +374,9 @@ async function checkAgainstContacts(
           {
             AND: [
               { firstName: { contains: firstName, mode: 'insensitive' } },
-              lastName ? { lastName: { contains: lastName, mode: 'insensitive' } } : {},
+              lastName
+                ? { lastName: { contains: lastName, mode: 'insensitive' } }
+                : {},
             ],
           },
           { firstName: { contains: normalizedCriterion, mode: 'insensitive' } },
@@ -377,7 +395,7 @@ async function checkAgainstContacts(
       const fullName = `${contact.firstName} ${contact.lastName}`.trim();
       const similarity = calculateSimilarity(
         normalizedCriterion,
-        normalizeName(fullName) || ''
+        normalizeName(fullName) || '',
       );
 
       if (similarity >= config.minimumSimilarity) {
@@ -406,7 +424,7 @@ async function checkAgainstContacts(
 async function checkAgainstOpportunities(
   tenantId: string,
   criteria: string[],
-  config: ConflictCheckConfig
+  config: ConflictCheckConfig,
 ): Promise<ConflictMatch[]> {
   const matches: ConflictMatch[] = [];
 
@@ -419,7 +437,9 @@ async function checkAgainstOpportunities(
         tenantId,
         OR: [
           { name: { contains: normalizedCriterion, mode: 'insensitive' } },
-          { description: { contains: normalizedCriterion, mode: 'insensitive' } },
+          {
+            description: { contains: normalizedCriterion, mode: 'insensitive' },
+          },
         ],
       },
       include: {
@@ -433,7 +453,7 @@ async function checkAgainstOpportunities(
     for (const opp of opportunities) {
       const similarity = calculateSimilarity(
         normalizedCriterion,
-        normalizeName(opp.name) || ''
+        normalizeName(opp.name) || '',
       );
 
       if (similarity >= config.minimumSimilarity) {
@@ -462,14 +482,19 @@ async function checkAgainstOpportunities(
 async function checkAdverseParties(
   tenantId: string,
   formData: Record<string, unknown>,
-  config: ConflictCheckConfig
+  config: ConflictCheckConfig,
 ): Promise<ConflictMatch[]> {
   const matches: ConflictMatch[] = [];
 
   // Extract adverse parties from form data
   const adversePartyFields = [
-    'opposing_party', 'adverse_party', 'defendant', 'defendants',
-    'other_side', 'opposing_counsel', 'other_parties',
+    'opposing_party',
+    'adverse_party',
+    'defendant',
+    'defendants',
+    'other_side',
+    'opposing_counsel',
+    'other_parties',
   ];
 
   const adverseParties: string[] = [];
@@ -478,7 +503,7 @@ async function checkAdverseParties(
     if (typeof value === 'string' && value.trim()) {
       adverseParties.push(value.trim());
     } else if (Array.isArray(value)) {
-      adverseParties.push(...value.filter(v => typeof v === 'string'));
+      adverseParties.push(...value.filter((v) => typeof v === 'string'));
     }
   }
 
@@ -500,7 +525,7 @@ async function checkAdverseParties(
     for (const account of accounts) {
       const similarity = calculateSimilarity(
         normalizedParty,
-        normalizeName(account.name) || ''
+        normalizeName(account.name) || '',
       );
 
       if (similarity >= config.minimumSimilarity) {
@@ -534,7 +559,7 @@ function calculateSimilarity(str1: string, str2: string): number {
   const set1 = new Set(str1.toLowerCase().split(''));
   const set2 = new Set(str2.toLowerCase().split(''));
 
-  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const intersection = new Set([...set1].filter((x) => set2.has(x)));
   const union = new Set([...set1, ...set2]);
 
   return intersection.size / union.size;
@@ -545,7 +570,7 @@ function calculateSimilarity(str1: string, str2: string): number {
  */
 function determineSeverity(
   similarity: number,
-  matchType: 'account' | 'contact' | 'opportunity' | 'matter'
+  _matchType: 'account' | 'contact' | 'opportunity' | 'matter',
 ): ConflictSeverity {
   if (similarity >= 0.95) return 'high';
   if (similarity >= 0.85) return 'medium';
@@ -559,10 +584,10 @@ function determineSeverity(
 function determineOverallSeverity(matches: ConflictMatch[]): ConflictSeverity {
   if (matches.length === 0) return 'none';
 
-  if (matches.some(m => m.severity === 'blocking')) return 'blocking';
-  if (matches.some(m => m.severity === 'high')) return 'high';
-  if (matches.some(m => m.severity === 'medium')) return 'medium';
-  if (matches.some(m => m.severity === 'low')) return 'low';
+  if (matches.some((m) => m.severity === 'blocking')) return 'blocking';
+  if (matches.some((m) => m.severity === 'high')) return 'high';
+  if (matches.some((m) => m.severity === 'medium')) return 'medium';
+  if (matches.some((m) => m.severity === 'low')) return 'low';
 
   return 'none';
 }
@@ -572,12 +597,14 @@ function determineOverallSeverity(matches: ConflictMatch[]): ConflictSeverity {
  */
 function generateRecommendations(
   matches: ConflictMatch[],
-  severity: ConflictSeverity
+  severity: ConflictSeverity,
 ): string[] {
   const recommendations: string[] = [];
 
   if (severity === 'blocking') {
-    recommendations.push('STOP: Potential conflict with adverse party detected');
+    recommendations.push(
+      'STOP: Potential conflict with adverse party detected',
+    );
     recommendations.push('Immediate review by supervising attorney required');
     recommendations.push('Do not proceed until conflict is cleared');
   } else if (severity === 'high') {
@@ -596,10 +623,12 @@ function generateRecommendations(
   }
 
   // Add specific recommendations for match types
-  const adverseMatches = matches.filter(m => m.matchField === 'adverse_party');
+  const adverseMatches = matches.filter(
+    (m) => m.matchField === 'adverse_party',
+  );
   if (adverseMatches.length > 0) {
     recommendations.push(
-      `${adverseMatches.length} adverse party match(es) require immediate review`
+      `${adverseMatches.length} adverse party match(es) require immediate review`,
     );
   }
 
@@ -611,7 +640,7 @@ function generateRecommendations(
  */
 export async function saveConflictCheckResult(
   submissionId: number,
-  result: ConflictCheckResult
+  result: ConflictCheckResult,
 ): Promise<void> {
   const submission = await prisma.intakeSubmission.findUnique({
     where: { id: submissionId },

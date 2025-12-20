@@ -12,18 +12,18 @@ import { env } from '../../../config/env';
 // ============================================================================
 
 export type IntentType =
-  | 'provide_information'    // User is providing requested information
-  | 'ask_question'           // User is asking a question
-  | 'request_clarification'  // User wants clarification on what to provide
-  | 'skip_field'             // User wants to skip current field
-  | 'go_back'                // User wants to go back to previous field
-  | 'request_help'           // User needs help
-  | 'confirm'                // User is confirming something
-  | 'deny'                   // User is denying/rejecting something
-  | 'correction'             // User wants to correct a previous answer
-  | 'complete'               // User wants to complete/submit
-  | 'pause'                  // User wants to pause and come back later
-  | 'unknown';               // Unable to determine intent
+  | 'provide_information' // User is providing requested information
+  | 'ask_question' // User is asking a question
+  | 'request_clarification' // User wants clarification on what to provide
+  | 'skip_field' // User wants to skip current field
+  | 'go_back' // User wants to go back to previous field
+  | 'request_help' // User needs help
+  | 'confirm' // User is confirming something
+  | 'deny' // User is denying/rejecting something
+  | 'correction' // User wants to correct a previous answer
+  | 'complete' // User wants to complete/submit
+  | 'pause' // User wants to pause and come back later
+  | 'unknown'; // Unable to determine intent
 
 export interface IntentDetectionResult {
   intent: IntentType;
@@ -127,7 +127,7 @@ export async function detectIntent(
   context?: {
     currentField?: string;
     previousIntents?: IntentType[];
-  }
+  },
 ): Promise<IntentDetectionResult> {
   // First try rule-based detection (faster, no API needed)
   const ruleBasedResult = detectIntentRuleBased(message);
@@ -197,9 +197,11 @@ async function detectIntentWithAI(
   context?: {
     currentField?: string;
     previousIntents?: IntentType[];
-  }
+  },
 ): Promise<IntentDetectionResult> {
-  const intentList = Object.keys(INTENT_PATTERNS).filter(i => i !== 'unknown');
+  const intentList = Object.keys(INTENT_PATTERNS).filter(
+    (i) => i !== 'unknown',
+  );
   const contextInfo = context?.currentField
     ? `Current field being asked: ${context.currentField}`
     : 'No specific field context';
@@ -308,7 +310,9 @@ export function isNavigationIntent(intent: IntentType): boolean {
  * Check if intent indicates user needs assistance
  */
 export function isAssistanceIntent(intent: IntentType): boolean {
-  return ['ask_question', 'request_clarification', 'request_help'].includes(intent);
+  return ['ask_question', 'request_clarification', 'request_help'].includes(
+    intent,
+  );
 }
 
 /**

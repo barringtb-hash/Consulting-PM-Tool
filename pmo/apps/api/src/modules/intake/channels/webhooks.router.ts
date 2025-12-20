@@ -14,10 +14,7 @@ import {
 } from './channel-adapter.service';
 import * as smsService from './sms.service';
 import * as whatsappService from './whatsapp.service';
-import {
-  IntakeChannelConfig,
-  IncomingIntakeMessage,
-} from './channel.types';
+import { IntakeChannelConfig, IncomingIntakeMessage } from './channel.types';
 
 const router = Router();
 
@@ -35,7 +32,10 @@ router.post('/twilio/sms', async (req: Request, res: Response) => {
       const signature = req.headers['x-twilio-signature'] as string;
       const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-      if (!signature || !verifyTwilioSignature(fullUrl, req.body, signature, TWILIO_AUTH_TOKEN)) {
+      if (
+        !signature ||
+        !verifyTwilioSignature(fullUrl, req.body, signature, TWILIO_AUTH_TOKEN)
+      ) {
         console.warn('Invalid Twilio SMS webhook signature');
         res.status(401).send('Invalid signature');
         return;
@@ -62,12 +62,17 @@ router.post('/twilio/sms', async (req: Request, res: Response) => {
     if (!channelConfig) {
       console.warn('No SMS channel config found for:', req.body.To);
       // Return empty TwiML to avoid Twilio retries
-      res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+      res
+        .type('text/xml')
+        .send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
       return;
     }
 
     // Process the message
-    const response = await smsService.processIncomingSms(incomingMessage, channelConfig);
+    const response = await smsService.processIncomingSms(
+      incomingMessage,
+      channelConfig,
+    );
 
     // Send response via Twilio
     if (channelConfig.credentials) {
@@ -75,7 +80,9 @@ router.post('/twilio/sms', async (req: Request, res: Response) => {
     }
 
     // Return TwiML response (empty - we handle responses ourselves)
-    res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    res
+      .type('text/xml')
+      .send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
   } catch (error) {
     console.error('Error processing SMS webhook:', error);
     res.status(500).send('Internal server error');
@@ -93,7 +100,10 @@ router.post('/twilio/whatsapp', async (req: Request, res: Response) => {
       const signature = req.headers['x-twilio-signature'] as string;
       const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-      if (!signature || !verifyTwilioSignature(fullUrl, req.body, signature, TWILIO_AUTH_TOKEN)) {
+      if (
+        !signature ||
+        !verifyTwilioSignature(fullUrl, req.body, signature, TWILIO_AUTH_TOKEN)
+      ) {
         console.warn('Invalid Twilio WhatsApp webhook signature');
         res.status(401).send('Invalid signature');
         return;
@@ -119,7 +129,9 @@ router.post('/twilio/whatsapp', async (req: Request, res: Response) => {
 
     if (!channelConfig) {
       console.warn('No WhatsApp channel config found');
-      res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+      res
+        .type('text/xml')
+        .send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
       return;
     }
 
@@ -135,7 +147,9 @@ router.post('/twilio/whatsapp', async (req: Request, res: Response) => {
     }
 
     // Return TwiML response
-    res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    res
+      .type('text/xml')
+      .send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
   } catch (error) {
     console.error('Error processing WhatsApp webhook:', error);
     res.status(500).send('Internal server error');
@@ -159,7 +173,9 @@ router.post('/twilio/status', async (req: Request, res: Response) => {
 
     // Log status updates (could store in database for tracking)
     if (ErrorCode) {
-      console.error(`Message ${MessageSid} failed: ${ErrorCode} - ${ErrorMessage}`);
+      console.error(
+        `Message ${MessageSid} failed: ${ErrorCode} - ${ErrorMessage}`,
+      );
     }
 
     res.status(200).send('OK');
@@ -182,24 +198,28 @@ router.get('/health', (_req: Request, res: Response) => {
 });
 
 // Channel config schema for validation
-const channelConfigSchema = z.object({
+const _channelConfigSchema = z.object({
   configId: z.number().int().positive(),
   channel: z.enum(['SMS', 'WHATSAPP', 'WIDGET']),
   isEnabled: z.boolean(),
-  credentials: z.object({
-    type: z.enum(['twilio', 'whatsapp_business']),
-    accountSid: z.string().optional(),
-    authToken: z.string().optional(),
-    phoneNumber: z.string().optional(),
-    messagingServiceSid: z.string().optional(),
-  }).optional(),
-  settings: z.object({
-    maxMessageLength: z.number().optional(),
-    sendConfirmation: z.boolean().optional(),
-    useButtons: z.boolean().optional(),
-    useQuickReplies: z.boolean().optional(),
-    collectEmailFirst: z.boolean().optional(),
-  }).optional(),
+  credentials: z
+    .object({
+      type: z.enum(['twilio', 'whatsapp_business']),
+      accountSid: z.string().optional(),
+      authToken: z.string().optional(),
+      phoneNumber: z.string().optional(),
+      messagingServiceSid: z.string().optional(),
+    })
+    .optional(),
+  settings: z
+    .object({
+      maxMessageLength: z.number().optional(),
+      sendConfirmation: z.boolean().optional(),
+      useButtons: z.boolean().optional(),
+      useQuickReplies: z.boolean().optional(),
+      collectEmailFirst: z.boolean().optional(),
+    })
+    .optional(),
   welcomeMessage: z.string().optional(),
   completionMessage: z.string().optional(),
   errorMessage: z.string().optional(),
@@ -228,30 +248,46 @@ async function findChannelConfig(
 
   for (const config of configs) {
     // Use storageCredentials to store channel settings
-    const storedSettings = config.storageCredentials as Record<string, unknown> | null;
-    const channelSettings = storedSettings?.channelSettings as Record<string, unknown> | undefined;
+    const storedSettings = config.storageCredentials as Record<
+      string,
+      unknown
+    > | null;
+    const channelSettings = storedSettings?.channelSettings as
+      | Record<string, unknown>
+      | undefined;
 
     if (channelSettings?.[channel.toLowerCase()]) {
-      const channelConfig = channelSettings[channel.toLowerCase()] as Record<string, unknown>;
+      const channelConfig = channelSettings[channel.toLowerCase()] as Record<
+        string,
+        unknown
+      >;
 
       // Check if this config matches the phone number
       if (channelConfig.phoneNumber === phoneNumber || !phoneNumber) {
         return {
           configId: config.id,
           channel,
-          isEnabled: channelConfig.isEnabled as boolean ?? true,
+          isEnabled: (channelConfig.isEnabled as boolean) ?? true,
           credentials: {
             type: 'twilio',
-            accountSid: (channelConfig.accountSid as string) || process.env.TWILIO_ACCOUNT_SID,
-            authToken: (channelConfig.authToken as string) || process.env.TWILIO_AUTH_TOKEN,
-            phoneNumber: (channelConfig.phoneNumber as string) || process.env.TWILIO_PHONE_NUMBER,
+            accountSid:
+              (channelConfig.accountSid as string) ||
+              process.env.TWILIO_ACCOUNT_SID,
+            authToken:
+              (channelConfig.authToken as string) ||
+              process.env.TWILIO_AUTH_TOKEN,
+            phoneNumber:
+              (channelConfig.phoneNumber as string) ||
+              process.env.TWILIO_PHONE_NUMBER,
             messagingServiceSid: channelConfig.messagingServiceSid as string,
           },
           settings: {
-            collectEmailFirst: channelConfig.collectEmailFirst as boolean ?? true,
-            sendConfirmation: channelConfig.sendConfirmation as boolean ?? true,
-            useButtons: channelConfig.useButtons as boolean ?? true,
-            useQuickReplies: channelConfig.useQuickReplies as boolean ?? true,
+            collectEmailFirst:
+              (channelConfig.collectEmailFirst as boolean) ?? true,
+            sendConfirmation:
+              (channelConfig.sendConfirmation as boolean) ?? true,
+            useButtons: (channelConfig.useButtons as boolean) ?? true,
+            useQuickReplies: (channelConfig.useQuickReplies as boolean) ?? true,
           },
           welcomeMessage: channelConfig.welcomeMessage as string,
           completionMessage: channelConfig.completionMessage as string,

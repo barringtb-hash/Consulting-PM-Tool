@@ -7,11 +7,9 @@
 
 import { prisma } from '../../../prisma/client';
 import {
-  IntakeChannel,
   IncomingIntakeMessage,
   OutgoingIntakeMessage,
   ChannelSession,
-  ChannelSessionState,
   IntakeChannelConfig,
   ChannelDeliveryResult,
 } from './channel.types';
@@ -122,7 +120,15 @@ async function handleStartState(
 ): Promise<OutgoingIntakeMessage> {
   // Check for start keywords
   const content = message.content.toLowerCase().trim();
-  const startKeywords = ['start', 'begin', 'help', 'intake', 'hi', 'hello', 'hey'];
+  const startKeywords = [
+    'start',
+    'begin',
+    'help',
+    'intake',
+    'hi',
+    'hello',
+    'hey',
+  ];
 
   if (!startKeywords.some((kw) => content.includes(kw))) {
     return createResponse(
@@ -182,7 +188,7 @@ async function handleEmailCollection(
   if (!emailRegex.test(email)) {
     return createResponse(
       message.senderIdentifier,
-      'That doesn\'t look like a valid email. Please enter a valid email address:',
+      "That doesn't look like a valid email. Please enter a valid email address:",
     );
   }
 
@@ -206,7 +212,13 @@ async function handleEmailCollection(
     );
   }
 
-  return startConversationalIntake(session, message, channelConfig, form, email);
+  return startConversationalIntake(
+    session,
+    message,
+    channelConfig,
+    form,
+    email,
+  );
 }
 
 /**
@@ -364,7 +376,7 @@ async function continueConversation(
     console.error('Error processing conversation:', error);
     return createResponse(
       session.senderIdentifier,
-      'I didn\'t understand that. Could you rephrase your answer?',
+      "I didn't understand that. Could you rephrase your answer?",
     );
   }
 }
@@ -454,7 +466,7 @@ export async function handleMmsDocument(
  * Cleanup expired sessions
  */
 export function cleanupExpiredSessions(): void {
-  const now = new Date();
+  const _now = new Date();
   for (const [key, session] of sessions) {
     if (isSessionExpired(session)) {
       sessions.delete(key);

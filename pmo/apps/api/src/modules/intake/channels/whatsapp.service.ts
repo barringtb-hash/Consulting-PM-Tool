@@ -21,7 +21,7 @@ import * as conversationService from '../conversation';
 const sessions = new Map<string, ChannelSession>();
 
 // WhatsApp-specific message templates
-const WHATSAPP_TEMPLATES = {
+const _WHATSAPP_TEMPLATES = {
   welcome: {
     id: 'intake_welcome',
     components: [
@@ -100,13 +100,23 @@ export async function processIncomingWhatsApp(
     // Handle based on session state
     switch (session.state) {
       case 'AWAITING_START':
-        return handleStartState(session, message, channelConfig, buttonResponse);
+        return handleStartState(
+          session,
+          message,
+          channelConfig,
+          buttonResponse,
+        );
 
       case 'COLLECTING_EMAIL':
         return handleEmailCollection(session, message, channelConfig);
 
       case 'ACTIVE':
-        return handleActiveState(session, message, channelConfig, buttonResponse);
+        return handleActiveState(
+          session,
+          message,
+          channelConfig,
+          buttonResponse,
+        );
 
       case 'COMPLETED':
         return createResponse(
@@ -118,7 +128,12 @@ export async function processIncomingWhatsApp(
       case 'ERROR':
       case 'ABANDONED':
         session.state = 'AWAITING_START';
-        return handleStartState(session, message, channelConfig, buttonResponse);
+        return handleStartState(
+          session,
+          message,
+          channelConfig,
+          buttonResponse,
+        );
 
       default:
         return createResponse(
@@ -169,7 +184,15 @@ async function handleStartState(
   const content = (buttonResponse || message.content).toLowerCase().trim();
 
   // Check for start keywords
-  const startKeywords = ['start', 'begin', 'intake', 'start intake', 'hi', 'hello', 'hey'];
+  const startKeywords = [
+    'start',
+    'begin',
+    'intake',
+    'start intake',
+    'hi',
+    'hello',
+    'hey',
+  ];
   const helpKeywords = ['help', 'info', 'need help', '?'];
 
   if (helpKeywords.some((kw) => content.includes(kw))) {
@@ -177,8 +200,8 @@ async function handleStartState(
       message.senderIdentifier,
       '📋 *Intake Form Help*\n\n' +
         "I'll guide you through our intake form step by step. You can:\n\n" +
-        "• Reply with your answers\n" +
-        "• Send documents/images when asked\n" +
+        '• Reply with your answers\n' +
+        '• Send documents/images when asked\n' +
         "• Type 'back' to go to previous question\n" +
         "• Type 'stop' to cancel\n\n" +
         'Ready to start?',
@@ -274,7 +297,13 @@ async function handleEmailCollection(
     );
   }
 
-  return startConversationalIntake(session, message, channelConfig, form, email);
+  return startConversationalIntake(
+    session,
+    message,
+    channelConfig,
+    form,
+    email,
+  );
 }
 
 /**
@@ -579,7 +608,8 @@ function getExtension(mimeType: string): string {
     'image/gif': 'gif',
     'application/pdf': 'pdf',
     'application/msword': 'doc',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      'docx',
   };
   return mimeToExt[mimeType] || 'bin';
 }

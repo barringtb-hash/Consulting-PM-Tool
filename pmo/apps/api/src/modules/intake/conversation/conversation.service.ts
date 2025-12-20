@@ -5,7 +5,11 @@
  * Handles message processing, entity extraction, and field mapping.
  */
 
-import { IntakeConversationStatus, IntakeFormStatus, Prisma } from '@prisma/client';
+import {
+  IntakeConversationStatus,
+  IntakeFormStatus,
+  Prisma,
+} from '@prisma/client';
 import { prisma } from '../../../prisma/client';
 import { env } from '../../../config/env';
 
@@ -76,7 +80,7 @@ interface FieldOption {
  * Start a new conversational intake session
  */
 export async function startConversation(
-  request: StartConversationRequest
+  request: StartConversationRequest,
 ): Promise<StartConversationResult> {
   const { formSlug, configId, submitterEmail, submitterName } = request;
 
@@ -154,7 +158,7 @@ export async function startConversation(
  */
 export async function processMessage(
   accessToken: string,
-  userMessage: string
+  userMessage: string,
 ): Promise<SendMessageResult> {
   // Find submission and conversation
   const submission = await prisma.intakeSubmission.findUnique({
@@ -194,10 +198,14 @@ export async function processMessage(
 
   // Extract data from user message
   const currentField = fields.find((f) => f.name === currentFieldId);
-  const extractedData = await extractFieldData(userMessage, currentField, fields);
+  const extractedData = await extractFieldData(
+    userMessage,
+    currentField,
+    fields,
+  );
 
   // Update form data if extraction successful
-  let updatedCompletedFields = [...completedFields];
+  const updatedCompletedFields = [...completedFields];
   if (extractedData && Object.keys(extractedData).length > 0) {
     const existingData = (submission.formData as Record<string, unknown>) || {};
     await prisma.intakeSubmission.update({
@@ -226,23 +234,26 @@ export async function processMessage(
     nextField,
     extractedData,
     fields,
-    updatedCompletedFields
+    updatedCompletedFields,
   );
 
   // Calculate progress
   const requiredFields = fields.filter((f) => f.isRequired);
   const completedRequired = requiredFields.filter((f) =>
-    updatedCompletedFields.includes(f.name)
+    updatedCompletedFields.includes(f.name),
   );
-  const progress = requiredFields.length > 0
-    ? Math.round((completedRequired.length / requiredFields.length) * 100)
-    : 100;
+  const progress =
+    requiredFields.length > 0
+      ? Math.round((completedRequired.length / requiredFields.length) * 100)
+      : 100;
 
   // Check if all required fields are complete
   const isComplete = completedRequired.length === requiredFields.length;
 
   // Update conversation state
-  const newStatus: IntakeConversationStatus = isComplete ? 'COMPLETED' : 'ACTIVE';
+  const newStatus: IntakeConversationStatus = isComplete
+    ? 'COMPLETED'
+    : 'ACTIVE';
   await prisma.intakeConversation.update({
     where: { id: conversation.id },
     data: {
@@ -266,9 +277,7 @@ export async function processMessage(
   return {
     reply,
     extractedData,
-    nextQuestion: nextField
-      ? generateFieldQuestion(nextField)
-      : undefined,
+    nextQuestion: nextField ? generateFieldQuestion(nextField) : undefined,
     progress,
     isComplete,
   };
@@ -278,7 +287,7 @@ export async function processMessage(
  * Get conversation summary
  */
 export async function getConversationSummary(
-  accessToken: string
+  accessToken: string,
 ): Promise<ConversationSummary> {
   const submission = await prisma.intakeSubmission.findUnique({
     where: { accessToken },
@@ -299,7 +308,8 @@ export async function getConversationSummary(
   }
 
   const fields = submission.form.fields as unknown as FormField[];
-  const completedFields = (submission.conversation.completedFields as string[]) || [];
+  const completedFields =
+    (submission.conversation.completedFields as string[]) || [];
   const collectedData = (submission.formData as Record<string, unknown>) || {};
 
   const requiredFields = fields.filter((f) => f.isRequired);
@@ -307,13 +317,15 @@ export async function getConversationSummary(
     .filter((f) => !completedFields.includes(f.name))
     .map((f) => f.label);
 
-  const progress = requiredFields.length > 0
-    ? Math.round(
-        (requiredFields.filter((f) => completedFields.includes(f.name)).length /
-          requiredFields.length) *
-          100
-      )
-    : 100;
+  const progress =
+    requiredFields.length > 0
+      ? Math.round(
+          (requiredFields.filter((f) => completedFields.includes(f.name))
+            .length /
+            requiredFields.length) *
+            100,
+        )
+      : 100;
 
   return {
     collectedData,
@@ -347,7 +359,7 @@ export async function pauseConversation(accessToken: string): Promise<void> {
  * Resume a paused conversation
  */
 export async function resumeConversation(
-  accessToken: string
+  accessToken: string,
 ): Promise<{ greeting: string; progress: number }> {
   const submission = await prisma.intakeSubmission.findUnique({
     where: { accessToken },
@@ -372,20 +384,23 @@ export async function resumeConversation(
   }
 
   const fields = submission.form.fields as unknown as FormField[];
-  const completedFields = (submission.conversation.completedFields as string[]) || [];
+  const completedFields =
+    (submission.conversation.completedFields as string[]) || [];
   const currentField = fields.find(
-    (f) => f.name === submission.conversation!.currentFieldId
+    (f) => f.name === submission.conversation!.currentFieldId,
   );
 
   // Calculate progress
   const requiredFields = fields.filter((f) => f.isRequired);
-  const progress = requiredFields.length > 0
-    ? Math.round(
-        (requiredFields.filter((f) => completedFields.includes(f.name)).length /
-          requiredFields.length) *
-          100
-      )
-    : 100;
+  const progress =
+    requiredFields.length > 0
+      ? Math.round(
+          (requiredFields.filter((f) => completedFields.includes(f.name))
+            .length /
+            requiredFields.length) *
+            100,
+        )
+      : 100;
 
   // Generate resume greeting
   const greeting = currentField
@@ -435,7 +450,7 @@ export async function abandonConversation(accessToken: string): Promise<void> {
  * Get conversation history
  */
 export async function getConversationHistory(
-  accessToken: string
+  accessToken: string,
 ): Promise<ConversationMessage[]> {
   const submission = await prisma.intakeSubmission.findUnique({
     where: { accessToken },
@@ -462,7 +477,8 @@ export async function getConversationHistory(
  * Generate a unique access token
  */
 function generateAccessToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let token = 'conv_';
   for (let i = 0; i < 32; i++) {
     token += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -475,7 +491,7 @@ function generateAccessToken(): string {
  */
 async function addMessageToConversation(
   conversationId: number,
-  message: ConversationMessage
+  message: ConversationMessage,
 ): Promise<void> {
   const conversation = await prisma.intakeConversation.findUnique({
     where: { id: conversationId },
@@ -500,7 +516,7 @@ async function addMessageToConversation(
  */
 async function generateGreeting(
   formName: string,
-  fields: FormField[]
+  fields: FormField[],
 ): Promise<string> {
   const firstField = fields[0];
   const fieldCount = fields.length;
@@ -519,7 +535,9 @@ async function generateGreeting(
 /**
  * Parse options from JSON field
  */
-function parseOptions(options: Prisma.JsonValue | undefined | null): FieldOption[] {
+function parseOptions(
+  options: Prisma.JsonValue | undefined | null,
+): FieldOption[] {
   if (!options || !Array.isArray(options)) {
     return [];
   }
@@ -595,11 +613,11 @@ function generateFieldQuestion(field: FormField): string {
  */
 function findNextField(
   fields: FormField[],
-  completedFields: string[]
+  completedFields: string[],
 ): FormField | undefined {
   // First, try required fields
   const nextRequired = fields.find(
-    (f) => f.isRequired && !completedFields.includes(f.name)
+    (f) => f.isRequired && !completedFields.includes(f.name),
   );
   if (nextRequired) return nextRequired;
 
@@ -613,7 +631,7 @@ function findNextField(
 async function extractFieldData(
   message: string,
   currentField: FormField | undefined,
-  allFields: FormField[]
+  allFields: FormField[],
 ): Promise<Record<string, unknown>> {
   // If we have an API key, use AI extraction
   if (env.openaiApiKey) {
@@ -630,7 +648,7 @@ async function extractFieldData(
 async function extractWithAI(
   message: string,
   currentField: FormField | undefined,
-  allFields: FormField[]
+  allFields: FormField[],
 ): Promise<Record<string, unknown>> {
   try {
     const fieldContext = currentField
@@ -699,7 +717,7 @@ Example output: { "full_name": "John Smith", "email": "john@example.com" }`,
  */
 function extractRuleBased(
   message: string,
-  currentField: FormField | undefined
+  currentField: FormField | undefined,
 ): Record<string, unknown> {
   if (!currentField) return {};
 
@@ -759,7 +777,7 @@ function extractRuleBased(
         const matchedOption = options.find(
           (opt) =>
             opt.label.toLowerCase() === lowerMessage ||
-            opt.value.toLowerCase() === lowerMessage
+            opt.value.toLowerCase() === lowerMessage,
         );
         if (matchedOption) {
           result[currentField.name] = matchedOption.value;
@@ -795,7 +813,7 @@ function extractRuleBased(
           const matched = options.find(
             (opt) =>
               opt.label.toLowerCase() === lowerPart ||
-              opt.value.toLowerCase() === lowerPart
+              opt.value.toLowerCase() === lowerPart,
           );
           if (matched) {
             selected.push(matched.value);
@@ -827,7 +845,7 @@ async function generateResponse(
   nextField: FormField | undefined,
   extractedData: Record<string, unknown>,
   allFields: FormField[],
-  completedFields: string[]
+  completedFields: string[],
 ): Promise<string> {
   // If no API key, use template-based responses
   if (!env.openaiApiKey) {
@@ -836,7 +854,7 @@ async function generateResponse(
       nextField,
       extractedData,
       completedFields,
-      allFields
+      allFields,
     );
   }
 
@@ -846,7 +864,7 @@ async function generateResponse(
       nextField,
       extractedData,
       completedFields,
-      allFields
+      allFields,
     );
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -895,7 +913,7 @@ Guidelines:
       nextField,
       extractedData,
       completedFields,
-      allFields
+      allFields,
     );
   }
 }
@@ -908,7 +926,7 @@ function buildConversationContext(
   nextField: FormField | undefined,
   extractedData: Record<string, unknown>,
   completedFields: string[],
-  allFields: FormField[]
+  allFields: FormField[],
 ): string {
   const parts: string[] = [];
 
@@ -922,9 +940,11 @@ function buildConversationContext(
   }
 
   const requiredFields = allFields.filter((f) => f.isRequired);
-  const completed = requiredFields.filter((f) => completedFields.includes(f.name));
+  const completed = requiredFields.filter((f) =>
+    completedFields.includes(f.name),
+  );
   parts.push(
-    `Progress: ${completed.length}/${requiredFields.length} required fields complete`
+    `Progress: ${completed.length}/${requiredFields.length} required fields complete`,
   );
 
   if (nextField) {
@@ -944,7 +964,7 @@ function generateTemplateResponse(
   nextField: FormField | undefined,
   extractedData: Record<string, unknown>,
   completedFields: string[],
-  allFields: FormField[]
+  allFields: FormField[],
 ): string {
   const parts: string[] = [];
 
@@ -959,12 +979,12 @@ function generateTemplateResponse(
   // Check completion
   const requiredFields = allFields.filter((f) => f.isRequired);
   const missingRequired = requiredFields.filter(
-    (f) => !completedFields.includes(f.name)
+    (f) => !completedFields.includes(f.name),
   );
 
   if (missingRequired.length === 0 && !nextField) {
     parts.push(
-      "Great, I've got everything I need! You can review your information and submit when you're ready."
+      "Great, I've got everything I need! You can review your information and submit when you're ready.",
     );
     return parts.join(' ');
   }

@@ -12,7 +12,11 @@ import { env } from '../../../config/env';
 // TYPES
 // ============================================================================
 
-export type ScreeningStatus = 'qualified' | 'needs_review' | 'declined' | 'referred';
+export type ScreeningStatus =
+  | 'qualified'
+  | 'needs_review'
+  | 'declined'
+  | 'referred';
 
 export interface ScreeningResult {
   status: ScreeningStatus;
@@ -104,33 +108,95 @@ export interface ReferralPartner {
 
 const DEFAULT_CONFIG: ScreeningConfiguration = {
   practiceAreas: [
-    { name: 'personal_injury', aliases: ['PI', 'injury', 'accident', 'slip and fall', 'car accident', 'malpractice'], acceptNew: true },
-    { name: 'family_law', aliases: ['divorce', 'custody', 'child support', 'family', 'matrimonial'], acceptNew: true },
-    { name: 'criminal_defense', aliases: ['criminal', 'DUI', 'DWI', 'felony', 'misdemeanor'], acceptNew: true },
-    { name: 'estate_planning', aliases: ['estate', 'wills', 'trusts', 'probate', 'succession'], acceptNew: true },
-    { name: 'business_law', aliases: ['business', 'corporate', 'contracts', 'LLC', 'formation'], acceptNew: true },
-    { name: 'real_estate', aliases: ['real estate', 'property', 'closing', 'title'], acceptNew: true },
-    { name: 'employment_law', aliases: ['employment', 'wrongful termination', 'discrimination', 'harassment'], acceptNew: true },
-    { name: 'bankruptcy', aliases: ['bankruptcy', 'chapter 7', 'chapter 13', 'debt'], acceptNew: true },
-    { name: 'immigration', aliases: ['immigration', 'visa', 'green card', 'citizenship', 'asylum'], acceptNew: false },
+    {
+      name: 'personal_injury',
+      aliases: [
+        'PI',
+        'injury',
+        'accident',
+        'slip and fall',
+        'car accident',
+        'malpractice',
+      ],
+      acceptNew: true,
+    },
+    {
+      name: 'family_law',
+      aliases: ['divorce', 'custody', 'child support', 'family', 'matrimonial'],
+      acceptNew: true,
+    },
+    {
+      name: 'criminal_defense',
+      aliases: ['criminal', 'DUI', 'DWI', 'felony', 'misdemeanor'],
+      acceptNew: true,
+    },
+    {
+      name: 'estate_planning',
+      aliases: ['estate', 'wills', 'trusts', 'probate', 'succession'],
+      acceptNew: true,
+    },
+    {
+      name: 'business_law',
+      aliases: ['business', 'corporate', 'contracts', 'LLC', 'formation'],
+      acceptNew: true,
+    },
+    {
+      name: 'real_estate',
+      aliases: ['real estate', 'property', 'closing', 'title'],
+      acceptNew: true,
+    },
+    {
+      name: 'employment_law',
+      aliases: [
+        'employment',
+        'wrongful termination',
+        'discrimination',
+        'harassment',
+      ],
+      acceptNew: true,
+    },
+    {
+      name: 'bankruptcy',
+      aliases: ['bankruptcy', 'chapter 7', 'chapter 13', 'debt'],
+      acceptNew: true,
+    },
+    {
+      name: 'immigration',
+      aliases: ['immigration', 'visa', 'green card', 'citizenship', 'asylum'],
+      acceptNew: false,
+    },
   ],
   caseTypes: [
     { name: 'auto_accident', practiceArea: 'personal_injury', accepted: true },
-    { name: 'medical_malpractice', practiceArea: 'personal_injury', accepted: true },
+    {
+      name: 'medical_malpractice',
+      practiceArea: 'personal_injury',
+      accepted: true,
+    },
     { name: 'slip_and_fall', practiceArea: 'personal_injury', accepted: true },
-    { name: 'product_liability', practiceArea: 'personal_injury', accepted: false, declineReason: 'Case type not currently accepted' },
+    {
+      name: 'product_liability',
+      practiceArea: 'personal_injury',
+      accepted: false,
+      declineReason: 'Case type not currently accepted',
+    },
     { name: 'divorce', practiceArea: 'family_law', accepted: true },
     { name: 'child_custody', practiceArea: 'family_law', accepted: true },
-    { name: 'adoption', practiceArea: 'family_law', accepted: false, declineReason: 'No adoption attorneys available' },
+    {
+      name: 'adoption',
+      practiceArea: 'family_law',
+      accepted: false,
+      declineReason: 'No adoption attorneys available',
+    },
   ],
   jurisdictions: ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'],
   statuteOfLimitations: {
     defaultYears: 2,
     byState: {
-      'CA': { 'personal_injury': 2, 'medical_malpractice': 3, 'wrongful_death': 2 },
-      'NY': { 'personal_injury': 3, 'medical_malpractice': 2.5, 'wrongful_death': 2 },
-      'TX': { 'personal_injury': 2, 'medical_malpractice': 2, 'wrongful_death': 2 },
-      'FL': { 'personal_injury': 4, 'medical_malpractice': 2, 'wrongful_death': 2 },
+      CA: { personal_injury: 2, medical_malpractice: 3, wrongful_death: 2 },
+      NY: { personal_injury: 3, medical_malpractice: 2.5, wrongful_death: 2 },
+      TX: { personal_injury: 2, medical_malpractice: 2, wrongful_death: 2 },
+      FL: { personal_injury: 4, medical_malpractice: 2, wrongful_death: 2 },
     },
     urgentThresholdDays: 60,
   },
@@ -141,8 +207,16 @@ const DEFAULT_CONFIG: ScreeningConfiguration = {
     'Conflict of interest',
   ],
   referralPartners: [
-    { name: 'Immigration Law Partners', practiceAreas: ['immigration'], jurisdictions: ['CA', 'NY', 'TX'] },
-    { name: 'Product Liability Specialists', practiceAreas: ['personal_injury'], jurisdictions: ['CA', 'NY'] },
+    {
+      name: 'Immigration Law Partners',
+      practiceAreas: ['immigration'],
+      jurisdictions: ['CA', 'NY', 'TX'],
+    },
+    {
+      name: 'Product Liability Specialists',
+      practiceAreas: ['personal_injury'],
+      jurisdictions: ['CA', 'NY'],
+    },
   ],
 };
 
@@ -155,7 +229,7 @@ const DEFAULT_CONFIG: ScreeningConfiguration = {
  */
 export async function screenSubmission(
   submissionId: number,
-  customConfig?: Partial<ScreeningConfiguration>
+  customConfig?: Partial<ScreeningConfiguration>,
 ): Promise<ScreeningResult> {
   const config = { ...DEFAULT_CONFIG, ...customConfig };
 
@@ -180,18 +254,27 @@ export async function screenSubmission(
 
   // Run all screening checks
   const practiceAreaCheck = await checkPracticeArea(formData, config);
-  const caseTypeCheck = checkCaseType(formData, practiceAreaCheck.practiceArea, config);
-  const statuteCheck = checkStatuteOfLimitations(formData, practiceAreaCheck.practiceArea, config);
+  const caseTypeCheck = checkCaseType(
+    formData,
+    practiceAreaCheck.practiceArea,
+    config,
+  );
+  const statuteCheck = checkStatuteOfLimitations(
+    formData,
+    practiceAreaCheck.practiceArea,
+    config,
+  );
   const jurisdictionCheck = checkJurisdiction(formData, config);
 
   // Calculate overall score and determine status
-  const { status, overallScore, recommendations, referralSuggestions } = determineStatus(
-    practiceAreaCheck,
-    caseTypeCheck,
-    statuteCheck,
-    jurisdictionCheck,
-    config
-  );
+  const { status, overallScore, recommendations, referralSuggestions } =
+    determineStatus(
+      practiceAreaCheck,
+      caseTypeCheck,
+      statuteCheck,
+      jurisdictionCheck,
+      config,
+    );
 
   const result: ScreeningResult = {
     status,
@@ -215,22 +298,31 @@ export async function screenSubmission(
  */
 export async function quickScreen(
   formData: Record<string, unknown>,
-  config?: Partial<ScreeningConfiguration>
+  config?: Partial<ScreeningConfiguration>,
 ): Promise<ScreeningResult> {
   const fullConfig = { ...DEFAULT_CONFIG, ...config };
 
   const practiceAreaCheck = await checkPracticeArea(formData, fullConfig);
-  const caseTypeCheck = checkCaseType(formData, practiceAreaCheck.practiceArea, fullConfig);
-  const statuteCheck = checkStatuteOfLimitations(formData, practiceAreaCheck.practiceArea, fullConfig);
+  const caseTypeCheck = checkCaseType(
+    formData,
+    practiceAreaCheck.practiceArea,
+    fullConfig,
+  );
+  const statuteCheck = checkStatuteOfLimitations(
+    formData,
+    practiceAreaCheck.practiceArea,
+    fullConfig,
+  );
   const jurisdictionCheck = checkJurisdiction(formData, fullConfig);
 
-  const { status, overallScore, recommendations, referralSuggestions } = determineStatus(
-    practiceAreaCheck,
-    caseTypeCheck,
-    statuteCheck,
-    jurisdictionCheck,
-    fullConfig
-  );
+  const { status, overallScore, recommendations, referralSuggestions } =
+    determineStatus(
+      practiceAreaCheck,
+      caseTypeCheck,
+      statuteCheck,
+      jurisdictionCheck,
+      fullConfig,
+    );
 
   return {
     status,
@@ -253,23 +345,34 @@ export async function quickScreen(
  */
 async function checkPracticeArea(
   formData: Record<string, unknown>,
-  config: ScreeningConfiguration
+  config: ScreeningConfiguration,
 ): Promise<PracticeAreaCheckResult> {
   // Extract relevant fields
   const description = extractText(formData, [
-    'matter_description', 'case_description', 'description',
-    'issue_type', 'legal_issue', 'case_type', 'service_needed'
+    'matter_description',
+    'case_description',
+    'description',
+    'issue_type',
+    'legal_issue',
+    'case_type',
+    'service_needed',
   ]);
 
   const specifiedArea = extractText(formData, [
-    'practice_area', 'area_of_law', 'legal_area', 'service_type'
+    'practice_area',
+    'area_of_law',
+    'legal_area',
+    'service_type',
   ]);
 
   // First check if practice area is explicitly specified
   if (specifiedArea) {
     const normalized = specifiedArea.toLowerCase();
     for (const area of config.practiceAreas) {
-      if (area.name === normalized || area.aliases.some((a: string) => normalized.includes(a.toLowerCase()))) {
+      if (
+        area.name === normalized ||
+        area.aliases.some((a: string) => normalized.includes(a.toLowerCase()))
+      ) {
         return {
           matched: true,
           practiceArea: area.name,
@@ -315,7 +418,7 @@ async function checkPracticeArea(
  */
 function matchPracticeAreaByRules(
   description: string,
-  config: ScreeningConfiguration
+  config: ScreeningConfiguration,
 ): PracticeAreaCheckResult {
   const lowered = description.toLowerCase();
   let bestMatch: { area: string; score: number } | null = null;
@@ -358,9 +461,9 @@ function matchPracticeAreaByRules(
  */
 async function detectPracticeAreaWithAI(
   description: string,
-  config: ScreeningConfiguration
+  config: ScreeningConfiguration,
 ): Promise<PracticeAreaCheckResult> {
-  const practiceAreaList = config.practiceAreas.map(a => a.name).join(', ');
+  const practiceAreaList = config.practiceAreas.map((a) => a.name).join(', ');
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -395,7 +498,7 @@ Return JSON: { "practiceArea": string, "confidence": number (0-1), "reason": str
   const parsed = JSON.parse(data.choices[0].message.content);
 
   const matchedArea = config.practiceAreas.find(
-    a => a.name === parsed.practiceArea
+    (a) => a.name === parsed.practiceArea,
   );
 
   return {
@@ -412,10 +515,13 @@ Return JSON: { "practiceArea": string, "confidence": number (0-1), "reason": str
 function checkCaseType(
   formData: Record<string, unknown>,
   practiceArea: string | undefined,
-  config: ScreeningConfiguration
+  config: ScreeningConfiguration,
 ): CaseTypeCheckResult {
   const specifiedType = extractText(formData, [
-    'case_type', 'matter_type', 'claim_type', 'incident_type'
+    'case_type',
+    'matter_type',
+    'claim_type',
+    'incident_type',
   ]);
 
   if (!specifiedType && !practiceArea) {
@@ -430,9 +536,10 @@ function checkCaseType(
   if (specifiedType) {
     const normalized = specifiedType.toLowerCase().replace(/[^a-z]/g, '_');
     const caseTypeConfig = config.caseTypes.find(
-      ct => ct.name === normalized ||
+      (ct) =>
+        ct.name === normalized ||
         ct.name.includes(normalized) ||
-        normalized.includes(ct.name)
+        normalized.includes(ct.name),
     );
 
     if (caseTypeConfig) {
@@ -440,14 +547,18 @@ function checkCaseType(
         matched: true,
         caseType: caseTypeConfig.name,
         isAccepted: caseTypeConfig.accepted,
-        notes: caseTypeConfig.accepted ? 'Case type accepted' : caseTypeConfig.declineReason,
+        notes: caseTypeConfig.accepted
+          ? 'Case type accepted'
+          : caseTypeConfig.declineReason,
       };
     }
   }
 
   // If practice area is known and accepting new cases, assume accepted
   if (practiceArea) {
-    const practiceAreaConfig = config.practiceAreas.find(pa => pa.name === practiceArea);
+    const practiceAreaConfig = config.practiceAreas.find(
+      (pa) => pa.name === practiceArea,
+    );
     if (practiceAreaConfig?.acceptNew) {
       return {
         matched: true,
@@ -471,12 +582,16 @@ function checkCaseType(
 function checkStatuteOfLimitations(
   formData: Record<string, unknown>,
   practiceArea: string | undefined,
-  config: ScreeningConfiguration
+  config: ScreeningConfiguration,
 ): StatuteCheckResult {
   // Extract incident date
   const incidentDateStr = extractText(formData, [
-    'incident_date', 'date_of_incident', 'accident_date',
-    'injury_date', 'event_date', 'occurrence_date'
+    'incident_date',
+    'date_of_incident',
+    'accident_date',
+    'injury_date',
+    'event_date',
+    'occurrence_date',
   ]);
 
   if (!incidentDateStr) {
@@ -500,7 +615,10 @@ function checkStatuteOfLimitations(
 
   // Get jurisdiction
   const state = extractText(formData, [
-    'state', 'jurisdiction', 'incident_state', 'location_state'
+    'state',
+    'jurisdiction',
+    'incident_state',
+    'location_state',
   ])?.toUpperCase();
 
   // Calculate deadline
@@ -517,8 +635,12 @@ function checkStatuteOfLimitations(
   deadlineDate.setFullYear(deadlineDate.getFullYear() + limitYears);
 
   const today = new Date();
-  const daysRemaining = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const isUrgent = daysRemaining > 0 && daysRemaining <= config.statuteOfLimitations.urgentThresholdDays;
+  const daysRemaining = Math.ceil(
+    (deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  const isUrgent =
+    daysRemaining > 0 &&
+    daysRemaining <= config.statuteOfLimitations.urgentThresholdDays;
   const isBeyondDeadline = daysRemaining <= 0;
 
   return {
@@ -540,11 +662,15 @@ function checkStatuteOfLimitations(
  */
 function checkJurisdiction(
   formData: Record<string, unknown>,
-  config: ScreeningConfiguration
+  config: ScreeningConfiguration,
 ): JurisdictionCheckResult {
   const jurisdiction = extractText(formData, [
-    'state', 'jurisdiction', 'incident_state', 'location_state',
-    'court', 'venue'
+    'state',
+    'jurisdiction',
+    'incident_state',
+    'location_state',
+    'court',
+    'venue',
   ]);
 
   if (!jurisdiction) {
@@ -556,8 +682,11 @@ function checkJurisdiction(
   }
 
   const normalizedJurisdiction = jurisdiction.toUpperCase().trim();
-  const stateCode = normalizedJurisdiction.length === 2 ? normalizedJurisdiction :
-    STATE_CODES[normalizedJurisdiction.toLowerCase()] || normalizedJurisdiction;
+  const stateCode =
+    normalizedJurisdiction.length === 2
+      ? normalizedJurisdiction
+      : STATE_CODES[normalizedJurisdiction.toLowerCase()] ||
+        normalizedJurisdiction;
 
   const isLicensed = config.jurisdictions.includes(stateCode);
 
@@ -580,7 +709,7 @@ function checkJurisdiction(
  */
 function extractText(
   formData: Record<string, unknown>,
-  fieldNames: string[]
+  fieldNames: string[],
 ): string | undefined {
   for (const field of fieldNames) {
     const value = formData[field];
@@ -599,7 +728,7 @@ function determineStatus(
   caseTypeCheck: CaseTypeCheckResult,
   statuteCheck: StatuteCheckResult,
   jurisdictionCheck: JurisdictionCheckResult,
-  config: ScreeningConfiguration
+  config: ScreeningConfiguration,
 ): {
   status: ScreeningStatus;
   overallScore: number;
@@ -615,21 +744,31 @@ function determineStatus(
     return {
       status: 'declined',
       overallScore: 0,
-      recommendations: ['Case cannot be accepted - statute of limitations has expired'],
+      recommendations: [
+        'Case cannot be accepted - statute of limitations has expired',
+      ],
     };
   }
 
   // Practice area check
   if (!practiceAreaCheck.matched) {
     score -= 30;
-    recommendations.push('Practice area could not be determined - manual review needed');
-  } else if (!config.practiceAreas.find(pa => pa.name === practiceAreaCheck.practiceArea)?.acceptNew) {
+    recommendations.push(
+      'Practice area could not be determined - manual review needed',
+    );
+  } else if (
+    !config.practiceAreas.find(
+      (pa) => pa.name === practiceAreaCheck.practiceArea,
+    )?.acceptNew
+  ) {
     score -= 50;
-    recommendations.push(`Practice area ${practiceAreaCheck.practiceArea} not currently accepting new cases`);
+    recommendations.push(
+      `Practice area ${practiceAreaCheck.practiceArea} not currently accepting new cases`,
+    );
 
     // Add referral suggestion
-    const referral = config.referralPartners?.find(
-      rp => rp.practiceAreas.includes(practiceAreaCheck.practiceArea!)
+    const referral = config.referralPartners?.find((rp) =>
+      rp.practiceAreas.includes(practiceAreaCheck.practiceArea!),
     );
     if (referral) {
       referralSuggestions.push({
@@ -643,16 +782,20 @@ function determineStatus(
   // Case type check
   if (!caseTypeCheck.isAccepted) {
     score -= 40;
-    recommendations.push(caseTypeCheck.notes || 'Case type not in accepted list');
+    recommendations.push(
+      caseTypeCheck.notes || 'Case type not in accepted list',
+    );
   }
 
   // Jurisdiction check
   if (jurisdictionCheck.applicable && !jurisdictionCheck.isLicensed) {
     score -= 50;
-    recommendations.push(`Not licensed in ${jurisdictionCheck.jurisdiction} - referral needed`);
+    recommendations.push(
+      `Not licensed in ${jurisdictionCheck.jurisdiction} - referral needed`,
+    );
 
-    const referral = config.referralPartners?.find(
-      rp => rp.jurisdictions.includes(jurisdictionCheck.jurisdiction!)
+    const referral = config.referralPartners?.find((rp) =>
+      rp.jurisdictions.includes(jurisdictionCheck.jurisdiction!),
     );
     if (referral) {
       referralSuggestions.push({
@@ -665,7 +808,9 @@ function determineStatus(
 
   // Statute urgency
   if (statuteCheck.isUrgent) {
-    recommendations.push(`URGENT: Only ${statuteCheck.daysRemaining} days until statute of limitations expires`);
+    recommendations.push(
+      `URGENT: Only ${statuteCheck.daysRemaining} days until statute of limitations expires`,
+    );
   }
 
   // Determine final status
@@ -688,7 +833,8 @@ function determineStatus(
     status,
     overallScore: Math.max(0, score),
     recommendations,
-    referralSuggestions: referralSuggestions.length > 0 ? referralSuggestions : undefined,
+    referralSuggestions:
+      referralSuggestions.length > 0 ? referralSuggestions : undefined,
   };
 }
 
@@ -697,7 +843,7 @@ function determineStatus(
  */
 async function saveScreeningResult(
   submissionId: number,
-  result: ScreeningResult
+  result: ScreeningResult,
 ): Promise<void> {
   const submission = await prisma.intakeSubmission.findUnique({
     where: { id: submissionId },
@@ -733,7 +879,7 @@ async function saveScreeningResult(
  * Get screening configuration for a client
  */
 export async function getScreeningConfig(
-  configId: number
+  configId: number,
 ): Promise<ScreeningConfiguration | null> {
   const config = await prisma.intakeConfig.findUnique({
     where: { id: configId },
@@ -751,7 +897,7 @@ export async function getScreeningConfig(
  */
 export async function updateScreeningConfig(
   configId: number,
-  updates: Partial<ScreeningConfiguration>
+  updates: Partial<ScreeningConfiguration>,
 ): Promise<ScreeningConfiguration> {
   // In a production system, this would save to database
   return { ...DEFAULT_CONFIG, ...updates };
@@ -762,17 +908,55 @@ export async function updateScreeningConfig(
 // ============================================================================
 
 const STATE_CODES: Record<string, string> = {
-  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
-  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
-  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
-  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
-  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
-  'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
-  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
-  'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
-  'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
-  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
-  'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC',
+  alabama: 'AL',
+  alaska: 'AK',
+  arizona: 'AZ',
+  arkansas: 'AR',
+  california: 'CA',
+  colorado: 'CO',
+  connecticut: 'CT',
+  delaware: 'DE',
+  florida: 'FL',
+  georgia: 'GA',
+  hawaii: 'HI',
+  idaho: 'ID',
+  illinois: 'IL',
+  indiana: 'IN',
+  iowa: 'IA',
+  kansas: 'KS',
+  kentucky: 'KY',
+  louisiana: 'LA',
+  maine: 'ME',
+  maryland: 'MD',
+  massachusetts: 'MA',
+  michigan: 'MI',
+  minnesota: 'MN',
+  mississippi: 'MS',
+  missouri: 'MO',
+  montana: 'MT',
+  nebraska: 'NE',
+  nevada: 'NV',
+  'new hampshire': 'NH',
+  'new jersey': 'NJ',
+  'new mexico': 'NM',
+  'new york': 'NY',
+  'north carolina': 'NC',
+  'north dakota': 'ND',
+  ohio: 'OH',
+  oklahoma: 'OK',
+  oregon: 'OR',
+  pennsylvania: 'PA',
+  'rhode island': 'RI',
+  'south carolina': 'SC',
+  'south dakota': 'SD',
+  tennessee: 'TN',
+  texas: 'TX',
+  utah: 'UT',
+  vermont: 'VT',
+  virginia: 'VA',
+  washington: 'WA',
+  'west virginia': 'WV',
+  wisconsin: 'WI',
+  wyoming: 'WY',
+  'district of columbia': 'DC',
 };
