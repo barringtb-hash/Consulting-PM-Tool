@@ -17,12 +17,20 @@ import {
   type TenantRequest,
 } from '../../tenant/tenant.middleware';
 
-// Helper to check if error is a Prisma "not found" error
+// Helper to check if error is a "not found" error (Prisma or custom)
 function isNotFoundError(error: unknown): boolean {
-  return (
+  // Check for Prisma's record not found error
+  if (
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === 'P2025'
-  );
+  ) {
+    return true;
+  }
+  // Check for custom "Account not found" error from service layer
+  if (error instanceof Error && error.message === 'Account not found') {
+    return true;
+  }
+  return false;
 }
 
 const router = Router();
