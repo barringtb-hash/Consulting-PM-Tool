@@ -2321,4 +2321,412 @@ router.get(
   },
 );
 
+// ============================================================================
+// MULTI-CHANNEL INTAKE ROUTES (Phase 4)
+// ============================================================================
+
+import * as channelService from './channels';
+
+// Channel config validation schemas
+const channelConfigUpdateSchema = z.object({
+  channel: z.enum(['SMS', 'WHATSAPP', 'WIDGET']),
+  isEnabled: z.boolean().optional(),
+  credentials: z.object({
+    type: z.enum(['twilio', 'whatsapp_business']),
+    accountSid: z.string().optional(),
+    authToken: z.string().optional(),
+    phoneNumber: z.string().optional(),
+    messagingServiceSid: z.string().optional(),
+  }).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
+  welcomeMessage: z.string().max(1000).optional(),
+  completionMessage: z.string().max(1000).optional(),
+  errorMessage: z.string().max(500).optional(),
+});
+
+const widgetConfigUpdateSchema = z.object({
+  position: z.enum(['bottom-right', 'bottom-left', 'top-right', 'top-left']).optional(),
+  primaryColor: z.string().max(20).optional(),
+  textColor: z.string().max(20).optional(),
+  buttonText: z.string().max(50).optional(),
+  title: z.string().max(100).optional(),
+  subtitle: z.string().max(200).optional(),
+  logoUrl: z.string().url().optional(),
+  mode: z.enum(['form', 'chat', 'both']).optional(),
+  defaultMode: z.enum(['form', 'chat']).optional(),
+  autoOpen: z.boolean().optional(),
+  openDelay: z.number().int().min(0).max(60000).optional(),
+  triggers: z.array(z.object({
+    type: z.enum(['time', 'scroll', 'exit_intent', 'page_view']),
+    delay: z.number().optional(),
+    scrollPercent: z.number().optional(),
+    pagePattern: z.string().optional(),
+  })).optional(),
+  preFillFromUrl: z.boolean().optional(),
+  trackAnalytics: z.boolean().optional(),
+  googleAnalyticsId: z.string().max(50).optional(),
+  customCss: z.string().max(10000).optional(),
+  zIndex: z.number().int().optional(),
+  hideOnMobile: z.boolean().optional(),
+  allowMinimize: z.boolean().optional(),
+});
+
+/**
+ * GET /api/intake/:configId/channels
+ * Get all channel configurations for an intake config
+ */
+router.get(
+  '/intake/:configId/channels',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const config = await prisma.intakeConfig.findUnique({
+        where: { id: configId },
+      });
+
+      if (!config) {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+
+      const storedSettings = (config.storageCredentials || {}) as Record<string, unknown>;
+      const channelSettings = storedSettings.channelSettings || {};
+
+      res.json({
+        data: {
+          sms: (channelSettings as Record<string, unknown>).sms || { isEnabled: false },
+          whatsapp: (channelSettings as Record<string, unknown>).whatsapp || { isEnabled: false },
+          widget: (channelSettings as Record<string, unknown>).widget || { isEnabled: false },
+        },
+      });
+    } catch (error) {
+      console.error('Error getting channel configs:', error);
+      res.status(500).json({ error: 'Failed to get channel configurations' });
+    }
+  },
+);
+
+/**
+ * PUT /api/intake/:configId/channels/:channel
+ * Update a specific channel configuration
+ */
+router.put(
+  '/intake/:configId/channels/:channel',
+  async (
+    req: AuthenticatedRequest<{ configId: string; channel: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const channel = req.params.channel.toUpperCase();
+    if (!['SMS', 'WHATSAPP', 'WIDGET'].includes(channel)) {
+      res.status(400).json({ error: 'Invalid channel. Must be SMS, WHATSAPP, or WIDGET' });
+      return;
+    }
+
+    const bodyData = (req.body || {}) as Record<string, unknown>;
+    const parsed = channelConfigUpdateSchema.safeParse({ ...bodyData, channel });
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const config = await prisma.intakeConfig.findUnique({
+        where: { id: configId },
+      });
+
+      if (!config) {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+
+      const storedSettings = (config.storageCredentials || {}) as Record<string, unknown>;
+      const channelSettings = (storedSettings.channelSettings || {}) as Record<string, unknown>;
+
+      const existingChannelConfig = (channelSettings[channel.toLowerCase()] || {}) as Record<string, unknown>;
+      channelSettings[channel.toLowerCase()] = {
+        ...existingChannelConfig,
+        ...parsed.data,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await prisma.intakeConfig.update({
+        where: { id: configId },
+        data: {
+          storageCredentials: {
+            ...storedSettings,
+            channelSettings,
+          },
+        },
+      });
+
+      res.json({ data: channelSettings[channel.toLowerCase()] });
+    } catch (error) {
+      console.error('Error updating channel config:', error);
+      res.status(500).json({ error: 'Failed to update channel configuration' });
+    }
+  },
+);
+
+// ============================================================================
+// WIDGET ROUTES (Phase 4)
+// ============================================================================
+
+/**
+ * GET /api/intake/:configId/widget/config
+ * Get widget configuration
+ */
+router.get(
+  '/intake/:configId/widget/config',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      if (!widgetConfig) {
+        res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+
+      res.json({ data: widgetConfig });
+    } catch (error) {
+      console.error('Error getting widget config:', error);
+      res.status(500).json({ error: 'Failed to get widget configuration' });
+    }
+  },
+);
+
+/**
+ * PUT /api/intake/:configId/widget/config
+ * Update widget configuration
+ */
+router.put(
+  '/intake/:configId/widget/config',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const parsed = widgetConfigUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const widgetConfig = await channelService.widgetService.updateWidgetConfig(
+        configId,
+        parsed.data,
+      );
+      res.json({ data: widgetConfig });
+    } catch (error) {
+      console.error('Error updating widget config:', error);
+      const message = error instanceof Error ? error.message : 'Failed to update widget configuration';
+      res.status(500).json({ error: message });
+    }
+  },
+);
+
+/**
+ * GET /api/intake/:configId/widget/embed
+ * Get widget embed code
+ */
+router.get(
+  '/intake/:configId/widget/embed',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    try {
+      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const formSlug = req.query.formSlug as string | undefined;
+
+      const embed = channelService.widgetService.generateEmbedCode(
+        configId,
+        apiBaseUrl,
+        { formSlug },
+      );
+
+      res.json({ data: embed });
+    } catch (error) {
+      console.error('Error generating embed code:', error);
+      res.status(500).json({ error: 'Failed to generate embed code' });
+    }
+  },
+);
+
+/**
+ * GET /api/intake/widget/:configId/widget.js
+ * Serve the widget JavaScript bundle (public)
+ */
+router.get(
+  '/intake/widget/:configId/widget.js',
+  async (req: Request, res: Response) => {
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).send('// Invalid config ID');
+      return;
+    }
+
+    try {
+      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      if (!widgetConfig) {
+        res.status(404).send('// Config not found');
+        return;
+      }
+
+      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const script = channelService.widgetService.generateWidgetScript(widgetConfig, apiBaseUrl);
+
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minute cache
+      res.send(script);
+    } catch (error) {
+      console.error('Error generating widget script:', error);
+      res.status(500).send('// Error generating widget');
+    }
+  },
+);
+
+/**
+ * GET /api/public/intake/widget/:configId/chat
+ * Serve the widget chat page (public)
+ */
+router.get(
+  '/public/intake/widget/:configId/chat',
+  async (req: Request, res: Response) => {
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).send('Invalid config ID');
+      return;
+    }
+
+    try {
+      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      if (!widgetConfig) {
+        res.status(404).send('Config not found');
+        return;
+      }
+
+      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const html = channelService.widgetService.generateChatPageHtml(widgetConfig, apiBaseUrl);
+
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+    } catch (error) {
+      console.error('Error generating chat page:', error);
+      res.status(500).send('Error loading chat');
+    }
+  },
+);
+
+/**
+ * GET /api/public/intake/widget/:configId/form
+ * Serve the widget form page (public)
+ */
+router.get(
+  '/public/intake/widget/:configId/form',
+  async (req: Request, res: Response) => {
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).send('Invalid config ID');
+      return;
+    }
+
+    try {
+      const widgetConfig = await channelService.widgetService.getWidgetConfig(configId);
+      if (!widgetConfig) {
+        res.status(404).send('Config not found');
+        return;
+      }
+
+      const apiBaseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}/api`;
+      const html = channelService.widgetService.generateFormPageHtml(widgetConfig, apiBaseUrl);
+
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+    } catch (error) {
+      console.error('Error generating form page:', error);
+      res.status(500).send('Error loading form');
+    }
+  },
+);
+
+/**
+ * POST /api/intake/widget/:configId/analytics
+ * Track widget analytics events (public)
+ */
+router.post(
+  '/intake/widget/:configId/analytics',
+  async (req: Request, res: Response) => {
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const { event, data } = req.body as { event?: string; data?: Record<string, unknown> };
+    if (!event) {
+      res.status(400).json({ error: 'Event is required' });
+      return;
+    }
+
+    try {
+      await channelService.widgetService.trackWidgetEvent(configId, event, data);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error tracking widget event:', error);
+      res.status(500).json({ error: 'Failed to track event' });
+    }
+  },
+);
+
+// Mount webhooks router for channel webhooks
+import { webhooksRouter } from './channels';
+router.use('/intake/webhooks', webhooksRouter);
+
 export default router;
