@@ -743,15 +743,27 @@ export async function permanentlyDeleteTenant(tenantId: string) {
 
     // IMPORTANT: Do NOT delete audit logs for compliance purposes.
     // Regulatory frameworks (GDPR, SOC 2, HIPAA) often require audit log
-    // retention even after account deletion. The audit logs are anonymized
-    // below by removing user associations but the records are preserved.
-    await tx.auditLog.updateMany({
+    // retention even after account deletion. The audit logs are marked as
+    // belonging to a deleted tenant while preserving all original metadata.
+    const auditLogs = await tx.auditLog.findMany({
       where: { tenantId },
-      data: {
-        // Anonymize but preserve the audit trail
-        metadata: { deletedTenant: true, deletedAt: new Date().toISOString() },
-      },
+      select: { id: true, metadata: true },
     });
+
+    const deletionTimestamp = new Date().toISOString();
+    for (const log of auditLogs) {
+      const existingMetadata = (log.metadata as Record<string, unknown>) || {};
+      await tx.auditLog.update({
+        where: { id: log.id },
+        data: {
+          metadata: {
+            ...existingMetadata,
+            _tenantDeleted: true,
+            _tenantDeletedAt: deletionTimestamp,
+          },
+        },
+      });
+    }
 
     // Delete Health metrics
     await tx.tenantHealthMetrics.deleteMany({ where: { tenantId } });
@@ -930,19 +942,28 @@ export async function forceDeleteTenant(tenantId: string) {
 
     // IMPORTANT: Do NOT delete audit logs for compliance purposes.
     // Regulatory frameworks (GDPR, SOC 2, HIPAA) often require audit log
-    // retention even after account deletion. The audit logs are anonymized
-    // below by removing user associations but the records are preserved.
-    await tx.auditLog.updateMany({
+    // retention even after account deletion. The audit logs are marked as
+    // belonging to a deleted tenant while preserving all original metadata.
+    const auditLogs = await tx.auditLog.findMany({
       where: { tenantId },
-      data: {
-        // Anonymize but preserve the audit trail
-        metadata: {
-          deletedTenant: true,
-          deletedAt: new Date().toISOString(),
-          forceDeleted: true,
-        },
-      },
+      select: { id: true, metadata: true },
     });
+
+    const deletionTimestamp = new Date().toISOString();
+    for (const log of auditLogs) {
+      const existingMetadata = (log.metadata as Record<string, unknown>) || {};
+      await tx.auditLog.update({
+        where: { id: log.id },
+        data: {
+          metadata: {
+            ...existingMetadata,
+            _tenantDeleted: true,
+            _tenantDeletedAt: deletionTimestamp,
+            _forceDeleted: true,
+          },
+        },
+      });
+    }
 
     // Delete Health metrics
     await tx.tenantHealthMetrics.deleteMany({ where: { tenantId } });
