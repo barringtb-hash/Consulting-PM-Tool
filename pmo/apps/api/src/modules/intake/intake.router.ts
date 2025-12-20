@@ -7,6 +7,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import {
   hasClientAccess,
@@ -1734,6 +1735,8 @@ router.post(
 
 import * as crmIntegration from './crm';
 import * as complianceService from './compliance';
+import * as screeningService from './screening';
+import * as analyticsService from './analytics';
 
 const crmIntegrationSchema = z.object({
   createAccount: z.boolean().optional(),
@@ -2045,6 +2048,275 @@ router.post(
       } else {
         res.status(500).json({ error: message });
       }
+    }
+  },
+);
+
+// ============================================================================
+// MATTER SCREENING ROUTES (Phase 3)
+// ============================================================================
+
+const screeningConfigSchema = z.object({
+  practiceAreas: z.array(z.object({
+    name: z.string(),
+    aliases: z.array(z.string()),
+    acceptNew: z.boolean(),
+    minimumValue: z.number().optional(),
+  })).optional(),
+  jurisdictions: z.array(z.string()).optional(),
+  autoDeclineReasons: z.array(z.string()).optional(),
+});
+
+/**
+ * POST /api/intake/submissions/:submissionId/screen
+ * Perform matter pre-screening for a submission
+ */
+router.post(
+  '/intake/submissions/:submissionId/screen',
+  async (
+    req: AuthenticatedRequest<{ submissionId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const submissionId = Number(req.params.submissionId);
+    if (Number.isNaN(submissionId)) {
+      res.status(400).json({ error: 'Invalid submission ID' });
+      return;
+    }
+
+    const parsed = screeningConfigSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const result = await screeningService.screenSubmission(
+        submissionId,
+        parsed.data,
+      );
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Screening error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to perform screening';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * POST /api/intake/screen/quick
+ * Quick screening without a submission
+ */
+router.post(
+  '/intake/screen/quick',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const schema = z.object({
+      formData: z.record(z.string(), z.unknown()),
+      config: screeningConfigSchema.optional(),
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const result = await screeningService.quickScreen(
+        parsed.data.formData,
+        parsed.data.config,
+      );
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Quick screening error:', error);
+      res.status(500).json({ error: 'Failed to perform screening' });
+    }
+  },
+);
+
+// ============================================================================
+// ENHANCED ANALYTICS ROUTES (Phase 3)
+// ============================================================================
+
+/**
+ * GET /api/intake/:configId/analytics/dashboard
+ * Get comprehensive intake analytics
+ */
+router.get(
+  '/intake/:configId/analytics/dashboard',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const startDate = req.query.start
+      ? new Date(req.query.start as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = req.query.end
+      ? new Date(req.query.end as string)
+      : new Date();
+    const formId = req.query.formId ? Number(req.query.formId) : undefined;
+
+    try {
+      const analytics = await analyticsService.getIntakeAnalytics(configId, {
+        startDate,
+        endDate,
+        formId,
+      });
+      res.json({ data: analytics });
+    } catch (error) {
+      console.error('Analytics error:', error);
+      res.status(500).json({ error: 'Failed to get analytics' });
+    }
+  },
+);
+
+/**
+ * GET /api/intake/:configId/analytics/suggestions
+ * Get AI-powered optimization suggestions
+ */
+router.get(
+  '/intake/:configId/analytics/suggestions',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const startDate = req.query.start
+      ? new Date(req.query.start as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = req.query.end
+      ? new Date(req.query.end as string)
+      : new Date();
+
+    try {
+      const suggestions = await analyticsService.getOptimizationSuggestions(
+        configId,
+        { startDate, endDate },
+      );
+      res.json({ data: suggestions });
+    } catch (error) {
+      console.error('Suggestions error:', error);
+      res.status(500).json({ error: 'Failed to get optimization suggestions' });
+    }
+  },
+);
+
+/**
+ * GET /api/intake/forms/:formId/analytics/dropoff
+ * Get drop-off analysis for a specific form
+ */
+router.get(
+  '/intake/forms/:formId/analytics/dropoff',
+  async (req: AuthenticatedRequest<{ formId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const formId = Number(req.params.formId);
+    if (Number.isNaN(formId)) {
+      res.status(400).json({ error: 'Invalid form ID' });
+      return;
+    }
+
+    // Get configId from form
+    const form = await prisma.intakeForm.findUnique({
+      where: { id: formId },
+      select: { configId: true },
+    });
+
+    if (!form) {
+      res.status(404).json({ error: 'Form not found' });
+      return;
+    }
+
+    try {
+      const analysis = await analyticsService.getDropOffAnalysis(
+        form.configId,
+        formId,
+      );
+      res.json({ data: analysis });
+    } catch (error) {
+      console.error('Drop-off analysis error:', error);
+      res.status(500).json({ error: 'Failed to get drop-off analysis' });
+    }
+  },
+);
+
+/**
+ * GET /api/intake/:configId/analytics/export
+ * Export analytics report
+ */
+router.get(
+  '/intake/:configId/analytics/export',
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const startDate = req.query.start
+      ? new Date(req.query.start as string)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = req.query.end
+      ? new Date(req.query.end as string)
+      : new Date();
+    const format = (req.query.format as 'csv' | 'json') || 'csv';
+
+    try {
+      const report = await analyticsService.exportAnalyticsReport(
+        configId,
+        { startDate, endDate },
+        format,
+      );
+
+      if (format === 'json') {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename="intake-analytics.json"');
+      } else {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="intake-analytics.csv"');
+      }
+
+      res.send(report);
+    } catch (error) {
+      console.error('Export error:', error);
+      res.status(500).json({ error: 'Failed to export analytics' });
     }
   },
 );
