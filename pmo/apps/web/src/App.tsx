@@ -13,6 +13,8 @@ import ProjectsPage from './pages/ProjectsPage';
 import ProjectSetupPage from './pages/ProjectSetupPage';
 import ProjectDashboardPage from './pages/ProjectDashboardPage';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import MyTasksPage from './pages/MyTasksPage';
 import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 
@@ -245,6 +247,8 @@ function App(): JSX.Element {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
           path="/book/:slug"
           element={

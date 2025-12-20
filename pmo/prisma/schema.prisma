@@ -263,6 +263,26 @@ model User {
   aiUsageEvents        AIUsageEvent[]
   acknowledgedAnomalies Anomaly[]      @relation("AnomalyAcknowledgedBy")
   resolvedAnomalies    Anomaly[]      @relation("AnomalyResolvedBy")
+
+  // Password reset tokens
+  passwordResets PasswordReset[]
+}
+
+/// Stores password reset tokens for self-service password recovery.
+/// Tokens are hashed for security and expire after a short time period.
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    Int
+  tokenHash String   // SHA-256 hash of the actual token
+  expiresAt DateTime
+  usedAt    DateTime? // Set when token is used to prevent reuse
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
 }
 
 model Client {
