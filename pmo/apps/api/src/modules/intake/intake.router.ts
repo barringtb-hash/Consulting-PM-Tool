@@ -1728,4 +1728,325 @@ router.post(
   },
 );
 
+// ============================================================================
+// CRM INTEGRATION ROUTES (Phase 2)
+// ============================================================================
+
+import * as crmIntegration from './crm';
+import * as complianceService from './compliance';
+
+const crmIntegrationSchema = z.object({
+  createAccount: z.boolean().optional(),
+  createContact: z.boolean().optional(),
+  createOpportunity: z.boolean().optional(),
+  defaultPipelineId: z.number().int().optional(),
+  defaultStageId: z.number().int().optional(),
+  assignToUserId: z.number().int().optional(),
+  fieldMappings: z.record(z.string(), z.string()).optional(),
+});
+
+const conflictCheckSchema = z.object({
+  checkAccounts: z.boolean().optional(),
+  checkContacts: z.boolean().optional(),
+  checkOpportunities: z.boolean().optional(),
+  checkAdverseParties: z.boolean().optional(),
+  minimumSimilarity: z.number().min(0).max(1).optional(),
+  includeArchived: z.boolean().optional(),
+});
+
+const engagementLetterSchema = z.object({
+  templateId: z.string().optional(),
+  industry: z.string().optional(),
+  customContent: z.string().max(5000).optional(),
+  signatureType: z.enum(['none', 'docusign', 'hellosign', 'manual']).optional(),
+});
+
+/**
+ * POST /api/intake/submissions/:submissionId/crm
+ * Process an approved submission and create CRM records
+ */
+router.post(
+  '/intake/submissions/:submissionId/crm',
+  async (
+    req: AuthenticatedRequest<{ submissionId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const submissionId = Number(req.params.submissionId);
+    if (Number.isNaN(submissionId)) {
+      res.status(400).json({ error: 'Invalid submission ID' });
+      return;
+    }
+
+    const parsed = crmIntegrationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const result = await crmIntegration.processIntakeForCRM(
+        submissionId,
+        parsed.data,
+      );
+
+      if (result.errors.length > 0) {
+        res.status(400).json({
+          data: result,
+          error: result.errors[0],
+        });
+        return;
+      }
+
+      res.json({ data: result });
+    } catch (error) {
+      console.error('CRM integration error:', error);
+      res.status(500).json({ error: 'Failed to process CRM integration' });
+    }
+  },
+);
+
+/**
+ * GET /api/intake/submissions/:submissionId/crm/status
+ * Get CRM integration status for a submission
+ */
+router.get(
+  '/intake/submissions/:submissionId/crm/status',
+  async (
+    req: AuthenticatedRequest<{ submissionId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const submissionId = Number(req.params.submissionId);
+    if (Number.isNaN(submissionId)) {
+      res.status(400).json({ error: 'Invalid submission ID' });
+      return;
+    }
+
+    try {
+      const status = await crmIntegration.getIntegrationStatus(submissionId);
+      res.json({ data: status });
+    } catch (error) {
+      console.error('Error getting CRM status:', error);
+      res.status(500).json({ error: 'Failed to get CRM status' });
+    }
+  },
+);
+
+// ============================================================================
+// LEGAL COMPLIANCE ROUTES (Phase 2)
+// ============================================================================
+
+/**
+ * POST /api/intake/submissions/:submissionId/conflict-check
+ * Perform conflict of interest check for a submission
+ */
+router.post(
+  '/intake/submissions/:submissionId/conflict-check',
+  async (
+    req: AuthenticatedRequest<{ submissionId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const submissionId = Number(req.params.submissionId);
+    if (Number.isNaN(submissionId)) {
+      res.status(400).json({ error: 'Invalid submission ID' });
+      return;
+    }
+
+    const parsed = conflictCheckSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const result = await complianceService.checkForConflicts(
+        submissionId,
+        parsed.data,
+      );
+
+      // Optionally save the result
+      if (req.query.save === 'true') {
+        await complianceService.saveConflictCheckResult(submissionId, result);
+      }
+
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Conflict check error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to perform conflict check';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * POST /api/intake/conflict-check/quick
+ * Quick conflict check against names (without submission)
+ */
+router.post(
+  '/intake/conflict-check/quick',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const schema = z.object({
+      tenantId: z.string(),
+      names: z.array(z.string().min(1)).min(1).max(20),
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const result = await complianceService.quickConflictCheck(
+        parsed.data.tenantId,
+        parsed.data.names,
+      );
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Quick conflict check error:', error);
+      res.status(500).json({ error: 'Failed to perform quick conflict check' });
+    }
+  },
+);
+
+/**
+ * POST /api/intake/submissions/:submissionId/engagement-letter
+ * Generate an engagement letter for a submission
+ */
+router.post(
+  '/intake/submissions/:submissionId/engagement-letter',
+  async (
+    req: AuthenticatedRequest<{ submissionId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const submissionId = Number(req.params.submissionId);
+    if (Number.isNaN(submissionId)) {
+      res.status(400).json({ error: 'Invalid submission ID' });
+      return;
+    }
+
+    const parsed = engagementLetterSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const letter = await complianceService.generateEngagementLetter(
+        submissionId,
+        parsed.data,
+      );
+      res.json({ data: letter });
+    } catch (error) {
+      console.error('Engagement letter generation error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to generate engagement letter';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
+/**
+ * GET /api/intake/engagement-letter/templates
+ * Get available engagement letter templates
+ */
+router.get(
+  '/intake/engagement-letter/templates',
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const industry = req.query.industry as string | undefined;
+    const templates = complianceService.getAvailableTemplates(industry);
+    res.json({ data: templates });
+  },
+);
+
+/**
+ * GET /api/intake/engagement-letter/templates/:templateId
+ * Get a specific engagement letter template
+ */
+router.get(
+  '/intake/engagement-letter/templates/:templateId',
+  async (req: AuthenticatedRequest<{ templateId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const template = complianceService.getTemplate(req.params.templateId);
+    if (!template) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+
+    res.json({ data: template });
+  },
+);
+
+/**
+ * POST /api/intake/engagement-letter/templates/:templateId/preview
+ * Preview an engagement letter with sample data
+ */
+router.post(
+  '/intake/engagement-letter/templates/:templateId/preview',
+  async (req: AuthenticatedRequest<{ templateId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sampleData = req.body as Record<string, string>;
+
+    try {
+      const content = complianceService.previewTemplate(
+        req.params.templateId,
+        sampleData,
+      );
+      res.json({ data: { content } });
+    } catch (error) {
+      console.error('Template preview error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to preview template';
+      if (message.includes('not found')) {
+        res.status(404).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    }
+  },
+);
+
 export default router;
