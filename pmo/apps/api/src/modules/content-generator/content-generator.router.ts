@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as contentGeneratorService from './content-generator.service';
+import * as intakeContentService from './services/intake-content.service';
 import {
   hasClientAccess,
   getClientIdFromContentGeneratorConfig,
@@ -1314,6 +1315,261 @@ router.post(
       }
       if ((error as Error).message === 'Config not found') {
         res.status(404).json({ error: 'Config not found' });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
+// ============================================================================
+// INTAKE CONTENT INTEGRATION ROUTES
+// ============================================================================
+
+const intakeQuestionSchema = z.object({
+  industry: z.string().min(1),
+  questionType: z.enum([
+    'qualification',
+    'discovery',
+    'screening',
+    'onboarding',
+  ]),
+  targetCount: z.number().int().min(1).max(20).default(5),
+  existingQuestions: z.array(z.string()).optional(),
+  customContext: z.string().max(1000).optional(),
+  includeFollowUps: z.boolean().optional(),
+});
+
+const chatbotFlowSchema = z.object({
+  industry: z.string().min(1),
+  flowType: z.enum([
+    'greeting',
+    'qualification',
+    'faq',
+    'scheduling',
+    'support',
+  ]),
+  intents: z.array(z.string()).min(1),
+  personality: z
+    .enum(['professional', 'friendly', 'casual', 'formal'])
+    .default('professional'),
+  maxTurns: z.number().int().min(1).max(10).optional(),
+});
+
+const faqGenerationSchema = z.object({
+  submissionIds: z.array(z.number()).optional(),
+  industry: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  maxItems: z.number().int().min(1).max(50).default(10),
+});
+
+/**
+ * POST /api/content-generator/:configId/intake-questions
+ * Generate intake form questions by industry
+ */
+router.post(
+  '/content-generator/:configId/intake-questions',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = intakeQuestionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await intakeContentService.generateIntakeQuestions(
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating intake questions:', error);
+      res.status(500).json({ error: 'Failed to generate questions' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/chatbot-flow
+ * Generate chatbot conversation flow
+ */
+router.post(
+  '/content-generator/:configId/chatbot-flow',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = chatbotFlowSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await intakeContentService.generateChatbotFlow(
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating chatbot flow:', error);
+      res.status(500).json({ error: 'Failed to generate chatbot flow' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/faq-from-intake
+ * Generate FAQ content from intake submissions
+ */
+router.post(
+  '/content-generator/:configId/faq-from-intake',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    // Authorization check
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = faqGenerationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    try {
+      const result = await intakeContentService.generateFAQFromIntakeData(
+        configId,
+        parsed.data,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating FAQ content:', error);
+      res.status(500).json({ error: 'Failed to generate FAQ content' });
+    }
+  },
+);
+
+/**
+ * GET /api/content-generator/engagement-letter-templates
+ * Get available engagement letter templates (shared with Intake module)
+ */
+router.get(
+  '/content-generator/engagement-letter-templates',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const industry = req.query.industry as string | undefined;
+    const templates =
+      intakeContentService.getEngagementLetterTemplates(industry);
+    res.json({ templates });
+  },
+);
+
+/**
+ * GET /api/content-generator/engagement-letter-templates/:templateId
+ * Get a specific engagement letter template
+ */
+router.get(
+  '/content-generator/engagement-letter-templates/:templateId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ templateId: string }>, res: Response) => {
+    const template = intakeContentService.getEngagementLetterTemplate(
+      req.params.templateId,
+    );
+    if (!template) {
+      res.status(404).json({ error: 'Template not found' });
+      return;
+    }
+    res.json({ template });
+  },
+);
+
+/**
+ * POST /api/content-generator/engagement-letter-templates/:templateId/preview
+ * Preview an engagement letter with sample data
+ */
+router.post(
+  '/content-generator/engagement-letter-templates/:templateId/preview',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ templateId: string }>, res: Response) => {
+    const sampleData = req.body as Record<string, string>;
+
+    try {
+      const preview = intakeContentService.previewEngagementLetter(
+        req.params.templateId,
+        sampleData,
+      );
+      res.json({ preview });
+    } catch (error) {
+      if ((error as Error).message === 'Template not found') {
+        res.status(404).json({ error: 'Template not found' });
         return;
       }
       throw error;
