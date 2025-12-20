@@ -2,5 +2,8 @@
   "version": 2,
   "buildCommand": "cd apps/web && HUSKY=0 npm install && npm run build",
   "outputDirectory": "apps/web/dist",
-  "installCommand": "HUSKY=0 npm install"
+  "installCommand": "HUSKY=0 npm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
