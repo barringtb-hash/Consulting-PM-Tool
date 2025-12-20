@@ -12,6 +12,7 @@ import * as contentGeneratorService from './content-generator.service';
 import * as intakeContentService from './services/intake-content.service';
 import * as sequenceService from './services/sequence.service';
 import * as translationService from './services/translation.service';
+import * as complianceService from './services/compliance.service';
 import {
   hasClientAccess,
   getClientIdFromContentGeneratorConfig,
@@ -2310,6 +2311,226 @@ router.delete(
     }
 
     res.json({ success: true });
+  },
+);
+
+// ============================================================================
+// COMPLIANCE ROUTES (Phase 5: Basic Compliance Warnings)
+// ============================================================================
+
+/**
+ * GET /compliance/industries
+ * Get list of supported industries for compliance checking
+ */
+router.get(
+  '/compliance/industries',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const industries = complianceService.getSupportedIndustries();
+    res.json({ industries });
+  },
+);
+
+/**
+ * GET /compliance/rules/:industry
+ * Get compliance rules for a specific industry
+ */
+router.get(
+  '/compliance/rules/:industry',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const industry = req.params.industry as complianceService.IndustryType;
+
+    const validIndustries = [
+      'legal',
+      'healthcare',
+      'financial',
+      'real_estate',
+      'insurance',
+      'general',
+    ];
+    if (!validIndustries.includes(industry)) {
+      res.status(400).json({
+        error: `Invalid industry. Must be one of: ${validIndustries.join(', ')}`,
+      });
+      return;
+    }
+
+    const rules = complianceService.getIndustryRules(industry);
+    res.json({ industry, rules });
+  },
+);
+
+/**
+ * POST /compliance/analyze
+ * Analyze text for compliance issues without saving
+ */
+router.post(
+  '/compliance/analyze',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const analyzeSchema = z.object({
+      content: z.string().min(10).max(50000),
+      industry: z.enum([
+        'legal',
+        'healthcare',
+        'financial',
+        'real_estate',
+        'insurance',
+        'general',
+      ]),
+      strictMode: z.boolean().optional(),
+      useAI: z.boolean().optional(),
+    });
+
+    const parsed = analyzeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    let result: complianceService.ComplianceCheckResult;
+
+    if (parsed.data.useAI) {
+      result = await complianceService.enhancedComplianceCheck(
+        parsed.data.content,
+        parsed.data.industry,
+      );
+    } else {
+      result = complianceService.checkContentCompliance({
+        industry: parsed.data.industry,
+        content: parsed.data.content,
+        strictMode: parsed.data.strictMode,
+      });
+    }
+
+    res.json(result);
+  },
+);
+
+/**
+ * POST /contents/:contentId/compliance-check
+ * Check compliance for a specific stored content
+ */
+router.post(
+  '/contents/:contentId/compliance-check',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const contentId = parseInt(req.params.contentId, 10);
+    if (isNaN(contentId)) {
+      res.status(400).json({ error: 'Invalid content ID' });
+      return;
+    }
+
+    // Verify client access
+    const clientId = await getClientIdFromGeneratedContent(contentId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+    if (!hasClientAccess(req.user!, clientId)) {
+      res.status(403).json({ error: 'Access denied to this content' });
+      return;
+    }
+
+    const checkSchema = z.object({
+      industry: z.enum([
+        'legal',
+        'healthcare',
+        'financial',
+        'real_estate',
+        'insurance',
+        'general',
+      ]),
+      strictMode: z.boolean().optional(),
+    });
+
+    const parsed = checkSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Get configId from content
+    const content = await contentGeneratorService.getGeneratedContent(
+      contentId,
+      0,
+    );
+    if (!content) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const result = await complianceService.checkStoredContentCompliance(
+      content.configId,
+      contentId,
+      parsed.data.industry,
+      parsed.data.strictMode,
+    );
+
+    if (!result) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    res.json(result);
+  },
+);
+
+/**
+ * POST /compliance/batch-check
+ * Check compliance for multiple contents
+ */
+router.post(
+  '/compliance/batch-check',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const batchCheckSchema = z.object({
+      contentIds: z.array(z.number().int().positive()).min(1).max(100),
+      industry: z.enum([
+        'legal',
+        'healthcare',
+        'financial',
+        'real_estate',
+        'insurance',
+        'general',
+      ]),
+    });
+
+    const parsed = batchCheckSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
+    // Verify access to all contents
+    for (const contentId of parsed.data.contentIds) {
+      const clientId = await getClientIdFromGeneratedContent(contentId);
+      if (!clientId || !hasClientAccess(req.user!, clientId)) {
+        res
+          .status(403)
+          .json({ error: `Access denied to content ID ${contentId}` });
+        return;
+      }
+    }
+
+    // Get configId from first content
+    const firstContent = await contentGeneratorService.getGeneratedContent(
+      parsed.data.contentIds[0],
+      0,
+    );
+    if (!firstContent) {
+      res.status(404).json({ error: 'Content not found' });
+      return;
+    }
+
+    const summary = await complianceService.getComplianceSummary(
+      firstContent.configId,
+      parsed.data.contentIds,
+      parsed.data.industry,
+    );
+
+    res.json(summary);
   },
 );
 
