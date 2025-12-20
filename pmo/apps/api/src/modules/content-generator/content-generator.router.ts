@@ -10,6 +10,7 @@ import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as contentGeneratorService from './content-generator.service';
 import * as intakeContentService from './services/intake-content.service';
+import * as sequenceService from './services/sequence.service';
 import {
   hasClientAccess,
   getClientIdFromContentGeneratorConfig,
@@ -1574,6 +1575,513 @@ router.post(
       }
       throw error;
     }
+  },
+);
+
+// ============================================================================
+// CONTENT SEQUENCE ROUTES
+// ============================================================================
+
+const createSequenceSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  type: z.enum(['ONBOARDING', 'NURTURE', 'FOLLOW_UP', 'DRIP', 'REENGAGEMENT']),
+  triggerEvent: z.string().optional(),
+  pieces: z
+    .array(
+      z.object({
+        order: z.number().int().min(1),
+        delayDays: z.number().int().min(0),
+        purpose: z.string().min(1),
+        subject: z.string().optional(),
+        contentType: z
+          .enum([
+            'SOCIAL_POST',
+            'EMAIL',
+            'BLOG_POST',
+            'AD_COPY',
+            'LANDING_PAGE',
+            'NEWSLETTER',
+            'PRESS_RELEASE',
+            'PRODUCT_COPY',
+            'VIDEO_SCRIPT',
+            'PROPOSAL',
+            'CASE_STUDY',
+            'FAQ_CONTENT',
+            'WELCOME_PACKET',
+            'WHITEPAPER',
+          ])
+          .optional(),
+        promptHints: z.string().optional(),
+        keywords: z.array(z.string()).optional(),
+      }),
+    )
+    .min(1),
+});
+
+const generateSequenceSchema = z.object({
+  type: z.enum(['ONBOARDING', 'NURTURE', 'FOLLOW_UP', 'DRIP', 'REENGAGEMENT']),
+  industry: z.string().optional(),
+  pieceCount: z.number().int().min(1).max(10).default(5),
+  totalDurationDays: z.number().int().min(1).optional(),
+  tone: z.string().optional(),
+  brandContext: z.string().max(1000).optional(),
+});
+
+/**
+ * GET /api/content-generator/sequence-templates
+ * Get available sequence templates
+ */
+router.get(
+  '/content-generator/sequence-templates',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const templates = sequenceService.getSequenceTemplates();
+    res.json({ templates });
+  },
+);
+
+/**
+ * GET /api/content-generator/:configId/sequences
+ * List sequences for a config
+ */
+router.get(
+  '/content-generator/:configId/sequences',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const type = req.query.type as string | undefined;
+    const status = req.query.status as string | undefined;
+
+    const sequences = await sequenceService.listSequences(configId, {
+      type: type as
+        | 'ONBOARDING'
+        | 'NURTURE'
+        | 'FOLLOW_UP'
+        | 'DRIP'
+        | 'REENGAGEMENT'
+        | undefined,
+      status: status as
+        | 'DRAFT'
+        | 'ACTIVE'
+        | 'PAUSED'
+        | 'COMPLETED'
+        | 'ARCHIVED'
+        | undefined,
+    });
+    res.json({ sequences });
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/sequences
+ * Create a new sequence
+ */
+router.post(
+  '/content-generator/:configId/sequences',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = createSequenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const sequence = await sequenceService.createSequence(
+      configId,
+      parsed.data,
+    );
+    res.status(201).json({ sequence });
+  },
+);
+
+/**
+ * POST /api/content-generator/:configId/sequences/generate
+ * Generate a sequence from template or AI
+ */
+router.post(
+  '/content-generator/:configId/sequences/generate',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const configId = Number(req.params.configId);
+    if (Number.isNaN(configId)) {
+      res.status(400).json({ error: 'Invalid config ID' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(configId);
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const parsed = generateSequenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    // Generate sequence definition
+    const sequenceInput = await sequenceService.generateCustomSequence(
+      configId,
+      parsed.data,
+    );
+
+    // Create the sequence
+    const sequence = await sequenceService.createSequence(
+      configId,
+      sequenceInput,
+    );
+    res.status(201).json({ sequence });
+  },
+);
+
+/**
+ * GET /api/content-generator/sequences/:sequenceId
+ * Get a specific sequence
+ */
+router.get(
+  '/content-generator/sequences/:sequenceId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    res.json({ sequence });
+  },
+);
+
+/**
+ * PATCH /api/content-generator/sequences/:sequenceId
+ * Update a sequence
+ */
+router.patch(
+  '/content-generator/sequences/:sequenceId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const updateSchema = z.object({
+      name: z.string().min(1).max(200).optional(),
+      description: z.string().max(1000).optional(),
+      triggerEvent: z.string().optional(),
+      status: z
+        .enum(['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED'])
+        .optional(),
+      isActive: z.boolean().optional(),
+    });
+
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: 'Invalid data', details: parsed.error.format() });
+      return;
+    }
+
+    const updated = await sequenceService.updateSequence(
+      sequenceId,
+      parsed.data,
+    );
+    res.json({ sequence: updated });
+  },
+);
+
+/**
+ * DELETE /api/content-generator/sequences/:sequenceId
+ * Delete a sequence
+ */
+router.delete(
+  '/content-generator/sequences/:sequenceId',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    await sequenceService.deleteSequence(sequenceId);
+    res.status(204).send();
+  },
+);
+
+/**
+ * POST /api/content-generator/sequences/:sequenceId/generate-content
+ * Generate content for all pieces in a sequence
+ */
+router.post(
+  '/content-generator/sequences/:sequenceId/generate-content',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const options = req.body as { tone?: string; brandContext?: string };
+
+    try {
+      const result = await sequenceService.generateSequenceContent(
+        sequenceId,
+        options,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating sequence content:', error);
+      res.status(500).json({ error: 'Failed to generate sequence content' });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/sequences/:sequenceId/activate
+ * Activate a sequence
+ */
+router.post(
+  '/content-generator/sequences/:sequenceId/activate',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    try {
+      const activated = await sequenceService.activateSequence(sequenceId);
+      res.json({ sequence: activated });
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  },
+);
+
+/**
+ * POST /api/content-generator/sequences/:sequenceId/pause
+ * Pause a sequence
+ */
+router.post(
+  '/content-generator/sequences/:sequenceId/pause',
+  requireAuth,
+  async (req: AuthenticatedRequest<{ sequenceId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const sequenceId = Number(req.params.sequenceId);
+    if (Number.isNaN(sequenceId)) {
+      res.status(400).json({ error: 'Invalid sequence ID' });
+      return;
+    }
+
+    const sequence = await sequenceService.getSequence(sequenceId);
+    if (!sequence) {
+      res.status(404).json({ error: 'Sequence not found' });
+      return;
+    }
+
+    const clientId = await getClientIdFromContentGeneratorConfig(
+      sequence.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const paused = await sequenceService.pauseSequence(sequenceId);
+    res.json({ sequence: paused });
   },
 );
 

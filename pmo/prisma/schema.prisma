@@ -3359,6 +3359,7 @@ model ContentGeneratorConfig {
   generatedContents GeneratedContent[]
   contentTemplates  ContentTemplate[]
   approvalWorkflows ContentApprovalWorkflow[]
+  contentSequences  ContentSequence[]
 
   @@index([clientId, isActive])
 }
@@ -3424,7 +3425,8 @@ model GeneratedContent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  config ContentGeneratorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  config         ContentGeneratorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  sequencePieces ContentSequencePiece[]
 
   @@index([configId, type])
   @@index([configId, approvalStatus])
@@ -3490,6 +3492,86 @@ model ContentApprovalWorkflow {
   config ContentGeneratorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
   @@index([configId, isActive])
+}
+
+/**
+ * ContentSequence - Multi-piece content sequences (email drips, onboarding, etc.)
+ */
+enum ContentSequenceType {
+  ONBOARDING    // New client welcome sequence
+  NURTURE       // Lead nurturing sequence
+  FOLLOW_UP     // Post-meeting/intake follow-up
+  DRIP          // Educational content drip
+  REENGAGEMENT  // Win-back sequence
+}
+
+enum ContentSequenceStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+model ContentSequence {
+  id       Int    @id @default(autoincrement())
+  configId Int
+  config   ContentGeneratorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  type        ContentSequenceType
+
+  // Trigger configuration
+  triggerEvent String?  // e.g., "intake_submitted", "opportunity_created", "manual"
+
+  // Sequence status
+  status   ContentSequenceStatus @default(DRAFT)
+  isActive Boolean               @default(false)
+
+  // Pieces in this sequence
+  pieces ContentSequencePiece[]
+
+  // Metadata
+  totalPieces     Int @default(0)
+  totalDurationDays Int? // Total days from start to end
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([configId, status])
+  @@index([configId, type])
+}
+
+model ContentSequencePiece {
+  id         Int             @id @default(autoincrement())
+  sequenceId Int
+  sequence   ContentSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  // Order in sequence
+  order     Int // 1, 2, 3...
+  delayDays Int @default(0) // Days after trigger/previous piece
+
+  // Content reference (optional - may be generated later)
+  contentId Int?
+  content   GeneratedContent? @relation(fields: [contentId], references: [id])
+
+  // Piece configuration
+  purpose     String   // "welcome", "value_prop", "case_study", "cta", "reminder"
+  subject     String?  // For emails
+  contentType ContentGenerationType @default(EMAIL)
+
+  // Generation prompt hints
+  promptHints String?
+  keywords    String[] @default([])
+
+  // Status
+  isGenerated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sequenceId, order])
 }
 
 // ============================================================================
