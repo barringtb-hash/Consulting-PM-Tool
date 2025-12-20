@@ -10,4 +10,5 @@ export * from './Modal';
 export * from './PageHeader';
 export * from './Section';
 export * from './Tabs';
+export * from './Toast';
 export * from './utils';
