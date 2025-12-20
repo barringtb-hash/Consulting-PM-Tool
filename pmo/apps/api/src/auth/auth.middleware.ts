@@ -101,14 +101,52 @@ export const requireAdmin = async (
     const payload = verifyToken(token);
     req.userId = payload.userId;
 
-    // Check if user is an admin
+    // Check if user is an admin or super admin
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { role: true },
     });
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
       res.status(403).json({ error: 'Forbidden: Admin access required' });
+      return;
+    }
+
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+/**
+ * Middleware to require Super Admin access.
+ * Super Admins are internal platform operators with full access across all tenants.
+ * They can perform destructive operations like permanent tenant deletion.
+ */
+export const requireSuperAdmin = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  const token = extractToken(req);
+
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    const payload = verifyToken(token);
+    req.userId = payload.userId;
+
+    // Check if user is a super admin
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { role: true },
+    });
+
+    if (!user || user.role !== 'SUPER_ADMIN') {
+      res.status(403).json({ error: 'Forbidden: Super Admin access required' });
       return;
     }
 

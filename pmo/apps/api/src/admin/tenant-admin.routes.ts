@@ -6,7 +6,11 @@
  */
 
 import { Router, Response } from 'express';
-import { requireAdmin, AuthenticatedRequest } from '../auth/auth.middleware';
+import {
+  requireAdmin,
+  requireSuperAdmin,
+  AuthenticatedRequest,
+} from '../auth/auth.middleware';
 import {
   createTenantAdminSchema,
   updateTenantAdminSchema,
@@ -565,6 +569,73 @@ router.put(
           error instanceof Error
             ? error.message
             : 'Failed to update tenant branding',
+      });
+    }
+  },
+);
+
+// ============================================================================
+// SUPER ADMIN ONLY ROUTES
+// These routes are restricted to Super Admins (internal platform operators)
+// and allow destructive operations that bypass normal safety checks.
+// ============================================================================
+
+/**
+ * DELETE /api/admin/tenants/:tenantId/force
+ * Permanently delete a tenant immediately (Super Admin only).
+ * This bypasses the 30-day retention period and cannot be undone.
+ * Requires confirmation via request body.
+ */
+router.delete(
+  '/tenants/:tenantId/force',
+  requireSuperAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tenantId } = req.params;
+      const body = req.body as { confirm?: string };
+
+      // Require explicit confirmation
+      if (body.confirm !== 'PERMANENTLY_DELETE') {
+        return res.status(400).json({
+          error:
+            'Confirmation required. Set confirm: "PERMANENTLY_DELETE" in request body.',
+        });
+      }
+
+      // Get tenant info for audit before deletion
+      const tenant = await tenantAdminService.getTenantDetailsById(tenantId);
+      const tenantName = tenant.name;
+
+      // Force delete the tenant
+      const result = await tenantService.forceDeleteTenant(tenantId);
+
+      // Audit log
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.DELETE,
+        entityType: 'Tenant',
+        entityId: tenantId,
+        before: { name: tenantName, status: tenant.status },
+        after: { deleted: true, forceDeleted: true },
+        metadata: {
+          adminAction: 'force-delete',
+          superAdmin: true,
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      return res.json({ data: result });
+    } catch (error) {
+      console.error('Error force deleting tenant:', error);
+      if (error instanceof Error && error.message === 'Tenant not found') {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      return res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to force delete tenant',
       });
     }
   },

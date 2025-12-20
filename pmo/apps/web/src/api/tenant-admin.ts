@@ -431,3 +431,34 @@ export async function updateTenantBranding(
   );
   return handleResponse<TenantBranding>(response);
 }
+
+// ============================================================================
+// SUPER ADMIN ONLY FUNCTIONS
+// ============================================================================
+
+export interface ForceDeleteTenantResult {
+  deleted: boolean;
+  tenantId: string;
+  forceDeleted: boolean;
+}
+
+/**
+ * Force delete a tenant permanently (Super Admin only).
+ * This bypasses the 30-day retention period and cannot be undone.
+ * Requires explicit confirmation.
+ */
+export async function forceDeleteTenant(
+  tenantId: string,
+): Promise<ForceDeleteTenantResult> {
+  const response = await fetch(
+    `${API_BASE}/admin/tenants/${tenantId}/force`,
+    buildOptions({
+      method: 'DELETE',
+      body: JSON.stringify({ confirm: 'PERMANENTLY_DELETE' }),
+    }),
+  );
+  const result = await handleResponse<{ data: ForceDeleteTenantResult }>(
+    response,
+  );
+  return result.data;
+}
