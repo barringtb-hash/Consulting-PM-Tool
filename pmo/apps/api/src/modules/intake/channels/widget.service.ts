@@ -6,10 +6,7 @@
  */
 
 import { prisma } from '../../../prisma/client';
-import {
-  IntakeChannelSettings,
-  WidgetTrigger,
-} from './channel.types';
+import { WidgetTrigger } from './channel.types';
 
 export interface WidgetConfig {
   configId: number;
@@ -56,7 +53,9 @@ export interface WidgetEmbed {
 /**
  * Get widget configuration for a client
  */
-export async function getWidgetConfig(configId: number): Promise<WidgetConfig | null> {
+export async function getWidgetConfig(
+  configId: number,
+): Promise<WidgetConfig | null> {
   const config = await prisma.intakeConfig.findUnique({
     where: { id: configId },
     include: {
@@ -73,8 +72,12 @@ export async function getWidgetConfig(configId: number): Promise<WidgetConfig | 
   }
 
   // Get widget settings from storageCredentials (using it as a JSON settings store)
-  const storedSettings = (config.storageCredentials || {}) as Record<string, unknown>;
-  const widgetSettings = (storedSettings.widgetSettings || {}) as Partial<WidgetConfig>;
+  const storedSettings = (config.storageCredentials || {}) as Record<
+    string,
+    unknown
+  >;
+  const widgetSettings = (storedSettings.widgetSettings ||
+    {}) as Partial<WidgetConfig>;
 
   const defaultConfig: WidgetConfig = {
     configId,
@@ -119,8 +122,12 @@ export async function updateWidgetConfig(
     throw new Error('Intake config not found');
   }
 
-  const storedSettings = (config.storageCredentials || {}) as Record<string, unknown>;
-  const existingWidgetSettings = (storedSettings.widgetSettings || {}) as Partial<WidgetConfig>;
+  const storedSettings = (config.storageCredentials || {}) as Record<
+    string,
+    unknown
+  >;
+  const existingWidgetSettings = (storedSettings.widgetSettings ||
+    {}) as Partial<WidgetConfig>;
 
   const updatedSettings: Partial<WidgetConfig> = {
     ...existingWidgetSettings,
@@ -185,19 +192,33 @@ export function generateEmbedCode(
 /**
  * Generate the widget JavaScript bundle
  */
-export function generateWidgetScript(config: WidgetConfig, apiBaseUrl: string): string {
-  const positionBottom = config.position.includes('bottom') ? 'bottom: 20px;' : 'top: 20px;';
-  const positionRight = config.position.includes('right') ? 'right: 20px;' : 'left: 20px;';
-  const popupBottom = config.position.includes('bottom') ? 'bottom: 70px;' : 'top: 70px;';
-  const popupRight = config.position.includes('right') ? 'right: 0;' : 'left: 0;';
-  const hideOnMobileStyle = config.hideOnMobile ? '.intake-widget-container { display: none; }' : '';
+export function generateWidgetScript(
+  config: WidgetConfig,
+  apiBaseUrl: string,
+): string {
+  const positionBottom = config.position.includes('bottom')
+    ? 'bottom: 20px;'
+    : 'top: 20px;';
+  const positionRight = config.position.includes('right')
+    ? 'right: 20px;'
+    : 'left: 20px;';
+  const popupBottom = config.position.includes('bottom')
+    ? 'bottom: 70px;'
+    : 'top: 70px;';
+  const popupRight = config.position.includes('right')
+    ? 'right: 0;'
+    : 'left: 0;';
+  const hideOnMobileStyle = config.hideOnMobile
+    ? '.intake-widget-container { display: none; }'
+    : '';
   const defaultMode = config.defaultMode || 'chat';
-  const modeToggleHtml = config.mode === 'both'
-    ? `<div class="intake-widget-mode-toggle">
+  const modeToggleHtml =
+    config.mode === 'both'
+      ? `<div class="intake-widget-mode-toggle">
           <button class="intake-widget-mode-btn" data-mode="chat">Chat</button>
           <button class="intake-widget-mode-btn" data-mode="form">Form</button>
         </div>`
-    : '';
+      : '';
 
   return `(function() {
   'use strict';
@@ -385,7 +406,10 @@ export function generateWidgetScript(config: WidgetConfig, apiBaseUrl: string): 
 /**
  * Generate widget chat page HTML
  */
-export function generateChatPageHtml(config: WidgetConfig, apiBaseUrl: string): string {
+export function generateChatPageHtml(
+  config: WidgetConfig,
+  apiBaseUrl: string,
+): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -595,7 +619,10 @@ export function generateChatPageHtml(config: WidgetConfig, apiBaseUrl: string): 
 /**
  * Generate widget form page HTML
  */
-export function generateFormPageHtml(config: WidgetConfig, apiBaseUrl: string): string {
+export function generateFormPageHtml(
+  config: WidgetConfig,
+  apiBaseUrl: string,
+): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -793,8 +820,8 @@ export function generateFormPageHtml(config: WidgetConfig, apiBaseUrl: string): 
  */
 export async function trackWidgetEvent(
   configId: number,
-  event: string,
-  data?: Record<string, unknown>,
+  _event: string,
+  _data?: Record<string, unknown>,
 ): Promise<void> {
   try {
     // Store in database or send to analytics service

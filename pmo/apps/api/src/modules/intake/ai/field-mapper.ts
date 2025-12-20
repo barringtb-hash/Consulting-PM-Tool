@@ -165,9 +165,14 @@ const TYPE_ALIASES: Record<string, FieldType> = {
 /**
  * Map an array of AI-generated fields to the intake form schema
  */
-export function mapAIFieldsToSchema(aiFields: AIGeneratedField[]): MappedField[] {
+export function mapAIFieldsToSchema(
+  aiFields: AIGeneratedField[],
+): MappedField[] {
   if (!Array.isArray(aiFields)) {
-    console.warn('mapAIFieldsToSchema received non-array input:', typeof aiFields);
+    console.warn(
+      'mapAIFieldsToSchema received non-array input:',
+      typeof aiFields,
+    );
     return [];
   }
 
@@ -201,10 +206,12 @@ export function mapAIFieldsToSchema(aiFields: AIGeneratedField[]): MappedField[]
 function mapSingleField(
   aiField: AIGeneratedField,
   index: number,
-  usedNames: Set<string>
+  usedNames: Set<string>,
 ): MappedField | null {
   // Extract and normalize field name
-  let name = normalizeFieldName(aiField.name || aiField.label || `field_${index}`);
+  let name = normalizeFieldName(
+    aiField.name || aiField.label || `field_${index}`,
+  );
 
   // Ensure unique name
   if (usedNames.has(name)) {
@@ -226,12 +233,12 @@ function mapSingleField(
 
   // Extract validation rules
   const validationRules = normalizeValidationRules(
-    aiField.validationRules || aiField.validation
+    aiField.validationRules || aiField.validation,
   );
 
   // Extract conditional logic
   const conditionalLogic = normalizeConditionalLogic(
-    aiField.conditionalLogic || aiField.showIf
+    aiField.conditionalLogic || aiField.showIf,
   );
 
   // Extract layout properties
@@ -280,7 +287,7 @@ function humanizeFieldName(name: string): string {
     .replace(/_/g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
@@ -312,10 +319,23 @@ function mapFieldType(typeStr?: string): FieldType {
  */
 function isValidFieldType(type: string): boolean {
   const validTypes: FieldType[] = [
-    'TEXT', 'TEXTAREA', 'EMAIL', 'PHONE', 'NUMBER',
-    'DATE', 'TIME', 'DATETIME', 'SELECT', 'MULTISELECT',
-    'CHECKBOX', 'RADIO', 'FILE_UPLOAD', 'SIGNATURE',
-    'ADDRESS', 'SSN_LAST4', 'INSURANCE_INFO'
+    'TEXT',
+    'TEXTAREA',
+    'EMAIL',
+    'PHONE',
+    'NUMBER',
+    'DATE',
+    'TIME',
+    'DATETIME',
+    'SELECT',
+    'MULTISELECT',
+    'CHECKBOX',
+    'RADIO',
+    'FILE_UPLOAD',
+    'SIGNATURE',
+    'ADDRESS',
+    'SSN_LAST4',
+    'INSURANCE_INFO',
   ];
   return validTypes.includes(type as FieldType);
 }
@@ -325,7 +345,7 @@ function isValidFieldType(type: string): boolean {
  */
 function normalizeOptions(
   options: Array<{ value: string; label: string } | string>,
-  _fieldType: FieldType
+  _fieldType: FieldType,
 ): Array<{ value: string; label: string }> | undefined {
   if (!Array.isArray(options) || options.length === 0) {
     return undefined;
@@ -340,7 +360,9 @@ function normalizeOptions(
 
     if (typeof opt === 'object' && opt !== null) {
       return {
-        value: String(opt.value || opt.label || `option_${index}`).toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+        value: String(opt.value || opt.label || `option_${index}`)
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '_'),
         label: String(opt.label || opt.value || `Option ${index + 1}`),
       };
     }
@@ -353,7 +375,7 @@ function normalizeOptions(
  * Normalize validation rules
  */
 function normalizeValidationRules(
-  rules?: Record<string, unknown>
+  rules?: Record<string, unknown>,
 ): Record<string, unknown> | undefined {
   if (!rules || typeof rules !== 'object') {
     return undefined;
@@ -390,7 +412,7 @@ function normalizeValidationRules(
  * Normalize conditional logic
  */
 function normalizeConditionalLogic(
-  logic?: Record<string, unknown>
+  logic?: Record<string, unknown>,
 ): Record<string, unknown> | undefined {
   if (!logic || typeof logic !== 'object') {
     return undefined;
@@ -426,11 +448,19 @@ function normalizeWidth(width?: string): 'full' | 'half' | 'third' {
 
   const normalized = width.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-  if (normalized.includes('half') || normalized === '50' || normalized === '2') {
+  if (
+    normalized.includes('half') ||
+    normalized === '50' ||
+    normalized === '2'
+  ) {
     return 'half';
   }
 
-  if (normalized.includes('third') || normalized === '33' || normalized === '3') {
+  if (
+    normalized.includes('third') ||
+    normalized === '33' ||
+    normalized === '3'
+  ) {
     return 'third';
   }
 
@@ -465,7 +495,10 @@ export function validateMappedField(field: MappedField): string[] {
 
   // Validate options for select/radio/checkbox types
   const typesRequiringOptions: FieldType[] = ['SELECT', 'MULTISELECT', 'RADIO'];
-  if (typesRequiringOptions.includes(field.type) && (!field.options || field.options.length === 0)) {
+  if (
+    typesRequiringOptions.includes(field.type) &&
+    (!field.options || field.options.length === 0)
+  ) {
     errors.push(`Field type ${field.type} requires at least one option`);
   }
 
@@ -475,7 +508,10 @@ export function validateMappedField(field: MappedField): string[] {
 /**
  * Validate all mapped fields
  */
-export function validateMappedFields(fields: MappedField[]): { valid: boolean; errors: Record<string, string[]> } {
+export function validateMappedFields(fields: MappedField[]): {
+  valid: boolean;
+  errors: Record<string, string[]>;
+} {
   const errors: Record<string, string[]> = {};
   let valid = true;
 

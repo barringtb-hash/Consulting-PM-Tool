@@ -101,9 +101,17 @@ _________________________
 Date: _________________
 `,
     placeholders: [
-      'FIRM_NAME', 'FIRM_ADDRESS', 'DATE', 'CLIENT_NAME', 'CLIENT_ADDRESS',
-      'CLIENT_SALUTATION', 'MATTER_DESCRIPTION', 'FEE_ARRANGEMENT', 'FEE_DETAILS',
-      'RETAINER_CLAUSE', 'ATTORNEY_NAME'
+      'FIRM_NAME',
+      'FIRM_ADDRESS',
+      'DATE',
+      'CLIENT_NAME',
+      'CLIENT_ADDRESS',
+      'CLIENT_SALUTATION',
+      'MATTER_DESCRIPTION',
+      'FEE_ARRANGEMENT',
+      'FEE_DETAILS',
+      'RETAINER_CLAUSE',
+      'ATTORNEY_NAME',
     ],
     requiredFields: ['client_name', 'matter_description'],
   },
@@ -174,10 +182,20 @@ _________________________
 Date: _________________
 `,
     placeholders: [
-      'CONSULTANT_NAME', 'CONSULTANT_ADDRESS', 'DATE', 'CLIENT_NAME',
-      'PROJECT_NAME', 'PROJECT_DESCRIPTION', 'DELIVERABLES', 'START_DATE',
-      'END_DATE', 'MILESTONES', 'PROJECT_FEE', 'PAYMENT_TERMS',
-      'EXPENSE_CLAUSE', 'REVIEW_PERIOD'
+      'CONSULTANT_NAME',
+      'CONSULTANT_ADDRESS',
+      'DATE',
+      'CLIENT_NAME',
+      'PROJECT_NAME',
+      'PROJECT_DESCRIPTION',
+      'DELIVERABLES',
+      'START_DATE',
+      'END_DATE',
+      'MILESTONES',
+      'PROJECT_FEE',
+      'PAYMENT_TERMS',
+      'EXPENSE_CLAUSE',
+      'REVIEW_PERIOD',
     ],
     requiredFields: ['client_name', 'project_name', 'project_description'],
   },
@@ -236,9 +254,16 @@ If signed by someone other than the patient:
 Relationship to Patient: _________________
 `,
     placeholders: [
-      'PRACTICE_NAME', 'PRACTICE_ADDRESS', 'PRACTICE_PHONE', 'PATIENT_NAME',
-      'DATE_OF_BIRTH', 'DATE', 'PAYMENT_POLICY', 'PATIENT_PHONE',
-      'PATIENT_EMAIL', 'COMMUNICATION_PREFERENCES'
+      'PRACTICE_NAME',
+      'PRACTICE_ADDRESS',
+      'PRACTICE_PHONE',
+      'PATIENT_NAME',
+      'DATE_OF_BIRTH',
+      'DATE',
+      'PAYMENT_POLICY',
+      'PATIENT_PHONE',
+      'PATIENT_EMAIL',
+      'COMMUNICATION_PREFERENCES',
     ],
     requiredFields: ['patient_name', 'date_of_birth'],
   },
@@ -310,10 +335,20 @@ _________________________
 Date: _________________
 `,
     placeholders: [
-      'FIRM_NAME', 'FIRM_ADDRESS', 'FIRM_REGISTRATION', 'CLIENT_NAME', 'DATE',
-      'ADDITIONAL_SERVICES', 'RISK_TOLERANCE', 'INVESTMENT_OBJECTIVES',
-      'TIME_HORIZON', 'RESTRICTIONS', 'ADVISORY_FEE', 'FEE_SCHEDULE',
-      'BILLING_FREQUENCY', 'ADVISOR_NAME'
+      'FIRM_NAME',
+      'FIRM_ADDRESS',
+      'FIRM_REGISTRATION',
+      'CLIENT_NAME',
+      'DATE',
+      'ADDITIONAL_SERVICES',
+      'RISK_TOLERANCE',
+      'INVESTMENT_OBJECTIVES',
+      'TIME_HORIZON',
+      'RESTRICTIONS',
+      'ADVISORY_FEE',
+      'FEE_SCHEDULE',
+      'BILLING_FREQUENCY',
+      'ADVISOR_NAME',
     ],
     requiredFields: ['client_name', 'risk_tolerance', 'investment_objectives'],
   },
@@ -328,7 +363,7 @@ Date: _________________
  */
 export async function generateEngagementLetter(
   submissionId: number,
-  options?: LetterGenerationOptions
+  options?: LetterGenerationOptions,
 ): Promise<GeneratedLetter> {
   // Get submission data
   const submission = await prisma.intakeSubmission.findUnique({
@@ -360,7 +395,7 @@ export async function generateEngagementLetter(
 
   // Check for missing required fields
   const missingFields = template.requiredFields.filter(
-    field => !placeholderValues[field.toUpperCase().replace(/_/g, '_')]
+    (field) => !placeholderValues[field.toUpperCase().replace(/_/g, '_')],
   );
 
   // Generate letter content
@@ -416,11 +451,15 @@ export async function generateEngagementLetter(
 /**
  * Get available templates
  */
-export function getAvailableTemplates(industry?: string): EngagementLetterTemplate[] {
+export function getAvailableTemplates(
+  industry?: string,
+): EngagementLetterTemplate[] {
   const templates = Object.values(ENGAGEMENT_TEMPLATES);
 
   if (industry) {
-    return templates.filter(t => t.industry === industry || t.industry === 'general');
+    return templates.filter(
+      (t) => t.industry === industry || t.industry === 'general',
+    );
   }
 
   return templates;
@@ -429,7 +468,9 @@ export function getAvailableTemplates(industry?: string): EngagementLetterTempla
 /**
  * Get template by ID
  */
-export function getTemplate(templateId: string): EngagementLetterTemplate | undefined {
+export function getTemplate(
+  templateId: string,
+): EngagementLetterTemplate | undefined {
   return ENGAGEMENT_TEMPLATES[templateId];
 }
 
@@ -438,7 +479,7 @@ export function getTemplate(templateId: string): EngagementLetterTemplate | unde
  */
 export function previewTemplate(
   templateId: string,
-  sampleData: Record<string, string>
+  sampleData: Record<string, string>,
 ): string {
   const template = ENGAGEMENT_TEMPLATES[templateId];
   if (!template) {
@@ -464,7 +505,7 @@ export function previewTemplate(
  */
 function findTemplateByIndustry(industry: string): EngagementLetterTemplate {
   const industryTemplate = Object.values(ENGAGEMENT_TEMPLATES).find(
-    t => t.industry === industry
+    (t) => t.industry === industry,
   );
 
   if (industryTemplate) return industryTemplate;
@@ -478,7 +519,7 @@ function findTemplateByIndustry(industry: string): EngagementLetterTemplate {
  */
 function mapFormDataToPlaceholders(
   formData: Record<string, unknown>,
-  template: EngagementLetterTemplate
+  template: EngagementLetterTemplate,
 ): Record<string, string> {
   const values: Record<string, string> = {};
 
@@ -487,7 +528,12 @@ function mapFormDataToPlaceholders(
     CLIENT_NAME: ['client_name', 'full_name', 'name', 'company_name'],
     CLIENT_ADDRESS: ['client_address', 'address', 'mailing_address'],
     CLIENT_SALUTATION: ['salutation', 'title', 'first_name'],
-    MATTER_DESCRIPTION: ['matter_description', 'case_description', 'project_description', 'description'],
+    MATTER_DESCRIPTION: [
+      'matter_description',
+      'case_description',
+      'project_description',
+      'description',
+    ],
     PROJECT_NAME: ['project_name', 'matter_name', 'engagement_name'],
     PROJECT_DESCRIPTION: ['project_description', 'scope', 'description'],
     FEE_ARRANGEMENT: ['fee_arrangement', 'billing_type', 'fee_type'],
@@ -505,7 +551,9 @@ function mapFormDataToPlaceholders(
   };
 
   for (const placeholder of template.placeholders) {
-    const possibleFields = fieldMappings[placeholder] || [placeholder.toLowerCase()];
+    const possibleFields = fieldMappings[placeholder] || [
+      placeholder.toLowerCase(),
+    ];
 
     for (const field of possibleFields) {
       const value = formData[field];
@@ -525,7 +573,7 @@ function mapFormDataToPlaceholders(
 async function enhanceWithAI(
   content: string,
   customInstructions: string,
-  formData: Record<string, unknown>
+  formData: Record<string, unknown>,
 ): Promise<string> {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

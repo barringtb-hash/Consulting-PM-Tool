@@ -25,7 +25,15 @@ export interface ScoringRule {
 
 export interface ScoringCondition {
   field: string;
-  operator: 'equals' | 'contains' | 'greater_than' | 'less_than' | 'in' | 'not_in' | 'exists' | 'regex';
+  operator:
+    | 'equals'
+    | 'contains'
+    | 'greater_than'
+    | 'less_than'
+    | 'in'
+    | 'not_in'
+    | 'exists'
+    | 'regex';
   value: unknown;
 }
 
@@ -77,7 +85,16 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'High-Value Case Type',
         description: 'Case types that typically result in higher engagement',
         category: 'qualification',
-        condition: { field: 'case_type', operator: 'in', value: ['personal_injury', 'medical_malpractice', 'corporate', 'real_estate'] },
+        condition: {
+          field: 'case_type',
+          operator: 'in',
+          value: [
+            'personal_injury',
+            'medical_malpractice',
+            'corporate',
+            'real_estate',
+          ],
+        },
         points: 20,
       },
       {
@@ -85,7 +102,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Urgency Indicator',
         description: 'Client indicated urgent need',
         category: 'urgency',
-        condition: { field: 'urgency', operator: 'in', value: ['urgent', 'asap', 'immediate'] },
+        condition: {
+          field: 'urgency',
+          operator: 'in',
+          value: ['urgent', 'asap', 'immediate'],
+        },
         points: 15,
       },
       {
@@ -101,7 +122,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Referral Source',
         description: 'Came through referral',
         category: 'fit',
-        condition: { field: 'source', operator: 'in', value: ['referral', 'client_referral', 'attorney_referral'] },
+        condition: {
+          field: 'source',
+          operator: 'in',
+          value: ['referral', 'client_referral', 'attorney_referral'],
+        },
         points: 15,
       },
       {
@@ -117,7 +142,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Detailed Description',
         description: 'Provided detailed case description',
         category: 'engagement',
-        condition: { field: 'description', operator: 'regex', value: '.{100,}' },
+        condition: {
+          field: 'description',
+          operator: 'regex',
+          value: '.{100,}',
+        },
         points: 10,
       },
       {
@@ -125,7 +154,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Business Client',
         description: 'Representing a business entity',
         category: 'firmographic',
-        condition: { field: 'client_type', operator: 'equals', value: 'business' },
+        condition: {
+          field: 'client_type',
+          operator: 'equals',
+          value: 'business',
+        },
         points: 15,
       },
     ],
@@ -141,7 +174,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Insurance Verified',
         description: 'Has verified insurance information',
         category: 'qualification',
-        condition: { field: 'insurance_member_id', operator: 'exists', value: true },
+        condition: {
+          field: 'insurance_member_id',
+          operator: 'exists',
+          value: true,
+        },
         points: 20,
       },
       {
@@ -157,7 +194,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Provider Referral',
         description: 'Referred by another healthcare provider',
         category: 'fit',
-        condition: { field: 'referral_source', operator: 'in', value: ['physician', 'specialist', 'hospital'] },
+        condition: {
+          field: 'referral_source',
+          operator: 'in',
+          value: ['physician', 'specialist', 'hospital'],
+        },
         points: 15,
       },
       {
@@ -165,7 +206,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Scheduling Flexibility',
         description: 'Flexible with appointment times',
         category: 'engagement',
-        condition: { field: 'preferred_times', operator: 'contains', value: 'any' },
+        condition: {
+          field: 'preferred_times',
+          operator: 'contains',
+          value: 'any',
+        },
         points: 10,
       },
       {
@@ -173,7 +218,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Complete Medical History',
         description: 'Provided medical history details',
         category: 'engagement',
-        condition: { field: 'medical_history', operator: 'exists', value: true },
+        condition: {
+          field: 'medical_history',
+          operator: 'exists',
+          value: true,
+        },
         points: 15,
       },
       {
@@ -181,7 +230,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Urgent Care Needed',
         description: 'Indicated urgent care need',
         category: 'urgency',
-        condition: { field: 'urgency_level', operator: 'in', value: ['urgent', 'emergency'] },
+        condition: {
+          field: 'urgency_level',
+          operator: 'in',
+          value: ['urgent', 'emergency'],
+        },
         points: 25,
       },
     ],
@@ -197,7 +250,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Company Size',
         description: 'Mid-size or enterprise company',
         category: 'firmographic',
-        condition: { field: 'company_size', operator: 'in', value: ['51-200', '201-500', '500+'] },
+        condition: {
+          field: 'company_size',
+          operator: 'in',
+          value: ['51-200', '201-500', '500+'],
+        },
         points: 20,
       },
       {
@@ -213,7 +270,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Decision Maker',
         description: 'Contact is a decision maker',
         category: 'qualification',
-        condition: { field: 'title', operator: 'regex', value: '(CEO|CTO|CFO|VP|Director|Head|Manager)' },
+        condition: {
+          field: 'title',
+          operator: 'regex',
+          value: '(CEO|CTO|CFO|VP|Director|Head|Manager)',
+        },
         points: 15,
       },
       {
@@ -221,7 +282,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Clear Timeline',
         description: 'Has defined project timeline',
         category: 'urgency',
-        condition: { field: 'timeline', operator: 'in', value: ['immediate', '1-3_months', '3-6_months'] },
+        condition: {
+          field: 'timeline',
+          operator: 'in',
+          value: ['immediate', '1-3_months', '3-6_months'],
+        },
         points: 15,
       },
       {
@@ -229,7 +294,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Defined Scope',
         description: 'Provided detailed project scope',
         category: 'engagement',
-        condition: { field: 'project_scope', operator: 'regex', value: '.{200,}' },
+        condition: {
+          field: 'project_scope',
+          operator: 'regex',
+          value: '.{200,}',
+        },
         points: 15,
       },
       {
@@ -237,7 +306,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Previous Engagement',
         description: 'Has worked with consultants before',
         category: 'fit',
-        condition: { field: 'previous_consultant', operator: 'equals', value: true },
+        condition: {
+          field: 'previous_consultant',
+          operator: 'equals',
+          value: true,
+        },
         points: 15,
       },
     ],
@@ -293,7 +366,11 @@ const DEFAULT_SCORING_MODELS: Record<string, ScoringModel> = {
         name: 'Urgent Timeline',
         description: 'Needs assistance soon',
         category: 'urgency',
-        condition: { field: 'timeline', operator: 'in', value: ['immediate', 'this_week', 'this_month'] },
+        condition: {
+          field: 'timeline',
+          operator: 'in',
+          value: ['immediate', 'this_week', 'this_month'],
+        },
         points: 25,
       },
     ],
@@ -314,7 +391,7 @@ export async function scoreSubmission(
   options?: {
     modelId?: string;
     industry?: string;
-  }
+  },
 ): Promise<ScoreResult> {
   // Get submission with form data
   const submission = await prisma.intakeSubmission.findUnique({
@@ -336,7 +413,7 @@ export async function scoreSubmission(
   if (!industry) {
     // Try to detect from form data
     const description = Object.values(formData)
-      .filter(v => typeof v === 'string')
+      .filter((v) => typeof v === 'string')
       .join(' ');
     industry = await detectIndustry(description);
   }
@@ -368,7 +445,7 @@ export async function scoreSubmission(
  */
 export function calculateScore(
   data: Record<string, unknown>,
-  model: ScoringModel
+  model: ScoringModel,
 ): ScoreResult {
   const breakdown: ScoreBreakdown[] = [];
   let totalScore = 0;
@@ -395,9 +472,10 @@ export function calculateScore(
     });
   }
 
-  const percentage = maxPossibleScore > 0
-    ? Math.round((totalScore / maxPossibleScore) * 100)
-    : 0;
+  const percentage =
+    maxPossibleScore > 0
+      ? Math.round((totalScore / maxPossibleScore) * 100)
+      : 0;
 
   const grade = getGrade(percentage);
   const priority = getPriority(totalScore, model.thresholds);
@@ -419,7 +497,7 @@ export function calculateScore(
  */
 function evaluateCondition(
   data: Record<string, unknown>,
-  condition: ScoringCondition
+  condition: ScoringCondition,
 ): boolean {
   const value = getNestedValue(data, condition.field);
 
@@ -428,8 +506,10 @@ function evaluateCondition(
       return value === condition.value;
 
     case 'contains':
-      return typeof value === 'string' &&
-        value.toLowerCase().includes(String(condition.value).toLowerCase());
+      return (
+        typeof value === 'string' &&
+        value.toLowerCase().includes(String(condition.value).toLowerCase())
+      );
 
     case 'greater_than':
       return typeof value === 'number' && value > Number(condition.value);
@@ -439,22 +519,24 @@ function evaluateCondition(
 
     case 'in':
       if (Array.isArray(condition.value)) {
-        const lowerValue = typeof value === 'string' ? value.toLowerCase() : value;
-        return condition.value.some(v =>
+        const lowerValue =
+          typeof value === 'string' ? value.toLowerCase() : value;
+        return condition.value.some((v) =>
           typeof v === 'string' && typeof lowerValue === 'string'
             ? v.toLowerCase() === lowerValue
-            : v === lowerValue
+            : v === lowerValue,
         );
       }
       return false;
 
     case 'not_in':
       if (Array.isArray(condition.value)) {
-        const lowerValue = typeof value === 'string' ? value.toLowerCase() : value;
-        return !condition.value.some(v =>
+        const lowerValue =
+          typeof value === 'string' ? value.toLowerCase() : value;
+        return !condition.value.some((v) =>
           typeof v === 'string' && typeof lowerValue === 'string'
             ? v.toLowerCase() === lowerValue
-            : v === lowerValue
+            : v === lowerValue,
         );
       }
       return true;
@@ -506,7 +588,7 @@ function getGrade(percentage: number): 'A' | 'B' | 'C' | 'D' | 'F' {
  */
 function getPriority(
   score: number,
-  thresholds: ScoringModel['thresholds']
+  thresholds: ScoringModel['thresholds'],
 ): 'hot' | 'warm' | 'cold' {
   if (score >= thresholds.hot) return 'hot';
   if (score >= thresholds.warm) return 'warm';
@@ -518,13 +600,14 @@ function getPriority(
  */
 function generateRecommendations(
   breakdown: ScoreBreakdown[],
-  model: ScoringModel
+  _model: ScoringModel,
 ): string[] {
   const recommendations: string[] = [];
-  const unmatchedRules = breakdown.filter(b => !b.matched);
+  const unmatchedRules = breakdown.filter((b) => !b.matched);
 
   // Group by category
-  const categoryScores: Record<string, { earned: number; possible: number }> = {};
+  const categoryScores: Record<string, { earned: number; possible: number }> =
+    {};
   for (const item of breakdown) {
     if (!categoryScores[item.category]) {
       categoryScores[item.category] = { earned: 0, possible: 0 };
@@ -550,7 +633,9 @@ function generateRecommendations(
           recommendations.push('Clarify timeline and urgency of needs');
           break;
         case 'fit':
-          recommendations.push('Assess fit with your services and ideal client profile');
+          recommendations.push(
+            'Assess fit with your services and ideal client profile',
+          );
           break;
         case 'firmographic':
           recommendations.push('Research company background and size');
@@ -561,11 +646,13 @@ function generateRecommendations(
 
   // Top unmatched high-value rules
   const highValueUnmatched = unmatchedRules
-    .filter(r => r.maxPoints >= 15)
+    .filter((r) => r.maxPoints >= 15)
     .slice(0, 2);
 
   for (const rule of highValueUnmatched) {
-    recommendations.push(`Missing: ${rule.ruleName} - worth ${rule.maxPoints} points`);
+    recommendations.push(
+      `Missing: ${rule.ruleName} - worth ${rule.maxPoints} points`,
+    );
   }
 
   return recommendations.slice(0, 5);
@@ -576,7 +663,7 @@ function generateRecommendations(
  */
 async function getAIPredictions(
   data: Record<string, unknown>,
-  currentScore: ScoreResult
+  currentScore: ScoreResult,
 ): Promise<{ conversionRate: number; recommendations: string[] }> {
   const dataSnapshot = JSON.stringify(data).substring(0, 1000);
 
@@ -671,10 +758,11 @@ export function createScoringModel(
     description?: string;
     maxScore?: number;
     thresholds?: ScoringModel['thresholds'];
-  }
+  },
 ): ScoringModel {
   const id = `custom-${Date.now()}`;
-  const maxScore = options?.maxScore ||
+  const maxScore =
+    options?.maxScore ||
     rules.reduce((sum, r) => sum + (r.maxPoints || r.points), 0);
 
   return {

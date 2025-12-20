@@ -8,7 +8,7 @@
 import { env } from '../../../config/env';
 import { FieldType } from '@prisma/client';
 import { detectIndustry, IndustryType } from './industry-detector';
-import { mapAIFieldsToSchema, AIGeneratedField } from './field-mapper';
+import { mapAIFieldsToSchema } from './field-mapper';
 import { getIndustryPrompt } from './prompts';
 
 // ============================================================================
@@ -65,9 +65,14 @@ export interface FieldSuggestion {
  * Generate a complete intake form from a natural language description
  */
 export async function generateForm(
-  request: FormGenerationRequest
+  request: FormGenerationRequest,
 ): Promise<GeneratedForm> {
-  const { description, formName, includeCompliance = true, maxFields = 20 } = request;
+  const {
+    description,
+    formName,
+    includeCompliance = true,
+    maxFields = 20,
+  } = request;
 
   // Detect industry if not provided
   const industry = request.industry || (await detectIndustry(description));
@@ -78,8 +83,15 @@ export async function generateForm(
   }
 
   try {
-    const systemPrompt = buildFormGenerationSystemPrompt(industry, includeCompliance);
-    const userPrompt = buildFormGenerationUserPrompt(description, formName, maxFields);
+    const systemPrompt = buildFormGenerationSystemPrompt(
+      industry,
+      includeCompliance,
+    );
+    const userPrompt = buildFormGenerationUserPrompt(
+      description,
+      formName,
+      maxFields,
+    );
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -131,14 +143,12 @@ export async function generateForm(
 /**
  * Suggest additional fields based on existing form context
  */
-export async function suggestFields(
-  formContext: {
-    existingFields: string[];
-    formName: string;
-    industry?: IndustryType;
-    description?: string;
-  }
-): Promise<FieldSuggestion[]> {
+export async function suggestFields(formContext: {
+  existingFields: string[];
+  formName: string;
+  industry?: IndustryType;
+  description?: string;
+}): Promise<FieldSuggestion[]> {
   const industry = formContext.industry || 'general';
 
   // If no API key, use rule-based suggestions
@@ -208,7 +218,7 @@ Suggest 3-5 additional fields that would enhance this form.`;
 
 function buildFormGenerationSystemPrompt(
   industry: IndustryType,
-  includeCompliance: boolean
+  includeCompliance: boolean,
 ): string {
   const industryPrompt = getIndustryPrompt(industry);
 
@@ -272,7 +282,7 @@ Return a JSON object with this structure:
 function buildFormGenerationUserPrompt(
   description: string,
   formName?: string,
-  maxFields?: number
+  maxFields?: number,
 ): string {
   let prompt = `Generate an intake form based on this description:\n\n"${description}"`;
 
@@ -295,7 +305,7 @@ function generateFormRuleBased(
   description: string,
   industry: IndustryType,
   formName?: string,
-  maxFields?: number
+  maxFields?: number,
 ): GeneratedForm {
   const lowerDesc = description.toLowerCase();
   const fields: GeneratedField[] = [];
@@ -306,7 +316,7 @@ function generateFormRuleBased(
     createField('firstName', 'First Name', 'TEXT', true, sortOrder++, 'half'),
     createField('lastName', 'Last Name', 'TEXT', true, sortOrder++, 'half'),
     createField('email', 'Email Address', 'EMAIL', true, sortOrder++, 'half'),
-    createField('phone', 'Phone Number', 'PHONE', true, sortOrder++, 'half')
+    createField('phone', 'Phone Number', 'PHONE', true, sortOrder++, 'half'),
   );
 
   // Industry-specific fields
@@ -315,41 +325,120 @@ function generateFormRuleBased(
   sortOrder += industryFields.length;
 
   // Context-based fields from description
-  if (lowerDesc.includes('company') || lowerDesc.includes('business') || lowerDesc.includes('organization')) {
-    fields.push(createField('companyName', 'Company/Organization Name', 'TEXT', false, sortOrder++, 'full'));
-    fields.push(createField('jobTitle', 'Job Title', 'TEXT', false, sortOrder++, 'half'));
+  if (
+    lowerDesc.includes('company') ||
+    lowerDesc.includes('business') ||
+    lowerDesc.includes('organization')
+  ) {
+    fields.push(
+      createField(
+        'companyName',
+        'Company/Organization Name',
+        'TEXT',
+        false,
+        sortOrder++,
+        'full',
+      ),
+    );
+    fields.push(
+      createField('jobTitle', 'Job Title', 'TEXT', false, sortOrder++, 'half'),
+    );
   }
 
   if (lowerDesc.includes('address') || lowerDesc.includes('location')) {
-    fields.push(createField('address', 'Address', 'ADDRESS', false, sortOrder++, 'full'));
+    fields.push(
+      createField('address', 'Address', 'ADDRESS', false, sortOrder++, 'full'),
+    );
   }
 
-  if (lowerDesc.includes('budget') || lowerDesc.includes('price') || lowerDesc.includes('cost')) {
-    fields.push(createField('budget', 'Budget Range', 'SELECT', false, sortOrder++, 'half', {
-      options: [
-        { value: 'under_5k', label: 'Under $5,000' },
-        { value: '5k_15k', label: '$5,000 - $15,000' },
-        { value: '15k_50k', label: '$15,000 - $50,000' },
-        { value: '50k_100k', label: '$50,000 - $100,000' },
-        { value: 'over_100k', label: 'Over $100,000' },
-      ],
-    }));
+  if (
+    lowerDesc.includes('budget') ||
+    lowerDesc.includes('price') ||
+    lowerDesc.includes('cost')
+  ) {
+    fields.push(
+      createField(
+        'budget',
+        'Budget Range',
+        'SELECT',
+        false,
+        sortOrder++,
+        'half',
+        {
+          options: [
+            { value: 'under_5k', label: 'Under $5,000' },
+            { value: '5k_15k', label: '$5,000 - $15,000' },
+            { value: '15k_50k', label: '$15,000 - $50,000' },
+            { value: '50k_100k', label: '$50,000 - $100,000' },
+            { value: 'over_100k', label: 'Over $100,000' },
+          ],
+        },
+      ),
+    );
   }
 
-  if (lowerDesc.includes('timeline') || lowerDesc.includes('deadline') || lowerDesc.includes('start date')) {
-    fields.push(createField('preferredStartDate', 'Preferred Start Date', 'DATE', false, sortOrder++, 'half'));
+  if (
+    lowerDesc.includes('timeline') ||
+    lowerDesc.includes('deadline') ||
+    lowerDesc.includes('start date')
+  ) {
+    fields.push(
+      createField(
+        'preferredStartDate',
+        'Preferred Start Date',
+        'DATE',
+        false,
+        sortOrder++,
+        'half',
+      ),
+    );
   }
 
-  if (lowerDesc.includes('document') || lowerDesc.includes('file') || lowerDesc.includes('upload')) {
-    fields.push(createField('documents', 'Upload Documents', 'FILE_UPLOAD', false, sortOrder++, 'full'));
+  if (
+    lowerDesc.includes('document') ||
+    lowerDesc.includes('file') ||
+    lowerDesc.includes('upload')
+  ) {
+    fields.push(
+      createField(
+        'documents',
+        'Upload Documents',
+        'FILE_UPLOAD',
+        false,
+        sortOrder++,
+        'full',
+      ),
+    );
   }
 
-  if (lowerDesc.includes('sign') || lowerDesc.includes('agreement') || lowerDesc.includes('consent')) {
-    fields.push(createField('signature', 'Electronic Signature', 'SIGNATURE', true, sortOrder++, 'full'));
+  if (
+    lowerDesc.includes('sign') ||
+    lowerDesc.includes('agreement') ||
+    lowerDesc.includes('consent')
+  ) {
+    fields.push(
+      createField(
+        'signature',
+        'Electronic Signature',
+        'SIGNATURE',
+        true,
+        sortOrder++,
+        'full',
+      ),
+    );
   }
 
   // Always add a notes/comments field
-  fields.push(createField('additionalNotes', 'Additional Notes or Comments', 'TEXTAREA', false, sortOrder++, 'full'));
+  fields.push(
+    createField(
+      'additionalNotes',
+      'Additional Notes or Comments',
+      'TEXTAREA',
+      false,
+      sortOrder++,
+      'full',
+    ),
+  );
 
   // Limit fields if specified
   const limitedFields = maxFields ? fields.slice(0, maxFields) : fields;
@@ -366,159 +455,355 @@ function generateFormRuleBased(
   };
 }
 
-function getIndustrySpecificFields(industry: IndustryType, startSortOrder: number): GeneratedField[] {
+function getIndustrySpecificFields(
+  industry: IndustryType,
+  startSortOrder: number,
+): GeneratedField[] {
   const fields: GeneratedField[] = [];
   let sortOrder = startSortOrder;
 
   switch (industry) {
     case 'legal':
       fields.push(
-        createField('caseType', 'Type of Legal Matter', 'SELECT', true, sortOrder++, 'full', {
-          options: [
-            { value: 'personal_injury', label: 'Personal Injury' },
-            { value: 'family_law', label: 'Family Law' },
-            { value: 'criminal_defense', label: 'Criminal Defense' },
-            { value: 'business_law', label: 'Business Law' },
-            { value: 'real_estate', label: 'Real Estate' },
-            { value: 'estate_planning', label: 'Estate Planning' },
-            { value: 'immigration', label: 'Immigration' },
-            { value: 'other', label: 'Other' },
-          ],
-        }),
-        createField('caseDescription', 'Brief Description of Your Legal Matter', 'TEXTAREA', true, sortOrder++, 'full'),
-        createField('incidentDate', 'Date of Incident (if applicable)', 'DATE', false, sortOrder++, 'half'),
-        createField('opposingParty', 'Opposing Party (if known)', 'TEXT', false, sortOrder++, 'half'),
-        createField('priorAttorney', 'Have you consulted with another attorney?', 'RADIO', false, sortOrder++, 'full', {
-          options: [
-            { value: 'yes', label: 'Yes' },
-            { value: 'no', label: 'No' },
-          ],
-        })
+        createField(
+          'caseType',
+          'Type of Legal Matter',
+          'SELECT',
+          true,
+          sortOrder++,
+          'full',
+          {
+            options: [
+              { value: 'personal_injury', label: 'Personal Injury' },
+              { value: 'family_law', label: 'Family Law' },
+              { value: 'criminal_defense', label: 'Criminal Defense' },
+              { value: 'business_law', label: 'Business Law' },
+              { value: 'real_estate', label: 'Real Estate' },
+              { value: 'estate_planning', label: 'Estate Planning' },
+              { value: 'immigration', label: 'Immigration' },
+              { value: 'other', label: 'Other' },
+            ],
+          },
+        ),
+        createField(
+          'caseDescription',
+          'Brief Description of Your Legal Matter',
+          'TEXTAREA',
+          true,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'incidentDate',
+          'Date of Incident (if applicable)',
+          'DATE',
+          false,
+          sortOrder++,
+          'half',
+        ),
+        createField(
+          'opposingParty',
+          'Opposing Party (if known)',
+          'TEXT',
+          false,
+          sortOrder++,
+          'half',
+        ),
+        createField(
+          'priorAttorney',
+          'Have you consulted with another attorney?',
+          'RADIO',
+          false,
+          sortOrder++,
+          'full',
+          {
+            options: [
+              { value: 'yes', label: 'Yes' },
+              { value: 'no', label: 'No' },
+            ],
+          },
+        ),
       );
       break;
 
     case 'healthcare':
       fields.push(
-        createField('dateOfBirth', 'Date of Birth', 'DATE', true, sortOrder++, 'half'),
-        createField('insuranceInfo', 'Insurance Information', 'INSURANCE_INFO', false, sortOrder++, 'full'),
-        createField('primaryConcern', 'Primary Health Concern', 'TEXTAREA', true, sortOrder++, 'full'),
-        createField('currentMedications', 'Current Medications', 'TEXTAREA', false, sortOrder++, 'full'),
-        createField('allergies', 'Known Allergies', 'TEXTAREA', false, sortOrder++, 'full'),
-        createField('emergencyContact', 'Emergency Contact Name', 'TEXT', true, sortOrder++, 'half'),
-        createField('emergencyPhone', 'Emergency Contact Phone', 'PHONE', true, sortOrder++, 'half')
+        createField(
+          'dateOfBirth',
+          'Date of Birth',
+          'DATE',
+          true,
+          sortOrder++,
+          'half',
+        ),
+        createField(
+          'insuranceInfo',
+          'Insurance Information',
+          'INSURANCE_INFO',
+          false,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'primaryConcern',
+          'Primary Health Concern',
+          'TEXTAREA',
+          true,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'currentMedications',
+          'Current Medications',
+          'TEXTAREA',
+          false,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'allergies',
+          'Known Allergies',
+          'TEXTAREA',
+          false,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'emergencyContact',
+          'Emergency Contact Name',
+          'TEXT',
+          true,
+          sortOrder++,
+          'half',
+        ),
+        createField(
+          'emergencyPhone',
+          'Emergency Contact Phone',
+          'PHONE',
+          true,
+          sortOrder++,
+          'half',
+        ),
       );
       break;
 
     case 'financial':
       fields.push(
-        createField('serviceType', 'Type of Financial Service Needed', 'SELECT', true, sortOrder++, 'full', {
-          options: [
-            { value: 'tax_preparation', label: 'Tax Preparation' },
-            { value: 'bookkeeping', label: 'Bookkeeping' },
-            { value: 'financial_planning', label: 'Financial Planning' },
-            { value: 'investment_advisory', label: 'Investment Advisory' },
-            { value: 'audit', label: 'Audit Services' },
-            { value: 'business_consulting', label: 'Business Consulting' },
-            { value: 'other', label: 'Other' },
-          ],
-        }),
-        createField('annualRevenue', 'Annual Revenue (if business)', 'SELECT', false, sortOrder++, 'half', {
-          options: [
-            { value: 'under_100k', label: 'Under $100,000' },
-            { value: '100k_500k', label: '$100,000 - $500,000' },
-            { value: '500k_1m', label: '$500,000 - $1 Million' },
-            { value: '1m_5m', label: '$1 Million - $5 Million' },
-            { value: 'over_5m', label: 'Over $5 Million' },
-          ],
-        }),
-        createField('entityType', 'Business Entity Type', 'SELECT', false, sortOrder++, 'half', {
-          options: [
-            { value: 'individual', label: 'Individual' },
-            { value: 'sole_proprietor', label: 'Sole Proprietor' },
-            { value: 'llc', label: 'LLC' },
-            { value: 'corporation', label: 'Corporation' },
-            { value: 'partnership', label: 'Partnership' },
-            { value: 'nonprofit', label: 'Non-Profit' },
-          ],
-        }),
-        createField('ssnLast4', 'Last 4 Digits of SSN', 'SSN_LAST4', false, sortOrder++, 'half')
+        createField(
+          'serviceType',
+          'Type of Financial Service Needed',
+          'SELECT',
+          true,
+          sortOrder++,
+          'full',
+          {
+            options: [
+              { value: 'tax_preparation', label: 'Tax Preparation' },
+              { value: 'bookkeeping', label: 'Bookkeeping' },
+              { value: 'financial_planning', label: 'Financial Planning' },
+              { value: 'investment_advisory', label: 'Investment Advisory' },
+              { value: 'audit', label: 'Audit Services' },
+              { value: 'business_consulting', label: 'Business Consulting' },
+              { value: 'other', label: 'Other' },
+            ],
+          },
+        ),
+        createField(
+          'annualRevenue',
+          'Annual Revenue (if business)',
+          'SELECT',
+          false,
+          sortOrder++,
+          'half',
+          {
+            options: [
+              { value: 'under_100k', label: 'Under $100,000' },
+              { value: '100k_500k', label: '$100,000 - $500,000' },
+              { value: '500k_1m', label: '$500,000 - $1 Million' },
+              { value: '1m_5m', label: '$1 Million - $5 Million' },
+              { value: 'over_5m', label: 'Over $5 Million' },
+            ],
+          },
+        ),
+        createField(
+          'entityType',
+          'Business Entity Type',
+          'SELECT',
+          false,
+          sortOrder++,
+          'half',
+          {
+            options: [
+              { value: 'individual', label: 'Individual' },
+              { value: 'sole_proprietor', label: 'Sole Proprietor' },
+              { value: 'llc', label: 'LLC' },
+              { value: 'corporation', label: 'Corporation' },
+              { value: 'partnership', label: 'Partnership' },
+              { value: 'nonprofit', label: 'Non-Profit' },
+            ],
+          },
+        ),
+        createField(
+          'ssnLast4',
+          'Last 4 Digits of SSN',
+          'SSN_LAST4',
+          false,
+          sortOrder++,
+          'half',
+        ),
       );
       break;
 
     case 'consulting':
       fields.push(
-        createField('projectType', 'Type of Consulting Needed', 'SELECT', true, sortOrder++, 'full', {
-          options: [
-            { value: 'strategy', label: 'Strategy Consulting' },
-            { value: 'operations', label: 'Operations Improvement' },
-            { value: 'technology', label: 'Technology Consulting' },
-            { value: 'marketing', label: 'Marketing Strategy' },
-            { value: 'hr', label: 'HR & Organizational' },
-            { value: 'change_management', label: 'Change Management' },
-            { value: 'other', label: 'Other' },
-          ],
-        }),
-        createField('currentChallenges', 'Describe Your Current Challenges', 'TEXTAREA', true, sortOrder++, 'full'),
-        createField('desiredOutcome', 'What Outcome Are You Hoping to Achieve?', 'TEXTAREA', true, sortOrder++, 'full'),
-        createField('teamSize', 'Team Size', 'SELECT', false, sortOrder++, 'half', {
-          options: [
-            { value: '1_10', label: '1-10 employees' },
-            { value: '11_50', label: '11-50 employees' },
-            { value: '51_200', label: '51-200 employees' },
-            { value: '201_500', label: '201-500 employees' },
-            { value: 'over_500', label: 'Over 500 employees' },
-          ],
-        })
+        createField(
+          'projectType',
+          'Type of Consulting Needed',
+          'SELECT',
+          true,
+          sortOrder++,
+          'full',
+          {
+            options: [
+              { value: 'strategy', label: 'Strategy Consulting' },
+              { value: 'operations', label: 'Operations Improvement' },
+              { value: 'technology', label: 'Technology Consulting' },
+              { value: 'marketing', label: 'Marketing Strategy' },
+              { value: 'hr', label: 'HR & Organizational' },
+              { value: 'change_management', label: 'Change Management' },
+              { value: 'other', label: 'Other' },
+            ],
+          },
+        ),
+        createField(
+          'currentChallenges',
+          'Describe Your Current Challenges',
+          'TEXTAREA',
+          true,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'desiredOutcome',
+          'What Outcome Are You Hoping to Achieve?',
+          'TEXTAREA',
+          true,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'teamSize',
+          'Team Size',
+          'SELECT',
+          false,
+          sortOrder++,
+          'half',
+          {
+            options: [
+              { value: '1_10', label: '1-10 employees' },
+              { value: '11_50', label: '11-50 employees' },
+              { value: '51_200', label: '51-200 employees' },
+              { value: '201_500', label: '201-500 employees' },
+              { value: 'over_500', label: 'Over 500 employees' },
+            ],
+          },
+        ),
       );
       break;
 
     case 'real_estate':
       fields.push(
-        createField('transactionType', 'Transaction Type', 'SELECT', true, sortOrder++, 'full', {
-          options: [
-            { value: 'buying', label: 'Buying' },
-            { value: 'selling', label: 'Selling' },
-            { value: 'renting', label: 'Renting' },
-            { value: 'leasing', label: 'Leasing' },
-            { value: 'investment', label: 'Investment Property' },
-          ],
-        }),
-        createField('propertyType', 'Property Type', 'SELECT', true, sortOrder++, 'half', {
-          options: [
-            { value: 'residential', label: 'Residential' },
-            { value: 'commercial', label: 'Commercial' },
-            { value: 'industrial', label: 'Industrial' },
-            { value: 'land', label: 'Land' },
-            { value: 'multi_family', label: 'Multi-Family' },
-          ],
-        }),
-        createField('priceRange', 'Price Range', 'SELECT', false, sortOrder++, 'half', {
-          options: [
-            { value: 'under_200k', label: 'Under $200,000' },
-            { value: '200k_500k', label: '$200,000 - $500,000' },
-            { value: '500k_1m', label: '$500,000 - $1 Million' },
-            { value: '1m_5m', label: '$1 Million - $5 Million' },
-            { value: 'over_5m', label: 'Over $5 Million' },
-          ],
-        }),
-        createField('preferredLocation', 'Preferred Location/Area', 'TEXT', false, sortOrder++, 'full')
+        createField(
+          'transactionType',
+          'Transaction Type',
+          'SELECT',
+          true,
+          sortOrder++,
+          'full',
+          {
+            options: [
+              { value: 'buying', label: 'Buying' },
+              { value: 'selling', label: 'Selling' },
+              { value: 'renting', label: 'Renting' },
+              { value: 'leasing', label: 'Leasing' },
+              { value: 'investment', label: 'Investment Property' },
+            ],
+          },
+        ),
+        createField(
+          'propertyType',
+          'Property Type',
+          'SELECT',
+          true,
+          sortOrder++,
+          'half',
+          {
+            options: [
+              { value: 'residential', label: 'Residential' },
+              { value: 'commercial', label: 'Commercial' },
+              { value: 'industrial', label: 'Industrial' },
+              { value: 'land', label: 'Land' },
+              { value: 'multi_family', label: 'Multi-Family' },
+            ],
+          },
+        ),
+        createField(
+          'priceRange',
+          'Price Range',
+          'SELECT',
+          false,
+          sortOrder++,
+          'half',
+          {
+            options: [
+              { value: 'under_200k', label: 'Under $200,000' },
+              { value: '200k_500k', label: '$200,000 - $500,000' },
+              { value: '500k_1m', label: '$500,000 - $1 Million' },
+              { value: '1m_5m', label: '$1 Million - $5 Million' },
+              { value: 'over_5m', label: 'Over $5 Million' },
+            ],
+          },
+        ),
+        createField(
+          'preferredLocation',
+          'Preferred Location/Area',
+          'TEXT',
+          false,
+          sortOrder++,
+          'full',
+        ),
       );
       break;
 
     default:
       // General business fields
       fields.push(
-        createField('serviceInterest', 'What Service Are You Interested In?', 'TEXTAREA', true, sortOrder++, 'full'),
-        createField('howDidYouHear', 'How Did You Hear About Us?', 'SELECT', false, sortOrder++, 'full', {
-          options: [
-            { value: 'search', label: 'Search Engine' },
-            { value: 'referral', label: 'Referral' },
-            { value: 'social_media', label: 'Social Media' },
-            { value: 'advertisement', label: 'Advertisement' },
-            { value: 'event', label: 'Event/Conference' },
-            { value: 'other', label: 'Other' },
-          ],
-        })
+        createField(
+          'serviceInterest',
+          'What Service Are You Interested In?',
+          'TEXTAREA',
+          true,
+          sortOrder++,
+          'full',
+        ),
+        createField(
+          'howDidYouHear',
+          'How Did You Hear About Us?',
+          'SELECT',
+          false,
+          sortOrder++,
+          'full',
+          {
+            options: [
+              { value: 'search', label: 'Search Engine' },
+              { value: 'referral', label: 'Referral' },
+              { value: 'social_media', label: 'Social Media' },
+              { value: 'advertisement', label: 'Advertisement' },
+              { value: 'event', label: 'Event/Conference' },
+              { value: 'other', label: 'Other' },
+            ],
+          },
+        ),
       );
   }
 
@@ -532,7 +817,11 @@ function getComplianceSuggestions(industry: IndustryType): string[] {
     case 'financial':
       return ['SOX', 'PCI-DSS', 'AML/KYC'];
     case 'legal':
-      return ['Attorney-Client Privilege', 'Conflict of Interest Check', 'State Bar Rules'];
+      return [
+        'Attorney-Client Privilege',
+        'Conflict of Interest Check',
+        'State Bar Rules',
+      ];
     case 'real_estate':
       return ['Fair Housing', 'RESPA'];
     default:
@@ -542,13 +831,13 @@ function getComplianceSuggestions(industry: IndustryType): string[] {
 
 function suggestFieldsRuleBased(
   existingFields: string[],
-  industry: IndustryType
+  industry: IndustryType,
 ): FieldSuggestion[] {
   const suggestions: FieldSuggestion[] = [];
-  const existingLower = existingFields.map(f => f.toLowerCase());
+  const existingLower = existingFields.map((f) => f.toLowerCase());
 
   // Common suggestions based on what's missing
-  if (!existingLower.some(f => f.includes('email'))) {
+  if (!existingLower.some((f) => f.includes('email'))) {
     suggestions.push({
       name: 'email',
       label: 'Email Address',
@@ -558,7 +847,7 @@ function suggestFieldsRuleBased(
     });
   }
 
-  if (!existingLower.some(f => f.includes('phone'))) {
+  if (!existingLower.some((f) => f.includes('phone'))) {
     suggestions.push({
       name: 'phone',
       label: 'Phone Number',
@@ -568,7 +857,9 @@ function suggestFieldsRuleBased(
     });
   }
 
-  if (!existingLower.some(f => f.includes('consent') || f.includes('agree'))) {
+  if (
+    !existingLower.some((f) => f.includes('consent') || f.includes('agree'))
+  ) {
     suggestions.push({
       name: 'termsConsent',
       label: 'I agree to the terms and conditions',
@@ -579,7 +870,10 @@ function suggestFieldsRuleBased(
   }
 
   // Industry-specific suggestions
-  if (industry === 'healthcare' && !existingLower.some(f => f.includes('birth') || f.includes('dob'))) {
+  if (
+    industry === 'healthcare' &&
+    !existingLower.some((f) => f.includes('birth') || f.includes('dob'))
+  ) {
     suggestions.push({
       name: 'dateOfBirth',
       label: 'Date of Birth',
@@ -589,7 +883,10 @@ function suggestFieldsRuleBased(
     });
   }
 
-  if (industry === 'legal' && !existingLower.some(f => f.includes('case') || f.includes('matter'))) {
+  if (
+    industry === 'legal' &&
+    !existingLower.some((f) => f.includes('case') || f.includes('matter'))
+  ) {
     suggestions.push({
       name: 'caseType',
       label: 'Type of Legal Matter',
@@ -613,7 +910,10 @@ function createField(
   isRequired: boolean,
   sortOrder: number,
   width: 'full' | 'half' | 'third' = 'full',
-  extra?: { options?: Array<{ value: string; label: string }>; validationRules?: Record<string, unknown> }
+  extra?: {
+    options?: Array<{ value: string; label: string }>;
+    validationRules?: Record<string, unknown>;
+  },
 ): GeneratedField {
   return {
     name,
@@ -656,10 +956,23 @@ function generateSlug(name: string): string {
 
 function validateFieldType(type: string): FieldType {
   const validTypes: FieldType[] = [
-    'TEXT', 'TEXTAREA', 'EMAIL', 'PHONE', 'NUMBER',
-    'DATE', 'TIME', 'DATETIME', 'SELECT', 'MULTISELECT',
-    'CHECKBOX', 'RADIO', 'FILE_UPLOAD', 'SIGNATURE',
-    'ADDRESS', 'SSN_LAST4', 'INSURANCE_INFO'
+    'TEXT',
+    'TEXTAREA',
+    'EMAIL',
+    'PHONE',
+    'NUMBER',
+    'DATE',
+    'TIME',
+    'DATETIME',
+    'SELECT',
+    'MULTISELECT',
+    'CHECKBOX',
+    'RADIO',
+    'FILE_UPLOAD',
+    'SIGNATURE',
+    'ADDRESS',
+    'SSN_LAST4',
+    'INSURANCE_INFO',
   ];
 
   if (validTypes.includes(type as FieldType)) {

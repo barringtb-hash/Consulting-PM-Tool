@@ -7,7 +7,6 @@
 
 import crypto from 'crypto';
 import {
-  IntakeChannel,
   ChannelCredentials,
   IncomingIntakeMessage,
   OutgoingIntakeMessage,

@@ -118,9 +118,15 @@ export interface AnalyticsFilter {
  */
 export async function getIntakeAnalytics(
   configId: number,
-  filter: AnalyticsFilter
+  filter: AnalyticsFilter,
 ): Promise<IntakeAnalytics> {
-  const { startDate, endDate, formId, source, status } = filter;
+  const {
+    startDate,
+    endDate,
+    formId,
+    source: _source,
+    status: _status,
+  } = filter;
 
   // Build base where clause
   const whereClause: Record<string, unknown> = {
@@ -193,19 +199,21 @@ export async function getIntakeAnalytics(
  */
 export async function getOptimizationSuggestions(
   configId: number,
-  filter: AnalyticsFilter
+  filter: AnalyticsFilter,
 ): Promise<OptimizationSuggestion[]> {
   const analytics = await getIntakeAnalytics(configId, filter);
   const suggestions: OptimizationSuggestion[] = [];
 
   // Check for high drop-off fields
-  const bottleneckFields = analytics.fieldAnalytics.filter(f => f.isBottleneck);
+  const bottleneckFields = analytics.fieldAnalytics.filter(
+    (f) => f.isBottleneck,
+  );
   for (const field of bottleneckFields) {
     suggestions.push({
       type: 'field',
       priority: 'high',
       title: `Optimize field: ${field.fieldLabel}`,
-      description: `This field has a ${(field.dropOffCount / analytics.overview.totalSubmissions * 100).toFixed(1)}% drop-off rate and ${field.avgTimeToComplete.toFixed(0)}s average completion time.`,
+      description: `This field has a ${((field.dropOffCount / analytics.overview.totalSubmissions) * 100).toFixed(1)}% drop-off rate and ${field.avgTimeToComplete.toFixed(0)}s average completion time.`,
       expectedImpact: `Could improve completion rate by ${(field.dropOffCount * 0.3).toFixed(0)} submissions`,
       fieldId: field.fieldId,
     });
@@ -247,7 +255,7 @@ export async function getOptimizationSuggestions(
 
   // Check for low-performing sources
   const lowSources = analytics.sourceMetrics.filter(
-    s => s.conversionRate < analytics.overview.conversionRate * 0.7
+    (s) => s.conversionRate < analytics.overview.conversionRate * 0.7,
   );
   for (const source of lowSources) {
     suggestions.push({
@@ -271,7 +279,9 @@ export async function getOptimizationSuggestions(
 
   // Sort by priority
   const priorityOrder = { high: 0, medium: 1, low: 2 };
-  suggestions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  suggestions.sort(
+    (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority],
+  );
 
   return suggestions;
 }
@@ -281,7 +291,7 @@ export async function getOptimizationSuggestions(
  */
 export async function getDropOffAnalysis(
   configId: number,
-  formId: number
+  formId: number,
 ): Promise<{
   totalStarted: number;
   dropOffPoints: Array<{
@@ -314,9 +324,11 @@ export async function getDropOffAnalysis(
     },
   });
 
-  const totalStarted = abandonedSubmissions.length + await prisma.intakeSubmission.count({
-    where: { formId, status: { not: 'IN_PROGRESS' } },
-  });
+  const totalStarted =
+    abandonedSubmissions.length +
+    (await prisma.intakeSubmission.count({
+      where: { formId, status: { not: 'IN_PROGRESS' } },
+    }));
 
   const fieldDropOffs = new Map<number, number>();
   let totalProgress = 0;
@@ -345,21 +357,25 @@ export async function getDropOffAnalysis(
     totalProgress += (lastCompletedIndex + 1) / form.fields.length;
   }
 
-  const dropOffPoints = form.fields.map(field => ({
-    fieldId: field.id,
-    fieldName: field.name,
-    dropOffs: fieldDropOffs.get(field.id) || 0,
-    percentage: totalStarted > 0
-      ? ((fieldDropOffs.get(field.id) || 0) / totalStarted) * 100
-      : 0,
-  })).filter(d => d.dropOffs > 0);
+  const dropOffPoints = form.fields
+    .map((field) => ({
+      fieldId: field.id,
+      fieldName: field.name,
+      dropOffs: fieldDropOffs.get(field.id) || 0,
+      percentage:
+        totalStarted > 0
+          ? ((fieldDropOffs.get(field.id) || 0) / totalStarted) * 100
+          : 0,
+    }))
+    .filter((d) => d.dropOffs > 0);
 
   return {
     totalStarted,
     dropOffPoints,
-    avgProgressAtAbandonment: abandonedSubmissions.length > 0
-      ? (totalProgress / abandonedSubmissions.length) * 100
-      : 0,
+    avgProgressAtAbandonment:
+      abandonedSubmissions.length > 0
+        ? (totalProgress / abandonedSubmissions.length) * 100
+        : 0,
   };
 }
 
@@ -369,7 +385,7 @@ export async function getDropOffAnalysis(
 export async function exportAnalyticsReport(
   configId: number,
   filter: AnalyticsFilter,
-  format: 'csv' | 'json'
+  format: 'csv' | 'json',
 ): Promise<string> {
   const analytics = await getIntakeAnalytics(configId, filter);
 
@@ -382,7 +398,9 @@ export async function exportAnalyticsReport(
 
   // Overview section
   lines.push('# INTAKE ANALYTICS REPORT');
-  lines.push(`# Period: ${filter.startDate.toISOString()} to ${filter.endDate.toISOString()}`);
+  lines.push(
+    `# Period: ${filter.startDate.toISOString()} to ${filter.endDate.toISOString()}`,
+  );
   lines.push('');
   lines.push('## Overview');
   lines.push('Metric,Value');
@@ -390,23 +408,33 @@ export async function exportAnalyticsReport(
   lines.push(`Completed,${analytics.overview.completedSubmissions}`);
   lines.push(`Approved,${analytics.overview.approvedSubmissions}`);
   lines.push(`Rejected,${analytics.overview.rejectedSubmissions}`);
-  lines.push(`Conversion Rate,${(analytics.overview.conversionRate * 100).toFixed(1)}%`);
-  lines.push(`Avg Completion Time,${analytics.overview.avgCompletionTime.toFixed(0)} min`);
+  lines.push(
+    `Conversion Rate,${(analytics.overview.conversionRate * 100).toFixed(1)}%`,
+  );
+  lines.push(
+    `Avg Completion Time,${analytics.overview.avgCompletionTime.toFixed(0)} min`,
+  );
   lines.push('');
 
   // Funnel section
   lines.push('## Conversion Funnel');
   lines.push('Stage,Count,Percentage,Drop-off Rate');
   for (const stage of analytics.funnel.stages) {
-    lines.push(`${stage.name},${stage.count},${stage.percentage.toFixed(1)}%,${stage.dropOffRate.toFixed(1)}%`);
+    lines.push(
+      `${stage.name},${stage.count},${stage.percentage.toFixed(1)}%,${stage.dropOffRate.toFixed(1)}%`,
+    );
   }
   lines.push('');
 
   // Field analytics
   lines.push('## Field Analytics');
-  lines.push('Field,Completion Rate,Avg Time (s),Error Rate,Skip Rate,Bottleneck');
+  lines.push(
+    'Field,Completion Rate,Avg Time (s),Error Rate,Skip Rate,Bottleneck',
+  );
   for (const field of analytics.fieldAnalytics) {
-    lines.push(`${field.fieldLabel},${(field.completionRate * 100).toFixed(1)}%,${field.avgTimeToComplete.toFixed(0)},${(field.errorRate * 100).toFixed(1)}%,${(field.skipRate * 100).toFixed(1)}%,${field.isBottleneck ? 'Yes' : 'No'}`);
+    lines.push(
+      `${field.fieldLabel},${(field.completionRate * 100).toFixed(1)}%,${field.avgTimeToComplete.toFixed(0)},${(field.errorRate * 100).toFixed(1)}%,${(field.skipRate * 100).toFixed(1)}%,${field.isBottleneck ? 'Yes' : 'No'}`,
+    );
   }
   lines.push('');
 
@@ -414,7 +442,9 @@ export async function exportAnalyticsReport(
   lines.push('## Daily Trends');
   lines.push('Date,Submissions,Completions,Approvals,Avg Time (min)');
   for (const trend of analytics.trends) {
-    lines.push(`${trend.date},${trend.submissions},${trend.completions},${trend.approvals},${trend.avgTime.toFixed(0)}`);
+    lines.push(
+      `${trend.date},${trend.submissions},${trend.completions},${trend.approvals},${trend.avgTime.toFixed(0)}`,
+    );
   }
 
   return lines.join('\n');
@@ -443,19 +473,26 @@ interface SubmissionWithForm {
   };
 }
 
-function calculateOverviewMetrics(submissions: SubmissionWithForm[]): OverviewMetrics {
+function calculateOverviewMetrics(
+  submissions: SubmissionWithForm[],
+): OverviewMetrics {
   const total = submissions.length;
-  const completed = submissions.filter(s => s.status !== 'IN_PROGRESS').length;
-  const approved = submissions.filter(s => s.status === 'APPROVED').length;
-  const rejected = submissions.filter(s => s.status === 'REJECTED').length;
-  const inProgress = submissions.filter(s => s.status === 'IN_PROGRESS').length;
+  const completed = submissions.filter(
+    (s) => s.status !== 'IN_PROGRESS',
+  ).length;
+  const approved = submissions.filter((s) => s.status === 'APPROVED').length;
+  const rejected = submissions.filter((s) => s.status === 'REJECTED').length;
+  const inProgress = submissions.filter(
+    (s) => s.status === 'IN_PROGRESS',
+  ).length;
 
   // Calculate average completion time
   let totalTime = 0;
   let completedCount = 0;
   for (const s of submissions) {
     if (s.submittedAt && s.createdAt) {
-      totalTime += (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
+      totalTime +=
+        (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
       completedCount++;
     }
   }
@@ -472,7 +509,9 @@ function calculateOverviewMetrics(submissions: SubmissionWithForm[]): OverviewMe
   };
 }
 
-function calculateFunnelMetrics(submissions: SubmissionWithForm[]): FunnelMetrics {
+function calculateFunnelMetrics(
+  submissions: SubmissionWithForm[],
+): FunnelMetrics {
   const stages = [
     { name: 'Started', status: null },
     { name: 'In Progress', status: 'IN_PROGRESS' },
@@ -492,12 +531,15 @@ function calculateFunnelMetrics(submissions: SubmissionWithForm[]): FunnelMetric
     if (stage.status === null) {
       count = total;
     } else if (stage.status === 'APPROVED') {
-      count = submissions.filter(s => s.status === 'APPROVED').length;
+      count = submissions.filter((s) => s.status === 'APPROVED').length;
     } else {
       // Count submissions that have reached or passed this stage
-      const laterStages = stages.slice(i).map(s => s.status).filter(Boolean);
-      count = submissions.filter(s =>
-        s.status === stage.status || laterStages.includes(s.status!)
+      const laterStages = stages
+        .slice(i)
+        .map((s) => s.status)
+        .filter(Boolean);
+      count = submissions.filter(
+        (s) => s.status === stage.status || laterStages.includes(s.status!),
       ).length;
     }
 
@@ -523,16 +565,19 @@ function calculateFunnelMetrics(submissions: SubmissionWithForm[]): FunnelMetric
 
   return {
     stages: stageCounts,
-    overallDropOffRate: total > 0
-      ? ((total - submissions.filter(s => s.status === 'APPROVED').length) / total) * 100
-      : 0,
+    overallDropOffRate:
+      total > 0
+        ? ((total - submissions.filter((s) => s.status === 'APPROVED').length) /
+            total) *
+          100
+        : 0,
     biggestDropOffStage: biggestDropOff.name,
   };
 }
 
 async function calculateFieldAnalytics(
   configId: number,
-  submissions: SubmissionWithForm[]
+  submissions: SubmissionWithForm[],
 ): Promise<FieldAnalytics[]> {
   // Get all fields for forms in this config
   const forms = await prisma.intakeForm.findMany({
@@ -542,15 +587,18 @@ async function calculateFieldAnalytics(
     },
   });
 
-  const fieldStats = new Map<number, {
-    field: { id: number; name: string; label: string };
-    completions: number;
-    errors: number;
-    skips: number;
-    dropOffs: number;
-    totalTime: number;
-    timeCount: number;
-  }>();
+  const fieldStats = new Map<
+    number,
+    {
+      field: { id: number; name: string; label: string };
+      completions: number;
+      errors: number;
+      skips: number;
+      dropOffs: number;
+      totalTime: number;
+      timeCount: number;
+    }
+  >();
 
   // Initialize field stats
   for (const form of forms) {
@@ -591,8 +639,8 @@ async function calculateFieldAnalytics(
   const avgDropOff = submissions.length * 0.1; // 10% baseline
 
   for (const [fieldId, stats] of fieldStats) {
-    const total = submissions.filter(s =>
-      s.form.fields.some(f => f.id === fieldId)
+    const total = submissions.filter((s) =>
+      s.form.fields.some((f) => f.id === fieldId),
     ).length;
 
     const completionRate = total > 0 ? stats.completions / total : 0;
@@ -604,7 +652,8 @@ async function calculateFieldAnalytics(
       fieldName: stats.field.name,
       fieldLabel: stats.field.label,
       completionRate,
-      avgTimeToComplete: stats.timeCount > 0 ? stats.totalTime / stats.timeCount : 5,
+      avgTimeToComplete:
+        stats.timeCount > 0 ? stats.totalTime / stats.timeCount : 5,
       errorRate,
       skipRate,
       dropOffCount: stats.dropOffs,
@@ -628,7 +677,15 @@ function calculateTimeMetrics(submissions: SubmissionWithForm[]): TimeMetrics {
   const hourCounts = new Map<number, number>();
   const dayCounts = new Map<string, number>();
 
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayNames = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
 
   for (const s of submissions) {
     // Track peak hours and days
@@ -640,7 +697,8 @@ function calculateTimeMetrics(submissions: SubmissionWithForm[]): TimeMetrics {
 
     // Time calculations
     if (s.submittedAt) {
-      const startToSubmit = (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
+      const startToSubmit =
+        (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
       totalStartToSubmit += startToSubmit;
       countSubmit++;
 
@@ -651,14 +709,16 @@ function calculateTimeMetrics(submissions: SubmissionWithForm[]): TimeMetrics {
     }
 
     if (s.reviewedAt && s.submittedAt) {
-      const submitToReview = (s.reviewedAt.getTime() - s.submittedAt.getTime()) / (1000 * 60);
+      const submitToReview =
+        (s.reviewedAt.getTime() - s.submittedAt.getTime()) / (1000 * 60);
       totalSubmitToReview += submitToReview;
       countReview++;
     }
 
     if (s.status === 'APPROVED' || s.status === 'REJECTED') {
       if (s.reviewedAt && s.submittedAt) {
-        const reviewToDecision = (s.updatedAt.getTime() - s.reviewedAt.getTime()) / (1000 * 60);
+        const reviewToDecision =
+          (s.updatedAt.getTime() - s.reviewedAt.getTime()) / (1000 * 60);
         totalReviewToDecision += reviewToDecision;
         countDecision++;
       }
@@ -674,26 +734,34 @@ function calculateTimeMetrics(submissions: SubmissionWithForm[]): TimeMetrics {
   const peakDays = sortedDays.slice(0, 2).map(([day]) => day);
 
   return {
-    avgStartToComplete: countComplete > 0 ? totalStartToComplete / countComplete : 0,
+    avgStartToComplete:
+      countComplete > 0 ? totalStartToComplete / countComplete : 0,
     avgStartToSubmit: countSubmit > 0 ? totalStartToSubmit / countSubmit : 0,
     avgSubmitToReview: countReview > 0 ? totalSubmitToReview / countReview : 0,
-    avgReviewToDecision: countDecision > 0 ? totalReviewToDecision / countDecision : 0,
+    avgReviewToDecision:
+      countDecision > 0 ? totalReviewToDecision / countDecision : 0,
     peakHours,
     peakDays,
   };
 }
 
-function calculateSourceMetrics(submissions: SubmissionWithForm[]): SourceMetrics[] {
-  const sourceStats = new Map<string, {
-    count: number;
-    completed: number;
-    totalScore: number;
-    scoreCount: number;
-  }>();
+function calculateSourceMetrics(
+  submissions: SubmissionWithForm[],
+): SourceMetrics[] {
+  const sourceStats = new Map<
+    string,
+    {
+      count: number;
+      completed: number;
+      totalScore: number;
+      scoreCount: number;
+    }
+  >();
 
   for (const s of submissions) {
     const formData = s.formData as Record<string, unknown> | null;
-    const source = (formData?.source as string) ||
+    const source =
+      (formData?.source as string) ||
       (formData?.lead_source as string) ||
       (formData?.utm_source as string) ||
       'Direct';
@@ -738,15 +806,18 @@ function calculateSourceMetrics(submissions: SubmissionWithForm[]): SourceMetric
 function calculateTrends(
   submissions: SubmissionWithForm[],
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): TrendData[] {
-  const trends = new Map<string, {
-    submissions: number;
-    completions: number;
-    approvals: number;
-    totalTime: number;
-    timeCount: number;
-  }>();
+  const trends = new Map<
+    string,
+    {
+      submissions: number;
+      completions: number;
+      approvals: number;
+      totalTime: number;
+      timeCount: number;
+    }
+  >();
 
   // Initialize all dates in range
   const current = new Date(startDate);
@@ -779,7 +850,8 @@ function calculateTrends(
     }
 
     if (s.submittedAt) {
-      const time = (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
+      const time =
+        (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
       stats.totalTime += time;
       stats.timeCount++;
     }
@@ -796,16 +868,19 @@ function calculateTrends(
 
 async function calculateFormComparison(
   configId: number,
-  submissions: SubmissionWithForm[]
+  submissions: SubmissionWithForm[],
 ): Promise<FormComparisonMetrics[]> {
-  const formStats = new Map<number, {
-    name: string;
-    total: number;
-    completed: number;
-    approved: number;
-    totalTime: number;
-    timeCount: number;
-  }>();
+  const formStats = new Map<
+    number,
+    {
+      name: string;
+      total: number;
+      completed: number;
+      approved: number;
+      totalTime: number;
+      timeCount: number;
+    }
+  >();
 
   for (const s of submissions) {
     const stats = formStats.get(s.form.id) || {
@@ -828,7 +903,8 @@ async function calculateFormComparison(
     }
 
     if (s.submittedAt) {
-      stats.totalTime += (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
+      stats.totalTime +=
+        (s.submittedAt.getTime() - s.createdAt.getTime()) / (1000 * 60);
       stats.timeCount++;
     }
 
@@ -845,7 +921,9 @@ async function calculateFormComparison(
   }));
 }
 
-async function getAISuggestions(analytics: IntakeAnalytics): Promise<OptimizationSuggestion[]> {
+async function getAISuggestions(
+  analytics: IntakeAnalytics,
+): Promise<OptimizationSuggestion[]> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -869,7 +947,10 @@ Return JSON: { "suggestions": [{ "type": "field"|"form"|"flow"|"timing", "priori
 - Conversion rate: ${(analytics.overview.conversionRate * 100).toFixed(1)}%
 - Avg completion time: ${analytics.overview.avgCompletionTime.toFixed(0)} min
 - Biggest drop-off: ${analytics.funnel.biggestDropOffStage}
-- Bottleneck fields: ${analytics.fieldAnalytics.filter(f => f.isBottleneck).map(f => f.fieldLabel).join(', ')}`,
+- Bottleneck fields: ${analytics.fieldAnalytics
+            .filter((f) => f.isBottleneck)
+            .map((f) => f.fieldLabel)
+            .join(', ')}`,
         },
       ],
     }),

@@ -92,7 +92,7 @@ const DEFAULT_FIELD_MAPPINGS: IntakeFieldMapping = {
  */
 export async function processIntakeForCRM(
   submissionId: number,
-  config?: Partial<CRMIntegrationConfig>
+  config?: Partial<CRMIntegrationConfig>,
 ): Promise<CRMIntegrationResult> {
   const result: CRMIntegrationResult = {
     actions: [],
@@ -152,7 +152,9 @@ export async function processIntakeForCRM(
     if (integrationConfig.createAccount && mappedData.companyName) {
       const account = await createOrFindAccount(tenantId, mappedData, formData);
       result.accountId = account.id;
-      result.actions.push(`Account ${account.wasCreated ? 'created' : 'found'}: ${account.name}`);
+      result.actions.push(
+        `Account ${account.wasCreated ? 'created' : 'found'}: ${account.name}`,
+      );
     }
 
     // Create Contact
@@ -161,10 +163,12 @@ export async function processIntakeForCRM(
         tenantId,
         result.accountId,
         mappedData,
-        formData
+        formData,
       );
       result.contactId = contact.id;
-      result.actions.push(`Contact ${contact.wasCreated ? 'created' : 'found'}: ${contact.email}`);
+      result.actions.push(
+        `Contact ${contact.wasCreated ? 'created' : 'found'}: ${contact.email}`,
+      );
     }
 
     // Create Opportunity
@@ -176,7 +180,7 @@ export async function processIntakeForCRM(
         mappedData,
         formData,
         submissionId,
-        integrationConfig
+        integrationConfig,
       );
       result.opportunityId = opportunity.id;
       result.actions.push(`Opportunity created: ${opportunity.name}`);
@@ -202,7 +206,9 @@ export async function processIntakeForCRM(
     result.actions.push('CRM integration completed');
   } catch (error) {
     console.error('CRM integration error:', error);
-    result.errors.push(`Integration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    result.errors.push(
+      `Integration failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 
   return result;
@@ -213,7 +219,7 @@ export async function processIntakeForCRM(
  */
 function extractMappedValues(
   formData: Record<string, unknown>,
-  mappings: IntakeFieldMapping
+  mappings: IntakeFieldMapping,
 ): Record<string, string | undefined> {
   const result: Record<string, string | undefined> = {};
 
@@ -240,7 +246,7 @@ function extractMappedValues(
 async function createOrFindAccount(
   tenantId: string,
   mappedData: Record<string, string | undefined>,
-  formData: Record<string, unknown>
+  formData: Record<string, unknown>,
 ): Promise<{ id: number; name: string; wasCreated: boolean }> {
   const name = mappedData.companyName!;
 
@@ -295,7 +301,7 @@ async function createOrFindContact(
   tenantId: string,
   accountId: number | undefined,
   mappedData: Record<string, string | undefined>,
-  formData: Record<string, unknown>
+  formData: Record<string, unknown>,
 ): Promise<{ id: number; email: string; wasCreated: boolean }> {
   const email = mappedData.email!;
 
@@ -315,7 +321,11 @@ async function createOrFindContact(
         data: { accountId },
       });
     }
-    return { id: existing.id, email: existing.email || email, wasCreated: false };
+    return {
+      id: existing.id,
+      email: existing.email || email,
+      wasCreated: false,
+    };
   }
 
   // Parse name
@@ -360,7 +370,7 @@ async function createOpportunity(
   mappedData: Record<string, string | undefined>,
   formData: Record<string, unknown>,
   submissionId: number,
-  config: CRMIntegrationConfig
+  config: CRMIntegrationConfig,
 ): Promise<{ id: number; name: string }> {
   // Get default pipeline and stage
   let pipelineId = config.defaultPipelineId;
@@ -418,7 +428,8 @@ async function createOpportunity(
   expectedCloseDate.setDate(expectedCloseDate.getDate() + 30);
 
   // Generate opportunity name
-  const name = mappedData.projectName ||
+  const name =
+    mappedData.projectName ||
     `Intake: ${mappedData.companyName || 'New Lead'} - ${new Date().toLocaleDateString()}`;
 
   // Get owner - use config owner, or find first admin
@@ -500,9 +511,7 @@ async function createOpportunity(
 /**
  * Get CRM integration status for a submission
  */
-export async function getIntegrationStatus(
-  submissionId: number
-): Promise<{
+export async function getIntegrationStatus(submissionId: number): Promise<{
   isIntegrated: boolean;
   accountId?: number;
   contactId?: number;
@@ -518,12 +527,14 @@ export async function getIntegrationStatus(
   }
 
   const formData = submission.formData as Record<string, unknown> | null;
-  const integration = formData?._crmIntegration as {
-    accountId?: number;
-    contactId?: number;
-    opportunityId?: number;
-    processedAt?: string;
-  } | undefined;
+  const integration = formData?._crmIntegration as
+    | {
+        accountId?: number;
+        contactId?: number;
+        opportunityId?: number;
+        processedAt?: string;
+      }
+    | undefined;
 
   if (!integration) {
     return { isIntegrated: false };
@@ -540,7 +551,7 @@ export async function getIntegrationStatus(
  */
 export function validateFieldMappings(
   formData: Record<string, unknown>,
-  mappings: IntakeFieldMapping
+  mappings: IntakeFieldMapping,
 ): { valid: boolean; missing: string[]; found: string[] } {
   const found: string[] = [];
   const missing: string[] = [];
@@ -559,7 +570,10 @@ export function validateFieldMappings(
       }
     }
 
-    if (!hasMatch && ['email', 'fullName', 'companyName'].includes(targetField)) {
+    if (
+      !hasMatch &&
+      ['email', 'fullName', 'companyName'].includes(targetField)
+    ) {
       missing.push(targetField);
     }
   }

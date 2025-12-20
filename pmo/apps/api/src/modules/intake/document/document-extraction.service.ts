@@ -70,9 +70,24 @@ const EXTRACTION_TEMPLATES: Record<DocumentType, ExtractionTemplate> = {
     documentType: 'drivers_license',
     expectedFields: [
       { name: 'full_name', label: 'Full Name', type: 'text', required: true },
-      { name: 'date_of_birth', label: 'Date of Birth', type: 'date', required: true },
-      { name: 'license_number', label: 'License Number', type: 'text', required: true },
-      { name: 'expiration_date', label: 'Expiration Date', type: 'date', required: true },
+      {
+        name: 'date_of_birth',
+        label: 'Date of Birth',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'license_number',
+        label: 'License Number',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'expiration_date',
+        label: 'Expiration Date',
+        type: 'date',
+        required: true,
+      },
       { name: 'address', label: 'Address', type: 'text', required: false },
       { name: 'state', label: 'State', type: 'text', required: false },
       { name: 'class', label: 'License Class', type: 'text', required: false },
@@ -82,23 +97,68 @@ const EXTRACTION_TEMPLATES: Record<DocumentType, ExtractionTemplate> = {
     documentType: 'passport',
     expectedFields: [
       { name: 'full_name', label: 'Full Name', type: 'text', required: true },
-      { name: 'date_of_birth', label: 'Date of Birth', type: 'date', required: true },
-      { name: 'passport_number', label: 'Passport Number', type: 'text', required: true },
-      { name: 'expiration_date', label: 'Expiration Date', type: 'date', required: true },
-      { name: 'nationality', label: 'Nationality', type: 'text', required: true },
+      {
+        name: 'date_of_birth',
+        label: 'Date of Birth',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'passport_number',
+        label: 'Passport Number',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'expiration_date',
+        label: 'Expiration Date',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'nationality',
+        label: 'Nationality',
+        type: 'text',
+        required: true,
+      },
       { name: 'sex', label: 'Sex', type: 'text', required: false },
-      { name: 'place_of_birth', label: 'Place of Birth', type: 'text', required: false },
+      {
+        name: 'place_of_birth',
+        label: 'Place of Birth',
+        type: 'text',
+        required: false,
+      },
     ],
   },
   insurance_card: {
     documentType: 'insurance_card',
     expectedFields: [
-      { name: 'member_name', label: 'Member Name', type: 'text', required: true },
+      {
+        name: 'member_name',
+        label: 'Member Name',
+        type: 'text',
+        required: true,
+      },
       { name: 'member_id', label: 'Member ID', type: 'text', required: true },
-      { name: 'group_number', label: 'Group Number', type: 'text', required: true },
-      { name: 'insurance_company', label: 'Insurance Company', type: 'text', required: true },
+      {
+        name: 'group_number',
+        label: 'Group Number',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'insurance_company',
+        label: 'Insurance Company',
+        type: 'text',
+        required: true,
+      },
       { name: 'plan_name', label: 'Plan Name', type: 'text', required: false },
-      { name: 'effective_date', label: 'Effective Date', type: 'date', required: false },
+      {
+        name: 'effective_date',
+        label: 'Effective Date',
+        type: 'date',
+        required: false,
+      },
       { name: 'copay', label: 'Copay', type: 'text', required: false },
       { name: 'rx_bin', label: 'RX BIN', type: 'text', required: false },
       { name: 'rx_pcn', label: 'RX PCN', type: 'text', required: false },
@@ -107,17 +167,42 @@ const EXTRACTION_TEMPLATES: Record<DocumentType, ExtractionTemplate> = {
   insurance_card_front: {
     documentType: 'insurance_card_front',
     expectedFields: [
-      { name: 'member_name', label: 'Member Name', type: 'text', required: true },
+      {
+        name: 'member_name',
+        label: 'Member Name',
+        type: 'text',
+        required: true,
+      },
       { name: 'member_id', label: 'Member ID', type: 'text', required: true },
-      { name: 'group_number', label: 'Group Number', type: 'text', required: false },
-      { name: 'insurance_company', label: 'Insurance Company', type: 'text', required: true },
+      {
+        name: 'group_number',
+        label: 'Group Number',
+        type: 'text',
+        required: false,
+      },
+      {
+        name: 'insurance_company',
+        label: 'Insurance Company',
+        type: 'text',
+        required: true,
+      },
     ],
   },
   insurance_card_back: {
     documentType: 'insurance_card_back',
     expectedFields: [
-      { name: 'claims_address', label: 'Claims Address', type: 'text', required: false },
-      { name: 'phone_number', label: 'Phone Number', type: 'text', required: false },
+      {
+        name: 'claims_address',
+        label: 'Claims Address',
+        type: 'text',
+        required: false,
+      },
+      {
+        name: 'phone_number',
+        label: 'Phone Number',
+        type: 'text',
+        required: false,
+      },
       { name: 'rx_bin', label: 'RX BIN', type: 'text', required: false },
       { name: 'rx_pcn', label: 'RX PCN', type: 'text', required: false },
       { name: 'rx_group', label: 'RX Group', type: 'text', required: false },
@@ -127,39 +212,119 @@ const EXTRACTION_TEMPLATES: Record<DocumentType, ExtractionTemplate> = {
     documentType: 'contract',
     expectedFields: [
       { name: 'parties', label: 'Parties', type: 'text', required: true },
-      { name: 'effective_date', label: 'Effective Date', type: 'date', required: true },
-      { name: 'contract_value', label: 'Contract Value', type: 'number', required: false },
-      { name: 'term_length', label: 'Term Length', type: 'text', required: false },
-      { name: 'signatures', label: 'Signatures Present', type: 'boolean', required: false },
+      {
+        name: 'effective_date',
+        label: 'Effective Date',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'contract_value',
+        label: 'Contract Value',
+        type: 'number',
+        required: false,
+      },
+      {
+        name: 'term_length',
+        label: 'Term Length',
+        type: 'text',
+        required: false,
+      },
+      {
+        name: 'signatures',
+        label: 'Signatures Present',
+        type: 'boolean',
+        required: false,
+      },
     ],
   },
   invoice: {
     documentType: 'invoice',
     expectedFields: [
-      { name: 'invoice_number', label: 'Invoice Number', type: 'text', required: true },
-      { name: 'invoice_date', label: 'Invoice Date', type: 'date', required: true },
+      {
+        name: 'invoice_number',
+        label: 'Invoice Number',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'invoice_date',
+        label: 'Invoice Date',
+        type: 'date',
+        required: true,
+      },
       { name: 'due_date', label: 'Due Date', type: 'date', required: false },
-      { name: 'total_amount', label: 'Total Amount', type: 'number', required: true },
-      { name: 'vendor_name', label: 'Vendor Name', type: 'text', required: true },
-      { name: 'customer_name', label: 'Customer Name', type: 'text', required: false },
+      {
+        name: 'total_amount',
+        label: 'Total Amount',
+        type: 'number',
+        required: true,
+      },
+      {
+        name: 'vendor_name',
+        label: 'Vendor Name',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'customer_name',
+        label: 'Customer Name',
+        type: 'text',
+        required: false,
+      },
     ],
   },
   receipt: {
     documentType: 'receipt',
     expectedFields: [
-      { name: 'merchant_name', label: 'Merchant Name', type: 'text', required: true },
+      {
+        name: 'merchant_name',
+        label: 'Merchant Name',
+        type: 'text',
+        required: true,
+      },
       { name: 'date', label: 'Date', type: 'date', required: true },
-      { name: 'total_amount', label: 'Total Amount', type: 'number', required: true },
-      { name: 'payment_method', label: 'Payment Method', type: 'text', required: false },
+      {
+        name: 'total_amount',
+        label: 'Total Amount',
+        type: 'number',
+        required: true,
+      },
+      {
+        name: 'payment_method',
+        label: 'Payment Method',
+        type: 'text',
+        required: false,
+      },
     ],
   },
   bank_statement: {
     documentType: 'bank_statement',
     expectedFields: [
-      { name: 'account_holder', label: 'Account Holder', type: 'text', required: true },
-      { name: 'account_number_last4', label: 'Account Number (last 4)', type: 'text', required: true },
-      { name: 'statement_period', label: 'Statement Period', type: 'text', required: true },
-      { name: 'ending_balance', label: 'Ending Balance', type: 'number', required: true },
+      {
+        name: 'account_holder',
+        label: 'Account Holder',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'account_number_last4',
+        label: 'Account Number (last 4)',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'statement_period',
+        label: 'Statement Period',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'ending_balance',
+        label: 'Ending Balance',
+        type: 'number',
+        required: true,
+      },
     ],
   },
   tax_form: {
@@ -167,36 +332,91 @@ const EXTRACTION_TEMPLATES: Record<DocumentType, ExtractionTemplate> = {
     expectedFields: [
       { name: 'form_type', label: 'Form Type', type: 'text', required: true },
       { name: 'tax_year', label: 'Tax Year', type: 'text', required: true },
-      { name: 'taxpayer_name', label: 'Taxpayer Name', type: 'text', required: true },
-      { name: 'ssn_last4', label: 'SSN (last 4)', type: 'text', required: false },
+      {
+        name: 'taxpayer_name',
+        label: 'Taxpayer Name',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'ssn_last4',
+        label: 'SSN (last 4)',
+        type: 'text',
+        required: false,
+      },
     ],
   },
   medical_record: {
     documentType: 'medical_record',
     expectedFields: [
-      { name: 'patient_name', label: 'Patient Name', type: 'text', required: true },
-      { name: 'date_of_service', label: 'Date of Service', type: 'date', required: true },
-      { name: 'provider_name', label: 'Provider Name', type: 'text', required: false },
+      {
+        name: 'patient_name',
+        label: 'Patient Name',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'date_of_service',
+        label: 'Date of Service',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'provider_name',
+        label: 'Provider Name',
+        type: 'text',
+        required: false,
+      },
       { name: 'diagnosis', label: 'Diagnosis', type: 'text', required: false },
     ],
   },
   legal_document: {
     documentType: 'legal_document',
     expectedFields: [
-      { name: 'document_title', label: 'Document Title', type: 'text', required: true },
+      {
+        name: 'document_title',
+        label: 'Document Title',
+        type: 'text',
+        required: true,
+      },
       { name: 'date', label: 'Date', type: 'date', required: false },
       { name: 'parties', label: 'Parties', type: 'text', required: false },
-      { name: 'case_number', label: 'Case Number', type: 'text', required: false },
+      {
+        name: 'case_number',
+        label: 'Case Number',
+        type: 'text',
+        required: false,
+      },
     ],
   },
   certificate: {
     documentType: 'certificate',
     expectedFields: [
-      { name: 'certificate_type', label: 'Certificate Type', type: 'text', required: true },
+      {
+        name: 'certificate_type',
+        label: 'Certificate Type',
+        type: 'text',
+        required: true,
+      },
       { name: 'issued_to', label: 'Issued To', type: 'text', required: true },
-      { name: 'issue_date', label: 'Issue Date', type: 'date', required: false },
-      { name: 'expiration_date', label: 'Expiration Date', type: 'date', required: false },
-      { name: 'issuing_authority', label: 'Issuing Authority', type: 'text', required: false },
+      {
+        name: 'issue_date',
+        label: 'Issue Date',
+        type: 'date',
+        required: false,
+      },
+      {
+        name: 'expiration_date',
+        label: 'Expiration Date',
+        type: 'date',
+        required: false,
+      },
+      {
+        name: 'issuing_authority',
+        label: 'Issuing Authority',
+        type: 'text',
+        required: false,
+      },
     ],
   },
   id_card: {
@@ -204,24 +424,64 @@ const EXTRACTION_TEMPLATES: Record<DocumentType, ExtractionTemplate> = {
     expectedFields: [
       { name: 'full_name', label: 'Full Name', type: 'text', required: true },
       { name: 'id_number', label: 'ID Number', type: 'text', required: true },
-      { name: 'expiration_date', label: 'Expiration Date', type: 'date', required: false },
+      {
+        name: 'expiration_date',
+        label: 'Expiration Date',
+        type: 'date',
+        required: false,
+      },
     ],
   },
   utility_bill: {
     documentType: 'utility_bill',
     expectedFields: [
-      { name: 'account_holder', label: 'Account Holder', type: 'text', required: true },
-      { name: 'service_address', label: 'Service Address', type: 'text', required: true },
-      { name: 'billing_date', label: 'Billing Date', type: 'date', required: true },
-      { name: 'amount_due', label: 'Amount Due', type: 'number', required: true },
-      { name: 'utility_company', label: 'Utility Company', type: 'text', required: true },
+      {
+        name: 'account_holder',
+        label: 'Account Holder',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'service_address',
+        label: 'Service Address',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'billing_date',
+        label: 'Billing Date',
+        type: 'date',
+        required: true,
+      },
+      {
+        name: 'amount_due',
+        label: 'Amount Due',
+        type: 'number',
+        required: true,
+      },
+      {
+        name: 'utility_company',
+        label: 'Utility Company',
+        type: 'text',
+        required: true,
+      },
     ],
   },
   pay_stub: {
     documentType: 'pay_stub',
     expectedFields: [
-      { name: 'employee_name', label: 'Employee Name', type: 'text', required: true },
-      { name: 'employer_name', label: 'Employer Name', type: 'text', required: true },
+      {
+        name: 'employee_name',
+        label: 'Employee Name',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'employer_name',
+        label: 'Employer Name',
+        type: 'text',
+        required: true,
+      },
       { name: 'pay_period', label: 'Pay Period', type: 'text', required: true },
       { name: 'gross_pay', label: 'Gross Pay', type: 'number', required: true },
       { name: 'net_pay', label: 'Net Pay', type: 'number', required: true },
@@ -242,7 +502,7 @@ const EXTRACTION_TEMPLATES: Record<DocumentType, ExtractionTemplate> = {
  */
 export async function classifyDocument(
   text: string,
-  filename?: string
+  filename?: string,
 ): Promise<{ type: DocumentType; confidence: number }> {
   // Try AI classification first if available
   if (env.openaiApiKey) {
@@ -262,9 +522,11 @@ export async function classifyDocument(
  */
 async function classifyWithAI(
   text: string,
-  filename?: string
+  filename?: string,
 ): Promise<{ type: DocumentType; confidence: number }> {
-  const documentTypes = Object.keys(EXTRACTION_TEMPLATES).filter(t => t !== 'unknown');
+  const documentTypes = Object.keys(EXTRACTION_TEMPLATES).filter(
+    (t) => t !== 'unknown',
+  );
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -316,7 +578,7 @@ Return a JSON object with:
  */
 function classifyRuleBased(
   text: string,
-  filename?: string
+  filename?: string,
 ): { type: DocumentType; confidence: number } {
   const lowerText = text.toLowerCase();
   const lowerFilename = (filename || '').toLowerCase();
@@ -343,7 +605,11 @@ function classifyRuleBased(
   };
 
   // Driver's License patterns
-  if (lowerText.includes('driver') || lowerText.includes('license') || lowerText.includes('dl')) {
+  if (
+    lowerText.includes('driver') ||
+    lowerText.includes('license') ||
+    lowerText.includes('dl')
+  ) {
     typeScores.drivers_license += 3;
   }
   if (lowerText.includes('class') && lowerText.includes('expires')) {
@@ -354,7 +620,10 @@ function classifyRuleBased(
   if (lowerText.includes('passport')) {
     typeScores.passport += 5;
   }
-  if (lowerText.includes('nationality') || lowerText.includes('place of birth')) {
+  if (
+    lowerText.includes('nationality') ||
+    lowerText.includes('place of birth')
+  ) {
     typeScores.passport += 2;
   }
 
@@ -394,7 +663,11 @@ function classifyRuleBased(
   }
 
   // Tax form patterns
-  if (lowerText.includes('w-2') || lowerText.includes('1099') || lowerText.includes('tax return')) {
+  if (
+    lowerText.includes('w-2') ||
+    lowerText.includes('1099') ||
+    lowerText.includes('tax return')
+  ) {
     typeScores.tax_form += 4;
   }
   if (lowerText.includes('irs') || lowerText.includes('federal tax')) {
@@ -423,7 +696,10 @@ function classifyRuleBased(
   }
 
   // Pay stub patterns
-  if (lowerText.includes('pay stub') || lowerText.includes('earnings statement')) {
+  if (
+    lowerText.includes('pay stub') ||
+    lowerText.includes('earnings statement')
+  ) {
     typeScores.pay_stub += 4;
   }
   if (lowerText.includes('gross pay') && lowerText.includes('net pay')) {
@@ -467,7 +743,7 @@ export async function extractFromDocument(
   options?: {
     documentType?: DocumentType;
     useAI?: boolean;
-  }
+  },
 ): Promise<ExtractionResult> {
   const startTime = Date.now();
   const useAI = options?.useAI !== false && !!env.openaiApiKey;
@@ -510,8 +786,8 @@ export async function extractFromDocument(
 
   // Generate warnings
   const warnings: string[] = [];
-  const requiredFields = template.expectedFields.filter(f => f.required);
-  const extractedFieldNames = fields.map(f => f.name);
+  const requiredFields = template.expectedFields.filter((f) => f.required);
+  const extractedFieldNames = fields.map((f) => f.name);
 
   for (const required of requiredFields) {
     if (!extractedFieldNames.includes(required.name)) {
@@ -533,15 +809,16 @@ export async function extractFromDocument(
       data: {
         extractedData: {
           documentType,
-          fields: fields.map(f => ({
+          fields: fields.map((f) => ({
             name: f.name,
             value: f.value,
             confidence: f.confidence,
           })),
         },
-        extractionConfidence: fields.length > 0
-          ? fields.reduce((sum, f) => sum + f.confidence, 0) / fields.length
-          : 0,
+        extractionConfidence:
+          fields.length > 0
+            ? fields.reduce((sum, f) => sum + f.confidence, 0) / fields.length
+            : 0,
       },
     });
   } catch (error) {
@@ -566,10 +843,13 @@ export async function extractFromDocument(
  */
 async function extractWithAI(
   text: string,
-  template: ExtractionTemplate
+  template: ExtractionTemplate,
 ): Promise<ExtractionField[]> {
   const fieldsDescription = template.expectedFields
-    .map(f => `- ${f.name}: ${f.label} (${f.type}${f.required ? ', required' : ''})`)
+    .map(
+      (f) =>
+        `- ${f.name}: ${f.label} (${f.type}${f.required ? ', required' : ''})`,
+    )
     .join('\n');
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -617,11 +897,13 @@ Only include fields you can extract. Be precise with dates (ISO format), numbers
     return [];
   }
 
-  return parsed.fields.map((f: { name: string; value: unknown; confidence: number }) => ({
-    name: f.name,
-    value: f.value ?? null,
-    confidence: Math.min(1, Math.max(0, f.confidence || 0.7)),
-  }));
+  return parsed.fields.map(
+    (f: { name: string; value: unknown; confidence: number }) => ({
+      name: f.name,
+      value: f.value ?? null,
+      confidence: Math.min(1, Math.max(0, f.confidence || 0.7)),
+    }),
+  );
 }
 
 /**
@@ -629,7 +911,7 @@ Only include fields you can extract. Be precise with dates (ISO format), numbers
  */
 function extractRuleBased(
   text: string,
-  template: ExtractionTemplate
+  template: ExtractionTemplate,
 ): ExtractionField[] {
   const fields: ExtractionField[] = [];
 
@@ -652,9 +934,9 @@ function extractRuleBased(
  */
 function extractFieldValue(
   text: string,
-  field: ExtractionTemplate['expectedFields'][0]
+  field: ExtractionTemplate['expectedFields'][0],
 ): { value: string | number | boolean | null; confidence: number } | null {
-  const lowerText = text.toLowerCase();
+  const _lowerText = text.toLowerCase();
 
   // Common patterns for different field types
   const patterns: Record<string, RegExp[]> = {
@@ -663,22 +945,16 @@ function extractFieldValue(
       /([A-Z][a-z]+ [A-Z][a-z]+)\s*$/m,
     ],
     date_of_birth: [
-      /dob[:\s]+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
-      /date of birth[:\s]+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
-      /birth[:\s]+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+      /dob[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
+      /date of birth[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
+      /birth[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
     ],
     expiration_date: [
-      /exp[:\s]+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
-      /expires?[:\s]+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+      /exp[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
+      /expires?[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
     ],
-    member_id: [
-      /member\s*id[:\s]+([A-Z0-9]+)/i,
-      /id[:\s]+([A-Z0-9]{6,})/i,
-    ],
-    group_number: [
-      /group[:\s]+([A-Z0-9]+)/i,
-      /grp[:\s]+([A-Z0-9]+)/i,
-    ],
+    member_id: [/member\s*id[:\s]+([A-Z0-9]+)/i, /id[:\s]+([A-Z0-9]{6,})/i],
+    group_number: [/group[:\s]+([A-Z0-9]+)/i, /grp[:\s]+([A-Z0-9]+)/i],
     total_amount: [
       /total[:\s]+\$?([\d,]+\.?\d*)/i,
       /amount[:\s]+\$?([\d,]+\.?\d*)/i,
@@ -700,10 +976,7 @@ function extractFieldValue(
   }
 
   // Try generic label-based extraction
-  const labelPattern = new RegExp(
-    `${field.label}[:\\s]+([^\\n]+)`,
-    'i'
-  );
+  const labelPattern = new RegExp(`${field.label}[:\\s]+([^\\n]+)`, 'i');
   const labelMatch = text.match(labelPattern);
   if (labelMatch && labelMatch[1]) {
     let value: string | number = labelMatch[1].trim();
@@ -728,7 +1001,7 @@ function extractFieldValue(
  */
 export function mapExtractedToFormFields(
   extractionResult: ExtractionResult,
-  formFields: Array<{ name: string; type: string }>
+  formFields: Array<{ name: string; type: string }>,
 ): Record<string, unknown> {
   const mappedData: Record<string, unknown> = {};
 
@@ -747,7 +1020,7 @@ export function mapExtractedToFormFields(
     if (field.value === null || field.confidence < 0.4) continue;
 
     // Check if there's a direct match
-    const formField = formFields.find(f => f.name === field.name);
+    const formField = formFields.find((f) => f.name === field.name);
     if (formField) {
       mappedData[formField.name] = field.value;
       continue;
@@ -757,7 +1030,7 @@ export function mapExtractedToFormFields(
     const mappings = fieldMappings[field.name];
     if (mappings) {
       for (const mapping of mappings) {
-        const matchingField = formFields.find(f => f.name === mapping);
+        const matchingField = formFields.find((f) => f.name === mapping);
         if (matchingField) {
           mappedData[matchingField.name] = field.value;
           break;
@@ -772,7 +1045,9 @@ export function mapExtractedToFormFields(
 /**
  * Get extraction template for a document type
  */
-export function getExtractionTemplate(documentType: DocumentType): ExtractionTemplate {
+export function getExtractionTemplate(
+  documentType: DocumentType,
+): ExtractionTemplate {
   return EXTRACTION_TEMPLATES[documentType] || EXTRACTION_TEMPLATES.unknown;
 }
 

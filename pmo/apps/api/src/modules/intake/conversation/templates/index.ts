@@ -270,7 +270,9 @@ const TEMPLATES: Record<IndustryType, ConversationTemplate> = {
 /**
  * Get conversation template for an industry
  */
-export function getConversationTemplate(industry: IndustryType): ConversationTemplate {
+export function getConversationTemplate(
+  industry: IndustryType,
+): ConversationTemplate {
   return TEMPLATES[industry] || TEMPLATES.general;
 }
 
@@ -291,10 +293,7 @@ export function hasSpecializedTemplate(industry: IndustryType): boolean {
 /**
  * Get appropriate terminology for an industry
  */
-export function getTerminology(
-  industry: IndustryType,
-  term: string
-): string {
+export function getTerminology(industry: IndustryType, term: string): string {
   const template = TEMPLATES[industry];
   return template?.terminology[term.toLowerCase()] || term;
 }
