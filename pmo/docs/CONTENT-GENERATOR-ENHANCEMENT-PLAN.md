@@ -26,6 +26,7 @@ Based on analysis of the market research on AI-Assisted Client Intake Systems an
 | VIDEO_SCRIPT | Video narratives with visual cues |
 
 **Existing Features:**
+
 - Brand voice training & consistency scoring
 - Template system with placeholders
 - A/B variant generation (1-5 variants)
@@ -39,13 +40,13 @@ Based on analysis of the market research on AI-Assisted Client Intake Systems an
 
 The market research emphasizes that **63% of clients say onboarding experiences influence retention**. We lack:
 
-| Missing Type | Market Need | Priority |
-|--------------|-------------|----------|
-| **PROPOSAL** | Business/project proposals with pricing, scope, timeline | HIGH |
-| **CASE_STUDY** | Client success stories for lead nurturing | HIGH |
-| **WHITEPAPER** | Thought leadership for lead generation | MEDIUM |
-| **FAQ_CONTENT** | FAQ entries for knowledge bases & chatbots | HIGH |
-| **WELCOME_PACKET** | New client welcome content/guides | HIGH |
+| Missing Type       | Market Need                                              | Priority |
+| ------------------ | -------------------------------------------------------- | -------- |
+| **PROPOSAL**       | Business/project proposals with pricing, scope, timeline | HIGH     |
+| **CASE_STUDY**     | Client success stories for lead nurturing                | HIGH     |
+| **WHITEPAPER**     | Thought leadership for lead generation                   | MEDIUM   |
+| **FAQ_CONTENT**    | FAQ entries for knowledge bases & chatbots               | HIGH     |
+| **WELCOME_PACKET** | New client welcome content/guides                        | HIGH     |
 
 **Note:** Engagement letters, contracts, and SOW already exist in the Intake module's `engagement-letter.service.ts`. We should integrate, not duplicate.
 
@@ -53,11 +54,11 @@ The market research emphasizes that **63% of clients say onboarding experiences 
 
 The research shows **80% of clients expect responses within 24 hours**, yet **64% of firms cannot deliver**. Automated sequences address this:
 
-| Missing Capability | Market Need |
-|--------------------|-------------|
-| **Email Sequences** | Multi-step nurture/onboarding email series |
-| **Follow-up Sequences** | Automated follow-up after intake/meetings |
-| **Drip Campaigns** | Time-based educational content delivery |
+| Missing Capability      | Market Need                                |
+| ----------------------- | ------------------------------------------ |
+| **Email Sequences**     | Multi-step nurture/onboarding email series |
+| **Follow-up Sequences** | Automated follow-up after intake/meetings  |
+| **Drip Campaigns**      | Time-based educational content delivery    |
 
 Current limitation: The content generator creates individual pieces, not interconnected sequences.
 
@@ -65,11 +66,11 @@ Current limitation: The content generator creates individual pieces, not interco
 
 The research shows **chatbots are 2X more effective than Contact Us pages**:
 
-| Missing Capability | Market Need |
-|--------------------|-------------|
-| **Intake Questions** | AI-generated intake form questions by industry |
-| **Chatbot Scripts** | Conversational flows for AI chatbots |
-| **Qualification Questions** | Lead qualification question sets |
+| Missing Capability          | Market Need                                    |
+| --------------------------- | ---------------------------------------------- |
+| **Intake Questions**        | AI-generated intake form questions by industry |
+| **Chatbot Scripts**         | Conversational flows for AI chatbots           |
+| **Qualification Questions** | Lead qualification question sets               |
 
 **Note:** The Intake module has conversation templates in `intake/conversation/templates/` but lacks AI generation of new content.
 
@@ -121,15 +122,16 @@ enum ContentGenerationType {
 
 **Implementation Details:**
 
-| Content Type | System Prompt Focus | Template Variables | Output Format |
-|--------------|---------------------|-------------------|---------------|
-| PROPOSAL | Professional proposal writer with persuasive scope/pricing | `{{client_name}}`, `{{project_scope}}`, `{{timeline}}`, `{{pricing}}`, `{{deliverables}}` | Structured sections: Executive Summary, Scope, Timeline, Pricing, Terms |
-| CASE_STUDY | B2B storyteller with metrics focus | `{{client_name}}`, `{{industry}}`, `{{challenge}}`, `{{solution}}`, `{{results}}` | Problem → Solution → Results format |
-| FAQ_CONTENT | Concise Q&A writer | `{{topic}}`, `{{audience}}`, `{{tone}}` | Question + Answer pairs, optionally with categories |
-| WELCOME_PACKET | Warm, helpful onboarding specialist | `{{client_name}}`, `{{service_type}}`, `{{contact_info}}`, `{{next_steps}}` | Welcome message + What to expect + Next steps |
-| WHITEPAPER | Authoritative thought leadership | `{{topic}}`, `{{industry}}`, `{{key_points}}` | Title, Abstract, Sections, Conclusion, CTA |
+| Content Type   | System Prompt Focus                                        | Template Variables                                                                        | Output Format                                                           |
+| -------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| PROPOSAL       | Professional proposal writer with persuasive scope/pricing | `{{client_name}}`, `{{project_scope}}`, `{{timeline}}`, `{{pricing}}`, `{{deliverables}}` | Structured sections: Executive Summary, Scope, Timeline, Pricing, Terms |
+| CASE_STUDY     | B2B storyteller with metrics focus                         | `{{client_name}}`, `{{industry}}`, `{{challenge}}`, `{{solution}}`, `{{results}}`         | Problem → Solution → Results format                                     |
+| FAQ_CONTENT    | Concise Q&A writer                                         | `{{topic}}`, `{{audience}}`, `{{tone}}`                                                   | Question + Answer pairs, optionally with categories                     |
+| WELCOME_PACKET | Warm, helpful onboarding specialist                        | `{{client_name}}`, `{{service_type}}`, `{{contact_info}}`, `{{next_steps}}`               | Welcome message + What to expect + Next steps                           |
+| WHITEPAPER     | Authoritative thought leadership                           | `{{topic}}`, `{{industry}}`, `{{key_points}}`                                             | Title, Abstract, Sections, Conclusion, CTA                              |
 
 **Database Changes:**
+
 - Add new enum values to Prisma schema
 - Create migration
 
@@ -209,6 +211,7 @@ POST   /api/content-generator/sequences/:id/activate        - Activate sequence
 ```
 
 **Generation Logic:**
+
 1. User defines sequence type and number of pieces
 2. AI generates cohesive sequence with proper progression
 3. Each piece maintains brand voice and builds on previous
@@ -221,6 +224,7 @@ POST   /api/content-generator/sequences/:id/activate        - Activate sequence
 ### Phase 3: Intake Content Integration (Priority: HIGH)
 
 Connect Content Generator with the Intake module to generate:
+
 1. Intake form questions by industry
 2. Chatbot conversation flows
 3. FAQ/Knowledge base content from intake data
@@ -278,6 +282,7 @@ POST /api/content-generator/batch-translate               - Batch translate
 ```
 
 **Database Changes:**
+
 - Add `language` field to GeneratedContent
 - Add `parentTranslationId` for translation relationships
 
@@ -291,19 +296,19 @@ Add compliance checking similar to Product Descriptions module.
 
 **Compliance Rules by Industry:**
 
-| Industry | Rules |
-|----------|-------|
-| **Legal** | No guarantees of outcomes, proper disclaimers, bar advertising rules, no misleading claims |
-| **Healthcare** | HIPAA-aware language, no diagnosis claims, proper medical disclaimers |
-| **Financial** | Required disclosures, no guaranteed returns, fiduciary language |
-| **General** | Truth in advertising, no deceptive claims |
+| Industry       | Rules                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| **Legal**      | No guarantees of outcomes, proper disclaimers, bar advertising rules, no misleading claims |
+| **Healthcare** | HIPAA-aware language, no diagnosis claims, proper medical disclaimers                      |
+| **Financial**  | Required disclosures, no guaranteed returns, fiduciary language                            |
+| **General**    | Truth in advertising, no deceptive claims                                                  |
 
 **New Service: ContentComplianceService**
 
 ```typescript
 interface ComplianceCheckResult {
   isCompliant: boolean;
-  score: number;              // 0-100
+  score: number; // 0-100
   violations: ComplianceViolation[];
   warnings: ComplianceWarning[];
   suggestions: string[];
@@ -312,7 +317,7 @@ interface ComplianceCheckResult {
 interface ComplianceViolation {
   severity: 'critical' | 'high' | 'medium';
   rule: string;
-  location: string;           // Text that violated
+  location: string; // Text that violated
   recommendation: string;
 }
 ```
@@ -333,6 +338,7 @@ POST /api/content-generator/compliance-analyze             - Analyze text withou
 Enable content personalization using CRM data.
 
 **Features:**
+
 1. Pull Account/Opportunity/Contact data for personalization
 2. Auto-populate placeholders from CRM records
 3. Generate content for specific pipeline stages
@@ -341,13 +347,41 @@ Enable content personalization using CRM data.
 
 ```typescript
 // Dynamic placeholders that pull from CRM
-{{crm.account.name}}
-{{crm.account.industry}}
-{{crm.contact.firstName}}
-{{crm.contact.title}}
-{{crm.opportunity.name}}
-{{crm.opportunity.amount}}
-{{crm.opportunity.stage}}
+{
+  {
+    crm.account.name;
+  }
+}
+{
+  {
+    crm.account.industry;
+  }
+}
+{
+  {
+    crm.contact.firstName;
+  }
+}
+{
+  {
+    crm.contact.title;
+  }
+}
+{
+  {
+    crm.opportunity.name;
+  }
+}
+{
+  {
+    crm.opportunity.amount;
+  }
+}
+{
+  {
+    crm.opportunity.stage;
+  }
+}
 ```
 
 **New API Endpoints:**
@@ -364,49 +398,60 @@ GET  /api/content-generator/crm-placeholders/:accountId   - Available CRM placeh
 
 ## Implementation Summary
 
-| Phase | Feature | Priority | Effort | Dependencies |
-|-------|---------|----------|--------|--------------|
-| 1 | New Content Types | HIGH | 2-3 days | None |
-| 2 | Content Sequences | HIGH | 3-4 days | Phase 1 |
-| 3 | Intake Content Integration | HIGH | 2-3 days | Phase 1 |
-| 4 | Multi-Language Support | MEDIUM | 2 days | Phase 1 |
-| 5 | Industry Compliance | MEDIUM | 2-3 days | Phase 1 |
-| 6 | CRM Data Integration | MEDIUM | 2-3 days | Phase 1 |
+| Phase | Feature                                                       | Priority            | Effort   | Dependencies |
+| ----- | ------------------------------------------------------------- | ------------------- | -------- | ------------ |
+| 1     | New Content Types                                             | HIGH                | 2-3 days | None         |
+| 6     | CRM Data Integration                                          | **HIGH** (moved up) | 2-3 days | Phase 1      |
+| 3     | Intake Content Integration + Shared Engagement Letter Service | HIGH                | 2-3 days | Phase 1      |
+| 2     | Content Sequences                                             | HIGH                | 3-4 days | Phase 1      |
+| 4     | Multi-Language Support                                        | MEDIUM              | 2 days   | Phase 1      |
+| 5     | Industry Compliance (basic warnings)                          | MEDIUM              | 2-3 days | Phase 1      |
 
 **Total Estimated Effort:** 13-18 days
 
 ---
 
-## Recommended Implementation Order
+## Approved Implementation Order
 
-### Sprint 1 (Phases 1 + 3): Core Expansion
-- Add 5 new content types
-- Integrate intake content generation
-- Provides immediate value for intake-focused use cases
+### Sprint 1: Phase 1 - New Content Types
 
-### Sprint 2 (Phase 2): Sequences
+- Add 5 new content types (PROPOSAL, CASE_STUDY, FAQ_CONTENT, WELCOME_PACKET, WHITEPAPER)
+- Update Prisma schema and service
+
+### Sprint 2: Phase 6 - CRM Integration (Priority Elevated)
+
+- CRM data personalization with dynamic placeholders
+- Pipeline-stage content generation
+- Deep platform integration (key market differentiator)
+
+### Sprint 3: Phase 3 - Intake Content Integration
+
+- Generate intake form questions by industry
+- Generate chatbot conversation flows
+- **Shared engagement letter service** (used by both Intake and Content Generator modules)
+
+### Sprint 4: Phase 2 - Content Sequences
+
 - Add content sequence capability
 - Enables automated follow-up and nurture campaigns
 - Addresses "80% expect 24hr response" finding
 
-### Sprint 3 (Phases 4 + 5): Enterprise Features
-- Multi-language support
-- Industry compliance checking
-- Differentiates for regulated industries
+### Sprint 5: Phases 4 + 5 - Enterprise Features
 
-### Sprint 4 (Phase 6): CRM Integration
-- CRM data personalization
-- Pipeline-stage content generation
-- Deep platform integration
+- Multi-language support
+- Industry compliance checking (**basic warnings only** for initial release)
+- Differentiates for regulated industries
 
 ---
 
 ## Files to Modify/Create
 
 ### Prisma Schema
+
 - `pmo/prisma/schema.prisma` - Add new enums and models
 
 ### API Module
+
 - `pmo/apps/api/src/modules/content-generator/content-generator.service.ts` - Extend with new types
 - `pmo/apps/api/src/modules/content-generator/content-generator.router.ts` - New endpoints
 - `pmo/apps/api/src/modules/content-generator/services/sequence.service.ts` - NEW
@@ -416,44 +461,43 @@ GET  /api/content-generator/crm-placeholders/:accountId   - Available CRM placeh
 - `pmo/apps/api/src/modules/content-generator/services/crm-integration.service.ts` - NEW
 
 ### Frontend (if applicable)
+
 - `pmo/apps/web/src/pages/ai-tools/ContentGeneratorPage.tsx` - UI updates
 
 ---
 
 ## Success Metrics (From Market Research)
 
-| Metric | Target | Source |
-|--------|--------|--------|
-| Content generation time reduction | 70%+ | Jotform benchmark |
-| Form/intake completion rate improvement | 35% | Conversational forms benchmark |
-| Client response time | <24 hours | 80% client expectation |
-| Content approval cycle time | 50% reduction | Workflow automation |
+| Metric                                  | Target        | Source                         |
+| --------------------------------------- | ------------- | ------------------------------ |
+| Content generation time reduction       | 70%+          | Jotform benchmark              |
+| Form/intake completion rate improvement | 35%           | Conversational forms benchmark |
+| Client response time                    | <24 hours     | 80% client expectation         |
+| Content approval cycle time             | 50% reduction | Workflow automation            |
 
 ---
 
-## Questions for Review
+## Decisions Made
 
-1. **Phase Prioritization:** Should we start with Phases 1+3 (content types + intake integration) or Phase 2 (sequences)?
+1. **Phase Prioritization:** Keep as proposed, with CRM integration moved to top priority after Phase 1
 
-2. **Engagement Letter Integration:** The Intake module already has engagement letter generation. Should we:
-   - a) Move it to Content Generator for unified content management
-   - b) Keep it in Intake and add cross-module references
-   - c) Create a shared service both modules use
+2. **Engagement Letter Integration:** ✅ Create a **shared service** both modules use
+   - Will be located in a shared location accessible to both Intake and Content Generator
 
-3. **Compliance Scope:** How deep should industry compliance go?
-   - a) Basic warning flags (faster to implement)
-   - b) Full compliance rules with specific bar/healthcare regulations (more comprehensive)
+3. **Compliance Scope:** ✅ **Basic warning flags** for initial release
+   - Can be expanded later based on customer feedback
 
-4. **CRM Integration Priority:** Should CRM data integration be moved up given "deep CRM integration" was identified as key differentiator?
+4. **CRM Integration Priority:** ✅ **Elevated to top priority** (Phase 6 → Sprint 2)
+   - Deep CRM integration identified as key market differentiator
 
 ---
 
-## Approval Requested
+## Status: APPROVED - Implementation In Progress
 
-Please review this plan and confirm:
-- [ ] Phase prioritization is acceptable
-- [ ] Scope of new content types is correct
-- [ ] Database model design for sequences is appropriate
-- [ ] Any phases should be added/removed/modified
+Implementation order:
 
-Once approved, I will proceed with implementation starting with the confirmed priorities.
+1. [IN PROGRESS] Phase 1: New Content Types
+2. [PENDING] Phase 6: CRM Data Integration
+3. [PENDING] Phase 3: Intake Content Integration + Shared Engagement Letter Service
+4. [PENDING] Phase 2: Content Sequences
+5. [PENDING] Phases 4+5: Multi-Language + Basic Compliance

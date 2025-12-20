@@ -343,6 +343,17 @@ function getDefaultSystemPrompt(type: ContentGenerationType): string {
       'You are an expert product copywriter. Create compelling product descriptions that highlight benefits and drive purchases.',
     VIDEO_SCRIPT:
       'You are an expert video scriptwriter. Create engaging video scripts with clear narratives and visual cues.',
+    // Phase 1 additions - Business document content types
+    PROPOSAL:
+      'You are an expert business proposal writer. Create professional, persuasive proposals with clear structure including: Executive Summary, Scope of Work, Timeline, Deliverables, Pricing, and Terms. Focus on articulating value and addressing client needs.',
+    CASE_STUDY:
+      'You are an expert B2B case study writer. Create compelling client success stories following the Problem-Solution-Results format. Include specific metrics and outcomes. Make it relatable to prospects facing similar challenges.',
+    FAQ_CONTENT:
+      'You are an expert at creating clear, helpful FAQ content. Write concise question-and-answer pairs that anticipate user needs. Use natural language and organize by topic. Each answer should be complete but brief.',
+    WELCOME_PACKET:
+      'You are an expert at client onboarding content. Create warm, professional welcome materials that set expectations, explain next steps, and make new clients feel valued. Include key contacts, timelines, and what to expect.',
+    WHITEPAPER:
+      'You are an expert thought leadership writer. Create authoritative, research-backed whitepapers that establish expertise and provide genuine value. Structure with: Title, Abstract, Key Sections, Conclusion, and Call-to-Action. Maintain a professional, educational tone.',
   };
 
   return (

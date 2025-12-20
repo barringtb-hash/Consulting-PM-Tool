@@ -57,6 +57,12 @@ const contentGenerationSchema = z.object({
     'PRESS_RELEASE',
     'PRODUCT_COPY',
     'VIDEO_SCRIPT',
+    // Phase 1 additions - Business document content types
+    'PROPOSAL',
+    'CASE_STUDY',
+    'FAQ_CONTENT',
+    'WELCOME_PACKET',
+    'WHITEPAPER',
   ]),
   prompt: z.string().max(5000).optional(),
   templateId: z.number().int().optional(),
@@ -80,6 +86,12 @@ const contentTemplateSchema = z.object({
     'PRESS_RELEASE',
     'PRODUCT_COPY',
     'VIDEO_SCRIPT',
+    // Phase 1 additions - Business document content types
+    'PROPOSAL',
+    'CASE_STUDY',
+    'FAQ_CONTENT',
+    'WELCOME_PACKET',
+    'WHITEPAPER',
   ]),
   template: z.string().min(1).max(10000),
   placeholders: z

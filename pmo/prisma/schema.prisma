@@ -3294,6 +3294,12 @@ enum ContentGenerationType {
   PRESS_RELEASE
   PRODUCT_COPY
   VIDEO_SCRIPT
+  // Phase 1 additions - Business document content types
+  PROPOSAL        // Business/project proposals with pricing, scope, timeline
+  CASE_STUDY      // Client success stories for lead nurturing
+  FAQ_CONTENT     // FAQ entries for knowledge bases & chatbots
+  WELCOME_PACKET  // New client welcome content/guides
+  WHITEPAPER      // Thought leadership content for lead generation
 }
 
 enum ContentApprovalStatus {
