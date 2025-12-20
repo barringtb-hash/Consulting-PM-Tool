@@ -207,9 +207,10 @@ router.post(
       }
 
       // Validate request body
+      const body = req.body as { newPassword?: string };
       const validation = adminResetPasswordSchema.safeParse({
         userId: id,
-        newPassword: req.body.newPassword,
+        newPassword: body.newPassword,
       });
 
       if (!validation.success) {
