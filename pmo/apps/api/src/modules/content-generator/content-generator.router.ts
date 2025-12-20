@@ -2124,7 +2124,7 @@ router.post(
       res.status(404).json({ error: 'Content not found' });
       return;
     }
-    const canAccess = await hasClientAccess(req.userId, clientId);
+    const canAccess = await hasClientAccess(req.userId!, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this content' });
       return;
@@ -2144,10 +2144,7 @@ router.post(
     }
 
     // Get configId from content
-    const content = await contentGeneratorService.getGeneratedContent(
-      contentId,
-      0,
-    );
+    const content = await contentGeneratorService.getContent(contentId);
     if (!content) {
       res.status(404).json({ error: 'Content not found' });
       return;
@@ -2199,7 +2196,7 @@ router.post(
         res.status(403).json({ error: `Content ID ${contentId} not found` });
         return;
       }
-      const canAccess = await hasClientAccess(req.userId, clientId);
+      const canAccess = await hasClientAccess(req.userId!, clientId);
       if (!canAccess) {
         res
           .status(403)
@@ -2209,9 +2206,8 @@ router.post(
     }
 
     // Get configId from first content
-    const firstContent = await contentGeneratorService.getGeneratedContent(
+    const firstContent = await contentGeneratorService.getContent(
       parsed.data.contentIds[0],
-      0,
     );
     if (!firstContent) {
       res.status(404).json({ error: 'Content not found' });
@@ -2247,17 +2243,14 @@ router.get(
       res.status(404).json({ error: 'Content not found' });
       return;
     }
-    const canAccess = await hasClientAccess(req.userId, clientId);
+    const canAccess = await hasClientAccess(req.userId!, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this content' });
       return;
     }
 
     // Get configId from content
-    const content = await contentGeneratorService.getGeneratedContent(
-      contentId,
-      0,
-    );
+    const content = await contentGeneratorService.getContent(contentId);
     if (!content) {
       res.status(404).json({ error: 'Content not found' });
       return;
@@ -2292,17 +2285,14 @@ router.delete(
       res.status(404).json({ error: 'Translation not found' });
       return;
     }
-    const canAccess = await hasClientAccess(req.userId, clientId);
+    const canAccess = await hasClientAccess(req.userId!, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this translation' });
       return;
     }
 
     // Get configId from content
-    const content = await contentGeneratorService.getGeneratedContent(
-      translationId,
-      0,
-    );
+    const content = await contentGeneratorService.getContent(translationId);
     if (!content) {
       res.status(404).json({ error: 'Translation not found' });
       return;
@@ -2436,7 +2426,7 @@ router.post(
       res.status(404).json({ error: 'Content not found' });
       return;
     }
-    const canAccess = await hasClientAccess(req.userId, clientId);
+    const canAccess = await hasClientAccess(req.userId!, clientId);
     if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this content' });
       return;
@@ -2461,10 +2451,7 @@ router.post(
     }
 
     // Get configId from content
-    const content = await contentGeneratorService.getGeneratedContent(
-      contentId,
-      0,
-    );
+    const content = await contentGeneratorService.getContent(contentId);
     if (!content) {
       res.status(404).json({ error: 'Content not found' });
       return;
@@ -2519,7 +2506,7 @@ router.post(
         res.status(403).json({ error: `Content ID ${contentId} not found` });
         return;
       }
-      const canAccess = await hasClientAccess(req.userId, clientId);
+      const canAccess = await hasClientAccess(req.userId!, clientId);
       if (!canAccess) {
         res
           .status(403)
@@ -2529,9 +2516,8 @@ router.post(
     }
 
     // Get configId from first content
-    const firstContent = await contentGeneratorService.getGeneratedContent(
+    const firstContent = await contentGeneratorService.getContent(
       parsed.data.contentIds[0],
-      0,
     );
     if (!firstContent) {
       res.status(404).json({ error: 'Content not found' });

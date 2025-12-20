@@ -13,7 +13,6 @@
  */
 
 import { prisma } from '../../../prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
 
 // ============================================================================
 // TYPES
@@ -425,11 +424,15 @@ ${crmData.account.website ? `- Website: ${crmData.account.website}` : ''}`);
 // ============================================================================
 
 function formatCurrency(
-  amount: Decimal | number | string,
+  amount: number | string | { toString(): string },
   currency = 'USD',
 ): string {
   const numAmount =
-    typeof amount === 'string' ? parseFloat(amount) : Number(amount);
+    typeof amount === 'string'
+      ? parseFloat(amount)
+      : typeof amount === 'number'
+        ? amount
+        : parseFloat(amount.toString());
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
