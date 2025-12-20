@@ -63,6 +63,7 @@ router.post('/auth/login', loginRateLimiter, async (req, res) => {
         name: user.name,
         email: user.email,
         timezone: user.timezone,
+        role: user.role,
       },
       token, // For Safari localStorage fallback
     });
@@ -115,6 +116,7 @@ router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
         name: user.name,
         email: user.email,
         timezone: user.timezone,
+        role: user.role,
       },
       token, // For Safari localStorage fallback
     });

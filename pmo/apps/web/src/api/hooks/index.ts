@@ -337,6 +337,8 @@ export {
   useRemoveTenantUser,
   useConfigureTenantModule,
   useUpdateTenantBranding,
+  // Super Admin only
+  useForceDeleteTenant,
 } from './useTenantAdmin';
 
 // ============================================================================

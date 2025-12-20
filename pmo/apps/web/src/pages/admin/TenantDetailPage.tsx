@@ -30,6 +30,7 @@ import {
   Badge,
   Input,
   Modal,
+  useToast,
 } from '../../ui';
 import {
   useTenant,
@@ -41,7 +42,9 @@ import {
   useUpdateTenantUserRole,
   useConfigureTenantModule,
   useUpdateTenantBranding,
+  useForceDeleteTenant,
 } from '../../api/hooks';
+import { useAuth } from '../../auth/AuthContext';
 import type {
   TenantPlan,
   TenantStatus,
@@ -72,6 +75,10 @@ export function TenantDetailPage(): JSX.Element {
   const { tenantId } = useParams<{ tenantId: string }>();
   const navigate = useNavigate();
 
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const { showToast } = useToast();
+
   const { data: tenant, isLoading, error } = useTenant(tenantId);
   const suspendMutation = useSuspendTenant();
   const activateMutation = useActivateTenant();
@@ -81,6 +88,7 @@ export function TenantDetailPage(): JSX.Element {
   const updateRoleMutation = useUpdateTenantUserRole();
   const configureModuleMutation = useConfigureTenantModule();
   const updateBrandingMutation = useUpdateTenantBranding();
+  const forceDeleteMutation = useForceDeleteTenant();
 
   // Modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -89,6 +97,8 @@ export function TenantDetailPage(): JSX.Element {
     userId?: number;
     userName?: string;
   } | null>(null);
+  const [showForceDeleteModal, setShowForceDeleteModal] = useState(false);
+  const [forceDeleteConfirmText, setForceDeleteConfirmText] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState<TenantRole>('MEMBER');
@@ -450,6 +460,16 @@ export function TenantDetailPage(): JSX.Element {
                 >
                   <XCircle className="w-4 h-4 mr-2" />
                   Cancel
+                </Button>
+              )}
+              {/* Super Admin Only: Force Delete */}
+              {isSuperAdmin && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowForceDeleteModal(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Force Delete
                 </Button>
               )}
             </div>
@@ -1292,6 +1312,86 @@ export function TenantDetailPage(): JSX.Element {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Force Delete Modal - Super Admin Only */}
+      <Modal
+        isOpen={showForceDeleteModal}
+        onClose={() => {
+          setShowForceDeleteModal(false);
+          setForceDeleteConfirmText('');
+        }}
+        title="Permanently Delete Tenant"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="text-neutral-700 dark:text-neutral-300 font-medium">
+                This action cannot be undone.
+              </p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                Permanently deleting <strong>{tenant.name}</strong> will
+                immediately remove all associated data including users,
+                accounts, opportunities, activities, and all other records. This
+                bypasses the standard 30-day retention period.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-200">
+              Type <strong>{tenant.slug}</strong> to confirm permanent deletion:
+            </p>
+            <Input
+              type="text"
+              value={forceDeleteConfirmText}
+              onChange={(e) => setForceDeleteConfirmText(e.target.value)}
+              placeholder={tenant.slug}
+              className="mt-2"
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowForceDeleteModal(false);
+              setForceDeleteConfirmText('');
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={forceDeleteConfirmText !== tenant.slug}
+            isLoading={forceDeleteMutation.isPending}
+            onClick={async () => {
+              if (!tenantId || forceDeleteConfirmText !== tenant.slug) return;
+              try {
+                await forceDeleteMutation.mutateAsync({
+                  tenantId,
+                  confirmSlug: tenant.slug,
+                });
+                showToast('Tenant permanently deleted', 'success');
+                navigate('/admin/tenants');
+              } catch (err) {
+                showToast(
+                  err instanceof Error
+                    ? err.message
+                    : 'Failed to delete tenant',
+                  'error',
+                );
+              }
+            }}
+          >
+            Permanently Delete
+          </Button>
+        </div>
       </Modal>
     </div>
   );

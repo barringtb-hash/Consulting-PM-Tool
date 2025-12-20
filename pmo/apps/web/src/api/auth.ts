@@ -2,10 +2,13 @@ import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 import { storeToken, clearStoredToken, getStoredToken } from './token-storage';
 
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+
 export interface AuthUser {
   id: string;
   email: string;
   name?: string;
+  role?: UserRole;
 }
 
 const AUTH_BASE_PATH = buildApiUrl('/auth');

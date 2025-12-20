@@ -1,12 +1,13 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../prisma/client';
+import type { UserRole } from '@prisma/client';
 
 export interface CreateUserInput {
   name: string;
   email: string;
   password: string;
   timezone: string;
-  role?: 'USER' | 'ADMIN';
+  role?: UserRole;
 }
 
 export interface UpdateUserInput {
@@ -14,7 +15,7 @@ export interface UpdateUserInput {
   email?: string;
   password?: string;
   timezone?: string;
-  role?: 'USER' | 'ADMIN';
+  role?: UserRole;
 }
 
 export interface SafeUser {
@@ -22,7 +23,7 @@ export interface SafeUser {
   name: string;
   email: string;
   timezone: string;
-  role: 'USER' | 'ADMIN';
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -173,7 +174,7 @@ function sanitizeUser(user: {
   email: string;
   passwordHash: string;
   timezone: string;
-  role: 'USER' | 'ADMIN';
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }): SafeUser {

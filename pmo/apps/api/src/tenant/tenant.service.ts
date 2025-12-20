@@ -698,6 +698,20 @@ export async function permanentlyDeleteTenant(tenantId: string) {
     // Delete CRM Contacts
     await tx.cRMContact.deleteMany({ where: { tenantId } });
 
+    // Delete Finance module data (order matters for FK constraints)
+    await tx.financeAlert.deleteMany({ where: { tenantId } });
+    await tx.financeInsight.deleteMany({ where: { tenantId } });
+    await tx.accountProfitability.deleteMany({ where: { tenantId } });
+    await tx.expense.deleteMany({ where: { tenantId } });
+    await tx.recurringCost.deleteMany({ where: { tenantId } });
+    await tx.budget.deleteMany({ where: { tenantId } });
+    await tx.expenseCategory.deleteMany({ where: { tenantId } });
+    await tx.financeConfig.deleteMany({ where: { tenantId } });
+
+    // Delete AI monitoring data
+    await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
+    await tx.aIUsageSummary.deleteMany({ where: { tenantId } });
+
     // Delete Accounts
     await tx.account.deleteMany({ where: { tenantId } });
 
@@ -743,15 +757,27 @@ export async function permanentlyDeleteTenant(tenantId: string) {
 
     // IMPORTANT: Do NOT delete audit logs for compliance purposes.
     // Regulatory frameworks (GDPR, SOC 2, HIPAA) often require audit log
-    // retention even after account deletion. The audit logs are anonymized
-    // below by removing user associations but the records are preserved.
-    await tx.auditLog.updateMany({
+    // retention even after account deletion. The audit logs are marked as
+    // belonging to a deleted tenant while preserving all original metadata.
+    const auditLogs = await tx.auditLog.findMany({
       where: { tenantId },
-      data: {
-        // Anonymize but preserve the audit trail
-        metadata: { deletedTenant: true, deletedAt: new Date().toISOString() },
-      },
+      select: { id: true, metadata: true },
     });
+
+    const deletionTimestamp = new Date().toISOString();
+    for (const log of auditLogs) {
+      const existingMetadata = (log.metadata as Record<string, unknown>) || {};
+      await tx.auditLog.update({
+        where: { id: log.id },
+        data: {
+          metadata: {
+            ...existingMetadata,
+            _tenantDeleted: true,
+            _tenantDeletedAt: deletionTimestamp,
+          },
+        },
+      });
+    }
 
     // Delete Health metrics
     await tx.tenantHealthMetrics.deleteMany({ where: { tenantId } });
@@ -852,4 +878,127 @@ export async function getTenantsForDeletion() {
     }
     return false;
   });
+}
+
+/**
+ * Force delete a tenant immediately (Super Admin only).
+ * Bypasses the 30-day retention period for immediate permanent deletion.
+ * This is a destructive operation that cannot be undone.
+ */
+export async function forceDeleteTenant(tenantId: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    throw new Error('Tenant not found');
+  }
+
+  // Delete all tenant data in a transaction (respecting FK constraints)
+  await prisma.$transaction(async (tx) => {
+    // Delete CRM Activities
+    await tx.cRMActivity.deleteMany({ where: { tenantId } });
+
+    // Delete Opportunity-related data
+    await tx.opportunityStageHistory.deleteMany({
+      where: { opportunity: { tenantId } },
+    });
+    await tx.opportunityContact.deleteMany({
+      where: { opportunity: { tenantId } },
+    });
+    await tx.opportunity.deleteMany({ where: { tenantId } });
+
+    // Delete CRM Contacts
+    await tx.cRMContact.deleteMany({ where: { tenantId } });
+
+    // Delete Finance module data (order matters for FK constraints)
+    await tx.financeAlert.deleteMany({ where: { tenantId } });
+    await tx.financeInsight.deleteMany({ where: { tenantId } });
+    await tx.accountProfitability.deleteMany({ where: { tenantId } });
+    await tx.expense.deleteMany({ where: { tenantId } });
+    await tx.recurringCost.deleteMany({ where: { tenantId } });
+    await tx.budget.deleteMany({ where: { tenantId } });
+    await tx.expenseCategory.deleteMany({ where: { tenantId } });
+    await tx.financeConfig.deleteMany({ where: { tenantId } });
+
+    // Delete AI monitoring data
+    await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
+    await tx.aIUsageSummary.deleteMany({ where: { tenantId } });
+
+    // Delete Accounts
+    await tx.account.deleteMany({ where: { tenantId } });
+
+    // Delete Pipeline Stages then Pipelines
+    await tx.salesPipelineStage.deleteMany({
+      where: { pipeline: { tenantId } },
+    });
+    await tx.pipeline.deleteMany({ where: { tenantId } });
+
+    // Delete Notifications
+    await tx.notification.deleteMany({ where: { tenantId } });
+
+    // Delete Integrations and Sync Logs
+    await tx.syncLog.deleteMany({
+      where: { integration: { tenantId } },
+    });
+    await tx.integration.deleteMany({ where: { tenantId } });
+
+    // Delete Usage data
+    await tx.usageEvent.deleteMany({ where: { tenantId } });
+    await tx.usageSummary.deleteMany({ where: { tenantId } });
+
+    // Delete Saved Reports
+    await tx.savedReport.deleteMany({ where: { tenantId } });
+
+    // Delete Legacy PMO data
+    await tx.task.deleteMany({ where: { tenantId } });
+    await tx.milestone.deleteMany({ where: { tenantId } });
+    await tx.meeting.deleteMany({ where: { tenantId } });
+    await tx.project.deleteMany({ where: { tenantId } });
+    await tx.contact.deleteMany({ where: { tenantId } });
+    await tx.client.deleteMany({ where: { tenantId } });
+    await tx.aIAsset.deleteMany({ where: { tenantId } });
+    await tx.marketingContent.deleteMany({ where: { tenantId } });
+    await tx.campaign.deleteMany({ where: { tenantId } });
+    await tx.inboundLead.deleteMany({ where: { tenantId } });
+
+    // Delete Tenant configuration
+    await tx.tenantModule.deleteMany({ where: { tenantId } });
+    await tx.tenantDomain.deleteMany({ where: { tenantId } });
+    await tx.tenantBranding.deleteMany({ where: { tenantId } });
+    await tx.tenantUser.deleteMany({ where: { tenantId } });
+
+    // IMPORTANT: Do NOT delete audit logs for compliance purposes.
+    // Regulatory frameworks (GDPR, SOC 2, HIPAA) often require audit log
+    // retention even after account deletion. The audit logs are marked as
+    // belonging to a deleted tenant while preserving all original metadata.
+    const auditLogs = await tx.auditLog.findMany({
+      where: { tenantId },
+      select: { id: true, metadata: true },
+    });
+
+    const deletionTimestamp = new Date().toISOString();
+    for (const log of auditLogs) {
+      const existingMetadata = (log.metadata as Record<string, unknown>) || {};
+      await tx.auditLog.update({
+        where: { id: log.id },
+        data: {
+          metadata: {
+            ...existingMetadata,
+            _tenantDeleted: true,
+            _tenantDeletedAt: deletionTimestamp,
+            _forceDeleted: true,
+          },
+        },
+      });
+    }
+
+    // Delete Health metrics
+    await tx.tenantHealthMetrics.deleteMany({ where: { tenantId } });
+
+    // Finally, delete the tenant
+    await tx.tenant.delete({ where: { id: tenantId } });
+  });
+
+  return { deleted: true, tenantId, forceDeleted: true };
 }

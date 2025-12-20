@@ -143,6 +143,7 @@ enum MeetingCategory {
 enum UserRole {
   USER
   ADMIN
+  SUPER_ADMIN
 }
 
 enum ContentType {
