@@ -532,7 +532,7 @@ export async function enhancedComplianceCheck(
   // First, run rule-based check
   const ruleBasedResult = checkContentCompliance({ industry, content });
 
-  const openAIKey = env.OPENAI_API_KEY;
+  const openAIKey = env.openaiApiKey;
 
   // If no API key, return rule-based results only
   if (!openAIKey) {

@@ -347,7 +347,7 @@ async function generateTranslation(
   },
   input: TranslateContentInput,
 ): Promise<TranslatedContentParts> {
-  const openAIKey = env.OPENAI_API_KEY;
+  const openAIKey = env.openaiApiKey;
 
   // If no API key, return placeholder translations
   if (!openAIKey) {
@@ -424,8 +424,8 @@ Return the translation in this exact JSON format:
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    // Avoid logging response body to prevent leaking sensitive information
+    throw new Error(`OpenAI API error: ${response.status}`);
   }
 
   const data = (await response.json()) as {

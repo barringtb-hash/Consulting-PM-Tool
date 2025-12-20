@@ -2124,7 +2124,8 @@ router.post(
       res.status(404).json({ error: 'Content not found' });
       return;
     }
-    if (!hasClientAccess(req.user!, clientId)) {
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this content' });
       return;
     }
@@ -2194,7 +2195,12 @@ router.post(
     // Verify access to all contents
     for (const contentId of parsed.data.contentIds) {
       const clientId = await getClientIdFromGeneratedContent(contentId);
-      if (!clientId || !hasClientAccess(req.user!, clientId)) {
+      if (!clientId) {
+        res.status(403).json({ error: `Content ID ${contentId} not found` });
+        return;
+      }
+      const canAccess = await hasClientAccess(req.userId, clientId);
+      if (!canAccess) {
         res
           .status(403)
           .json({ error: `Access denied to content ID ${contentId}` });
@@ -2241,7 +2247,8 @@ router.get(
       res.status(404).json({ error: 'Content not found' });
       return;
     }
-    if (!hasClientAccess(req.user!, clientId)) {
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this content' });
       return;
     }
@@ -2285,7 +2292,8 @@ router.delete(
       res.status(404).json({ error: 'Translation not found' });
       return;
     }
-    if (!hasClientAccess(req.user!, clientId)) {
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this translation' });
       return;
     }
@@ -2428,7 +2436,8 @@ router.post(
       res.status(404).json({ error: 'Content not found' });
       return;
     }
-    if (!hasClientAccess(req.user!, clientId)) {
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
       res.status(403).json({ error: 'Access denied to this content' });
       return;
     }
@@ -2506,7 +2515,12 @@ router.post(
     // Verify access to all contents
     for (const contentId of parsed.data.contentIds) {
       const clientId = await getClientIdFromGeneratedContent(contentId);
-      if (!clientId || !hasClientAccess(req.user!, clientId)) {
+      if (!clientId) {
+        res.status(403).json({ error: `Content ID ${contentId} not found` });
+        return;
+      }
+      const canAccess = await hasClientAccess(req.userId, clientId);
+      if (!canAccess) {
         res
           .status(403)
           .json({ error: `Access denied to content ID ${contentId}` });
