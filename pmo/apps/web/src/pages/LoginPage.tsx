@@ -54,6 +54,17 @@ function LoginPage(): JSX.Element {
     }
   };
 
+  // Show loading state while checking authentication status.
+  // This prevents password managers from auto-filling and submitting
+  // before we know if the user is already authenticated.
+  if (status === 'loading') {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 px-4 py-12 transition-colors">
+        <div className="text-neutral-500 dark:text-neutral-400">Loading...</div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 px-4 py-12 transition-colors">
       <section className="w-full max-w-md">
