@@ -43,7 +43,10 @@ const campaignListQuerySchema = z.object({
   clientId: z.coerce.number().optional(),
   projectId: z.coerce.number().optional(),
   status: z.string().optional(),
-  archived: z.coerce.boolean().optional(),
+  archived: z
+    .string()
+    .optional()
+    .transform((val) => (val === undefined ? undefined : val === 'true')),
 });
 
 /**

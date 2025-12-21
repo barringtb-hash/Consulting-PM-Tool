@@ -68,7 +68,10 @@ export const listAccountsSchema = z.object({
   type: z.string().max(20).optional(),
   industry: z.string().max(MAX_INDUSTRY_LENGTH).optional(),
   ownerId: z.coerce.number().int().positive().optional(),
-  archived: z.coerce.boolean().optional(),
+  archived: z
+    .string()
+    .optional()
+    .transform((val) => (val === undefined ? undefined : val === 'true')),
   healthScoreMin: z.coerce.number().min(0).max(100).optional(),
   healthScoreMax: z.coerce.number().min(0).max(100).optional(),
   search: z.string().max(MAX_SEARCH_LENGTH).optional(),
