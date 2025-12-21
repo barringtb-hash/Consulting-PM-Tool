@@ -292,7 +292,9 @@ export default function RecurringCostsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recurring Costs</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Recurring Costs
+          </h1>
           <p className="text-gray-500 dark:text-gray-400">
             Manage subscriptions, licenses, and recurring expenses
           </p>
@@ -307,19 +309,25 @@ export default function RecurringCostsPage() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Active Costs</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Active Costs
+            </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white">
               {stats.activeCosts}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Total</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Monthly Total
+            </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white">
               {formatCurrency(stats.monthlyTotal)}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Annual Total</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Annual Total
+            </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white">
               {formatCurrency(stats.annualTotal)}
             </p>
@@ -327,7 +335,9 @@ export default function RecurringCostsPage() {
           <Card
             className={`p-4 ${stats.upcomingRenewalsCount > 0 ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-900/20' : ''}`}
           >
-            <p className="text-sm text-gray-500 dark:text-gray-400">Due in 7 Days</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Due in 7 Days
+            </p>
             <p
               className={`text-2xl font-semibold ${stats.upcomingRenewalsCount > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}`}
             >
@@ -449,7 +459,9 @@ export default function RecurringCostsPage() {
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Loading recurring costs...</p>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              Loading recurring costs...
+            </p>
           </div>
         ) : error ? (
           <div className="p-8 text-center text-red-600 dark:text-red-400">
@@ -458,7 +470,9 @@ export default function RecurringCostsPage() {
         ) : data?.costs.length === 0 ? (
           <div className="p-8 text-center">
             <RefreshCw className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
-            <p className="mt-2 text-gray-500 dark:text-gray-400">No recurring costs found</p>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              No recurring costs found
+            </p>
             <Button
               as={Link}
               to="/finance/recurring-costs/new"
@@ -498,7 +512,10 @@ export default function RecurringCostsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {data?.costs.map((cost) => (
-                  <tr key={cost.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <tr
+                    key={cost.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
                     <td className="px-6 py-4">
                       <Link
                         to={`/finance/recurring-costs/${cost.id}`}
