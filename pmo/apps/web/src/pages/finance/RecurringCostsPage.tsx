@@ -95,10 +95,12 @@ function StatusBadge({ status }: { status: RecurringCostStatus }) {
   const Icon = config.icon;
 
   const colorClasses: Record<string, string> = {
-    gray: 'bg-gray-100 text-gray-700',
-    yellow: 'bg-yellow-100 text-yellow-700',
-    green: 'bg-green-100 text-green-700',
-    red: 'bg-red-100 text-red-700',
+    gray: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    yellow:
+      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+    green:
+      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   };
 
   return (
@@ -116,7 +118,7 @@ function RenewalBadge({ nextDueDate }: { nextDueDate: string }) {
 
   if (daysUntil < 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
         <AlertCircle className="h-3 w-3" />
         Overdue
       </span>
@@ -125,7 +127,7 @@ function RenewalBadge({ nextDueDate }: { nextDueDate: string }) {
 
   if (daysUntil <= 7) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
         <Calendar className="h-3 w-3" />
         Due in {daysUntil} days
       </span>
@@ -134,7 +136,7 @@ function RenewalBadge({ nextDueDate }: { nextDueDate: string }) {
 
   if (daysUntil <= 30) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
         <Calendar className="h-3 w-3" />
         Due in {daysUntil} days
       </span>
