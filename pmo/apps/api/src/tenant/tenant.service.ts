@@ -22,6 +22,42 @@ import type {
 import { randomBytes } from 'crypto';
 
 /**
+ * Check if a Prisma error is due to a missing table (typically from pending migration)
+ * Uses Prisma error code P2021 for reliable detection instead of string matching
+ */
+function isMissingTableError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2021'
+  );
+}
+
+/**
+ * Helper to delete finance module data for a tenant.
+ * Wrapped in try-catch to handle cases where finance tables may not exist.
+ */
+async function deleteFinanceModuleData(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+): Promise<void> {
+  try {
+    await tx.financeAlert.deleteMany({ where: { tenantId } });
+    await tx.financeInsight.deleteMany({ where: { tenantId } });
+    await tx.accountProfitability.deleteMany({ where: { tenantId } });
+    await tx.expense.deleteMany({ where: { tenantId } });
+    await tx.recurringCost.deleteMany({ where: { tenantId } });
+    await tx.budget.deleteMany({ where: { tenantId } });
+    await tx.expenseCategory.deleteMany({ where: { tenantId } });
+    await tx.financeConfig.deleteMany({ where: { tenantId } });
+  } catch (error) {
+    // Finance tables may not exist in all environments - skip if table is missing
+    if (!isMissingTableError(error)) {
+      throw error;
+    }
+  }
+}
+
+/**
  * Generate a URL-safe slug from a string.
  */
 function generateSlug(name: string): string {
@@ -699,24 +735,7 @@ export async function permanentlyDeleteTenant(tenantId: string) {
     await tx.cRMContact.deleteMany({ where: { tenantId } });
 
     // Delete Finance module data (order matters for FK constraints)
-    // Wrapped in try-catch to handle cases where finance tables may not exist
-    try {
-      await tx.financeAlert.deleteMany({ where: { tenantId } });
-      await tx.financeInsight.deleteMany({ where: { tenantId } });
-      await tx.accountProfitability.deleteMany({ where: { tenantId } });
-      await tx.expense.deleteMany({ where: { tenantId } });
-      await tx.recurringCost.deleteMany({ where: { tenantId } });
-      await tx.budget.deleteMany({ where: { tenantId } });
-      await tx.expenseCategory.deleteMany({ where: { tenantId } });
-      await tx.financeConfig.deleteMany({ where: { tenantId } });
-    } catch (error) {
-      // Finance tables may not exist in all environments - skip if not found
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      if (!errorMessage.includes('does not exist')) {
-        throw error;
-      }
-    }
+    await deleteFinanceModuleData(tx, tenantId);
 
     // Delete AI monitoring data
     await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
@@ -922,24 +941,7 @@ export async function forceDeleteTenant(tenantId: string) {
     await tx.cRMContact.deleteMany({ where: { tenantId } });
 
     // Delete Finance module data (order matters for FK constraints)
-    // Wrapped in try-catch to handle cases where finance tables may not exist
-    try {
-      await tx.financeAlert.deleteMany({ where: { tenantId } });
-      await tx.financeInsight.deleteMany({ where: { tenantId } });
-      await tx.accountProfitability.deleteMany({ where: { tenantId } });
-      await tx.expense.deleteMany({ where: { tenantId } });
-      await tx.recurringCost.deleteMany({ where: { tenantId } });
-      await tx.budget.deleteMany({ where: { tenantId } });
-      await tx.expenseCategory.deleteMany({ where: { tenantId } });
-      await tx.financeConfig.deleteMany({ where: { tenantId } });
-    } catch (error) {
-      // Finance tables may not exist in all environments - skip if not found
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      if (!errorMessage.includes('does not exist')) {
-        throw error;
-      }
-    }
+    await deleteFinanceModuleData(tx, tenantId);
 
     // Delete AI monitoring data
     await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
