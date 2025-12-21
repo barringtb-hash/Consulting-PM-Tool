@@ -15,7 +15,7 @@ import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
 import { Badge } from '../../ui/Badge';
 import { useToast } from '../../ui/Toast';
-import { useAccounts } from '../../api/hooks/crm';
+import { useClients } from '../../api/hooks/clients';
 import { BulkJobPanel } from '../../components/product-descriptions/BulkJobPanel';
 import {
   Plus,
@@ -256,7 +256,7 @@ function ProductDescriptionsPage(): JSX.Element {
   const queryClient = useQueryClient();
 
   // Queries
-  const accountsQuery = useAccounts({ archived: false });
+  const clientsQuery = useClients({ includeArchived: false });
   const configsQuery = useQuery({
     queryKey: ['product-desc-configs'],
     queryFn: fetchConfigs,
@@ -270,10 +270,10 @@ function ProductDescriptionsPage(): JSX.Element {
 
   // Redirect to login on 401 errors from any query
   useRedirectOnUnauthorized(configsQuery.error);
-  useRedirectOnUnauthorized(accountsQuery.error);
+  useRedirectOnUnauthorized(clientsQuery.error);
   useRedirectOnUnauthorized(productsQuery.error);
 
-  const accounts = accountsQuery.data?.data ?? [];
+  const clients = clientsQuery.data ?? [];
   const products = productsQuery.data ?? [];
 
   const selectedConfig = useMemo(() => {
@@ -872,12 +872,12 @@ function ProductDescriptionsPage(): JSX.Element {
               className="flex flex-col flex-1 overflow-hidden"
             >
               <div className="p-4 space-y-5 overflow-y-auto flex-1">
-                {/* Account Selection */}
-                <Select label="Account" name="clientId" required>
-                  <option value="">Select an account...</option>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
+                {/* Client Selection */}
+                <Select label="Client" name="clientId" required>
+                  <option value="">Select a client...</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
                     </option>
                   ))}
                 </Select>
