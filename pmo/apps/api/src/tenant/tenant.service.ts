@@ -27,29 +27,18 @@ type TransactionClient = Parameters<
 >[0];
 
 /**
- * Check which tables exist in the database.
+ * Check which tables exist in the database from a given list.
  * Returns a Set of lowercase table names that exist.
  * PostgreSQL stores unquoted identifiers in lowercase in pg_tables.
  */
-async function getExistingFinanceTables(
+async function getExistingTables(
   tx: TransactionClient,
+  tableNames: string[],
 ): Promise<Set<string>> {
-  // Query for finance-related tables using lowercase names (how PostgreSQL stores them)
-  const financeTableNames = [
-    'financealert',
-    'financeinsight',
-    'accountprofitability',
-    'expense',
-    'recurringcost',
-    'budget',
-    'expensecategory',
-    'financeconfig',
-  ];
-
   const result = await tx.$queryRaw<Array<{ tablename: string }>>`
     SELECT tablename FROM pg_tables
     WHERE schemaname = 'public'
-    AND tablename = ANY(${financeTableNames})
+    AND tablename = ANY(${tableNames})
   `;
   return new Set(result.map((r) => r.tablename));
 }
@@ -63,34 +52,65 @@ async function deleteFinanceModuleData(
   tx: TransactionClient,
   tenantId: string,
 ): Promise<void> {
-  // Check which finance tables actually exist in the database
-  // PostgreSQL stores table names in lowercase
-  const existingTables = await getExistingFinanceTables(tx);
+  // Prisma creates tables with quoted PascalCase names, so query with exact casing
+  const financeTableNames = [
+    'FinanceAlert',
+    'FinanceInsight',
+    'AccountProfitability',
+    'Expense',
+    'RecurringCost',
+    'Budget',
+    'ExpenseCategory',
+    'FinanceConfig',
+  ];
+
+  const existingTables = await getExistingTables(tx, financeTableNames);
 
   // Only delete from tables that exist (order matters for FK constraints)
-  if (existingTables.has('financealert')) {
+  if (existingTables.has('FinanceAlert')) {
     await tx.financeAlert.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('financeinsight')) {
+  if (existingTables.has('FinanceInsight')) {
     await tx.financeInsight.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('accountprofitability')) {
+  if (existingTables.has('AccountProfitability')) {
     await tx.accountProfitability.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('expense')) {
+  if (existingTables.has('Expense')) {
     await tx.expense.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('recurringcost')) {
+  if (existingTables.has('RecurringCost')) {
     await tx.recurringCost.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('budget')) {
+  if (existingTables.has('Budget')) {
     await tx.budget.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('expensecategory')) {
+  if (existingTables.has('ExpenseCategory')) {
     await tx.expenseCategory.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('financeconfig')) {
+  if (existingTables.has('FinanceConfig')) {
     await tx.financeConfig.deleteMany({ where: { tenantId } });
+  }
+}
+
+/**
+ * Helper to delete AI monitoring data for a tenant.
+ * Checks which tables exist before attempting deletion to avoid
+ * transaction abort errors in PostgreSQL.
+ */
+async function deleteAIMonitoringData(
+  tx: TransactionClient,
+  tenantId: string,
+): Promise<void> {
+  // Prisma creates tables with quoted PascalCase names
+  const aiTableNames = ['AIUsageEvent', 'AIUsageSummary'];
+  const existingTables = await getExistingTables(tx, aiTableNames);
+
+  if (existingTables.has('AIUsageEvent')) {
+    await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('AIUsageSummary')) {
+    await tx.aIUsageSummary.deleteMany({ where: { tenantId } });
   }
 }
 
@@ -775,8 +795,7 @@ export async function permanentlyDeleteTenant(tenantId: string) {
     await deleteFinanceModuleData(tx, tenantId);
 
     // Delete AI monitoring data
-    await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
-    await tx.aIUsageSummary.deleteMany({ where: { tenantId } });
+    await deleteAIMonitoringData(tx, tenantId);
 
     // Delete Accounts
     await tx.account.deleteMany({ where: { tenantId } });
@@ -981,8 +1000,7 @@ export async function forceDeleteTenant(tenantId: string) {
     await deleteFinanceModuleData(tx, tenantId);
 
     // Delete AI monitoring data
-    await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
-    await tx.aIUsageSummary.deleteMany({ where: { tenantId } });
+    await deleteAIMonitoringData(tx, tenantId);
 
     // Delete Accounts
     await tx.account.deleteMany({ where: { tenantId } });
