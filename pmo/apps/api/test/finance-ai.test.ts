@@ -314,6 +314,7 @@ describe('Finance AI Services', () => {
         expect(result.forecasts).toEqual([]);
         expect(result.summary.totalPredicted).toBe(0);
         expect(result.summary.trend).toBe('STABLE');
+        expect(result.summary.trendPercentage).toBe(0);
         expect(result.summary.confidence).toBe(0);
         expect(result.byCategory).toEqual([]);
       });
