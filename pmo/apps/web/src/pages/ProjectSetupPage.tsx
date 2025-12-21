@@ -196,7 +196,7 @@ function ProjectSetupPage(): JSX.Element {
       description: '',
     };
   });
-  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [accountSearchTerm, setAccountSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useRedirectOnUnauthorized(accountsQuery.error);
@@ -217,23 +217,23 @@ function ProjectSetupPage(): JSX.Element {
     [formData.templateId],
   );
 
-  const selectedClientData = useMemo(
+  const selectedAccountData = useMemo(
     () => accountsQuery.data?.data?.find((c) => c.id === formData.clientId),
     [accountsQuery.data?.data, formData.clientId],
   );
 
-  const filteredClients = useMemo(() => {
+  const filteredAccounts = useMemo(() => {
     if (!accountsQuery.data?.data) return [];
-    if (!clientSearchTerm) return accountsQuery.data.data;
+    if (!accountSearchTerm) return accountsQuery.data.data;
 
-    const term = clientSearchTerm.toLowerCase();
-    return accountsQuery.data.data.filter((client) =>
-      client.name.toLowerCase().includes(term),
+    const term = accountSearchTerm.toLowerCase();
+    return accountsQuery.data.data.filter((account) =>
+      account.name.toLowerCase().includes(term),
     );
-  }, [accountsQuery.data?.data, clientSearchTerm]);
+  }, [accountsQuery.data?.data, accountSearchTerm]);
 
   const stepConfig = [
-    { key: 'client' as const, label: 'Choose Client', number: 1 },
+    { key: 'client' as const, label: 'Choose Account', number: 1 },
     { key: 'template' as const, label: 'Choose Template', number: 2 },
     { key: 'details' as const, label: 'Project Details', number: 3 },
     { key: 'preview' as const, label: 'Review & Create', number: 4 },
@@ -246,7 +246,7 @@ function ProjectSetupPage(): JSX.Element {
 
     if (step === 'client') {
       if (!formData.clientId) {
-        setError('Please select a client to continue');
+        setError('Please select an account to continue');
         return;
       }
       const client = accountsQuery.data?.data?.find(
@@ -288,14 +288,14 @@ function ProjectSetupPage(): JSX.Element {
         // Auto-fill project name if empty
         name:
           prev.name ||
-          `${selectedClientData?.name || 'Client'} - ${template.name}`,
+          `${selectedAccountData?.name || 'Account'} - ${template.name}`,
       }));
     }
   };
 
   const handleCreateProject = async () => {
     if (!formData.clientId) {
-      setError('Client is required');
+      setError('Account is required');
       return;
     }
 
@@ -409,58 +409,58 @@ function ProjectSetupPage(): JSX.Element {
         {step === 'client' && (
           <Card>
             <CardHeader>
-              <CardTitle>Select a Client</CardTitle>
+              <CardTitle>Select an Account</CardTitle>
             </CardHeader>
             <CardBody className="space-y-4">
               <p className="text-neutral-600 dark:text-neutral-400">
-                Choose which client this project belongs to. You can also{' '}
+                Choose which account this project belongs to. You can also{' '}
                 <Link
-                  to="/client-intake"
+                  to="/crm/accounts"
                   className="text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  create a new client
+                  create a new account
                 </Link>{' '}
                 if needed.
               </p>
 
               {accountsQuery.isLoading && (
                 <p className="text-neutral-600 dark:text-neutral-400">
-                  Loading clients…
+                  Loading accounts…
                 </p>
               )}
 
               {accountsQuery.error && (
-                <p className="text-danger-600">Unable to load clients.</p>
+                <p className="text-danger-600">Unable to load accounts.</p>
               )}
 
               {accountsQuery.data?.data && (
                 <>
                   <div>
-                    <label htmlFor="client-search" className="sr-only">
-                      Search clients
+                    <label htmlFor="account-search" className="sr-only">
+                      Search accounts
                     </label>
                     <Input
-                      id="client-search"
+                      id="account-search"
                       type="text"
-                      placeholder="Search clients by name..."
-                      value={clientSearchTerm}
-                      onChange={(e) => setClientSearchTerm(e.target.value)}
+                      placeholder="Search accounts by name..."
+                      value={accountSearchTerm}
+                      onChange={(e) => setAccountSearchTerm(e.target.value)}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
-                    {filteredClients.map((client) => (
+                    {filteredAccounts.map((account) => (
                       <button
-                        key={client.id}
+                        key={account.id}
                         type="button"
                         onClick={() =>
                           setFormData((prev) => ({
                             ...prev,
-                            clientId: client.id,
+                            clientId: account.id,
                           }))
                         }
                         className={`p-4 text-left border-2 rounded-lg transition-all ${
-                          formData.clientId === client.id
+                          formData.clientId === account.id
                             ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
                             : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600'
                         }`}
@@ -468,15 +468,15 @@ function ProjectSetupPage(): JSX.Element {
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                              {client.name}
+                              {account.name}
                             </h3>
-                            {client.industry && (
+                            {account.industry && (
                               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                                {client.industry}
+                                {account.industry}
                               </p>
                             )}
                           </div>
-                          {formData.clientId === client.id && (
+                          {formData.clientId === account.id && (
                             <Check className="w-5 h-5 text-primary-600 flex-shrink-0" />
                           )}
                         </div>
@@ -484,9 +484,9 @@ function ProjectSetupPage(): JSX.Element {
                     ))}
                   </div>
 
-                  {filteredClients.length === 0 && (
+                  {filteredAccounts.length === 0 && (
                     <p className="text-neutral-600 dark:text-neutral-400 text-center py-4">
-                      No clients found matching your search.
+                      No accounts found matching your search.
                     </p>
                   )}
                 </>
@@ -718,10 +718,10 @@ function ProjectSetupPage(): JSX.Element {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
-                      Client
+                      Account
                     </h4>
                     <p className="text-neutral-900 dark:text-neutral-100">
-                      {selectedClientData?.name || 'Not selected'}
+                      {selectedAccountData?.name || 'Not selected'}
                     </p>
                   </div>
 
