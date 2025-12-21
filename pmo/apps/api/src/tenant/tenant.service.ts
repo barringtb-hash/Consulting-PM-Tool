@@ -21,6 +21,11 @@ import type {
 } from './tenant.types';
 import { randomBytes } from 'crypto';
 
+// Type for the transaction client that works with extended Prisma clients
+type TransactionClient = Parameters<
+  Parameters<typeof prisma.$transaction>[0]
+>[0];
+
 /**
  * Check if a Prisma error is due to a missing table (typically from pending migration)
  * Uses Prisma error code P2021 for reliable detection instead of string matching
@@ -37,7 +42,7 @@ function isMissingTableError(error: unknown): boolean {
  * Wrapped in try-catch to handle cases where finance tables may not exist.
  */
 async function deleteFinanceModuleData(
-  tx: Prisma.TransactionClient,
+  tx: TransactionClient,
   tenantId: string,
 ): Promise<void> {
   try {
