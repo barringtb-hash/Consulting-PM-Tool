@@ -26,39 +26,70 @@ type TransactionClient = Parameters<
   Parameters<typeof prisma.$transaction>[0]
 >[0];
 
+// Finance table names that may not exist in all environments
+const FINANCE_TABLES = [
+  'FinanceAlert',
+  'FinanceInsight',
+  'AccountProfitability',
+  'Expense',
+  'RecurringCost',
+  'Budget',
+  'ExpenseCategory',
+  'FinanceConfig',
+] as const;
+
 /**
- * Check if a Prisma error is due to a missing table (typically from pending migration)
- * Uses Prisma error code P2021 for reliable detection instead of string matching
+ * Check which tables exist in the database.
+ * Returns a Set of table names that exist.
  */
-function isMissingTableError(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2021'
-  );
+async function getExistingTables(
+  tx: TransactionClient,
+  tableNames: readonly string[],
+): Promise<Set<string>> {
+  const result = await tx.$queryRaw<Array<{ tablename: string }>>`
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public'
+    AND tablename = ANY(${tableNames.map((t) => t)})
+  `;
+  return new Set(result.map((r) => r.tablename));
 }
 
 /**
  * Helper to delete finance module data for a tenant.
- * Wrapped in try-catch to handle cases where finance tables may not exist.
+ * Checks which tables exist before attempting deletion to avoid
+ * transaction abort errors in PostgreSQL.
  */
 async function deleteFinanceModuleData(
   tx: TransactionClient,
   tenantId: string,
 ): Promise<void> {
-  try {
+  // Check which finance tables actually exist in the database
+  const existingTables = await getExistingTables(tx, FINANCE_TABLES);
+
+  // Only delete from tables that exist (order matters for FK constraints)
+  if (existingTables.has('FinanceAlert')) {
     await tx.financeAlert.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('FinanceInsight')) {
     await tx.financeInsight.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('AccountProfitability')) {
     await tx.accountProfitability.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('Expense')) {
     await tx.expense.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('RecurringCost')) {
     await tx.recurringCost.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('Budget')) {
     await tx.budget.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('ExpenseCategory')) {
     await tx.expenseCategory.deleteMany({ where: { tenantId } });
+  }
+  if (existingTables.has('FinanceConfig')) {
     await tx.financeConfig.deleteMany({ where: { tenantId } });
-  } catch (error) {
-    // Finance tables may not exist in all environments - skip if table is missing
-    if (!isMissingTableError(error)) {
-      throw error;
-    }
   }
 }
 
