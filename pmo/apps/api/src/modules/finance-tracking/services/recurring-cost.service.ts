@@ -286,6 +286,7 @@ export async function createRecurringCost(
 export async function updateRecurringCost(
   id: number,
   input: UpdateRecurringCostInput,
+  userId: number,
 ): Promise<RecurringCostWithRelations> {
   const tenantId = getTenantId();
 
@@ -295,6 +296,11 @@ export async function updateRecurringCost(
 
   if (!existing) {
     throw new Error('Recurring cost not found');
+  }
+
+  // Only owner can update
+  if (existing.ownerId !== userId) {
+    throw new Error('Only the recurring cost owner can update it');
   }
 
   // Validate category if being changed
@@ -348,7 +354,10 @@ export async function updateRecurringCost(
   } as unknown as RecurringCostWithRelations;
 }
 
-export async function deleteRecurringCost(id: number): Promise<void> {
+export async function deleteRecurringCost(
+  id: number,
+  userId: number,
+): Promise<void> {
   const tenantId = getTenantId();
 
   const existing = await prisma.recurringCost.findFirst({
@@ -358,6 +367,11 @@ export async function deleteRecurringCost(id: number): Promise<void> {
 
   if (!existing) {
     throw new Error('Recurring cost not found');
+  }
+
+  // Only owner can delete
+  if (existing.ownerId !== userId) {
+    throw new Error('Only the recurring cost owner can delete it');
   }
 
   if (existing._count.expenses > 0) {
