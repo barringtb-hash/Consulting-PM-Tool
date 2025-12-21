@@ -3,8 +3,12 @@
  *
  * Provides utilities for checking if a user has access to a specific client's data.
  * A user has access to a client if:
- * 1. They are an admin, OR
- * 2. They own at least one project for that client
+ * 1. They are authenticated, AND
+ * 2. The client exists
+ *
+ * Note: Authorization was simplified to allow all authenticated users to access
+ * any client's data, matching the frontend behavior where all clients are visible
+ * to all users. This is appropriate for consulting teams where collaboration is key.
  */
 
 import { prisma } from '../prisma/client';
@@ -41,30 +45,37 @@ function isMissingColumnError(error: unknown, columnName: string): boolean {
  * @param userId - The authenticated user's ID
  * @param clientId - The client ID to check access for
  * @returns true if user has access, false otherwise
+ *
+ * Access is granted if:
+ * 1. User is authenticated and client exists, OR
+ * 2. User is an admin (always has access)
+ *
+ * Note: This was updated to be more permissive because the frontend
+ * displays all clients to all authenticated users, so restricting
+ * AI tool configuration to only project owners was too restrictive.
  */
 export async function hasClientAccess(
   userId: number,
   clientId: number,
 ): Promise<boolean> {
-  // First check if user is an admin
+  // Verify user exists and is authenticated
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: { id: true },
   });
 
-  if (user?.role === 'ADMIN') {
-    return true;
+  if (!user) {
+    return false;
   }
 
-  // Check if user owns any project for this client
-  const projectCount = await prisma.project.count({
-    where: {
-      clientId,
-      ownerId: userId,
-    },
+  // Verify client exists
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { id: true },
   });
 
-  return projectCount > 0;
+  // Grant access if both user and client exist
+  return client !== null;
 }
 
 /**
