@@ -538,16 +538,19 @@ export async function addUserToTenantByAdmin(
     throw new Error('Tenant not found');
   }
 
-  // If setting SUPER_ADMIN role, verify the requesting user is a Super Admin
-  if (input.userRole === 'SUPER_ADMIN' && requestingUserId) {
+  // Check requesting user's role for permission checks
+  let isCallerSuperAdmin = false;
+  if (requestingUserId) {
     const requestingUser = await prisma.user.findUnique({
       where: { id: requestingUserId },
       select: { role: true },
     });
+    isCallerSuperAdmin = requestingUser?.role === 'SUPER_ADMIN';
+  }
 
-    if (requestingUser?.role !== 'SUPER_ADMIN') {
-      throw new Error('Only Super Admins can assign the Super Admin role');
-    }
+  // If setting SUPER_ADMIN role, verify the requesting user is a Super Admin
+  if (input.userRole === 'SUPER_ADMIN' && !isCallerSuperAdmin) {
+    throw new Error('Only Super Admins can assign the Super Admin role');
   }
 
   // Check if user exists
@@ -573,6 +576,10 @@ export async function addUserToTenantByAdmin(
       },
     });
   } else if (input.userRole && input.userRole !== user.role) {
+    // Only Super Admins can modify Super Admin accounts
+    if (user.role === 'SUPER_ADMIN' && !isCallerSuperAdmin) {
+      throw new Error('Only Super Admins can modify Super Admin accounts');
+    }
     // Update existing user's global role if specified and different
     user = await prisma.user.update({
       where: { id: user.id },

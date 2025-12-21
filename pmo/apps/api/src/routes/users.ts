@@ -149,16 +149,34 @@ router.put(
         return;
       }
 
-      // Only Super Admins can promote users to Super Admin
-      if (validation.data.role === 'SUPER_ADMIN') {
-        const currentUser = await prisma.user.findUnique({
-          where: { id: req.userId },
-          select: { role: true },
-        });
+      // Check permissions for Super Admin role changes
+      if (validation.data.role) {
+        const [currentUser, targetUser] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: req.userId },
+            select: { role: true },
+          }),
+          prisma.user.findUnique({
+            where: { id },
+            select: { role: true },
+          }),
+        ]);
 
-        if (currentUser?.role !== 'SUPER_ADMIN') {
+        const isCallerSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+        const isTargetSuperAdmin = targetUser?.role === 'SUPER_ADMIN';
+
+        // Only Super Admins can promote users to Super Admin
+        if (validation.data.role === 'SUPER_ADMIN' && !isCallerSuperAdmin) {
           res.status(403).json({
             error: 'Only Super Admins can promote users to Super Admin',
+          });
+          return;
+        }
+
+        // Only Super Admins can demote other Super Admins
+        if (isTargetSuperAdmin && !isCallerSuperAdmin) {
+          res.status(403).json({
+            error: 'Only Super Admins can modify Super Admin accounts',
           });
           return;
         }
