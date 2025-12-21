@@ -304,14 +304,19 @@ describe('Finance AI Services', () => {
 
   describe('Forecasting Service', () => {
     describe('generateSpendingForecast', () => {
-      it('should throw error when insufficient data', async () => {
+      it('should return empty forecast when insufficient data', async () => {
         (prisma.expense.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
           [],
         );
 
-        await expect(
-          forecastingService.generateSpendingForecast({}),
-        ).rejects.toThrow('Insufficient historical data');
+        const result = await forecastingService.generateSpendingForecast({});
+
+        expect(result.forecasts).toEqual([]);
+        expect(result.summary.totalPredicted).toBe(0);
+        expect(result.summary.trend).toBe('STABLE');
+        expect(result.summary.trendPercentage).toBe(0);
+        expect(result.summary.confidence).toBe(0);
+        expect(result.byCategory).toEqual([]);
       });
 
       it('should generate forecast with enough data', async () => {
