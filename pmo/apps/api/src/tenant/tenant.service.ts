@@ -26,30 +26,30 @@ type TransactionClient = Parameters<
   Parameters<typeof prisma.$transaction>[0]
 >[0];
 
-// Finance table names that may not exist in all environments
-const FINANCE_TABLES = [
-  'FinanceAlert',
-  'FinanceInsight',
-  'AccountProfitability',
-  'Expense',
-  'RecurringCost',
-  'Budget',
-  'ExpenseCategory',
-  'FinanceConfig',
-] as const;
-
 /**
  * Check which tables exist in the database.
- * Returns a Set of table names that exist.
+ * Returns a Set of lowercase table names that exist.
+ * PostgreSQL stores unquoted identifiers in lowercase in pg_tables.
  */
-async function getExistingTables(
+async function getExistingFinanceTables(
   tx: TransactionClient,
-  tableNames: readonly string[],
 ): Promise<Set<string>> {
+  // Query for finance-related tables using lowercase names (how PostgreSQL stores them)
+  const financeTableNames = [
+    'financealert',
+    'financeinsight',
+    'accountprofitability',
+    'expense',
+    'recurringcost',
+    'budget',
+    'expensecategory',
+    'financeconfig',
+  ];
+
   const result = await tx.$queryRaw<Array<{ tablename: string }>>`
     SELECT tablename FROM pg_tables
     WHERE schemaname = 'public'
-    AND tablename = ANY(${tableNames.map((t) => t)})
+    AND tablename = ANY(${financeTableNames})
   `;
   return new Set(result.map((r) => r.tablename));
 }
@@ -64,31 +64,32 @@ async function deleteFinanceModuleData(
   tenantId: string,
 ): Promise<void> {
   // Check which finance tables actually exist in the database
-  const existingTables = await getExistingTables(tx, FINANCE_TABLES);
+  // PostgreSQL stores table names in lowercase
+  const existingTables = await getExistingFinanceTables(tx);
 
   // Only delete from tables that exist (order matters for FK constraints)
-  if (existingTables.has('FinanceAlert')) {
+  if (existingTables.has('financealert')) {
     await tx.financeAlert.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('FinanceInsight')) {
+  if (existingTables.has('financeinsight')) {
     await tx.financeInsight.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('AccountProfitability')) {
+  if (existingTables.has('accountprofitability')) {
     await tx.accountProfitability.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('Expense')) {
+  if (existingTables.has('expense')) {
     await tx.expense.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('RecurringCost')) {
+  if (existingTables.has('recurringcost')) {
     await tx.recurringCost.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('Budget')) {
+  if (existingTables.has('budget')) {
     await tx.budget.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('ExpenseCategory')) {
+  if (existingTables.has('expensecategory')) {
     await tx.expenseCategory.deleteMany({ where: { tenantId } });
   }
-  if (existingTables.has('FinanceConfig')) {
+  if (existingTables.has('financeconfig')) {
     await tx.financeConfig.deleteMany({ where: { tenantId } });
   }
 }
