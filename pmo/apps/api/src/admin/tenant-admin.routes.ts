@@ -444,10 +444,7 @@ router.post(
       return res.status(201).json(result);
     } catch (error) {
       console.error('Error adding user to tenant:', error);
-      if (
-        error instanceof Error &&
-        error.message.includes('Super Admin')
-      ) {
+      if (error instanceof Error && error.message.includes('Super Admin')) {
         return res.status(403).json({ error: error.message });
       }
       return res.status(500).json({

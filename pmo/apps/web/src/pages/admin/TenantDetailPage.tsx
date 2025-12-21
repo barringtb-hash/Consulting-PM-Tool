@@ -1056,7 +1056,7 @@ export function TenantDetailPage(): JSX.Element {
                 <option value="VIEWER">Viewer</option>
               </select>
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                User's role within this tenant
+                User&apos;s role within this tenant
               </p>
             </div>
             <div>
@@ -1065,7 +1065,9 @@ export function TenantDetailPage(): JSX.Element {
               </label>
               <select
                 value={newUserGlobalRole}
-                onChange={(e) => setNewUserGlobalRole(e.target.value as UserRole)}
+                onChange={(e) =>
+                  setNewUserGlobalRole(e.target.value as UserRole)
+                }
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800"
               >
                 <option value="USER">User</option>
@@ -1075,7 +1077,7 @@ export function TenantDetailPage(): JSX.Element {
                 )}
               </select>
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                User's system-wide role (Admin can access admin panel)
+                User&apos;s system-wide role (Admin can access admin panel)
               </p>
             </div>
           </div>

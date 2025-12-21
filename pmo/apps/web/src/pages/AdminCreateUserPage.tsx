@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createUser, type CreateUserInput, type UserRole } from '../api/users';
+import { createUser, type CreateUserInput } from '../api/users';
 import { useAuth } from '../auth/AuthContext';
 import {
   Button,
