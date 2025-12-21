@@ -2,7 +2,9 @@
  * Finance Tracking Module Router
  *
  * Main router combining all finance-related routes.
- * Admin-only module for tracking expenses, budgets, and recurring costs.
+ * - Expenses & Recurring Costs: Users can manage their own (ownership enforced)
+ * - Categories & Budgets: Admin-only for creation/modification
+ * - Approval actions (approve/reject expenses): Admin-only
  */
 
 import { Router, Response } from 'express';
@@ -639,40 +641,35 @@ router.get(
   },
 );
 
-// Create recurring cost (admin only)
-router.post(
-  '/recurring-costs',
-  requireFinanceAdmin,
-  async (req: TenantRequest, res: Response) => {
-    try {
-      const parsed = createRecurringCostSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res
-          .status(400)
-          .json({ error: 'Invalid input', details: parsed.error.flatten() });
-      }
-
-      const cost = await recurringCostService.createRecurringCost(
-        parsed.data,
-        req.userId!,
-      );
-
-      return res.status(201).json({ cost });
-    } catch (error) {
-      console.error('Error creating recurring cost:', error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to create recurring cost';
-      return res.status(400).json({ error: message });
+// Create recurring cost
+router.post('/recurring-costs', async (req: TenantRequest, res: Response) => {
+  try {
+    const parsed = createRecurringCostSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid input', details: parsed.error.flatten() });
     }
-  },
-);
 
-// Update recurring cost (admin only)
+    const cost = await recurringCostService.createRecurringCost(
+      parsed.data,
+      req.userId!,
+    );
+
+    return res.status(201).json({ cost });
+  } catch (error) {
+    console.error('Error creating recurring cost:', error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Failed to create recurring cost';
+    return res.status(400).json({ error: message });
+  }
+});
+
+// Update recurring cost
 router.put(
   '/recurring-costs/:id',
-  requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -690,6 +687,7 @@ router.put(
       const cost = await recurringCostService.updateRecurringCost(
         id,
         parsed.data,
+        req.userId!,
       );
 
       return res.json({ cost });
@@ -704,10 +702,9 @@ router.put(
   },
 );
 
-// Delete recurring cost (admin only)
+// Delete recurring cost
 router.delete(
   '/recurring-costs/:id',
-  requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id, 10);
@@ -715,7 +712,7 @@ router.delete(
         return res.status(400).json({ error: 'Invalid recurring cost ID' });
       }
 
-      await recurringCostService.deleteRecurringCost(id);
+      await recurringCostService.deleteRecurringCost(id, req.userId!);
 
       return res.status(204).send();
     } catch (error) {
