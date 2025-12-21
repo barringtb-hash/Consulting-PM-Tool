@@ -227,8 +227,8 @@ function ProjectSetupPage(): JSX.Element {
     if (!accountSearchTerm) return accountsQuery.data.data;
 
     const term = accountSearchTerm.toLowerCase();
-    return accountsQuery.data.data.filter((client) =>
-      client.name.toLowerCase().includes(term),
+    return accountsQuery.data.data.filter((account) =>
+      account.name.toLowerCase().includes(term),
     );
   }, [accountsQuery.data?.data, accountSearchTerm]);
 
@@ -288,7 +288,7 @@ function ProjectSetupPage(): JSX.Element {
         // Auto-fill project name if empty
         name:
           prev.name ||
-          `${selectedAccountData?.name || 'Client'} - ${template.name}`,
+          `${selectedAccountData?.name || 'Account'} - ${template.name}`,
       }));
     }
   };
@@ -449,18 +449,18 @@ function ProjectSetupPage(): JSX.Element {
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
-                    {filteredAccounts.map((client) => (
+                    {filteredAccounts.map((account) => (
                       <button
-                        key={client.id}
+                        key={account.id}
                         type="button"
                         onClick={() =>
                           setFormData((prev) => ({
                             ...prev,
-                            clientId: client.id,
+                            clientId: account.id,
                           }))
                         }
                         className={`p-4 text-left border-2 rounded-lg transition-all ${
-                          formData.clientId === client.id
+                          formData.clientId === account.id
                             ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
                             : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600'
                         }`}
@@ -468,15 +468,15 @@ function ProjectSetupPage(): JSX.Element {
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                              {client.name}
+                              {account.name}
                             </h3>
-                            {client.industry && (
+                            {account.industry && (
                               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                                {client.industry}
+                                {account.industry}
                               </p>
                             )}
                           </div>
-                          {formData.clientId === client.id && (
+                          {formData.clientId === account.id && (
                             <Check className="w-5 h-5 text-primary-600 flex-shrink-0" />
                           )}
                         </div>
