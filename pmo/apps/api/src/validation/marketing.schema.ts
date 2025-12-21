@@ -22,7 +22,10 @@ export const marketingContentListQuerySchema = z.object({
   type: z.string().optional(),
   status: z.string().optional(),
   search: z.string().optional(),
-  archived: z.coerce.boolean().optional(),
+  archived: z
+    .string()
+    .optional()
+    .transform((val) => (val === undefined ? undefined : val === 'true')),
 });
 
 export type MarketingContentCreateInput = CreateMarketingContentInput;

@@ -53,7 +53,10 @@ export const listOpportunitiesSchema = z.object({
   amountMax: z.coerce.number().positive().optional(),
   search: z.string().max(MAX_SEARCH_LENGTH).optional(),
   tags: z.string().max(500).optional(), // Comma-separated
-  archived: z.coerce.boolean().optional(),
+  archived: z
+    .string()
+    .optional()
+    .transform((val) => (val === undefined ? undefined : val === 'true')),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
   sortBy: z.string().max(50).optional(),

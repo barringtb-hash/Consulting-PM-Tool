@@ -20,7 +20,10 @@ const router = Router();
 // ============================================================================
 
 const listNotificationsSchema = z.object({
-  read: z.coerce.boolean().optional(),
+  read: z
+    .string()
+    .optional()
+    .transform((val) => (val === undefined ? undefined : val === 'true')),
   type: z.string().optional(), // Comma-separated types
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
   dateFrom: z.coerce.date().optional(),
