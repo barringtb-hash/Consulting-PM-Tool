@@ -1,4 +1,6 @@
 import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 import {
   AiMaturity,
@@ -25,7 +27,10 @@ if (!process.env.DATABASE_URL) {
     'postgresql://postgres:postgres@localhost:5432/pmo';
 }
 
-const prisma = new PrismaClient();
+// Prisma 7 requires the adapter pattern for PostgreSQL connections
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 type SeedUser = {
   name: string;
@@ -1570,4 +1575,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
