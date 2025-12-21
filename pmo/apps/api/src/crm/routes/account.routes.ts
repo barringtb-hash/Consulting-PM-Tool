@@ -53,7 +53,19 @@ const createAccountSchema = z.object({
         return `https://${val}`;
       }
       return val;
-    }),
+    })
+    .refine(
+      (val) => {
+        if (val === undefined) return true;
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Invalid website URL' },
+    ),
   phone: z.string().max(50).optional(),
   parentAccountId: z.number().int().positive().optional(),
   type: z
