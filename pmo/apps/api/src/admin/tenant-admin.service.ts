@@ -522,10 +522,12 @@ export async function getTenantUsersByAdmin(tenantId: string) {
 /**
  * Add a user to a tenant (System Admin only)
  * Creates user if doesn't exist
+ * Can also set/update the user's global role (UserRole) via input.userRole
  */
 export async function addUserToTenantByAdmin(
   tenantId: string,
   input: AddTenantUserAdminInput,
+  requestingUserId?: number,
 ) {
   // Check if tenant exists
   const tenant = await prisma.tenant.findUnique({
@@ -534,6 +536,18 @@ export async function addUserToTenantByAdmin(
 
   if (!tenant) {
     throw new Error('Tenant not found');
+  }
+
+  // If setting SUPER_ADMIN role, verify the requesting user is a Super Admin
+  if (input.userRole === 'SUPER_ADMIN' && requestingUserId) {
+    const requestingUser = await prisma.user.findUnique({
+      where: { id: requestingUserId },
+      select: { role: true },
+    });
+
+    if (requestingUser?.role !== 'SUPER_ADMIN') {
+      throw new Error('Only Super Admins can assign the Super Admin role');
+    }
   }
 
   // Check if user exists
@@ -554,9 +568,15 @@ export async function addUserToTenantByAdmin(
         email: input.email,
         name: input.name || input.email.split('@')[0],
         passwordHash,
-        role: 'USER',
+        role: input.userRole || 'USER',
         timezone: 'America/New_York',
       },
+    });
+  } else if (input.userRole && input.userRole !== user.role) {
+    // Update existing user's global role if specified and different
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { role: input.userRole },
     });
   }
 
@@ -588,6 +608,7 @@ export async function addUserToTenantByAdmin(
           id: true,
           name: true,
           email: true,
+          role: true,
         },
       },
     },

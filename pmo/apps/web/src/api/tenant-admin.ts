@@ -51,6 +51,8 @@ export interface TenantListResult {
   };
 }
 
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+
 export interface TenantUser {
   id: string;
   tenantId: string;
@@ -62,7 +64,7 @@ export interface TenantUser {
     id: number;
     name: string;
     email: string;
-    role: 'USER' | 'ADMIN';
+    role: UserRole;
     createdAt: string;
     timezone?: string;
   };
@@ -181,6 +183,7 @@ export interface AddTenantUserInput {
   email: string;
   name?: string;
   role?: TenantRole;
+  userRole?: UserRole;
 }
 
 export interface AddTenantUserResult {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { createUser, type CreateUserInput } from '../api/users';
+import { createUser, type CreateUserInput, type UserRole } from '../api/users';
+import { useAuth } from '../auth/AuthContext';
 import {
   Button,
   Card,
@@ -14,11 +15,15 @@ import {
 } from '../ui';
 
 export function AdminCreateUserPage() {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
   const [form, setForm] = useState<CreateUserInput>({
     name: '',
     email: '',
     password: '',
     timezone: 'America/Chicago',
+    role: 'USER',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +38,14 @@ export function AdminCreateUserPage() {
     try {
       await createUser(form);
       setSuccess(true);
-      // Reset form but keep timezone
-      setForm({ name: '', email: '', password: '', timezone: form.timezone });
+      // Reset form but keep timezone and role
+      setForm({
+        name: '',
+        email: '',
+        password: '',
+        timezone: form.timezone,
+        role: 'USER',
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create user');
     } finally {
@@ -141,6 +152,20 @@ export function AdminCreateUserPage() {
                   <option value="Australia/Sydney">Sydney</option>
                 </Select>
 
+                <Select
+                  label="Role"
+                  id="role"
+                  name="role"
+                  value={form.role || 'USER'}
+                  onChange={handleChange}
+                >
+                  <option value="USER">User</option>
+                  <option value="ADMIN">Admin</option>
+                  {isSuperAdmin && (
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                  )}
+                </Select>
+
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" isLoading={loading} disabled={loading}>
                     {loading ? 'Creating...' : 'Create User'}
@@ -154,6 +179,7 @@ export function AdminCreateUserPage() {
                         email: '',
                         password: '',
                         timezone: 'America/Chicago',
+                        role: 'USER',
                       })
                     }
                     disabled={loading}

@@ -423,6 +423,7 @@ router.get(
 /**
  * POST /api/admin/tenants/:tenantId/users
  * Add a user to a tenant
+ * Note: The userRole field can set the user's global role. Only Super Admins can assign SUPER_ADMIN.
  */
 router.post(
   '/tenants/:tenantId/users',
@@ -438,10 +439,17 @@ router.post(
       const result = await tenantAdminService.addUserToTenantByAdmin(
         tenantId,
         parsed.data,
+        req.userId,
       );
       return res.status(201).json(result);
     } catch (error) {
       console.error('Error adding user to tenant:', error);
+      if (
+        error instanceof Error &&
+        error.message.includes('Super Admin')
+      ) {
+        return res.status(403).json({ error: error.message });
+      }
       return res.status(500).json({
         error:
           error instanceof Error

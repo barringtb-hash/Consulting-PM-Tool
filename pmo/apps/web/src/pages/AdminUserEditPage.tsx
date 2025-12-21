@@ -6,6 +6,7 @@ import {
   type UpdateUserInput,
   type User,
 } from '../api/users';
+import { useAuth } from '../auth/AuthContext';
 import {
   Button,
   Card,
@@ -20,6 +21,8 @@ import {
 } from '../ui';
 
 export function AdminUserEditPage() {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -243,6 +246,9 @@ export function AdminUserEditPage() {
                 >
                   <option value="USER">User</option>
                   <option value="ADMIN">Admin</option>
+                  {isSuperAdmin && (
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                  )}
                 </Select>
 
                 <div className="flex gap-3 pt-4">
