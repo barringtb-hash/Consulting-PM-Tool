@@ -41,7 +41,31 @@ const router = Router();
 
 const createAccountSchema = z.object({
   name: z.string().min(1).max(200),
-  website: z.string().url().optional(),
+  website: z
+    .string()
+    .max(500)
+    .optional()
+    .transform((val) => {
+      // Allow empty strings to become undefined
+      if (!val || val.trim() === '') return undefined;
+      // If no protocol, prepend https://
+      if (!/^https?:\/\//i.test(val)) {
+        return `https://${val}`;
+      }
+      return val;
+    })
+    .refine(
+      (val) => {
+        if (val === undefined) return true;
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Invalid website URL' },
+    ),
   phone: z.string().max(50).optional(),
   parentAccountId: z.number().int().positive().optional(),
   type: z
@@ -51,7 +75,7 @@ const createAccountSchema = z.object({
   employeeCount: z
     .enum(['SOLO', 'MICRO', 'SMALL', 'MEDIUM', 'LARGE', 'ENTERPRISE'])
     .optional(),
-  annualRevenue: z.number().positive().optional(),
+  annualRevenue: z.number().nonnegative().optional(),
   billingAddress: z
     .object({
       street: z.string().optional(),
