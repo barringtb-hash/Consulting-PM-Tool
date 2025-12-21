@@ -46,19 +46,20 @@ function isMissingColumnError(error: unknown, columnName: string): boolean {
  * @param clientId - The client ID to check access for
  * @returns true if user has access, false otherwise
  *
- * Access is granted if:
- * 1. User is authenticated and client exists, OR
- * 2. User is an admin (always has access)
+ * Access is granted if the user is authenticated and the client exists.
  *
  * Note: This was updated to be more permissive because the frontend
  * displays all clients to all authenticated users, so restricting
  * AI tool configuration to only project owners was too restrictive.
+ * For consulting teams where collaboration is expected, any authenticated
+ * user can access any client's data.
  */
 export async function hasClientAccess(
   userId: number,
   clientId: number,
 ): Promise<boolean> {
-  // Verify user exists and is authenticated
+  // Defensive check: verify user exists (requireAuth middleware should have already validated this,
+  // but this provides an additional safety check for direct function calls)
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true },
