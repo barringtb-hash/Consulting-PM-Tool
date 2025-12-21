@@ -1,12 +1,14 @@
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 
+export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+
 export interface CreateUserInput {
   name: string;
   email: string;
   password: string;
   timezone: string;
-  role?: 'USER' | 'ADMIN';
+  role?: UserRole;
 }
 
 export interface UpdateUserInput {
@@ -14,7 +16,7 @@ export interface UpdateUserInput {
   email?: string;
   password?: string;
   timezone?: string;
-  role?: 'USER' | 'ADMIN';
+  role?: UserRole;
 }
 
 export interface User {
@@ -22,7 +24,7 @@ export interface User {
   name: string;
   email: string;
   timezone: string;
-  role: 'USER' | 'ADMIN';
+  role: UserRole;
   createdAt: string;
   updatedAt: string;
 }

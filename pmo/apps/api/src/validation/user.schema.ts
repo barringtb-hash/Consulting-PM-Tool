@@ -24,7 +24,7 @@ export const createUserSchema = z.object({
     .string()
     .min(1, 'Timezone is required')
     .max(255, 'Timezone must be less than 255 characters'),
-  role: z.enum(['USER', 'ADMIN']).optional(),
+  role: z.enum(['USER', 'ADMIN', 'SUPER_ADMIN']).optional(),
 });
 
 /**
@@ -55,7 +55,7 @@ export const updateUserSchema = z.object({
     .min(1, 'Timezone is required')
     .max(255, 'Timezone must be less than 255 characters')
     .optional(),
-  role: z.enum(['USER', 'ADMIN']).optional(),
+  role: z.enum(['USER', 'ADMIN', 'SUPER_ADMIN']).optional(),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;

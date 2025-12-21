@@ -140,12 +140,16 @@ export function AdminUsersListPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                user.role === 'ADMIN'
-                                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                  : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
+                                user.role === 'SUPER_ADMIN'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                                  : user.role === 'ADMIN'
+                                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                    : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
                               }`}
                             >
-                              {user.role}
+                              {user.role === 'SUPER_ADMIN'
+                                ? 'Super Admin'
+                                : user.role}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">

@@ -70,6 +70,8 @@ export const updateTenantAdminSchema = z.object({
 
 /**
  * Schema for adding a user to a tenant (system admin)
+ * - role: TenantRole (the user's role within this tenant)
+ * - userRole: UserRole (the user's global/system role - only Super Admins can set SUPER_ADMIN)
  */
 export const addTenantUserAdminSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -79,6 +81,7 @@ export const addTenantUserAdminSchema = z.object({
     .max(255, 'Name must be less than 255 characters')
     .optional(),
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
+  userRole: z.enum(['USER', 'ADMIN', 'SUPER_ADMIN']).optional(),
 });
 
 /**

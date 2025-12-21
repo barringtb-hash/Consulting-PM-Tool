@@ -11,12 +11,14 @@ import {
 import { adminResetPassword } from '../auth/password-reset.service';
 import { createUserSchema, updateUserSchema } from '../validation/user.schema';
 import { adminResetPasswordSchema } from '../validation/password-reset.schema';
+import { prisma } from '../prisma/client';
 
 const router = express.Router();
 
 /**
  * POST /api/users
  * Create a new user (Admin only)
+ * Note: Only Super Admins can create other Super Admin users
  */
 router.post(
   '/',
@@ -35,6 +37,21 @@ router.post(
       }
 
       const { name, email, password, timezone, role } = validation.data;
+
+      // Only Super Admins can create Super Admin users
+      if (role === 'SUPER_ADMIN') {
+        const currentUser = await prisma.user.findUnique({
+          where: { id: req.userId },
+          select: { role: true },
+        });
+
+        if (currentUser?.role !== 'SUPER_ADMIN') {
+          res.status(403).json({
+            error: 'Only Super Admins can create Super Admin users',
+          });
+          return;
+        }
+      }
 
       const user = await createUser({ name, email, password, timezone, role });
 
@@ -107,6 +124,7 @@ router.get(
 /**
  * PUT /api/users/:id
  * Update a user (Admin only)
+ * Note: Only Super Admins can promote users to Super Admin
  */
 router.put(
   '/:id',
@@ -129,6 +147,39 @@ router.put(
           details: validation.error.format(),
         });
         return;
+      }
+
+      // Check permissions for Super Admin role changes
+      if (validation.data.role) {
+        const [currentUser, targetUser] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: req.userId },
+            select: { role: true },
+          }),
+          prisma.user.findUnique({
+            where: { id },
+            select: { role: true },
+          }),
+        ]);
+
+        const isCallerSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+        const isTargetSuperAdmin = targetUser?.role === 'SUPER_ADMIN';
+
+        // Only Super Admins can promote users to Super Admin
+        if (validation.data.role === 'SUPER_ADMIN' && !isCallerSuperAdmin) {
+          res.status(403).json({
+            error: 'Only Super Admins can promote users to Super Admin',
+          });
+          return;
+        }
+
+        // Only Super Admins can demote other Super Admins
+        if (isTargetSuperAdmin && !isCallerSuperAdmin) {
+          res.status(403).json({
+            error: 'Only Super Admins can modify Super Admin accounts',
+          });
+          return;
+        }
       }
 
       const user = await updateUser(id, validation.data);

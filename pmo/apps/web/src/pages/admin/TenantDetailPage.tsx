@@ -50,6 +50,7 @@ import type {
   TenantStatus,
   TenantRole,
   ModuleTier,
+  UserRole,
 } from '../../api/tenant-admin';
 
 const PLAN_COLORS: Record<TenantPlan, string> = {
@@ -102,6 +103,7 @@ export function TenantDetailPage(): JSX.Element {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState<TenantRole>('MEMBER');
+  const [newUserGlobalRole, setNewUserGlobalRole] = useState<UserRole>('USER');
   const [tempPasswordResult, setTempPasswordResult] = useState<{
     email: string;
     password: string;
@@ -189,6 +191,7 @@ export function TenantDetailPage(): JSX.Element {
           email: newUserEmail,
           name: newUserName || undefined,
           role: newUserRole,
+          userRole: newUserGlobalRole,
         },
       });
 
@@ -203,6 +206,7 @@ export function TenantDetailPage(): JSX.Element {
       setNewUserEmail('');
       setNewUserName('');
       setNewUserRole('MEMBER');
+      setNewUserGlobalRole('USER');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to add user');
     }
@@ -672,12 +676,16 @@ export function TenantDetailPage(): JSX.Element {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge
                             className={
-                              tenantUser.user.role === 'ADMIN'
-                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                : 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
+                              tenantUser.user.role === 'SUPER_ADMIN'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                                : tenantUser.user.role === 'ADMIN'
+                                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                  : 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300'
                             }
                           >
-                            {tenantUser.user.role}
+                            {tenantUser.user.role === 'SUPER_ADMIN'
+                              ? 'Super Admin'
+                              : tenantUser.user.role}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
@@ -1036,7 +1044,7 @@ export function TenantDetailPage(): JSX.Element {
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Role
+                Tenant Role
               </label>
               <select
                 value={newUserRole}
@@ -1047,6 +1055,30 @@ export function TenantDetailPage(): JSX.Element {
                 <option value="MEMBER">Member</option>
                 <option value="VIEWER">Viewer</option>
               </select>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                User&apos;s role within this tenant
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Global Role
+              </label>
+              <select
+                value={newUserGlobalRole}
+                onChange={(e) =>
+                  setNewUserGlobalRole(e.target.value as UserRole)
+                }
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800"
+              >
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
+                {isSuperAdmin && (
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                )}
+              </select>
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                User&apos;s system-wide role (Admin can access admin panel)
+              </p>
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-6">
