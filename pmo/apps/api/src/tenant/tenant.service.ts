@@ -699,14 +699,24 @@ export async function permanentlyDeleteTenant(tenantId: string) {
     await tx.cRMContact.deleteMany({ where: { tenantId } });
 
     // Delete Finance module data (order matters for FK constraints)
-    await tx.financeAlert.deleteMany({ where: { tenantId } });
-    await tx.financeInsight.deleteMany({ where: { tenantId } });
-    await tx.accountProfitability.deleteMany({ where: { tenantId } });
-    await tx.expense.deleteMany({ where: { tenantId } });
-    await tx.recurringCost.deleteMany({ where: { tenantId } });
-    await tx.budget.deleteMany({ where: { tenantId } });
-    await tx.expenseCategory.deleteMany({ where: { tenantId } });
-    await tx.financeConfig.deleteMany({ where: { tenantId } });
+    // Wrapped in try-catch to handle cases where finance tables may not exist
+    try {
+      await tx.financeAlert.deleteMany({ where: { tenantId } });
+      await tx.financeInsight.deleteMany({ where: { tenantId } });
+      await tx.accountProfitability.deleteMany({ where: { tenantId } });
+      await tx.expense.deleteMany({ where: { tenantId } });
+      await tx.recurringCost.deleteMany({ where: { tenantId } });
+      await tx.budget.deleteMany({ where: { tenantId } });
+      await tx.expenseCategory.deleteMany({ where: { tenantId } });
+      await tx.financeConfig.deleteMany({ where: { tenantId } });
+    } catch (error) {
+      // Finance tables may not exist in all environments - skip if not found
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('does not exist')) {
+        throw error;
+      }
+    }
 
     // Delete AI monitoring data
     await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
@@ -912,14 +922,24 @@ export async function forceDeleteTenant(tenantId: string) {
     await tx.cRMContact.deleteMany({ where: { tenantId } });
 
     // Delete Finance module data (order matters for FK constraints)
-    await tx.financeAlert.deleteMany({ where: { tenantId } });
-    await tx.financeInsight.deleteMany({ where: { tenantId } });
-    await tx.accountProfitability.deleteMany({ where: { tenantId } });
-    await tx.expense.deleteMany({ where: { tenantId } });
-    await tx.recurringCost.deleteMany({ where: { tenantId } });
-    await tx.budget.deleteMany({ where: { tenantId } });
-    await tx.expenseCategory.deleteMany({ where: { tenantId } });
-    await tx.financeConfig.deleteMany({ where: { tenantId } });
+    // Wrapped in try-catch to handle cases where finance tables may not exist
+    try {
+      await tx.financeAlert.deleteMany({ where: { tenantId } });
+      await tx.financeInsight.deleteMany({ where: { tenantId } });
+      await tx.accountProfitability.deleteMany({ where: { tenantId } });
+      await tx.expense.deleteMany({ where: { tenantId } });
+      await tx.recurringCost.deleteMany({ where: { tenantId } });
+      await tx.budget.deleteMany({ where: { tenantId } });
+      await tx.expenseCategory.deleteMany({ where: { tenantId } });
+      await tx.financeConfig.deleteMany({ where: { tenantId } });
+    } catch (error) {
+      // Finance tables may not exist in all environments - skip if not found
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('does not exist')) {
+        throw error;
+      }
+    }
 
     // Delete AI monitoring data
     await tx.aIUsageEvent.deleteMany({ where: { tenantId } });
