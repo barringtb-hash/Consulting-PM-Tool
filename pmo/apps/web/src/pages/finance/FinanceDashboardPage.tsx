@@ -504,7 +504,7 @@ export default function FinanceDashboardPage() {
                 </div>
               ))}
             </div>
-          ) : forecast?.forecasts ? (
+          ) : forecast?.forecasts && forecast.forecasts.length > 0 ? (
             <div className="space-y-4">
               {/* Trend Summary */}
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-800">

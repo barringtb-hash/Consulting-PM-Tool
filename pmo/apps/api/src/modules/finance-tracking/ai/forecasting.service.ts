@@ -86,10 +86,18 @@ export async function generateSpendingForecast(params: {
   // Get historical spending data (last 12 months)
   const historicalData = await getHistoricalSpending(tenantId, 12, categoryId);
 
+  // Return empty forecast if insufficient data (not an error, just no data yet)
   if (historicalData.length < 3) {
-    throw new Error(
-      'Insufficient historical data for forecasting. Need at least 3 months.',
-    );
+    return {
+      forecasts: [],
+      summary: {
+        totalPredicted: 0,
+        trend: 'STABLE' as const,
+        trendPercentage: 0,
+        confidence: 0,
+      },
+      byCategory: [],
+    };
   }
 
   // Generate forecasts using multiple methods
