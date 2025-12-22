@@ -183,10 +183,25 @@ router.post('/', async (req: TenantRequest, res: Response) => {
       }
     }
 
-    const project = await createProject(req.userId, {
-      ...parsed.data,
-      accountId: accountId,
-    });
+    // Build project data based on which fields are provided:
+    // - If accountId is explicitly provided: keep both accountId and clientId (if present)
+    // - If only clientId is provided: it's being used as the Account ID (frontend workaround),
+    //   so use it as accountId and exclude clientId to avoid FK constraint issues
+    let projectData;
+    if (parsed.data.accountId !== undefined) {
+      // accountId is explicitly provided - use as-is, keep clientId if present
+      projectData = parsed.data;
+    } else if (parsed.data.clientId !== undefined) {
+      // Only clientId provided - it contains an Account ID, not a Client ID
+      // Exclude clientId and set accountId instead
+      const { clientId: _clientId, ...rest } = parsed.data;
+      projectData = { ...rest, accountId: parsed.data.clientId };
+    } else {
+      // Neither provided (validation should catch this, but handle gracefully)
+      projectData = parsed.data;
+    }
+
+    const project = await createProject(req.userId, projectData);
 
     res.status(201).json({ project });
   } catch (error) {
@@ -244,10 +259,26 @@ router.put('/:id', async (req: ProjectRequest, res: Response) => {
       }
     }
 
-    const updated = await updateProject(projectId, {
-      ...parsed.data,
-      accountId: newAccountId || parsed.data.accountId,
-    });
+    // Build update data based on which fields are provided:
+    // - If accountId is explicitly provided: keep both, use new accountId
+    // - If only clientId is provided: it's being used as the Account ID,
+    //   so use it as accountId and exclude clientId
+    // - If neither is provided: just pass through other update fields
+    let updateData;
+    if (parsed.data.accountId !== undefined) {
+      // accountId is explicitly provided - use as-is, keep clientId if present
+      updateData = parsed.data;
+    } else if (parsed.data.clientId !== undefined) {
+      // Only clientId provided - it contains an Account ID, not a Client ID
+      // Exclude clientId and set accountId instead
+      const { clientId: _clientId, ...rest } = parsed.data;
+      updateData = { ...rest, accountId: parsed.data.clientId };
+    } else {
+      // Neither provided - just pass through other fields
+      updateData = parsed.data;
+    }
+
+    const updated = await updateProject(projectId, updateData);
 
     res.json({ project: updated });
   } catch (error) {
