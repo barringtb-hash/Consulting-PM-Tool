@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
+import { tenantMiddleware } from '../tenant/tenant.middleware';
 import prisma from '../prisma/client';
 import {
   generateDocument,
@@ -12,7 +13,9 @@ import { documentGenerateSchema } from '../validation/document.schema';
 
 const router = Router();
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 router.get('/', async (req: AuthenticatedRequest, res) => {
   if (!req.userId) {
