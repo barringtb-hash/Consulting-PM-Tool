@@ -178,9 +178,7 @@ const CustomerSuccessDashboardPage = lazy(
 const CustomerSuccessAnalyticsPage = lazy(
   () => import('./pages/customer-success/CustomerSuccessAnalyticsPage'),
 );
-const CTAFormPage = lazy(
-  () => import('./pages/customer-success/CTAFormPage'),
-);
+const CTAFormPage = lazy(() => import('./pages/customer-success/CTAFormPage'));
 const SuccessPlanFormPage = lazy(
   () => import('./pages/customer-success/SuccessPlanFormPage'),
 );

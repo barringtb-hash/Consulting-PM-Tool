@@ -121,7 +121,9 @@ function MarketingContentCalendar({
     <div className="space-y-4">
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{monthYear}</h2>
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          {monthYear}
+        </h2>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={goToToday}>
             Today
