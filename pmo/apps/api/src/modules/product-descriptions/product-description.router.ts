@@ -8,6 +8,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import { getTenantId } from '../../tenant/tenant.context';
 import * as productDescService from './product-description.service';
 
@@ -146,7 +147,9 @@ const performanceSchema = z.object({
 // CONFIG ROUTES
 // ============================================================================
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 /**
  * GET /api/product-descriptions/configs
