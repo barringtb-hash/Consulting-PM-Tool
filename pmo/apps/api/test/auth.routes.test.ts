@@ -123,13 +123,13 @@ describe('auth routes', () => {
   });
 
   it('returns null user for /auth/me without authentication', async () => {
-    // The /auth/me endpoint returns 200 with { user: null } for unauthenticated
+    // The /auth/me endpoint returns 200 with { user: null, tenant: null } for unauthenticated
     // requests to avoid browser "Failed to load resource" console errors that
     // appear when the server returns 401 on initial page load.
     const response = await request(app).get('/api/auth/me');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ user: null });
+    expect(response.body).toEqual({ user: null, tenant: null });
   });
 
   it('sets no-cache headers on /auth/me to prevent stale auth state', async () => {
@@ -185,6 +185,6 @@ describe('auth routes', () => {
     // Without cookie, returns 200 with null user (not 401) to avoid browser console errors
     const meResponseWithoutCookie = await request(app).get('/api/auth/me');
     expect(meResponseWithoutCookie.status).toBe(200);
-    expect(meResponseWithoutCookie.body).toEqual({ user: null });
+    expect(meResponseWithoutCookie.body).toEqual({ user: null, tenant: null });
   });
 });
