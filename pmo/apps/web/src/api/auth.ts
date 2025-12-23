@@ -1,6 +1,7 @@
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 import { storeToken, clearStoredToken, getStoredToken } from './token-storage';
+import { storeTenant, clearStoredTenant } from './tenant-storage';
 
 export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 
@@ -9,6 +10,12 @@ export interface AuthUser {
   email: string;
   name?: string;
   role?: UserRole;
+}
+
+export interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 const AUTH_BASE_PATH = buildApiUrl('/auth');
@@ -25,15 +32,23 @@ export async function login(
     }),
   );
 
-  const data = await handleResponse<{ user: AuthUser; token?: string }>(
-    response,
-  );
+  const data = await handleResponse<{
+    user: AuthUser;
+    token?: string;
+    tenant?: TenantInfo | null;
+  }>(response);
 
   // Store token for Safari ITP fallback
   // Safari may block cookies even with partitioned attribute,
   // so we store the token in localStorage and send via Authorization header
   if (data.token) {
     storeToken(data.token);
+  }
+
+  // Store tenant info for multi-tenant API requests
+  // The X-Tenant-ID header is required for tenant-scoped API endpoints
+  if (data.tenant) {
+    storeTenant({ id: data.tenant.id, slug: data.tenant.slug });
   }
 
   return data.user;
@@ -49,9 +64,11 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
     }),
   );
 
-  const data = await handleResponse<{ user: AuthUser | null; token?: string }>(
-    response,
-  );
+  const data = await handleResponse<{
+    user: AuthUser | null;
+    token?: string;
+    tenant?: TenantInfo | null;
+  }>(response);
 
   // Store token for Safari ITP fallback.
   // This ensures users who logged in before the Safari localStorage fallback
@@ -62,6 +79,16 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
     // If we had a stored token but the response indicates no authenticated user,
     // the token was invalid or expired - clear it to avoid sending stale tokens.
     clearStoredToken();
+  }
+
+  // Store tenant info for multi-tenant API requests
+  // This ensures users who logged in before multi-tenant support
+  // will get their tenant ID stored on subsequent page loads
+  if (data.tenant) {
+    storeTenant({ id: data.tenant.id, slug: data.tenant.slug });
+  } else if (!data.user) {
+    // Clear tenant info if user is not authenticated
+    clearStoredTenant();
   }
 
   return data.user ?? null;
@@ -77,6 +104,9 @@ export async function logout(): Promise<void> {
 
   // Clear stored token for Safari ITP fallback
   clearStoredToken();
+
+  // Clear tenant info for multi-tenant support
+  clearStoredTenant();
 
   await handleResponse<void>(response);
 }

@@ -1,4 +1,5 @@
 import { getStoredToken } from './token-storage';
+import { getStoredTenantId } from './tenant-storage';
 import { buildApiUrl } from './config';
 
 export interface ApiError extends Error {
@@ -38,9 +39,13 @@ export interface FetchOptions extends RequestInit {
  * Safari's ITP blocks cross-origin cookies even with partitioned attribute,
  * so we include the token via Authorization header as a fallback mechanism.
  * The server accepts both cookies (preferred) and Authorization header.
+ *
+ * Also includes X-Tenant-ID header for multi-tenant support.
+ * This allows the server to resolve the correct tenant context for the request.
  */
 export function buildOptions(options?: FetchOptions): RequestInit {
   const storedToken = getStoredToken();
+  const storedTenantId = getStoredTenantId();
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -51,6 +56,12 @@ export function buildOptions(options?: FetchOptions): RequestInit {
   // Server will use cookie if present, otherwise falls back to this header
   if (storedToken) {
     headers['Authorization'] = `Bearer ${storedToken}`;
+  }
+
+  // Add X-Tenant-ID header for multi-tenant support
+  // Server uses this to resolve tenant context for the request
+  if (storedTenantId) {
+    headers['X-Tenant-ID'] = storedTenantId;
   }
 
   return {

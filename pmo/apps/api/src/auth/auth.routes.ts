@@ -15,6 +15,10 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../validation/password-reset.schema';
+import {
+  findDefaultTenantForUser,
+  formatTenantResponse,
+} from '../tenant/tenant.service';
 
 const router = Router();
 
@@ -68,6 +72,9 @@ router.post('/auth/login', loginRateLimiter, async (req, res) => {
       return;
     }
 
+    // Get user's default tenant for multi-tenant context
+    const tenant = await findDefaultTenantForUser(user.id);
+
     const token = signToken({ userId: user.id });
 
     res.cookie('token', token, cookieOptions);
@@ -83,6 +90,8 @@ router.post('/auth/login', loginRateLimiter, async (req, res) => {
         role: user.role,
       },
       token, // For Safari localStorage fallback
+      // Include tenant info for multi-tenant context
+      tenant: formatTenantResponse(tenant),
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -108,7 +117,7 @@ router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
   try {
     // If no userId, user is not authenticated - return null user with 200 status
     if (!req.userId) {
-      res.json({ user: null });
+      res.json({ user: null, tenant: null });
       return;
     }
 
@@ -116,9 +125,12 @@ router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
 
     if (!user) {
       // User ID was in token but user no longer exists in database
-      res.json({ user: null });
+      res.json({ user: null, tenant: null });
       return;
     }
+
+    // Get user's default tenant for multi-tenant context
+    const tenant = await findDefaultTenantForUser(user.id);
 
     // Generate a fresh token for Safari ITP fallback.
     // This ensures users who logged in before the Safari localStorage fallback
@@ -136,6 +148,8 @@ router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
         role: user.role,
       },
       token, // For Safari localStorage fallback
+      // Include tenant info for multi-tenant context
+      tenant: formatTenantResponse(tenant),
     });
   } catch (error) {
     console.error('Get user error:', error);
