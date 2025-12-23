@@ -172,10 +172,10 @@ function KanbanColumn({
   onTaskDelete,
 }: KanbanColumnProps): JSX.Element {
   return (
-    <div className="flex flex-col bg-neutral-50 rounded-lg border border-neutral-200 min-h-[500px]">
-      <div className="px-4 py-3 border-b border-neutral-200 bg-white rounded-t-lg">
+    <div className="flex flex-col bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 min-h-[500px]">
+      <div className="px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-lg">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm text-neutral-900">
+          <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
             {formatStatusLabel(status)}
           </h3>
           <Badge variant={getStatusBadgeVariant(status)}>{tasks.length}</Badge>
@@ -189,7 +189,7 @@ function KanbanColumn({
       >
         <div className="flex-1 p-3 space-y-3 overflow-y-auto">
           {tasks.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-neutral-400 text-sm">
+            <div className="flex items-center justify-center h-32 text-neutral-400 dark:text-neutral-500 text-sm">
               No tasks
             </div>
           ) : (
@@ -215,17 +215,19 @@ interface TaskCardProps {
 function TaskCard({ task, isDragging = false }: TaskCardProps): JSX.Element {
   return (
     <div
-      className={`bg-white rounded-lg border border-neutral-200 p-4 shadow-sm ${
-        isDragging ? 'shadow-lg' : 'hover:shadow-md'
+      className={`bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 shadow-sm ${
+        isDragging
+          ? 'shadow-lg'
+          : 'hover:shadow-md dark:hover:shadow-neutral-900/50'
       } transition-shadow cursor-grab active:cursor-grabbing`}
     >
       <div className="space-y-3">
         <div>
-          <p className="text-sm font-medium text-neutral-900 line-clamp-2">
+          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 line-clamp-2">
             {task.title}
           </p>
           {task.description && (
-            <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">
               {task.description}
             </p>
           )}
@@ -241,17 +243,17 @@ function TaskCard({ task, isDragging = false }: TaskCardProps): JSX.Element {
             </Badge>
           )}
           {task.dueDate && (
-            <span className="text-xs text-neutral-600">
+            <span className="text-xs text-neutral-600 dark:text-neutral-400">
               {formatDate(task.dueDate)}
             </span>
           )}
         </div>
 
         {task.projectName && (
-          <div className="pt-2 border-t border-neutral-100">
+          <div className="pt-2 border-t border-neutral-100 dark:border-neutral-700">
             <Link
               to={`/projects/${task.projectId}`}
-              className="text-xs text-primary-600 hover:text-primary-700 hover:underline"
+              className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               {task.projectName}
