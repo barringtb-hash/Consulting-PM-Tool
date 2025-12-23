@@ -191,6 +191,7 @@ function AccountsPage(): JSX.Element {
           />
           <Button
             type="submit"
+            size="sm"
             disabled={!newAccountName.trim() || createAccount.isPending}
           >
             <Plus className="h-4 w-4 mr-2" />
