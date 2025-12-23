@@ -72,7 +72,7 @@ export function TabsList({ children, className }: TabsListProps) {
   return (
     <div
       className={cn(
-        'flex h-10 items-center justify-start rounded-lg bg-neutral-100 dark:bg-neutral-800 p-1 gap-1',
+        'flex h-12 items-center justify-start rounded-lg bg-neutral-100 dark:bg-neutral-800 p-1.5 gap-1',
         'w-full overflow-x-auto md:w-fit',
         className,
       )}
@@ -100,7 +100,7 @@ export function TabsTrigger({ value, children, className }: TabsTriggerProps) {
       aria-selected={isActive}
       onClick={() => setActiveTab(value)}
       className={cn(
-        'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all',
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-3.5 py-2 text-sm font-medium transition-all',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-800',
         'disabled:pointer-events-none disabled:opacity-50',
         'flex-shrink-0',
