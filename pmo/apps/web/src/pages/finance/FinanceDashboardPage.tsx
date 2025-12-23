@@ -83,10 +83,12 @@ function EmptyState({
         {description}
       </p>
       {action && (
-        <Button variant="secondary" size="sm" as={Link} to={action.href}>
-          <Plus className="h-4 w-4 mr-2" />
-          {action.label}
-        </Button>
+        <Link to={action.href}>
+          <Button variant="secondary" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            {action.label}
+          </Button>
+        </Link>
       )}
     </div>
   );
@@ -271,14 +273,18 @@ export default function FinanceDashboardPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary" as={Link} to="/finance/recurring-costs">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Recurring Costs
-          </Button>
-          <Button as={Link} to="/finance/expenses/new">
-            <Receipt className="h-4 w-4 mr-2" />
-            Add Expense
-          </Button>
+          <Link to="/finance/recurring-costs">
+            <Button variant="secondary">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Recurring Costs
+            </Button>
+          </Link>
+          <Link to="/finance/expenses/new">
+            <Button>
+              <Receipt className="h-4 w-4 mr-2" />
+              Add Expense
+            </Button>
+          </Link>
         </div>
       </div>
 
