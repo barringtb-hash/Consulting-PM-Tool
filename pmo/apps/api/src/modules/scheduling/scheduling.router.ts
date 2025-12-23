@@ -8,6 +8,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import { hasTenantContext, getTenantId } from '../../tenant/tenant.context';
 import * as schedulingService from './scheduling.service';
 
@@ -118,7 +119,9 @@ const waitlistSchema = z.object({
 // CONFIG ROUTES
 // ============================================================================
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 /**
  * GET /api/scheduling/configs

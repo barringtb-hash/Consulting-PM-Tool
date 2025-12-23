@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import {
   getBrandProfileByClientId,
   createBrandProfile,
@@ -14,7 +15,9 @@ import { BrandAssetType } from '../../types/marketing';
 
 const router = Router();
 
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 const brandProfileCreateSchema = z.object({
   clientId: z.number(),

@@ -7,6 +7,7 @@
 
 import { Router } from 'express';
 import { requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import {
   getAIUsageSummary,
   getRealtimeUsageStats,
@@ -32,8 +33,9 @@ import { logger } from '../../utils/logger';
 
 const router = Router();
 
-// All routes require authentication
+// All routes require authentication and tenant context
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 // ============================================================================
 // OVERVIEW & SYSTEM STATS
