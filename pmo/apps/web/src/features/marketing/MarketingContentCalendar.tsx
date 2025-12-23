@@ -121,7 +121,7 @@ function MarketingContentCalendar({
     <div className="space-y-4">
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-neutral-900">{monthYear}</h2>
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{monthYear}</h2>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={goToToday}>
             Today
@@ -146,13 +146,13 @@ function MarketingContentCalendar({
       </div>
 
       {/* Calendar Grid */}
-      <div className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
+      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden bg-white dark:bg-neutral-800">
         {/* Day of Week Headers */}
-        <div className="grid grid-cols-7 border-b border-neutral-200 bg-neutral-50">
+        <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
             <div
               key={day}
-              className="text-center py-2 text-sm font-medium text-neutral-700"
+              className="text-center py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
               {day}
             </div>
@@ -164,17 +164,17 @@ function MarketingContentCalendar({
           {calendarDays.map((day, index) => (
             <div
               key={index}
-              className={`min-h-[120px] border-b border-r border-neutral-100 p-2 ${
-                !day.isCurrentMonth ? 'bg-neutral-50' : ''
-              } ${isToday(day.date) ? 'bg-primary-50' : ''}`}
+              className={`min-h-[120px] border-b border-r border-neutral-100 dark:border-neutral-700 p-2 ${
+                !day.isCurrentMonth ? 'bg-neutral-50 dark:bg-neutral-900' : ''
+              } ${isToday(day.date) ? 'bg-primary-50 dark:bg-primary-900/30' : ''}`}
             >
               <div
                 className={`text-sm font-medium mb-1 ${
                   !day.isCurrentMonth
-                    ? 'text-neutral-400'
+                    ? 'text-neutral-400 dark:text-neutral-500'
                     : isToday(day.date)
-                      ? 'text-primary-700'
-                      : 'text-neutral-900'
+                      ? 'text-primary-700 dark:text-primary-400'
+                      : 'text-neutral-900 dark:text-neutral-100'
                 }`}
               >
                 {day.date.getDate()}
@@ -183,14 +183,14 @@ function MarketingContentCalendar({
                 {day.contents.map((content) => (
                   <div
                     key={content.id}
-                    className="text-xs p-1 bg-primary-100 hover:bg-primary-200 rounded cursor-pointer transition-colors"
+                    className="text-xs p-1 bg-primary-100 dark:bg-primary-900/50 hover:bg-primary-200 dark:hover:bg-primary-800/50 rounded cursor-pointer transition-colors"
                     onClick={() => onContentClick(content)}
                   >
                     <div className="flex items-center gap-1">
                       <span className="text-sm">
                         {getContentTypeIcon(content.type)}
                       </span>
-                      <span className="font-medium text-neutral-900 truncate">
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                         {content.name}
                       </span>
                     </div>
@@ -208,13 +208,13 @@ function MarketingContentCalendar({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-sm text-neutral-600">
+      <div className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-primary-50 border border-primary-200 rounded"></div>
+          <div className="w-4 h-4 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 rounded"></div>
           <span>Today</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-primary-100 border border-primary-300 rounded"></div>
+          <div className="w-4 h-4 bg-primary-100 dark:bg-primary-900/50 border border-primary-300 dark:border-primary-700 rounded"></div>
           <span>Scheduled content</span>
         </div>
       </div>
