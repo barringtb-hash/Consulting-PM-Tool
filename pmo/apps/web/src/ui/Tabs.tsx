@@ -72,8 +72,8 @@ export function TabsList({ children, className }: TabsListProps) {
   return (
     <div
       className={cn(
-        'flex h-12 items-center justify-start rounded-lg bg-neutral-100 dark:bg-neutral-800 p-1.5 gap-1',
-        'w-full overflow-x-auto md:w-fit',
+        'inline-flex h-12 items-center justify-start rounded-lg bg-neutral-100 dark:bg-neutral-800 p-1.5 gap-1',
+        'w-full overflow-x-auto',
         className,
       )}
       role="tablist"
