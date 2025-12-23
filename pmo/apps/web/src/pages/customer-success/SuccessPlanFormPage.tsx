@@ -52,6 +52,18 @@ function SuccessPlanFormPage(): JSX.Element {
       return;
     }
 
+    if (formData.startDate && formData.targetDate) {
+      const start = new Date(formData.startDate);
+      const target = new Date(formData.targetDate);
+      if (target < start) {
+        showToast({
+          message: 'Target date cannot be before start date',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     try {
       await createSuccessPlan.mutateAsync({
         clientId: formData.clientId,
@@ -103,12 +115,13 @@ function SuccessPlanFormPage(): JSX.Element {
             </label>
             <Select
               value={formData.clientId?.toString() ?? ''}
-              onChange={(e) =>
+              onChange={(e) => {
+                const value = e.target.value;
                 setFormData((prev) => ({
                   ...prev,
-                  clientId: parseInt(e.target.value, 10),
-                }))
-              }
+                  clientId: value === '' ? undefined : parseInt(value, 10),
+                }));
+              }}
               disabled={clientsLoading}
             >
               <option value="">Select a client...</option>
