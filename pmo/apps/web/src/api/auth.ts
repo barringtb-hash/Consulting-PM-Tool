@@ -1,6 +1,7 @@
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 import { storeToken, clearStoredToken, getStoredToken } from './token-storage';
+import { storeTenant, clearStoredTenant } from './tenant-storage';
 
 export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 
@@ -47,8 +48,7 @@ export async function login(
   // Store tenant info for multi-tenant API requests
   // The X-Tenant-ID header is required for tenant-scoped API endpoints
   if (data.tenant) {
-    localStorage.setItem('currentTenantId', data.tenant.id);
-    localStorage.setItem('currentTenantSlug', data.tenant.slug);
+    storeTenant({ id: data.tenant.id, slug: data.tenant.slug });
   }
 
   return data.user;
@@ -85,12 +85,10 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
   // This ensures users who logged in before multi-tenant support
   // will get their tenant ID stored on subsequent page loads
   if (data.tenant) {
-    localStorage.setItem('currentTenantId', data.tenant.id);
-    localStorage.setItem('currentTenantSlug', data.tenant.slug);
+    storeTenant({ id: data.tenant.id, slug: data.tenant.slug });
   } else if (!data.user) {
     // Clear tenant info if user is not authenticated
-    localStorage.removeItem('currentTenantId');
-    localStorage.removeItem('currentTenantSlug');
+    clearStoredTenant();
   }
 
   return data.user ?? null;
@@ -108,8 +106,7 @@ export async function logout(): Promise<void> {
   clearStoredToken();
 
   // Clear tenant info for multi-tenant support
-  localStorage.removeItem('currentTenantId');
-  localStorage.removeItem('currentTenantSlug');
+  clearStoredTenant();
 
   await handleResponse<void>(response);
 }

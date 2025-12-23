@@ -21,6 +21,49 @@ import type {
 } from './tenant.types';
 import { randomBytes } from 'crypto';
 
+// ============================================================================
+// USER TENANT HELPERS
+// ============================================================================
+
+/**
+ * Find the default tenant for a user.
+ *
+ * Uses orderBy createdAt to ensure deterministic results when a user
+ * belongs to multiple tenants. Returns the first tenant the user was
+ * added to (earliest createdAt).
+ *
+ * @param userId - The user's ID
+ * @returns The user's default tenant or null if not found
+ */
+export async function findDefaultTenantForUser(userId: number) {
+  const tenantUser = await prisma.tenantUser.findFirst({
+    where: { userId },
+    include: { tenant: true },
+    // Ensure deterministic selection if user belongs to multiple tenants
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return tenantUser?.tenant ?? null;
+}
+
+/**
+ * Get tenant info formatted for API responses.
+ *
+ * @param tenant - The tenant object from Prisma
+ * @returns Formatted tenant info or null
+ */
+export function formatTenantResponse(
+  tenant: { id: string; name: string; slug: string } | null,
+) {
+  if (!tenant) return null;
+
+  return {
+    id: tenant.id,
+    name: tenant.name,
+    slug: tenant.slug,
+  };
+}
+
 // Type for the transaction client that works with extended Prisma clients
 type TransactionClient = Parameters<
   Parameters<typeof prisma.$transaction>[0]

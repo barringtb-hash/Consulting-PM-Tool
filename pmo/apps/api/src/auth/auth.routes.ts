@@ -15,6 +15,10 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../validation/password-reset.schema';
+import {
+  findDefaultTenantForUser,
+  formatTenantResponse,
+} from '../tenant/tenant.service';
 
 const router = Router();
 
@@ -69,10 +73,7 @@ router.post('/auth/login', loginRateLimiter, async (req, res) => {
     }
 
     // Get user's default tenant for multi-tenant context
-    const tenantUser = await prisma.tenantUser.findFirst({
-      where: { userId: user.id },
-      include: { tenant: true },
-    });
+    const tenant = await findDefaultTenantForUser(user.id);
 
     const token = signToken({ userId: user.id });
 
@@ -90,13 +91,7 @@ router.post('/auth/login', loginRateLimiter, async (req, res) => {
       },
       token, // For Safari localStorage fallback
       // Include tenant info for multi-tenant context
-      tenant: tenantUser?.tenant
-        ? {
-            id: tenantUser.tenant.id,
-            name: tenantUser.tenant.name,
-            slug: tenantUser.tenant.slug,
-          }
-        : null,
+      tenant: formatTenantResponse(tenant),
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -135,10 +130,7 @@ router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
     }
 
     // Get user's default tenant for multi-tenant context
-    const tenantUser = await prisma.tenantUser.findFirst({
-      where: { userId: user.id },
-      include: { tenant: true },
-    });
+    const tenant = await findDefaultTenantForUser(user.id);
 
     // Generate a fresh token for Safari ITP fallback.
     // This ensures users who logged in before the Safari localStorage fallback
@@ -157,13 +149,7 @@ router.get('/auth/me', optionalAuth, async (req: AuthenticatedRequest, res) => {
       },
       token, // For Safari localStorage fallback
       // Include tenant info for multi-tenant context
-      tenant: tenantUser?.tenant
-        ? {
-            id: tenantUser.tenant.id,
-            name: tenantUser.tenant.name,
-            slug: tenantUser.tenant.slug,
-          }
-        : null,
+      tenant: formatTenantResponse(tenant),
     });
   } catch (error) {
     console.error('Get user error:', error);

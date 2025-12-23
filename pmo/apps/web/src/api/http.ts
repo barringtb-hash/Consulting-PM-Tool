@@ -1,4 +1,5 @@
 import { getStoredToken } from './token-storage';
+import { getStoredTenantId } from './tenant-storage';
 import { buildApiUrl } from './config';
 
 export interface ApiError extends Error {
@@ -44,7 +45,7 @@ export interface FetchOptions extends RequestInit {
  */
 export function buildOptions(options?: FetchOptions): RequestInit {
   const storedToken = getStoredToken();
-  const storedTenantId = localStorage.getItem('currentTenantId');
+  const storedTenantId = getStoredTenantId();
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
