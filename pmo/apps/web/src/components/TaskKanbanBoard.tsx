@@ -216,7 +216,9 @@ function TaskCard({ task, isDragging = false }: TaskCardProps): JSX.Element {
   return (
     <div
       className={`bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 shadow-sm ${
-        isDragging ? 'shadow-lg' : 'hover:shadow-md dark:hover:shadow-neutral-900/50'
+        isDragging
+          ? 'shadow-lg'
+          : 'hover:shadow-md dark:hover:shadow-neutral-900/50'
       } transition-shadow cursor-grab active:cursor-grabbing`}
     >
       <div className="space-y-3">
