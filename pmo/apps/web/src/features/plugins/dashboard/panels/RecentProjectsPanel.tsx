@@ -90,8 +90,8 @@ function RecentProjectsPanelComponent(): JSX.Element {
   const isLoading = projectsData?.isLoading ?? false;
 
   return (
-    <Card>
-      <CardBody>
+    <Card className="h-full">
+      <CardBody className="h-full flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <CardTitle>Recent Projects</CardTitle>
           <Link
@@ -105,7 +105,7 @@ function RecentProjectsPanelComponent(): JSX.Element {
         {isLoading ? (
           <ProjectListSkeleton />
         ) : recentProjects.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-8 flex-1 flex flex-col justify-center">
             <svg
               className="mx-auto h-12 w-12 text-neutral-400 mb-3"
               fill="none"
