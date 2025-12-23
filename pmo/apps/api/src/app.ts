@@ -257,7 +257,7 @@ export function createApp(): express.Express {
         cors({
           origin: buildCorsOrigin(),
           credentials: true,
-          allowedHeaders: ['Content-Type', 'Authorization'],
+          allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
           exposedHeaders: ['Content-Type'],
           maxAge: 86400,
         })(req, res, next);
@@ -279,7 +279,8 @@ export function createApp(): express.Express {
         // Explicitly allow Authorization header for Safari ITP fallback
         // Safari's ITP may block cookies, so we use Authorization header as fallback
         // Content-Type is needed for JSON requests
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        // X-Tenant-ID is needed for multi-tenant context
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
         // Allow browser to read these headers from responses
         exposedHeaders: ['Content-Type'],
         // Cache preflight response for 24 hours to reduce OPTIONS requests
