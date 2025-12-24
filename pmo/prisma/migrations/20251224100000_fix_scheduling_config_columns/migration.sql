@@ -1,103 +1,30 @@
 -- Fix SchedulingConfig table to ensure all columns exist
 -- This migration repairs any issues from the previous migration (20251219033045)
 -- All operations are idempotent and can be run multiple times safely
+--
+-- IMPORTANT: Uses ADD COLUMN IF NOT EXISTS (PostgreSQL 9.6+) for reliability
+-- Previous version used information_schema checks which could fail due to case sensitivity
 
 -- Step 1: Add tenantId column if it doesn't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'tenantId') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "tenantId" TEXT;
-    END IF;
-END $$;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
 
 -- Step 2: Add accountId column if it doesn't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'accountId') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "accountId" INTEGER;
-    END IF;
-END $$;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "accountId" INTEGER;
 
 -- Step 3: Add booking settings columns if they don't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'allowWalkIns') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "allowWalkIns" BOOLEAN NOT NULL DEFAULT false;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'requirePhone') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "requirePhone" BOOLEAN NOT NULL DEFAULT true;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'autoConfirm') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "autoConfirm" BOOLEAN NOT NULL DEFAULT false;
-    END IF;
-END $$;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "allowWalkIns" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "requirePhone" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "autoConfirm" BOOLEAN NOT NULL DEFAULT false;
 
 -- Step 4: Add booking page settings columns if they don't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'showProviderSelection') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "showProviderSelection" BOOLEAN NOT NULL DEFAULT true;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'showAppointmentTypes') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "showAppointmentTypes" BOOLEAN NOT NULL DEFAULT true;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'requireIntakeForm') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "requireIntakeForm" BOOLEAN NOT NULL DEFAULT false;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'cancellationPolicy') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "cancellationPolicy" TEXT;
-    END IF;
-END $$;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "showProviderSelection" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "showAppointmentTypes" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "requireIntakeForm" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "cancellationPolicy" TEXT;
 
 -- Step 5: Add industry template columns if they don't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'industryTemplate') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "industryTemplate" TEXT;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                   WHERE table_schema = current_schema()
-                   AND table_name = 'SchedulingConfig'
-                   AND column_name = 'templateSettings') THEN
-        ALTER TABLE "SchedulingConfig" ADD COLUMN "templateSettings" JSONB;
-    END IF;
-END $$;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "industryTemplate" TEXT;
+ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "templateSettings" JSONB;
 
 -- Step 6: Make clientId nullable (wrap in exception handler)
 DO $$
