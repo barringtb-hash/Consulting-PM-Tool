@@ -192,8 +192,6 @@ export async function findOrCreateAccountForClient(
         id: true,
         name: true,
         industry: true,
-        website: true,
-        phone: true,
       },
     });
 
@@ -251,8 +249,6 @@ export async function findOrCreateAccountForClient(
         tenantId,
         name: client.name,
         industry: client.industry,
-        website: client.website,
-        phone: client.phone,
         ownerId: userId,
         type: 'CUSTOMER',
         customFields: {
