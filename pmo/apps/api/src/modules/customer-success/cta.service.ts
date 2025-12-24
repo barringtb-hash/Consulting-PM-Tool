@@ -352,27 +352,34 @@ export async function deleteCTA(id: number): Promise<void> {
 }
 
 /**
- * Get CTA summary/statistics
+ * CTA summary response matching frontend CTASummary interface
  */
-export async function getCTASummary(ownerId?: number): Promise<{
-  totalOpen: number;
-  totalOverdue: number;
-  byCTAType: Record<CTAType, number>;
-  byPriority: Record<CTAPriority, number>;
-  completedThisWeek: number;
-  completedThisMonth: number;
-}> {
+export interface CTASummaryResponse {
+  total: number;
+  open: number;
+  inProgress: number;
+  completed: number;
+  overdue: number;
+  byType: Record<string, number>;
+  byPriority: Record<string, number>;
+}
+
+/**
+ * Get CTA summary/statistics
+ * Returns structure matching frontend CTASummary interface
+ */
+export async function getCTASummary(
+  ownerId?: number,
+): Promise<CTASummaryResponse> {
   const now = new Date();
-  const weekAgo = new Date(now);
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  const monthAgo = new Date(now);
-  monthAgo.setDate(monthAgo.getDate() - 30);
 
   const ownerFilter = ownerId ? { ownerId } : {};
 
   const [
-    totalOpen,
-    totalOverdue,
+    openCount,
+    inProgressCount,
+    completedCount,
+    overdueCount,
     riskCount,
     opportunityCount,
     lifecycleCount,
@@ -382,12 +389,20 @@ export async function getCTASummary(ownerId?: number): Promise<{
     highCount,
     mediumCount,
     lowCount,
-    completedThisWeek,
-    completedThisMonth,
   ] = await Promise.all([
+    // Open CTAs
     prisma.cTA.count({
-      where: { ...ownerFilter, status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      where: { ...ownerFilter, status: 'OPEN' },
     }),
+    // In Progress CTAs
+    prisma.cTA.count({
+      where: { ...ownerFilter, status: 'IN_PROGRESS' },
+    }),
+    // Completed CTAs
+    prisma.cTA.count({
+      where: { ...ownerFilter, status: 'COMPLETED' },
+    }),
+    // Overdue CTAs (not completed/cancelled and past due date)
     prisma.cTA.count({
       where: {
         ...ownerFilter,
@@ -395,6 +410,7 @@ export async function getCTASummary(ownerId?: number): Promise<{
         dueDate: { lt: now },
       },
     }),
+    // By Type counts
     prisma.cTA.count({
       where: {
         ...ownerFilter,
@@ -430,6 +446,7 @@ export async function getCTASummary(ownerId?: number): Promise<{
         status: { notIn: ['COMPLETED', 'CANCELLED'] },
       },
     }),
+    // By Priority counts
     prisma.cTA.count({
       where: {
         ...ownerFilter,
@@ -458,26 +475,15 @@ export async function getCTASummary(ownerId?: number): Promise<{
         status: { notIn: ['COMPLETED', 'CANCELLED'] },
       },
     }),
-    prisma.cTA.count({
-      where: {
-        ...ownerFilter,
-        status: 'COMPLETED',
-        completedAt: { gte: weekAgo },
-      },
-    }),
-    prisma.cTA.count({
-      where: {
-        ...ownerFilter,
-        status: 'COMPLETED',
-        completedAt: { gte: monthAgo },
-      },
-    }),
   ]);
 
   return {
-    totalOpen,
-    totalOverdue,
-    byCTAType: {
+    total: openCount + inProgressCount,
+    open: openCount,
+    inProgress: inProgressCount,
+    completed: completedCount,
+    overdue: overdueCount,
+    byType: {
       RISK: riskCount,
       OPPORTUNITY: opportunityCount,
       LIFECYCLE: lifecycleCount,
@@ -490,8 +496,6 @@ export async function getCTASummary(ownerId?: number): Promise<{
       MEDIUM: mediumCount,
       LOW: lowCount,
     },
-    completedThisWeek,
-    completedThisMonth,
   };
 }
 
