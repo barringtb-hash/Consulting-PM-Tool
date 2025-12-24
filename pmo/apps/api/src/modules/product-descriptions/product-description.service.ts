@@ -183,7 +183,13 @@ export async function findOrCreateAccountForClient(
   // First, get the Client details
   const client = await prisma.client.findUnique({
     where: { id: clientId },
-    select: { id: true, name: true, industry: true, website: true, phone: true },
+    select: {
+      id: true,
+      name: true,
+      industry: true,
+      website: true,
+      phone: true,
+    },
   });
 
   if (!client) {
