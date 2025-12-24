@@ -402,11 +402,11 @@ export async function getCTASummary(
     prisma.cTA.count({
       where: { ...ownerFilter, status: 'COMPLETED' },
     }),
-    // Overdue CTAs (not completed/cancelled and past due date)
+    // Overdue CTAs (open or in progress with past due date - excludes snoozed)
     prisma.cTA.count({
       where: {
         ...ownerFilter,
-        status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
         dueDate: { lt: now },
       },
     }),
