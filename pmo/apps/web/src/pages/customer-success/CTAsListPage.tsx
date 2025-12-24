@@ -60,8 +60,12 @@ function CTAStatusBadge({ status }: { status: CTA['status'] }): JSX.Element {
 /**
  * Summary stats section
  */
+const INCLUDE_ALL_CTAS_IN_SUMMARY = true;
+
 function CTASummaryStats(): JSX.Element {
-  const { data: summary, isLoading } = useCTASummary(true);
+  const { data: summary, isLoading } = useCTASummary(
+    INCLUDE_ALL_CTAS_IN_SUMMARY,
+  );
 
   if (isLoading || !summary) {
     return (
