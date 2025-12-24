@@ -171,6 +171,96 @@ export async function updateProductDescriptionConfig(
   });
 }
 
+/**
+ * Find or create an Account for a legacy Client.
+ * This bridges the gap between the legacy Client-based API and the new Account-based schema.
+ * Uses a transaction to prevent race conditions when multiple requests arrive simultaneously.
+ */
+export async function findOrCreateAccountForClient(
+  clientId: number,
+  tenantId: string,
+  userId: number,
+): Promise<number | null> {
+  return prisma.$transaction(async (tx) => {
+    // First, get the Client details with tenant isolation
+    const client = await tx.client.findFirst({
+      where: {
+        id: clientId,
+        OR: [{ tenantId }, { tenantId: null }],
+      },
+      select: {
+        id: true,
+        name: true,
+        industry: true,
+      },
+    });
+
+    if (!client) {
+      return null;
+    }
+
+    // Try to find an existing Account linked to this Client via customFields
+    const existingAccountByLegacyId = await tx.account.findFirst({
+      where: {
+        tenantId,
+        customFields: {
+          path: ['legacyClientId'],
+          equals: clientId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existingAccountByLegacyId) {
+      return existingAccountByLegacyId.id;
+    }
+
+    // Try to find an Account with the same name (case-insensitive)
+    const existingAccountByName = await tx.account.findFirst({
+      where: {
+        tenantId,
+        name: {
+          equals: client.name,
+          mode: 'insensitive',
+        },
+      },
+      select: { id: true, customFields: true },
+    });
+
+    if (existingAccountByName) {
+      // Update the Account to link to this Client, preserving existing customFields
+      const existingCustomFields =
+        (existingAccountByName.customFields as Record<string, unknown>) || {};
+      await tx.account.update({
+        where: { id: existingAccountByName.id },
+        data: {
+          customFields: {
+            ...existingCustomFields,
+            legacyClientId: clientId,
+          },
+        },
+      });
+      return existingAccountByName.id;
+    }
+
+    // Create a new Account from the Client data
+    const newAccount = await tx.account.create({
+      data: {
+        tenantId,
+        name: client.name,
+        industry: client.industry,
+        ownerId: userId,
+        type: 'CUSTOMER',
+        customFields: {
+          legacyClientId: clientId,
+        },
+      },
+    });
+
+    return newAccount.id;
+  });
+}
+
 // ============================================================================
 // PRODUCT MANAGEMENT
 // ============================================================================

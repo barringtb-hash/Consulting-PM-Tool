@@ -239,11 +239,22 @@ router.post(
     }
 
     try {
-      // For backward compatibility, use clientId as accountId in the legacy client-based API
-      // The tenantId is required for the new schema
       const tenantId = getTenantId();
+
+      // Find or create an Account for this Client
+      const accountId = await productDescService.findOrCreateAccountForClient(
+        clientId,
+        tenantId,
+        req.userId,
+      );
+
+      if (!accountId) {
+        res.status(404).json({ error: 'Client not found' });
+        return;
+      }
+
       const config = await productDescService.createProductDescriptionConfig(
-        clientId, // Using clientId as accountId for legacy API compatibility
+        accountId,
         {
           ...parsed.data,
           tenantId,
