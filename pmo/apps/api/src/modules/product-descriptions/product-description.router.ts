@@ -8,7 +8,11 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
-import { tenantMiddleware } from '../../tenant/tenant.middleware';
+import {
+  tenantMiddleware,
+  optionalTenantMiddleware,
+  requireTenant,
+} from '../../tenant/tenant.middleware';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import * as productDescService from './product-description.service';
 
@@ -147,9 +151,11 @@ const performanceSchema = z.object({
 // CONFIG ROUTES
 // ============================================================================
 
-// All routes require authentication and tenant context
+// All routes require authentication
+// Use optionalTenantMiddleware to allow read operations without tenant context
+// (returns empty results when no tenant). Write operations use requireTenant.
 router.use(requireAuth);
-router.use(tenantMiddleware);
+router.use(optionalTenantMiddleware);
 
 /**
  * GET /api/product-descriptions/configs
@@ -212,6 +218,7 @@ router.get(
  */
 router.post(
   '/clients/:clientId/product-descriptions',
+  requireTenant,
   async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -265,6 +272,7 @@ router.post(
  */
 router.patch(
   '/clients/:clientId/product-descriptions',
+  requireTenant,
   async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -341,6 +349,7 @@ router.get(
  */
 router.post(
   '/product-descriptions/:configId/products',
+  requireTenant,
   async (req: AuthenticatedRequest<{ configId: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
