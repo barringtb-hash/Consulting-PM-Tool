@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import {
-  tenantMiddleware,
   optionalTenantMiddleware,
   requireTenant,
 } from '../../tenant/tenant.middleware';
