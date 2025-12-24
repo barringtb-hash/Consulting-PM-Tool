@@ -179,6 +179,9 @@ const CustomerSuccessAnalyticsPage = lazy(
   () => import('./pages/customer-success/CustomerSuccessAnalyticsPage'),
 );
 const CTAFormPage = lazy(() => import('./pages/customer-success/CTAFormPage'));
+const CTAsListPage = lazy(
+  () => import('./pages/customer-success/CTAsListPage'),
+);
 const SuccessPlanFormPage = lazy(
   () => import('./pages/customer-success/SuccessPlanFormPage'),
 );
@@ -762,6 +765,14 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <CustomerSuccessAnalyticsPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/customer-success/ctas"
+                  element={
+                    <LazyPage>
+                      <CTAsListPage />
                     </LazyPage>
                   }
                 />
