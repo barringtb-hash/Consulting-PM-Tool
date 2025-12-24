@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import { tenantMiddleware } from '../../tenant/tenant.middleware';
-import { getTenantId } from '../../tenant/tenant.context';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import * as productDescService from './product-description.service';
 
 const router = Router();
@@ -171,8 +171,12 @@ router.get(
       return;
     }
 
+    // Get tenant context for multi-tenant filtering
+    const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
     const configs = await productDescService.listProductDescriptionConfigs({
       clientId,
+      tenantId,
     });
     res.json({ configs });
   },
