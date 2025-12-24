@@ -86,8 +86,13 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
   // will get their tenant ID stored on subsequent page loads
   if (data.tenant) {
     storeTenant({ id: data.tenant.id, slug: data.tenant.slug });
-  } else if (!data.user) {
-    // Clear tenant info if user is not authenticated
+  } else {
+    // Clear stale tenant info if server returns no tenant.
+    // This handles cases where:
+    // 1. User is not authenticated
+    // 2. User is authenticated but has no tenant association
+    // 3. User's tenant was deleted or their TenantUser record was removed
+    // Without this, stale tenant IDs would cause 400 "Tenant not found" errors
     clearStoredTenant();
   }
 

@@ -113,9 +113,31 @@ export async function getProductDescriptionConfig(clientId: number) {
 
 export async function listProductDescriptionConfigs(filters?: {
   clientId?: number;
+  tenantId?: string;
 }) {
+  // Build where clause with tenant filtering for multi-tenant isolation
+  const where: Prisma.ProductDescriptionConfigWhereInput = {};
+
+  // Security: In production with multi-tenant enabled, require tenant filtering
+  // to prevent cross-tenant data leakage
+  const isProduction = env.nodeEnv === 'production';
+  const isMultiTenant = env.multiTenantEnabled !== false;
+
+  if (isProduction && isMultiTenant && !filters?.tenantId) {
+    // Return empty result set to prevent exposing all tenant data
+    return [];
+  }
+
+  if (filters?.tenantId) {
+    where.tenantId = filters.tenantId;
+  }
+
+  if (filters?.clientId) {
+    where.clientId = filters.clientId;
+  }
+
   return prisma.productDescriptionConfig.findMany({
-    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    where: Object.keys(where).length > 0 ? where : undefined,
     include: {
       client: { select: { id: true, name: true, industry: true } },
       _count: { select: { products: true } },
