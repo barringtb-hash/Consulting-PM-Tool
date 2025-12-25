@@ -101,7 +101,11 @@ export const errorHandler = (
   // Prisma known request errors (constraint violations, not found, etc.)
   if (err.name === 'PrismaClientKnownRequestError') {
     // Log concise message - full details available in Prisma logs
-    console.error(`[Prisma] ${err.message.split('\n').slice(-1)[0].trim()}`);
+    const prismaMessage =
+      typeof err.message === 'string' && err.message.trim() !== ''
+        ? err.message.split('\n').slice(-1)[0].trim()
+        : 'Unknown Prisma client error';
+    console.error(`[Prisma] ${prismaMessage}`);
     res.status(400).json({
       error: 'Database operation failed',
     });
@@ -113,7 +117,11 @@ export const errorHandler = (
     err.name === 'PrismaClientInitializationError' ||
     err.name === 'PrismaClientRustPanicError'
   ) {
-    console.error(`[Prisma] Database connection error`);
+    const firstLine =
+      typeof err.message === 'string' ? err.message.split('\n')[0].trim() : '';
+    console.error(
+      `[Prisma] Database connection error${firstLine ? `: ${firstLine}` : ''}`,
+    );
     res.status(503).json({
       error: 'Database connection unavailable',
     });
@@ -122,7 +130,11 @@ export const errorHandler = (
 
   // Prisma validation errors
   if (err.name === 'PrismaClientValidationError') {
-    console.error(`[Prisma] Validation error`);
+    const validationMessage =
+      typeof err.message === 'string' ? err.message.slice(0, 200) : '';
+    console.error(
+      `[Prisma] Validation error${validationMessage ? `: ${validationMessage}` : ''}`,
+    );
     res.status(400).json({
       error: 'Invalid request',
     });
