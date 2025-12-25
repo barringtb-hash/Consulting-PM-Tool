@@ -32,7 +32,7 @@ function createExtendedPrismaClient() {
   const baseClient = new PrismaClient({
     adapter,
     // Disable Prisma's built-in stdout logging - our error middleware handles all error logging
-    // In development, we still want query logs for debugging if needed
+    // In development, we keep warning logs enabled for debugging schema issues
     log:
       process.env.NODE_ENV === 'development'
         ? ['warn']
