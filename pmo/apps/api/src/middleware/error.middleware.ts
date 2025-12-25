@@ -73,18 +73,16 @@ export const errorHandler = (
 
   _next: NextFunction,
 ): void => {
-  // Handle CORS errors silently - these are security policy, not application errors.
-  // CORS blocks from bot traffic and probing requests should not flood logs.
-  if (err instanceof CorsError) {
-    // Return 403 without logging - CORS middleware already handled headers
-    res.status(403).json({
-      error: 'CORS policy: Origin not allowed',
-    });
+  // Defensive check: prevent "Cannot set headers after they are sent" errors
+  if (res.headersSent) {
     return;
   }
 
-  // Also catch generic CORS errors from the cors library
-  if (err.message === 'Not allowed by CORS') {
+  // Handle CORS errors silently - these are security policy, not application errors.
+  // CORS blocks from bot traffic and probing requests should not flood logs.
+  // Note: We only check for CorsError (our custom class) since all CORS rejections
+  // from buildCorsOrigin() now use CorsError. This avoids fragile string matching.
+  if (err instanceof CorsError) {
     res.status(403).json({
       error: 'CORS policy: Origin not allowed',
     });
