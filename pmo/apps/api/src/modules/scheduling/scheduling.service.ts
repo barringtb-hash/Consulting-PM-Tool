@@ -162,10 +162,11 @@ export async function createSchedulingConfigForAccount(
     },
   });
 
-  // Fetch the created config without relations to avoid column errors
-  // Relations can be fetched separately if needed
+  // Fetch the created config with safe relations (providers/appointmentTypes)
+  // Account/Client includes have been removed to avoid column errors
   const config = await prisma.schedulingConfig.findUnique({
     where: { id: created.id },
+    include: configIncludes,
   });
   if (!config) {
     throw new Error('Failed to fetch created scheduling config');
@@ -190,7 +191,8 @@ export async function createSchedulingConfig(
     },
   });
 
-  // Fetch the created config with relations
+  // Fetch the created config with safe relations (providers/appointmentTypes)
+  // Account/Client includes have been removed to avoid column errors
   const config = await prisma.schedulingConfig.findUnique({
     where: { id: created.id },
     include: configIncludes,
