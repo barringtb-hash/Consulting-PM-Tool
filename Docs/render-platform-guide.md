@@ -18,11 +18,11 @@ The backend API and PostgreSQL database run on Render; the frontend deploys sepa
 
 1. **Set up the database on Render**
    - Create a PostgreSQL instance and save its connection string as `DATABASE_URL`.
-   - After deployment, run Prisma migrations (e.g., `npx prisma migrate deploy` or a postdeploy script).
+   - Migrations run automatically during the API build step (no manual intervention needed).
 
 2. **Set up the API service**
    - Create a Web Service from the GitHub repo pointing to `/apps/api`.
-   - Build: `cd apps/api && npm install && npm run build`.
+   - Build: `cd apps/api && npm install && npm run build` (includes `prisma migrate deploy`).
    - Start: `cd apps/api && npm run start`.
    - Configure environment variables:
      - `DATABASE_URL` – Render Postgres connection string.
@@ -30,7 +30,7 @@ The backend API and PostgreSQL database run on Render; the frontend deploys sepa
      - `CORS_ORIGIN` – allowed web origin (e.g., Vercel URL).
      - `NODE_ENV=production`.
      - `PORT` – optional; Render injects this, but the app must listen on `process.env.PORT`.
-   - Deploy; Render builds and starts automatically. Run `npx prisma migrate deploy` to apply migrations.
+   - Deploy; Render builds and starts automatically. Migrations run during the build step.
 
 3. **Set up the web app on Vercel**
    - Create a project from the repo; set root to `pmo`.
@@ -67,7 +67,7 @@ The backend API and PostgreSQL database run on Render; the frontend deploys sepa
 ## Best practices for AI projects on Render
 - Store secrets (e.g., `JWT_SECRET`, `DATABASE_URL`) and `CORS_ORIGIN` in Render env settings; do not commit them.
 - Bind the server to `process.env.PORT || 4000` and host `0.0.0.0` so Render can route traffic.
-- Run `prisma migrate deploy` after deployments to keep the database schema up to date.
+- Migrations run automatically during the build step (`npm run build` includes `prisma migrate deploy`). For manual migrations, run `npx prisma migrate deploy` via Render shell.
 - Use auto-scaling and persistent disks for workloads needing burst capacity or durable storage; leverage generous timeouts for long-running AI jobs.
 - Pair with Vercel for the frontend, passing `VITE_API_BASE_URL` to point at the Render-hosted API.
 

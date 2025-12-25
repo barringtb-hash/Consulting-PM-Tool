@@ -24,13 +24,13 @@ This guide assumes:
    cd apps/api && npm install && npm run build
    ```
 
+   > **Note**: The `build` script includes `prisma migrate deploy` at the end, ensuring database migrations are applied during each deployment. This is the recommended approach as it runs migrations once per deploy rather than on every server restart.
+
 3. Start command:
 
    ```bash
    cd apps/api && npm run start
    ```
-
-   > **Note**: The `start` script automatically runs `prisma migrate deploy` before starting the server. This ensures database schema changes are always applied, preventing errors like "The column X does not exist". If you need to start without migrations (not recommended), use `npm run start:no-migrate`.
 
 4. Add environment variables in Render (Settings → Environment):
    - `DATABASE_URL` – value from the Render Postgres instance.
@@ -39,7 +39,7 @@ This guide assumes:
    - `NODE_ENV` – `production`.
    - `PORT` – Render usually injects this automatically; ensure your app listens on `process.env.PORT`.
 
-5. Migrations run automatically on each deploy. If you need to manually trigger migrations:
+5. Migrations run automatically during the build phase of each deploy. If you need to manually trigger migrations:
    - Open a shell on the Render service and run:
 
      ```bash
@@ -47,7 +47,7 @@ This guide assumes:
      npx prisma migrate deploy
      ```
 
-   - Or trigger a redeploy, which will run migrations as part of the start command.
+   - Or trigger a redeploy, which will run migrations as part of the build step.
 
 ---
 
