@@ -14,7 +14,9 @@
     "test:e2e:ui": "playwright test --ui",
     "build": "echo \"No build configured\"",
     "format": "prettier \"**/*.{ts,tsx,js,jsx,json,md}\" --write",
-    "prepare": "node ./scripts/install-husky.mjs || echo \"[husky] prepare failed, skipping\""
+    "prepare": "node ./scripts/install-husky.mjs || echo \"[husky] prepare failed, skipping\"",
+    "prisma:migrate:deploy": "bash ./scripts/deploy-migrations.sh",
+    "db:migrate": "npx prisma migrate deploy --schema ./prisma/schema.prisma"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
