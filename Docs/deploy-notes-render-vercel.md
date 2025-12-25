@@ -21,10 +21,10 @@ This guide assumes:
 2. Build command:
 
    ```bash
-   cd apps/api && npm install && npm run build
+   cd pmo && npm install && npm run prisma:migrate:deploy && cd apps/api && npm run build
    ```
 
-   > **Note**: The `build` script includes `prisma migrate deploy` at the end, ensuring database migrations are applied during each deployment. This is the recommended approach as it runs migrations once per deploy rather than on every server restart.
+   > **Note**: Migrations must run from the workspace root (`pmo/`) where `prisma.config.ts` is located. The `prisma:migrate:deploy` script handles this correctly. The API build step only compiles TypeScript.
 
 3. Start command:
 
@@ -43,8 +43,8 @@ This guide assumes:
    - Open a shell on the Render service and run:
 
      ```bash
-     cd apps/api
-     npx prisma migrate deploy
+     cd pmo
+     npm run prisma:migrate:deploy
      ```
 
    - Or trigger a redeploy, which will run migrations as part of the build step.
