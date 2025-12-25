@@ -81,10 +81,12 @@ interface TimeSlot {
 
 /**
  * Standard includes for scheduling config queries
+ * Note: Using minimal selects to avoid issues with columns that may not exist
+ * in all database versions (tenantId, industry were added in later migrations)
  */
 const configIncludes = {
-  account: { select: { id: true, name: true, industry: true, tenantId: true } },
-  client: { select: { id: true, name: true, industry: true } },
+  account: { select: { id: true, name: true } },
+  client: { select: { id: true, name: true } },
   providers: { where: { isActive: true } },
   appointmentTypes: { where: { isActive: true } },
 };
