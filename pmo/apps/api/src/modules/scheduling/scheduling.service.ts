@@ -81,15 +81,16 @@ interface TimeSlot {
 
 /**
  * Standard includes for scheduling config queries
- * NOTE: Account and Client includes have been temporarily removed to diagnose
- * a "column does not exist" error in production. The issue appears to be related
- * to Prisma's handling of these relations. Once resolved, these can be re-added.
+ * NOTE: ALL includes have been temporarily removed to diagnose
+ * a "column does not exist" error in production. Once the root cause
+ * is identified, includes can be gradually restored.
  */
 const configIncludes = {
-  // Temporarily removed: account: { select: { id: true, name: true } },
-  // Temporarily removed: client: { select: { id: true, name: true } },
-  providers: { where: { isActive: true } },
-  appointmentTypes: { where: { isActive: true } },
+  // Temporarily removed ALL includes to diagnose the issue
+  // account: { select: { id: true, name: true } },
+  // client: { select: { id: true, name: true } },
+  // providers: { where: { isActive: true } },
+  // appointmentTypes: { where: { isActive: true } },
 };
 
 /**
