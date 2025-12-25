@@ -149,12 +149,19 @@ export async function createSchedulingConfigForAccount(
   data: SchedulingConfigInput,
   tenantId?: string,
 ) {
-  return prisma.schedulingConfig.create({
+  // Create without includes first, then fetch with includes
+  // This avoids potential issues with relation loading during create
+  const created = await prisma.schedulingConfig.create({
     data: {
       accountId,
       tenantId,
       ...data,
     },
+  });
+
+  // Fetch the created config with relations
+  return prisma.schedulingConfig.findUnique({
+    where: { id: created.id },
     include: configIncludes,
   });
 }
