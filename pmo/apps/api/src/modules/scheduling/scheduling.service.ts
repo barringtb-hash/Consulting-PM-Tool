@@ -81,10 +81,13 @@ interface TimeSlot {
 
 /**
  * Standard includes for scheduling config queries
+ * NOTE: Account and Client includes have been temporarily removed to diagnose
+ * a "column does not exist" error in production. The issue appears to be related
+ * to Prisma's handling of these relations. Once resolved, these can be re-added.
  */
 const configIncludes = {
-  account: { select: { id: true, name: true } },
-  client: { select: { id: true, name: true } },
+  // Temporarily removed: account: { select: { id: true, name: true } },
+  // Temporarily removed: client: { select: { id: true, name: true } },
   providers: { where: { isActive: true } },
   appointmentTypes: { where: { isActive: true } },
 };
@@ -133,8 +136,8 @@ export async function listSchedulingConfigs(filters?: {
   return prisma.schedulingConfig.findMany({
     where: Object.keys(where).length > 0 ? where : undefined,
     include: {
-      account: { select: { id: true, name: true } },
-      client: { select: { id: true, name: true } },
+      // Temporarily removed: account: { select: { id: true, name: true } },
+      // Temporarily removed: client: { select: { id: true, name: true } },
       _count: { select: { providers: true, appointments: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -159,7 +162,8 @@ export async function createSchedulingConfigForAccount(
     },
   });
 
-  // Fetch the created config with relations
+  // Fetch the created config with safe relations (providers/appointmentTypes)
+  // Account/Client includes have been removed to avoid column errors
   const config = await prisma.schedulingConfig.findUnique({
     where: { id: created.id },
     include: configIncludes,
@@ -187,7 +191,8 @@ export async function createSchedulingConfig(
     },
   });
 
-  // Fetch the created config with relations
+  // Fetch the created config with safe relations (providers/appointmentTypes)
+  // Account/Client includes have been removed to avoid column errors
   const config = await prisma.schedulingConfig.findUnique({
     where: { id: created.id },
     include: configIncludes,
