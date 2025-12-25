@@ -27,6 +27,7 @@
  */
 
 import { NextFunction, Request, Response } from 'express';
+import { CorsError } from '../errors/cors.error';
 
 /**
  * Custom application error class for operational errors.
@@ -72,6 +73,24 @@ export const errorHandler = (
 
   _next: NextFunction,
 ): void => {
+  // Handle CORS errors silently - these are security policy, not application errors.
+  // CORS blocks from bot traffic and probing requests should not flood logs.
+  if (err instanceof CorsError) {
+    // Return 403 without logging - CORS middleware already handled headers
+    res.status(403).json({
+      error: 'CORS policy: Origin not allowed',
+    });
+    return;
+  }
+
+  // Also catch generic CORS errors from the cors library
+  if (err.message === 'Not allowed by CORS') {
+    res.status(403).json({
+      error: 'CORS policy: Origin not allowed',
+    });
+    return;
+  }
+
   console.error('Error occurred:', {
     message: err.message,
     stack: err.stack,

@@ -27,6 +27,7 @@
 import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import { CorsError } from './errors/cors.error';
 
 import authRouter from './auth/auth.routes';
 import assetsRouter from './routes/assets';
@@ -210,16 +211,10 @@ function buildCorsOrigin(): cors.CorsOptions['origin'] {
       return;
     }
 
-    // Origin not allowed - log for debugging
-    console.warn('CORS blocked origin:', {
-      requestedOrigin: origin,
-      allowedOrigins,
-      hasVercelOrigin,
-      hint: hasVercelOrigin
-        ? 'Origin does not match any allowed origins or .vercel.app pattern'
-        : 'Add a .vercel.app URL to CORS_ORIGIN to allow Vercel preview deployments',
-    });
-    callback(new Error('Not allowed by CORS'));
+    // Origin not allowed - use CorsError for clean handling
+    // Note: We intentionally skip verbose logging here to avoid log noise from
+    // bot traffic and probing. CORS blocks are security policy, not application errors.
+    callback(new CorsError(origin, allowedOrigins));
   };
 }
 
