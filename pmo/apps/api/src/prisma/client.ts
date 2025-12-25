@@ -31,7 +31,13 @@ function createExtendedPrismaClient() {
 
   const baseClient = new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
+    // Disable Prisma's built-in stdout logging - our error middleware handles all error logging
+    // In development, we keep warning logs enabled for debugging schema issues
+    log:
+      process.env.NODE_ENV === 'development'
+        ? ['warn']
+        : // Production: no logging - errors are handled by error.middleware.ts
+          [],
   });
 
   // Return client with tenant extension
