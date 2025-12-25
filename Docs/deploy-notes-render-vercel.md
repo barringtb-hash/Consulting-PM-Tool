@@ -18,15 +18,15 @@ This guide assumes:
 ## 2. Set up the API service on Render
 
 1. Create a new **Web Service** from your GitHub repo pointing to the `/apps/api` directory.
-2. Build command (**IMPORTANT: include migrations**):
+2. Build command:
 
    ```bash
-   cd apps/api && npm install && npm run build && npx prisma migrate deploy
+   cd pmo && npm install && npm run prisma:migrate:deploy && cd apps/api && npm run build
    ```
 
-   > **Note**: The `prisma migrate deploy` step is critical. Without it, schema changes won't be applied to the production database, causing runtime errors like "The column X does not exist".
+   > **Note**: Migrations must run from the workspace root (`pmo/`) where `prisma.config.ts` is located. The `prisma:migrate:deploy` script handles this correctly. The API build step only compiles TypeScript.
 
-3. Start command (example):
+3. Start command:
 
    ```bash
    cd apps/api && npm run start
@@ -39,13 +39,15 @@ This guide assumes:
    - `NODE_ENV` – `production`.
    - `PORT` – Render usually injects this automatically; ensure your app listens on `process.env.PORT`.
 
-5. If you previously deployed without migrations, you may need to manually run them once:
+5. Migrations run automatically during the build phase of each deploy. If you need to manually trigger migrations:
    - Open a shell on the Render service and run:
 
      ```bash
-     cd apps/api
-     npx prisma migrate deploy
+     cd pmo
+     npm run prisma:migrate:deploy
      ```
+
+   - Or trigger a redeploy, which will run migrations as part of the build step.
 
 ---
 
