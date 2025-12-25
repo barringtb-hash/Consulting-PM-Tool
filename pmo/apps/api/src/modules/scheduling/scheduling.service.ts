@@ -83,8 +83,8 @@ interface TimeSlot {
  * Standard includes for scheduling config queries
  */
 const configIncludes = {
-  account: { select: { id: true, name: true, industry: true, tenantId: true } },
-  client: { select: { id: true, name: true, industry: true } },
+  account: { select: { id: true, name: true } },
+  client: { select: { id: true, name: true } },
   providers: { where: { isActive: true } },
   appointmentTypes: { where: { isActive: true } },
 };
@@ -133,8 +133,8 @@ export async function listSchedulingConfigs(filters?: {
   return prisma.schedulingConfig.findMany({
     where: Object.keys(where).length > 0 ? where : undefined,
     include: {
-      account: { select: { id: true, name: true, industry: true } },
-      client: { select: { id: true, name: true, industry: true } },
+      account: { select: { id: true, name: true } },
+      client: { select: { id: true, name: true } },
       _count: { select: { providers: true, appointments: true } },
     },
     orderBy: { createdAt: 'desc' },
