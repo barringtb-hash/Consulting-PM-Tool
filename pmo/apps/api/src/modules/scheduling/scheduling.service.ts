@@ -81,15 +81,16 @@ interface TimeSlot {
 
 /**
  * Standard includes for scheduling config queries
- * NOTE: Account and Client includes have been temporarily removed to diagnose
- * a "column does not exist" error in production. The issue appears to be related
- * to Prisma's handling of these relations. Once resolved, these can be re-added.
+ * NOTE: ALL includes have been temporarily removed to diagnose
+ * a "column does not exist" error in production. Once the root cause
+ * is identified, includes can be gradually restored.
  */
 const configIncludes = {
-  // Temporarily removed: account: { select: { id: true, name: true } },
-  // Temporarily removed: client: { select: { id: true, name: true } },
-  providers: { where: { isActive: true } },
-  appointmentTypes: { where: { isActive: true } },
+  // Temporarily removed ALL includes to diagnose the issue
+  // account: { select: { id: true, name: true } },
+  // client: { select: { id: true, name: true } },
+  // providers: { where: { isActive: true } },
+  // appointmentTypes: { where: { isActive: true } },
 };
 
 /**
@@ -152,26 +153,15 @@ export async function createSchedulingConfigForAccount(
   data: SchedulingConfigInput,
   tenantId?: string,
 ) {
-  // Create without includes first, then fetch with includes
-  // This avoids potential issues with relation loading during create
-  const created = await prisma.schedulingConfig.create({
+  // Just create and return directly - no additional fetch
+  // This bypasses any potential issues with includes/relations
+  return prisma.schedulingConfig.create({
     data: {
       accountId,
       tenantId,
       ...data,
     },
   });
-
-  // Fetch the created config with safe relations (providers/appointmentTypes)
-  // Account/Client includes have been removed to avoid column errors
-  const config = await prisma.schedulingConfig.findUnique({
-    where: { id: created.id },
-    include: configIncludes,
-  });
-  if (!config) {
-    throw new Error('Failed to fetch created scheduling config');
-  }
-  return config;
 }
 
 /**
