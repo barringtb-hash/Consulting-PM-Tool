@@ -11,10 +11,10 @@
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run",
     "create-user": "ts-node scripts/create-user.ts",
-    "db:migrate": "prisma migrate deploy",
+    "db:migrate": "prisma migrate deploy --schema ../../prisma/schema.prisma",
     "db:seed": "prisma db seed",
-    "db:setup": "prisma migrate deploy && prisma db seed",
-    "prisma:migrate": "prisma migrate deploy",
+    "db:setup": "prisma migrate deploy --schema ../../prisma/schema.prisma && prisma db seed",
+    "prisma:migrate": "prisma migrate deploy --schema ../../prisma/schema.prisma",
     "prisma:migrate:deploy": "bash ../../scripts/deploy-migrations.sh",
     "prisma:seed": "prisma db seed"
   },
