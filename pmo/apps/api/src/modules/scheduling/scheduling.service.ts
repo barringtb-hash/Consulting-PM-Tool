@@ -149,14 +149,25 @@ export async function createSchedulingConfigForAccount(
   data: SchedulingConfigInput,
   tenantId?: string,
 ) {
-  return prisma.schedulingConfig.create({
+  // Create without includes first, then fetch with includes
+  // This avoids potential issues with relation loading during create
+  const created = await prisma.schedulingConfig.create({
     data: {
       accountId,
       tenantId,
       ...data,
     },
+  });
+
+  // Fetch the created config with relations
+  const config = await prisma.schedulingConfig.findUnique({
+    where: { id: created.id },
     include: configIncludes,
   });
+  if (!config) {
+    throw new Error('Failed to fetch created scheduling config');
+  }
+  return config;
 }
 
 /**
@@ -167,13 +178,24 @@ export async function createSchedulingConfig(
   clientId: number,
   data: SchedulingConfigInput,
 ) {
-  return prisma.schedulingConfig.create({
+  // Create without includes first, then fetch with includes
+  // This avoids potential issues with relation loading during create
+  const created = await prisma.schedulingConfig.create({
     data: {
       clientId,
       ...data,
     },
+  });
+
+  // Fetch the created config with relations
+  const config = await prisma.schedulingConfig.findUnique({
+    where: { id: created.id },
     include: configIncludes,
   });
+  if (!config) {
+    throw new Error('Failed to fetch created scheduling config');
+  }
+  return config;
 }
 
 /**
