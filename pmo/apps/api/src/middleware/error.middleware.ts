@@ -78,10 +78,9 @@ export const errorHandler = (
     return;
   }
 
+  // ========== SILENT ERRORS (no logging) ==========
   // Handle CORS errors silently - these are security policy, not application errors.
   // CORS blocks from bot traffic and probing requests should not flood logs.
-  // Note: We only check for CorsError (our custom class) since all CORS rejections
-  // from buildCorsOrigin() now use CorsError. This avoids fragile string matching.
   if (err instanceof CorsError) {
     res.status(403).json({
       error: 'CORS policy: Origin not allowed',
@@ -89,50 +88,67 @@ export const errorHandler = (
     return;
   }
 
-  console.error('Error occurred:', {
-    message: err.message,
-    stack: err.stack,
-    name: err.name,
-  });
-
+  // ========== OPERATIONAL ERRORS (single log line) ==========
+  // AppError: Application-level operational errors
   if (err instanceof AppError) {
+    console.error(`[${err.statusCode}] ${err.message}`);
     res.status(err.statusCode).json({
       error: err.message,
     });
     return;
   }
 
-  // Handle Prisma errors - log details server-side only, don't expose to clients
+  // Prisma known request errors (constraint violations, not found, etc.)
   if (err.name === 'PrismaClientKnownRequestError') {
-    console.error('Prisma known request error:', err.message);
+    // Log concise message - full details available in Prisma logs
+    const prismaMessage =
+      typeof err.message === 'string' && err.message.trim() !== ''
+        ? err.message.split('\n').slice(-1)[0].trim()
+        : 'Unknown Prisma client error';
+    console.error(`[Prisma] ${prismaMessage}`);
     res.status(400).json({
       error: 'Database operation failed',
     });
     return;
   }
 
-  // Handle Prisma connection/initialization errors
+  // Prisma connection/initialization errors
   if (
     err.name === 'PrismaClientInitializationError' ||
     err.name === 'PrismaClientRustPanicError'
   ) {
-    console.error('Database connection error:', err.message);
+    const firstLine =
+      typeof err.message === 'string' ? err.message.split('\n')[0].trim() : '';
+    console.error(
+      `[Prisma] Database connection error${firstLine ? `: ${firstLine}` : ''}`,
+    );
     res.status(503).json({
       error: 'Database connection unavailable',
     });
     return;
   }
 
-  // Handle Prisma validation errors
+  // Prisma validation errors
   if (err.name === 'PrismaClientValidationError') {
-    console.error('Prisma validation error:', err.message);
+    const validationMessage =
+      typeof err.message === 'string' ? err.message.slice(0, 200) : '';
+    console.error(
+      `[Prisma] Validation error${validationMessage ? `: ${validationMessage}` : ''}`,
+    );
     res.status(400).json({
       error: 'Invalid request',
     });
     return;
   }
 
-  // Default to 500 server error
+  // ========== UNEXPECTED ERRORS (full logging for debugging) ==========
+  // Only log full details for truly unexpected errors
+  console.error('Unexpected error:', {
+    message: err.message,
+    stack: err.stack,
+    name: err.name,
+  });
+
   res.status(500).json({
     error: 'Internal server error',
   });
