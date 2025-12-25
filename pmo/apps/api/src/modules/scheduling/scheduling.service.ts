@@ -153,26 +153,15 @@ export async function createSchedulingConfigForAccount(
   data: SchedulingConfigInput,
   tenantId?: string,
 ) {
-  // Create without includes first, then fetch with includes
-  // This avoids potential issues with relation loading during create
-  const created = await prisma.schedulingConfig.create({
+  // Just create and return directly - no additional fetch
+  // This bypasses any potential issues with includes/relations
+  return prisma.schedulingConfig.create({
     data: {
       accountId,
       tenantId,
       ...data,
     },
   });
-
-  // Fetch the created config with safe relations (providers/appointmentTypes)
-  // Account/Client includes have been removed to avoid column errors
-  const config = await prisma.schedulingConfig.findUnique({
-    where: { id: created.id },
-    include: configIncludes,
-  });
-  if (!config) {
-    throw new Error('Failed to fetch created scheduling config');
-  }
-  return config;
 }
 
 /**
