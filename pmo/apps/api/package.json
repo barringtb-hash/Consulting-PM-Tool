@@ -15,7 +15,7 @@
     "db:seed": "prisma db seed",
     "db:setup": "prisma migrate deploy --schema ../../prisma/schema.prisma && prisma db seed",
     "prisma:migrate": "prisma migrate deploy --schema ../../prisma/schema.prisma",
-    "prisma:migrate:deploy": "bash ../../scripts/deploy-migrations.sh",
+    "prisma:migrate:deploy": "bash ../../scripts/deploy-migrations.sh ../../prisma/schema.prisma",
     "prisma:seed": "prisma db seed"
   },
   "dependencies": {
