@@ -1,5 +1,6 @@
 -- Add tenantId to AI Module Config models for multi-tenant support
--- This migration adds tenant isolation to all AI tool configurations
+-- This migration adds tenant isolation to existing AI tool configurations
+-- Note: Some Phase 2/3 AI modules are not yet migrated to DB; they will get tenantId when created
 
 -- Phase 1 AI Tool Configs
 -- ChatbotConfig already has tenantId from previous migration
@@ -25,7 +26,7 @@ ALTER TABLE "ProductDescriptionConfig" ADD CONSTRAINT "ProductDescriptionConfig_
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 CREATE INDEX IF NOT EXISTS "ProductDescriptionConfig_tenantId_idx" ON "ProductDescriptionConfig"("tenantId");
 
--- Phase 2 AI Tool Configs
+-- Phase 2 AI Tool Configs (that exist in DB)
 
 -- DocumentAnalyzerConfig
 ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
@@ -40,57 +41,6 @@ ALTER TABLE "ContentGeneratorConfig" DROP CONSTRAINT IF EXISTS "ContentGenerator
 ALTER TABLE "ContentGeneratorConfig" ADD CONSTRAINT "ContentGeneratorConfig_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 CREATE INDEX IF NOT EXISTS "ContentGeneratorConfig_tenantId_idx" ON "ContentGeneratorConfig"("tenantId");
-
--- LeadScoringConfig
-ALTER TABLE "LeadScoringConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
-ALTER TABLE "LeadScoringConfig" DROP CONSTRAINT IF EXISTS "LeadScoringConfig_tenantId_fkey";
-ALTER TABLE "LeadScoringConfig" ADD CONSTRAINT "LeadScoringConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "LeadScoringConfig_tenantId_idx" ON "LeadScoringConfig"("tenantId");
-
--- PriorAuthConfig
-ALTER TABLE "PriorAuthConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
-ALTER TABLE "PriorAuthConfig" DROP CONSTRAINT IF EXISTS "PriorAuthConfig_tenantId_fkey";
-ALTER TABLE "PriorAuthConfig" ADD CONSTRAINT "PriorAuthConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "PriorAuthConfig_tenantId_idx" ON "PriorAuthConfig"("tenantId");
-
--- Phase 3 AI Tool Configs
-
--- InventoryForecastConfig
-ALTER TABLE "InventoryForecastConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
-ALTER TABLE "InventoryForecastConfig" DROP CONSTRAINT IF EXISTS "InventoryForecastConfig_tenantId_fkey";
-ALTER TABLE "InventoryForecastConfig" ADD CONSTRAINT "InventoryForecastConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "InventoryForecastConfig_tenantId_idx" ON "InventoryForecastConfig"("tenantId");
-
--- ComplianceMonitorConfig
-ALTER TABLE "ComplianceMonitorConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
-ALTER TABLE "ComplianceMonitorConfig" DROP CONSTRAINT IF EXISTS "ComplianceMonitorConfig_tenantId_fkey";
-ALTER TABLE "ComplianceMonitorConfig" ADD CONSTRAINT "ComplianceMonitorConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "ComplianceMonitorConfig_tenantId_idx" ON "ComplianceMonitorConfig"("tenantId");
-
--- PredictiveMaintenanceConfig
-ALTER TABLE "PredictiveMaintenanceConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
-ALTER TABLE "PredictiveMaintenanceConfig" DROP CONSTRAINT IF EXISTS "PredictiveMaintenanceConfig_tenantId_fkey";
-ALTER TABLE "PredictiveMaintenanceConfig" ADD CONSTRAINT "PredictiveMaintenanceConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "PredictiveMaintenanceConfig_tenantId_idx" ON "PredictiveMaintenanceConfig"("tenantId");
-
--- RevenueManagementConfig
-ALTER TABLE "RevenueManagementConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
-ALTER TABLE "RevenueManagementConfig" DROP CONSTRAINT IF EXISTS "RevenueManagementConfig_tenantId_fkey";
-ALTER TABLE "RevenueManagementConfig" ADD CONSTRAINT "RevenueManagementConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "RevenueManagementConfig_tenantId_idx" ON "RevenueManagementConfig"("tenantId");
-
--- SafetyMonitorConfig
-ALTER TABLE "SafetyMonitorConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
-ALTER TABLE "SafetyMonitorConfig" DROP CONSTRAINT IF EXISTS "SafetyMonitorConfig_tenantId_fkey";
-ALTER TABLE "SafetyMonitorConfig" ADD CONSTRAINT "SafetyMonitorConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "SafetyMonitorConfig_tenantId_idx" ON "SafetyMonitorConfig"("tenantId");
 
 -- Customer Success Models
 
@@ -121,3 +71,8 @@ ALTER TABLE "Playbook" DROP CONSTRAINT IF EXISTS "Playbook_tenantId_fkey";
 ALTER TABLE "Playbook" ADD CONSTRAINT "Playbook_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 CREATE INDEX IF NOT EXISTS "Playbook_tenantId_idx" ON "Playbook"("tenantId");
+
+-- Note: The following tables are defined in schema but not yet migrated to DB:
+-- LeadScoringConfig, PriorAuthConfig, InventoryForecastConfig, ComplianceMonitorConfig,
+-- PredictiveMaintenanceConfig, RevenueManagementConfig, SafetyMonitorConfig
+-- They will get tenantId column when their migrations are created.
