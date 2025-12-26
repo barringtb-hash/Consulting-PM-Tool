@@ -5,6 +5,21 @@ import { vi } from 'vitest';
 
 import LoginPage from './LoginPage';
 
+// Mock window.matchMedia for dark mode detection
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 const mockLogin = vi.fn();
 const mockNavigate = vi.fn();
 let mockAuthError: string | null = null;
@@ -60,7 +75,7 @@ describe('LoginPage', () => {
     );
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'password123');
 
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
@@ -95,7 +110,7 @@ describe('LoginPage', () => {
     );
 
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await userEvent.type(screen.getByLabelText(/password/i), 'wrong');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'wrong');
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Force a rerender to pick up the error state change

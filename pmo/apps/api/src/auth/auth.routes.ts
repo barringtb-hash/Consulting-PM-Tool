@@ -59,7 +59,10 @@ router.post('/auth/login', loginRateLimiter, async (req, res) => {
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Use case-insensitive email lookup to improve UX
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
 
     // Always perform password comparison to prevent timing attacks
     // If user doesn't exist, compare against dummy hash to maintain consistent timing
