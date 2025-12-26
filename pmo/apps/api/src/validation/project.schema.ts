@@ -25,6 +25,7 @@ export const projectCreateSchema = z
     status: z.nativeEnum(ProjectStatus).optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
+    isSharedWithTenant: z.boolean().optional(), // When true, all users in tenant can view
   })
   .refine(
     (data) => data.accountId !== undefined || data.clientId !== undefined,

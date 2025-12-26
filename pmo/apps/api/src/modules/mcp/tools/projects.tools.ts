@@ -269,8 +269,15 @@ export async function executeProjectTool(
         const projects = await prisma.project.findMany({
           where: {
             AND: [
-              // Filter by owner if userId is provided
-              parsed._userId ? { ownerId: parsed._userId } : {},
+              // Show projects owned by user OR shared with tenant
+              parsed._userId
+                ? {
+                    OR: [
+                      { ownerId: parsed._userId },
+                      { isSharedWithTenant: true },
+                    ],
+                  }
+                : {},
               parsed.clientId ? { clientId: parsed.clientId } : {},
               parsed.status ? { status: parsed.status } : {},
               parsed.healthStatus ? { healthStatus: parsed.healthStatus } : {},
