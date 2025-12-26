@@ -39,9 +39,12 @@ export async function createUser(input: CreateUserInput): Promise<SafeUser> {
     throw new Error('BCRYPT_SALT_ROUNDS must be a valid number');
   }
 
-  // 1) Enforce email uniqueness
-  const existing = await prisma.user.findUnique({
-    where: { email: input.email },
+  // Normalize email to lowercase for consistent storage and comparison
+  const normalizedEmail = input.email.trim().toLowerCase();
+
+  // 1) Enforce email uniqueness (case-insensitive)
+  const existing = await prisma.user.findFirst({
+    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
   });
 
   if (existing) {
@@ -51,11 +54,11 @@ export async function createUser(input: CreateUserInput): Promise<SafeUser> {
   // 2) Hash password
   const passwordHash = await bcrypt.hash(input.password, bcryptSaltRounds);
 
-  // 3) Create user via Prisma
+  // 3) Create user via Prisma (store normalized email)
   const user = await prisma.user.create({
     data: {
       name: input.name,
-      email: input.email,
+      email: normalizedEmail,
       passwordHash,
       timezone: input.timezone,
       role: input.role ?? 'USER',
@@ -109,14 +112,19 @@ export async function updateUser(
     throw new Error('User not found');
   }
 
-  // If email is being updated, check if it's already in use by another user
-  if (input.email && input.email !== existingUser.email) {
-    const emailInUse = await prisma.user.findUnique({
-      where: { email: input.email },
-    });
+  // If email is being updated, normalize and check if it's already in use by another user
+  let normalizedEmail: string | undefined;
+  if (input.email) {
+    normalizedEmail = input.email.trim().toLowerCase();
 
-    if (emailInUse) {
-      throw new Error('Email already in use');
+    if (normalizedEmail !== existingUser.email.toLowerCase()) {
+      const emailInUse = await prisma.user.findFirst({
+        where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+      });
+
+      if (emailInUse) {
+        throw new Error('Email already in use');
+      }
     }
   }
 
@@ -132,12 +140,12 @@ export async function updateUser(
     passwordHash = await bcrypt.hash(input.password, bcryptSaltRounds);
   }
 
-  // Update user
+  // Update user (store normalized email)
   const user = await prisma.user.update({
     where: { id },
     data: {
       ...(input.name && { name: input.name }),
-      ...(input.email && { email: input.email }),
+      ...(normalizedEmail && { email: normalizedEmail }),
       ...(passwordHash && { passwordHash }),
       ...(input.timezone && { timezone: input.timezone }),
       ...(input.role && { role: input.role }),
