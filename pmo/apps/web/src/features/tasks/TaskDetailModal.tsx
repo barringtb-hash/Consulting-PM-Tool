@@ -24,7 +24,7 @@ import {
 interface TaskDetailModalProps {
   isOpen: boolean;
   taskId: number | null;
-  projectId: number;
+  projectId?: number;
   milestones: Milestone[];
   onClose: () => void;
   onDeleted?: () => void;

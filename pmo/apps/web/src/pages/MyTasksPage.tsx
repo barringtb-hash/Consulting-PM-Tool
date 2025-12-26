@@ -521,6 +521,14 @@ function MyTasksPage(): JSX.Element {
                         key={task.id}
                         className="hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                         onClick={() => setSelectedTaskId(task.id)}
+                        tabIndex={0}
+                        role="button"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedTaskId(task.id);
+                          }
+                        }}
                       >
                         <td
                           className="px-6 py-4"
@@ -640,7 +648,7 @@ function MyTasksPage(): JSX.Element {
       <TaskDetailModal
         isOpen={selectedTaskId !== null}
         taskId={selectedTaskId}
-        projectId={selectedTask?.projectId ?? 0}
+        projectId={selectedTask?.projectId}
         milestones={milestones}
         onClose={() => setSelectedTaskId(null)}
       />

@@ -388,14 +388,20 @@ router.patch(
       return;
     }
 
+    const parentTaskId = Number(req.params.id);
     const subtaskId = Number(req.params.subtaskId);
+
+    if (Number.isNaN(parentTaskId)) {
+      res.status(400).json({ error: 'Invalid parent task id' });
+      return;
+    }
 
     if (Number.isNaN(subtaskId)) {
       res.status(400).json({ error: 'Invalid subtask id' });
       return;
     }
 
-    const result = await toggleSubtask(subtaskId, req.userId);
+    const result = await toggleSubtask(subtaskId, req.userId, parentTaskId);
 
     if (result.error === 'not_found') {
       res.status(404).json({ error: 'Subtask not found' });
@@ -409,6 +415,13 @@ router.patch(
 
     if (result.error === 'not_subtask') {
       res.status(400).json({ error: 'Task is not a subtask' });
+      return;
+    }
+
+    if (result.error === 'parent_mismatch') {
+      res
+        .status(400)
+        .json({ error: 'Subtask does not belong to specified parent task' });
       return;
     }
 

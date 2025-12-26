@@ -495,9 +495,14 @@ export const listSubtasks = async (parentTaskId: number, ownerId: number) => {
  *
  * @param subtaskId - The ID of the subtask to toggle
  * @param ownerId - The ID of the user toggling (must be project owner)
+ * @param parentTaskId - Optional parent task ID to validate relationship
  * @returns Object with either { subtask } or { error }
  */
-export const toggleSubtask = async (subtaskId: number, ownerId: number) => {
+export const toggleSubtask = async (
+  subtaskId: number,
+  ownerId: number,
+  parentTaskId?: number,
+) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
   const subtask = await prisma.task.findFirst({
@@ -516,6 +521,11 @@ export const toggleSubtask = async (subtaskId: number, ownerId: number) => {
   // Must be a subtask (have a parent)
   if (subtask.parentTaskId === null) {
     return { error: 'not_subtask' as const };
+  }
+
+  // Validate parent task ID if provided
+  if (parentTaskId !== undefined && subtask.parentTaskId !== parentTaskId) {
+    return { error: 'parent_mismatch' as const };
   }
 
   const newStatus = subtask.status === 'DONE' ? 'BACKLOG' : 'DONE';

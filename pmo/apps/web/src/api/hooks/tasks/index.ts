@@ -203,7 +203,12 @@ export function useCreateSubtask(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload) => createSubtask(parentTaskId as number, payload),
+    mutationFn: (payload) => {
+      if (parentTaskId === undefined) {
+        throw new Error('Cannot create subtask: parent task ID is required');
+      }
+      return createSubtask(parentTaskId, payload);
+    },
     onSuccess: () => {
       // Invalidate the parent task detail (for subtask list)
       queryClient.invalidateQueries({
@@ -228,7 +233,12 @@ export function useToggleSubtask(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (subtaskId) => toggleSubtask(parentTaskId as number, subtaskId),
+    mutationFn: (subtaskId) => {
+      if (parentTaskId === undefined) {
+        throw new Error('Cannot toggle subtask: parent task ID is required');
+      }
+      return toggleSubtask(parentTaskId, subtaskId);
+    },
     onSuccess: (updatedSubtask) => {
       // Optimistically update the task detail cache
       queryClient.setQueryData<TaskWithSubtasks>(

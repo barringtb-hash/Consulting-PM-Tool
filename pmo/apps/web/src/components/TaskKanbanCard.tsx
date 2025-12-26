@@ -107,6 +107,17 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
     mouseDownPosRef.current = null;
   }, []);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      // Handle Enter/Space for click accessibility
+      if ((e.key === 'Enter' || e.key === ' ') && onClick) {
+        e.preventDefault();
+        onClick(task.id);
+      }
+    },
+    [task.id, onClick],
+  );
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -125,6 +136,10 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={onClick ? 0 : undefined}
+      role={onClick ? 'button' : undefined}
+      aria-label={onClick ? `Open task details for ${task.title}` : undefined}
       className={`bg-white rounded-lg border border-neutral-200 p-4 shadow-sm ${
         isDragging
           ? 'shadow-lg cursor-grabbing'
