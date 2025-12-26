@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { LayoutList, LayoutGrid } from 'lucide-react';
 
 import { useProjects } from '../api/queries';
+import { useProjectMilestones } from '../api/hooks/milestones';
 import { useAuth } from '../auth/AuthContext';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import {
@@ -22,6 +23,7 @@ import { Select } from '../ui/Select';
 import { useToast } from '../ui/Toast';
 import type { TaskWithProject } from '../api/tasks';
 import { TaskKanbanBoard } from '../components/TaskKanbanBoard';
+import { TaskDetailModal } from '../features/tasks/TaskDetailModal';
 import { EMPTY_STATES } from '../utils/typography';
 
 interface Filters {
@@ -87,6 +89,7 @@ function MyTasksPage(): JSX.Element {
     search: '',
   });
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -94,6 +97,19 @@ function MyTasksPage(): JSX.Element {
   const tasksQuery = useMyTasks(ownerId);
   const projectsQuery = useProjects();
   const updateTaskMutation = useUpdateTask();
+
+  // Get the selected task to find its project
+  const selectedTask = useMemo(() => {
+    if (!selectedTaskId) return null;
+    return tasksQuery.data?.find((t) => t.id === selectedTaskId) ?? null;
+  }, [selectedTaskId, tasksQuery.data]);
+
+  // Fetch milestones for the selected task's project
+  const milestonesQuery = useProjectMilestones(selectedTask?.projectId);
+  const milestones = useMemo(
+    () => milestonesQuery.data ?? [],
+    [milestonesQuery.data],
+  );
 
   useRedirectOnUnauthorized(tasksQuery.error);
   useRedirectOnUnauthorized(projectsQuery.error);
@@ -503,9 +519,21 @@ function MyTasksPage(): JSX.Element {
                     {filteredTasks.map((task) => (
                       <tr
                         key={task.id}
-                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                        onClick={() => setSelectedTaskId(task.id)}
+                        tabIndex={0}
+                        role="button"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedTaskId(task.id);
+                          }
+                        }}
                       >
-                        <td className="px-6 py-4">
+                        <td
+                          className="px-6 py-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Checkbox
                             checked={task.status === 'DONE'}
                             onChange={() => handleToggleDone(task)}
@@ -534,7 +562,10 @@ function MyTasksPage(): JSX.Element {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td
+                          className="px-6 py-4 whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {task.projectName && (
                             <Link
                               to={`/projects/${task.projectId}`}
@@ -544,7 +575,10 @@ function MyTasksPage(): JSX.Element {
                             </Link>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td
+                          className="px-6 py-4 whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center gap-2">
                             <Badge variant={getStatusBadgeVariant(task.status)}>
                               {formatStatusLabel(task.status)}
@@ -578,7 +612,10 @@ function MyTasksPage(): JSX.Element {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {formatDate(task.dueDate)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <td
+                          className="px-6 py-4 whitespace-nowrap text-right text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Link
                             to={`/projects/${task.projectId}`}
                             className="text-primary-600 hover:text-primary-700 font-medium"
@@ -601,10 +638,20 @@ function MyTasksPage(): JSX.Element {
               <TaskKanbanBoard
                 tasks={filteredTasks}
                 onTaskMove={handleStatusChange}
+                onTaskClick={setSelectedTaskId}
               />
             )}
         </section>
       </main>
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        isOpen={selectedTaskId !== null}
+        taskId={selectedTaskId}
+        projectId={selectedTask?.projectId}
+        milestones={milestones}
+        onClose={() => setSelectedTaskId(null)}
+      />
     </div>
   );
 }

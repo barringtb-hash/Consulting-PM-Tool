@@ -17,17 +17,22 @@ import { queryKeys } from '../queryKeys';
 import {
   TASK_PRIORITIES,
   TASK_STATUSES,
+  createSubtask,
   createTask,
   deleteTask,
   fetchMyTasks,
   fetchProjectTasks,
+  fetchTaskWithSubtasks,
   moveTask,
+  toggleSubtask,
   updateTask,
+  type SubtaskPayload,
   type Task,
   type TaskMovePayload,
   type TaskPayload,
   type TaskUpdatePayload,
   type TaskWithProject,
+  type TaskWithSubtasks,
 } from '../../tasks';
 
 // ============================================================================
@@ -57,6 +62,19 @@ export function useMyTasks(
     queryKey: [...queryKeys.tasks.myTasks(), ownerId],
     enabled: Boolean(ownerId),
     queryFn: () => fetchMyTasks(ownerId),
+  });
+}
+
+/**
+ * Fetch a task with its subtasks for the detail modal
+ */
+export function useTaskWithSubtasks(
+  taskId?: number,
+): UseQueryResult<TaskWithSubtasks, Error> {
+  return useQuery({
+    queryKey: queryKeys.tasks.detail(taskId),
+    enabled: Boolean(taskId),
+    queryFn: () => fetchTaskWithSubtasks(taskId as number),
   });
 }
 
@@ -172,14 +190,89 @@ export function useDeleteTask(
 }
 
 // ============================================================================
+// Subtask Mutations
+// ============================================================================
+
+/**
+ * Create a subtask for a parent task
+ */
+export function useCreateSubtask(
+  parentTaskId?: number,
+  projectId?: number,
+): UseMutationResult<Task, Error, SubtaskPayload> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) => {
+      if (parentTaskId === undefined) {
+        throw new Error('Cannot create subtask: parent task ID is required');
+      }
+      return createSubtask(parentTaskId, payload);
+    },
+    onSuccess: () => {
+      // Invalidate the parent task detail (for subtask list)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tasks.detail(parentTaskId),
+      });
+      // Invalidate project tasks (for subtask count on cards)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tasks.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.myTasks() });
+    },
+  });
+}
+
+/**
+ * Toggle a subtask's completion status
+ */
+export function useToggleSubtask(
+  parentTaskId?: number,
+  projectId?: number,
+): UseMutationResult<Task, Error, number> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (subtaskId) => {
+      if (parentTaskId === undefined) {
+        throw new Error('Cannot toggle subtask: parent task ID is required');
+      }
+      return toggleSubtask(parentTaskId, subtaskId);
+    },
+    onSuccess: (updatedSubtask) => {
+      // Optimistically update the task detail cache
+      queryClient.setQueryData<TaskWithSubtasks>(
+        queryKeys.tasks.detail(parentTaskId),
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            subTasks: current.subTasks.map((st) =>
+              st.id === updatedSubtask.id ? updatedSubtask : st,
+            ),
+          };
+        },
+      );
+      // Invalidate project tasks (for subtask count on cards)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tasks.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.myTasks() });
+    },
+  });
+}
+
+// ============================================================================
 // Re-exports
 // ============================================================================
 
 export { TASK_PRIORITIES, TASK_STATUSES };
 export type {
+  SubtaskPayload,
   Task,
   TaskMovePayload,
   TaskPayload,
   TaskUpdatePayload,
   TaskWithProject,
+  TaskWithSubtasks,
 } from '../../tasks';

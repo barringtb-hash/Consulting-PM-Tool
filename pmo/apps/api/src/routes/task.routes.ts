@@ -3,14 +3,19 @@ import { Router, Response } from 'express';
 import { AuthenticatedRequest, requireAuth } from '../auth/auth.middleware';
 import { tenantMiddleware } from '../tenant/tenant.middleware';
 import {
+  createSubtask,
   createTask,
   deleteTask,
   getTaskForOwner,
+  getTaskWithSubtasks,
+  listSubtasks,
   listTasksForProject,
   moveTask,
+  toggleSubtask,
   updateTask,
 } from '../services/task.service';
 import {
+  subtaskCreateSchema,
   taskCreateSchema,
   taskMoveSchema,
   taskUpdateSchema,
@@ -113,6 +118,11 @@ router.post('/tasks', async (req: AuthenticatedRequest, res: Response) => {
 
   if (result.error === 'invalid_milestone') {
     res.status(400).json({ error: 'Milestone does not belong to the project' });
+    return;
+  }
+
+  if (result.error === 'invalid_parent') {
+    res.status(400).json({ error: 'Invalid parent task' });
     return;
   }
 
@@ -241,6 +251,181 @@ router.delete(
     }
 
     res.status(204).send();
+  },
+);
+
+// ============================================================================
+// Task detail with subtasks (for modal view)
+// ============================================================================
+
+router.get(
+  '/tasks/:id/details',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const taskId = Number(req.params.id);
+
+    if (Number.isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task id' });
+      return;
+    }
+
+    const result = await getTaskWithSubtasks(taskId, req.userId);
+
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    res.json({ task: result.task });
+  },
+);
+
+// ============================================================================
+// Subtask routes
+// ============================================================================
+
+router.get(
+  '/tasks/:id/subtasks',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const taskId = Number(req.params.id);
+
+    if (Number.isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task id' });
+      return;
+    }
+
+    const result = await listSubtasks(taskId, req.userId);
+
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    res.json({ subtasks: result.subtasks });
+  },
+);
+
+router.post(
+  '/tasks/:id/subtasks',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parentTaskId = Number(req.params.id);
+
+    if (Number.isNaN(parentTaskId)) {
+      res.status(400).json({ error: 'Invalid task id' });
+      return;
+    }
+
+    const parsed = subtaskCreateSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid subtask data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const result = await createSubtask(parentTaskId, req.userId, parsed.data);
+
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Parent task not found' });
+      return;
+    }
+
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    if (result.error === 'invalid_parent') {
+      res.status(400).json({ error: 'Cannot add subtask to a subtask' });
+      return;
+    }
+
+    if (result.error === 'invalid_milestone') {
+      res
+        .status(400)
+        .json({ error: 'Milestone does not belong to the project' });
+      return;
+    }
+
+    res.status(201).json({ subtask: result.subtask });
+  },
+);
+
+router.patch(
+  '/tasks/:id/subtasks/:subtaskId/toggle',
+  async (
+    req: AuthenticatedRequest<{ id: string; subtaskId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parentTaskId = Number(req.params.id);
+    const subtaskId = Number(req.params.subtaskId);
+
+    if (Number.isNaN(parentTaskId)) {
+      res.status(400).json({ error: 'Invalid parent task id' });
+      return;
+    }
+
+    if (Number.isNaN(subtaskId)) {
+      res.status(400).json({ error: 'Invalid subtask id' });
+      return;
+    }
+
+    const result = await toggleSubtask(subtaskId, req.userId, parentTaskId);
+
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Subtask not found' });
+      return;
+    }
+
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    if (result.error === 'not_subtask') {
+      res.status(400).json({ error: 'Task is not a subtask' });
+      return;
+    }
+
+    if (result.error === 'parent_mismatch') {
+      res
+        .status(400)
+        .json({ error: 'Subtask does not belong to specified parent task' });
+      return;
+    }
+
+    res.json({ subtask: result.subtask });
   },
 );
 

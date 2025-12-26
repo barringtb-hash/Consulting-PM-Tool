@@ -21,6 +21,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../prisma/client';
 import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import {
+  SubtaskCreateInput,
   TaskCreateInput,
   TaskMoveInput,
   TaskUpdateInput,
@@ -36,6 +37,18 @@ type TaskWithoutProject = Omit<TaskWithOwner, 'project'>;
 
 /** Task creation data including optional meeting source */
 type TaskCreateData = TaskCreateInput & { sourceMeetingId?: number };
+
+/** Task with subtask counts for display */
+type _TaskWithSubtaskCounts = Prisma.TaskGetPayload<{
+  include: { _count: { select: { subTasks: true } } };
+}> & {
+  subTaskCompletedCount?: number;
+};
+
+/** Task with full subtasks array */
+type _TaskWithSubtasks = Prisma.TaskGetPayload<{
+  include: { subTasks: true };
+}>;
 
 const stripProject = ({
   project,
@@ -93,7 +106,8 @@ const validateMilestoneForProject = async (
 };
 
 /**
- * Lists all tasks for a project.
+ * Lists all parent tasks for a project (excludes subtasks).
+ * Includes subtask counts for each task.
  *
  * @param projectId - The ID of the project to list tasks for
  * @param ownerId - The ID of the user requesting access (must be project owner)
@@ -109,12 +123,28 @@ export const listTasksForProject = async (
     return { error: projectAccess } as const;
   }
 
+  // Get parent tasks only (no subtasks) with subtask counts
   const tasks = await prisma.task.findMany({
-    where: { projectId },
+    where: { projectId, parentTaskId: null },
+    include: {
+      _count: { select: { subTasks: true } },
+      subTasks: { select: { status: true } },
+    },
     orderBy: { createdAt: 'desc' },
   });
 
-  return { tasks } as const;
+  // Transform to include completed subtask count
+  const tasksWithCounts = tasks.map((task) => {
+    const { subTasks, _count, ...taskData } = task;
+    return {
+      ...taskData,
+      subTaskCount: _count.subTasks,
+      subTaskCompletedCount: subTasks.filter((st) => st.status === 'DONE')
+        .length,
+    };
+  });
+
+  return { tasks: tasksWithCounts } as const;
 };
 
 /**
@@ -139,20 +169,75 @@ export const getTaskForOwner = async (id: number, ownerId: number) => {
 };
 
 /**
+ * Retrieves a task by ID with its subtasks, verifying owner access.
+ *
+ * @param id - The task ID
+ * @param ownerId - The ID of the user requesting access (must be project owner)
+ * @returns Object with either { task } (including subtasks) or { error }
+ */
+export const getTaskWithSubtasks = async (id: number, ownerId: number) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const task = await prisma.task.findFirst({
+    where: { id, tenantId },
+    include: {
+      project: { select: { ownerId: true, name: true } },
+      milestone: { select: { id: true, name: true } },
+      subTasks: {
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  });
+
+  if (!task) {
+    return { error: 'not_found' as const };
+  }
+
+  if (task.project.ownerId !== ownerId) {
+    return { error: 'forbidden' as const };
+  }
+
+  return { task } as const;
+};
+
+/**
  * Creates a new task within a project.
  *
  * Validates project ownership and milestone association before creation.
  * Automatically assigns tenant context for multi-tenant isolation.
+ * If parentTaskId is provided, validates single-level nesting (subtasks can't have subtasks).
  *
  * @param ownerId - The ID of the user creating the task (must be project owner)
  * @param data - Task creation data including title, projectId, optional milestoneId
- * @returns Object with either { task } or { error } with 'not_found' | 'forbidden' | 'invalid_milestone'
+ * @returns Object with either { task } or { error } with 'not_found' | 'forbidden' | 'invalid_milestone' | 'invalid_parent'
  */
 export const createTask = async (ownerId: number, data: TaskCreateData) => {
   const projectAccess = await validateProjectAccess(data.projectId, ownerId);
 
   if (projectAccess === 'not_found' || projectAccess === 'forbidden') {
     return { error: projectAccess } as const;
+  }
+
+  // Validate parentTaskId if provided (enforce single-level nesting)
+  if (data.parentTaskId) {
+    const tenantId = hasTenantContext() ? getTenantId() : undefined;
+    const parentTask = await prisma.task.findFirst({
+      where: { id: data.parentTaskId, tenantId },
+    });
+
+    if (!parentTask) {
+      return { error: 'invalid_parent' as const };
+    }
+
+    // Prevent subtasks from having their own subtasks
+    if (parentTask.parentTaskId !== null) {
+      return { error: 'invalid_parent' as const };
+    }
+
+    // Parent task must belong to the same project
+    if (parentTask.projectId !== data.projectId) {
+      return { error: 'invalid_parent' as const };
+    }
   }
 
   if (data.milestoneId) {
@@ -307,4 +392,148 @@ export const deleteTask = async (id: number, ownerId: number) => {
   await prisma.task.delete({ where: { id } });
 
   return { deleted: true } as const;
+};
+
+// ============================================================================
+// Subtask-specific operations
+// ============================================================================
+
+/**
+ * Creates a subtask for a parent task.
+ * Inherits projectId, ownerId, and tenantId from parent task.
+ * Validates single-level nesting (parent must not be a subtask itself).
+ *
+ * @param parentTaskId - The ID of the parent task
+ * @param ownerId - The ID of the user creating the subtask (must be project owner)
+ * @param data - Subtask creation data (title, description, status, priority, dueDate, milestoneId)
+ * @returns Object with either { subtask } or { error }
+ */
+export const createSubtask = async (
+  parentTaskId: number,
+  ownerId: number,
+  data: SubtaskCreateInput,
+) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  // Find parent task and verify it's not already a subtask
+  const parentTask = await prisma.task.findFirst({
+    where: { id: parentTaskId, tenantId },
+    include: { project: { select: { ownerId: true } } },
+  });
+
+  if (!parentTask) {
+    return { error: 'not_found' as const };
+  }
+
+  if (parentTask.project.ownerId !== ownerId) {
+    return { error: 'forbidden' as const };
+  }
+
+  // Enforce single-level nesting
+  if (parentTask.parentTaskId !== null) {
+    return { error: 'invalid_parent' as const };
+  }
+
+  // Validate milestone if provided
+  if (data.milestoneId) {
+    const milestoneValid = await validateMilestoneForProject(
+      data.milestoneId,
+      parentTask.projectId,
+    );
+
+    if (!milestoneValid) {
+      return { error: 'invalid_milestone' as const };
+    }
+  }
+
+  const subtask = await prisma.task.create({
+    data: {
+      ...data,
+      projectId: parentTask.projectId,
+      ownerId,
+      tenantId,
+      parentTaskId,
+    },
+  });
+
+  return { subtask } as const;
+};
+
+/**
+ * Lists all subtasks for a given parent task.
+ *
+ * @param parentTaskId - The ID of the parent task
+ * @param ownerId - The ID of the user requesting access (must be project owner)
+ * @returns Object with either { subtasks } or { error }
+ */
+export const listSubtasks = async (parentTaskId: number, ownerId: number) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const parentTask = await prisma.task.findFirst({
+    where: { id: parentTaskId, tenantId },
+    include: { project: { select: { ownerId: true } } },
+  });
+
+  if (!parentTask) {
+    return { error: 'not_found' as const };
+  }
+
+  if (parentTask.project.ownerId !== ownerId) {
+    return { error: 'forbidden' as const };
+  }
+
+  const subtasks = await prisma.task.findMany({
+    where: { parentTaskId, tenantId },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return { subtasks } as const;
+};
+
+/**
+ * Toggles a subtask's completion status (DONE <-> BACKLOG).
+ *
+ * @param subtaskId - The ID of the subtask to toggle
+ * @param ownerId - The ID of the user toggling (must be project owner)
+ * @param parentTaskId - Optional parent task ID to validate relationship
+ * @returns Object with either { subtask } or { error }
+ */
+export const toggleSubtask = async (
+  subtaskId: number,
+  ownerId: number,
+  parentTaskId?: number,
+) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const subtask = await prisma.task.findFirst({
+    where: { id: subtaskId, tenantId },
+    include: { project: { select: { ownerId: true } } },
+  });
+
+  if (!subtask) {
+    return { error: 'not_found' as const };
+  }
+
+  if (subtask.project.ownerId !== ownerId) {
+    return { error: 'forbidden' as const };
+  }
+
+  // Must be a subtask (have a parent)
+  if (subtask.parentTaskId === null) {
+    return { error: 'not_subtask' as const };
+  }
+
+  // Validate parent task ID if provided
+  if (parentTaskId !== undefined && subtask.parentTaskId !== parentTaskId) {
+    return { error: 'parent_mismatch' as const };
+  }
+
+  const newStatus = subtask.status === 'DONE' ? 'BACKLOG' : 'DONE';
+
+  const updated = await prisma.task.update({
+    where: { id: subtaskId },
+    data: { status: newStatus },
+  });
+
+  return { subtask: updated } as const;
 };
