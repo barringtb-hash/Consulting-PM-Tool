@@ -59,9 +59,12 @@ router.post('/auth/login', loginRateLimiter, async (req, res) => {
       return;
     }
 
+    // Normalize email to lowercase for consistent comparison
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Use case-insensitive email lookup to improve UX
     const user = await prisma.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
     });
 
     // Always perform password comparison to prevent timing attacks

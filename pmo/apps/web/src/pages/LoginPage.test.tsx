@@ -125,4 +125,34 @@ describe('LoginPage', () => {
     );
     expect(mockNavigate).not.toHaveBeenCalled();
   });
+
+  it('toggles password visibility when show password button is clicked', async () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/login' }]}>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    const passwordInput = screen.getByLabelText(/^password$/i);
+    const toggleButton = screen.getByRole('button', { name: /show password/i });
+
+    // Password should be hidden by default
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    // Click to show password
+    await userEvent.click(toggleButton);
+    expect(passwordInput).toHaveAttribute('type', 'text');
+    expect(
+      screen.getByRole('button', { name: /hide password/i }),
+    ).toBeInTheDocument();
+
+    // Click again to hide password
+    await userEvent.click(
+      screen.getByRole('button', { name: /hide password/i }),
+    );
+    expect(passwordInput).toHaveAttribute('type', 'password');
+    expect(
+      screen.getByRole('button', { name: /show password/i }),
+    ).toBeInTheDocument();
+  });
 });
