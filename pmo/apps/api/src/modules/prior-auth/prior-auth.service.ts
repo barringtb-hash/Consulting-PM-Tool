@@ -20,6 +20,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -95,6 +96,11 @@ export async function listPriorAuthConfigs(filters?: {
 }) {
   const whereClause: Prisma.PriorAuthConfigWhereInput = {};
 
+  // Always filter by tenant if context is available
+  if (hasTenantContext()) {
+    whereClause.tenantId = getTenantId();
+  }
+
   if (filters?.clientId) {
     whereClause.clientId = filters.clientId;
   } else if (filters?.clientIds && filters.clientIds.length > 0) {
@@ -102,7 +108,7 @@ export async function listPriorAuthConfigs(filters?: {
   }
 
   return prisma.priorAuthConfig.findMany({
-    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    where: whereClause,
     include: {
       client: { select: { id: true, name: true, industry: true } },
     },
@@ -116,6 +122,7 @@ export async function createPriorAuthConfig(
 ) {
   return prisma.priorAuthConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId,
       ...data,
     },

@@ -23,6 +23,7 @@ import {
   dispatchWebhookEvent,
   WEBHOOK_EVENTS,
 } from './webhooks/webhook.service';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -100,6 +101,12 @@ export async function listChatbotConfigs(filters?: {
   accountId?: number;
 }) {
   const where: Prisma.ChatbotConfigWhereInput = {};
+
+  // Always filter by tenant if context is available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
+
   if (filters?.accountId) {
     where.accountId = filters.accountId;
   } else if (filters?.clientId) {
@@ -107,7 +114,7 @@ export async function listChatbotConfigs(filters?: {
   }
 
   return prisma.chatbotConfig.findMany({
-    where: Object.keys(where).length > 0 ? where : undefined,
+    where,
     include: {
       client: { select: { id: true, name: true, industry: true } },
       account: { select: { id: true, name: true, industry: true } },
@@ -126,6 +133,7 @@ export async function createChatbotConfig(
   const { clientId, accountId, ...configData } = data;
   return prisma.chatbotConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       ...(accountId && { accountId }),
       ...(clientId && { clientId }),
       ...configData,

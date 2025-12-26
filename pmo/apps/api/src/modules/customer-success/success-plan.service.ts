@@ -13,6 +13,7 @@ import {
   Priority,
 } from '@prisma/client';
 import prisma from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 export interface CreateSuccessPlanInput {
   clientId: number;
@@ -112,6 +113,7 @@ export async function createSuccessPlan(
       targetDate: input.targetDate,
       customerGoals: input.customerGoals,
       isCustomerVisible: input.isCustomerVisible ?? false,
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
     },
     include: {
       client: { select: { id: true, name: true } },
@@ -240,6 +242,11 @@ export async function listSuccessPlans(options: {
       ],
     }),
   };
+
+  // Apply tenant context when available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
 
   if (options.status) {
     if (Array.isArray(options.status)) {

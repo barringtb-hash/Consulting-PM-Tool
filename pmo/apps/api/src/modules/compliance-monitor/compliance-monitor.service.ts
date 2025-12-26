@@ -26,6 +26,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============ Configuration Management ============
 
@@ -64,6 +65,7 @@ export async function createComplianceConfig(data: {
 }) {
   return prisma.complianceMonitorConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId: data.clientId,
       industry: data.industry,
       jurisdiction: data.jurisdiction,

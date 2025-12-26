@@ -12,6 +12,7 @@
 
 import { prisma } from '../../prisma/client';
 import { AppointmentStatus, Prisma } from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -124,14 +125,18 @@ export async function listSchedulingConfigs(filters?: {
 }) {
   const where: Prisma.SchedulingConfigWhereInput = {};
 
+  // Apply tenant context automatically when available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  } else if (filters?.tenantId) {
+    where.tenantId = filters.tenantId;
+  }
+
   if (filters?.accountId) {
     where.accountId = filters.accountId;
   }
   if (filters?.clientId) {
     where.clientId = filters.clientId;
-  }
-  if (filters?.tenantId) {
-    where.tenantId = filters.tenantId;
   }
 
   return prisma.schedulingConfig.findMany({
@@ -153,12 +158,16 @@ export async function createSchedulingConfigForAccount(
   data: SchedulingConfigInput,
   tenantId?: string,
 ) {
+  // Resolve tenant ID: use explicit param, or context, or undefined
+  const resolvedTenantId =
+    tenantId ?? (hasTenantContext() ? getTenantId() : undefined);
+
   // Just create and return directly - no additional fetch
   // This bypasses any potential issues with includes/relations
   return prisma.schedulingConfig.create({
     data: {
       accountId,
-      tenantId,
+      tenantId: resolvedTenantId,
       ...data,
     },
   });
@@ -177,6 +186,7 @@ export async function createSchedulingConfig(
   const created = await prisma.schedulingConfig.create({
     data: {
       clientId,
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       ...data,
     },
   });

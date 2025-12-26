@@ -43,6 +43,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============ Configuration Management ============
 
@@ -84,6 +85,7 @@ export async function createSafetyConfig(data: {
 }) {
   return prisma.safetyMonitorConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId: data.clientId,
       organizationName: data.organizationName,
       industry: data.industry,

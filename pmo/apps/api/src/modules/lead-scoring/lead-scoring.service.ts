@@ -12,6 +12,7 @@
 
 import { prisma } from '../../prisma/client';
 import { LeadScoreLevel, Prisma } from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -87,6 +88,11 @@ export async function listLeadScoringConfigs(filters?: {
 }) {
   const whereClause: Prisma.LeadScoringConfigWhereInput = {};
 
+  // Always filter by tenant if context is available
+  if (hasTenantContext()) {
+    whereClause.tenantId = getTenantId();
+  }
+
   if (filters?.clientId) {
     whereClause.clientId = filters.clientId;
   } else if (filters?.clientIds && filters.clientIds.length > 0) {
@@ -94,7 +100,7 @@ export async function listLeadScoringConfigs(filters?: {
   }
 
   return prisma.leadScoringConfig.findMany({
-    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    where: whereClause,
     include: {
       client: { select: { id: true, name: true, industry: true } },
     },
@@ -108,6 +114,7 @@ export async function createLeadScoringConfig(
 ) {
   return prisma.leadScoringConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId,
       ...data,
     },

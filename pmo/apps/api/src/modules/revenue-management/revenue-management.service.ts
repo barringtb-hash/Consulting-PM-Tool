@@ -35,6 +35,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============ Internal Types ============
 
@@ -111,6 +112,7 @@ export async function createRevenueConfig(data: {
 }) {
   return prisma.revenueManagementConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId: data.clientId,
       businessName: data.businessName,
       businessType: data.businessType,

@@ -14,6 +14,7 @@
 
 import { Prisma, HealthScoreCategory } from '@prisma/client';
 import prisma from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 export interface HealthScoreInput {
   clientId: number;
@@ -159,6 +160,7 @@ export async function getOrCreateHealthScore(
       projectId: projectId ?? null,
       overallScore: 50,
       category: 'AT_RISK',
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
     },
   });
 
@@ -502,10 +504,17 @@ export async function getPortfolioHealthSummary(): Promise<{
   averageScore: number;
   averageChurnRisk: number;
 }> {
+  const where: Prisma.CustomerHealthScoreWhereInput = {
+    projectId: null, // Client-level scores only
+  };
+
+  // Apply tenant context when available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
+
   const scores = await prisma.customerHealthScore.findMany({
-    where: {
-      projectId: null, // Client-level scores only
-    },
+    where,
     select: {
       category: true,
       overallScore: true,
@@ -588,6 +597,11 @@ export async function listHealthScores(options: {
       churnRisk: { gte: options.minChurnRisk },
     }),
   };
+
+  // Apply tenant context when available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
 
   const orderBy: Prisma.CustomerHealthScoreOrderByWithRelationInput = {};
   if (options.sortBy === 'score') {

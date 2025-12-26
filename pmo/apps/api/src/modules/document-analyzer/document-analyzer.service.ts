@@ -19,6 +19,7 @@ import {
   ComplianceLevel,
   Prisma,
 } from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // HELPER: Prisma Error Detection
@@ -157,6 +158,11 @@ export async function listDocumentAnalyzerConfigs(filters?: {
 }) {
   const whereClause: Prisma.DocumentAnalyzerConfigWhereInput = {};
 
+  // Always filter by tenant if context is available
+  if (hasTenantContext()) {
+    whereClause.tenantId = getTenantId();
+  }
+
   // Build where clause - prefer account filters if available
   // Note: accountId column may not exist in older databases, so we handle errors gracefully
   if (filters?.accountId) {
@@ -229,6 +235,7 @@ export async function createDocumentAnalyzerConfig(
   try {
     return await prisma.documentAnalyzerConfig.create({
       data: {
+        ...(hasTenantContext() && { tenantId: getTenantId() }),
         ...(accountId && { accountId }),
         ...(clientId && { clientId }),
         ...configData,

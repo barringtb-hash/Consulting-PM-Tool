@@ -20,6 +20,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -105,12 +106,17 @@ export async function listIntakeConfigs(filters?: {
   clientId?: number;
   clientIds?: number[];
 }) {
-  let whereClause: Prisma.IntakeConfigWhereInput | undefined;
+  const whereClause: Prisma.IntakeConfigWhereInput = {};
+
+  // Always filter by tenant if context is available
+  if (hasTenantContext()) {
+    whereClause.tenantId = getTenantId();
+  }
 
   if (filters?.clientId) {
-    whereClause = { clientId: filters.clientId };
+    whereClause.clientId = filters.clientId;
   } else if (filters?.clientIds && filters.clientIds.length > 0) {
-    whereClause = { clientId: { in: filters.clientIds } };
+    whereClause.clientId = { in: filters.clientIds };
   }
 
   return prisma.intakeConfig.findMany({
@@ -129,6 +135,7 @@ export async function createIntakeConfig(
 ) {
   return prisma.intakeConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId,
       ...data,
     },

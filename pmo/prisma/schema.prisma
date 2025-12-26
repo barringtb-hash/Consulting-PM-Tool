@@ -856,6 +856,7 @@ enum IntentType {
  */
 model ChatbotConfig {
   id              Int     @id @default(autoincrement())
+  tenantId        String? // Multi-tenant support
   clientId        Int?    @unique // @deprecated - use accountId
   accountId       Int?    @unique // Preferred: link to CRM Account
   name            String
@@ -895,6 +896,7 @@ model ChatbotConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant         Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client         Client?             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   account        Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   conversations  ChatConversation[]
@@ -902,6 +904,7 @@ model ChatbotConfig {
   webhooks       WebhookConfig[]
   channelConfigs ChannelConfig[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
   @@index([accountId, isActive])
 }
@@ -2419,8 +2422,9 @@ enum WorkflowStepStatus {
  * IntakeConfig - Configuration for client intake automation
  */
 model IntakeConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   // Portal branding
   portalName   String?
@@ -2451,12 +2455,14 @@ model IntakeConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client              Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
   forms               IntakeForm[]
   submissions         IntakeSubmission[]
   workflows           IntakeWorkflow[]
   complianceTemplates ComplianceTemplate[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -2889,9 +2895,10 @@ enum WorkflowActionType {
  * Note: accountId is the preferred field; clientId is deprecated
  */
 model DocumentAnalyzerConfig {
-  id        Int  @id @default(autoincrement())
-  clientId  Int? @unique // @deprecated - use accountId
-  accountId Int? @unique // Preferred: link to CRM Account
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
+  clientId  Int?    @unique // @deprecated - use accountId
+  accountId Int?    @unique // Preferred: link to CRM Account
 
   // Industry configuration for specialized templates
   industryType      IndustryType       @default(OTHER)
@@ -2926,6 +2933,7 @@ model DocumentAnalyzerConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant              Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client              Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
   account             Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   analyzedDocuments   AnalyzedDocument[]
@@ -2935,6 +2943,7 @@ model DocumentAnalyzerConfig {
   integrations        DocumentIntegration[]
   processingMetrics   ProcessingMetrics[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
   @@index([accountId, isActive])
   @@index([industryType])
@@ -3344,8 +3353,9 @@ enum WorkflowStepType {
  * ContentGeneratorConfig - Configuration for content generation per client
  */
 model ContentGeneratorConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   // Brand voice settings
   brandVoiceDescription String?
@@ -3376,12 +3386,14 @@ model ContentGeneratorConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant            Tenant?                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client            Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   generatedContents GeneratedContent[]
   contentTemplates  ContentTemplate[]
   approvalWorkflows ContentApprovalWorkflow[]
   contentSequences  ContentSequence[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -3634,8 +3646,9 @@ enum NurtureStepType {
  * LeadScoringConfig - Configuration for lead scoring per client
  */
 model LeadScoringConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   // Scoring model settings
   scoringModelVersion String?
@@ -3669,11 +3682,13 @@ model LeadScoringConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
   scoredLeads      ScoredLead[]
   nurtureSequences NurtureSequence[]
   leadActivities   LeadActivity[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -3938,8 +3953,9 @@ enum AppealStatus {
  * PriorAuthConfig - Configuration for prior authorization automation per client
  */
 model PriorAuthConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   // Practice info
   practiceName    String?
@@ -3974,11 +3990,13 @@ model PriorAuthConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
   paRequests  PARequest[]
   payerRules  PayerRule[]
   paTemplates PATemplate[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -4290,8 +4308,9 @@ enum AlertStatus {
 }
 
 model InventoryForecastConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   businessName String?
   timezone     String  @default("America/New_York")
@@ -4318,6 +4337,7 @@ model InventoryForecastConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant    Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client    Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
   locations InventoryLocation[]
   products  InventoryProduct[]
@@ -4325,6 +4345,7 @@ model InventoryForecastConfig {
   alerts    InventoryAlert[]
   scenarios ForecastScenario[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -4583,8 +4604,9 @@ enum AuditStatus {
 }
 
 model ComplianceMonitorConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   organizationName String?
   industry         String?
@@ -4611,6 +4633,7 @@ model ComplianceMonitorConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant          Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client          Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   complianceRules ComplianceRule[]
   violations      ComplianceViolation[]
@@ -4619,6 +4642,7 @@ model ComplianceMonitorConfig {
   riskAssessments RiskAssessment[]
   reports         ComplianceReport[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -4888,8 +4912,9 @@ enum WorkOrderPriority {
 }
 
 model PredictiveMaintenanceConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   facilityName String?
   timezone     String  @default("America/New_York")
@@ -4913,6 +4938,7 @@ model PredictiveMaintenanceConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant              Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client              Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
   equipment           Equipment[]
   sensors             Sensor[]
@@ -4920,6 +4946,7 @@ model PredictiveMaintenanceConfig {
   predictions         FailurePrediction[]
   sparePartsInventory SparePart[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -5249,8 +5276,9 @@ enum RateType {
 }
 
 model RevenueManagementConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   businessName String?
   businessType String?
@@ -5281,6 +5309,7 @@ model RevenueManagementConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   rateCategories       RateCategory[]
   competitors          Competitor[]
@@ -5289,6 +5318,7 @@ model RevenueManagementConfig {
   promotions           RevenuePromotion[]
   bookings             BookingData[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -5577,8 +5607,9 @@ enum TrainingStatus {
 }
 
 model SafetyMonitorConfig {
-  id       Int @id @default(autoincrement())
-  clientId Int @unique
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant support
+  clientId Int     @unique
 
   organizationName String?
   industry         String?
@@ -5604,6 +5635,7 @@ model SafetyMonitorConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   checklists           SafetyChecklist[]
   checklistCompletions ChecklistCompletion[]
@@ -5614,6 +5646,7 @@ model SafetyMonitorConfig {
   oshaLogs             OshaLog[]
   inspections          SafetyInspection[]
 
+  @@index([tenantId, isActive])
   @@index([clientId, isActive])
 }
 
@@ -6045,7 +6078,8 @@ enum CSActivityType {
  * Health scoring uses weighted dimensions: Usage, Support, Engagement, Sentiment
  */
 model CustomerHealthScore {
-  id        Int  @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
   clientId  Int
   projectId Int?
 
@@ -6083,11 +6117,13 @@ model CustomerHealthScore {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant  Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client  Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
   project Project?             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   history HealthScoreHistory[]
 
   @@unique([clientId, projectId])
+  @@index([tenantId])
   @@index([clientId, overallScore])
   @@index([category, lastCalculatedAt])
 }
@@ -6120,7 +6156,8 @@ model HealthScoreHistory {
  * Based on Gainsight's Success Plans with objectives and milestones
  */
 model SuccessPlan {
-  id        Int  @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
   clientId  Int
   projectId Int?
   ownerId   Int
@@ -6148,11 +6185,13 @@ model SuccessPlan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant     Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client     Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   project    Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
   owner      User               @relation(fields: [ownerId], references: [id])
   objectives SuccessObjective[]
 
+  @@index([tenantId])
   @@index([clientId, status])
   @@index([ownerId, status])
 }
@@ -6221,7 +6260,8 @@ model SuccessTask {
  * Central to Gainsight's Cockpit functionality
  */
 model CTA {
-  id        Int  @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
   clientId  Int
   projectId Int?
   ownerId   Int
@@ -6258,12 +6298,14 @@ model CTA {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client   Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   owner    User      @relation(fields: [ownerId], references: [id])
   playbook Playbook? @relation(fields: [playbookId], references: [id], onDelete: SetNull)
   ctaTasks CTATask[]
 
+  @@index([tenantId])
   @@index([clientId, status])
   @@index([ownerId, status, priority])
   @@index([type, status])
@@ -6301,6 +6343,7 @@ model CTATask {
  */
 model Playbook {
   id          Int            @id @default(autoincrement())
+  tenantId    String?        // Multi-tenant support
   name        String
   description String?
   status      PlaybookStatus @default(DRAFT)
@@ -6316,10 +6359,12 @@ model Playbook {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  tenant    Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdBy User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
   tasks     PlaybookTask[]
   ctas      CTA[]
 
+  @@index([tenantId])
   @@index([status, ctaType])
 }
 
@@ -6798,8 +6843,19 @@ model Tenant {
   campaigns                 Campaign[]
   inboundLeads              InboundLead[]
   // AI Tool configurations (tenant-scoped)
-  productDescriptionConfigs ProductDescriptionConfig[]
-  schedulingConfigs         SchedulingConfig[]
+  productDescriptionConfigs     ProductDescriptionConfig[]
+  schedulingConfigs             SchedulingConfig[]
+  chatbotConfigs                ChatbotConfig[]
+  intakeConfigs                 IntakeConfig[]
+  documentAnalyzerConfigs       DocumentAnalyzerConfig[]
+  contentGeneratorConfigs       ContentGeneratorConfig[]
+  leadScoringConfigs            LeadScoringConfig[]
+  priorAuthConfigs              PriorAuthConfig[]
+  inventoryForecastConfigs      InventoryForecastConfig[]
+  complianceMonitorConfigs      ComplianceMonitorConfig[]
+  predictiveMaintenanceConfigs  PredictiveMaintenanceConfig[]
+  revenueManagementConfigs      RevenueManagementConfig[]
+  safetyMonitorConfigs          SafetyMonitorConfig[]
   // Audit and health metrics
   auditLogs                 AuditLog[]
   healthMetrics             TenantHealthMetrics[]
@@ -6815,8 +6871,14 @@ model Tenant {
   financeInsights      FinanceInsight[]
 
   // AI Monitoring relations
-  aiUsageEvents   AIUsageEvent[]
+  aiUsageEvents    AIUsageEvent[]
   aiUsageSummaries AIUsageSummary[]
+
+  // Customer Success relations
+  customerHealthScores CustomerHealthScore[]
+  successPlans         SuccessPlan[]
+  ctas                 CTA[]
+  playbooks            Playbook[]
 
   @@index([slug])
   @@index([status])
