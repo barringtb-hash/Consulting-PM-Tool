@@ -12,11 +12,15 @@ import {
   type AuthenticatedRequest,
 } from '../../auth/auth.middleware';
 import {
+  tenantMiddleware,
   requireTenant,
   type TenantRequest,
 } from '../../tenant/tenant.middleware';
 
 const router = Router();
+
+// All routes require tenant context for isolation
+router.use(tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS

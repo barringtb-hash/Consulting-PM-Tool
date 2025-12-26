@@ -7,10 +7,15 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import { mcpClient } from './mcp-client.service';
 import { processAIQuery, executeDirectQuery } from './ai-query.service';
 
 const router = Router();
+
+// Apply tenant middleware to all MCP routes - required for tenant isolation
+// This ensures all queries filter by the current tenant
+router.use(tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS
