@@ -11,17 +11,21 @@ import {
   TASK_STATUSES,
   useMyTasks,
   useUpdateTask,
-  type TaskPriority,
   type TaskStatus,
 } from '../hooks/tasks';
-import { Badge, type BadgeVariant } from '../ui/Badge';
+import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import { Input } from '../ui/Input';
 import { PageHeader } from '../ui/PageHeader';
 import { Select } from '../ui/Select';
 import { useToast } from '../ui/Toast';
-import type { TaskWithProject } from '../api/tasks';
+import {
+  formatStatusLabel,
+  STATUS_BADGE_VARIANTS,
+  PRIORITY_BADGE_VARIANTS,
+  type TaskWithProject,
+} from '../api/tasks';
 import { TaskKanbanBoard } from '../components/TaskKanbanBoard';
 import { TaskDetailModal } from '../features/tasks/TaskDetailModal';
 import { EMPTY_STATES } from '../utils/typography';
@@ -45,40 +49,6 @@ function formatDate(value?: string | null): string {
     day: 'numeric',
     year: 'numeric',
   });
-}
-
-function getStatusBadgeVariant(status: TaskStatus): BadgeVariant {
-  switch (status) {
-    case 'DONE':
-      return 'success';
-    case 'IN_PROGRESS':
-      return 'primary';
-    case 'BLOCKED':
-      return 'danger';
-    case 'BACKLOG':
-    default:
-      return 'neutral';
-  }
-}
-
-function getPriorityBadgeVariant(priority?: TaskPriority | null): BadgeVariant {
-  if (!priority) return 'neutral';
-  switch (priority) {
-    case 'P0':
-      return 'danger';
-    case 'P1':
-      return 'warning';
-    case 'P2':
-    default:
-      return 'neutral';
-  }
-}
-
-function formatStatusLabel(status: TaskStatus): string {
-  return status
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 function MyTasksPage(): JSX.Element {
@@ -580,7 +550,7 @@ function MyTasksPage(): JSX.Element {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center gap-2">
-                            <Badge variant={getStatusBadgeVariant(task.status)}>
+                            <Badge variant={STATUS_BADGE_VARIANTS[task.status]}>
                               {formatStatusLabel(task.status)}
                             </Badge>
                             <select
@@ -604,7 +574,11 @@ function MyTasksPage(): JSX.Element {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge
-                            variant={getPriorityBadgeVariant(task.priority)}
+                            variant={
+                              task.priority
+                                ? PRIORITY_BADGE_VARIANTS[task.priority]
+                                : 'neutral'
+                            }
                           >
                             {task.priority ?? 'None'}
                           </Badge>

@@ -3,36 +3,18 @@ import { Plus, Square, CheckSquare } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { Badge } from '../../ui/Badge';
-import type { Task } from '../../api/tasks';
+import {
+  formatStatusLabel,
+  STATUS_BADGE_VARIANTS,
+  PRIORITY_BADGE_VARIANTS,
+  type Task,
+} from '../../api/tasks';
 
 interface SubtaskListProps {
   subtasks: Task[];
   onAddSubtask: (title: string) => Promise<void>;
   onToggleSubtask: (subtaskId: number) => Promise<void>;
   isAddingSubtask?: boolean;
-}
-
-const priorityColors: Record<string, 'danger' | 'warning' | 'neutral'> = {
-  P0: 'danger',
-  P1: 'warning',
-  P2: 'neutral',
-};
-
-const statusColors: Record<
-  string,
-  'neutral' | 'primary' | 'danger' | 'success'
-> = {
-  BACKLOG: 'neutral',
-  IN_PROGRESS: 'primary',
-  BLOCKED: 'danger',
-  DONE: 'success',
-};
-
-function formatStatusLabel(status: string): string {
-  return status
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 export function SubtaskList({
@@ -177,14 +159,14 @@ export function SubtaskList({
                   )}
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge
-                      variant={statusColors[subtask.status] ?? 'neutral'}
+                      variant={STATUS_BADGE_VARIANTS[subtask.status]}
                       size="sm"
                     >
                       {formatStatusLabel(subtask.status)}
                     </Badge>
                     {subtask.priority && (
                       <Badge
-                        variant={priorityColors[subtask.priority] ?? 'neutral'}
+                        variant={PRIORITY_BADGE_VARIANTS[subtask.priority]}
                         size="sm"
                       >
                         {subtask.priority}
