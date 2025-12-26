@@ -245,8 +245,17 @@ export async function executeMeetingTool(
         const meetings = await prisma.meeting.findMany({
           where: {
             AND: [
-              // Filter by project owner if userId is provided
-              parsed._userId ? { project: { ownerId: parsed._userId } } : {},
+              // Filter by project ownership or shared with tenant if userId is provided
+              parsed._userId
+                ? {
+                    project: {
+                      OR: [
+                        { ownerId: parsed._userId },
+                        { isSharedWithTenant: true },
+                      ],
+                    },
+                  }
+                : {},
               parsed.projectId ? { projectId: parsed.projectId } : {},
               parsed.clientId ? { project: { clientId: parsed.clientId } } : {},
               parsed.category ? { category: parsed.category } : {},
@@ -305,6 +314,7 @@ export async function executeMeetingTool(
                 id: true,
                 name: true,
                 ownerId: true,
+                isSharedWithTenant: true,
                 client: { select: { id: true, name: true } },
               },
             },
@@ -318,8 +328,12 @@ export async function executeMeetingTool(
           };
         }
 
-        // Check project ownership if userId is provided
-        if (parsed._userId && meeting.project.ownerId !== parsed._userId) {
+        // Check project ownership or shared access if userId is provided
+        if (
+          parsed._userId &&
+          meeting.project.ownerId !== parsed._userId &&
+          !meeting.project.isSharedWithTenant
+        ) {
           return {
             content: [{ type: 'text', text: 'Meeting not found' }],
             isError: true,
@@ -339,13 +353,16 @@ export async function executeMeetingTool(
       case 'create_meeting': {
         const parsed = createMeetingSchema.parse(args);
 
-        // Verify project ownership if userId is provided
+        // Verify project ownership or shared access if userId is provided
         if (parsed._userId) {
           const project = await prisma.project.findUnique({
             where: { id: parsed.projectId },
-            select: { ownerId: true },
+            select: { ownerId: true, isSharedWithTenant: true },
           });
-          if (!project || project.ownerId !== parsed._userId) {
+          if (
+            !project ||
+            (project.ownerId !== parsed._userId && !project.isSharedWithTenant)
+          ) {
             return {
               content: [{ type: 'text', text: 'Project not found' }],
               isError: true,
@@ -390,13 +407,19 @@ export async function executeMeetingTool(
         const parsed = updateMeetingSchema.parse(args);
         const { meetingId, _userId, ...updateData } = parsed;
 
-        // Verify meeting/project ownership if userId is provided
+        // Verify meeting/project ownership or shared access if userId is provided
         if (_userId) {
           const existingMeeting = await prisma.meeting.findUnique({
             where: { id: meetingId },
-            include: { project: { select: { ownerId: true } } },
+            include: {
+              project: { select: { ownerId: true, isSharedWithTenant: true } },
+            },
           });
-          if (!existingMeeting || existingMeeting.project.ownerId !== _userId) {
+          if (
+            !existingMeeting ||
+            (existingMeeting.project.ownerId !== _userId &&
+              !existingMeeting.project.isSharedWithTenant)
+          ) {
             return {
               content: [{ type: 'text', text: 'Meeting not found' }],
               isError: true,

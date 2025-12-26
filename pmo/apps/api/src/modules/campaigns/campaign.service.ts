@@ -25,6 +25,14 @@ const validateAccountAccess = async (
   return account;
 };
 
+/** Check if user has access to a project (owner or shared with tenant) */
+const hasProjectAccess = (
+  project: { ownerId: number; isSharedWithTenant: boolean },
+  userId: number,
+): boolean => {
+  return project.ownerId === userId || project.isSharedWithTenant;
+};
+
 /**
  * Validate that the user has access to the project
  */
@@ -36,7 +44,8 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
   if (!project) {
     return 'not_found' as const;
   }
-  if (project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (!hasProjectAccess(project, ownerId)) {
     return 'forbidden' as const;
   }
   return project;
@@ -60,10 +69,10 @@ const findCampaignWithAccess = async (id: number, ownerId: number) => {
   }
 
   // Check authorization:
-  // 1. If campaign has a project, user must own that project
+  // 1. If campaign has a project, user must have access (owner or shared with tenant)
   // 2. If campaign has no project, user must have created it
   if (campaign.project) {
-    if (campaign.project.ownerId !== ownerId) {
+    if (!hasProjectAccess(campaign.project, ownerId)) {
       return { error: 'forbidden' as const };
     }
   } else {
@@ -98,6 +107,12 @@ export const listCampaigns = async (
       {
         project: {
           ownerId: ownerId,
+        },
+      },
+      // Campaigns linked to projects shared with the tenant
+      {
+        project: {
+          isSharedWithTenant: true,
         },
       },
       // Campaigns with no project (client-level campaigns)

@@ -27,7 +27,7 @@ const normalizeJsonInput = (
   return value as Prisma.InputJsonValue;
 };
 
-const validateProjectAccess = async (projectId: number, ownerId: number) => {
+const validateProjectAccess = async (projectId: number, userId: number) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
@@ -39,7 +39,8 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
     return 'not_found' as const;
   }
 
-  if (project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (project.ownerId !== userId && !project.isSharedWithTenant) {
     return 'forbidden' as const;
   }
 

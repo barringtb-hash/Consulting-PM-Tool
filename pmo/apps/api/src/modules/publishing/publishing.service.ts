@@ -33,6 +33,14 @@ async function verifyClientAccess(
   return !!project;
 }
 
+/** Check if user has access to a project (owner or shared with tenant) */
+const hasProjectAccess = (
+  project: { ownerId: number; isSharedWithTenant: boolean },
+  userId: number,
+): boolean => {
+  return project.ownerId === userId || project.isSharedWithTenant;
+};
+
 /**
  * Get all publishing connections for an account
  * @param accountId - Account ID (or legacy clientId)
@@ -197,9 +205,9 @@ export const publishContent = async (
     return { error: 'content_not_found' as const };
   }
 
-  // Validate access
+  // Validate access (owner or project shared with tenant)
   if (content.project) {
-    if (content.project.ownerId !== ownerId) {
+    if (!hasProjectAccess(content.project, ownerId)) {
       return { error: 'forbidden' as const };
     }
   } else if (content.createdById !== ownerId) {

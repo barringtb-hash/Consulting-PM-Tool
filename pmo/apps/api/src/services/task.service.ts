@@ -28,7 +28,7 @@ import {
 
 /** Task with project owner information for access control checks */
 type TaskWithOwner = Prisma.TaskGetPayload<{
-  include: { project: { select: { ownerId: true } } };
+  include: { project: { select: { ownerId: true; isSharedWithTenant: true } } };
 }>;
 
 /** Task data without the nested project relation */
@@ -51,11 +51,21 @@ const findTaskWithOwner = async (id: number) => {
 
   return prisma.task.findFirst({
     where: { id, tenantId },
-    include: { project: { select: { ownerId: true } } },
+    include: {
+      project: { select: { ownerId: true, isSharedWithTenant: true } },
+    },
   });
 };
 
-const validateProjectAccess = async (projectId: number, ownerId: number) => {
+/** Check if user has access to the project (owner or shared) */
+const hasProjectAccess = (
+  project: { ownerId: number; isSharedWithTenant: boolean },
+  userId: number,
+): boolean => {
+  return project.ownerId === userId || project.isSharedWithTenant;
+};
+
+const validateProjectAccess = async (projectId: number, userId: number) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
@@ -67,7 +77,8 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
     return 'not_found' as const;
   }
 
-  if (project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (project.ownerId !== userId && !project.isSharedWithTenant) {
     return 'forbidden' as const;
   }
 
@@ -124,14 +135,14 @@ export const listTasksForProject = async (
  * @param ownerId - The ID of the user requesting access (must be project owner)
  * @returns Object with either { task } or { error } with 'not_found' | 'forbidden'
  */
-export const getTaskForOwner = async (id: number, ownerId: number) => {
+export const getTaskForOwner = async (id: number, userId: number) => {
   const task = await findTaskWithOwner(id);
 
   if (!task) {
     return { error: 'not_found' as const };
   }
 
-  if (task.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(task.project, userId)) {
     return { error: 'forbidden' as const };
   }
 
@@ -203,7 +214,7 @@ export const updateTask = async (
     return { error: 'not_found' as const };
   }
 
-  if (existing.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(existing.project, ownerId)) {
     return { error: 'forbidden' as const };
   }
 
@@ -251,7 +262,7 @@ export const updateTask = async (
  */
 export const moveTask = async (
   id: number,
-  ownerId: number,
+  userId: number,
   data: TaskMoveInput,
 ) => {
   const existing = await findTaskWithOwner(id);
@@ -260,7 +271,7 @@ export const moveTask = async (
     return { error: 'not_found' as const };
   }
 
-  if (existing.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(existing.project, userId)) {
     return { error: 'forbidden' as const };
   }
 
@@ -293,14 +304,14 @@ export const moveTask = async (
  * @param ownerId - The ID of the user deleting (must be project owner)
  * @returns Object with either { deleted: true } or { error } with 'not_found' | 'forbidden'
  */
-export const deleteTask = async (id: number, ownerId: number) => {
+export const deleteTask = async (id: number, userId: number) => {
   const existing = await findTaskWithOwner(id);
 
   if (!existing) {
     return { error: 'not_found' as const };
   }
 
-  if (existing.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(existing.project, userId)) {
     return { error: 'forbidden' as const };
   }
 

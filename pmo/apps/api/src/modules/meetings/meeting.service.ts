@@ -10,8 +10,16 @@ import {
 } from '../../types/meeting';
 
 type MeetingWithOwner = Prisma.MeetingGetPayload<{
-  include: { project: { select: { ownerId: true } } };
+  include: { project: { select: { ownerId: true; isSharedWithTenant: true } } };
 }>;
+
+/** Check if user has access to a project (owner or shared with tenant) */
+const hasProjectAccess = (
+  project: { ownerId: number; isSharedWithTenant: boolean },
+  userId: number,
+): boolean => {
+  return project.ownerId === userId || project.isSharedWithTenant;
+};
 
 type MeetingWithoutProject = Omit<MeetingWithOwner, 'project'>;
 
@@ -35,7 +43,8 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
     return 'not_found' as const;
   }
 
-  if (project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (!hasProjectAccess(project, ownerId)) {
     return 'forbidden' as const;
   }
 
@@ -48,7 +57,9 @@ const findMeetingWithOwner = async (id: number) => {
 
   return prisma.meeting.findFirst({
     where: { id, tenantId },
-    include: { project: { select: { ownerId: true } } },
+    include: {
+      project: { select: { ownerId: true, isSharedWithTenant: true } },
+    },
   });
 };
 
@@ -101,7 +112,8 @@ export const getMeetingById = async (id: number, ownerId: number) => {
     return { error: 'not_found' as const };
   }
 
-  if (meeting.project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (!hasProjectAccess(meeting.project, ownerId)) {
     return { error: 'forbidden' as const };
   }
 
@@ -119,7 +131,8 @@ export const updateMeeting = async (
     return { error: 'not_found' as const };
   }
 
-  if (existing.project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (!hasProjectAccess(existing.project, ownerId)) {
     return { error: 'forbidden' as const };
   }
 
@@ -150,7 +163,8 @@ export const deleteMeeting = async (id: number, ownerId: number) => {
     return { error: 'not_found' as const };
   }
 
-  if (existing.project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (!hasProjectAccess(existing.project, ownerId)) {
     return { error: 'forbidden' as const };
   }
 
@@ -169,7 +183,8 @@ export const createTaskFromSelection = async (
     return { error: 'not_found' as const };
   }
 
-  if (meeting.project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (!hasProjectAccess(meeting.project, ownerId)) {
     return { error: 'forbidden' as const };
   }
 

@@ -8,7 +8,7 @@ import {
 } from '../validation/milestone.schema';
 
 type MilestoneWithOwner = Prisma.MilestoneGetPayload<{
-  include: { project: { select: { ownerId: true } } };
+  include: { project: { select: { ownerId: true; isSharedWithTenant: true } } };
 }>;
 
 type MilestoneWithoutProject = Omit<MilestoneWithOwner, 'project'>;
@@ -27,11 +27,21 @@ const findMilestoneWithOwner = async (id: number) => {
 
   return prisma.milestone.findFirst({
     where: { id, tenantId },
-    include: { project: { select: { ownerId: true } } },
+    include: {
+      project: { select: { ownerId: true, isSharedWithTenant: true } },
+    },
   });
 };
 
-const validateProjectAccess = async (projectId: number, ownerId: number) => {
+/** Check if user has access to the project (owner or shared) */
+const hasProjectAccess = (
+  project: { ownerId: number; isSharedWithTenant: boolean },
+  userId: number,
+): boolean => {
+  return project.ownerId === userId || project.isSharedWithTenant;
+};
+
+const validateProjectAccess = async (projectId: number, userId: number) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
@@ -43,7 +53,8 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
     return 'not_found' as const;
   }
 
-  if (project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (project.ownerId !== userId && !project.isSharedWithTenant) {
     return 'forbidden' as const;
   }
 
@@ -68,14 +79,14 @@ export const listMilestonesForProject = async (
   return { milestones } as const;
 };
 
-export const getMilestoneForOwner = async (id: number, ownerId: number) => {
+export const getMilestoneForOwner = async (id: number, userId: number) => {
   const milestone = await findMilestoneWithOwner(id);
 
   if (!milestone) {
     return { error: 'not_found' as const };
   }
 
-  if (milestone.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(milestone.project, userId)) {
     return { error: 'forbidden' as const };
   }
 
@@ -107,7 +118,7 @@ export const createMilestone = async (
 
 export const updateMilestone = async (
   id: number,
-  ownerId: number,
+  userId: number,
   data: MilestoneUpdateInput,
 ) => {
   const existing = await findMilestoneWithOwner(id);
@@ -116,13 +127,13 @@ export const updateMilestone = async (
     return { error: 'not_found' as const };
   }
 
-  if (existing.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(existing.project, userId)) {
     return { error: 'forbidden' as const };
   }
 
   const targetProjectId = data.projectId ?? existing.projectId;
 
-  const projectAccess = await validateProjectAccess(targetProjectId, ownerId);
+  const projectAccess = await validateProjectAccess(targetProjectId, userId);
 
   if (projectAccess === 'not_found' || projectAccess === 'forbidden') {
     return { error: projectAccess } as const;
@@ -139,14 +150,14 @@ export const updateMilestone = async (
   return { milestone: updated } as const;
 };
 
-export const deleteMilestone = async (id: number, ownerId: number) => {
+export const deleteMilestone = async (id: number, userId: number) => {
   const existing = await findMilestoneWithOwner(id);
 
   if (!existing) {
     return { error: 'not_found' as const };
   }
 
-  if (existing.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(existing.project, userId)) {
     return { error: 'forbidden' as const };
   }
 

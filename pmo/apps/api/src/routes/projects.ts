@@ -34,6 +34,14 @@ import { env } from '../config/env';
 const log = createChildLogger({ module: 'projects' });
 const router = Router();
 
+/** Check if user has access to project (owner or shared with tenant) */
+const hasProjectAccess = (
+  project: { ownerId: number; isSharedWithTenant: boolean },
+  userId: number,
+): boolean => {
+  return project.ownerId === userId || project.isSharedWithTenant;
+};
+
 // All routes require authentication and tenant context
 router.use(requireAuth);
 router.use(tenantMiddleware);
@@ -141,7 +149,7 @@ router.get('/:id', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -241,7 +249,7 @@ router.put('/:id', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -308,7 +316,7 @@ router.delete('/:id', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -361,7 +369,7 @@ router.get('/:id/status', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -416,7 +424,7 @@ router.patch('/:id/status', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -481,7 +489,7 @@ router.post(
         return;
       }
 
-      if (project.ownerId !== req.userId) {
+      if (!hasProjectAccess(project, req.userId)) {
         res.status(403).json({ error: 'Forbidden' });
         return;
       }

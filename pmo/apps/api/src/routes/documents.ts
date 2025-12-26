@@ -13,6 +13,14 @@ import { documentGenerateSchema } from '../validation/document.schema';
 
 const router = Router();
 
+/** Check if user has access to a project (owner or shared with tenant) */
+const hasProjectAccess = (
+  project: { ownerId: number; isSharedWithTenant: boolean },
+  userId: number,
+): boolean => {
+  return project.ownerId === userId || project.isSharedWithTenant;
+};
+
 // All routes require authentication and tenant context
 router.use(requireAuth);
 router.use(tenantMiddleware);
@@ -92,7 +100,8 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    // Allow access if user is owner OR project is shared with tenant
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }

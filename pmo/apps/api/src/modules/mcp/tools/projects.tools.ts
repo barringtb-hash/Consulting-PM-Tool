@@ -366,8 +366,12 @@ export async function executeProjectTool(
           };
         }
 
-        // Check ownership if userId is provided
-        if (parsed._userId && project.ownerId !== parsed._userId) {
+        // Check ownership if userId is provided (allow if owner or shared with tenant)
+        if (
+          parsed._userId &&
+          project.ownerId !== parsed._userId &&
+          !project.isSharedWithTenant
+        ) {
           return {
             content: [{ type: 'text', text: 'Project not found' }],
             isError: true,
@@ -389,8 +393,17 @@ export async function executeProjectTool(
         const tasks = await prisma.task.findMany({
           where: {
             AND: [
-              // Filter by project owner if userId is provided
-              parsed._userId ? { project: { ownerId: parsed._userId } } : {},
+              // Filter by project ownership or shared with tenant if userId is provided
+              parsed._userId
+                ? {
+                    project: {
+                      OR: [
+                        { ownerId: parsed._userId },
+                        { isSharedWithTenant: true },
+                      ],
+                    },
+                  }
+                : {},
               parsed.projectId ? { projectId: parsed.projectId } : {},
               parsed.status ? { status: parsed.status } : {},
               parsed.priority ? { priority: parsed.priority } : {},
@@ -437,13 +450,16 @@ export async function executeProjectTool(
       case 'create_task': {
         const parsed = createTaskSchema.parse(args);
 
-        // Verify project ownership if userId is provided
+        // Verify project ownership or shared access if userId is provided
         if (parsed._userId) {
           const project = await prisma.project.findUnique({
             where: { id: parsed.projectId },
-            select: { ownerId: true },
+            select: { ownerId: true, isSharedWithTenant: true },
           });
-          if (!project || project.ownerId !== parsed._userId) {
+          if (
+            !project ||
+            (project.ownerId !== parsed._userId && !project.isSharedWithTenant)
+          ) {
             return {
               content: [{ type: 'text', text: 'Project not found' }],
               isError: true,
@@ -486,13 +502,19 @@ export async function executeProjectTool(
         const parsed = updateTaskSchema.parse(args);
         const { taskId, _userId, ...updateData } = parsed;
 
-        // Verify task/project ownership if userId is provided
+        // Verify task/project ownership or shared access if userId is provided
         if (_userId) {
           const existingTask = await prisma.task.findUnique({
             where: { id: taskId },
-            include: { project: { select: { ownerId: true } } },
+            include: {
+              project: { select: { ownerId: true, isSharedWithTenant: true } },
+            },
           });
-          if (!existingTask || existingTask.project.ownerId !== _userId) {
+          if (
+            !existingTask ||
+            (existingTask.project.ownerId !== _userId &&
+              !existingTask.project.isSharedWithTenant)
+          ) {
             return {
               content: [{ type: 'text', text: 'Task not found' }],
               isError: true,
