@@ -18,6 +18,23 @@ const priorityColors: Record<string, 'danger' | 'warning' | 'neutral'> = {
   P2: 'neutral',
 };
 
+const statusColors: Record<
+  string,
+  'neutral' | 'primary' | 'danger' | 'success'
+> = {
+  BACKLOG: 'neutral',
+  IN_PROGRESS: 'primary',
+  BLOCKED: 'danger',
+  DONE: 'success',
+};
+
+function formatStatusLabel(status: string): string {
+  return status
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
 export function SubtaskList({
   subtasks,
   onAddSubtask,
@@ -115,10 +132,10 @@ export function SubtaskList({
             return (
               <li
                 key={subtask.id}
-                className={`flex items-start gap-3 p-2 rounded-lg border transition-colors ${
+                className={`flex items-start gap-3 p-4 rounded-lg border shadow-sm transition-colors ${
                   isDone
                     ? 'bg-neutral-50 border-neutral-200'
-                    : 'bg-white border-neutral-200 hover:border-neutral-300'
+                    : 'bg-white border-neutral-200 hover:border-neutral-300 hover:shadow-md'
                 }`}
               >
                 <button
@@ -143,9 +160,9 @@ export function SubtaskList({
                   )}
                 </button>
 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 space-y-2">
                   <p
-                    className={`text-sm ${
+                    className={`text-sm font-medium ${
                       isDone
                         ? 'text-neutral-500 line-through'
                         : 'text-neutral-900'
@@ -154,26 +171,31 @@ export function SubtaskList({
                     {subtask.title}
                   </p>
                   {subtask.description && (
-                    <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                    <p className="text-xs text-neutral-600 line-clamp-2">
                       {subtask.description}
                     </p>
                   )}
-                </div>
-
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {subtask.priority && subtask.priority !== 'P1' && (
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge
-                      variant={priorityColors[subtask.priority] ?? 'neutral'}
+                      variant={statusColors[subtask.status] ?? 'neutral'}
                       size="sm"
                     >
-                      {subtask.priority}
+                      {formatStatusLabel(subtask.status)}
                     </Badge>
-                  )}
-                  {subtask.dueDate && (
-                    <span className="text-xs text-neutral-500">
-                      {formatDate(subtask.dueDate)}
-                    </span>
-                  )}
+                    {subtask.priority && (
+                      <Badge
+                        variant={priorityColors[subtask.priority] ?? 'neutral'}
+                        size="sm"
+                      >
+                        {subtask.priority}
+                      </Badge>
+                    )}
+                    {subtask.dueDate && (
+                      <span className="text-xs text-neutral-600">
+                        {formatDate(subtask.dueDate)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </li>
             );
