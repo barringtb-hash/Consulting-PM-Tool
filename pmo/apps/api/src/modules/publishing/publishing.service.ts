@@ -1,4 +1,5 @@
 import prisma from '../../prisma/client';
+import { hasProjectAccess } from '../../utils/project-access';
 import {
   CreatePublishingConnectionInput,
   UpdatePublishingConnectionInput,
@@ -32,14 +33,6 @@ async function verifyClientAccess(
 
   return !!project;
 }
-
-/** Check if user has access to a project (owner or shared with tenant) */
-const hasProjectAccess = (
-  project: { ownerId: number; isSharedWithTenant: boolean },
-  userId: number,
-): boolean => {
-  return project.ownerId === userId || project.isSharedWithTenant;
-};
 
 /**
  * Get all publishing connections for an account

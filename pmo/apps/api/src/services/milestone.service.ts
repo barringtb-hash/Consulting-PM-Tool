@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 
 import prisma from '../prisma/client';
 import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
+import { hasProjectAccess } from '../utils/project-access';
 import {
   MilestoneCreateInput,
   MilestoneUpdateInput,
@@ -31,14 +32,6 @@ const findMilestoneWithOwner = async (id: number) => {
       project: { select: { ownerId: true, isSharedWithTenant: true } },
     },
   });
-};
-
-/** Check if user has access to the project (owner or shared) */
-const hasProjectAccess = (
-  project: { ownerId: number; isSharedWithTenant: boolean },
-  userId: number,
-): boolean => {
-  return project.ownerId === userId || project.isSharedWithTenant;
 };
 
 const validateProjectAccess = async (projectId: number, userId: number) => {

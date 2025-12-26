@@ -1,6 +1,7 @@
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
+import { hasProjectAccess } from '../../utils/project-access';
 import {
   CreateMarketingContentInput,
   UpdateMarketingContentInput,
@@ -32,16 +33,6 @@ const validateAccountAccess = async (
   // In this system, all users can access all accounts
   // If you want to add account-level access control, implement it here
   return account;
-};
-
-/**
- * Check if user has access to a project (owner or shared with tenant)
- */
-const hasProjectAccess = (
-  project: { ownerId: number; isSharedWithTenant: boolean },
-  userId: number,
-): boolean => {
-  return project.ownerId === userId || project.isSharedWithTenant;
 };
 
 /**

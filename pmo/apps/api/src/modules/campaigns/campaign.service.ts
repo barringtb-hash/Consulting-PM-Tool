@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../prisma/client';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
+import { hasProjectAccess } from '../../utils/project-access';
 import {
   CreateCampaignInput,
   UpdateCampaignInput,
@@ -23,14 +24,6 @@ const validateAccountAccess = async (
     return 'not_found' as const;
   }
   return account;
-};
-
-/** Check if user has access to a project (owner or shared with tenant) */
-const hasProjectAccess = (
-  project: { ownerId: number; isSharedWithTenant: boolean },
-  userId: number,
-): boolean => {
-  return project.ownerId === userId || project.isSharedWithTenant;
 };
 
 /**

@@ -29,18 +29,11 @@ import {
   statusSummaryRequestSchema,
 } from '../validation/projectStatus.schema';
 import { createChildLogger } from '../utils/logger';
+import { hasProjectAccess } from '../utils/project-access';
 import { env } from '../config/env';
 
 const log = createChildLogger({ module: 'projects' });
 const router = Router();
-
-/** Check if user has access to project (owner or shared with tenant) */
-const hasProjectAccess = (
-  project: { ownerId: number; isSharedWithTenant: boolean },
-  userId: number,
-): boolean => {
-  return project.ownerId === userId || project.isSharedWithTenant;
-};
 
 // All routes require authentication and tenant context
 router.use(requireAuth);

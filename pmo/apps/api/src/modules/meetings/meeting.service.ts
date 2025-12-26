@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../prisma/client';
 import { createTask } from '../../services/task.service';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
+import { hasProjectAccess } from '../../utils/project-access';
 import {
   CreateMeetingInput,
   CreateTaskFromSelectionInput,
@@ -12,14 +13,6 @@ import {
 type MeetingWithOwner = Prisma.MeetingGetPayload<{
   include: { project: { select: { ownerId: true; isSharedWithTenant: true } } };
 }>;
-
-/** Check if user has access to a project (owner or shared with tenant) */
-const hasProjectAccess = (
-  project: { ownerId: number; isSharedWithTenant: boolean },
-  userId: number,
-): boolean => {
-  return project.ownerId === userId || project.isSharedWithTenant;
-};
 
 type MeetingWithoutProject = Omit<MeetingWithOwner, 'project'>;
 

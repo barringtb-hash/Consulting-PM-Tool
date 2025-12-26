@@ -10,16 +10,9 @@ import {
   deleteDocument,
 } from '../services/document.service';
 import { documentGenerateSchema } from '../validation/document.schema';
+import { hasProjectAccess } from '../utils/project-access';
 
 const router = Router();
-
-/** Check if user has access to a project (owner or shared with tenant) */
-const hasProjectAccess = (
-  project: { ownerId: number; isSharedWithTenant: boolean },
-  userId: number,
-): boolean => {
-  return project.ownerId === userId || project.isSharedWithTenant;
-};
 
 // All routes require authentication and tenant context
 router.use(requireAuth);
