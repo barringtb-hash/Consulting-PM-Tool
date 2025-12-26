@@ -4,8 +4,11 @@
 
 -- Phase 1 AI Tool Configs
 
--- ChatbotConfig already has tenantId from previous migration
--- Add composite index for [tenantId, isActive] to match schema (if not exists)
+-- ChatbotConfig (composite index [tenantId, isActive] per schema)
+ALTER TABLE "ChatbotConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
+ALTER TABLE "ChatbotConfig" DROP CONSTRAINT IF EXISTS "ChatbotConfig_tenantId_fkey";
+ALTER TABLE "ChatbotConfig" ADD CONSTRAINT "ChatbotConfig_tenantId_fkey"
+    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 DROP INDEX IF EXISTS "ChatbotConfig_tenantId_isActive_idx";
 CREATE INDEX IF NOT EXISTS "ChatbotConfig_tenantId_isActive_idx" ON "ChatbotConfig"("tenantId", "isActive");
 
