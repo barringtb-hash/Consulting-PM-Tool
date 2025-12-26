@@ -13,6 +13,7 @@ import {
   type AuthenticatedRequest,
 } from '../../auth/auth.middleware';
 import {
+  tenantMiddleware,
   requireTenant,
   type TenantRequest,
 } from '../../tenant/tenant.middleware';
@@ -34,6 +35,10 @@ function isNotFoundError(error: unknown): boolean {
 }
 
 const router = Router();
+
+// All routes require authentication and tenant context for isolation
+// requireAuth must come first so req.userId is available for tenant resolution
+router.use(requireAuth, tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS
