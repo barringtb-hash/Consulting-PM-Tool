@@ -29,6 +29,7 @@ import {
   statusSummaryRequestSchema,
 } from '../validation/projectStatus.schema';
 import { createChildLogger } from '../utils/logger';
+import { hasProjectAccess } from '../utils/project-access';
 import { env } from '../config/env';
 
 const log = createChildLogger({ module: 'projects' });
@@ -141,7 +142,7 @@ router.get('/:id', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -241,7 +242,7 @@ router.put('/:id', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -308,7 +309,7 @@ router.delete('/:id', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -361,7 +362,7 @@ router.get('/:id/status', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -416,7 +417,7 @@ router.patch('/:id/status', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
@@ -481,7 +482,7 @@ router.post(
         return;
       }
 
-      if (project.ownerId !== req.userId) {
+      if (!hasProjectAccess(project, req.userId)) {
         res.status(403).json({ error: 'Forbidden' });
         return;
       }

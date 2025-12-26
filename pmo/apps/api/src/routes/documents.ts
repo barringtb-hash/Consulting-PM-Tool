@@ -10,6 +10,7 @@ import {
   deleteDocument,
 } from '../services/document.service';
 import { documentGenerateSchema } from '../validation/document.schema';
+import { hasProjectAccess } from '../utils/project-access';
 
 const router = Router();
 
@@ -92,7 +93,8 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    if (project.ownerId !== req.userId) {
+    // Allow access if user is owner OR project is shared with tenant
+    if (!hasProjectAccess(project, req.userId)) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }

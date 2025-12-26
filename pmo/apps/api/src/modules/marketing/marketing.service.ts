@@ -1,6 +1,7 @@
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
+import { hasProjectAccess } from '../../utils/project-access';
 import {
   CreateMarketingContentInput,
   UpdateMarketingContentInput,
@@ -47,7 +48,8 @@ const validateProjectAccess = async (projectId: number, ownerId: number) => {
     return 'not_found' as const;
   }
 
-  if (project.ownerId !== ownerId) {
+  // Allow access if user is owner OR project is shared with tenant
+  if (!hasProjectAccess(project, ownerId)) {
     return 'forbidden' as const;
   }
 
@@ -72,10 +74,10 @@ const findContentWithAccess = async (id: number, ownerId: number) => {
   }
 
   // Check authorization:
-  // 1. If content has a project, user must own that project
+  // 1. If content has a project, user must have access (owner or shared with tenant)
   // 2. If content has no project, user must have created it
   if (content.project) {
-    if (content.project.ownerId !== ownerId) {
+    if (!hasProjectAccess(content.project, ownerId)) {
       return { error: 'forbidden' as const };
     }
   } else {
@@ -90,7 +92,7 @@ const findContentWithAccess = async (id: number, ownerId: number) => {
 
 /**
  * List marketing contents with optional filters
- * IMPORTANT: Only returns content that the user owns (via project ownership or creation)
+ * IMPORTANT: Only returns content that the user has access to (via project ownership, shared projects, or creation)
  */
 export const listMarketingContents = async (
   ownerId: number,
@@ -106,6 +108,12 @@ export const listMarketingContents = async (
       {
         project: {
           ownerId: ownerId,
+        },
+      },
+      // Content linked to projects shared with the tenant
+      {
+        project: {
+          isSharedWithTenant: true,
         },
       },
       // Content created by this user (for content without a project)
@@ -385,7 +393,8 @@ export const generateContent = async (
       return { error: 'not_found' as const };
     }
 
-    if (project.ownerId !== ownerId) {
+    // Allow access if user is owner OR project is shared with tenant
+    if (!hasProjectAccess(project, ownerId)) {
       return { error: 'forbidden' as const };
     }
 
@@ -430,7 +439,8 @@ export const generateContent = async (
       return { error: 'not_found' as const };
     }
 
-    if (meeting.project.ownerId !== ownerId) {
+    // Allow access if user is owner OR project is shared with tenant
+    if (!hasProjectAccess(meeting.project, ownerId)) {
       return { error: 'forbidden' as const };
     }
 

@@ -1,4 +1,5 @@
 import prisma from '../../prisma/client';
+import { hasProjectAccess } from '../../utils/project-access';
 import {
   CreatePublishingConnectionInput,
   UpdatePublishingConnectionInput,
@@ -197,9 +198,9 @@ export const publishContent = async (
     return { error: 'content_not_found' as const };
   }
 
-  // Validate access
+  // Validate access (owner or project shared with tenant)
   if (content.project) {
-    if (content.project.ownerId !== ownerId) {
+    if (!hasProjectAccess(content.project, ownerId)) {
       return { error: 'forbidden' as const };
     }
   } else if (content.createdById !== ownerId) {
