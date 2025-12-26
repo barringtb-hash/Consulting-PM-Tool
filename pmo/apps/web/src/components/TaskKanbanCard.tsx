@@ -1,8 +1,8 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router';
-import { Trash2 } from 'lucide-react';
+import { CheckSquare, Trash2 } from 'lucide-react';
 
 import type { TaskWithProject } from '../api/tasks';
 import { Badge, type BadgeVariant } from '../ui/Badge';
@@ -11,6 +11,7 @@ import { EMPTY_STATES } from '../utils/typography';
 interface TaskKanbanCardProps {
   task: TaskWithProject;
   onDelete?: (taskId: number) => void;
+  onClick?: (taskId: number) => void;
 }
 
 function getPriorityBadgeVariant(priority?: string | null): BadgeVariant {
@@ -41,6 +42,7 @@ function formatDate(value?: string | null): string {
 export const TaskKanbanCard = memo(function TaskKanbanCard({
   task,
   onDelete,
+  onClick,
 }: TaskKanbanCardProps): JSX.Element {
   const {
     attributes,
@@ -50,6 +52,10 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
     transition,
     isDragging,
   } = useSortable({ id: task.id });
+
+  // Track if we started a drag to prevent click on drag end
+  const isDraggingRef = useRef(false);
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
@@ -65,11 +71,49 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
     [task.id, task.title, onDelete],
   );
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+    isDraggingRef.current = false;
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (mouseDownPosRef.current) {
+      const dx = Math.abs(e.clientX - mouseDownPosRef.current.x);
+      const dy = Math.abs(e.clientY - mouseDownPosRef.current.y);
+      // If mouse moved more than 5px, consider it a drag
+      if (dx > 5 || dy > 5) {
+        isDraggingRef.current = true;
+      }
+    }
+  }, []);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Don't trigger click if we were dragging
+      if (isDraggingRef.current || isDragging) {
+        return;
+      }
+      // Don't trigger if clicking on interactive elements
+      const target = e.target as HTMLElement;
+      if (target.closest('a') || target.closest('button')) {
+        return;
+      }
+      onClick?.(task.id);
+    },
+    [task.id, onClick, isDragging],
+  );
+
+  const handleMouseUp = useCallback(() => {
+    mouseDownPosRef.current = null;
+  }, []);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const hasSubtasks = (task.subTaskCount ?? 0) > 0;
 
   return (
     <div
@@ -77,9 +121,17 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
       style={style}
       {...attributes}
       {...listeners}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onClick={handleClick}
       className={`bg-white rounded-lg border border-neutral-200 p-4 shadow-sm ${
-        isDragging ? 'shadow-lg cursor-grabbing' : 'hover:shadow-md cursor-grab'
-      } transition-shadow`}
+        isDragging
+          ? 'shadow-lg cursor-grabbing'
+          : onClick
+            ? 'hover:shadow-md hover:border-primary-300 cursor-pointer'
+            : 'hover:shadow-md cursor-grab'
+      } transition-all`}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
@@ -117,6 +169,12 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
           {task.dueDate && (
             <span className="text-xs text-neutral-600">
               {formatDate(task.dueDate)}
+            </span>
+          )}
+          {hasSubtasks && (
+            <span className="flex items-center gap-1 text-xs text-neutral-500">
+              <CheckSquare size={12} />
+              {task.subTaskCompletedCount ?? 0}/{task.subTaskCount}
             </span>
           )}
         </div>

@@ -26,6 +26,7 @@ interface TaskKanbanBoardProps {
   tasks: TaskWithProject[];
   onTaskMove: (taskId: number, newStatus: TaskStatus) => void;
   onTaskDelete?: (taskId: number) => void;
+  onTaskClick?: (taskId: number) => void;
 }
 
 function formatStatusLabel(status: TaskStatus): string {
@@ -78,6 +79,7 @@ export function TaskKanbanBoard({
   tasks,
   onTaskMove,
   onTaskDelete,
+  onTaskClick,
 }: TaskKanbanBoardProps): JSX.Element {
   const [activeTask, setActiveTask] = React.useState<TaskWithProject | null>(
     null,
@@ -145,6 +147,7 @@ export function TaskKanbanBoard({
             status={status}
             tasks={tasksByStatus[status]}
             onTaskDelete={onTaskDelete}
+            onTaskClick={onTaskClick}
           />
         ))}
       </div>
@@ -164,12 +167,14 @@ interface KanbanColumnProps {
   status: TaskStatus;
   tasks: TaskWithProject[];
   onTaskDelete?: (taskId: number) => void;
+  onTaskClick?: (taskId: number) => void;
 }
 
 function KanbanColumn({
   status,
   tasks,
   onTaskDelete,
+  onTaskClick,
 }: KanbanColumnProps): JSX.Element {
   return (
     <div className="flex flex-col bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 min-h-[500px]">
@@ -198,6 +203,7 @@ function KanbanColumn({
                 key={task.id}
                 task={task}
                 onDelete={onTaskDelete}
+                onClick={onTaskClick}
               />
             ))
           )}

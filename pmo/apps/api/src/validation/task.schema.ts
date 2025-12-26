@@ -35,6 +35,17 @@ export const taskCreateSchema = z.object({
   priority: z.nativeEnum(taskPriorityEnum).optional(),
   dueDate: z.coerce.date().optional(),
   milestoneId: z.number().int().positive().optional(),
+  parentTaskId: z.number().int().positive().optional(),
+});
+
+// Schema for creating a subtask (inherits projectId from parent)
+export const subtaskCreateSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(MAX_TITLE_LENGTH),
+  description: z.string().max(MAX_DESCRIPTION_LENGTH).optional(),
+  status: z.nativeEnum(taskStatusEnum).optional(),
+  priority: z.nativeEnum(taskPriorityEnum).optional(),
+  dueDate: z.coerce.date().optional(),
+  milestoneId: z.number().int().positive().optional(),
 });
 
 export const taskUpdateSchema = taskCreateSchema
@@ -61,3 +72,4 @@ export const taskMoveSchema = z
 export type TaskCreateInput = z.infer<typeof taskCreateSchema>;
 export type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;
 export type TaskMoveInput = z.infer<typeof taskMoveSchema>;
+export type SubtaskCreateInput = z.infer<typeof subtaskCreateSchema>;

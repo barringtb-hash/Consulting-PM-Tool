@@ -9,6 +9,7 @@ import {
 import { useProjectMilestones } from '../../hooks/milestones';
 import { TaskKanbanBoard } from '../../components/TaskKanbanBoard';
 import { TaskFormModal } from '../tasks/TaskFormModal';
+import { TaskDetailModal } from '../tasks/TaskDetailModal';
 import { Card, CardBody } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import type { TaskPayload, TaskStatus } from '../../api/tasks';
@@ -19,6 +20,7 @@ interface ProjectTasksTabProps {
 
 export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const tasksQuery = useProjectTasks(projectId);
@@ -107,6 +109,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         tasks={tasks}
         onTaskMove={handleTaskMove}
         onTaskDelete={handleTaskDelete}
+        onTaskClick={setSelectedTaskId}
       />
 
       <TaskFormModal
@@ -117,6 +120,14 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         onCancel={handleCloseModal}
         isSubmitting={createTaskMutation.isPending}
         error={error}
+      />
+
+      <TaskDetailModal
+        isOpen={selectedTaskId !== null}
+        taskId={selectedTaskId}
+        projectId={projectId}
+        milestones={milestones}
+        onClose={() => setSelectedTaskId(null)}
       />
     </div>
   );

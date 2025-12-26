@@ -18,6 +18,7 @@ export interface Task {
   id: number;
   projectId: number;
   ownerId: number;
+  parentTaskId?: number | null;
   title: string;
   description?: string | null;
   status: TaskStatus;
@@ -26,10 +27,34 @@ export interface Task {
   milestoneId?: number | null;
   createdAt: string;
   updatedAt: string;
+  // Subtask counts (included when listing parent tasks)
+  subTaskCount?: number;
+  subTaskCompletedCount?: number;
 }
 
 export interface TaskWithProject extends Task {
   projectName?: string;
+}
+
+export interface TaskWithSubtasks extends Task {
+  subTasks: Task[];
+  project?: {
+    ownerId: number;
+    name: string;
+  };
+  milestone?: {
+    id: number;
+    name: string;
+  } | null;
+}
+
+export interface SubtaskPayload {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  dueDate?: string;
+  milestoneId?: number;
 }
 
 export interface TaskPayload {
@@ -139,4 +164,56 @@ export async function fetchMyTasks(
       ...task,
       projectName: projectLookup.get(task.projectId)?.name,
     }));
+}
+
+// ============================================================================
+// Task detail with subtasks
+// ============================================================================
+
+export async function fetchTaskWithSubtasks(
+  taskId: number,
+): Promise<TaskWithSubtasks> {
+  const response = await fetch(
+    `${TASKS_BASE_PATH}/${taskId}/details`,
+    buildOptions({ method: 'GET' }),
+  );
+  const data = await handleResponse<{ task: TaskWithSubtasks }>(response);
+  return data.task;
+}
+
+// ============================================================================
+// Subtask operations
+// ============================================================================
+
+export async function fetchSubtasks(parentTaskId: number): Promise<Task[]> {
+  const response = await fetch(
+    `${TASKS_BASE_PATH}/${parentTaskId}/subtasks`,
+    buildOptions({ method: 'GET' }),
+  );
+  const data = await handleResponse<{ subtasks: Task[] }>(response);
+  return data.subtasks;
+}
+
+export async function createSubtask(
+  parentTaskId: number,
+  payload: SubtaskPayload,
+): Promise<Task> {
+  const response = await fetch(
+    `${TASKS_BASE_PATH}/${parentTaskId}/subtasks`,
+    buildOptions({ method: 'POST', body: JSON.stringify(payload) }),
+  );
+  const data = await handleResponse<{ subtask: Task }>(response);
+  return data.subtask;
+}
+
+export async function toggleSubtask(
+  parentTaskId: number,
+  subtaskId: number,
+): Promise<Task> {
+  const response = await fetch(
+    `${TASKS_BASE_PATH}/${parentTaskId}/subtasks/${subtaskId}/toggle`,
+    buildOptions({ method: 'PATCH' }),
+  );
+  const data = await handleResponse<{ subtask: Task }>(response);
+  return data.subtask;
 }

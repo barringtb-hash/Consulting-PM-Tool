@@ -518,6 +518,7 @@ model Task {
   milestoneId     Int?
   sourceMeetingId Int?
   linkedAssetId   Int?
+  parentTaskId    Int?
   title           String
   description     String?
   status          TaskStatus @default(BACKLOG)
@@ -531,9 +532,12 @@ model Task {
   owner         User       @relation(fields: [ownerId], references: [id])
   milestone     Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
   sourceMeeting Meeting?   @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  parentTask    Task?      @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks      Task[]     @relation("SubTasks")
 
   @@index([projectId, status, priority])
   @@index([ownerId, status])
+  @@index([parentTaskId])
 }
 
 model Meeting {

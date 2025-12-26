@@ -2,7 +2,5 @@
   "installCommand": "HUSKY=0 npm install",
   "buildCommand": "npm run build --workspace pmo-web",
   "outputDirectory": "apps/web/dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
