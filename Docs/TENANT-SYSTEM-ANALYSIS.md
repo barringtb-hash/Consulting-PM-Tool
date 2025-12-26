@@ -274,6 +274,15 @@ The tenant isolation system now uses a **defense-in-depth** approach:
 2. **Layer 2: Service Logic** - `getTenantId()` / `hasTenantContext()` pattern
 3. **Layer 3: Prisma Extension** - Auto-filters queries for TENANT_SCOPED_MODELS
 
+**Prisma Extension Query Handling:**
+- `findMany`, `findFirst`, `count`, `aggregate`, `groupBy`: Injects `tenantId` filter in WHERE clause
+- `findUnique`: Verifies result's tenantId matches context, returns `null` if mismatch
+- `create`, `createMany`: Injects `tenantId` into data
+- `update`, `delete`, `upsert`: Verifies tenant ownership before executing
+- `updateMany`, `deleteMany`: Injects `tenantId` filter in WHERE clause
+
+This ensures that even if service code doesn't explicitly filter by tenant, the Prisma extension provides automatic protection.
+
 ---
 
 ## 7. Migration Details
@@ -305,12 +314,22 @@ Migration `20251226200000_add_tenant_id_to_ai_modules` adds:
 ### 7.2 Migration SQL Pattern
 
 ```sql
--- Example for each table
+-- Single-column index pattern (for models with @@index([tenantId]))
 ALTER TABLE "ConfigTable" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
 ALTER TABLE "ConfigTable" ADD CONSTRAINT "ConfigTable_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 CREATE INDEX IF NOT EXISTS "ConfigTable_tenantId_idx" ON "ConfigTable"("tenantId");
+
+-- Composite index pattern (for models with @@index([tenantId, isActive]))
+ALTER TABLE "ConfigTable" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
+ALTER TABLE "ConfigTable" ADD CONSTRAINT "ConfigTable_tenantId_fkey"
+    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+CREATE INDEX IF NOT EXISTS "ConfigTable_tenantId_isActive_idx" ON "ConfigTable"("tenantId", "isActive");
 ```
+
+**Index alignment (per schema.prisma):**
+- **Composite `[tenantId, isActive]`**: ChatbotConfig, IntakeConfig, DocumentAnalyzerConfig, ContentGeneratorConfig
+- **Single `[tenantId]`**: SchedulingConfig, ProductDescriptionConfig, CustomerHealthScore, SuccessPlan, CTA, Playbook
 
 ---
 

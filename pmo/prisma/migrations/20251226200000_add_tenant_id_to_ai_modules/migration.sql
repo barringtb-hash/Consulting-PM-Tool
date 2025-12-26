@@ -3,23 +3,30 @@
 -- Note: Some Phase 2/3 AI modules are not yet migrated to DB; they will get tenantId when created
 
 -- Phase 1 AI Tool Configs
--- ChatbotConfig already has tenantId from previous migration
 
--- SchedulingConfig
+-- ChatbotConfig (composite index [tenantId, isActive] per schema)
+ALTER TABLE "ChatbotConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
+ALTER TABLE "ChatbotConfig" DROP CONSTRAINT IF EXISTS "ChatbotConfig_tenantId_fkey";
+ALTER TABLE "ChatbotConfig" ADD CONSTRAINT "ChatbotConfig_tenantId_fkey"
+    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DROP INDEX IF EXISTS "ChatbotConfig_tenantId_isActive_idx";
+CREATE INDEX IF NOT EXISTS "ChatbotConfig_tenantId_isActive_idx" ON "ChatbotConfig"("tenantId", "isActive");
+
+-- SchedulingConfig (single-column index per schema)
 ALTER TABLE "SchedulingConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
 ALTER TABLE "SchedulingConfig" DROP CONSTRAINT IF EXISTS "SchedulingConfig_tenantId_fkey";
 ALTER TABLE "SchedulingConfig" ADD CONSTRAINT "SchedulingConfig_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 CREATE INDEX IF NOT EXISTS "SchedulingConfig_tenantId_idx" ON "SchedulingConfig"("tenantId");
 
--- IntakeConfig
+-- IntakeConfig (composite index [tenantId, isActive] per schema)
 ALTER TABLE "IntakeConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
 ALTER TABLE "IntakeConfig" DROP CONSTRAINT IF EXISTS "IntakeConfig_tenantId_fkey";
 ALTER TABLE "IntakeConfig" ADD CONSTRAINT "IntakeConfig_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "IntakeConfig_tenantId_idx" ON "IntakeConfig"("tenantId");
+CREATE INDEX IF NOT EXISTS "IntakeConfig_tenantId_isActive_idx" ON "IntakeConfig"("tenantId", "isActive");
 
--- ProductDescriptionConfig
+-- ProductDescriptionConfig (single-column index per schema)
 ALTER TABLE "ProductDescriptionConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
 ALTER TABLE "ProductDescriptionConfig" DROP CONSTRAINT IF EXISTS "ProductDescriptionConfig_tenantId_fkey";
 ALTER TABLE "ProductDescriptionConfig" ADD CONSTRAINT "ProductDescriptionConfig_tenantId_fkey"
@@ -28,19 +35,19 @@ CREATE INDEX IF NOT EXISTS "ProductDescriptionConfig_tenantId_idx" ON "ProductDe
 
 -- Phase 2 AI Tool Configs (that exist in DB)
 
--- DocumentAnalyzerConfig
+-- DocumentAnalyzerConfig (composite index [tenantId, isActive] per schema)
 ALTER TABLE "DocumentAnalyzerConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
 ALTER TABLE "DocumentAnalyzerConfig" DROP CONSTRAINT IF EXISTS "DocumentAnalyzerConfig_tenantId_fkey";
 ALTER TABLE "DocumentAnalyzerConfig" ADD CONSTRAINT "DocumentAnalyzerConfig_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "DocumentAnalyzerConfig_tenantId_idx" ON "DocumentAnalyzerConfig"("tenantId");
+CREATE INDEX IF NOT EXISTS "DocumentAnalyzerConfig_tenantId_isActive_idx" ON "DocumentAnalyzerConfig"("tenantId", "isActive");
 
--- ContentGeneratorConfig
+-- ContentGeneratorConfig (composite index [tenantId, isActive] per schema)
 ALTER TABLE "ContentGeneratorConfig" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
 ALTER TABLE "ContentGeneratorConfig" DROP CONSTRAINT IF EXISTS "ContentGeneratorConfig_tenantId_fkey";
 ALTER TABLE "ContentGeneratorConfig" ADD CONSTRAINT "ContentGeneratorConfig_tenantId_fkey"
     FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-CREATE INDEX IF NOT EXISTS "ContentGeneratorConfig_tenantId_idx" ON "ContentGeneratorConfig"("tenantId");
+CREATE INDEX IF NOT EXISTS "ContentGeneratorConfig_tenantId_isActive_idx" ON "ContentGeneratorConfig"("tenantId", "isActive");
 
 -- Customer Success Models
 
