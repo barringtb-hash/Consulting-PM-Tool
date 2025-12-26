@@ -19,8 +19,9 @@ import {
 
 const router = Router();
 
-// All routes require tenant context for isolation
-router.use(tenantMiddleware);
+// All routes require authentication and tenant context for isolation
+// requireAuth must come first so req.userId is available for tenant resolution
+router.use(requireAuth, tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS

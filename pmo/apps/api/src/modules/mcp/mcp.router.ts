@@ -13,9 +13,9 @@ import { processAIQuery, executeDirectQuery } from './ai-query.service';
 
 const router = Router();
 
-// Apply tenant middleware to all MCP routes - required for tenant isolation
-// This ensures all queries filter by the current tenant
-router.use(tenantMiddleware);
+// Apply auth and tenant middleware to all MCP routes - required for tenant isolation
+// requireAuth must come first so req.userId is available for tenant resolution
+router.use(requireAuth, tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS
