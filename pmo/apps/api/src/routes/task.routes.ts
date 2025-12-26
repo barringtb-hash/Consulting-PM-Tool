@@ -53,40 +53,9 @@ router.get(
   },
 );
 
+// Both /tasks/:id and /tasks/:id/details return the same task data
 router.get(
-  '/tasks/:id',
-  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
-    if (!req.userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    const taskId = Number(req.params.id);
-
-    if (Number.isNaN(taskId)) {
-      res.status(400).json({ error: 'Invalid task id' });
-      return;
-    }
-
-    const result = await getTaskForOwner(taskId, req.userId);
-
-    if (result.error === 'not_found') {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    if (result.error === 'forbidden') {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
-
-    res.json({ task: result.task });
-  },
-);
-
-// Alias for /tasks/:id - some frontend calls use /details suffix
-router.get(
-  '/tasks/:id/details',
+  ['/tasks/:id', '/tasks/:id/details'],
   async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
