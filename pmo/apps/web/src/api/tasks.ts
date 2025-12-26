@@ -14,6 +14,45 @@ export const TASK_STATUSES: TaskStatus[] = [
 
 export const TASK_PRIORITIES: TaskPriority[] = ['P0', 'P1', 'P2'];
 
+// ============================================================================
+// Formatting utilities
+// ============================================================================
+
+/**
+ * Format a task status for display (e.g., "IN_PROGRESS" -> "In Progress")
+ */
+export function formatStatusLabel(status: TaskStatus): string {
+  return status
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+/**
+ * Get badge variant color for task status
+ */
+export const STATUS_BADGE_VARIANTS: Record<
+  TaskStatus,
+  'neutral' | 'primary' | 'danger' | 'success'
+> = {
+  BACKLOG: 'neutral',
+  IN_PROGRESS: 'primary',
+  BLOCKED: 'danger',
+  DONE: 'success',
+};
+
+/**
+ * Get badge variant color for task priority
+ */
+export const PRIORITY_BADGE_VARIANTS: Record<
+  TaskPriority,
+  'danger' | 'warning' | 'neutral'
+> = {
+  P0: 'danger',
+  P1: 'warning',
+  P2: 'neutral',
+};
+
 export interface Task {
   id: number;
   projectId: number;
