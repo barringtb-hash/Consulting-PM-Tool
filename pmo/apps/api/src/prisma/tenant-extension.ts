@@ -51,6 +51,50 @@ const TENANT_SCOPED_MODELS = new Set([
   'MarketingContent',
   'Campaign',
   'InboundLead',
+
+  // Finance Tracking
+  'ExpenseCategory',
+  'Budget',
+  'Expense',
+  'RecurringCost',
+  'AccountProfitability',
+  'FinanceAlert',
+  'FinanceInsight',
+  'FinanceConfig',
+
+  // AI Monitoring
+  'AIUsageEvent',
+  'AIUsageSummary',
+
+  // Reports & Audit
+  'SavedReport',
+  'AuditLog',
+
+  // Phase 1 AI Tool Configs
+  'ChatbotConfig',
+  'ProductDescriptionConfig',
+  'SchedulingConfig',
+  'ShiftSchedulingConfig',
+  'IntakeConfig',
+
+  // Phase 2 AI Tool Configs
+  'DocumentAnalyzerConfig',
+  'ContentGeneratorConfig',
+  'LeadScoringConfig',
+  'PriorAuthConfig',
+
+  // Phase 3 AI Tool Configs
+  'InventoryForecastConfig',
+  'ComplianceMonitorConfig',
+  'PredictiveMaintenanceConfig',
+  'RevenueManagementConfig',
+  'SafetyMonitorConfig',
+
+  // Customer Success
+  'CustomerHealthScore',
+  'SuccessPlan',
+  'CTA',
+  'Playbook',
 ]);
 
 // Models that have tenantId but are accessed via parent relations

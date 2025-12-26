@@ -16,6 +16,7 @@ import {
   AlertStatus,
   Prisma,
 } from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -111,6 +112,11 @@ export async function listInventoryForecastConfigs(filters?: {
 }) {
   const whereClause: Prisma.InventoryForecastConfigWhereInput = {};
 
+  // Always filter by tenant if context is available
+  if (hasTenantContext()) {
+    whereClause.tenantId = getTenantId();
+  }
+
   if (filters?.clientId) {
     whereClause.clientId = filters.clientId;
   } else if (filters?.clientIds && filters.clientIds.length > 0) {
@@ -118,7 +124,7 @@ export async function listInventoryForecastConfigs(filters?: {
   }
 
   return prisma.inventoryForecastConfig.findMany({
-    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    where: whereClause,
     include: {
       client: { select: { id: true, name: true, industry: true } },
       _count: {
@@ -140,6 +146,7 @@ export async function createInventoryForecastConfig(
 ) {
   return prisma.inventoryForecastConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId,
       ...data,
     },

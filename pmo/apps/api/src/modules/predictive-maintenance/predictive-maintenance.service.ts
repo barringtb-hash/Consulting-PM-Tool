@@ -36,6 +36,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { prisma } from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============ Internal Types ============
 
@@ -103,6 +104,7 @@ export async function createMaintenanceConfig(data: {
 }) {
   return prisma.predictiveMaintenanceConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId: data.clientId,
       facilityName: data.facilityName,
       timezone: data.timezone ?? 'America/New_York',

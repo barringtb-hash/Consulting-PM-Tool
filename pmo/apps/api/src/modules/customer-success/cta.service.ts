@@ -20,6 +20,7 @@ import {
   TaskStatus,
 } from '@prisma/client';
 import prisma from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 export interface CreateCTAInput {
   clientId: number;
@@ -127,6 +128,7 @@ export async function createCTA(
       isAutomated: input.isAutomated ?? false,
       triggerRule: input.triggerRule,
       triggerData: input.triggerData,
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
     },
     include: {
       client: { select: { id: true, name: true } },
@@ -285,6 +287,11 @@ export async function listCTAs(options: CTAListOptions): Promise<{
     ...(options.type && { type: options.type }),
     ...(options.priority && { priority: options.priority }),
   };
+
+  // Apply tenant context when available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
 
   // Handle status filter
   if (options.status) {

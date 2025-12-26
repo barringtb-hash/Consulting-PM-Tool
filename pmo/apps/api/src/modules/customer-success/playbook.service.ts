@@ -7,6 +7,7 @@
 
 import { Prisma, PlaybookStatus, CTAType } from '@prisma/client';
 import prisma from '../../prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 export interface CreatePlaybookInput {
   name: string;
@@ -65,6 +66,7 @@ export async function createPlaybook(
       ctaType: input.ctaType,
       category: input.category,
       createdById: input.createdById,
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       tasks: input.tasks
         ? {
             create: input.tasks.map((task, index) => ({
@@ -163,6 +165,11 @@ export async function listPlaybooks(options: {
       ],
     }),
   };
+
+  // Apply tenant context when available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
 
   const orderBy: Prisma.PlaybookOrderByWithRelationInput = {};
   if (options.sortBy === 'name') {
@@ -330,8 +337,15 @@ export async function getPopularPlaybooks(limit: number = 5): Promise<
     timesUsed: number;
   }>
 > {
+  const where: Prisma.PlaybookWhereInput = { status: 'ACTIVE' };
+
+  // Apply tenant context when available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
+
   return prisma.playbook.findMany({
-    where: { status: 'ACTIVE' },
+    where,
     select: {
       id: true,
       name: true,

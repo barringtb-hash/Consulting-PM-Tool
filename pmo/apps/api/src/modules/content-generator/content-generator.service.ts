@@ -19,6 +19,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import * as crmIntegration from './services/crm-integration.service';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -83,8 +84,19 @@ export async function getContentGeneratorConfig(clientId: number) {
 export async function listContentGeneratorConfigs(filters?: {
   clientId?: number;
 }) {
+  const where: Prisma.ContentGeneratorConfigWhereInput = {};
+
+  // Always filter by tenant if context is available
+  if (hasTenantContext()) {
+    where.tenantId = getTenantId();
+  }
+
+  if (filters?.clientId) {
+    where.clientId = filters.clientId;
+  }
+
   return prisma.contentGeneratorConfig.findMany({
-    where: filters?.clientId ? { clientId: filters.clientId } : undefined,
+    where,
     include: {
       client: { select: { id: true, name: true, industry: true } },
     },
@@ -98,6 +110,7 @@ export async function createContentGeneratorConfig(
 ) {
   return prisma.contentGeneratorConfig.create({
     data: {
+      ...(hasTenantContext() && { tenantId: getTenantId() }),
       clientId,
       ...data,
     },
