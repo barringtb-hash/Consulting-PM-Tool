@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { LayoutList, LayoutGrid } from 'lucide-react';
 
 import { useProjects } from '../api/queries';
-import { useMilestones } from '../api/hooks/milestones';
+import { useProjectMilestones } from '../api/hooks/milestones';
 import { useAuth } from '../auth/AuthContext';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import {
@@ -105,7 +105,7 @@ function MyTasksPage(): JSX.Element {
   }, [selectedTaskId, tasksQuery.data]);
 
   // Fetch milestones for the selected task's project
-  const milestonesQuery = useMilestones(selectedTask?.projectId);
+  const milestonesQuery = useProjectMilestones(selectedTask?.projectId);
   const milestones = useMemo(
     () => milestonesQuery.data ?? [],
     [milestonesQuery.data],
