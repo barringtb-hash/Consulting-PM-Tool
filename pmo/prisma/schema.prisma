@@ -443,6 +443,9 @@ model Project {
   onboardingComplete    Boolean   @default(false)
   onboardingCompletedAt DateTime?
 
+  // Tenant visibility settings
+  isSharedWithTenant Boolean @default(false) // When true, all users in tenant can view this project
+
   tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client            Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
   account           Account?           @relation(fields: [accountId], references: [id], onDelete: Cascade)

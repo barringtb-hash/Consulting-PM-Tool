@@ -32,6 +32,7 @@ export interface PaginatedResult<T> {
 
 /**
  * List projects for a specific owner with optional filtering and pagination.
+ * Also includes projects shared with the tenant (isSharedWithTenant = true).
  *
  * @param params - Query parameters
  * @param params.ownerId - Owner user ID (required)
@@ -58,9 +59,12 @@ export const listProjects = async ({
   // Support both accountId (preferred) and clientId (deprecated)
   const filterAccountId = accountId || clientId;
 
+  // Show projects that are:
+  // 1. Owned by the current user, OR
+  // 2. Shared with the tenant (isSharedWithTenant = true)
   const where: Prisma.ProjectWhereInput = {
     tenantId,
-    ownerId,
+    OR: [{ ownerId }, { isSharedWithTenant: true }],
     ...(filterAccountId && { accountId: filterAccountId }),
     status,
   };
