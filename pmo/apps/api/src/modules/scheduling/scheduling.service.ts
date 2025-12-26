@@ -159,7 +159,8 @@ export async function createSchedulingConfigForAccount(
   tenantId?: string,
 ) {
   // Resolve tenant ID: use explicit param, or context, or undefined
-  const resolvedTenantId = tenantId ?? (hasTenantContext() ? getTenantId() : undefined);
+  const resolvedTenantId =
+    tenantId ?? (hasTenantContext() ? getTenantId() : undefined);
 
   // Just create and return directly - no additional fetch
   // This bypasses any potential issues with includes/relations
