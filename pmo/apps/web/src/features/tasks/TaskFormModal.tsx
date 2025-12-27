@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Plus, X } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
@@ -7,7 +8,9 @@ import { Button } from '../../ui/Button';
 import {
   TASK_STATUSES,
   TASK_PRIORITIES,
+  formatStatusLabel,
   type TaskPayload,
+  type TaskStatus,
 } from '../../api/tasks';
 import type { Milestone } from '../../api/milestones';
 
@@ -24,39 +27,58 @@ interface TaskFormModalProps {
   isOpen: boolean;
   projectId: number;
   milestones: Milestone[];
-  onSubmit: (values: TaskPayload) => Promise<void> | void;
+  onSubmit: (values: TaskPayload) => Promise<{ id: number } | void>;
+  onCreateSubtasks?: (
+    parentTaskId: number,
+    subtasks: Array<{ title: string; status: TaskStatus }>,
+  ) => Promise<{ failedCount: number }>;
   onCancel: () => void;
+  onSuccess?: () => void;
   isSubmitting?: boolean;
   error?: string | null;
+  subtaskError?: string | null;
 }
 
 const initialFormValues: TaskFormValues = {
   title: '',
   description: '',
-  status: 'BACKLOG',
+  status: 'NOT_STARTED',
   priority: 'P1',
   dueDate: '',
   milestoneId: '',
 };
+
+interface PendingSubtask {
+  id: string;
+  title: string;
+  status: TaskStatus;
+}
 
 export function TaskFormModal({
   isOpen,
   projectId,
   milestones,
   onSubmit,
+  onCreateSubtasks,
   onCancel,
+  onSuccess,
   isSubmitting = false,
   error,
+  subtaskError,
 }: TaskFormModalProps): JSX.Element | null {
   const [values, setValues] = useState<TaskFormValues>(initialFormValues);
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
+  const [pendingSubtasks, setPendingSubtasks] = useState<PendingSubtask[]>([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setValues(initialFormValues);
       setValidationErrors({});
+      setPendingSubtasks([]);
+      setNewSubtaskTitle('');
     }
   }, [isOpen]);
 
@@ -83,6 +105,30 @@ export function TaskFormModal({
     return Object.keys(errors).length === 0;
   };
 
+  const handleAddSubtask = (): void => {
+    if (!newSubtaskTitle.trim()) return;
+
+    setPendingSubtasks((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        title: newSubtaskTitle.trim(),
+        status: 'NOT_STARTED',
+      },
+    ]);
+    setNewSubtaskTitle('');
+  };
+
+  const handleRemoveSubtask = (id: string): void => {
+    setPendingSubtasks((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const handleSubtaskStatusChange = (id: string, status: TaskStatus): void => {
+    setPendingSubtasks((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status } : s)),
+    );
+  };
+
   const handleSubmit = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
 
@@ -102,7 +148,34 @@ export function TaskFormModal({
         : undefined,
     };
 
-    await onSubmit(payload);
+    // Create parent task
+    const result = await onSubmit(payload);
+
+    // If parent task creation failed, don't proceed
+    if (!result?.id) {
+      return;
+    }
+
+    // Create subtasks if any
+    if (pendingSubtasks.length > 0 && onCreateSubtasks) {
+      const subtaskPayloads = pendingSubtasks.map((s) => ({
+        title: s.title,
+        status: s.status,
+      }));
+      const subtaskResult = await onCreateSubtasks(result.id, subtaskPayloads);
+
+      // If any subtasks failed, keep modal open so user sees the error
+      // User can close manually or retry by clicking Create Task again
+      if (subtaskResult.failedCount > 0) {
+        // Clear all pending subtasks since some were created and we can't
+        // reliably track which ones failed with parallel execution
+        setPendingSubtasks([]);
+        return;
+      }
+    }
+
+    // All operations successful, close the modal
+    onSuccess?.();
   };
 
   if (!isOpen) {
@@ -124,6 +197,17 @@ export function TaskFormModal({
               role="alert"
             >
               {error}
+            </p>
+          </div>
+        )}
+
+        {subtaskError && (
+          <div className="p-4 bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg">
+            <p
+              className="text-sm text-warning-800 dark:text-warning-200"
+              role="alert"
+            >
+              Task created successfully, but: {subtaskError}
             </p>
           </div>
         )}
@@ -155,7 +239,7 @@ export function TaskFormModal({
           >
             {TASK_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {status.replace('_', ' ')}
+                {formatStatusLabel(status)}
               </option>
             ))}
           </Select>
@@ -196,6 +280,81 @@ export function TaskFormModal({
               </option>
             ))}
           </Select>
+        </div>
+
+        {/* Subtasks Section */}
+        <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+          <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            Subtasks
+          </h3>
+
+          {/* Pending subtasks list */}
+          {pendingSubtasks.length > 0 && (
+            <ul className="space-y-2 mb-3">
+              {pendingSubtasks.map((subtask) => (
+                <li
+                  key={subtask.id}
+                  className="flex items-center gap-2 p-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg"
+                >
+                  <span className="flex-1 text-sm text-neutral-900 dark:text-neutral-100 truncate">
+                    {subtask.title}
+                  </span>
+                  <select
+                    value={subtask.status}
+                    onChange={(e) =>
+                      handleSubtaskStatusChange(
+                        subtask.id,
+                        e.target.value as TaskStatus,
+                      )
+                    }
+                    disabled={isSubmitting}
+                    className="text-xs px-2 py-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200"
+                  >
+                    {TASK_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {formatStatusLabel(status)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSubtask(subtask.id)}
+                    disabled={isSubmitting}
+                    className="p-1 text-neutral-400 hover:text-danger-500 dark:text-neutral-500 dark:hover:text-danger-400"
+                    aria-label="Remove subtask"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Add subtask input */}
+          <div className="flex items-center gap-2">
+            <Input
+              value={newSubtaskTitle}
+              onChange={(e) => setNewSubtaskTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddSubtask();
+                }
+              }}
+              placeholder="Add a subtask..."
+              disabled={isSubmitting}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleAddSubtask}
+              disabled={!newSubtaskTitle.trim() || isSubmitting}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">

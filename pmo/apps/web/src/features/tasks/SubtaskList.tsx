@@ -28,7 +28,7 @@ export function SubtaskList({
 }: SubtaskListProps): JSX.Element {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskStatus, setNewSubtaskStatus] =
-    useState<TaskStatus>('BACKLOG');
+    useState<TaskStatus>('NOT_STARTED');
   const [isInputVisible, setIsInputVisible] = useState(false);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 
@@ -40,7 +40,7 @@ export function SubtaskList({
 
     await onAddSubtask(newSubtaskTitle.trim(), newSubtaskStatus);
     setNewSubtaskTitle('');
-    setNewSubtaskStatus('BACKLOG');
+    setNewSubtaskStatus('NOT_STARTED');
     setIsInputVisible(false);
   };
 
@@ -66,7 +66,7 @@ export function SubtaskList({
       handleAddSubtask();
     } else if (e.key === 'Escape') {
       setNewSubtaskTitle('');
-      setNewSubtaskStatus('BACKLOG');
+      setNewSubtaskStatus('NOT_STARTED');
       setIsInputVisible(false);
     }
   };
@@ -83,15 +83,15 @@ export function SubtaskList({
     const variant = STATUS_BADGE_VARIANTS[status];
     switch (variant) {
       case 'neutral':
-        return 'bg-neutral-100 text-neutral-700 border-neutral-300';
+        return 'bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600';
       case 'primary':
-        return 'bg-primary-100 text-primary-700 border-primary-300';
+        return 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900 dark:text-primary-200 dark:border-primary-700';
       case 'danger':
-        return 'bg-danger-100 text-danger-700 border-danger-300';
+        return 'bg-danger-100 text-danger-700 border-danger-300 dark:bg-danger-900 dark:text-danger-200 dark:border-danger-700';
       case 'success':
-        return 'bg-success-100 text-success-700 border-success-300';
+        return 'bg-success-100 text-success-700 border-success-300 dark:bg-success-900 dark:text-success-200 dark:border-success-700';
       default:
-        return 'bg-neutral-100 text-neutral-700 border-neutral-300';
+        return 'bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600';
     }
   };
 
@@ -173,6 +173,7 @@ export function SubtaskList({
                         )
                       }
                       disabled={isUpdating}
+                      aria-label="Subtask status"
                       className={`text-xs font-medium px-2 py-1 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(subtask.status)} ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
                     >
                       {TASK_STATUSES.map((status) => (
@@ -219,6 +220,7 @@ export function SubtaskList({
                 setNewSubtaskStatus(e.target.value as TaskStatus)
               }
               disabled={isAddingSubtask}
+              aria-label="Initial status for new subtask"
               className={`text-xs font-medium px-2 py-2 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(newSubtaskStatus)}`}
             >
               {TASK_STATUSES.map((status) => (

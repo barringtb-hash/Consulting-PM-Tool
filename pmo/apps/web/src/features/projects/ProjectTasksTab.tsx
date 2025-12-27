@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import {
   useProjectTasks,
   useCreateTask,
+  useCreateSubtask,
   useMoveTask,
   useDeleteTask,
 } from '../../hooks/tasks';
@@ -22,30 +23,85 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [subtaskError, setSubtaskError] = useState<string | null>(null);
 
   const tasksQuery = useProjectTasks(projectId);
   const milestonesQuery = useProjectMilestones(projectId);
   const createTaskMutation = useCreateTask();
+  const [creatingSubtasksForTaskId, setCreatingSubtasksForTaskId] = useState<
+    number | null
+  >(null);
+  const createSubtaskMutation = useCreateSubtask(
+    creatingSubtasksForTaskId ?? undefined,
+    projectId,
+  );
   const moveTaskMutation = useMoveTask(projectId);
   const deleteTaskMutation = useDeleteTask(projectId);
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
     setError(null);
+    setSubtaskError(null);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setError(null);
+    setSubtaskError(null);
   };
 
-  const handleSubmit = async (payload: TaskPayload) => {
+  const handleSubmit = async (
+    payload: TaskPayload,
+  ): Promise<{ id: number } | void> => {
     try {
       setError(null);
-      await createTaskMutation.mutateAsync(payload);
-      setIsModalOpen(false);
+      setSubtaskError(null);
+      const task = await createTaskMutation.mutateAsync(payload);
+      // Don't close modal here - let caller decide after subtasks are created
+      return { id: task.id };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task');
+    }
+  };
+
+  const handleCreateSubtasks = async (
+    parentTaskId: number,
+    subtasks: Array<{ title: string; status: TaskStatus }>,
+  ): Promise<{ failedCount: number }> => {
+    setCreatingSubtasksForTaskId(parentTaskId);
+    setSubtaskError(null);
+
+    try {
+      // Create subtasks in parallel and track which ones fail
+      const results = await Promise.allSettled(
+        subtasks.map((subtask) => createSubtaskMutation.mutateAsync(subtask)),
+      );
+
+      const failed = results.filter((r) => r.status === 'rejected');
+
+      if (failed.length > 0) {
+        const failedTitles = subtasks
+          .filter((_, index) => results[index].status === 'rejected')
+          .map((s) => s.title);
+
+        const errorMsg =
+          failed.length === subtasks.length
+            ? 'Failed to create all subtasks. Please try adding them manually.'
+            : `Failed to create ${failed.length} subtask(s): ${failedTitles.join(', ')}`;
+
+        setSubtaskError(errorMsg);
+        return { failedCount: failed.length };
+      }
+
+      return { failedCount: 0 };
+    } catch (err) {
+      // Unexpected error (shouldn't happen with allSettled, but defensive)
+      const errorMsg =
+        err instanceof Error ? err.message : 'Failed to create subtasks';
+      setSubtaskError(errorMsg);
+      return { failedCount: subtasks.length };
+    } finally {
+      setCreatingSubtasksForTaskId(null);
     }
   };
 
@@ -117,9 +173,12 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         projectId={projectId}
         milestones={milestones}
         onSubmit={handleSubmit}
+        onCreateSubtasks={handleCreateSubtasks}
         onCancel={handleCloseModal}
+        onSuccess={handleCloseModal}
         isSubmitting={createTaskMutation.isPending}
         error={error}
+        subtaskError={subtaskError}
       />
 
       <TaskDetailModal
