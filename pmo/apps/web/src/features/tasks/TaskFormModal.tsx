@@ -118,8 +118,8 @@ export function TaskFormModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-4 bg-danger-50 border border-danger-200 rounded-lg">
-            <p className="text-sm text-danger-800" role="alert">
+          <div className="p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg">
+            <p className="text-sm text-danger-800 dark:text-danger-200" role="alert">
               {error}
             </p>
           </div>
@@ -195,7 +195,7 @@ export function TaskFormModal({
           </Select>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
+        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
           <Button
             type="button"
             variant="secondary"

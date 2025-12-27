@@ -58,28 +58,28 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+              <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 mb-2">
                 <User className="w-4 h-4" />
                 <span className="text-sm font-medium">Client</span>
               </div>
               {clientQuery.isLoading && (
-                <p className="text-neutral-600">Loading...</p>
+                <p className="text-neutral-600 dark:text-neutral-400">Loading...</p>
               )}
               {clientQuery.data && (
                 <Link
                   to={`/clients/${clientQuery.data.id}`}
-                  className="text-primary-600 hover:text-primary-700 font-medium"
+                  className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
                 >
                   {clientQuery.data.name}
                 </Link>
               )}
               {clientQuery.error && (
-                <p className="text-neutral-600">Unable to load</p>
+                <p className="text-neutral-600 dark:text-neutral-400">Unable to load</p>
               )}
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+              <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 mb-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-sm font-medium">Status</span>
               </div>
@@ -101,7 +101,7 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+              <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 mb-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-sm font-medium">Health</span>
               </div>
@@ -113,29 +113,29 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+              <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 mb-2">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm font-medium">Start Date</span>
               </div>
-              <p className="text-neutral-900">
+              <p className="text-neutral-900 dark:text-neutral-100">
                 {formatDate(project.startDate)}
               </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+              <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 mb-2">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm font-medium">Target End Date</span>
               </div>
-              <p className="text-neutral-900">{formatDate(project.endDate)}</p>
+              <p className="text-neutral-900 dark:text-neutral-100">{formatDate(project.endDate)}</p>
             </div>
 
             <div>
-              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+              <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 mb-2">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm font-medium">Created</span>
               </div>
-              <p className="text-neutral-900">
+              <p className="text-neutral-900 dark:text-neutral-100">
                 {formatDate(project.createdAt)}
               </p>
             </div>
@@ -147,7 +147,7 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
       {statusQuery.isLoading && (
         <Card>
           <CardBody>
-            <p className="text-neutral-600">Loading project status...</p>
+            <p className="text-neutral-600 dark:text-neutral-400">Loading project status...</p>
           </CardBody>
         </Card>
       )}
@@ -171,12 +171,12 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-neutral-600">Completion</span>
-                    <span className="text-2xl font-bold text-neutral-900">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Completion</span>
+                    <span className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       {completionPercentage}%
                     </span>
                   </div>
-                  <div className="w-full bg-neutral-200 rounded-full h-2">
+                  <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
                     <div
                       className="bg-primary-600 h-2 rounded-full transition-all"
                       style={{ width: `${completionPercentage}%` }}
@@ -188,10 +188,10 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   {Object.entries(statusData.taskCounts).map(
                     ([status, count]) => (
                       <div key={status} className="text-center">
-                        <div className="text-xl font-semibold text-neutral-900">
+                        <div className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                           {count}
                         </div>
-                        <div className="text-xs text-neutral-600">
+                        <div className="text-xs text-neutral-600 dark:text-neutral-400">
                           {formatStatus(status)}
                         </div>
                       </div>
@@ -210,10 +210,10 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             <CardBody>
               {statusData.currentMilestone ? (
                 <div>
-                  <h4 className="font-semibold text-neutral-900 mb-2">
+                  <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
                     {statusData.currentMilestone.name}
                   </h4>
-                  <p className="text-sm text-neutral-600 mb-1">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
                     Due: {formatDate(statusData.currentMilestone.dueDate)}
                   </p>
                   <Badge
@@ -229,7 +229,7 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   </Badge>
                 </div>
               ) : (
-                <p className="text-neutral-600 text-sm">
+                <p className="text-neutral-600 dark:text-neutral-400 text-sm">
                   {EMPTY_STATES.noActiveMilestone}
                 </p>
               )}
@@ -246,17 +246,17 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 <ul className="space-y-2">
                   {statusData.upcomingTasks.slice(0, 3).map((task) => (
                     <li key={task.id} className="text-sm">
-                      <div className="font-medium text-neutral-900">
+                      <div className="font-medium text-neutral-900 dark:text-neutral-100">
                         {task.title}
                       </div>
-                      <div className="text-xs text-neutral-600">
+                      <div className="text-xs text-neutral-600 dark:text-neutral-400">
                         {formatDate(task.dueDate)}
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-neutral-600 text-sm">
+                <p className="text-neutral-600 dark:text-neutral-400 text-sm">
                   {EMPTY_STATES.noUpcomingTasks}
                 </p>
               )}
@@ -267,9 +267,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
 
       {/* Overdue Tasks Alert */}
       {statusData && statusData.overdueTasks.length > 0 && (
-        <Card className="border-danger-200 bg-danger-50">
+        <Card className="border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/20">
           <CardHeader>
-            <CardTitle as="h3" className="text-danger-900">
+            <CardTitle as="h3" className="text-danger-900 dark:text-danger-200">
               ⚠️ Overdue Tasks ({statusData.overdueTasks.length})
             </CardTitle>
           </CardHeader>
@@ -277,10 +277,10 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             <ul className="space-y-2">
               {statusData.overdueTasks.map((task) => (
                 <li key={task.id} className="text-sm">
-                  <div className="font-medium text-danger-900">
+                  <div className="font-medium text-danger-900 dark:text-danger-200">
                     {task.title}
                   </div>
-                  <div className="text-xs text-danger-700">
+                  <div className="text-xs text-danger-700 dark:text-danger-400">
                     Was due: {formatDate(task.dueDate)}
                   </div>
                 </li>
@@ -296,9 +296,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
           statusData.recentDecisions.length > 0) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {statusData.recentRisks.length > 0 && (
-              <Card className="border-yellow-200">
+              <Card className="border-yellow-200 dark:border-yellow-800">
                 <CardHeader>
-                  <CardTitle as="h3" className="text-yellow-900">
+                  <CardTitle as="h3" className="text-yellow-900 dark:text-yellow-200">
                     Recent Risks
                   </CardTitle>
                 </CardHeader>
@@ -306,8 +306,8 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   <ul className="space-y-3">
                     {statusData.recentRisks.map((risk, idx) => (
                       <li key={idx} className="text-sm">
-                        <p className="text-neutral-900">{risk.snippet}</p>
-                        <p className="text-xs text-neutral-600 mt-1">
+                        <p className="text-neutral-900 dark:text-neutral-100">{risk.snippet}</p>
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
                           From meeting on {formatDate(risk.date)}
                         </p>
                       </li>
@@ -318,9 +318,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             )}
 
             {statusData.recentDecisions.length > 0 && (
-              <Card className="border-purple-200">
+              <Card className="border-purple-200 dark:border-purple-800">
                 <CardHeader>
-                  <CardTitle as="h3" className="text-purple-900">
+                  <CardTitle as="h3" className="text-purple-900 dark:text-purple-200">
                     Recent Decisions
                   </CardTitle>
                 </CardHeader>
@@ -328,8 +328,8 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   <ul className="space-y-3">
                     {statusData.recentDecisions.map((decision, idx) => (
                       <li key={idx} className="text-sm">
-                        <p className="text-neutral-900">{decision.snippet}</p>
-                        <p className="text-xs text-neutral-600 mt-1">
+                        <p className="text-neutral-900 dark:text-neutral-100">{decision.snippet}</p>
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
                           From meeting on {formatDate(decision.date)}
                         </p>
                       </li>
