@@ -173,19 +173,21 @@ export const getTaskForOwner = async (id: number, userId: number) => {
 };
 
 /**
- * Retrieves a task by ID with its subtasks, verifying owner access.
+ * Retrieves a task by ID with its subtasks, verifying user access.
  *
  * @param id - The task ID
- * @param ownerId - The ID of the user requesting access (must be project owner)
+ * @param userId - The ID of the user requesting access (must have project access)
  * @returns Object with either { task } (including subtasks) or { error }
  */
-export const getTaskWithSubtasks = async (id: number, ownerId: number) => {
+export const getTaskWithSubtasks = async (id: number, userId: number) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
   const task = await prisma.task.findFirst({
     where: { id, tenantId },
     include: {
-      project: { select: { ownerId: true, name: true } },
+      project: {
+        select: { ownerId: true, name: true, isSharedWithTenant: true },
+      },
       milestone: { select: { id: true, name: true } },
       subTasks: {
         orderBy: { createdAt: 'asc' },
@@ -197,7 +199,7 @@ export const getTaskWithSubtasks = async (id: number, ownerId: number) => {
     return { error: 'not_found' as const };
   }
 
-  if (task.project.ownerId !== ownerId) {
+  if (!hasProjectAccess(task.project, userId)) {
     return { error: 'forbidden' as const };
   }
 
