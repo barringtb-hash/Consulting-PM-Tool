@@ -8,6 +8,7 @@ import {
 
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
+import { isProjectDeleting } from './hooks/deletionTracker';
 import {
   type CreateMarketingContentInput,
   type UpdateMarketingContentInput,
@@ -319,7 +320,8 @@ export function useProjectMarketingContents(
   return useQuery({
     queryKey: marketingQueryKeys.projectContents(projectId),
     queryFn: () => fetchProjectMarketingContents(projectId!),
-    enabled: !!projectId,
+    // Disable query if project is being deleted to prevent 404 refetch race conditions
+    enabled: !!projectId && !isProjectDeleting(projectId),
   });
 }
 

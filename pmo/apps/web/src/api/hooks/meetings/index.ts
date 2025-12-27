@@ -18,6 +18,7 @@ import {
 
 import { queryKeys } from '../queryKeys';
 import { invalidateRelatedModules } from '../moduleRegistry';
+import { isProjectDeleting } from '../deletionTracker';
 import {
   createMeeting,
   createTaskFromSelection,
@@ -42,7 +43,8 @@ export function useProjectMeetings(
 ): UseQueryResult<Meeting[], Error> {
   return useQuery({
     queryKey: queryKeys.meetings.byProject(projectId),
-    enabled: Boolean(projectId),
+    // Disable query if project is being deleted to prevent 404 refetch race conditions
+    enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectMeetings(projectId as number),
   });
 }
