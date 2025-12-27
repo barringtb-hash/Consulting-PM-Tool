@@ -134,13 +134,20 @@ export async function fetchMyTasks(
     projects.map((project) => fetchProjectTasks(project.id)),
   );
 
-  // Extract successful results, filter out failed fetches
-  const tasksByProject = taskResults
-    .filter(
-      (result): result is PromiseFulfilledResult<Task[]> =>
-        result.status === 'fulfilled',
-    )
-    .map((result) => result.value);
+  // Extract successful results, log failed fetches for debugging
+  const tasksByProject: Task[][] = [];
+  taskResults.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      tasksByProject.push(result.value);
+    } else if (import.meta.env.DEV) {
+      // Log failures in development to help diagnose permission issues
+      const failedProject = projects[index];
+      console.warn(
+        `[fetchMyTasks] Failed to fetch tasks for project ${failedProject?.id}:`,
+        result.reason,
+      );
+    }
+  });
 
   return tasksByProject
     .flat()
