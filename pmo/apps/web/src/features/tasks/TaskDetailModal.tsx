@@ -184,14 +184,16 @@ export function TaskDetailModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="" size="large">
+    <Modal isOpen={isOpen} onClose={onClose} title="" size="xl">
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
         </div>
       ) : error ? (
-        <div className="p-4 bg-danger-50 border border-danger-200 rounded-lg">
-          <p className="text-sm text-danger-800">Failed to load task details</p>
+        <div className="p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg">
+          <p className="text-sm text-danger-800 dark:text-danger-200">
+            Failed to load task details
+          </p>
         </div>
       ) : task ? (
         <div className="space-y-6">
@@ -206,12 +208,12 @@ export function TaskDetailModal({
                   className="text-lg font-semibold"
                 />
               ) : (
-                <h2 className="text-xl font-semibold text-neutral-900 truncate">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                   {task.title}
                 </h2>
               )}
               {task.project?.name && (
-                <p className="text-sm text-neutral-500 mt-1">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                   Project: {task.project.name}
                 </p>
               )}
@@ -244,8 +246,8 @@ export function TaskDetailModal({
 
           {/* Delete confirmation */}
           {showDeleteConfirm && (
-            <div className="p-4 bg-danger-50 border border-danger-200 rounded-lg">
-              <p className="text-sm text-danger-800 mb-3">
+            <div className="p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg">
+              <p className="text-sm text-danger-800 dark:text-danger-200 mb-3">
                 Are you sure you want to delete this task? This will also delete
                 all subtasks.
               </p>
@@ -346,7 +348,7 @@ export function TaskDetailModal({
 
           {/* Description */}
           <div>
-            <h3 className="text-sm font-medium text-neutral-700 mb-2">
+            <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
               Description
             </h3>
             {isEditing ? (
@@ -357,14 +359,14 @@ export function TaskDetailModal({
                 rows={4}
               />
             ) : (
-              <p className="text-neutral-600 whitespace-pre-wrap">
+              <p className="text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
                 {task.description || 'No description provided.'}
               </p>
             )}
           </div>
 
           {/* Subtasks section */}
-          <div className="border-t border-neutral-200 pt-4">
+          <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
             <SubtaskList
               subtasks={task.subTasks}
               onAddSubtask={handleAddSubtask}
@@ -375,7 +377,7 @@ export function TaskDetailModal({
 
           {/* Edit mode action buttons */}
           {isEditing && (
-            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
               <Button
                 variant="secondary"
                 onClick={handleCancelEdit}

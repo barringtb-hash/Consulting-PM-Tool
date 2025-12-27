@@ -140,17 +140,17 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
       tabIndex={onClick ? 0 : undefined}
       role={onClick ? 'button' : undefined}
       aria-label={onClick ? `Open task details for ${task.title}` : undefined}
-      className={`bg-white rounded-lg border border-neutral-200 p-4 shadow-sm ${
+      className={`bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 shadow-sm ${
         isDragging
           ? 'shadow-lg cursor-grabbing'
           : onClick
-            ? 'hover:shadow-md hover:border-primary-300 cursor-pointer'
-            : 'hover:shadow-md cursor-grab'
+            ? 'hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600 cursor-pointer'
+            : 'hover:shadow-md dark:hover:shadow-neutral-900/50 cursor-grab'
       } transition-all`}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium text-neutral-900 line-clamp-2 flex-1">
+          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 line-clamp-2 flex-1">
             {task.title}
           </p>
           {onDelete && (
@@ -166,7 +166,7 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
         </div>
         <div>
           {task.description && (
-            <p className="text-xs text-neutral-600 line-clamp-2">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2">
               {task.description}
             </p>
           )}
@@ -182,12 +182,12 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
             </Badge>
           )}
           {task.dueDate && (
-            <span className="text-xs text-neutral-600">
+            <span className="text-xs text-neutral-600 dark:text-neutral-400">
               {formatDate(task.dueDate)}
             </span>
           )}
           {hasSubtasks && (
-            <span className="flex items-center gap-1 text-xs text-neutral-500">
+            <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
               <CheckSquare size={12} />
               {task.subTaskCompletedCount ?? 0}/{task.subTaskCount}
             </span>
@@ -195,10 +195,10 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
         </div>
 
         {task.projectName && (
-          <div className="pt-2 border-t border-neutral-100">
+          <div className="pt-2 border-t border-neutral-100 dark:border-neutral-700">
             <Link
               to={`/projects/${task.projectId}`}
-              className="text-xs text-primary-600 hover:text-primary-700 hover:underline"
+              className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               {task.projectName}
