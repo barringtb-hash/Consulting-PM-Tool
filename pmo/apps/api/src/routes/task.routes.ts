@@ -58,9 +58,9 @@ router.get(
   },
 );
 
-// Both /tasks/:id and /tasks/:id/details return the same task data
+// Get basic task info (without subtasks) - for /tasks/:id only
 router.get(
-  ['/tasks/:id', '/tasks/:id/details'],
+  '/tasks/:id',
   async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
