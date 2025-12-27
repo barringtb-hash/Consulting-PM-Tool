@@ -207,17 +207,18 @@ export function SubtaskList({
 
       {/* Add subtask input */}
       {isInputVisible && (
-        <div className="space-y-2 mt-2">
-          <div className="flex items-center gap-2">
-            <Input
-              value={newSubtaskTitle}
-              onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter subtask title..."
-              disabled={isAddingSubtask}
-              autoFocus
-              className="flex-1"
-            />
+        <div className="space-y-3 mt-2">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <Input
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter subtask title..."
+                disabled={isAddingSubtask}
+                autoFocus
+              />
+            </div>
             <select
               value={newSubtaskStatus}
               onChange={(e) =>
@@ -225,7 +226,7 @@ export function SubtaskList({
               }
               disabled={isAddingSubtask}
               aria-label="Initial status for new subtask"
-              className={`text-xs font-medium px-2 py-2 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(newSubtaskStatus)}`}
+              className={`text-sm font-medium px-3 py-2 min-w-[140px] rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(newSubtaskStatus)}`}
             >
               {TASK_STATUSES.map((status) => (
                 <option key={status} value={status}>

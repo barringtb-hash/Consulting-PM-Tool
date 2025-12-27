@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
@@ -72,6 +72,8 @@ export function TaskFormModal({
   >({});
   const [pendingSubtasks, setPendingSubtasks] = useState<PendingSubtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [newSubtaskStatus, setNewSubtaskStatus] =
+    useState<TaskStatus>('NOT_STARTED');
 
   useEffect(() => {
     if (isOpen) {
@@ -79,6 +81,7 @@ export function TaskFormModal({
       setValidationErrors({});
       setPendingSubtasks([]);
       setNewSubtaskTitle('');
+      setNewSubtaskStatus('NOT_STARTED');
     }
   }, [isOpen]);
 
@@ -113,10 +116,11 @@ export function TaskFormModal({
       {
         id: crypto.randomUUID(),
         title: newSubtaskTitle.trim(),
-        status: 'NOT_STARTED',
+        status: newSubtaskStatus,
       },
     ]);
     setNewSubtaskTitle('');
+    setNewSubtaskStatus('NOT_STARTED');
   };
 
   const handleRemoveSubtask = (id: string): void => {
@@ -331,29 +335,61 @@ export function TaskFormModal({
           )}
 
           {/* Add subtask input */}
-          <div className="flex items-center gap-2">
-            <Input
-              value={newSubtaskTitle}
-              onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddSubtask();
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <Input
+                  value={newSubtaskTitle}
+                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSubtask();
+                    }
+                  }}
+                  placeholder="Enter subtask title..."
+                  disabled={isSubmitting}
+                />
+              </div>
+              <select
+                value={newSubtaskStatus}
+                onChange={(e) =>
+                  setNewSubtaskStatus(e.target.value as TaskStatus)
                 }
-              }}
-              placeholder="Add a subtask..."
-              disabled={isSubmitting}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleAddSubtask}
-              disabled={!newSubtaskTitle.trim() || isSubmitting}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+                disabled={isSubmitting}
+                aria-label="Initial status for new subtask"
+                className="text-sm font-medium px-3 py-2 min-w-[140px] rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                {TASK_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {formatStatusLabel(status)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleAddSubtask}
+                disabled={!newSubtaskTitle.trim() || isSubmitting}
+              >
+                Add
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setNewSubtaskTitle('');
+                  setNewSubtaskStatus('NOT_STARTED');
+                }}
+                disabled={isSubmitting || !newSubtaskTitle.trim()}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
 
