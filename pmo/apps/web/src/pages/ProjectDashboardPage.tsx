@@ -174,6 +174,8 @@ function ProjectDashboardPage(): JSX.Element {
 
     try {
       await deleteProjectMutation.mutateAsync(projectId);
+      // Clear context after successful deletion to keep UI consistent on failure
+      setSelectedProject(null);
       showToast('Project deleted successfully', 'success');
       navigate('/dashboard');
     } catch {
