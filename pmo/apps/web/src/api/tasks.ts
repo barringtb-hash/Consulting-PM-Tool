@@ -128,9 +128,19 @@ export async function fetchMyTasks(
   const projectLookup = new Map<number, Project>();
   projects.forEach((project) => projectLookup.set(project.id, project));
 
-  const tasksByProject = await Promise.all(
+  // Use Promise.allSettled to handle individual project fetch failures gracefully
+  // This prevents one 403/404 from failing the entire request
+  const taskResults = await Promise.allSettled(
     projects.map((project) => fetchProjectTasks(project.id)),
   );
+
+  // Extract successful results, filter out failed fetches
+  const tasksByProject = taskResults
+    .filter(
+      (result): result is PromiseFulfilledResult<Task[]> =>
+        result.status === 'fulfilled',
+    )
+    .map((result) => result.value);
 
   return tasksByProject
     .flat()
