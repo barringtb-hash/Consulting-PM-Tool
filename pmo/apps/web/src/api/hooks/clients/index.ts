@@ -139,8 +139,8 @@ export function useArchiveClient(): UseMutationResult<Client, Error, number> {
 /**
  * Delete a client permanently
  *
- * This mutation uses module-aware invalidation to cascade cache invalidation
- * to all related modules (contacts, projects, campaigns, brandProfiles, publishing)
+ * This mutation removes all client-related queries from the cache to prevent
+ * 404 errors, then invalidates list queries to refresh the UI.
  */
 export function useDeleteClient(): UseMutationResult<void, Error, number> {
   const queryClient = useQueryClient();
@@ -148,18 +148,35 @@ export function useDeleteClient(): UseMutationResult<void, Error, number> {
   return useMutation({
     mutationFn: (clientId: number) => deleteClient(clientId),
     onSuccess: (_, clientId) => {
-      // Invalidate own module cache
-      queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
+      // Remove all queries specific to this client to prevent 404 refetch errors
       queryClient.removeQueries({
         queryKey: queryKeys.clients.detail(clientId),
       });
 
-      // Cross-module invalidation using module registry rules
+      // Remove client contacts queries
+      queryClient.removeQueries({
+        queryKey: queryKeys.contacts.byClient(clientId),
+      });
+
+      // Remove brand profile queries
+      queryClient.removeQueries({
+        queryKey: queryKeys.brandProfiles.byClient(clientId),
+      });
+
+      // Remove publishing connections queries
+      queryClient.removeQueries({
+        queryKey: queryKeys.publishing.connections(clientId),
+      });
+
+      // Cross-module removal using module registry rules
       invalidateRelatedModules(queryClient, {
         sourceModule: 'clients',
         trigger: 'delete',
         entityId: clientId,
       });
+
+      // Invalidate client lists to refresh UI
+      queryClient.invalidateQueries({ queryKey: queryKeys.clients.lists() });
     },
   });
 }
