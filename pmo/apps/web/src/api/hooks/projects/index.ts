@@ -156,7 +156,6 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
   return useMutation({
     mutationFn: async (projectId: number) => {
       // Cancel all queries for this project BEFORE making the delete request
-      // This prevents any in-flight requests from completing
       await Promise.all([
         queryClient.cancelQueries({
           queryKey: queryKeys.projects.detail(projectId),
@@ -178,43 +177,18 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
         }),
       ]);
 
-      // Remove all queries BEFORE the delete to prevent hooks from re-fetching
-      // while the delete is in progress. This is more aggressive than just canceling.
+      // Remove project-specific queries BEFORE the delete
+      // Related module queries (tasks, milestones, etc.) are handled by invalidateRelatedModules
       queryClient.removeQueries({
         queryKey: queryKeys.projects.detail(projectId),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.milestones.byProject(projectId),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.tasks.byProject(projectId),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.meetings.byProject(projectId),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.marketing.byProject(projectId),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.assets.byProject(projectId),
       });
 
       // Now perform the actual delete
       return deleteProject(projectId);
     },
     onSuccess: (_, projectId) => {
-      // Final cleanup - remove any remaining queries that might have been created
-      queryClient.removeQueries({
-        queryKey: queryKeys.projects.detail(projectId),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.projects.status(projectId),
-      });
-      queryClient.removeQueries({
-        queryKey: queryKeys.assets.byProject(projectId),
-      });
-
       // Cross-module removal using module registry rules
+      // This handles tasks, milestones, meetings, documents, marketing, assets
       invalidateRelatedModules(queryClient, {
         sourceModule: 'projects',
         trigger: 'delete',
