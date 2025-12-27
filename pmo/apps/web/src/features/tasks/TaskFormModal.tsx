@@ -31,10 +31,12 @@ interface TaskFormModalProps {
   onCreateSubtasks?: (
     parentTaskId: number,
     subtasks: Array<{ title: string; status: TaskStatus }>,
-  ) => Promise<void>;
+  ) => Promise<{ failedCount: number }>;
   onCancel: () => void;
+  onSuccess?: () => void;
   isSubmitting?: boolean;
   error?: string | null;
+  subtaskError?: string | null;
 }
 
 const initialFormValues: TaskFormValues = {
@@ -59,8 +61,10 @@ export function TaskFormModal({
   onSubmit,
   onCreateSubtasks,
   onCancel,
+  onSuccess,
   isSubmitting = false,
   error,
+  subtaskError,
 }: TaskFormModalProps): JSX.Element | null {
   const [values, setValues] = useState<TaskFormValues>(initialFormValues);
   const [validationErrors, setValidationErrors] = useState<
@@ -147,14 +151,31 @@ export function TaskFormModal({
     // Create parent task
     const result = await onSubmit(payload);
 
+    // If parent task creation failed, don't proceed
+    if (!result?.id) {
+      return;
+    }
+
     // Create subtasks if any
-    if (result?.id && pendingSubtasks.length > 0 && onCreateSubtasks) {
+    if (pendingSubtasks.length > 0 && onCreateSubtasks) {
       const subtaskPayloads = pendingSubtasks.map((s) => ({
         title: s.title,
         status: s.status,
       }));
-      await onCreateSubtasks(result.id, subtaskPayloads);
+      const subtaskResult = await onCreateSubtasks(result.id, subtaskPayloads);
+
+      // If any subtasks failed, keep modal open so user sees the error
+      // User can close manually or retry by clicking Create Task again
+      if (subtaskResult.failedCount > 0) {
+        // Clear all pending subtasks since some were created and we can't
+        // reliably track which ones failed with parallel execution
+        setPendingSubtasks([]);
+        return;
+      }
     }
+
+    // All operations successful, close the modal
+    onSuccess?.();
   };
 
   if (!isOpen) {
@@ -176,6 +197,17 @@ export function TaskFormModal({
               role="alert"
             >
               {error}
+            </p>
+          </div>
+        )}
+
+        {subtaskError && (
+          <div className="p-4 bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg">
+            <p
+              className="text-sm text-warning-800 dark:text-warning-200"
+              role="alert"
+            >
+              Task created successfully, but: {subtaskError}
             </p>
           </div>
         )}
