@@ -74,9 +74,11 @@ export function SubtaskList({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-neutral-700">Subtasks</h3>
+          <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Subtasks
+          </h3>
           {totalCount > 0 && (
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
               ({completedCount}/{totalCount} completed)
             </span>
           )}
@@ -96,7 +98,7 @@ export function SubtaskList({
 
       {/* Progress bar */}
       {totalCount > 0 && (
-        <div className="w-full bg-neutral-200 rounded-full h-1.5">
+        <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-1.5">
           <div
             className="bg-success-500 h-1.5 rounded-full transition-all duration-300"
             style={{ width: `${(completedCount / totalCount) * 100}%` }}
@@ -116,8 +118,8 @@ export function SubtaskList({
                 key={subtask.id}
                 className={`flex items-start gap-3 p-4 rounded-lg border shadow-sm transition-colors ${
                   isDone
-                    ? 'bg-neutral-50 border-neutral-200'
-                    : 'bg-white border-neutral-200 hover:border-neutral-300 hover:shadow-md'
+                    ? 'bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-600'
+                    : 'bg-white dark:bg-neutral-700 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:shadow-md'
                 }`}
               >
                 <button
@@ -129,7 +131,7 @@ export function SubtaskList({
                       ? 'opacity-50'
                       : isDone
                         ? 'text-success-600 hover:text-success-700'
-                        : 'text-neutral-400 hover:text-neutral-600'
+                        : 'text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300'
                   }`}
                   aria-label={
                     isDone ? 'Mark as incomplete' : 'Mark as complete'
@@ -146,14 +148,14 @@ export function SubtaskList({
                   <p
                     className={`text-sm font-medium ${
                       isDone
-                        ? 'text-neutral-500 line-through'
-                        : 'text-neutral-900'
+                        ? 'text-neutral-500 dark:text-neutral-400 line-through'
+                        : 'text-neutral-900 dark:text-neutral-100'
                     }`}
                   >
                     {subtask.title}
                   </p>
                   {subtask.description && (
-                    <p className="text-xs text-neutral-600 line-clamp-2">
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2">
                       {subtask.description}
                     </p>
                   )}
@@ -173,7 +175,7 @@ export function SubtaskList({
                       </Badge>
                     )}
                     {subtask.dueDate && (
-                      <span className="text-xs text-neutral-600">
+                      <span className="text-xs text-neutral-600 dark:text-neutral-400">
                         {formatDate(subtask.dueDate)}
                       </span>
                     )}
@@ -185,7 +187,7 @@ export function SubtaskList({
         </ul>
       ) : (
         !isInputVisible && (
-          <p className="text-sm text-neutral-500 italic py-2">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 italic py-2">
             No subtasks yet. Click &quot;Add Subtask&quot; to create one.
           </p>
         )
