@@ -725,7 +725,13 @@ export function invalidateRelatedModules(
         queryKey = getModuleQueryKey(target);
       }
 
-      queryClient.invalidateQueries({ queryKey });
+      // For delete operations, remove queries instead of invalidating them
+      // This prevents 404 errors from refetching deleted resources
+      if (trigger === 'delete') {
+        queryClient.removeQueries({ queryKey });
+      } else {
+        queryClient.invalidateQueries({ queryKey });
+      }
     });
   });
 }
