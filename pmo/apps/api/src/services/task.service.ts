@@ -185,7 +185,9 @@ export const getTaskWithSubtasks = async (id: number, userId: number) => {
   const task = await prisma.task.findFirst({
     where: { id, tenantId },
     include: {
-      project: { select: { ownerId: true, name: true, isSharedWithTenant: true } },
+      project: {
+        select: { ownerId: true, name: true, isSharedWithTenant: true },
+      },
       milestone: { select: { id: true, name: true } },
       subTasks: {
         orderBy: { createdAt: 'asc' },
