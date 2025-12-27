@@ -65,6 +65,10 @@ export const getProjectAccessLevel = (
     case 'TENANT':
       // All tenant users can view
       return 'view';
+
+    default:
+      // Fallback for any unexpected visibility value
+      return 'none';
   }
 };
 

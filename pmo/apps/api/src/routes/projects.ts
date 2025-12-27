@@ -126,6 +126,30 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
   }
 });
 
+// ===== Tenant Users Route (must be before /:id to avoid route conflict) =====
+
+/**
+ * GET /projects/tenant-users
+ * Get list of tenant users for member selection dropdown
+ */
+router.get('/tenant-users', async (req: TenantRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const search =
+      typeof req.query.search === 'string' ? req.query.search : undefined;
+    const users = await getTenantUsersForSelection(search);
+
+    res.json({ users });
+  } catch (error) {
+    log.error('Get tenant users error', error);
+    res.status(500).json({ error: 'Failed to get tenant users' });
+  }
+});
+
 type ProjectParams = { id: string };
 
 type ProjectRequest = TenantRequest & {
@@ -519,28 +543,6 @@ router.post(
 type ProjectMemberRequest = TenantRequest & {
   params: { id: string; userId?: string };
 };
-
-/**
- * GET /projects/tenant-users
- * Get list of tenant users for member selection dropdown
- */
-router.get('/tenant-users', async (req: TenantRequest, res: Response) => {
-  try {
-    if (!req.userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    const search =
-      typeof req.query.search === 'string' ? req.query.search : undefined;
-    const users = await getTenantUsersForSelection(search);
-
-    res.json({ users });
-  } catch (error) {
-    log.error('Get tenant users error', error);
-    res.status(500).json({ error: 'Failed to get tenant users' });
-  }
-});
 
 /**
  * GET /projects/:id/members
