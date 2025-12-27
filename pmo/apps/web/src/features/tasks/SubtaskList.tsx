@@ -74,7 +74,9 @@ export function SubtaskList({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Subtasks</h3>
+          <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Subtasks
+          </h3>
           {totalCount > 0 && (
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
               ({completedCount}/{totalCount} completed)

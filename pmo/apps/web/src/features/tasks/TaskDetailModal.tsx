@@ -181,7 +181,9 @@ export function TaskDetailModal({
         </div>
       ) : error ? (
         <div className="p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg">
-          <p className="text-sm text-danger-800 dark:text-danger-200">Failed to load task details</p>
+          <p className="text-sm text-danger-800 dark:text-danger-200">
+            Failed to load task details
+          </p>
         </div>
       ) : task ? (
         <div className="space-y-6">

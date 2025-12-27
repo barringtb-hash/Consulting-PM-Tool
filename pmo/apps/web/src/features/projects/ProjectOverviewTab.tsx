@@ -63,7 +63,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 <span className="text-sm font-medium">Client</span>
               </div>
               {clientQuery.isLoading && (
-                <p className="text-neutral-600 dark:text-neutral-400">Loading...</p>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  Loading...
+                </p>
               )}
               {clientQuery.data && (
                 <Link
@@ -74,7 +76,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 </Link>
               )}
               {clientQuery.error && (
-                <p className="text-neutral-600 dark:text-neutral-400">Unable to load</p>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  Unable to load
+                </p>
               )}
             </div>
 
@@ -127,7 +131,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm font-medium">Target End Date</span>
               </div>
-              <p className="text-neutral-900 dark:text-neutral-100">{formatDate(project.endDate)}</p>
+              <p className="text-neutral-900 dark:text-neutral-100">
+                {formatDate(project.endDate)}
+              </p>
             </div>
 
             <div>
@@ -147,7 +153,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
       {statusQuery.isLoading && (
         <Card>
           <CardBody>
-            <p className="text-neutral-600 dark:text-neutral-400">Loading project status...</p>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Loading project status...
+            </p>
           </CardBody>
         </Card>
       )}
@@ -171,7 +179,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Completion</span>
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Completion
+                    </span>
                     <span className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       {completionPercentage}%
                     </span>
@@ -298,7 +308,10 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             {statusData.recentRisks.length > 0 && (
               <Card className="border-yellow-200 dark:border-yellow-800">
                 <CardHeader>
-                  <CardTitle as="h3" className="text-yellow-900 dark:text-yellow-200">
+                  <CardTitle
+                    as="h3"
+                    className="text-yellow-900 dark:text-yellow-200"
+                  >
                     Recent Risks
                   </CardTitle>
                 </CardHeader>
@@ -306,7 +319,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   <ul className="space-y-3">
                     {statusData.recentRisks.map((risk, idx) => (
                       <li key={idx} className="text-sm">
-                        <p className="text-neutral-900 dark:text-neutral-100">{risk.snippet}</p>
+                        <p className="text-neutral-900 dark:text-neutral-100">
+                          {risk.snippet}
+                        </p>
                         <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
                           From meeting on {formatDate(risk.date)}
                         </p>
@@ -320,7 +335,10 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
             {statusData.recentDecisions.length > 0 && (
               <Card className="border-purple-200 dark:border-purple-800">
                 <CardHeader>
-                  <CardTitle as="h3" className="text-purple-900 dark:text-purple-200">
+                  <CardTitle
+                    as="h3"
+                    className="text-purple-900 dark:text-purple-200"
+                  >
                     Recent Decisions
                   </CardTitle>
                 </CardHeader>
@@ -328,7 +346,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                   <ul className="space-y-3">
                     {statusData.recentDecisions.map((decision, idx) => (
                       <li key={idx} className="text-sm">
-                        <p className="text-neutral-900 dark:text-neutral-100">{decision.snippet}</p>
+                        <p className="text-neutral-900 dark:text-neutral-100">
+                          {decision.snippet}
+                        </p>
                         <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
                           From meeting on {formatDate(decision.date)}
                         </p>
