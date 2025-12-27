@@ -35,6 +35,25 @@ export function formatStatusLabel(status: TaskStatus): string {
 }
 
 /**
+ * Display labels for task priorities
+ */
+export const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  P0: 'High',
+  P1: 'Medium',
+  P2: 'Low',
+};
+
+/**
+ * Format a task priority for display (e.g., "P0" -> "High")
+ */
+export function formatPriorityLabel(
+  priority: TaskPriority | null | undefined,
+): string {
+  if (!priority) return 'None';
+  return PRIORITY_LABELS[priority] ?? priority;
+}
+
+/**
  * Get badge variant color for task status
  */
 export const STATUS_BADGE_VARIANTS: Record<

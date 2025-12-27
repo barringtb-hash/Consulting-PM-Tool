@@ -10,6 +10,7 @@ import { SubtaskList } from './SubtaskList';
 import {
   TASK_STATUSES,
   TASK_PRIORITIES,
+  formatPriorityLabel,
   type TaskStatus,
   type TaskUpdatePayload,
 } from '../../api/tasks';
@@ -280,7 +281,7 @@ export function TaskDetailModal({
               </Badge>
               {task.priority && (
                 <Badge variant={priorityColors[task.priority] ?? 'neutral'}>
-                  {task.priority}
+                  {formatPriorityLabel(task.priority)}
                 </Badge>
               )}
               {task.dueDate && (
@@ -317,7 +318,7 @@ export function TaskDetailModal({
                 >
                   {TASK_PRIORITIES.map((priority) => (
                     <option key={priority} value={priority}>
-                      {priority}
+                      {formatPriorityLabel(priority)}
                     </option>
                   ))}
                 </Select>
