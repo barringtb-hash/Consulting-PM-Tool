@@ -32,8 +32,12 @@ export function SubtaskList({
   const [isInputVisible, setIsInputVisible] = useState(false);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 
-  const completedCount = subtasks.filter((st) => st.status === 'DONE').length;
-  const totalCount = subtasks.length;
+  // Defensive: ensure subtasks is always an array
+  const safeSubtasks = subtasks ?? [];
+  const completedCount = safeSubtasks.filter(
+    (st) => st.status === 'DONE',
+  ).length;
+  const totalCount = safeSubtasks.length;
 
   const handleAddSubtask = async (): Promise<void> => {
     if (!newSubtaskTitle.trim()) return;
@@ -133,9 +137,9 @@ export function SubtaskList({
       )}
 
       {/* Subtask list */}
-      {subtasks.length > 0 ? (
+      {safeSubtasks.length > 0 ? (
         <ul className="space-y-2">
-          {subtasks.map((subtask) => {
+          {safeSubtasks.map((subtask) => {
             const isDone = subtask.status === 'DONE';
             const isUpdating = updatingIds.has(subtask.id);
 

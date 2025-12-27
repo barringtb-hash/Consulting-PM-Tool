@@ -50,6 +50,7 @@ const statusColors: Record<
   string,
   'neutral' | 'primary' | 'warning' | 'success'
 > = {
+  NOT_STARTED: 'neutral',
   BACKLOG: 'neutral',
   IN_PROGRESS: 'primary',
   BLOCKED: 'warning',
@@ -368,7 +369,7 @@ export function TaskDetailModal({
           {/* Subtasks section */}
           <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
             <SubtaskList
-              subtasks={task.subTasks}
+              subtasks={task.subTasks ?? []}
               onAddSubtask={handleAddSubtask}
               onUpdateSubtaskStatus={handleUpdateSubtaskStatus}
               isAddingSubtask={createSubtask.isPending}
