@@ -365,27 +365,27 @@ function ProjectsPage(): JSX.Element {
             filteredProjects.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
+                  <thead className="bg-neutral-100 dark:bg-neutral-700/80 border-b-2 border-neutral-300 dark:border-neutral-600 shadow-sm">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         Client
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         Start Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         End Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         Last Updated
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -396,7 +396,7 @@ function ProjectsPage(): JSX.Element {
                         key={project.id}
                         data-testid={`project-row-${project.id}`}
                         onClick={() => handleProjectClick(project.id)}
-                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                        className="hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-l-4 hover:border-l-primary-500 active:bg-primary-100 dark:active:bg-primary-900/30 transition-all duration-150 cursor-pointer border-l-4 border-l-transparent"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
