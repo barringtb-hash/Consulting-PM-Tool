@@ -21,6 +21,7 @@ import {
   useProject,
   useUpdateProject,
 } from '../api/queries';
+import { useAuth } from '../auth/AuthContext';
 import { type Project, type ProjectStatus } from '../api/projects';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { useClientProjectContext } from './ClientProjectContext';
@@ -99,6 +100,7 @@ function ProjectDashboardPage(): JSX.Element {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
   const projectId = useMemo(() => Number(id), [id]);
 
   const projectQuery = useProject(
@@ -340,6 +342,21 @@ function ProjectDashboardPage(): JSX.Element {
     () => projectMarketingContentsQuery.data ?? [],
     [projectMarketingContentsQuery.data],
   );
+
+  // Check if current user is admin (owner or has ADMIN role in project members)
+  const isAdmin = useMemo(() => {
+    if (!project || !user) return false;
+    const userId = Number(user.id);
+    // Owner always has admin access
+    if (project.ownerId === userId) return true;
+    // Check if user has ADMIN role in project members
+    if (project.members) {
+      return project.members.some(
+        (m) => m.userId === userId && m.role === 'ADMIN',
+      );
+    }
+    return false;
+  }, [project, user]);
 
   const handleEditMarketingContent = (content: MarketingContent) => {
     setEditingMarketingContent(content);
@@ -1164,6 +1181,7 @@ function ProjectDashboardPage(): JSX.Element {
                 projectId={projectId}
                 ownerId={project.ownerId}
                 ownerName={project.owner?.name || 'Unknown'}
+                isAdmin={isAdmin}
               />
             </div>
           </TabsContent>
