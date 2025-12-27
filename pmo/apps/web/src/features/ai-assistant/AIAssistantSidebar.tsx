@@ -272,7 +272,8 @@ export function AIAssistantSidebar(): JSX.Element | null {
               Hi! I&apos;m your AI assistant.
             </p>
             <p className="text-sm text-neutral-400 dark:text-neutral-500">
-              Ask me about your clients, projects, tasks, or meetings.
+              I can help you build projects and tasks, or answer questions about
+              your clients and meetings.
             </p>
             <div className="mt-4 space-y-2">
               <p className="text-xs text-neutral-400 dark:text-neutral-500">
@@ -280,8 +281,9 @@ export function AIAssistantSidebar(): JSX.Element | null {
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 {[
+                  'Help me create a new project',
+                  'What project templates are available?',
                   'What are my at-risk projects?',
-                  'Prepare me for my meeting with client #1',
                   'Show recent meetings',
                 ].map((suggestion) => (
                   <button
