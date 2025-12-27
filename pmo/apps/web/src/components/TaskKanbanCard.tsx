@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router';
 import { CheckSquare, Trash2 } from 'lucide-react';
 
-import type { TaskWithProject } from '../api/tasks';
+import { formatPriorityLabel, type TaskWithProject } from '../api/tasks';
 import { Badge, type BadgeVariant } from '../ui/Badge';
 import { EMPTY_STATES } from '../utils/typography';
 
@@ -178,7 +178,7 @@ export const TaskKanbanCard = memo(function TaskKanbanCard({
               variant={getPriorityBadgeVariant(task.priority)}
               className="text-xs"
             >
-              {task.priority}
+              {formatPriorityLabel(task.priority)}
             </Badge>
           )}
           {task.dueDate && (

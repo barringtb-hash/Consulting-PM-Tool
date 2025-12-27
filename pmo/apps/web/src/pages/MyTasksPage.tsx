@@ -22,9 +22,11 @@ import { Select } from '../ui/Select';
 import { useToast } from '../ui/Toast';
 import {
   formatStatusLabel,
+  formatPriorityLabel,
   STATUS_BADGE_VARIANTS,
   PRIORITY_BADGE_VARIANTS,
   type TaskWithProject,
+  type TaskPriority,
 } from '../api/tasks';
 import { TaskKanbanBoard } from '../components/TaskKanbanBoard';
 import { TaskDetailModal } from '../features/tasks/TaskDetailModal';
@@ -282,7 +284,7 @@ function MyTasksPage(): JSX.Element {
               <option value="">All priorities</option>
               {TASK_PRIORITIES.map((priority) => (
                 <option key={priority} value={priority}>
-                  {priority}
+                  {formatPriorityLabel(priority)}
                 </option>
               ))}
             </Select>
@@ -313,7 +315,10 @@ function MyTasksPage(): JSX.Element {
                 </Badge>
               )}
               {filters.priority && (
-                <Badge variant="primary">Priority: {filters.priority}</Badge>
+                <Badge variant="primary">
+                  Priority:{' '}
+                  {formatPriorityLabel(filters.priority as TaskPriority)}
+                </Badge>
               )}
               {filters.search && (
                 <Badge variant="primary">
@@ -580,7 +585,7 @@ function MyTasksPage(): JSX.Element {
                                 : 'neutral'
                             }
                           >
-                            {task.priority ?? 'None'}
+                            {formatPriorityLabel(task.priority)}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">

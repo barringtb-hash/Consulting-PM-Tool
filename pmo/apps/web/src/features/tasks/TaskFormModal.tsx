@@ -9,6 +9,7 @@ import {
   TASK_STATUSES,
   TASK_PRIORITIES,
   formatStatusLabel,
+  formatPriorityLabel,
   type TaskPayload,
   type TaskStatus,
 } from '../../api/tasks';
@@ -256,7 +257,7 @@ export function TaskFormModal({
           >
             {TASK_PRIORITIES.map((priority) => (
               <option key={priority} value={priority}>
-                {priority}
+                {formatPriorityLabel(priority)}
               </option>
             ))}
           </Select>

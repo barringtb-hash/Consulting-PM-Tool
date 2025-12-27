@@ -18,7 +18,7 @@ import {
 import { Link } from 'react-router';
 
 import { TASK_STATUSES, type TaskStatus } from '../hooks/tasks';
-import type { TaskWithProject } from '../api/tasks';
+import { formatPriorityLabel, type TaskWithProject } from '../api/tasks';
 import { Badge, type BadgeVariant } from '../ui/Badge';
 import { TaskKanbanCard } from './TaskKanbanCard';
 
@@ -250,7 +250,7 @@ function TaskCard({ task, isDragging = false }: TaskCardProps): JSX.Element {
               variant={getPriorityBadgeVariant(task.priority)}
               className="text-xs"
             >
-              {task.priority}
+              {formatPriorityLabel(task.priority)}
             </Badge>
           )}
           {task.dueDate && (
