@@ -618,7 +618,8 @@ router.post(
       }
 
       // Check if bulk add (has members array) or single add
-      if (req.body.members && Array.isArray(req.body.members)) {
+      const body = req.body as Record<string, unknown>;
+      if (body.members && Array.isArray(body.members)) {
         // Bulk add
         const parsed = projectMemberBulkAddSchema.safeParse(req.body);
 
