@@ -157,30 +157,36 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
     mutationFn: async (projectId: number) => {
       // Cancel all queries for this project BEFORE making the delete request
       // This prevents any in-flight or pending refetches from completing
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.projects.detail(projectId),
-      });
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.milestones.byProject(projectId),
-      });
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.tasks.byProject(projectId),
-      });
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.meetings.byProject(projectId),
-      });
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.marketing.byProject(projectId),
-      });
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.assets.byProject(projectId),
-      });
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: queryKeys.projects.detail(projectId),
+        }),
+        queryClient.cancelQueries({
+          queryKey: queryKeys.milestones.byProject(projectId),
+        }),
+        queryClient.cancelQueries({
+          queryKey: queryKeys.tasks.byProject(projectId),
+        }),
+        queryClient.cancelQueries({
+          queryKey: queryKeys.meetings.byProject(projectId),
+        }),
+        queryClient.cancelQueries({
+          queryKey: queryKeys.marketing.byProject(projectId),
+        }),
+        queryClient.cancelQueries({
+          queryKey: queryKeys.assets.byProject(projectId),
+        }),
+      ]);
 
       // Now perform the actual delete
       return deleteProject(projectId);
     },
     onSuccess: (_, projectId) => {
-      // Remove all queries specific to this project to prevent 404 refetch errors
+      // Remove all queries specific to this project to prevent 404 refetch errors.
+      // These removals must happen before navigation away from the project page.
+      // Components on the project screen may still trigger refetches during the
+      // transition; clearing project-scoped queries here prevents 404 refetch
+      // errors against a project that has just been deleted.
       queryClient.removeQueries({
         queryKey: queryKeys.projects.detail(projectId),
       });
