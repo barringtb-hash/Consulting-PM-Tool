@@ -118,8 +118,8 @@ export function SubtaskList({
                 key={subtask.id}
                 className={`flex items-start gap-3 p-4 rounded-lg border shadow-sm transition-colors ${
                   isDone
-                    ? 'bg-neutral-50 dark:bg-neutral-800/50 border-neutral-200 dark:border-neutral-700'
-                    : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-md'
+                    ? 'bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-600'
+                    : 'bg-white dark:bg-neutral-700 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:shadow-md'
                 }`}
               >
                 <button

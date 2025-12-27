@@ -174,7 +174,7 @@ export function TaskDetailModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="" size="large">
+    <Modal isOpen={isOpen} onClose={onClose} title="" size="xl">
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
