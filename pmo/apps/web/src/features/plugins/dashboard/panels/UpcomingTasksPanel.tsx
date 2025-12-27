@@ -80,12 +80,12 @@ function TaskRow({ task, onNavigate }: TaskRowProps): JSX.Element {
   return (
     <button
       onClick={() => onNavigate(`/projects/${task.projectId}`)}
-      className="w-full text-left p-3 rounded-lg border border-neutral-200 hover:border-primary-300 hover:bg-primary-50/30 transition-all group"
+      className="w-full text-left p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50/30 dark:hover:bg-primary-900/30 transition-all group"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-medium text-neutral-900 truncate group-hover:text-primary-700">
+            <h4 className="font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-primary-700 dark:group-hover:text-primary-400">
               {task.title}
             </h4>
             {task.priority && (
@@ -94,7 +94,7 @@ function TaskRow({ task, onNavigate }: TaskRowProps): JSX.Element {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
             {task.projectName && <span>{task.projectName}</span>}
             <span>•</span>
             <Badge variant={statusColors[task.status] ?? 'neutral'}>
@@ -104,12 +104,14 @@ function TaskRow({ task, onNavigate }: TaskRowProps): JSX.Element {
         </div>
         <div className="flex-shrink-0 text-right">
           <div
-            className={`text-sm font-medium ${overdueFlag ? 'text-danger-600' : 'text-neutral-700'}`}
+            className={`text-sm font-medium ${overdueFlag ? 'text-danger-600 dark:text-danger-400' : 'text-neutral-700 dark:text-neutral-300'}`}
           >
             {formatDate(task.dueDate)}
           </div>
           {overdueFlag && (
-            <span className="text-xs text-danger-600 font-medium">Overdue</span>
+            <span className="text-xs text-danger-600 dark:text-danger-400 font-medium">
+              Overdue
+            </span>
           )}
         </div>
       </div>
@@ -121,7 +123,10 @@ function TaskListSkeleton(): JSX.Element {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="h-16 bg-neutral-100 animate-pulse rounded-lg" />
+        <div
+          key={i}
+          className="h-16 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded-lg"
+        />
       ))}
     </div>
   );
@@ -140,7 +145,7 @@ function UpcomingTasksPanelComponent(): JSX.Element {
           <CardTitle>Upcoming Tasks</CardTitle>
           <Link
             to="/tasks"
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
           >
             View all →
           </Link>
@@ -151,7 +156,7 @@ function UpcomingTasksPanelComponent(): JSX.Element {
         ) : upcomingTasks.length === 0 ? (
           <div className="text-center py-8 flex-1 flex flex-col justify-center">
             <svg
-              className="mx-auto h-12 w-12 text-neutral-400 mb-3"
+              className="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-500 mb-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -163,8 +168,10 @@ function UpcomingTasksPanelComponent(): JSX.Element {
                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-neutral-600 font-medium mb-1">All caught up!</p>
-            <p className="text-sm text-neutral-500">
+            <p className="text-neutral-600 dark:text-neutral-300 font-medium mb-1">
+              All caught up!
+            </p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
               No upcoming tasks with due dates
             </p>
           </div>

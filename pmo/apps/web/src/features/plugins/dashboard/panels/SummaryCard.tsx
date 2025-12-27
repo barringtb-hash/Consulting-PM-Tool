@@ -61,17 +61,22 @@ export function SummaryCard({
     <Card {...wrapperProps}>
       <CardBody>
         <div className="flex flex-col gap-2">
-          <CardTitle as="h2" className="text-sm font-medium text-neutral-600">
+          <CardTitle
+            as="h2"
+            className="text-sm font-medium text-neutral-600 dark:text-neutral-300"
+          >
             {title}
           </CardTitle>
           {isLoading ? (
-            <div className="h-10 w-20 bg-neutral-200 animate-pulse rounded" />
+            <div className="h-10 w-20 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
           ) : (
             <div className={`text-3xl font-bold ${valueColors[variant]}`}>
               {value}
             </div>
           )}
-          <p className="text-sm text-neutral-500">{description}</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            {description}
+          </p>
         </div>
       </CardBody>
     </Card>
