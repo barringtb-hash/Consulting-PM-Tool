@@ -44,6 +44,7 @@ function getStatusBadgeVariant(status: TaskStatus): BadgeVariant {
       return 'primary';
     case 'BLOCKED':
       return 'danger';
+    case 'NOT_STARTED':
     case 'BACKLOG':
     default:
       return 'neutral';
@@ -98,6 +99,7 @@ export function TaskKanbanBoard({
 
   const tasksByStatus = React.useMemo(() => {
     const grouped: Record<TaskStatus, TaskWithProject[]> = {
+      NOT_STARTED: [],
       BACKLOG: [],
       IN_PROGRESS: [],
       BLOCKED: [],
@@ -105,7 +107,10 @@ export function TaskKanbanBoard({
     };
 
     tasks.forEach((task) => {
-      grouped[task.status].push(task);
+      // Defensive: only push to known status columns
+      if (grouped[task.status]) {
+        grouped[task.status].push(task);
+      }
     });
 
     return grouped;

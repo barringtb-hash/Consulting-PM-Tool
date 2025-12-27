@@ -32,8 +32,12 @@ export function SubtaskList({
   const [isInputVisible, setIsInputVisible] = useState(false);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 
-  const completedCount = subtasks.filter((st) => st.status === 'DONE').length;
-  const totalCount = subtasks.length;
+  // Defensive: ensure subtasks is always an array
+  const safeSubtasks = subtasks ?? [];
+  const completedCount = safeSubtasks.filter(
+    (st) => st.status === 'DONE',
+  ).length;
+  const totalCount = safeSubtasks.length;
 
   const handleAddSubtask = async (): Promise<void> => {
     if (!newSubtaskTitle.trim()) return;
@@ -133,9 +137,9 @@ export function SubtaskList({
       )}
 
       {/* Subtask list */}
-      {subtasks.length > 0 ? (
+      {safeSubtasks.length > 0 ? (
         <ul className="space-y-2">
-          {subtasks.map((subtask) => {
+          {safeSubtasks.map((subtask) => {
             const isDone = subtask.status === 'DONE';
             const isUpdating = updatingIds.has(subtask.id);
 
@@ -203,17 +207,18 @@ export function SubtaskList({
 
       {/* Add subtask input */}
       {isInputVisible && (
-        <div className="space-y-2 mt-2">
-          <div className="flex items-center gap-2">
-            <Input
-              value={newSubtaskTitle}
-              onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter subtask title..."
-              disabled={isAddingSubtask}
-              autoFocus
-              className="flex-1"
-            />
+        <div className="space-y-3 mt-2">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <Input
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter subtask title..."
+                disabled={isAddingSubtask}
+                autoFocus
+              />
+            </div>
             <select
               value={newSubtaskStatus}
               onChange={(e) =>
@@ -221,7 +226,7 @@ export function SubtaskList({
               }
               disabled={isAddingSubtask}
               aria-label="Initial status for new subtask"
-              className={`text-xs font-medium px-2 py-2 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(newSubtaskStatus)}`}
+              className={`text-sm font-medium px-3 py-2 min-w-[140px] rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(newSubtaskStatus)}`}
             >
               {TASK_STATUSES.map((status) => (
                 <option key={status} value={status}>
