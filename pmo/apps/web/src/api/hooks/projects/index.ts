@@ -158,7 +158,7 @@ export function useUpdateProject(
  * 1. Marks the project as "deleting" to disable all related queries
  * 2. Cancels and removes all project-related queries from cache
  * 3. Makes the delete request
- * 4. Cleans up related queries and unmarks on completion
+ * 4. Cleans up related queries and unmarks when settled (success or error)
  */
 export function useDeleteProject(): UseMutationResult<void, Error, number> {
   const queryClient = useQueryClient();
@@ -211,8 +211,9 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
     },
     onSettled: (_, __, projectId) => {
-      // Always unmark the project when mutation completes (success or error)
-      // This is safe because by now the user has navigated away
+      // Always unmark the project when mutation settles (success or error)
+      // On success: user has navigated away, cleanup is complete
+      // On error: re-enables queries so user can retry or continue viewing
       unmarkProjectDeleting(projectId);
     },
   });

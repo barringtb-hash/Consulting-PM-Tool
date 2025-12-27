@@ -12,13 +12,14 @@
  *
  * By tracking which entities are being deleted, we can disable
  * queries for those entities until the component unmounts.
+ *
+ * Note: Currently only projects need this pattern because the project
+ * detail page has many nested hooks (tasks, milestones, meetings, etc.)
+ * that can trigger refetches. Client deletion uses a simpler pattern.
  */
 
 // Track projects being deleted
 const deletingProjects = new Set<number>();
-
-// Track clients being deleted
-const deletingClients = new Set<number>();
 
 /**
  * Mark a project as being deleted.
@@ -30,7 +31,7 @@ export function markProjectDeleting(projectId: number): void {
 
 /**
  * Unmark a project as being deleted.
- * Should be called after deletion completes (success or error).
+ * Should be called after deletion settles (success or error).
  */
 export function unmarkProjectDeleting(projectId: number): void {
   deletingProjects.delete(projectId);
@@ -43,26 +44,4 @@ export function unmarkProjectDeleting(projectId: number): void {
 export function isProjectDeleting(projectId: number | undefined): boolean {
   if (!projectId) return false;
   return deletingProjects.has(projectId);
-}
-
-/**
- * Mark a client as being deleted.
- */
-export function markClientDeleting(clientId: number): void {
-  deletingClients.add(clientId);
-}
-
-/**
- * Unmark a client as being deleted.
- */
-export function unmarkClientDeleting(clientId: number): void {
-  deletingClients.delete(clientId);
-}
-
-/**
- * Check if a client is currently being deleted.
- */
-export function isClientDeleting(clientId: number | undefined): boolean {
-  if (!clientId) return false;
-  return deletingClients.has(clientId);
 }
