@@ -1,31 +1,36 @@
 import React, { useState } from 'react';
-import { Plus, Square, CheckSquare } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
-import { Badge } from '../../ui/Badge';
 import {
   formatStatusLabel,
   STATUS_BADGE_VARIANTS,
-  PRIORITY_BADGE_VARIANTS,
+  TASK_STATUSES,
   type Task,
+  type TaskStatus,
 } from '../../api/tasks';
 
 interface SubtaskListProps {
   subtasks: Task[];
-  onAddSubtask: (title: string) => Promise<void>;
-  onToggleSubtask: (subtaskId: number) => Promise<void>;
+  onAddSubtask: (title: string, status: TaskStatus) => Promise<void>;
+  onUpdateSubtaskStatus: (
+    subtaskId: number,
+    status: TaskStatus,
+  ) => Promise<void>;
   isAddingSubtask?: boolean;
 }
 
 export function SubtaskList({
   subtasks,
   onAddSubtask,
-  onToggleSubtask,
+  onUpdateSubtaskStatus,
   isAddingSubtask = false,
 }: SubtaskListProps): JSX.Element {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [newSubtaskStatus, setNewSubtaskStatus] =
+    useState<TaskStatus>('BACKLOG');
   const [isInputVisible, setIsInputVisible] = useState(false);
-  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 
   const completedCount = subtasks.filter((st) => st.status === 'DONE').length;
   const totalCount = subtasks.length;
@@ -33,17 +38,21 @@ export function SubtaskList({
   const handleAddSubtask = async (): Promise<void> => {
     if (!newSubtaskTitle.trim()) return;
 
-    await onAddSubtask(newSubtaskTitle.trim());
+    await onAddSubtask(newSubtaskTitle.trim(), newSubtaskStatus);
     setNewSubtaskTitle('');
+    setNewSubtaskStatus('BACKLOG');
     setIsInputVisible(false);
   };
 
-  const handleToggle = async (subtaskId: number): Promise<void> => {
-    setTogglingIds((prev) => new Set(prev).add(subtaskId));
+  const handleStatusChange = async (
+    subtaskId: number,
+    newStatus: TaskStatus,
+  ): Promise<void> => {
+    setUpdatingIds((prev) => new Set(prev).add(subtaskId));
     try {
-      await onToggleSubtask(subtaskId);
+      await onUpdateSubtaskStatus(subtaskId, newStatus);
     } finally {
-      setTogglingIds((prev) => {
+      setUpdatingIds((prev) => {
         const next = new Set(prev);
         next.delete(subtaskId);
         return next;
@@ -57,6 +66,7 @@ export function SubtaskList({
       handleAddSubtask();
     } else if (e.key === 'Escape') {
       setNewSubtaskTitle('');
+      setNewSubtaskStatus('BACKLOG');
       setIsInputVisible(false);
     }
   };
@@ -67,6 +77,22 @@ export function SubtaskList({
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const getStatusBgColor = (status: TaskStatus): string => {
+    const variant = STATUS_BADGE_VARIANTS[status];
+    switch (variant) {
+      case 'neutral':
+        return 'bg-neutral-100 text-neutral-700 border-neutral-300';
+      case 'primary':
+        return 'bg-primary-100 text-primary-700 border-primary-300';
+      case 'danger':
+        return 'bg-danger-100 text-danger-700 border-danger-300';
+      case 'success':
+        return 'bg-success-100 text-success-700 border-success-300';
+      default:
+        return 'bg-neutral-100 text-neutral-700 border-neutral-300';
+    }
   };
 
   return (
@@ -111,7 +137,7 @@ export function SubtaskList({
         <ul className="space-y-2">
           {subtasks.map((subtask) => {
             const isDone = subtask.status === 'DONE';
-            const isToggling = togglingIds.has(subtask.id);
+            const isUpdating = updatingIds.has(subtask.id);
 
             return (
               <li
@@ -122,28 +148,6 @@ export function SubtaskList({
                     : 'bg-white dark:bg-neutral-700 border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500 hover:shadow-md'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => handleToggle(subtask.id)}
-                  disabled={isToggling}
-                  className={`flex-shrink-0 mt-0.5 transition-colors ${
-                    isToggling
-                      ? 'opacity-50'
-                      : isDone
-                        ? 'text-success-600 hover:text-success-700'
-                        : 'text-neutral-400 hover:text-neutral-500 dark:hover:text-neutral-300'
-                  }`}
-                  aria-label={
-                    isDone ? 'Mark as incomplete' : 'Mark as complete'
-                  }
-                >
-                  {isDone ? (
-                    <CheckSquare className="h-5 w-5" />
-                  ) : (
-                    <Square className="h-5 w-5" />
-                  )}
-                </button>
-
                 <div className="flex-1 min-w-0 space-y-2">
                   <p
                     className={`text-sm font-medium ${
@@ -160,20 +164,23 @@ export function SubtaskList({
                     </p>
                   )}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge
-                      variant={STATUS_BADGE_VARIANTS[subtask.status]}
-                      size="sm"
+                    <select
+                      value={subtask.status}
+                      onChange={(e) =>
+                        handleStatusChange(
+                          subtask.id,
+                          e.target.value as TaskStatus,
+                        )
+                      }
+                      disabled={isUpdating}
+                      className={`text-xs font-medium px-2 py-1 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(subtask.status)} ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
                     >
-                      {formatStatusLabel(subtask.status)}
-                    </Badge>
-                    {subtask.priority && (
-                      <Badge
-                        variant={PRIORITY_BADGE_VARIANTS[subtask.priority]}
-                        size="sm"
-                      >
-                        {subtask.priority}
-                      </Badge>
-                    )}
+                      {TASK_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {formatStatusLabel(status)}
+                        </option>
+                      ))}
+                    </select>
                     {subtask.dueDate && (
                       <span className="text-xs text-neutral-600 dark:text-neutral-400">
                         {formatDate(subtask.dueDate)}
@@ -195,36 +202,55 @@ export function SubtaskList({
 
       {/* Add subtask input */}
       {isInputVisible && (
-        <div className="flex items-center gap-2 mt-2">
-          <Input
-            value={newSubtaskTitle}
-            onChange={(e) => setNewSubtaskTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter subtask title..."
-            disabled={isAddingSubtask}
-            autoFocus
-            className="flex-1"
-          />
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleAddSubtask}
-            disabled={!newSubtaskTitle.trim() || isAddingSubtask}
-            isLoading={isAddingSubtask}
-          >
-            Add
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              setNewSubtaskTitle('');
-              setIsInputVisible(false);
-            }}
-            disabled={isAddingSubtask}
-          >
-            Cancel
-          </Button>
+        <div className="space-y-2 mt-2">
+          <div className="flex items-center gap-2">
+            <Input
+              value={newSubtaskTitle}
+              onChange={(e) => setNewSubtaskTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter subtask title..."
+              disabled={isAddingSubtask}
+              autoFocus
+              className="flex-1"
+            />
+            <select
+              value={newSubtaskStatus}
+              onChange={(e) =>
+                setNewSubtaskStatus(e.target.value as TaskStatus)
+              }
+              disabled={isAddingSubtask}
+              className={`text-xs font-medium px-2 py-2 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500 ${getStatusBgColor(newSubtaskStatus)}`}
+            >
+              {TASK_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {formatStatusLabel(status)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleAddSubtask}
+              disabled={!newSubtaskTitle.trim() || isAddingSubtask}
+              isLoading={isAddingSubtask}
+            >
+              Add
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setNewSubtaskTitle('');
+                setNewSubtaskStatus('BACKLOG');
+                setIsInputVisible(false);
+              }}
+              disabled={isAddingSubtask}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       )}
     </div>

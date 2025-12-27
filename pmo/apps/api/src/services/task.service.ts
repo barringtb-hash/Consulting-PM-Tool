@@ -23,6 +23,7 @@ import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import { hasProjectAccess } from '../utils/project-access';
 import {
   SubtaskCreateInput,
+  SubtaskUpdateStatusInput,
   TaskCreateInput,
   TaskMoveInput,
   TaskUpdateInput,
@@ -539,6 +540,56 @@ export const toggleSubtask = async (
   const updated = await prisma.task.update({
     where: { id: subtaskId },
     data: { status: newStatus },
+  });
+
+  return { subtask: updated } as const;
+};
+
+/**
+ * Updates a subtask's status to any valid status.
+ *
+ * @param subtaskId - The ID of the subtask to update
+ * @param ownerId - The ID of the user updating (must be project owner)
+ * @param data - Object containing the new status
+ * @param parentTaskId - Optional parent task ID to validate relationship
+ * @returns Object with either { subtask } or { error }
+ */
+export const updateSubtaskStatus = async (
+  subtaskId: number,
+  ownerId: number,
+  data: SubtaskUpdateStatusInput,
+  parentTaskId?: number,
+) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  const subtask = await prisma.task.findFirst({
+    where: { id: subtaskId, tenantId },
+    include: {
+      project: { select: { ownerId: true, isSharedWithTenant: true } },
+    },
+  });
+
+  if (!subtask) {
+    return { error: 'not_found' as const };
+  }
+
+  if (!hasProjectAccess(subtask.project, ownerId)) {
+    return { error: 'forbidden' as const };
+  }
+
+  // Must be a subtask (have a parent)
+  if (subtask.parentTaskId === null) {
+    return { error: 'not_subtask' as const };
+  }
+
+  // Validate parent task ID if provided
+  if (parentTaskId !== undefined && subtask.parentTaskId !== parentTaskId) {
+    return { error: 'parent_mismatch' as const };
+  }
+
+  const updated = await prisma.task.update({
+    where: { id: subtaskId },
+    data: { status: data.status },
   });
 
   return { subtask: updated } as const;

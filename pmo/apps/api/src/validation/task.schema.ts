@@ -39,13 +39,18 @@ export const taskCreateSchema = z.object({
 });
 
 // Schema for creating a subtask (inherits projectId from parent)
+// Note: Subtasks do not have priority - they inherit urgency from parent task
 export const subtaskCreateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(MAX_TITLE_LENGTH),
   description: z.string().max(MAX_DESCRIPTION_LENGTH).optional(),
   status: z.nativeEnum(taskStatusEnum).optional(),
-  priority: z.nativeEnum(taskPriorityEnum).optional(),
   dueDate: z.coerce.date().optional(),
   milestoneId: z.number().int().positive().optional(),
+});
+
+// Schema for updating a subtask's status
+export const subtaskUpdateStatusSchema = z.object({
+  status: z.nativeEnum(taskStatusEnum),
 });
 
 export const taskUpdateSchema = taskCreateSchema
@@ -73,3 +78,6 @@ export type TaskCreateInput = z.infer<typeof taskCreateSchema>;
 export type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;
 export type TaskMoveInput = z.infer<typeof taskMoveSchema>;
 export type SubtaskCreateInput = z.infer<typeof subtaskCreateSchema>;
+export type SubtaskUpdateStatusInput = z.infer<
+  typeof subtaskUpdateStatusSchema
+>;

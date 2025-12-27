@@ -12,10 +12,12 @@ import {
   listTasksForProject,
   moveTask,
   toggleSubtask,
+  updateSubtaskStatus,
   updateTask,
 } from '../services/task.service';
 import {
   subtaskCreateSchema,
+  subtaskUpdateStatusSchema,
   taskCreateSchema,
   taskMoveSchema,
   taskUpdateSchema,
@@ -403,6 +405,73 @@ router.patch(
     }
 
     const result = await toggleSubtask(subtaskId, req.userId, parentTaskId);
+
+    if (result.error === 'not_found') {
+      res.status(404).json({ error: 'Subtask not found' });
+      return;
+    }
+
+    if (result.error === 'forbidden') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    if (result.error === 'not_subtask') {
+      res.status(400).json({ error: 'Task is not a subtask' });
+      return;
+    }
+
+    if (result.error === 'parent_mismatch') {
+      res
+        .status(400)
+        .json({ error: 'Subtask does not belong to specified parent task' });
+      return;
+    }
+
+    res.json({ subtask: result.subtask });
+  },
+);
+
+router.patch(
+  '/tasks/:id/subtasks/:subtaskId/status',
+  async (
+    req: AuthenticatedRequest<{ id: string; subtaskId: string }>,
+    res: Response,
+  ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const parentTaskId = Number(req.params.id);
+    const subtaskId = Number(req.params.subtaskId);
+
+    if (Number.isNaN(parentTaskId)) {
+      res.status(400).json({ error: 'Invalid parent task id' });
+      return;
+    }
+
+    if (Number.isNaN(subtaskId)) {
+      res.status(400).json({ error: 'Invalid subtask id' });
+      return;
+    }
+
+    const parsed = subtaskUpdateStatusSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid status data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const result = await updateSubtaskStatus(
+      subtaskId,
+      req.userId,
+      parsed.data,
+      parentTaskId,
+    );
 
     if (result.error === 'not_found') {
       res.status(404).json({ error: 'Subtask not found' });

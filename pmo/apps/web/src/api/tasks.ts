@@ -91,9 +91,12 @@ export interface SubtaskPayload {
   title: string;
   description?: string;
   status?: TaskStatus;
-  priority?: TaskPriority;
   dueDate?: string;
   milestoneId?: number;
+}
+
+export interface SubtaskStatusPayload {
+  status: TaskStatus;
 }
 
 export interface TaskPayload {
@@ -269,6 +272,19 @@ export async function toggleSubtask(
   const response = await fetch(
     `${TASKS_BASE_PATH}/${parentTaskId}/subtasks/${subtaskId}/toggle`,
     buildOptions({ method: 'PATCH' }),
+  );
+  const data = await handleResponse<{ subtask: Task }>(response);
+  return data.subtask;
+}
+
+export async function updateSubtaskStatus(
+  parentTaskId: number,
+  subtaskId: number,
+  payload: SubtaskStatusPayload,
+): Promise<Task> {
+  const response = await fetch(
+    `${TASKS_BASE_PATH}/${parentTaskId}/subtasks/${subtaskId}/status`,
+    buildOptions({ method: 'PATCH', body: JSON.stringify(payload) }),
   );
   const data = await handleResponse<{ subtask: Task }>(response);
   return data.subtask;

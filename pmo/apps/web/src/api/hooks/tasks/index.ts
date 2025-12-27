@@ -25,8 +25,10 @@ import {
   fetchTaskWithSubtasks,
   moveTask,
   toggleSubtask,
+  updateSubtaskStatus,
   updateTask,
   type SubtaskPayload,
+  type SubtaskStatusPayload,
   type Task,
   type TaskMovePayload,
   type TaskPayload,
@@ -262,6 +264,51 @@ export function useToggleSubtask(
   });
 }
 
+/**
+ * Update a subtask's status to any valid status
+ */
+export function useUpdateSubtaskStatus(
+  parentTaskId?: number,
+  projectId?: number,
+): UseMutationResult<
+  Task,
+  Error,
+  { subtaskId: number; status: SubtaskStatusPayload['status'] }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ subtaskId, status }) => {
+      if (parentTaskId === undefined) {
+        throw new Error(
+          'Cannot update subtask status: parent task ID is required',
+        );
+      }
+      return updateSubtaskStatus(parentTaskId, subtaskId, { status });
+    },
+    onSuccess: (updatedSubtask) => {
+      // Optimistically update the task detail cache
+      queryClient.setQueryData<TaskWithSubtasks>(
+        queryKeys.tasks.detail(parentTaskId),
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            subTasks: current.subTasks.map((st) =>
+              st.id === updatedSubtask.id ? updatedSubtask : st,
+            ),
+          };
+        },
+      );
+      // Invalidate project tasks (for subtask count on cards)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.tasks.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.myTasks() });
+    },
+  });
+}
+
 // ============================================================================
 // Re-exports
 // ============================================================================
@@ -269,6 +316,7 @@ export function useToggleSubtask(
 export { TASK_PRIORITIES, TASK_STATUSES };
 export type {
   SubtaskPayload,
+  SubtaskStatusPayload,
   Task,
   TaskMovePayload,
   TaskPayload,
