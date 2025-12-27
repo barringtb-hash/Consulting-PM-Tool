@@ -173,13 +173,15 @@ function ProjectDashboardPage(): JSX.Element {
     }
 
     try {
-      await deleteProjectMutation.mutateAsync(projectId);
-      // Clear context after successful deletion to keep UI consistent on failure
+      // Clear context and navigate BEFORE the mutation completes
+      // This unmounts the component and its query hooks, preventing refetch attempts
       setSelectedProject(null);
-      showToast('Project deleted successfully', 'success');
       navigate('/dashboard');
+      await deleteProjectMutation.mutateAsync(projectId);
+      showToast('Project deleted successfully', 'success');
     } catch {
       showToast('Failed to delete project', 'error');
+      // On failure, user is already on dashboard - they can navigate back if needed
     }
   };
 
