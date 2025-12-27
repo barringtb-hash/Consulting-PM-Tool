@@ -147,17 +147,40 @@ export function useUpdateProject(
 /**
  * Delete a project
  *
- * This mutation removes all project-related queries from the cache to prevent
- * 404 errors, then invalidates list queries to refresh the UI.
+ * This mutation cancels and removes all project-related queries from the cache
+ * to prevent 404 errors, then invalidates list queries to refresh the UI.
  */
 export function useDeleteProject(): UseMutationResult<void, Error, number> {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (projectId: number) => deleteProject(projectId),
+    mutationFn: async (projectId: number) => {
+      // Cancel all queries for this project BEFORE making the delete request
+      // This prevents any in-flight or pending refetches from completing
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.projects.detail(projectId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.milestones.byProject(projectId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.tasks.byProject(projectId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.meetings.byProject(projectId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.marketing.byProject(projectId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.assets.byProject(projectId),
+      });
+
+      // Now perform the actual delete
+      return deleteProject(projectId);
+    },
     onSuccess: (_, projectId) => {
       // Remove all queries specific to this project to prevent 404 refetch errors
-      // This must happen before navigation away from the project page
       queryClient.removeQueries({
         queryKey: queryKeys.projects.detail(projectId),
       });
