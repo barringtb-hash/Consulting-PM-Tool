@@ -10,6 +10,7 @@ import { SubtaskList } from './SubtaskList';
 import {
   TASK_STATUSES,
   TASK_PRIORITIES,
+  type TaskStatus,
   type TaskUpdatePayload,
 } from '../../api/tasks';
 import type { Milestone } from '../../api/milestones';
@@ -18,7 +19,7 @@ import {
   useUpdateTask,
   useDeleteTask,
   useCreateSubtask,
-  useToggleSubtask,
+  useUpdateSubtaskStatus,
 } from '../../api/hooks/tasks';
 
 interface TaskDetailModalProps {
@@ -85,7 +86,10 @@ export function TaskDetailModal({
   const updateTask = useUpdateTask(projectId);
   const deleteTask = useDeleteTask(projectId);
   const createSubtask = useCreateSubtask(taskId ?? undefined, projectId);
-  const toggleSubtask = useToggleSubtask(taskId ?? undefined, projectId);
+  const updateSubtaskStatusMutation = useUpdateSubtaskStatus(
+    taskId ?? undefined,
+    projectId,
+  );
 
   // Initialize form when task data loads
   useEffect(() => {
@@ -138,12 +142,18 @@ export function TaskDetailModal({
     onClose();
   };
 
-  const handleAddSubtask = async (title: string): Promise<void> => {
-    await createSubtask.mutateAsync({ title });
+  const handleAddSubtask = async (
+    title: string,
+    status: TaskStatus,
+  ): Promise<void> => {
+    await createSubtask.mutateAsync({ title, status });
   };
 
-  const handleToggleSubtask = async (subtaskId: number): Promise<void> => {
-    await toggleSubtask.mutateAsync(subtaskId);
+  const handleUpdateSubtaskStatus = async (
+    subtaskId: number,
+    status: TaskStatus,
+  ): Promise<void> => {
+    await updateSubtaskStatusMutation.mutateAsync({ subtaskId, status });
   };
 
   const handleCancelEdit = (): void => {
@@ -358,7 +368,7 @@ export function TaskDetailModal({
             <SubtaskList
               subtasks={task.subTasks}
               onAddSubtask={handleAddSubtask}
-              onToggleSubtask={handleToggleSubtask}
+              onUpdateSubtaskStatus={handleUpdateSubtaskStatus}
               isAddingSubtask={createSubtask.isPending}
             />
           </div>
