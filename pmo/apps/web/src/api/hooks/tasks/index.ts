@@ -14,6 +14,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { isProjectDeleting } from '../deletionTracker';
 import {
   TASK_PRIORITIES,
   TASK_STATUSES,
@@ -49,7 +50,8 @@ export function useProjectTasks(
 ): UseQueryResult<Task[], Error> {
   return useQuery({
     queryKey: queryKeys.tasks.byProject(projectId),
-    enabled: Boolean(projectId),
+    // Disable query if project is being deleted to prevent 404 refetch race conditions
+    enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectTasks(projectId as number),
   });
 }

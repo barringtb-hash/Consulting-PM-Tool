@@ -18,6 +18,7 @@ import {
 
 import { queryKeys } from '../queryKeys';
 import { moduleRegistry } from '../moduleRegistry';
+import { isProjectDeleting } from '../deletionTracker';
 import {
   archiveAsset,
   createAsset,
@@ -117,7 +118,9 @@ export function useProjectAssets(
 
   return useQuery({
     queryKey: queryKeys.assets.byProject(projectId ?? 0, includeArchived),
-    enabled: Boolean(projectId) && isModuleEnabled,
+    // Disable query if project is being deleted to prevent 404 refetch race conditions
+    enabled:
+      Boolean(projectId) && isModuleEnabled && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectAssets(projectId as number, includeArchived),
   });
 }

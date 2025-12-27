@@ -20,6 +20,11 @@ import {
 import { queryKeys } from '../queryKeys';
 import { invalidateRelatedModules } from '../moduleRegistry';
 import {
+  isProjectDeleting,
+  markProjectDeleting,
+  unmarkProjectDeleting,
+} from '../deletionTracker';
+import {
   createProject,
   deleteProject,
   fetchProjectById,
@@ -63,7 +68,8 @@ export function useProject(projectId?: number): UseQueryResult<Project, Error> {
     queryKey: projectId
       ? queryKeys.projects.detail(projectId)
       : queryKeys.projects.all,
-    enabled: Boolean(projectId),
+    // Disable query if project is being deleted to prevent 404 refetch race conditions
+    enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectById(projectId as number),
     initialData: () => {
       if (!projectId) {
@@ -98,7 +104,8 @@ export function useProjectStatus(
     queryKey: projectId
       ? queryKeys.projects.status(projectId, rangeDays)
       : queryKeys.projects.all,
-    enabled: Boolean(projectId),
+    // Disable query if project is being deleted to prevent 404 refetch race conditions
+    enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectStatus(projectId as number, rangeDays),
   });
 }
@@ -147,15 +154,22 @@ export function useUpdateProject(
 /**
  * Delete a project
  *
- * This mutation cancels and removes all project-related queries from the cache
- * BEFORE making the delete request to prevent 404 errors from query refetches.
+ * This mutation:
+ * 1. Marks the project as "deleting" to disable all related queries
+ * 2. Cancels and removes all project-related queries from cache
+ * 3. Makes the delete request
+ * 4. Cleans up related queries and unmarks on completion
  */
 export function useDeleteProject(): UseMutationResult<void, Error, number> {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (projectId: number) => {
-      // Cancel all queries for this project BEFORE making the delete request
+      // Mark project as deleting FIRST - this disables all queries for this project
+      // and prevents any refetches while the delete is in progress
+      markProjectDeleting(projectId);
+
+      // Cancel any in-flight queries
       await Promise.all([
         queryClient.cancelQueries({
           queryKey: queryKeys.projects.detail(projectId),
@@ -177,8 +191,7 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
         }),
       ]);
 
-      // Remove project-specific queries BEFORE the delete
-      // Related module queries (tasks, milestones, etc.) are handled by invalidateRelatedModules
+      // Remove project-specific queries from cache
       queryClient.removeQueries({
         queryKey: queryKeys.projects.detail(projectId),
       });
@@ -188,7 +201,6 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
     },
     onSuccess: (_, projectId) => {
       // Cross-module removal using module registry rules
-      // This handles tasks, milestones, meetings, documents, marketing, assets
       invalidateRelatedModules(queryClient, {
         sourceModule: 'projects',
         trigger: 'delete',
@@ -197,6 +209,11 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
 
       // Invalidate project lists to refresh UI
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+    onSettled: (_, __, projectId) => {
+      // Always unmark the project when mutation completes (success or error)
+      // This is safe because by now the user has navigated away
+      unmarkProjectDeleting(projectId);
     },
   });
 }
