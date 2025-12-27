@@ -58,22 +58,22 @@ export class ErrorBoundary extends Component<
       // Default error UI
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md text-center">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
               Something went wrong
             </h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
               An error occurred while loading this page. Please try again.
             </p>
             {this.state.error && (
-              <p className="text-xs text-gray-500 mb-4 font-mono bg-gray-100 p-2 rounded overflow-auto max-h-24">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4 font-mono bg-neutral-100 dark:bg-neutral-800 p-2 rounded overflow-auto max-h-24">
                 {this.state.error.message}
               </p>
             )}
             <button
               onClick={this.handleRetry}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
               Try Again

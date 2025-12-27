@@ -11,6 +11,9 @@ import {
   Megaphone,
   Edit2,
   Archive,
+  UserPlus,
+  Lock,
+  Globe,
 } from 'lucide-react';
 import {
   useClient,
@@ -30,6 +33,7 @@ import { ProjectStatusTab } from '../features/status/ProjectStatusTab';
 import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
 import { Badge } from '../ui/Badge';
 import { ProjectStatusPill } from '../components/ProjectStatusPill';
+import { ProjectMembersManager } from '../components/projects/ProjectMembersManager';
 import { Card, CardBody, CardHeader, CardTitle } from '../ui/Card';
 import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
@@ -605,6 +609,10 @@ function ProjectDashboardPage(): JSX.Element {
               <Megaphone className="w-4 h-4" />
               Marketing
             </TabsTrigger>
+            <TabsTrigger value="team">
+              <UserPlus className="w-4 h-4" />
+              Team
+            </TabsTrigger>
             <TabsTrigger value="status">
               <Settings className="w-4 h-4" />
               Status & Reporting
@@ -1087,6 +1095,76 @@ function ProjectDashboardPage(): JSX.Element {
                   )}
                 </CardBody>
               </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="team">
+            <div className="space-y-6">
+              {/* Visibility Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Visibility</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <div className="flex items-center gap-3">
+                    {project.visibility === 'PRIVATE' && (
+                      <>
+                        <div className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                          <Lock className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium dark:text-neutral-100">
+                            Private
+                          </p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Only the owner and assigned team members can access
+                            this project.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {project.visibility === 'TEAM' && (
+                      <>
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                          <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium dark:text-neutral-100">
+                            Team Members Only
+                          </p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Only the owner and assigned team members can access
+                            this project.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {project.visibility === 'TENANT' && (
+                      <>
+                        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                          <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium dark:text-neutral-100">
+                            Tenant-wide
+                          </p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            All users in your organization can view this
+                            project.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+
+              {/* Team Members */}
+              <ProjectMembersManager
+                projectId={projectId}
+                ownerId={project.ownerId}
+                ownerName={project.owner?.name || 'Unknown'}
+              />
             </div>
           </TabsContent>
 

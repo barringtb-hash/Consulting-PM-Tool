@@ -32,7 +32,10 @@ export interface PaginatedResult<T> {
 
 /**
  * List projects for a specific owner with optional filtering and pagination.
- * Also includes projects shared with the tenant (isSharedWithTenant = true).
+ * Includes projects based on visibility:
+ * - PRIVATE: Only owner can see
+ * - TEAM: Owner and assigned team members can see
+ * - TENANT: All users in tenant can see (also honors legacy isSharedWithTenant)
  *
  * @param params - Query parameters
  * @param params.ownerId - Owner user ID (required)
@@ -61,10 +64,16 @@ export const listProjects = async ({
 
   // Show projects that are:
   // 1. Owned by the current user, OR
-  // 2. Shared with the tenant (isSharedWithTenant = true)
+  // 2. User is a team member (for TEAM visibility), OR
+  // 3. Shared with the tenant (visibility = TENANT or legacy isSharedWithTenant = true)
   const where: Prisma.ProjectWhereInput = {
     tenantId,
-    OR: [{ ownerId }, { isSharedWithTenant: true }],
+    OR: [
+      { ownerId }, // User is owner
+      { members: { some: { userId: ownerId } } }, // User is a team member
+      { visibility: 'TENANT' }, // Visible to all tenant users
+      { isSharedWithTenant: true }, // Legacy: shared with tenant
+    ],
     ...(filterAccountId && { accountId: filterAccountId }),
     status,
   };
@@ -82,6 +91,21 @@ export const listProjects = async ({
       orderBy: { createdAt: 'desc' },
       take: safeLimit,
       skip,
+      include: {
+        members: {
+          select: {
+            userId: true,
+            role: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     }),
   ]);
 
@@ -98,6 +122,7 @@ export const listProjects = async ({
 
 /**
  * Get a project by ID within the current tenant context.
+ * Includes members for access control checks.
  *
  * @param id - Project ID
  * @returns The project if found, null otherwise
@@ -108,6 +133,21 @@ export const getProjectById = async (id: number) => {
 
   return prisma.project.findFirst({
     where: { id, tenantId },
+    include: {
+      members: {
+        select: {
+          userId: true,
+          role: true,
+        },
+      },
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 };
 

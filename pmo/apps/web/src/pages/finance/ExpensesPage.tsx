@@ -77,11 +77,13 @@ function StatusBadge({ status }: { status: ExpenseStatus }) {
   const Icon = config.icon;
 
   const colorClasses: Record<string, string> = {
-    gray: 'bg-gray-100 text-gray-700',
-    yellow: 'bg-yellow-100 text-yellow-700',
-    green: 'bg-green-100 text-green-700',
-    red: 'bg-red-100 text-red-700',
-    blue: 'bg-blue-100 text-blue-700',
+    gray: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300',
+    yellow:
+      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+    green:
+      'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    red: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+    blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
   };
 
   return (
@@ -129,14 +131,14 @@ function ExpenseActions({
           <>
             <button
               onClick={() => onApprove(expense.id)}
-              className="p-1 text-green-600 hover:bg-green-50 rounded"
+              className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
               title="Approve"
             >
               <Check className="h-4 w-4" />
             </button>
             <button
               onClick={() => setShowRejectModal(true)}
-              className="p-1 text-red-600 hover:bg-red-50 rounded"
+              className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
               title="Reject"
             >
               <X className="h-4 w-4" />
@@ -145,7 +147,7 @@ function ExpenseActions({
         )}
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+          className="p-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded"
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>
@@ -157,10 +159,10 @@ function ExpenseActions({
             className="fixed inset-0 z-10"
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
+          <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 z-20">
             <Link
               to={`/finance/expenses/${expense.id}`}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700"
             >
               <Eye className="h-4 w-4" />
               View Details
@@ -168,7 +170,7 @@ function ExpenseActions({
             {(expense.status === 'DRAFT' || expense.status === 'PENDING') && (
               <Link
                 to={`/finance/expenses/${expense.id}/edit`}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700"
               >
                 <Edit className="h-4 w-4" />
                 Edit
@@ -180,7 +182,7 @@ function ExpenseActions({
                   onDelete(expense.id);
                   setShowMenu(false);
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full text-left"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete
@@ -196,14 +198,14 @@ function ExpenseActions({
         title="Reject Expense"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
             Please provide a reason for rejecting this expense.
           </p>
           <textarea
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="Enter rejection reason..."
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             rows={3}
           />
           <div className="flex justify-end gap-2">

@@ -10,6 +10,10 @@ export type ProjectStatus =
 
 export type ProjectHealthStatus = 'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK';
 
+export type ProjectVisibility = 'PRIVATE' | 'TEAM' | 'TENANT';
+
+export type ProjectRole = 'VIEW_ONLY' | 'EDIT' | 'ADMIN';
+
 export type PipelineStage =
   | 'NEW_LEAD'
   | 'DISCOVERY'
@@ -20,12 +24,48 @@ export type PipelineStage =
   | 'WON'
   | 'LOST';
 
+export interface ProjectOwner {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface ProjectMember {
+  id: number;
+  projectId: number;
+  userId: number;
+  role: ProjectRole;
+  addedAt: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  addedBy?: {
+    id: number;
+    name: string;
+  } | null;
+}
+
+export interface ProjectMemberBasic {
+  userId: number;
+  role: ProjectRole;
+}
+
+export interface TenantUser {
+  id: number;
+  name: string;
+  email: string;
+  tenantRole: string;
+}
+
 export interface Project {
   id: number;
   clientId: number;
   ownerId: number;
   name: string;
   status: ProjectStatus;
+  visibility?: ProjectVisibility;
   startDate?: string | null;
   endDate?: string | null;
   createdAt: string;
@@ -34,6 +74,9 @@ export interface Project {
   healthStatus?: ProjectHealthStatus;
   statusSummary?: string | null;
   statusUpdatedAt?: string | null;
+  // Owner and members info (included when fetched)
+  owner?: ProjectOwner;
+  members?: ProjectMemberBasic[];
   // Note: Pipeline fields removed - use CRM Opportunity for sales tracking
   // See /crm/opportunities for sales pipeline management
 }
@@ -47,8 +90,22 @@ export interface ProjectPayload {
   clientId: number;
   name: string;
   status?: ProjectStatus;
+  visibility?: ProjectVisibility;
   startDate?: string;
   endDate?: string;
+}
+
+export interface AddProjectMemberPayload {
+  userId: number;
+  role?: ProjectRole;
+}
+
+export interface AddProjectMembersBulkPayload {
+  members: AddProjectMemberPayload[];
+}
+
+export interface UpdateProjectMemberPayload {
+  role: ProjectRole;
 }
 
 const PROJECTS_BASE_PATH = buildApiUrl('/projects');
@@ -231,6 +288,98 @@ export async function generateStatusSummary(
 export async function deleteProject(projectId: number): Promise<void> {
   const response = await fetch(
     `${PROJECTS_BASE_PATH}/${projectId}`,
+    buildOptions({
+      method: 'DELETE',
+    }),
+  );
+
+  await handleResponse(response);
+}
+
+// Project Member Management Functions
+
+export async function fetchTenantUsers(search?: string): Promise<TenantUser[]> {
+  const params = new URLSearchParams();
+  if (search) {
+    params.append('search', search);
+  }
+  const query = params.toString();
+  const url = query
+    ? `${PROJECTS_BASE_PATH}/tenant-users?${query}`
+    : `${PROJECTS_BASE_PATH}/tenant-users`;
+
+  const response = await fetch(url, buildOptions({ method: 'GET' }));
+  const data = await handleResponse<{ users: TenantUser[] }>(response);
+  return data.users;
+}
+
+export async function fetchProjectMembers(
+  projectId: number,
+): Promise<ProjectMember[]> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/members`,
+    buildOptions({ method: 'GET' }),
+  );
+
+  const data = await handleResponse<{ members: ProjectMember[] }>(response);
+  return data.members;
+}
+
+export async function addProjectMember(
+  projectId: number,
+  payload: AddProjectMemberPayload,
+): Promise<ProjectMember> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/members`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  const data = await handleResponse<{ member: ProjectMember }>(response);
+  return data.member;
+}
+
+export async function addProjectMembersBulk(
+  projectId: number,
+  payload: AddProjectMembersBulkPayload,
+): Promise<ProjectMember[]> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/members`,
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  const data = await handleResponse<{ members: ProjectMember[] }>(response);
+  return data.members;
+}
+
+export async function updateProjectMember(
+  projectId: number,
+  userId: number,
+  payload: UpdateProjectMemberPayload,
+): Promise<ProjectMember> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/members/${userId}`,
+    buildOptions({
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  );
+
+  const data = await handleResponse<{ member: ProjectMember }>(response);
+  return data.member;
+}
+
+export async function removeProjectMember(
+  projectId: number,
+  userId: number,
+): Promise<void> {
+  const response = await fetch(
+    `${PROJECTS_BASE_PATH}/${projectId}/members/${userId}`,
     buildOptions({
       method: 'DELETE',
     }),

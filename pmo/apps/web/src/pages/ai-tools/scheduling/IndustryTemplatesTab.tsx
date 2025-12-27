@@ -42,11 +42,14 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const categoryColors: Record<string, string> = {
-  healthcare: 'bg-blue-100 text-blue-700',
-  professional: 'bg-purple-100 text-purple-700',
-  home_services: 'bg-orange-100 text-orange-700',
-  beauty: 'bg-pink-100 text-pink-700',
-  restaurant: 'bg-red-100 text-red-700',
+  healthcare:
+    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+  professional:
+    'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+  home_services:
+    'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+  beauty: 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400',
+  restaurant: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
 };
 
 export function IndustryTemplatesTab({
@@ -108,7 +111,7 @@ export function IndustryTemplatesTab({
   if (templatesQuery.isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400 dark:text-neutral-500" />
       </div>
     );
   }
@@ -126,17 +129,19 @@ export function IndustryTemplatesTab({
 
       {/* Currently Applied Template */}
       {appliedTemplate && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                <Check className="h-5 w-5 text-green-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h3 className="font-medium text-green-900">
+                <h3 className="font-medium text-green-900 dark:text-green-100">
                   {appliedTemplate.name}
                 </h3>
-                <p className="text-sm text-green-700">Currently applied</p>
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  Currently applied
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -238,10 +243,12 @@ export function IndustryTemplatesTab({
 
       {/* Template Preview / Details Panel */}
       {selectedTemplateId && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-blue-900">Template Preview</h3>
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                Template Preview
+              </h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -258,7 +265,7 @@ export function IndustryTemplatesTab({
             ) : preview ? (
               <div className="space-y-4">
                 {/* Setup Time */}
-                <div className="flex items-center gap-2 text-sm text-blue-700">
+                <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                   <Clock className="h-4 w-4" />
                   <span>
                     Estimated setup time: {preview.estimatedSetupTime}
@@ -267,7 +274,7 @@ export function IndustryTemplatesTab({
 
                 {/* Features */}
                 <div>
-                  <h4 className="mb-2 text-sm font-medium text-blue-900">
+                  <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-100">
                     Features
                   </h4>
                   <div className="flex flex-wrap gap-2">
@@ -275,9 +282,9 @@ export function IndustryTemplatesTab({
                       <Badge
                         key={feature}
                         variant="outline"
-                        className="bg-white"
+                        className="bg-white dark:bg-neutral-800"
                       >
-                        <Check className="mr-1 h-3 w-3 text-green-500" />
+                        <Check className="mr-1 h-3 w-3 text-green-500 dark:text-green-400" />
                         {feature}
                       </Badge>
                     ))}
@@ -286,10 +293,10 @@ export function IndustryTemplatesTab({
 
                 {/* Recommended For */}
                 <div>
-                  <h4 className="mb-2 text-sm font-medium text-blue-900">
+                  <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-100">
                     Recommended For
                   </h4>
-                  <ul className="space-y-1 text-sm text-blue-700">
+                  <ul className="space-y-1 text-sm text-blue-700 dark:text-blue-400">
                     {preview.recommendedFor.map((rec: string) => (
                       <li key={rec} className="flex items-center gap-2">
                         <ChevronRight className="h-3 w-3" />
@@ -301,7 +308,7 @@ export function IndustryTemplatesTab({
 
                 {/* Appointment Types */}
                 <div>
-                  <h4 className="mb-2 text-sm font-medium text-blue-900">
+                  <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-100">
                     Appointment Types (
                     {preview.template.appointmentTypes.length})
                   </h4>
@@ -309,14 +316,16 @@ export function IndustryTemplatesTab({
                     {preview.template.appointmentTypes.map((apt) => (
                       <div
                         key={apt.name}
-                        className="flex items-center gap-2 rounded bg-white px-3 py-2 text-sm"
+                        className="flex items-center gap-2 rounded bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
                       >
                         <div
                           className="h-3 w-3 rounded-full"
                           style={{ backgroundColor: apt.color }}
                         />
-                        <span>{apt.name}</span>
-                        <span className="ml-auto text-gray-500">
+                        <span className="dark:text-neutral-100">
+                          {apt.name}
+                        </span>
+                        <span className="ml-auto text-gray-500 dark:text-neutral-400">
                           {apt.durationMinutes}min
                         </span>
                       </div>
@@ -326,12 +335,12 @@ export function IndustryTemplatesTab({
 
                 {/* Comparison (if showing) */}
                 {showComparison && comparison && (
-                  <div className="border-t border-blue-200 pt-4">
-                    <h4 className="mb-2 text-sm font-medium text-blue-900">
+                  <div className="border-t border-blue-200 dark:border-blue-800 pt-4">
+                    <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-100">
                       Configuration Differences
                     </h4>
                     {comparison.differences.length === 0 ? (
-                      <p className="text-sm text-blue-700">
+                      <p className="text-sm text-blue-700 dark:text-blue-400">
                         No differences from template defaults.
                       </p>
                     ) : (
@@ -339,15 +348,17 @@ export function IndustryTemplatesTab({
                         {comparison.differences.map((diff) => (
                           <div
                             key={diff.field}
-                            className="flex items-center justify-between rounded bg-white px-3 py-2 text-sm"
+                            className="flex items-center justify-between rounded bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
                           >
-                            <span className="font-medium">{diff.field}</span>
+                            <span className="font-medium dark:text-neutral-100">
+                              {diff.field}
+                            </span>
                             <span>
-                              <span className="text-gray-500">
+                              <span className="text-gray-500 dark:text-neutral-400">
                                 {String(diff.currentValue)}
                               </span>{' '}
-                              <ChevronRight className="inline h-3 w-3" />{' '}
-                              <span className="text-blue-600">
+                              <ChevronRight className="inline h-3 w-3 dark:text-neutral-400" />{' '}
+                              <span className="text-blue-600 dark:text-blue-400">
                                 {String(diff.templateValue)}
                               </span>
                             </span>
@@ -386,7 +397,7 @@ export function IndustryTemplatesTab({
 
                 {/* Warning */}
                 {!appliedTemplate?.id && (
-                  <div className="flex items-start gap-2 text-sm text-amber-700">
+                  <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400">
                     <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                     <span>
                       Applying this template will create a new scheduling
@@ -397,7 +408,9 @@ export function IndustryTemplatesTab({
                 )}
               </div>
             ) : (
-              <p className="text-sm text-blue-700">Failed to load preview</p>
+              <p className="text-sm text-blue-700 dark:text-blue-400">
+                Failed to load preview
+              </p>
             )}
           </div>
         </Card>
@@ -405,12 +418,14 @@ export function IndustryTemplatesTab({
 
       {/* Success Message */}
       {applyMutation.isSuccess && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
           <div className="flex items-center gap-3">
-            <Check className="h-5 w-5 text-green-600" />
+            <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
             <div>
-              <p className="font-medium text-green-900">Template Applied!</p>
-              <p className="text-sm text-green-700">
+              <p className="font-medium text-green-900 dark:text-green-100">
+                Template Applied!
+              </p>
+              <p className="text-sm text-green-700 dark:text-green-400">
                 Created {applyMutation.data.appointmentTypesCreated} appointment
                 types and configured {applyMutation.data.intakeFieldsConfigured}{' '}
                 intake form fields.
@@ -422,10 +437,10 @@ export function IndustryTemplatesTab({
 
       {/* Error Message */}
       {(applyMutation.isError || resetMutation.isError) && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
           <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-sm text-red-700">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <p className="text-sm text-red-700 dark:text-red-400">
               {applyMutation.error?.message ||
                 resetMutation.error?.message ||
                 'An error occurred'}

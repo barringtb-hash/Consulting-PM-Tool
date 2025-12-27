@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Lock, Users, Globe } from 'lucide-react';
 import { useCreateProject } from '../api/queries';
 import { useAccounts } from '../api/hooks/crm';
-import { type ProjectStatus } from '../api/projects';
+import { type ProjectStatus, type ProjectVisibility } from '../api/projects';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { useClientProjectContext } from './ClientProjectContext';
 import { Button } from '../ui/Button';
@@ -144,12 +144,39 @@ const STATUS_OPTIONS: Array<{ value: ProjectStatus; label: string }> = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
+const VISIBILITY_OPTIONS: Array<{
+  value: ProjectVisibility;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+}> = [
+  {
+    value: 'PRIVATE',
+    label: 'Private',
+    description: 'Only you (the owner) can access this project',
+    icon: Lock,
+  },
+  {
+    value: 'TEAM',
+    label: 'Team Members',
+    description: 'Only assigned team members can access this project',
+    icon: Users,
+  },
+  {
+    value: 'TENANT',
+    label: 'Organization',
+    description: 'Everyone in your organization can view this project',
+    icon: Globe,
+  },
+];
+
 interface ProjectFormData {
   clientId: number | '';
   templateId: string;
   name: string;
   type: string;
   status: ProjectStatus;
+  visibility: ProjectVisibility;
   startDate: string;
   endDate: string;
   goals: string;
@@ -190,6 +217,7 @@ function ProjectSetupPage(): JSX.Element {
       name: '',
       type: template?.type || '',
       status: 'PLANNING',
+      visibility: 'PRIVATE',
       startDate: '',
       endDate: '',
       goals: '',
@@ -311,6 +339,7 @@ function ProjectSetupPage(): JSX.Element {
         clientId: formData.clientId,
         name: formData.name,
         status: formData.status,
+        visibility: formData.visibility,
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
       });
@@ -618,6 +647,61 @@ function ProjectSetupPage(): JSX.Element {
                   </Select>
                 </div>
 
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                    Project Visibility
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {VISIBILITY_OPTIONS.map((option) => {
+                      const Icon = option.icon;
+                      const isSelected = formData.visibility === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              visibility: option.value,
+                            }))
+                          }
+                          className={`p-3 text-left border-2 rounded-lg transition-all ${
+                            isSelected
+                              ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/30'
+                              : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Icon
+                              className={`w-4 h-4 ${
+                                isSelected
+                                  ? 'text-primary-600'
+                                  : 'text-neutral-500 dark:text-neutral-400'
+                              }`}
+                            />
+                            <span
+                              className={`font-medium ${
+                                isSelected
+                                  ? 'text-primary-600'
+                                  : 'text-neutral-900 dark:text-neutral-100'
+                              }`}
+                            >
+                              {option.label}
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {option.description}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                    You can add team members after creating the project if you
+                    select &quot;Team Members&quot; visibility.
+                  </p>
+                </div>
+
                 <div>
                   <label
                     htmlFor="project-start-date"
@@ -760,6 +844,35 @@ function ProjectSetupPage(): JSX.Element {
                       {STATUS_OPTIONS.find((s) => s.value === formData.status)
                         ?.label || formData.status}
                     </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+                      Visibility
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const visOption = VISIBILITY_OPTIONS.find(
+                          (v) => v.value === formData.visibility,
+                        );
+                        if (visOption) {
+                          const Icon = visOption.icon;
+                          return (
+                            <>
+                              <Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                              <span className="text-neutral-900 dark:text-neutral-100">
+                                {visOption.label}
+                              </span>
+                            </>
+                          );
+                        }
+                        return (
+                          <span className="text-neutral-900 dark:text-neutral-100">
+                            {formData.visibility}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
 
                   <div>

@@ -155,7 +155,7 @@ const BudgetActions = memo(function BudgetActions({
     <div className="relative">
       <button
         onClick={handleToggleMenu}
-        className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+        className="p-1 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded"
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
@@ -163,10 +163,10 @@ const BudgetActions = memo(function BudgetActions({
       {showMenu && (
         <>
           <div className="fixed inset-0 z-10" onClick={handleCloseMenu} />
-          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-20">
+          <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 z-20">
             <Link
               to={`/finance/budgets/${budget.id}`}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700"
             >
               <Eye className="h-4 w-4" />
               View Details
@@ -174,7 +174,7 @@ const BudgetActions = memo(function BudgetActions({
             {budget.status !== 'CLOSED' && (
               <Link
                 to={`/finance/budgets/${budget.id}/edit`}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700"
               >
                 <Edit className="h-4 w-4" />
                 Edit
@@ -183,7 +183,7 @@ const BudgetActions = memo(function BudgetActions({
             {budget.status === 'DRAFT' && (
               <button
                 onClick={handleDeleteClick}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full text-left"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete

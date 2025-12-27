@@ -1,4 +1,4 @@
-import { ProjectStatus } from '@prisma/client';
+import { ProjectStatus, Prisma } from '@prisma/client';
 import { Router, Response } from 'express';
 import { ParsedQs } from 'qs';
 
@@ -16,8 +16,19 @@ import {
   deleteProject,
 } from '../services/project.service';
 import {
+  getProjectMembers,
+  addProjectMember,
+  addProjectMembersBulk,
+  updateProjectMemberRole,
+  removeProjectMember,
+  getTenantUsersForSelection,
+} from '../services/projectMember.service';
+import {
   projectCreateSchema,
   projectUpdateSchema,
+  projectMemberAddSchema,
+  projectMemberUpdateSchema,
+  projectMemberBulkAddSchema,
 } from '../validation/project.schema';
 import {
   getProjectStatus,
@@ -29,7 +40,7 @@ import {
   statusSummaryRequestSchema,
 } from '../validation/projectStatus.schema';
 import { createChildLogger } from '../utils/logger';
-import { hasProjectAccess } from '../utils/project-access';
+import { hasProjectAccess, hasAdminAccess } from '../utils/project-access';
 import { env } from '../config/env';
 
 const log = createChildLogger({ module: 'projects' });
@@ -112,6 +123,30 @@ router.get('/', async (req: ProjectListRequest, res: Response) => {
         details: { message: errorInfo.message, name: errorInfo.name },
       }),
     });
+  }
+});
+
+// ===== Tenant Users Route (must be before /:id to avoid route conflict) =====
+
+/**
+ * GET /projects/tenant-users
+ * Get list of tenant users for member selection dropdown
+ */
+router.get('/tenant-users', async (req: TenantRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const search =
+      typeof req.query.search === 'string' ? req.query.search : undefined;
+    const users = await getTenantUsersForSelection(search);
+
+    res.json({ users });
+  } catch (error) {
+    log.error('Get tenant users error', error);
+    res.status(500).json({ error: 'Failed to get tenant users' });
   }
 });
 
@@ -499,6 +534,304 @@ router.post(
     } catch (error) {
       log.error('Generate status summary error', error);
       res.status(500).json({ error: 'Failed to generate status summary' });
+    }
+  },
+);
+
+// ===== Project Member Management Routes =====
+
+type ProjectMemberRequest = TenantRequest & {
+  params: { id: string; userId?: string };
+};
+
+/**
+ * GET /projects/:id/members
+ * Get all members of a project
+ */
+router.get('/:id/members', async (req: ProjectMemberRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const projectId = Number(req.params.id);
+
+    if (Number.isNaN(projectId)) {
+      res.status(400).json({ error: 'Invalid project id' });
+      return;
+    }
+
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    if (!hasProjectAccess(project, req.userId)) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const members = await getProjectMembers(projectId);
+
+    res.json({ members });
+  } catch (error) {
+    log.error('Get project members error', error);
+    res.status(500).json({ error: 'Failed to get project members' });
+  }
+});
+
+/**
+ * POST /projects/:id/members
+ * Add member(s) to a project. Requires admin access.
+ * Supports both single member and bulk add (with members array)
+ */
+router.post(
+  '/:id/members',
+  async (req: ProjectMemberRequest, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+
+      if (Number.isNaN(projectId)) {
+        res.status(400).json({ error: 'Invalid project id' });
+        return;
+      }
+
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      // Only admins can add members
+      if (!hasAdminAccess(project, req.userId)) {
+        res
+          .status(403)
+          .json({ error: 'Admin access required to manage members' });
+        return;
+      }
+
+      // Check if bulk add (has members array) or single add
+      const body = req.body as Record<string, unknown>;
+      if (body.members && Array.isArray(body.members)) {
+        // Bulk add
+        const parsed = projectMemberBulkAddSchema.safeParse(req.body);
+
+        if (!parsed.success) {
+          res.status(400).json({
+            error: 'Invalid member data',
+            details: parsed.error.format(),
+          });
+          return;
+        }
+
+        // Verify all users exist and are in the tenant
+        const userIds = parsed.data.members.map((m) => m.userId);
+        const tenantUsers = await getTenantUsersForSelection();
+        const validUserIds = new Set(tenantUsers.map((u) => u.id));
+        const invalidUsers = userIds.filter((id) => !validUserIds.has(id));
+
+        if (invalidUsers.length > 0) {
+          res.status(400).json({
+            error: 'Some users are not valid tenant members',
+            invalidUserIds: invalidUsers,
+          });
+          return;
+        }
+
+        // Don't add the owner as a member (they already have admin access)
+        const membersToAdd = parsed.data.members.filter(
+          (m) => m.userId !== project.ownerId,
+        );
+
+        if (membersToAdd.length === 0) {
+          res.status(400).json({
+            error: 'No valid members to add (owner is already admin)',
+          });
+          return;
+        }
+
+        const addedMembers = await addProjectMembersBulk(
+          projectId,
+          membersToAdd,
+          req.userId,
+        );
+
+        res.status(201).json({ members: addedMembers });
+      } else {
+        // Single add
+        const parsed = projectMemberAddSchema.safeParse(req.body);
+
+        if (!parsed.success) {
+          res.status(400).json({
+            error: 'Invalid member data',
+            details: parsed.error.format(),
+          });
+          return;
+        }
+
+        // Don't add the owner as a member
+        if (parsed.data.userId === project.ownerId) {
+          res.status(400).json({
+            error: 'Cannot add owner as member (already has admin access)',
+          });
+          return;
+        }
+
+        // Verify user exists and is in the tenant
+        const tenantUsers = await getTenantUsersForSelection();
+        const validUser = tenantUsers.find((u) => u.id === parsed.data.userId);
+
+        if (!validUser) {
+          res.status(400).json({ error: 'User is not a valid tenant member' });
+          return;
+        }
+
+        const member = await addProjectMember(
+          projectId,
+          parsed.data,
+          req.userId,
+        );
+
+        res.status(201).json({ member });
+      }
+    } catch (error) {
+      // Handle unique constraint violation (member already exists)
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        res
+          .status(409)
+          .json({ error: 'User is already a member of this project' });
+        return;
+      }
+      log.error('Add project member error', error);
+      res.status(500).json({ error: 'Failed to add project member' });
+    }
+  },
+);
+
+/**
+ * PUT /projects/:id/members/:userId
+ * Update a project member's role. Requires admin access.
+ */
+router.put(
+  '/:id/members/:userId',
+  async (req: ProjectMemberRequest, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+      const memberUserId = Number(req.params.userId);
+
+      if (Number.isNaN(projectId) || Number.isNaN(memberUserId)) {
+        res.status(400).json({ error: 'Invalid project or user id' });
+        return;
+      }
+
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      // Only admins can update member roles
+      if (!hasAdminAccess(project, req.userId)) {
+        res
+          .status(403)
+          .json({ error: 'Admin access required to manage members' });
+        return;
+      }
+
+      const parsed = projectMemberUpdateSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: 'Invalid role data',
+          details: parsed.error.format(),
+        });
+        return;
+      }
+
+      const updated = await updateProjectMemberRole(
+        projectId,
+        memberUserId,
+        parsed.data,
+      );
+
+      if (!updated) {
+        res.status(404).json({ error: 'Member not found' });
+        return;
+      }
+
+      res.json({ member: updated });
+    } catch (error) {
+      log.error('Update project member error', error);
+      res.status(500).json({ error: 'Failed to update project member' });
+    }
+  },
+);
+
+/**
+ * DELETE /projects/:id/members/:userId
+ * Remove a member from a project. Requires admin access.
+ */
+router.delete(
+  '/:id/members/:userId',
+  async (req: ProjectMemberRequest, res: Response) => {
+    try {
+      if (!req.userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const projectId = Number(req.params.id);
+      const memberUserId = Number(req.params.userId);
+
+      if (Number.isNaN(projectId) || Number.isNaN(memberUserId)) {
+        res.status(400).json({ error: 'Invalid project or user id' });
+        return;
+      }
+
+      const project = await getProjectById(projectId);
+
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      // Only admins can remove members
+      if (!hasAdminAccess(project, req.userId)) {
+        res
+          .status(403)
+          .json({ error: 'Admin access required to manage members' });
+        return;
+      }
+
+      const removed = await removeProjectMember(projectId, memberUserId);
+
+      if (!removed) {
+        res.status(404).json({ error: 'Member not found' });
+        return;
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      log.error('Remove project member error', error);
+      res.status(500).json({ error: 'Failed to remove project member' });
     }
   },
 );
