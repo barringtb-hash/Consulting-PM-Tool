@@ -39,6 +39,10 @@ export const getProjectAccessLevel = (
   switch (project.visibility) {
     case 'PRIVATE':
       // Only owner can access (handled above)
+      // Legacy fallback: check isSharedWithTenant for data that hasn't been migrated
+      if (project.isSharedWithTenant) {
+        return 'view';
+      }
       return 'none';
 
     case 'TEAM':
@@ -53,8 +57,6 @@ export const getProjectAccessLevel = (
               return 'edit';
             case 'VIEW_ONLY':
               return 'view';
-            default:
-              return 'none';
           }
         }
       }
@@ -63,13 +65,6 @@ export const getProjectAccessLevel = (
     case 'TENANT':
       // All tenant users can view
       return 'view';
-
-    default:
-      // Legacy fallback: check isSharedWithTenant
-      if (project.isSharedWithTenant) {
-        return 'view';
-      }
-      return 'none';
   }
 };
 

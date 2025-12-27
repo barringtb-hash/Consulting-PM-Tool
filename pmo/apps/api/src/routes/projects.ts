@@ -1,4 +1,4 @@
-import { ProjectStatus } from '@prisma/client';
+import { ProjectStatus, Prisma } from '@prisma/client';
 import { Router, Response } from 'express';
 import { ParsedQs } from 'qs';
 
@@ -703,7 +703,10 @@ router.post(
       }
     } catch (error) {
       // Handle unique constraint violation (member already exists)
-      if ((error as { code?: string }).code === 'P2002') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         res
           .status(409)
           .json({ error: 'User is already a member of this project' });

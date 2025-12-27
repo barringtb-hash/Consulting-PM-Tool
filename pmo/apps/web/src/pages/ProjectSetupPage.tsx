@@ -217,7 +217,7 @@ function ProjectSetupPage(): JSX.Element {
       name: '',
       type: template?.type || '',
       status: 'PLANNING',
-      visibility: 'PRIVATE' as ProjectVisibility,
+      visibility: 'PRIVATE',
       startDate: '',
       endDate: '',
       goals: '',
