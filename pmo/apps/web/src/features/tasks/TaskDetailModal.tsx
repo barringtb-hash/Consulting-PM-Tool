@@ -48,12 +48,12 @@ const priorityColors: Record<string, 'danger' | 'warning' | 'neutral'> = {
 
 const statusColors: Record<
   string,
-  'neutral' | 'primary' | 'warning' | 'success'
+  'neutral' | 'primary' | 'danger' | 'success'
 > = {
   NOT_STARTED: 'neutral',
   BACKLOG: 'neutral',
   IN_PROGRESS: 'primary',
-  BLOCKED: 'warning',
+  BLOCKED: 'danger',
   DONE: 'success',
 };
 
