@@ -12,6 +12,7 @@ export {
   useProjectTasks,
   useMyTasks,
   useCreateTask,
+  useCreateSubtask,
   useUpdateTask,
   useMoveTask,
   useDeleteTask,

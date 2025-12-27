@@ -2,10 +2,16 @@ import { fetchProjects, type Project } from './projects';
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 
-export type TaskStatus = 'BACKLOG' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE';
+export type TaskStatus =
+  | 'NOT_STARTED'
+  | 'BACKLOG'
+  | 'IN_PROGRESS'
+  | 'BLOCKED'
+  | 'DONE';
 export type TaskPriority = 'P0' | 'P1' | 'P2';
 
 export const TASK_STATUSES: TaskStatus[] = [
+  'NOT_STARTED',
   'BACKLOG',
   'IN_PROGRESS',
   'BLOCKED',
@@ -35,6 +41,7 @@ export const STATUS_BADGE_VARIANTS: Record<
   TaskStatus,
   'neutral' | 'primary' | 'danger' | 'success'
 > = {
+  NOT_STARTED: 'neutral',
   BACKLOG: 'neutral',
   IN_PROGRESS: 'primary',
   BLOCKED: 'danger',

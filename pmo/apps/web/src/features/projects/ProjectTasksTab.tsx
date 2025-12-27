@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import {
   useProjectTasks,
   useCreateTask,
+  useCreateSubtask,
   useMoveTask,
   useDeleteTask,
 } from '../../hooks/tasks';
@@ -26,6 +27,13 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const tasksQuery = useProjectTasks(projectId);
   const milestonesQuery = useProjectMilestones(projectId);
   const createTaskMutation = useCreateTask();
+  const [creatingSubtasksForTaskId, setCreatingSubtasksForTaskId] = useState<
+    number | null
+  >(null);
+  const createSubtaskMutation = useCreateSubtask(
+    creatingSubtasksForTaskId ?? undefined,
+    projectId,
+  );
   const moveTaskMutation = useMoveTask(projectId);
   const deleteTaskMutation = useDeleteTask(projectId);
 
@@ -39,13 +47,32 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
     setError(null);
   };
 
-  const handleSubmit = async (payload: TaskPayload) => {
+  const handleSubmit = async (
+    payload: TaskPayload,
+  ): Promise<{ id: number } | void> => {
     try {
       setError(null);
-      await createTaskMutation.mutateAsync(payload);
+      const task = await createTaskMutation.mutateAsync(payload);
       setIsModalOpen(false);
+      return { id: task.id };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task');
+    }
+  };
+
+  const handleCreateSubtasks = async (
+    parentTaskId: number,
+    subtasks: Array<{ title: string; status: TaskStatus }>,
+  ) => {
+    setCreatingSubtasksForTaskId(parentTaskId);
+    try {
+      for (const subtask of subtasks) {
+        await createSubtaskMutation.mutateAsync(subtask);
+      }
+    } catch (err) {
+      console.error('Failed to create subtasks:', err);
+    } finally {
+      setCreatingSubtasksForTaskId(null);
     }
   };
 
@@ -117,6 +144,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         projectId={projectId}
         milestones={milestones}
         onSubmit={handleSubmit}
+        onCreateSubtasks={handleCreateSubtasks}
         onCancel={handleCloseModal}
         isSubmitting={createTaskMutation.isPending}
         error={error}

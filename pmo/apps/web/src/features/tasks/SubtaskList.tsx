@@ -28,7 +28,7 @@ export function SubtaskList({
 }: SubtaskListProps): JSX.Element {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskStatus, setNewSubtaskStatus] =
-    useState<TaskStatus>('BACKLOG');
+    useState<TaskStatus>('NOT_STARTED');
   const [isInputVisible, setIsInputVisible] = useState(false);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 
@@ -40,7 +40,7 @@ export function SubtaskList({
 
     await onAddSubtask(newSubtaskTitle.trim(), newSubtaskStatus);
     setNewSubtaskTitle('');
-    setNewSubtaskStatus('BACKLOG');
+    setNewSubtaskStatus('NOT_STARTED');
     setIsInputVisible(false);
   };
 
@@ -66,7 +66,7 @@ export function SubtaskList({
       handleAddSubtask();
     } else if (e.key === 'Escape') {
       setNewSubtaskTitle('');
-      setNewSubtaskStatus('BACKLOG');
+      setNewSubtaskStatus('NOT_STARTED');
       setIsInputVisible(false);
     }
   };
