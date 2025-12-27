@@ -192,9 +192,26 @@ export async function fetchMyTasks(
   const projectLookup = new Map<number, Project>();
   projects.forEach((project) => projectLookup.set(project.id, project));
 
-  const tasksByProject = await Promise.all(
+  // Use Promise.allSettled to handle individual project fetch failures gracefully
+  // This prevents one 403/404 from failing the entire request
+  const taskResults = await Promise.allSettled(
     projects.map((project) => fetchProjectTasks(project.id)),
   );
+
+  // Extract successful results, log failed fetches for debugging
+  const tasksByProject: Task[][] = [];
+  taskResults.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      tasksByProject.push(result.value);
+    } else if (import.meta.env.DEV) {
+      // Log failures in development to help diagnose permission issues
+      const failedProject = projects[index];
+      console.warn(
+        `[fetchMyTasks] Failed to fetch tasks for project ${failedProject?.id}:`,
+        result.reason,
+      );
+    }
+  });
 
   return tasksByProject
     .flat()
