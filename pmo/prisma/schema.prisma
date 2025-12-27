@@ -33,6 +33,18 @@ enum ProjectHealthStatus {
   OFF_TRACK
 }
 
+enum ProjectVisibility {
+  PRIVATE // Only owner can access
+  TEAM // Only assigned team members can access
+  TENANT // All users in tenant can access
+}
+
+enum ProjectRole {
+  VIEW_ONLY // Can view project, tasks, milestones (read-only)
+  EDIT // Can modify project details, create/edit tasks, meetings, etc.
+  ADMIN // Full control including user management
+}
+
 enum TaskStatus {
   NOT_STARTED
   BACKLOG
@@ -218,13 +230,15 @@ model User {
   // Example: { dashboardPanels: ['active-clients', 'open-tasks'], theme: 'light' }
   preferences Json?
 
-  ownedProjects    Project[]
-  documents        Document[]
-  tasks            Task[]
-  createdAssets    AIAsset[]
-  ownedLeads       InboundLead[]
-  createdContents  MarketingContent[]
-  createdCampaigns Campaign[]
+  ownedProjects       Project[]
+  projectMemberships  ProjectMember[] // Projects user is a member of
+  addedProjectMembers ProjectMember[]    @relation("ProjectMemberAddedBy") // Members this user added
+  documents           Document[]
+  tasks               Task[]
+  createdAssets       AIAsset[]
+  ownedLeads          InboundLead[]
+  createdContents     MarketingContent[]
+  createdCampaigns    Campaign[]
 
   // Customer Success Platform relations
   ownedSuccessPlans    SuccessPlan[]
@@ -261,9 +275,9 @@ model User {
   shiftEmployees ShiftEmployee[]
 
   // AI Monitoring relations
-  aiUsageEvents        AIUsageEvent[]
+  aiUsageEvents         AIUsageEvent[]
   acknowledgedAnomalies Anomaly[]      @relation("AnomalyAcknowledgedBy")
-  resolvedAnomalies    Anomaly[]      @relation("AnomalyResolvedBy")
+  resolvedAnomalies     Anomaly[]      @relation("AnomalyResolvedBy")
 
   // Password reset tokens
   passwordResets PasswordReset[]
@@ -272,12 +286,12 @@ model User {
 /// Stores password reset tokens for self-service password recovery.
 /// Tokens are hashed for security and expire after a short time period.
 model PasswordReset {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    Int
-  tokenHash String   // SHA-256 hash of the actual token
+  tokenHash String // SHA-256 hash of the actual token
   expiresAt DateTime
   usedAt    DateTime? // Set when token is used to prevent reuse
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -444,10 +458,13 @@ model Project {
   onboardingComplete    Boolean   @default(false)
   onboardingCompletedAt DateTime?
 
-  // Tenant visibility settings
-  isSharedWithTenant Boolean @default(false) // When true, all users in tenant can view this project
+  // Project visibility and access control
+  // @deprecated isSharedWithTenant - use visibility instead
+  isSharedWithTenant Boolean           @default(false) // Legacy: When true, all users in tenant can view
+  visibility         ProjectVisibility @default(PRIVATE) // New: PRIVATE, TEAM, or TENANT
 
   tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members           ProjectMember[] // Team members with role-based access
   client            Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
   account           Account?           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   owner             User               @relation(fields: [ownerId], references: [id])
@@ -475,6 +492,28 @@ model Project {
   @@index([renewalDate])
   @@index([healthStatus, renewalDate])
   @@index([accountId])
+  @@index([visibility])
+}
+
+/// ProjectMember - Manages project team membership with role-based access
+/// Links users to projects with specific roles (VIEW_ONLY, EDIT, ADMIN)
+/// Owner is automatically Admin but stored in Project.ownerId, not here
+model ProjectMember {
+  id        Int         @id @default(autoincrement())
+  projectId Int
+  userId    Int
+  role      ProjectRole @default(VIEW_ONLY)
+  addedAt   DateTime    @default(now())
+  addedById Int? // User who added this member (null for initial creation)
+  updatedAt DateTime    @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User?   @relation("ProjectMemberAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, userId]) // Each user can only be added once per project
+  @@index([userId])
+  @@index([projectId, role])
 }
 
 model Document {
@@ -1532,7 +1571,6 @@ enum SwapStatus {
 
 /**
  * SchedulingConfig - Configuration for scheduling assistant per account
- *
  * NOTE: This model has been migrated from Client to Account as the primary reference.
  * - accountId is now the preferred reference for new implementations
  * - clientId is kept for backward compatibility with existing data
@@ -1598,9 +1636,9 @@ model SchedulingConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  account          Account?          @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  client           Client?           @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account          Account?                @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  client           Client?                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenant           Tenant?                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   providers        Provider[]
   appointmentTypes AppointmentType[]
   appointments     Appointment[]
@@ -1706,7 +1744,7 @@ model SchedulingIntakeField {
   options  String[] @default([]) // For select/radio fields
 
   // Layout
-  sortOrder Int @default(0)
+  sortOrder Int     @default(0)
   isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -2599,8 +2637,8 @@ model IntakeSubmission {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  config           IntakeConfig       @relation(fields: [configId], references: [id], onDelete: Cascade)
-  form             IntakeForm         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  config           IntakeConfig        @relation(fields: [configId], references: [id], onDelete: Cascade)
+  form             IntakeForm          @relation(fields: [formId], references: [id], onDelete: Cascade)
   documents        IntakeDocument[]
   complianceChecks ComplianceCheck[]
   workflowProgress WorkflowProgress[]
@@ -3333,11 +3371,11 @@ enum ContentGenerationType {
   PRODUCT_COPY
   VIDEO_SCRIPT
   // Phase 1 additions - Business document content types
-  PROPOSAL        // Business/project proposals with pricing, scope, timeline
-  CASE_STUDY      // Client success stories for lead nurturing
-  FAQ_CONTENT     // FAQ entries for knowledge bases & chatbots
-  WELCOME_PACKET  // New client welcome content/guides
-  WHITEPAPER      // Thought leadership content for lead generation
+  PROPOSAL // Business/project proposals with pricing, scope, timeline
+  CASE_STUDY // Client success stories for lead nurturing
+  FAQ_CONTENT // FAQ entries for knowledge bases & chatbots
+  WELCOME_PACKET // New client welcome content/guides
+  WHITEPAPER // Thought leadership content for lead generation
 }
 
 enum ContentApprovalStatus {
@@ -3464,9 +3502,9 @@ model GeneratedContent {
   engagementRate Float?
 
   // Multi-language support (Phase 4)
-  language            String            @default("en") // ISO 639-1 code
+  language            String             @default("en") // ISO 639-1 code
   parentTranslationId Int? // Links to original content for translations
-  parentTranslation   GeneratedContent? @relation("ContentTranslations", fields: [parentTranslationId], references: [id])
+  parentTranslation   GeneratedContent?  @relation("ContentTranslations", fields: [parentTranslationId], references: [id])
   translations        GeneratedContent[] @relation("ContentTranslations")
 
   createdAt DateTime @default(now())
@@ -3547,11 +3585,11 @@ model ContentApprovalWorkflow {
  * ContentSequence - Multi-piece content sequences (email drips, onboarding, etc.)
  */
 enum ContentSequenceType {
-  ONBOARDING    // New client welcome sequence
-  NURTURE       // Lead nurturing sequence
-  FOLLOW_UP     // Post-meeting/intake follow-up
-  DRIP          // Educational content drip
-  REENGAGEMENT  // Win-back sequence
+  ONBOARDING // New client welcome sequence
+  NURTURE // Lead nurturing sequence
+  FOLLOW_UP // Post-meeting/intake follow-up
+  DRIP // Educational content drip
+  REENGAGEMENT // Win-back sequence
 }
 
 enum ContentSequenceStatus {
@@ -3563,7 +3601,7 @@ enum ContentSequenceStatus {
 }
 
 model ContentSequence {
-  id       Int    @id @default(autoincrement())
+  id       Int                    @id @default(autoincrement())
   configId Int
   config   ContentGeneratorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
@@ -3572,7 +3610,7 @@ model ContentSequence {
   type        ContentSequenceType
 
   // Trigger configuration
-  triggerEvent String?  // e.g., "intake_submitted", "opportunity_created", "manual"
+  triggerEvent String? // e.g., "intake_submitted", "opportunity_created", "manual"
 
   // Sequence status
   status   ContentSequenceStatus @default(DRAFT)
@@ -3582,7 +3620,7 @@ model ContentSequence {
   pieces ContentSequencePiece[]
 
   // Metadata
-  totalPieces     Int @default(0)
+  totalPieces       Int  @default(0)
   totalDurationDays Int? // Total days from start to end
 
   createdAt DateTime @default(now())
@@ -3606,8 +3644,8 @@ model ContentSequencePiece {
   content   GeneratedContent? @relation(fields: [contentId], references: [id])
 
   // Piece configuration
-  purpose     String   // "welcome", "value_prop", "case_study", "cta", "reminder"
-  subject     String?  // For emails
+  purpose     String // "welcome", "value_prop", "case_study", "cta", "reminder"
+  subject     String? // For emails
   contentType ContentGenerationType @default(EMAIL)
 
   // Generation prompt hints
@@ -6351,7 +6389,7 @@ model CTATask {
  */
 model Playbook {
   id          Int            @id @default(autoincrement())
-  tenantId    String?        // Multi-tenant support
+  tenantId    String? // Multi-tenant support
   name        String
   description String?
   status      PlaybookStatus @default(DRAFT)
@@ -6824,49 +6862,49 @@ model Tenant {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  users                     TenantUser[]
-  domains                   TenantDomain[]
-  branding                  TenantBranding?
-  modules                   TenantModule[]
-  accounts                  Account[]
-  crmContacts               CRMContact[]
-  opportunities             Opportunity[]
-  pipelines                 Pipeline[]
-  activities                CRMActivity[]
-  notifications             Notification[]
+  users                        TenantUser[]
+  domains                      TenantDomain[]
+  branding                     TenantBranding?
+  modules                      TenantModule[]
+  accounts                     Account[]
+  crmContacts                  CRMContact[]
+  opportunities                Opportunity[]
+  pipelines                    Pipeline[]
+  activities                   CRMActivity[]
+  notifications                Notification[]
   // CRM Phase 3-6 relations
-  integrations              Integration[]
-  usageEvents               UsageEvent[]
-  usageSummaries            UsageSummary[]
-  savedReports              SavedReport[]
+  integrations                 Integration[]
+  usageEvents                  UsageEvent[]
+  usageSummaries               UsageSummary[]
+  savedReports                 SavedReport[]
   // Legacy PMO models (tenant-scoped)
-  clients                   Client[]
-  contacts                  Contact[]
-  projects                  Project[]
-  tasks                     Task[]
-  milestones                Milestone[]
-  meetings                  Meeting[]
-  aiAssets                  AIAsset[]
-  marketingContents         MarketingContent[]
-  campaigns                 Campaign[]
-  inboundLeads              InboundLead[]
+  clients                      Client[]
+  contacts                     Contact[]
+  projects                     Project[]
+  tasks                        Task[]
+  milestones                   Milestone[]
+  meetings                     Meeting[]
+  aiAssets                     AIAsset[]
+  marketingContents            MarketingContent[]
+  campaigns                    Campaign[]
+  inboundLeads                 InboundLead[]
   // AI Tool configurations (tenant-scoped)
-  productDescriptionConfigs     ProductDescriptionConfig[]
-  schedulingConfigs             SchedulingConfig[]
-  chatbotConfigs                ChatbotConfig[]
-  intakeConfigs                 IntakeConfig[]
-  documentAnalyzerConfigs       DocumentAnalyzerConfig[]
-  contentGeneratorConfigs       ContentGeneratorConfig[]
-  leadScoringConfigs            LeadScoringConfig[]
-  priorAuthConfigs              PriorAuthConfig[]
-  inventoryForecastConfigs      InventoryForecastConfig[]
-  complianceMonitorConfigs      ComplianceMonitorConfig[]
-  predictiveMaintenanceConfigs  PredictiveMaintenanceConfig[]
-  revenueManagementConfigs      RevenueManagementConfig[]
-  safetyMonitorConfigs          SafetyMonitorConfig[]
+  productDescriptionConfigs    ProductDescriptionConfig[]
+  schedulingConfigs            SchedulingConfig[]
+  chatbotConfigs               ChatbotConfig[]
+  intakeConfigs                IntakeConfig[]
+  documentAnalyzerConfigs      DocumentAnalyzerConfig[]
+  contentGeneratorConfigs      ContentGeneratorConfig[]
+  leadScoringConfigs           LeadScoringConfig[]
+  priorAuthConfigs             PriorAuthConfig[]
+  inventoryForecastConfigs     InventoryForecastConfig[]
+  complianceMonitorConfigs     ComplianceMonitorConfig[]
+  predictiveMaintenanceConfigs PredictiveMaintenanceConfig[]
+  revenueManagementConfigs     RevenueManagementConfig[]
+  safetyMonitorConfigs         SafetyMonitorConfig[]
   // Audit and health metrics
-  auditLogs                 AuditLog[]
-  healthMetrics             TenantHealthMetrics[]
+  auditLogs                    AuditLog[]
+  healthMetrics                TenantHealthMetrics[]
 
   // Finance Tracking relations
   financeConfig        FinanceConfig?
@@ -8150,8 +8188,8 @@ model InfrastructureMetric {
   metricName String // Specific metric (e.g., "POST /api/chatbot/chat")
 
   // Aggregated values
-  count Int   @default(0)
-  sum   Float @default(0)
+  count Int    @default(0)
+  sum   Float  @default(0)
   min   Float?
   max   Float?
   avg   Float?
@@ -8311,7 +8349,7 @@ model AlertHistory {
   channel   AlertChannel
   recipient String
   subject   String
-  body      String @db.Text
+  body      String       @db.Text
 
   // Delivery status
   status       AlertDeliveryStatus

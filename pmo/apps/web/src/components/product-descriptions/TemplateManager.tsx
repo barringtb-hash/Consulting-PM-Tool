@@ -261,7 +261,7 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
       {/* Filters */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -272,7 +272,7 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
         <select
           value={filterMarketplace}
           onChange={(e) => setFilterMarketplace(e.target.value)}
-          className="border rounded-lg px-3 py-2"
+          className="border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 dark:text-neutral-100"
         >
           {MARKETPLACES.map((mp) => (
             <option key={mp.value} value={mp.value}>
@@ -285,14 +285,16 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
       {/* Template List */}
       {isLoading ? (
         <div className="flex items-center justify-center p-8">
-          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+          <RefreshCw className="h-8 w-8 animate-spin text-neutral-400 dark:text-neutral-500" />
         </div>
       ) : (
         <div className="grid gap-4">
           {filteredTemplates?.length === 0 ? (
             <Card className="p-8 text-center">
-              <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No templates found</p>
+              <FileText className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
+              <p className="text-neutral-500 dark:text-neutral-400">
+                No templates found
+              </p>
               <Button size="sm" className="mt-3" onClick={() => openEditor()}>
                 Create your first template
               </Button>
@@ -318,11 +320,11 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
                       )}
                     </div>
                     {template.description && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                         {template.description}
                       </p>
                     )}
-                    <div className="mt-2 text-xs text-gray-400">
+                    <div className="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
                       Updated:{' '}
                       {new Date(template.updatedAt).toLocaleDateString()}
                     </div>
@@ -409,7 +411,7 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1 dark:text-neutral-100">
                 Marketplace
               </label>
               <select
@@ -417,7 +419,7 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, marketplace: e.target.value })
                 }
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 dark:text-neutral-100"
               >
                 {MARKETPLACES.map((mp) => (
                   <option key={mp.value} value={mp.value}>
@@ -439,15 +441,15 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
           </div>
 
           {/* Variable Reference */}
-          <Card className="p-3 bg-blue-50">
-            <p className="text-sm font-medium text-blue-800 mb-2">
+          <Card className="p-3 bg-blue-50 dark:bg-blue-900/20">
+            <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
               Available Variables
             </p>
             <div className="flex flex-wrap gap-2">
               {TEMPLATE_VARIABLES.map((v) => (
                 <span
                   key={v.var}
-                  className="text-xs bg-white px-2 py-1 rounded border"
+                  className="text-xs bg-white dark:bg-neutral-800 px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 dark:text-neutral-100"
                   title={v.desc}
                 >
                   {v.var}
@@ -458,7 +460,7 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
 
           {/* Template Fields */}
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 dark:text-neutral-100">
               Title Template
             </label>
             <textarea
@@ -466,14 +468,14 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
               onChange={(e) =>
                 setFormData({ ...formData, titleTemplate: e.target.value })
               }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-neutral-800 dark:text-neutral-100"
               rows={2}
               placeholder="{{product_name}} - {{brand}}"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 dark:text-neutral-100">
               Short Description Template
             </label>
             <textarea
@@ -481,13 +483,13 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
               onChange={(e) =>
                 setFormData({ ...formData, shortDescTemplate: e.target.value })
               }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-neutral-800 dark:text-neutral-100"
               rows={3}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 dark:text-neutral-100">
               Long Description Template
             </label>
             <textarea
@@ -495,13 +497,13 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
               onChange={(e) =>
                 setFormData({ ...formData, longDescTemplate: e.target.value })
               }
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-neutral-800 dark:text-neutral-100"
               rows={6}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 dark:text-neutral-100">
               Bullet Point Template
             </label>
             <Input
@@ -572,36 +574,38 @@ export function TemplateManager({ configId }: TemplateManagerProps) {
         {editingTemplate && (
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Title</p>
-              <p className="p-2 bg-gray-50 rounded">
+              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+                Title
+              </p>
+              <p className="p-2 bg-neutral-50 dark:bg-neutral-800 rounded dark:text-neutral-100">
                 {previewTemplate(editingTemplate.titleTemplate)}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">
+              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                 Short Description
               </p>
-              <p className="p-2 bg-gray-50 rounded text-sm">
+              <p className="p-2 bg-neutral-50 dark:bg-neutral-800 rounded text-sm dark:text-neutral-100">
                 {previewTemplate(editingTemplate.shortDescTemplate)}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">
+              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                 Long Description
               </p>
-              <p className="p-2 bg-gray-50 rounded text-sm whitespace-pre-wrap">
+              <p className="p-2 bg-neutral-50 dark:bg-neutral-800 rounded text-sm whitespace-pre-wrap dark:text-neutral-100">
                 {previewTemplate(editingTemplate.longDescTemplate)}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">
+              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                 Bullet Format
               </p>
-              <p className="p-2 bg-gray-50 rounded text-sm">
+              <p className="p-2 bg-neutral-50 dark:bg-neutral-800 rounded text-sm dark:text-neutral-100">
                 {previewTemplate(editingTemplate.bulletTemplate)}
               </p>
             </div>
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-end pt-4 border-t border-neutral-200 dark:border-neutral-700">
               <Button variant="secondary" onClick={() => setShowPreview(false)}>
                 Close
               </Button>

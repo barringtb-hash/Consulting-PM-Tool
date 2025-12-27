@@ -186,8 +186,8 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-1 w-64 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
-          <div className="border-b border-neutral-100 px-3 py-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
+        <div className="absolute left-0 z-50 mt-1 w-64 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 py-1 shadow-lg">
+          <div className="border-b border-neutral-100 dark:border-neutral-700 px-3 py-2 text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
             Your Workspaces
           </div>
           <div className="max-h-[300px] overflow-y-auto">
@@ -205,8 +205,8 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
                     setIsOpen(false);
                   }}
                   disabled={switchMutation.isPending}
-                  className={`flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-neutral-50 disabled:opacity-50 ${
-                    isActive ? 'bg-blue-50' : ''
+                  className={`flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50 ${
+                    isActive ? 'bg-blue-50 dark:bg-blue-900/30' : ''
                   }`}
                   role="option"
                   aria-selected={isActive}
@@ -228,10 +228,10 @@ export function TenantSwitcher({ currentTenantId }: TenantSwitcherProps) {
                     </div>
                   )}
                   <div className="min-w-0 flex-1 text-left">
-                    <div className="truncate font-medium text-neutral-900">
+                    <div className="truncate font-medium text-neutral-900 dark:text-neutral-100">
                       {tenant.name}
                     </div>
-                    <div className="text-xs capitalize text-neutral-500">
+                    <div className="text-xs capitalize text-neutral-500 dark:text-neutral-400">
                       {tenant.role.toLowerCase()} &middot;{' '}
                       {tenant.plan.toLowerCase()}
                     </div>

@@ -1,4 +1,4 @@
-import { ProjectStatus } from '@prisma/client';
+import { ProjectStatus, ProjectVisibility, ProjectRole } from '@prisma/client';
 import { z } from 'zod';
 
 // Input length limits for security (prevents resource exhaustion)
@@ -25,7 +25,8 @@ export const projectCreateSchema = z
     status: z.nativeEnum(ProjectStatus).optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
-    isSharedWithTenant: z.boolean().optional(), // When true, all users in tenant can view
+    isSharedWithTenant: z.boolean().optional(), // @deprecated - use visibility
+    visibility: z.nativeEnum(ProjectVisibility).optional().default('PRIVATE'),
   })
   .refine(
     (data) => data.accountId !== undefined || data.clientId !== undefined,
@@ -43,3 +44,27 @@ export const projectUpdateSchema = projectCreateSchema
 
 export type ProjectCreateInput = z.infer<typeof projectCreateSchema>;
 export type ProjectUpdateInput = z.infer<typeof projectUpdateSchema>;
+
+// Project Member Schemas
+export const projectMemberAddSchema = z.object({
+  userId: z.number().int().positive('User ID is required'),
+  role: z.nativeEnum(ProjectRole).default('VIEW_ONLY'),
+});
+
+export const projectMemberUpdateSchema = z.object({
+  role: z.nativeEnum(ProjectRole),
+});
+
+export const projectMemberBulkAddSchema = z.object({
+  members: z
+    .array(projectMemberAddSchema)
+    .min(1, 'At least one member is required'),
+});
+
+export type ProjectMemberAddInput = z.infer<typeof projectMemberAddSchema>;
+export type ProjectMemberUpdateInput = z.infer<
+  typeof projectMemberUpdateSchema
+>;
+export type ProjectMemberBulkAddInput = z.infer<
+  typeof projectMemberBulkAddSchema
+>;

@@ -216,7 +216,7 @@ export function BookingRulesTab({
   if (rulesQuery.isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400 dark:text-neutral-500" />
       </div>
     );
   }
@@ -224,7 +224,7 @@ export function BookingRulesTab({
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b pb-4">
+      <div className="flex gap-2 border-b border-neutral-200 dark:border-neutral-700 pb-4">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -233,8 +233,8 @@ export function BookingRulesTab({
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -248,20 +248,26 @@ export function BookingRulesTab({
       {activeTab === 'modification' && rules && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold">Modification Rules</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold dark:text-neutral-100">
+              Modification Rules
+            </h3>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Configure rules for rescheduling, cancellation, and no-shows.
             </p>
           </div>
 
           {/* Reschedule Settings */}
           <Card>
-            <h4 className="mb-4 font-medium">Reschedule Policy</h4>
+            <h4 className="mb-4 font-medium dark:text-neutral-100">
+              Reschedule Policy
+            </h4>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">Allow Rescheduling</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium dark:text-neutral-100">
+                    Allow Rescheduling
+                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Let customers reschedule appointments
                   </p>
                 </div>
@@ -275,10 +281,10 @@ export function BookingRulesTab({
                       },
                     })
                   }
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full ${
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     rules.modificationRules.allowReschedule
                       ? 'bg-blue-600'
-                      : 'bg-gray-200'
+                      : 'bg-neutral-200 dark:bg-neutral-700'
                   }`}
                 >
                   <span
@@ -357,12 +363,16 @@ export function BookingRulesTab({
 
           {/* Cancellation Settings */}
           <Card>
-            <h4 className="mb-4 font-medium">Cancellation Policy</h4>
+            <h4 className="mb-4 font-medium dark:text-neutral-100">
+              Cancellation Policy
+            </h4>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">Allow Cancellation</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium dark:text-neutral-100">
+                    Allow Cancellation
+                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
                     Let customers cancel appointments
                   </p>
                 </div>
@@ -375,10 +385,10 @@ export function BookingRulesTab({
                       },
                     })
                   }
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full ${
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     rules.modificationRules.allowCancel
                       ? 'bg-blue-600'
-                      : 'bg-gray-200'
+                      : 'bg-neutral-200 dark:bg-neutral-700'
                   }`}
                 >
                   <span
@@ -476,7 +486,9 @@ export function BookingRulesTab({
 
           {/* No-Show Settings */}
           <Card>
-            <h4 className="mb-4 font-medium">No-Show Policy</h4>
+            <h4 className="mb-4 font-medium dark:text-neutral-100">
+              No-Show Policy
+            </h4>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium">
@@ -525,8 +537,10 @@ export function BookingRulesTab({
       {activeTab === 'limits' && rules && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold">Booking Limits</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold dark:text-neutral-100">
+              Booking Limits
+            </h3>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Set limits to manage capacity and prevent overbooking.
             </p>
           </div>
@@ -534,10 +548,10 @@ export function BookingRulesTab({
           <Card>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label className="mb-1 block text-sm font-medium dark:text-neutral-100">
                   Max Active Bookings per Customer
                 </label>
-                <p className="mb-2 text-xs text-gray-500">
+                <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
                   Maximum upcoming appointments per customer
                 </p>
                 <Input
@@ -556,10 +570,10 @@ export function BookingRulesTab({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label className="mb-1 block text-sm font-medium dark:text-neutral-100">
                   Max Bookings per Day
                 </label>
-                <p className="mb-2 text-xs text-gray-500">
+                <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
                   Total daily capacity across all providers
                 </p>
                 <Input
@@ -578,10 +592,10 @@ export function BookingRulesTab({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label className="mb-1 block text-sm font-medium dark:text-neutral-100">
                   Max Bookings per Provider per Day
                 </label>
-                <p className="mb-2 text-xs text-gray-500">
+                <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
                   Individual provider daily limit
                 </p>
                 <Input
@@ -600,10 +614,10 @@ export function BookingRulesTab({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">
+                <label className="mb-1 block text-sm font-medium dark:text-neutral-100">
                   Min Interval Between Bookings (hours)
                 </label>
-                <p className="mb-2 text-xs text-gray-500">
+                <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
                   Minimum time between same customer bookings
                 </p>
                 <Input
@@ -632,19 +646,23 @@ export function BookingRulesTab({
       {activeTab === 'buffer' && rules && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold">Buffer Times</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold dark:text-neutral-100">
+              Buffer Times
+            </h3>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Set time buffers between appointments and break times.
             </p>
           </div>
 
           <Card>
-            <h4 className="mb-4 font-medium">Default Buffer</h4>
+            <h4 className="mb-4 font-medium dark:text-neutral-100">
+              Default Buffer
+            </h4>
             <div>
-              <label className="mb-1 block text-sm font-medium">
+              <label className="mb-1 block text-sm font-medium dark:text-neutral-100">
                 Buffer Between Appointments (minutes)
               </label>
-              <p className="mb-2 text-xs text-gray-500">
+              <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
                 Time added between consecutive appointments
               </p>
               <Input
@@ -666,8 +684,10 @@ export function BookingRulesTab({
           </Card>
 
           <Card>
-            <h4 className="mb-4 font-medium">Break Times</h4>
-            <p className="mb-4 text-sm text-gray-500">
+            <h4 className="mb-4 font-medium dark:text-neutral-100">
+              Break Times
+            </h4>
+            <p className="mb-4 text-sm text-neutral-500 dark:text-neutral-400">
               Define recurring break times when no appointments can be booked.
             </p>
             {rules.bufferSettings.breakTimes &&
@@ -676,9 +696,9 @@ export function BookingRulesTab({
                 {rules.bufferSettings.breakTimes.map((breakTime, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-4 rounded border p-3"
+                    className="flex items-center gap-4 rounded border border-neutral-200 dark:border-neutral-700 p-3"
                   >
-                    <span className="font-medium">
+                    <span className="font-medium dark:text-neutral-100">
                       {breakTime.startTime} - {breakTime.endTime}
                     </span>
                     <div className="flex gap-1">
@@ -702,7 +722,9 @@ export function BookingRulesTab({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">No break times configured</p>
+              <p className="text-sm text-neutral-400 dark:text-neutral-500">
+                No break times configured
+              </p>
             )}
             <Button variant="outline" size="sm" className="mt-4">
               <Plus className="mr-2 h-4 w-4" />
@@ -716,15 +738,19 @@ export function BookingRulesTab({
       {activeTab === 'blackout' && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold">Blackout Dates</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold dark:text-neutral-100">
+              Blackout Dates
+            </h3>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
               Block specific dates from accepting appointments.
             </p>
           </div>
 
           {/* Add New Blackout */}
           <Card>
-            <h4 className="mb-4 font-medium">Add Blackout Date</h4>
+            <h4 className="mb-4 font-medium dark:text-neutral-100">
+              Add Blackout Date
+            </h4>
             <div className="flex gap-4">
               <div className="flex-1">
                 <Input
@@ -763,20 +789,22 @@ export function BookingRulesTab({
 
           {/* Existing Blackout Dates */}
           <Card>
-            <h4 className="mb-4 font-medium">Upcoming Blackout Dates</h4>
+            <h4 className="mb-4 font-medium dark:text-neutral-100">
+              Upcoming Blackout Dates
+            </h4>
             {blackoutDates.length > 0 ? (
               <div className="space-y-2">
                 {blackoutDates.map((blackout) => (
                   <div
                     key={blackout.id}
-                    className="flex items-center justify-between rounded border p-3"
+                    className="flex items-center justify-between rounded border border-neutral-200 dark:border-neutral-700 p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
-                        <Calendar className="h-5 w-5 text-red-600" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+                        <Calendar className="h-5 w-5 text-red-600 dark:text-red-400" />
                       </div>
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium dark:text-neutral-100">
                           {new Date(blackout.date).toLocaleDateString(
                             undefined,
                             {
@@ -788,7 +816,7 @@ export function BookingRulesTab({
                           )}
                         </p>
                         {blackout.reason && (
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
                             {blackout.reason}
                           </p>
                         )}
@@ -806,7 +834,9 @@ export function BookingRulesTab({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">No blackout dates set</p>
+              <p className="text-sm text-neutral-400 dark:text-neutral-500">
+                No blackout dates set
+              </p>
             )}
           </Card>
         </div>
