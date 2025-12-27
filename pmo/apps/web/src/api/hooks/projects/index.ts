@@ -147,8 +147,8 @@ export function useUpdateProject(
 /**
  * Delete a project
  *
- * This mutation uses module-aware invalidation to cascade cache invalidation
- * to all related modules (tasks, milestones, meetings, documents, marketing)
+ * This mutation removes all project-related queries from the cache to prevent
+ * 404 errors, then invalidates list queries to refresh the UI.
  */
 export function useDeleteProject(): UseMutationResult<void, Error, number> {
   const queryClient = useQueryClient();
@@ -156,18 +156,33 @@ export function useDeleteProject(): UseMutationResult<void, Error, number> {
   return useMutation({
     mutationFn: (projectId: number) => deleteProject(projectId),
     onSuccess: (_, projectId) => {
-      // Invalidate own module cache
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      // Remove all queries specific to this project to prevent 404 refetch errors
+      // This must happen before navigation away from the project page
       queryClient.removeQueries({
         queryKey: queryKeys.projects.detail(projectId),
       });
 
-      // Cross-module invalidation using module registry rules
+      // Remove project status queries (nested under detail)
+      queryClient.removeQueries({
+        queryKey: queryKeys.projects.status(projectId),
+      });
+
+      // Remove project assets queries
+      queryClient.removeQueries({
+        queryKey: queryKeys.assets.byProject(projectId),
+      });
+
+      // Cross-module removal using module registry rules
+      // This removes tasks, milestones, meetings, documents, marketing queries
       invalidateRelatedModules(queryClient, {
         sourceModule: 'projects',
         trigger: 'delete',
         entityId: projectId,
       });
+
+      // Invalidate project lists to refresh UI (this won't cause 404s
+      // because list endpoints return arrays, not single resources)
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
     },
   });
 }
