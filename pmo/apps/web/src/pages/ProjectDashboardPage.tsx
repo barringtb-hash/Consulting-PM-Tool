@@ -118,6 +118,10 @@ function ProjectDashboardPage(): JSX.Element {
   const [editedStartDate, setEditedStartDate] = useState('');
   const [editedEndDate, setEditedEndDate] = useState('');
 
+  // Project name editing
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
+
   // Milestones
   const milestonesQuery = useProjectMilestones(projectId);
   const createMilestoneMutation = useCreateMilestone();
@@ -191,8 +195,26 @@ function ProjectDashboardPage(): JSX.Element {
       setEditedStatus(project.status);
       setEditedStartDate(project.startDate?.slice(0, 10) ?? '');
       setEditedEndDate(project.endDate?.slice(0, 10) ?? '');
+      setEditedName(project.name);
     }
   }, [project, setSelectedProject]);
+
+  const handleUpdateProjectName = async () => {
+    if (!project || !editedName.trim()) return;
+    if (editedName.trim() === project.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    try {
+      await updateProjectMutation.mutateAsync({ name: editedName.trim() });
+      setIsEditingName(false);
+      showToast('Project name updated', 'success');
+    } catch (err) {
+      console.error('Failed to update project name:', err);
+      showToast('Failed to update project name', 'error');
+    }
+  };
 
   useEffect(() => {
     if (clientQuery.data) {
@@ -424,7 +446,53 @@ function ProjectDashboardPage(): JSX.Element {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       {/* Page Header */}
       <PageHeader
-        title={project.name}
+        title={
+          isEditingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleUpdateProjectName();
+                  } else if (e.key === 'Escape') {
+                    setEditedName(project.name);
+                    setIsEditingName(false);
+                  }
+                }}
+                className="text-2xl font-bold bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-600 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                autoFocus
+              />
+              <Button
+                size="sm"
+                onClick={handleUpdateProjectName}
+                isLoading={updateProjectMutation.isPending}
+              >
+                Save
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setEditedName(project.name);
+                  setIsEditingName(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <span
+              className="group cursor-pointer flex items-center gap-2"
+              onClick={() => setIsEditingName(true)}
+              title="Click to edit project name"
+            >
+              {project.name}
+              <Edit2 className="w-4 h-4 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </span>
+          )
+        }
         description={
           clientQuery.data ? (
             <span>

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Check, UserPlus, List } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
+import { Textarea } from '../../ui/Textarea';
+import { Badge } from '../../ui/Badge';
 import {
   formatStatusLabel,
   STATUS_BADGE_VARIANTS,
@@ -9,10 +11,23 @@ import {
   type Task,
   type TaskStatus,
 } from '../../api/tasks';
+import type { ProjectMember } from '../../api/projects';
 
 interface SubtaskListProps {
   subtasks: Task[];
-  onAddSubtask: (title: string, status: TaskStatus) => Promise<void>;
+  projectMembers?: ProjectMember[];
+  onAddSubtask: (
+    title: string,
+    status: TaskStatus,
+    assigneeIds?: number[],
+  ) => Promise<void>;
+  onAddBulkSubtasks?: (
+    subtasks: Array<{
+      title: string;
+      status: TaskStatus;
+      assigneeIds?: number[];
+    }>,
+  ) => Promise<void>;
   onUpdateSubtaskStatus: (
     subtaskId: number,
     status: TaskStatus,
@@ -22,15 +37,50 @@ interface SubtaskListProps {
 
 export function SubtaskList({
   subtasks,
+  projectMembers = [],
   onAddSubtask,
+  onAddBulkSubtasks,
   onUpdateSubtaskStatus,
   isAddingSubtask = false,
 }: SubtaskListProps): JSX.Element {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskStatus, setNewSubtaskStatus] =
     useState<TaskStatus>('NOT_STARTED');
+  const [selectedAssignees, setSelectedAssignees] = useState<number[]>([]);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [isInputVisible, setIsInputVisible] = useState(false);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [bulkText, setBulkText] = useState('');
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Click outside handler for assignee dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        assigneeDropdownRef.current &&
+        !assigneeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowAssigneeDropdown(false);
+      }
+    };
+
+    if (showAssigneeDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAssigneeDropdown]);
+
+  const toggleAssignee = (userId: number): void => {
+    setSelectedAssignees((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
+  };
 
   // Defensive: ensure subtasks is always an array
   const safeSubtasks = subtasks ?? [];
@@ -42,9 +92,52 @@ export function SubtaskList({
   const handleAddSubtask = async (): Promise<void> => {
     if (!newSubtaskTitle.trim()) return;
 
-    await onAddSubtask(newSubtaskTitle.trim(), newSubtaskStatus);
+    await onAddSubtask(
+      newSubtaskTitle.trim(),
+      newSubtaskStatus,
+      selectedAssignees.length > 0 ? selectedAssignees : undefined,
+    );
     setNewSubtaskTitle('');
     setNewSubtaskStatus('NOT_STARTED');
+    setSelectedAssignees([]);
+    setShowAssigneeDropdown(false);
+    setIsInputVisible(false);
+  };
+
+  const handleBulkAdd = async (): Promise<void> => {
+    if (!bulkText.trim()) return;
+
+    const lines = bulkText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    if (lines.length === 0) return;
+
+    if (onAddBulkSubtasks) {
+      const subtasksToCreate = lines.map((title) => ({
+        title,
+        status: newSubtaskStatus,
+        assigneeIds:
+          selectedAssignees.length > 0 ? selectedAssignees : undefined,
+      }));
+      await onAddBulkSubtasks(subtasksToCreate);
+    } else {
+      // Fallback: create one by one
+      for (const title of lines) {
+        await onAddSubtask(
+          title,
+          newSubtaskStatus,
+          selectedAssignees.length > 0 ? selectedAssignees : undefined,
+        );
+      }
+    }
+
+    setBulkText('');
+    setNewSubtaskStatus('NOT_STARTED');
+    setSelectedAssignees([]);
+    setShowAssigneeDropdown(false);
+    setIsBulkMode(false);
     setIsInputVisible(false);
   };
 
@@ -65,14 +158,22 @@ export function SubtaskList({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isBulkMode) {
       e.preventDefault();
       handleAddSubtask();
     } else if (e.key === 'Escape') {
-      setNewSubtaskTitle('');
-      setNewSubtaskStatus('NOT_STARTED');
-      setIsInputVisible(false);
+      resetForm();
     }
+  };
+
+  const resetForm = (): void => {
+    setNewSubtaskTitle('');
+    setBulkText('');
+    setNewSubtaskStatus('NOT_STARTED');
+    setSelectedAssignees([]);
+    setShowAssigneeDropdown(false);
+    setIsBulkMode(false);
+    setIsInputVisible(false);
   };
 
   const formatDate = (dateStr?: string | null): string => {
@@ -114,15 +215,33 @@ export function SubtaskList({
           )}
         </div>
         {!isInputVisible && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsInputVisible(true)}
-            className="flex items-center gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            Add Subtask
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setIsBulkMode(true);
+                setIsInputVisible(true);
+              }}
+              className="flex items-center gap-1"
+              title="Add multiple subtasks at once"
+            >
+              <List className="h-4 w-4" />
+              Bulk Add
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setIsBulkMode(false);
+                setIsInputVisible(true);
+              }}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              Add Subtask
+            </Button>
+          </div>
         )}
       </div>
 
@@ -191,6 +310,19 @@ export function SubtaskList({
                         {formatDate(subtask.dueDate)}
                       </span>
                     )}
+                    {subtask.assignees && subtask.assignees.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        {subtask.assignees.map((assignee) => (
+                          <Badge
+                            key={assignee.userId}
+                            variant="primary"
+                            size="sm"
+                          >
+                            {assignee.user.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </li>
@@ -207,18 +339,38 @@ export function SubtaskList({
 
       {/* Add subtask input */}
       {isInputVisible && (
-        <div className="space-y-3 mt-2">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <Input
-                value={newSubtaskTitle}
-                onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter subtask title..."
+        <div className="space-y-3 mt-2 p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+          {isBulkMode ? (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  Add Multiple Subtasks
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  One subtask per line
+                </span>
+              </div>
+              <Textarea
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder="Enter subtask titles (one per line)..."
                 disabled={isAddingSubtask}
+                rows={4}
                 autoFocus
               />
-            </div>
+            </>
+          ) : (
+            <Input
+              value={newSubtaskTitle}
+              onChange={(e) => setNewSubtaskTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter subtask title..."
+              disabled={isAddingSubtask}
+              autoFocus
+            />
+          )}
+
+          <div className="flex items-center gap-3">
             <select
               value={newSubtaskStatus}
               onChange={(e) =>
@@ -234,25 +386,95 @@ export function SubtaskList({
                 </option>
               ))}
             </select>
+
+            {/* Assignee selector */}
+            {projectMembers.length > 0 && (
+              <div ref={assigneeDropdownRef} className="relative flex-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                  disabled={isAddingSubtask}
+                  className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-sm text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <span className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4 text-neutral-400" />
+                    {selectedAssignees.length === 0
+                      ? 'Assign to...'
+                      : `${selectedAssignees.length} assigned`}
+                  </span>
+                </button>
+                {showAssigneeDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {projectMembers.map((member) => (
+                      <button
+                        key={member.userId}
+                        type="button"
+                        onClick={() => toggleAssignee(member.userId)}
+                        className="w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-left"
+                      >
+                        <div
+                          className={`w-5 h-5 rounded border flex items-center justify-center ${
+                            selectedAssignees.includes(member.userId)
+                              ? 'bg-primary-500 border-primary-500 text-white'
+                              : 'border-neutral-300 dark:border-neutral-600'
+                          }`}
+                        >
+                          {selectedAssignees.includes(member.userId) && (
+                            <Check className="h-3 w-3" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-neutral-900 dark:text-neutral-100 truncate">
+                              {member.user.name}
+                            </span>
+                            {member.role === 'OWNER' && (
+                              <span className="px-1.5 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded">
+                                Owner
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Selected assignees display */}
+          {selectedAssignees.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedAssignees.map((userId) => {
+                const member = projectMembers.find((m) => m.userId === userId);
+                return member ? (
+                  <Badge key={userId} variant="primary" size="sm">
+                    {member.user.name}
+                  </Badge>
+                ) : null;
+              })}
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             <Button
               variant="primary"
               size="sm"
-              onClick={handleAddSubtask}
-              disabled={!newSubtaskTitle.trim() || isAddingSubtask}
+              onClick={isBulkMode ? handleBulkAdd : handleAddSubtask}
+              disabled={
+                isBulkMode
+                  ? !bulkText.trim() || isAddingSubtask
+                  : !newSubtaskTitle.trim() || isAddingSubtask
+              }
               isLoading={isAddingSubtask}
             >
-              Add
+              {isBulkMode ? 'Add All' : 'Add'}
             </Button>
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => {
-                setNewSubtaskTitle('');
-                setNewSubtaskStatus('BACKLOG');
-                setIsInputVisible(false);
-              }}
+              onClick={resetForm}
               disabled={isAddingSubtask}
             >
               Cancel

@@ -10,6 +10,7 @@ import {
   getTaskWithSubtasks,
   listSubtasks,
   listTasksForProject,
+  listTasksForUser,
   moveTask,
   toggleSubtask,
   updateSubtaskStatus,
@@ -28,6 +29,17 @@ const router = Router();
 // All routes require authentication and tenant context
 router.use(requireAuth);
 router.use(tenantMiddleware);
+
+// Get all tasks assigned to the current user (including subtasks)
+router.get('/tasks/my', async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const result = await listTasksForUser(req.userId);
+  res.json({ tasks: result.tasks });
+});
 
 router.get(
   '/projects/:projectId/tasks',

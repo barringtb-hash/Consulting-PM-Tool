@@ -761,3 +761,78 @@ export const updateSubtaskStatus = async (
 
   return { subtask: updated } as const;
 };
+
+// ============================================================================
+// User-specific task operations
+// ============================================================================
+
+/**
+ * Lists all tasks (including subtasks) where a user is assigned.
+ * Returns tasks across all projects accessible to the user.
+ *
+ * @param userId - The ID of the user to find tasks for
+ * @returns Object with { tasks } array including project info
+ */
+export const listTasksForUser = async (userId: number) => {
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  // Find all tasks where user is an assignee
+  const tasks = await prisma.task.findMany({
+    where: {
+      tenantId,
+      assignees: {
+        some: {
+          userId,
+        },
+      },
+    },
+    include: {
+      project: {
+        select: {
+          id: true,
+          name: true,
+          ownerId: true,
+          isSharedWithTenant: true,
+        },
+      },
+      parentTask: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+      assignees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
+      _count: { select: { subTasks: true } },
+      subTasks: { select: { status: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // Filter out tasks from projects the user doesn't have access to
+  const accessibleTasks = tasks.filter((task) =>
+    hasProjectAccess(task.project, userId),
+  );
+
+  // Transform to include completed subtask count and project name
+  const tasksWithCounts = accessibleTasks.map((task) => {
+    const { subTasks, _count, project, parentTask, ...taskData } = task;
+    const completedSubtasks = subTasks.filter(
+      (st) => st.status === 'DONE',
+    ).length;
+    return {
+      ...taskData,
+      projectId: project.id,
+      projectName: project.name,
+      parentTaskId: parentTask?.id ?? null,
+      parentTaskTitle: parentTask?.title ?? null,
+      subTaskCount: _count.subTasks,
+      subTaskCompletedCount: completedSubtasks,
+    };
+  });
+
+  return { tasks: tasksWithCounts } as const;
+};
