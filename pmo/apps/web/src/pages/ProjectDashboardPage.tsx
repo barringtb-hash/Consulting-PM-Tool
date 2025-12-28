@@ -436,9 +436,9 @@ function ProjectDashboardPage(): JSX.Element {
                 {clientQuery.data.name}
               </Link>
             </span>
-          ) : (
+          ) : project.clientId ? (
             'Loading client...'
-          )
+          ) : undefined
         }
         action={
           <div className="flex gap-2">
