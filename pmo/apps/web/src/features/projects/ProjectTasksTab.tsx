@@ -193,6 +193,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         taskId={selectedTaskId}
         projectId={projectId}
         milestones={milestones}
+        projectMembers={membersQuery.data ?? []}
         onClose={() => setSelectedTaskId(null)}
       />
     </div>

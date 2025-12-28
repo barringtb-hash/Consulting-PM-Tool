@@ -576,7 +576,34 @@ router.get('/:id/members', async (req: ProjectMemberRequest, res: Response) => {
 
     const members = await getProjectMembers(projectId);
 
-    res.json({ members });
+    // Include the project owner in the members list with OWNER role
+    const ownerAsMember = project.owner
+      ? {
+          id: -1, // Synthetic ID since owner isn't in ProjectMember table
+          projectId,
+          userId: project.owner.id,
+          role: 'OWNER' as const,
+          addedAt: null,
+          acceptedAt: null,
+          addedById: null,
+          addedBy: null,
+          user: {
+            id: project.owner.id,
+            name: project.owner.name,
+            email: project.owner.email,
+          },
+        }
+      : null;
+
+    // Combine owner with members, owner first
+    const allMembers = ownerAsMember
+      ? [
+          ownerAsMember,
+          ...members.filter((m) => m.userId !== project.owner?.id),
+        ]
+      : members;
+
+    res.json({ members: allMembers });
   } catch (error) {
     log.error('Get project members error', error);
     res.status(500).json({ error: 'Failed to get project members' });

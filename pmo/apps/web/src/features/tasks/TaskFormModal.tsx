@@ -545,9 +545,16 @@ export function TaskFormModal({
                           <Check className="h-3 w-3" />
                         )}
                       </div>
-                      <div>
-                        <div className="text-sm text-neutral-900 dark:text-neutral-100">
-                          {member.user.name}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-neutral-900 dark:text-neutral-100">
+                            {member.user.name}
+                          </span>
+                          {member.role === 'OWNER' && (
+                            <span className="px-1.5 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded">
+                              Owner
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-neutral-500">
                           {member.user.email}
