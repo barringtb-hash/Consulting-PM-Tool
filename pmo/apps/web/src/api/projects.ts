@@ -12,7 +12,7 @@ export type ProjectHealthStatus = 'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK';
 
 export type ProjectVisibility = 'PRIVATE' | 'TEAM' | 'TENANT';
 
-export type ProjectRole = 'VIEW_ONLY' | 'EDIT' | 'ADMIN';
+export type ProjectRole = 'VIEW_ONLY' | 'EDIT' | 'ADMIN' | 'OWNER';
 
 export type PipelineStage =
   | 'NEW_LEAD'

@@ -129,6 +129,13 @@ router.post('/tasks', async (req: AuthenticatedRequest, res: Response) => {
     return;
   }
 
+  if (result.error === 'invalid_assignees') {
+    res
+      .status(400)
+      .json({ error: 'One or more assignees are not project members' });
+    return;
+  }
+
   res.status(201).json({ task: result.task });
 });
 
@@ -172,6 +179,13 @@ router.patch(
       res
         .status(400)
         .json({ error: 'Milestone does not belong to the project' });
+      return;
+    }
+
+    if (result.error === 'invalid_assignees') {
+      res
+        .status(400)
+        .json({ error: 'One or more assignees are not project members' });
       return;
     }
 
@@ -373,6 +387,13 @@ router.post(
       res
         .status(400)
         .json({ error: 'Milestone does not belong to the project' });
+      return;
+    }
+
+    if (result.error === 'invalid_assignees') {
+      res
+        .status(400)
+        .json({ error: 'One or more assignees are not project members' });
       return;
     }
 

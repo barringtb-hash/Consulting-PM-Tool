@@ -79,6 +79,18 @@ export const PRIORITY_BADGE_VARIANTS: Record<
   P2: 'neutral',
 };
 
+export interface TaskAssignee {
+  id: number;
+  userId: number;
+  assignedAt: string;
+  assignedById: number | null;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
 export interface Task {
   id: number;
   projectId: number;
@@ -95,6 +107,8 @@ export interface Task {
   // Subtask counts (included when listing parent tasks)
   subTaskCount?: number;
   subTaskCompletedCount?: number;
+  // Assignees (included in responses)
+  assignees?: TaskAssignee[];
 }
 
 export interface TaskWithProject extends Task {
@@ -119,6 +133,7 @@ export interface SubtaskPayload {
   status?: TaskStatus;
   dueDate?: string;
   milestoneId?: number;
+  assigneeIds?: number[];
 }
 
 export interface SubtaskStatusPayload {
@@ -133,6 +148,7 @@ export interface TaskPayload {
   priority?: TaskPriority;
   dueDate?: string;
   milestoneId?: number;
+  assigneeIds?: number[];
 }
 
 export interface TaskUpdatePayload {
@@ -143,6 +159,7 @@ export interface TaskUpdatePayload {
   priority?: TaskPriority;
   dueDate?: string | null;
   milestoneId?: number | null;
+  assigneeIds?: number[];
 }
 
 export interface TaskMovePayload {
@@ -211,9 +228,9 @@ export async function deleteTask(taskId: number): Promise<void> {
 }
 
 export async function fetchMyTasks(
-  ownerId?: number,
+  userId?: number,
 ): Promise<TaskWithProject[]> {
-  if (!ownerId) {
+  if (!userId) {
     return [];
   }
 
@@ -242,9 +259,14 @@ export async function fetchMyTasks(
     }
   });
 
+  // Check if user is assigned to a task
+  const isAssignedTo = (task: Task, uid: number): boolean => {
+    return task.assignees?.some((assignee) => assignee.userId === uid) ?? false;
+  };
+
   return tasksByProject
     .flat()
-    .filter((task) => task.ownerId === ownerId)
+    .filter((task) => task.ownerId === userId || isAssignedTo(task, userId))
     .map((task) => ({
       ...task,
       projectName: projectLookup.get(task.projectId)?.name,

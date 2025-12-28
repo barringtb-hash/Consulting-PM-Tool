@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { X, UserPlus, Check } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
@@ -13,7 +13,12 @@ import {
   type TaskPayload,
   type TaskStatus,
 } from '../../api/tasks';
-import type { Milestone } from '../../api/milestones';
+import type {
+  Milestone,
+  MilestonePayload,
+  MilestoneStatus,
+} from '../../api/milestones';
+import type { ProjectMember } from '../../api/projects';
 
 export interface TaskFormValues {
   title: string;
@@ -21,18 +26,19 @@ export interface TaskFormValues {
   status: string;
   priority: string;
   dueDate: string;
-  milestoneId: string;
+  isMilestone: 'yes' | 'no';
 }
 
 interface TaskFormModalProps {
   isOpen: boolean;
   projectId: number;
-  milestones: Milestone[];
+  projectMembers?: ProjectMember[];
   onSubmit: (values: TaskPayload) => Promise<{ id: number } | void>;
   onCreateSubtasks?: (
     parentTaskId: number,
     subtasks: Array<{ title: string; status: TaskStatus }>,
   ) => Promise<{ failedCount: number }>;
+  onCreateMilestone?: (payload: MilestonePayload) => Promise<Milestone>;
   onCancel: () => void;
   onSuccess?: () => void;
   isSubmitting?: boolean;
@@ -46,7 +52,7 @@ const initialFormValues: TaskFormValues = {
   status: 'NOT_STARTED',
   priority: 'P1',
   dueDate: '',
-  milestoneId: '',
+  isMilestone: 'no',
 };
 
 interface PendingSubtask {
@@ -58,9 +64,10 @@ interface PendingSubtask {
 export function TaskFormModal({
   isOpen,
   projectId,
-  milestones,
+  projectMembers = [],
   onSubmit,
   onCreateSubtasks,
+  onCreateMilestone,
   onCancel,
   onSuccess,
   isSubmitting = false,
@@ -75,6 +82,32 @@ export function TaskFormModal({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskStatus, setNewSubtaskStatus] =
     useState<TaskStatus>('NOT_STARTED');
+  const [selectedAssignees, setSelectedAssignees] = useState<number[]>([]);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Click outside handler for assignee dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        assigneeDropdownRef.current &&
+        !assigneeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowAssigneeDropdown(false);
+      }
+    };
+
+    if (showAssigneeDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAssigneeDropdown]);
+
+  // State for milestone creation during submit
+  const [isCreatingMilestone, setIsCreatingMilestone] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -83,8 +116,29 @@ export function TaskFormModal({
       setPendingSubtasks([]);
       setNewSubtaskTitle('');
       setNewSubtaskStatus('NOT_STARTED');
+      setSelectedAssignees([]);
+      setShowAssigneeDropdown(false);
+      setIsCreatingMilestone(false);
     }
   }, [isOpen]);
+
+  // Map task status to milestone status
+  const mapTaskStatusToMilestoneStatus = (
+    taskStatus: string,
+  ): MilestoneStatus => {
+    if (taskStatus === 'DONE') return 'DONE';
+    if (taskStatus === 'IN_PROGRESS' || taskStatus === 'BLOCKED')
+      return 'IN_PROGRESS';
+    return 'NOT_STARTED';
+  };
+
+  const toggleAssignee = (userId: number): void => {
+    setSelectedAssignees((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
+  };
 
   const handleChange = (field: keyof TaskFormValues, value: string): void => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -141,6 +195,28 @@ export function TaskFormModal({
       return;
     }
 
+    let milestoneId: number | undefined;
+
+    // If this task should be a milestone, create it first
+    if (values.isMilestone === 'yes' && onCreateMilestone) {
+      setIsCreatingMilestone(true);
+      try {
+        const milestone = await onCreateMilestone({
+          projectId,
+          name: values.title.trim(),
+          description: values.description.trim() || undefined,
+          dueDate: values.dueDate || undefined,
+          status: mapTaskStatusToMilestoneStatus(values.status),
+        });
+        milestoneId = milestone.id;
+      } catch {
+        // Milestone creation failed, don't proceed with task
+        setIsCreatingMilestone(false);
+        return;
+      }
+      setIsCreatingMilestone(false);
+    }
+
     const payload: TaskPayload = {
       projectId,
       title: values.title.trim(),
@@ -148,9 +224,8 @@ export function TaskFormModal({
       status: values.status as TaskPayload['status'],
       priority: values.priority as TaskPayload['priority'],
       dueDate: values.dueDate || undefined,
-      milestoneId: values.milestoneId
-        ? parseInt(values.milestoneId, 10)
-        : undefined,
+      milestoneId,
+      assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
     };
 
     // Create parent task
@@ -274,18 +349,105 @@ export function TaskFormModal({
 
           <Select
             label="Milestone"
-            value={values.milestoneId}
-            onChange={(e) => handleChange('milestoneId', e.target.value)}
-            disabled={isSubmitting}
+            value={values.isMilestone}
+            onChange={(e) =>
+              handleChange('isMilestone', e.target.value as 'yes' | 'no')
+            }
+            disabled={isSubmitting || isCreatingMilestone}
           >
-            <option value="">No milestone</option>
-            {milestones.map((milestone) => (
-              <option key={milestone.id} value={milestone.id}>
-                {milestone.name}
-              </option>
-            ))}
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
           </Select>
         </div>
+
+        {/* Assignees Section */}
+        {projectMembers.length > 0 && (
+          <div ref={assigneeDropdownRef}>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Assignees
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <span className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-neutral-400" />
+                  {selectedAssignees.length === 0
+                    ? 'Select assignees...'
+                    : `${selectedAssignees.length} assignee${selectedAssignees.length > 1 ? 's' : ''} selected`}
+                </span>
+              </button>
+              {showAssigneeDropdown && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {projectMembers.map((member) => (
+                    <button
+                      key={member.userId}
+                      type="button"
+                      onClick={() => toggleAssignee(member.userId)}
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-left"
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          selectedAssignees.includes(member.userId)
+                            ? 'bg-primary-500 border-primary-500 text-white'
+                            : 'border-neutral-300 dark:border-neutral-600'
+                        }`}
+                      >
+                        {selectedAssignees.includes(member.userId) && (
+                          <Check className="h-3 w-3" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-neutral-900 dark:text-neutral-100">
+                            {member.user.name}
+                          </span>
+                          {member.role === 'OWNER' && (
+                            <span className="px-1.5 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded">
+                              Owner
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {member.user.email}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Selected assignees chips */}
+            {selectedAssignees.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedAssignees.map((userId) => {
+                  const member = projectMembers.find(
+                    (m) => m.userId === userId,
+                  );
+                  if (!member) return null;
+                  return (
+                    <span
+                      key={userId}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full"
+                    >
+                      {member.user.name}
+                      <button
+                        type="button"
+                        onClick={() => toggleAssignee(userId)}
+                        className="hover:text-primary-900 dark:hover:text-primary-100"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Subtasks Section */}
         <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">

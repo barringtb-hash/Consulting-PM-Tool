@@ -338,9 +338,15 @@ export function useCreateMarketingContent(): UseMutationResult<
 
   return useMutation({
     mutationFn: createMarketingContent,
-    onSuccess: () => {
+    onSuccess: (content) => {
       // Invalidate all marketing queries to ensure UI updates everywhere
       queryClient.invalidateQueries({ queryKey: marketingQueryKeys.all });
+      // Also invalidate project-specific marketing contents query if projectId exists
+      if (content.projectId) {
+        queryClient.invalidateQueries({
+          queryKey: marketingQueryKeys.projectContents(content.projectId),
+        });
+      }
     },
   });
 }

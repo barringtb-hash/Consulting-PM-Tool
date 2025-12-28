@@ -28,6 +28,7 @@ import {
   createProject,
   deleteProject,
   fetchProjectById,
+  fetchProjectMembers,
   fetchProjects,
   fetchProjectStatus,
   generateStatusSummary,
@@ -35,6 +36,7 @@ import {
   updateProjectHealthStatus,
   type Project,
   type ProjectFilters,
+  type ProjectMember,
   type ProjectPayload,
   type ProjectStatusSnapshot,
   type StatusSummaryRequest,
@@ -107,6 +109,21 @@ export function useProjectStatus(
     // Disable query if project is being deleted to prevent 404 refetch race conditions
     enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectStatus(projectId as number, rangeDays),
+  });
+}
+
+/**
+ * Fetch project members (for task assignment dropdowns)
+ */
+export function useProjectMembers(
+  projectId?: number,
+): UseQueryResult<ProjectMember[], Error> {
+  return useQuery({
+    queryKey: projectId
+      ? queryKeys.projects.members(projectId)
+      : queryKeys.projects.all,
+    enabled: Boolean(projectId) && !isProjectDeleting(projectId),
+    queryFn: () => fetchProjectMembers(projectId as number),
   });
 }
 
@@ -261,6 +278,7 @@ export function useGenerateStatusSummary(
 export type {
   Project,
   ProjectFilters,
+  ProjectMember,
   ProjectPayload,
   ProjectStatusSnapshot,
   StatusSummaryRequest,

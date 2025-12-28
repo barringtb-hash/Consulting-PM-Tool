@@ -199,24 +199,30 @@ export function useDeleteTask(
 
 /**
  * Create a subtask for a parent task
+ * parentTaskId can be provided at hook level (for detail modal) or in payload (for task creation)
  */
 export function useCreateSubtask(
   parentTaskId?: number,
   projectId?: number,
-): UseMutationResult<Task, Error, SubtaskPayload> {
+): UseMutationResult<Task, Error, SubtaskPayload & { parentTaskId?: number }> {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (payload) => {
-      if (parentTaskId === undefined) {
+      // Allow parentTaskId from payload to override hook-level value
+      const effectiveParentId = payload.parentTaskId ?? parentTaskId;
+      if (effectiveParentId === undefined) {
         throw new Error('Cannot create subtask: parent task ID is required');
       }
-      return createSubtask(parentTaskId, payload);
+      // Remove parentTaskId from payload before sending to API
+      const { parentTaskId: _, ...subtaskPayload } = payload;
+      return createSubtask(effectiveParentId, subtaskPayload);
     },
-    onSuccess: () => {
+    onSuccess: (_, payload) => {
+      const effectiveParentId = payload.parentTaskId ?? parentTaskId;
       // Invalidate the parent task detail (for subtask list)
       queryClient.invalidateQueries({
-        queryKey: queryKeys.tasks.detail(parentTaskId),
+        queryKey: queryKeys.tasks.detail(effectiveParentId),
       });
       // Invalidate project tasks (for subtask count on cards)
       queryClient.invalidateQueries({
