@@ -176,7 +176,6 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
       <TaskFormModal
         isOpen={isModalOpen}
         projectId={projectId}
-        milestones={milestones}
         projectMembers={membersQuery.data ?? []}
         onSubmit={handleSubmit}
         onCreateSubtasks={handleCreateSubtasks}

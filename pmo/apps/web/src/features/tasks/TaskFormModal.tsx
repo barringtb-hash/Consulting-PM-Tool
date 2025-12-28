@@ -26,13 +26,12 @@ export interface TaskFormValues {
   status: string;
   priority: string;
   dueDate: string;
-  milestoneId: string;
+  isMilestone: 'yes' | 'no';
 }
 
 interface TaskFormModalProps {
   isOpen: boolean;
   projectId: number;
-  milestones: Milestone[];
   projectMembers?: ProjectMember[];
   onSubmit: (values: TaskPayload) => Promise<{ id: number } | void>;
   onCreateSubtasks?: (
@@ -47,28 +46,13 @@ interface TaskFormModalProps {
   subtaskError?: string | null;
 }
 
-const MILESTONE_STATUSES: MilestoneStatus[] = [
-  'NOT_STARTED',
-  'IN_PROGRESS',
-  'DONE',
-];
-
-const formatMilestoneStatusLabel = (status: MilestoneStatus): string => {
-  const labels: Record<MilestoneStatus, string> = {
-    NOT_STARTED: 'Not Started',
-    IN_PROGRESS: 'In Progress',
-    DONE: 'Done',
-  };
-  return labels[status];
-};
-
 const initialFormValues: TaskFormValues = {
   title: '',
   description: '',
   status: 'NOT_STARTED',
   priority: 'P1',
   dueDate: '',
-  milestoneId: '',
+  isMilestone: 'no',
 };
 
 interface PendingSubtask {
@@ -80,7 +64,6 @@ interface PendingSubtask {
 export function TaskFormModal({
   isOpen,
   projectId,
-  milestones,
   projectMembers = [],
   onSubmit,
   onCreateSubtasks,
@@ -123,16 +106,8 @@ export function TaskFormModal({
     };
   }, [showAssigneeDropdown]);
 
-  // Inline milestone creation state
-  const [showCreateMilestone, setShowCreateMilestone] = useState(false);
-  const [newMilestone, setNewMilestone] = useState({
-    name: '',
-    description: '',
-    dueDate: '',
-    status: 'NOT_STARTED' as MilestoneStatus,
-  });
+  // State for milestone creation during submit
   const [isCreatingMilestone, setIsCreatingMilestone] = useState(false);
-  const [milestoneError, setMilestoneError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -143,48 +118,18 @@ export function TaskFormModal({
       setNewSubtaskStatus('NOT_STARTED');
       setSelectedAssignees([]);
       setShowAssigneeDropdown(false);
-      setShowCreateMilestone(false);
-      setNewMilestone({
-        name: '',
-        description: '',
-        dueDate: '',
-        status: 'NOT_STARTED',
-      });
-      setMilestoneError(null);
+      setIsCreatingMilestone(false);
     }
   }, [isOpen]);
 
-  const handleCreateMilestone = async (): Promise<void> => {
-    if (!onCreateMilestone || !newMilestone.name.trim()) return;
-
-    setIsCreatingMilestone(true);
-    setMilestoneError(null);
-
-    try {
-      const milestone = await onCreateMilestone({
-        projectId,
-        name: newMilestone.name.trim(),
-        description: newMilestone.description.trim() || undefined,
-        dueDate: newMilestone.dueDate || undefined,
-        status: newMilestone.status,
-      });
-
-      // Select the newly created milestone
-      setValues((prev) => ({ ...prev, milestoneId: String(milestone.id) }));
-      setShowCreateMilestone(false);
-      setNewMilestone({
-        name: '',
-        description: '',
-        dueDate: '',
-        status: 'NOT_STARTED',
-      });
-    } catch (err) {
-      setMilestoneError(
-        err instanceof Error ? err.message : 'Failed to create milestone',
-      );
-    } finally {
-      setIsCreatingMilestone(false);
-    }
+  // Map task status to milestone status
+  const mapTaskStatusToMilestoneStatus = (
+    taskStatus: string,
+  ): MilestoneStatus => {
+    if (taskStatus === 'DONE') return 'DONE';
+    if (taskStatus === 'IN_PROGRESS' || taskStatus === 'BLOCKED')
+      return 'IN_PROGRESS';
+    return 'NOT_STARTED';
   };
 
   const toggleAssignee = (userId: number): void => {
@@ -250,6 +195,28 @@ export function TaskFormModal({
       return;
     }
 
+    let milestoneId: number | undefined;
+
+    // If this task should be a milestone, create it first
+    if (values.isMilestone === 'yes' && onCreateMilestone) {
+      setIsCreatingMilestone(true);
+      try {
+        const milestone = await onCreateMilestone({
+          projectId,
+          name: values.title.trim(),
+          description: values.description.trim() || undefined,
+          dueDate: values.dueDate || undefined,
+          status: mapTaskStatusToMilestoneStatus(values.status),
+        });
+        milestoneId = milestone.id;
+      } catch {
+        // Milestone creation failed, don't proceed with task
+        setIsCreatingMilestone(false);
+        return;
+      }
+      setIsCreatingMilestone(false);
+    }
+
     const payload: TaskPayload = {
       projectId,
       title: values.title.trim(),
@@ -257,9 +224,7 @@ export function TaskFormModal({
       status: values.status as TaskPayload['status'],
       priority: values.priority as TaskPayload['priority'],
       dueDate: values.dueDate || undefined,
-      milestoneId: values.milestoneId
-        ? parseInt(values.milestoneId, 10)
-        : undefined,
+      milestoneId,
       assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
     };
 
@@ -382,148 +347,17 @@ export function TaskFormModal({
             disabled={isSubmitting}
           />
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Milestone
-            </label>
-            {!showCreateMilestone ? (
-              <div className="space-y-2">
-                <Select
-                  value={values.milestoneId}
-                  onChange={(e) => handleChange('milestoneId', e.target.value)}
-                  disabled={isSubmitting}
-                >
-                  <option value="">No milestone</option>
-                  {milestones.map((milestone) => (
-                    <option key={milestone.id} value={milestone.id}>
-                      {milestone.name}
-                    </option>
-                  ))}
-                </Select>
-                {onCreateMilestone && (
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateMilestone(true)}
-                    disabled={isSubmitting}
-                    className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                  >
-                    + Create new milestone
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    New Milestone
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateMilestone(false);
-                      setMilestoneError(null);
-                    }}
-                    className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {milestoneError && (
-                  <p className="text-sm text-danger-600 dark:text-danger-400">
-                    {milestoneError}
-                  </p>
-                )}
-
-                <Input
-                  placeholder="Milestone name *"
-                  value={newMilestone.name}
-                  onChange={(e) =>
-                    setNewMilestone((prev) => ({
-                      ...prev,
-                      name: e.target.value,
-                    }))
-                  }
-                  disabled={isCreatingMilestone}
-                />
-
-                <Textarea
-                  placeholder="Description (optional)"
-                  value={newMilestone.description}
-                  onChange={(e) =>
-                    setNewMilestone((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  disabled={isCreatingMilestone}
-                  rows={2}
-                />
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="date"
-                    placeholder="Due date"
-                    value={newMilestone.dueDate}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        dueDate: e.target.value,
-                      }))
-                    }
-                    disabled={isCreatingMilestone}
-                  />
-                  <Select
-                    value={newMilestone.status}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        status: e.target.value as MilestoneStatus,
-                      }))
-                    }
-                    disabled={isCreatingMilestone}
-                  >
-                    {MILESTONE_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {formatMilestoneStatusLabel(status)}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    onClick={handleCreateMilestone}
-                    disabled={!newMilestone.name.trim() || isCreatingMilestone}
-                    isLoading={isCreatingMilestone}
-                  >
-                    Create Milestone
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      setShowCreateMilestone(false);
-                      setNewMilestone({
-                        name: '',
-                        description: '',
-                        dueDate: '',
-                        status: 'NOT_STARTED',
-                      });
-                      setMilestoneError(null);
-                    }}
-                    disabled={isCreatingMilestone}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+          <Select
+            label="Milestone"
+            value={values.isMilestone}
+            onChange={(e) =>
+              handleChange('isMilestone', e.target.value as 'yes' | 'no')
+            }
+            disabled={isSubmitting || isCreatingMilestone}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </Select>
         </div>
 
         {/* Assignees Section */}
