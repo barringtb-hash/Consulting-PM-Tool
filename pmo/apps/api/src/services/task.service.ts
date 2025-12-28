@@ -825,10 +825,10 @@ export const listTasksForUser = async (userId: number) => {
     ).length;
     return {
       ...taskData,
-      projectId: project.id,
-      projectName: project.name,
-      parentTaskId: parentTask?.id ?? null,
-      parentTaskTitle: parentTask?.title ?? null,
+      project: { id: project.id, name: project.name },
+      parentTask: parentTask
+        ? { id: parentTask.id, title: parentTask.title }
+        : null,
       subTaskCount: _count.subTasks,
       subTaskCompletedCount: completedSubtasks,
     };

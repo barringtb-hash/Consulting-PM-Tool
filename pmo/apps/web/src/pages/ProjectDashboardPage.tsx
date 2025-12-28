@@ -175,14 +175,19 @@ function ProjectDashboardPage(): JSX.Element {
   }, [project, setSelectedProject]);
 
   const handleUpdateProjectName = async () => {
-    if (!project || !editedName.trim()) return;
-    if (editedName.trim() === project.name) {
+    if (!project) return;
+    const trimmedName = editedName.trim();
+    if (!trimmedName) {
+      showToast('Project name cannot be empty', 'error');
+      return;
+    }
+    if (trimmedName === project.name) {
       setIsEditingName(false);
       return;
     }
 
     try {
-      await updateProjectMutation.mutateAsync({ name: editedName.trim() });
+      await updateProjectMutation.mutateAsync({ name: trimmedName });
       setIsEditingName(false);
       showToast('Project name updated', 'success');
     } catch (err) {
@@ -393,12 +398,21 @@ function ProjectDashboardPage(): JSX.Element {
             </div>
           ) : (
             <span
-              className="group cursor-pointer flex items-center gap-2"
+              role="button"
+              tabIndex={0}
+              className="group cursor-pointer flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded"
               onClick={() => setIsEditingName(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsEditingName(true);
+                }
+              }}
               title="Click to edit project name"
+              aria-label={`Edit project name: ${project.name}`}
             >
               {project.name}
-              <Edit2 className="w-4 h-4 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Edit2 className="w-4 h-4 text-neutral-400 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity" />
             </span>
           )
         }
