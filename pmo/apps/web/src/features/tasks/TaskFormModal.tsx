@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, UserPlus, Check } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
@@ -13,7 +13,12 @@ import {
   type TaskPayload,
   type TaskStatus,
 } from '../../api/tasks';
-import type { Milestone } from '../../api/milestones';
+import type {
+  Milestone,
+  MilestonePayload,
+  MilestoneStatus,
+} from '../../api/milestones';
+import type { ProjectMember } from '../../api/projects';
 
 export interface TaskFormValues {
   title: string;
@@ -28,17 +33,34 @@ interface TaskFormModalProps {
   isOpen: boolean;
   projectId: number;
   milestones: Milestone[];
+  projectMembers?: ProjectMember[];
   onSubmit: (values: TaskPayload) => Promise<{ id: number } | void>;
   onCreateSubtasks?: (
     parentTaskId: number,
     subtasks: Array<{ title: string; status: TaskStatus }>,
   ) => Promise<{ failedCount: number }>;
+  onCreateMilestone?: (payload: MilestonePayload) => Promise<Milestone>;
   onCancel: () => void;
   onSuccess?: () => void;
   isSubmitting?: boolean;
   error?: string | null;
   subtaskError?: string | null;
 }
+
+const MILESTONE_STATUSES: MilestoneStatus[] = [
+  'NOT_STARTED',
+  'IN_PROGRESS',
+  'DONE',
+];
+
+const formatMilestoneStatusLabel = (status: MilestoneStatus): string => {
+  const labels: Record<MilestoneStatus, string> = {
+    NOT_STARTED: 'Not Started',
+    IN_PROGRESS: 'In Progress',
+    DONE: 'Done',
+  };
+  return labels[status];
+};
 
 const initialFormValues: TaskFormValues = {
   title: '',
@@ -59,8 +81,10 @@ export function TaskFormModal({
   isOpen,
   projectId,
   milestones,
+  projectMembers = [],
   onSubmit,
   onCreateSubtasks,
+  onCreateMilestone,
   onCancel,
   onSuccess,
   isSubmitting = false,
@@ -75,6 +99,19 @@ export function TaskFormModal({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskStatus, setNewSubtaskStatus] =
     useState<TaskStatus>('NOT_STARTED');
+  const [selectedAssignees, setSelectedAssignees] = useState<number[]>([]);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+
+  // Inline milestone creation state
+  const [showCreateMilestone, setShowCreateMilestone] = useState(false);
+  const [newMilestone, setNewMilestone] = useState({
+    name: '',
+    description: '',
+    dueDate: '',
+    status: 'NOT_STARTED' as MilestoneStatus,
+  });
+  const [isCreatingMilestone, setIsCreatingMilestone] = useState(false);
+  const [milestoneError, setMilestoneError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -83,8 +120,59 @@ export function TaskFormModal({
       setPendingSubtasks([]);
       setNewSubtaskTitle('');
       setNewSubtaskStatus('NOT_STARTED');
+      setSelectedAssignees([]);
+      setShowAssigneeDropdown(false);
+      setShowCreateMilestone(false);
+      setNewMilestone({
+        name: '',
+        description: '',
+        dueDate: '',
+        status: 'NOT_STARTED',
+      });
+      setMilestoneError(null);
     }
   }, [isOpen]);
+
+  const handleCreateMilestone = async (): Promise<void> => {
+    if (!onCreateMilestone || !newMilestone.name.trim()) return;
+
+    setIsCreatingMilestone(true);
+    setMilestoneError(null);
+
+    try {
+      const milestone = await onCreateMilestone({
+        projectId,
+        name: newMilestone.name.trim(),
+        description: newMilestone.description.trim() || undefined,
+        dueDate: newMilestone.dueDate || undefined,
+        status: newMilestone.status,
+      });
+
+      // Select the newly created milestone
+      setValues((prev) => ({ ...prev, milestoneId: String(milestone.id) }));
+      setShowCreateMilestone(false);
+      setNewMilestone({
+        name: '',
+        description: '',
+        dueDate: '',
+        status: 'NOT_STARTED',
+      });
+    } catch (err) {
+      setMilestoneError(
+        err instanceof Error ? err.message : 'Failed to create milestone',
+      );
+    } finally {
+      setIsCreatingMilestone(false);
+    }
+  };
+
+  const toggleAssignee = (userId: number): void => {
+    setSelectedAssignees((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
+    );
+  };
 
   const handleChange = (field: keyof TaskFormValues, value: string): void => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -151,6 +239,7 @@ export function TaskFormModal({
       milestoneId: values.milestoneId
         ? parseInt(values.milestoneId, 10)
         : undefined,
+      assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
     };
 
     // Create parent task
@@ -272,20 +361,231 @@ export function TaskFormModal({
             disabled={isSubmitting}
           />
 
-          <Select
-            label="Milestone"
-            value={values.milestoneId}
-            onChange={(e) => handleChange('milestoneId', e.target.value)}
-            disabled={isSubmitting}
-          >
-            <option value="">No milestone</option>
-            {milestones.map((milestone) => (
-              <option key={milestone.id} value={milestone.id}>
-                {milestone.name}
-              </option>
-            ))}
-          </Select>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              Milestone
+            </label>
+            {!showCreateMilestone ? (
+              <div className="space-y-2">
+                <Select
+                  value={values.milestoneId}
+                  onChange={(e) => handleChange('milestoneId', e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  <option value="">No milestone</option>
+                  {milestones.map((milestone) => (
+                    <option key={milestone.id} value={milestone.id}>
+                      {milestone.name}
+                    </option>
+                  ))}
+                </Select>
+                {onCreateMilestone && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateMilestone(true)}
+                    disabled={isSubmitting}
+                    className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                  >
+                    + Create new milestone
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    New Milestone
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateMilestone(false);
+                      setMilestoneError(null);
+                    }}
+                    className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {milestoneError && (
+                  <p className="text-sm text-danger-600 dark:text-danger-400">
+                    {milestoneError}
+                  </p>
+                )}
+
+                <Input
+                  placeholder="Milestone name *"
+                  value={newMilestone.name}
+                  onChange={(e) =>
+                    setNewMilestone((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  disabled={isCreatingMilestone}
+                />
+
+                <Textarea
+                  placeholder="Description (optional)"
+                  value={newMilestone.description}
+                  onChange={(e) =>
+                    setNewMilestone((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  disabled={isCreatingMilestone}
+                  rows={2}
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="date"
+                    placeholder="Due date"
+                    value={newMilestone.dueDate}
+                    onChange={(e) =>
+                      setNewMilestone((prev) => ({
+                        ...prev,
+                        dueDate: e.target.value,
+                      }))
+                    }
+                    disabled={isCreatingMilestone}
+                  />
+                  <Select
+                    value={newMilestone.status}
+                    onChange={(e) =>
+                      setNewMilestone((prev) => ({
+                        ...prev,
+                        status: e.target.value as MilestoneStatus,
+                      }))
+                    }
+                    disabled={isCreatingMilestone}
+                  >
+                    {MILESTONE_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {formatMilestoneStatusLabel(status)}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="primary"
+                    onClick={handleCreateMilestone}
+                    disabled={!newMilestone.name.trim() || isCreatingMilestone}
+                    isLoading={isCreatingMilestone}
+                  >
+                    Create Milestone
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowCreateMilestone(false);
+                      setNewMilestone({
+                        name: '',
+                        description: '',
+                        dueDate: '',
+                        status: 'NOT_STARTED',
+                      });
+                      setMilestoneError(null);
+                    }}
+                    disabled={isCreatingMilestone}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Assignees Section */}
+        {projectMembers.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Assignees
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <span className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-neutral-400" />
+                  {selectedAssignees.length === 0
+                    ? 'Select assignees...'
+                    : `${selectedAssignees.length} assignee${selectedAssignees.length > 1 ? 's' : ''} selected`}
+                </span>
+              </button>
+              {showAssigneeDropdown && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {projectMembers.map((member) => (
+                    <button
+                      key={member.userId}
+                      type="button"
+                      onClick={() => toggleAssignee(member.userId)}
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-left"
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          selectedAssignees.includes(member.userId)
+                            ? 'bg-primary-500 border-primary-500 text-white'
+                            : 'border-neutral-300 dark:border-neutral-600'
+                        }`}
+                      >
+                        {selectedAssignees.includes(member.userId) && (
+                          <Check className="h-3 w-3" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-sm text-neutral-900 dark:text-neutral-100">
+                          {member.user.name}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {member.user.email}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Selected assignees chips */}
+            {selectedAssignees.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedAssignees.map((userId) => {
+                  const member = projectMembers.find(
+                    (m) => m.userId === userId,
+                  );
+                  if (!member) return null;
+                  return (
+                    <span
+                      key={userId}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full"
+                    >
+                      {member.user.name}
+                      <button
+                        type="button"
+                        onClick={() => toggleAssignee(userId)}
+                        className="hover:text-primary-900 dark:hover:text-primary-100"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Subtasks Section */}
         <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">

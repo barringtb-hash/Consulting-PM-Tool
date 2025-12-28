@@ -13,6 +13,7 @@ const nullableDate = z.preprocess(
 const taskStatusEnum =
   TaskStatus ??
   ({
+    NOT_STARTED: 'NOT_STARTED',
     BACKLOG: 'BACKLOG',
     IN_PROGRESS: 'IN_PROGRESS',
     BLOCKED: 'BLOCKED',
@@ -36,6 +37,7 @@ export const taskCreateSchema = z.object({
   dueDate: z.coerce.date().optional(),
   milestoneId: z.number().int().positive().optional(),
   parentTaskId: z.number().int().positive().optional(),
+  assigneeIds: z.array(z.number().int().positive()).optional(),
 });
 
 // Schema for creating a subtask (inherits projectId from parent)
@@ -46,6 +48,7 @@ export const subtaskCreateSchema = z.object({
   status: z.nativeEnum(taskStatusEnum).optional(),
   dueDate: z.coerce.date().optional(),
   milestoneId: z.number().int().positive().optional(),
+  assigneeIds: z.array(z.number().int().positive()).optional(),
 });
 
 // Schema for updating a subtask's status

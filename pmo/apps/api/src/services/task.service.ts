@@ -40,6 +40,19 @@ type TaskWithoutProject = Omit<TaskWithOwner, 'project'>;
 /** Task creation data including optional meeting source */
 type TaskCreateData = TaskCreateInput & { sourceMeetingId?: number };
 
+/** Assignee data with user information */
+type _AssigneeWithUser = {
+  id: number;
+  userId: number;
+  assignedAt: Date;
+  assignedById: number | null;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+};
+
 /** Task with subtask counts for display */
 type _TaskWithSubtaskCounts = Prisma.TaskGetPayload<{
   include: { _count: { select: { subTasks: true } } };
@@ -128,12 +141,17 @@ export const listTasksForProject = async (
     return { error: projectAccess } as const;
   }
 
-  // Get parent tasks only (no subtasks) with subtask counts
+  // Get parent tasks only (no subtasks) with subtask counts and assignees
   const tasks = await prisma.task.findMany({
     where: { projectId, parentTaskId: null },
     include: {
       _count: { select: { subTasks: true } },
       subTasks: { select: { status: true } },
+      assignees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -192,6 +210,18 @@ export const getTaskWithSubtasks = async (id: number, userId: number) => {
       milestone: { select: { id: true, name: true } },
       subTasks: {
         orderBy: { createdAt: 'asc' },
+        include: {
+          assignees: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+        },
+      },
+      assignees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
       },
     },
   });
@@ -261,12 +291,33 @@ export const createTask = async (ownerId: number, data: TaskCreateData) => {
   // Get tenant context for multi-tenant isolation
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
+  // Extract assigneeIds from data before creating task
+  const { assigneeIds, ...taskData } = data;
+
   const task = await prisma.task.create({
     data: {
-      ...data,
+      ...taskData,
       ownerId,
       tenantId,
       sourceMeetingId: data.sourceMeetingId ?? undefined,
+      // Create assignee relationships if provided
+      ...(assigneeIds && assigneeIds.length > 0
+        ? {
+            assignees: {
+              create: assigneeIds.map((userId) => ({
+                userId,
+                assignedById: ownerId,
+              })),
+            },
+          }
+        : {}),
+    },
+    include: {
+      assignees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
     },
   });
 
@@ -318,13 +369,44 @@ export const updateTask = async (
     }
   }
 
+  // Extract assigneeIds from data before updating task
+  const { assigneeIds, ...updateData } = data;
+
+  // If assigneeIds provided, update assignees (replace all)
+  if (assigneeIds !== undefined) {
+    // Delete existing assignees and create new ones in a transaction
+    await prisma.$transaction([
+      prisma.taskAssignee.deleteMany({ where: { taskId: id } }),
+      ...(assigneeIds.length > 0
+        ? [
+            prisma.taskAssignee.createMany({
+              data: assigneeIds.map((userId) => ({
+                taskId: id,
+                userId,
+                assignedById: ownerId,
+              })),
+            }),
+          ]
+        : []),
+    ]);
+  }
+
   const updated = await prisma.task.update({
     where: { id },
     data: {
-      ...data,
-      projectId: data.projectId ?? undefined,
+      ...updateData,
+      projectId: updateData.projectId ?? undefined,
       milestoneId:
-        data.milestoneId === undefined ? undefined : data.milestoneId,
+        updateData.milestoneId === undefined
+          ? undefined
+          : updateData.milestoneId,
+    },
+    include: {
+      assignees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
     },
   });
 
@@ -453,13 +535,34 @@ export const createSubtask = async (
     }
   }
 
+  // Extract assigneeIds from data before creating subtask
+  const { assigneeIds, ...subtaskData } = data;
+
   const subtask = await prisma.task.create({
     data: {
-      ...data,
+      ...subtaskData,
       projectId: parentTask.projectId,
       ownerId,
       tenantId,
       parentTaskId,
+      // Create assignee relationships if provided
+      ...(assigneeIds && assigneeIds.length > 0
+        ? {
+            assignees: {
+              create: assigneeIds.map((userId) => ({
+                userId,
+                assignedById: ownerId,
+              })),
+            },
+          }
+        : {}),
+    },
+    include: {
+      assignees: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
     },
   });
 

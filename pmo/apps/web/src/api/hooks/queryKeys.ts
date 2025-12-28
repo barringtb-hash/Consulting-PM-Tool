@@ -59,6 +59,8 @@ export const queryKeys = {
     detail: (id: number) => [...queryKeys.projects.details(), id] as const,
     status: (id: number, rangeDays?: number) =>
       [...queryKeys.projects.detail(id), 'status', rangeDays] as const,
+    members: (id: number) =>
+      [...queryKeys.projects.detail(id), 'members'] as const,
   },
 
   // ---------------------------------------------------------------------------

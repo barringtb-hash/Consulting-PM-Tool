@@ -7,13 +7,18 @@ import {
   useMoveTask,
   useDeleteTask,
 } from '../../hooks/tasks';
-import { useProjectMilestones } from '../../hooks/milestones';
+import {
+  useProjectMilestones,
+  useCreateMilestone,
+} from '../../hooks/milestones';
+import { useProjectMembers } from '../../api/hooks/projects';
 import { TaskKanbanBoard } from '../../components/TaskKanbanBoard';
 import { TaskFormModal } from '../tasks/TaskFormModal';
 import { TaskDetailModal } from '../tasks/TaskDetailModal';
 import { Card, CardBody } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import type { TaskPayload, TaskStatus } from '../../api/tasks';
+import type { MilestonePayload } from '../../api/milestones';
 
 interface ProjectTasksTabProps {
   projectId: number;
@@ -27,14 +32,10 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 
   const tasksQuery = useProjectTasks(projectId);
   const milestonesQuery = useProjectMilestones(projectId);
+  const membersQuery = useProjectMembers(projectId);
   const createTaskMutation = useCreateTask();
-  const [creatingSubtasksForTaskId, setCreatingSubtasksForTaskId] = useState<
-    number | null
-  >(null);
-  const createSubtaskMutation = useCreateSubtask(
-    creatingSubtasksForTaskId ?? undefined,
-    projectId,
-  );
+  const createSubtaskMutation = useCreateSubtask(undefined, projectId);
+  const createMilestoneMutation = useCreateMilestone();
   const moveTaskMutation = useMoveTask(projectId);
   const deleteTaskMutation = useDeleteTask(projectId);
 
@@ -64,17 +65,23 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
     }
   };
 
+  const handleCreateMilestone = async (payload: MilestonePayload) => {
+    return await createMilestoneMutation.mutateAsync(payload);
+  };
+
   const handleCreateSubtasks = async (
     parentTaskId: number,
     subtasks: Array<{ title: string; status: TaskStatus }>,
   ): Promise<{ failedCount: number }> => {
-    setCreatingSubtasksForTaskId(parentTaskId);
     setSubtaskError(null);
 
     try {
       // Create subtasks in parallel and track which ones fail
+      // Pass parentTaskId in each payload so the mutation knows which task to attach to
       const results = await Promise.allSettled(
-        subtasks.map((subtask) => createSubtaskMutation.mutateAsync(subtask)),
+        subtasks.map((subtask) =>
+          createSubtaskMutation.mutateAsync({ ...subtask, parentTaskId }),
+        ),
       );
 
       const failed = results.filter((r) => r.status === 'rejected');
@@ -100,8 +107,6 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         err instanceof Error ? err.message : 'Failed to create subtasks';
       setSubtaskError(errorMsg);
       return { failedCount: subtasks.length };
-    } finally {
-      setCreatingSubtasksForTaskId(null);
     }
   };
 
@@ -172,8 +177,10 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         isOpen={isModalOpen}
         projectId={projectId}
         milestones={milestones}
+        projectMembers={membersQuery.data ?? []}
         onSubmit={handleSubmit}
         onCreateSubtasks={handleCreateSubtasks}
+        onCreateMilestone={handleCreateMilestone}
         onCancel={handleCloseModal}
         onSuccess={handleCloseModal}
         isSubmitting={createTaskMutation.isPending}
