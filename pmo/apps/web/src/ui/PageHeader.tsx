@@ -2,10 +2,10 @@ import React from 'react';
 import { cn } from './utils';
 
 export interface PageHeaderProps extends React.HTMLAttributes<HTMLElement> {
-  title: string;
-  description?: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
   /** Alias for description - used by infrastructure pages */
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   /** Optional icon component to display next to the title */
   icon?: React.ComponentType<{ className?: string }>;
   actions?: React.ReactNode;

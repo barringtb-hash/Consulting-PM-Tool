@@ -1,4 +1,3 @@
-import { fetchProjects, type Project } from './projects';
 import { buildApiUrl } from './config';
 import { buildOptions, handleResponse } from './http';
 
@@ -113,6 +112,10 @@ export interface Task {
 
 export interface TaskWithProject extends Task {
   projectName?: string;
+  parentTask?: {
+    id: number;
+    title: string;
+  } | null;
 }
 
 export interface TaskWithSubtasks extends Task {
@@ -227,50 +230,61 @@ export async function deleteTask(taskId: number): Promise<void> {
   );
 }
 
-export async function fetchMyTasks(
-  userId?: number,
-): Promise<TaskWithProject[]> {
-  if (!userId) {
-    return [];
-  }
-
-  const projects = await fetchProjects();
-  const projectLookup = new Map<number, Project>();
-  projects.forEach((project) => projectLookup.set(project.id, project));
-
-  // Use Promise.allSettled to handle individual project fetch failures gracefully
-  // This prevents one 403/404 from failing the entire request
-  const taskResults = await Promise.allSettled(
-    projects.map((project) => fetchProjectTasks(project.id)),
-  );
-
-  // Extract successful results, log failed fetches for debugging
-  const tasksByProject: Task[][] = [];
-  taskResults.forEach((result, index) => {
-    if (result.status === 'fulfilled') {
-      tasksByProject.push(result.value);
-    } else if (import.meta.env.DEV) {
-      // Log failures in development to help diagnose permission issues
-      const failedProject = projects[index];
-      console.warn(
-        `[fetchMyTasks] Failed to fetch tasks for project ${failedProject?.id}:`,
-        result.reason,
-      );
-    }
-  });
-
-  // Check if user is assigned to a task
-  const isAssignedTo = (task: Task, uid: number): boolean => {
-    return task.assignees?.some((assignee) => assignee.userId === uid) ?? false;
+interface MyTasksApiResponse {
+  id: number;
+  projectId: number;
+  ownerId: number;
+  parentTaskId?: number | null;
+  title: string;
+  description?: string | null;
+  status: TaskStatus;
+  priority?: TaskPriority | null;
+  dueDate?: string | null;
+  milestoneId?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  subTaskCount?: number;
+  subTaskCompletedCount?: number;
+  assignees?: TaskAssignee[];
+  project?: {
+    id: number;
+    name: string;
   };
+  parentTask?: {
+    id: number;
+    title: string;
+  } | null;
+}
 
-  return tasksByProject
-    .flat()
-    .filter((task) => task.ownerId === userId || isAssignedTo(task, userId))
-    .map((task) => ({
-      ...task,
-      projectName: projectLookup.get(task.projectId)?.name,
-    }));
+export async function fetchMyTasks(
+  _userId?: number,
+): Promise<TaskWithProject[]> {
+  // Use the dedicated endpoint that returns all tasks assigned to the user
+  const response = await fetch(
+    `${TASKS_BASE_PATH}/my`,
+    buildOptions({ method: 'GET' }),
+  );
+  const data = await handleResponse<{ tasks: MyTasksApiResponse[] }>(response);
+
+  return data.tasks.map((task) => ({
+    id: task.id,
+    projectId: task.projectId,
+    ownerId: task.ownerId,
+    parentTaskId: task.parentTaskId,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    priority: task.priority,
+    dueDate: task.dueDate,
+    milestoneId: task.milestoneId,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    subTaskCount: task.subTaskCount,
+    subTaskCompletedCount: task.subTaskCompletedCount,
+    assignees: task.assignees,
+    projectName: task.project?.name,
+    parentTask: task.parentTask,
+  }));
 }
 
 // ============================================================================

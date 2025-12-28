@@ -517,6 +517,14 @@ function MyTasksPage(): JSX.Element {
                         </td>
                         <td className="px-6 py-4">
                           <div className="max-w-md">
+                            {task.parentTask && (
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5 flex items-center gap-1">
+                                <span className="text-neutral-400 dark:text-neutral-500">
+                                  ↳
+                                </span>
+                                Subtask of: {task.parentTask.title}
+                              </p>
+                            )}
                             <p
                               className={`text-sm font-medium ${
                                 task.status === 'DONE'

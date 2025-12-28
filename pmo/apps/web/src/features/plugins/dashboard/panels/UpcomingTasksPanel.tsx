@@ -74,37 +74,54 @@ const priorityColors: Record<string, BadgeVariant> = {
   P2: 'neutral',
 };
 
+const priorityLabels: Record<string, string> = {
+  P0: 'High',
+  P1: 'Medium',
+  P2: 'Low',
+};
+
+function formatStatus(status: string): string {
+  return status
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
 function TaskRow({ task, onNavigate }: TaskRowProps): JSX.Element {
   const overdueFlag = isOverdue(task.dueDate);
 
   return (
     <button
       onClick={() => onNavigate(`/projects/${task.projectId}`)}
-      className="w-full text-left p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50/30 dark:hover:bg-primary-900/30 transition-all group"
+      className="w-full text-left p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-all group"
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-primary-700 dark:group-hover:text-primary-400">
-              {task.title}
-            </h4>
+          <h4 className="font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-primary-700 dark:group-hover:text-primary-400 mb-1">
+            {task.title}
+          </h4>
+          {task.projectName && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mb-2">
+              {task.projectName}
+            </p>
+          )}
+          <div className="flex items-center gap-2">
+            <Badge variant={statusColors[task.status] ?? 'neutral'} size="sm">
+              {formatStatus(task.status)}
+            </Badge>
             {task.priority && (
-              <Badge variant={priorityColors[task.priority] ?? 'neutral'}>
-                {task.priority}
+              <Badge
+                variant={priorityColors[task.priority] ?? 'neutral'}
+                size="sm"
+              >
+                {priorityLabels[task.priority] ?? task.priority}
               </Badge>
             )}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-            {task.projectName && <span>{task.projectName}</span>}
-            <span>•</span>
-            <Badge variant={statusColors[task.status] ?? 'neutral'}>
-              {task.status.replace('_', ' ')}
-            </Badge>
           </div>
         </div>
         <div className="flex-shrink-0 text-right">
           <div
-            className={`text-sm font-medium ${overdueFlag ? 'text-danger-600 dark:text-danger-400' : 'text-neutral-700 dark:text-neutral-300'}`}
+            className={`text-sm font-medium ${overdueFlag ? 'text-danger-600 dark:text-danger-400' : 'text-neutral-600 dark:text-neutral-300'}`}
           >
             {formatDate(task.dueDate)}
           </div>

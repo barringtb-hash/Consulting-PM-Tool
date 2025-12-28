@@ -188,8 +188,9 @@ export function TaskDetailModal({
   const handleAddSubtask = async (
     title: string,
     status: TaskStatus,
+    assigneeIds?: number[],
   ): Promise<void> => {
-    await createSubtask.mutateAsync({ title, status });
+    await createSubtask.mutateAsync({ title, status, assigneeIds });
   };
 
   const handleUpdateSubtaskStatus = async (
@@ -513,6 +514,7 @@ export function TaskDetailModal({
           <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
             <SubtaskList
               subtasks={task.subTasks ?? []}
+              projectMembers={projectMembers}
               onAddSubtask={handleAddSubtask}
               onUpdateSubtaskStatus={handleUpdateSubtaskStatus}
               isAddingSubtask={createSubtask.isPending}

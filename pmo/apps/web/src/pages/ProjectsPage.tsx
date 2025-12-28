@@ -183,7 +183,7 @@ function ProjectsPage(): JSX.Element {
             <Input
               label="Search"
               type="search"
-              placeholder="Search by name or client"
+              placeholder="Search by name or account"
               value={filters.search}
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, search: e.target.value }))
@@ -209,7 +209,7 @@ function ProjectsPage(): JSX.Element {
             </Select>
 
             <Select
-              label="Client"
+              label="Account"
               value={filters.clientId}
               onChange={(e) =>
                 setFilters((prev) => ({
@@ -218,7 +218,7 @@ function ProjectsPage(): JSX.Element {
                 }))
               }
             >
-              <option value="">All clients</option>
+              <option value="">All accounts</option>
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
                   {account.name}
@@ -245,7 +245,7 @@ function ProjectsPage(): JSX.Element {
               )}
               {filters.clientId && (
                 <Badge variant="primary">
-                  Client: {clientMap[filters.clientId]}
+                  Account: {clientMap[filters.clientId]}
                 </Badge>
               )}
             </div>
@@ -371,7 +371,7 @@ function ProjectsPage(): JSX.Element {
                         Name
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
-                        Client
+                        Account
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                         Status

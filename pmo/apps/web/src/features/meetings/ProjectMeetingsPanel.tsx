@@ -136,7 +136,7 @@ function ProjectMeetingsPanel({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Meetings</CardTitle>
-              <p className="text-sm text-neutral-600 mt-1">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                 Track meeting notes, decisions, and risks.
               </p>
             </div>
@@ -145,17 +145,21 @@ function ProjectMeetingsPanel({
         </CardHeader>
         <CardBody>
           {meetingsQuery.isLoading && (
-            <p className="text-neutral-600">Loading meetings...</p>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Loading meetings...
+            </p>
           )}
 
           {meetingsQuery.error && (
-            <p role="alert" className="text-danger-600">
+            <p role="alert" className="text-danger-600 dark:text-danger-400">
               Unable to load meetings: {meetingsQuery.error.message}
             </p>
           )}
 
           {!meetingsQuery.isLoading && meetings.length === 0 && (
-            <p className="text-neutral-600">{EMPTY_STATES.noMeetings}</p>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              {EMPTY_STATES.noMeetings}
+            </p>
           )}
 
           {meetings.length > 0 && (
@@ -163,19 +167,19 @@ function ProjectMeetingsPanel({
               {meetings.map((meeting) => (
                 <div
                   key={meeting.id}
-                  className="p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors"
+                  className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors"
                 >
                   <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-neutral-900">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
                           {meeting.title}
                         </h3>
-                        <p className="text-sm text-neutral-600 mt-1">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                           {meeting.date.toLocaleDateString()} at {meeting.time}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         <Link to={`/meetings/${meeting.id}`}>
                           <Button variant="secondary" size="sm">
                             View
@@ -200,28 +204,36 @@ function ProjectMeetingsPanel({
 
                     <div className="space-y-2 text-sm">
                       <p>
-                        <strong className="text-neutral-900">Attendees:</strong>{' '}
-                        <span className="text-neutral-700">
+                        <strong className="text-neutral-900 dark:text-neutral-100">
+                          Attendees:
+                        </strong>{' '}
+                        <span className="text-neutral-700 dark:text-neutral-300">
                           {meeting.attendees.length > 0
                             ? meeting.attendees.join(', ')
                             : EMPTY_STATES.notProvided}
                         </span>
                       </p>
                       <p>
-                        <strong className="text-neutral-900">Notes:</strong>{' '}
-                        <span className="text-neutral-700">
+                        <strong className="text-neutral-900 dark:text-neutral-100">
+                          Notes:
+                        </strong>{' '}
+                        <span className="text-neutral-700 dark:text-neutral-300">
                           {meeting.notes || EMPTY_STATES.noNotes}
                         </span>
                       </p>
                       <p>
-                        <strong className="text-neutral-900">Decisions:</strong>{' '}
-                        <span className="text-neutral-700">
+                        <strong className="text-neutral-900 dark:text-neutral-100">
+                          Decisions:
+                        </strong>{' '}
+                        <span className="text-neutral-700 dark:text-neutral-300">
                           {meeting.decisions || EMPTY_STATES.noDecisions}
                         </span>
                       </p>
                       <p>
-                        <strong className="text-neutral-900">Risks:</strong>{' '}
-                        <span className="text-neutral-700">
+                        <strong className="text-neutral-900 dark:text-neutral-100">
+                          Risks:
+                        </strong>{' '}
+                        <span className="text-neutral-700 dark:text-neutral-300">
                           {meeting.risks || EMPTY_STATES.noRisks}
                         </span>
                       </p>
