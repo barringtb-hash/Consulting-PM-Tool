@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   LayoutDashboard,
   CheckSquare,
-  Target,
   Users,
   FolderOpen,
   Settings,
@@ -41,14 +40,6 @@ import { Input } from '../ui/Input';
 import { useToast } from '../ui/Toast';
 import { EMPTY_STATES, formatStatus } from '../utils/typography';
 
-// Import milestone components
-import {
-  useProjectMilestones,
-  useCreateMilestone,
-  useUpdateMilestone,
-  useDeleteMilestone,
-  MILESTONE_STATUSES,
-} from '../hooks/milestones';
 import {
   useProjectAssets,
   useLinkAssetToProject,
@@ -56,7 +47,6 @@ import {
   useAssets,
   useCreateAsset,
 } from '../api/queries';
-import { type Milestone } from '../api/milestones';
 import AssetForm, {
   assetFormValuesToPayload,
   type AssetFormValues,
@@ -121,21 +111,6 @@ function ProjectDashboardPage(): JSX.Element {
   // Project name editing
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
-
-  // Milestones
-  const milestonesQuery = useProjectMilestones(projectId);
-  const createMilestoneMutation = useCreateMilestone();
-  const updateMilestoneMutation = useUpdateMilestone(projectId);
-  const deleteMilestoneMutation = useDeleteMilestone(projectId);
-  const [milestoneForm, setMilestoneForm] = useState({
-    name: '',
-    description: '',
-    status: 'NOT_STARTED' as Milestone['status'],
-    dueDate: '',
-  });
-  const [editingMilestoneId, setEditingMilestoneId] = useState<number | null>(
-    null,
-  );
 
   // Assets
   const projectAssetsQuery = useProjectAssets(projectId, false);
@@ -237,67 +212,6 @@ function ProjectDashboardPage(): JSX.Element {
     }
   };
 
-  const handleSaveMilestone = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!project) return;
-
-    const payload = {
-      projectId: project.id,
-      name: milestoneForm.name,
-      description: milestoneForm.description || undefined,
-      status: milestoneForm.status,
-      dueDate: milestoneForm.dueDate || undefined,
-    };
-
-    try {
-      if (editingMilestoneId) {
-        await updateMilestoneMutation.mutateAsync({
-          milestoneId: editingMilestoneId,
-          payload: { ...payload, dueDate: milestoneForm.dueDate || null },
-        });
-      } else {
-        await createMilestoneMutation.mutateAsync(payload);
-      }
-
-      setMilestoneForm({
-        name: '',
-        description: '',
-        status: 'NOT_STARTED',
-        dueDate: '',
-      });
-      setEditingMilestoneId(null);
-    } catch (err) {
-      console.error('Failed to save milestone:', err);
-    }
-  };
-
-  const handleEditMilestone = (milestone: Milestone) => {
-    setEditingMilestoneId(milestone.id);
-    setMilestoneForm({
-      name: milestone.name,
-      description: milestone.description ?? '',
-      status: milestone.status,
-      dueDate: milestone.dueDate?.slice(0, 10) ?? '',
-    });
-  };
-
-  const handleDeleteMilestone = async (milestoneId: number) => {
-    try {
-      await deleteMilestoneMutation.mutateAsync(milestoneId);
-      if (editingMilestoneId === milestoneId) {
-        setMilestoneForm({
-          name: '',
-          description: '',
-          status: 'NOT_STARTED',
-          dueDate: '',
-        });
-        setEditingMilestoneId(null);
-      }
-    } catch (err) {
-      console.error('Failed to delete milestone:', err);
-    }
-  };
-
   const handleLinkAsset = async () => {
     if (!selectedAssetId) {
       setAssetError('Please select an asset');
@@ -358,11 +272,6 @@ function ProjectDashboardPage(): JSX.Element {
     const list = availableAssetsQuery.data ?? [];
     return list.filter((asset) => !linkedIds.has(asset.id));
   }, [availableAssetsQuery.data, projectAssets]);
-
-  const milestones = useMemo(
-    () => milestonesQuery.data ?? [],
-    [milestonesQuery.data],
-  );
 
   const marketingContents = useMemo(
     () => projectMarketingContentsQuery.data ?? [],
@@ -682,10 +591,6 @@ function ProjectDashboardPage(): JSX.Element {
               <CheckSquare className="w-4 h-4" />
               Tasks
             </TabsTrigger>
-            <TabsTrigger value="milestones">
-              <Target className="w-4 h-4" />
-              Milestones
-            </TabsTrigger>
             <TabsTrigger value="meetings">
               <Users className="w-4 h-4" />
               Meetings
@@ -714,216 +619,6 @@ function ProjectDashboardPage(): JSX.Element {
 
           <TabsContent value="tasks">
             <ProjectTasksTab projectId={project.id} />
-          </TabsContent>
-
-          <TabsContent value="milestones">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {editingMilestoneId ? 'Edit Milestone' : 'Add Milestone'}
-                  </CardTitle>
-                </CardHeader>
-                <CardBody>
-                  <form onSubmit={handleSaveMilestone} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label
-                          htmlFor="milestone-name"
-                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
-                        >
-                          Name
-                        </label>
-                        <Input
-                          id="milestone-name"
-                          value={milestoneForm.name}
-                          onChange={(e) =>
-                            setMilestoneForm((prev) => ({
-                              ...prev,
-                              name: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="milestone-status"
-                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
-                        >
-                          Status
-                        </label>
-                        <Select
-                          id="milestone-status"
-                          value={milestoneForm.status}
-                          onChange={(e) =>
-                            setMilestoneForm((prev) => ({
-                              ...prev,
-                              status: e.target.value as Milestone['status'],
-                            }))
-                          }
-                        >
-                          {MILESTONE_STATUSES.map((status) => (
-                            <option key={status} value={status}>
-                              {formatStatus(status)}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="milestone-due-date"
-                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
-                        >
-                          Due Date
-                        </label>
-                        <Input
-                          id="milestone-due-date"
-                          type="date"
-                          value={milestoneForm.dueDate}
-                          onChange={(e) =>
-                            setMilestoneForm((prev) => ({
-                              ...prev,
-                              dueDate: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <label
-                          htmlFor="milestone-description"
-                          className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1"
-                        >
-                          Description
-                        </label>
-                        <Input
-                          id="milestone-description"
-                          value={milestoneForm.description}
-                          onChange={(e) =>
-                            setMilestoneForm((prev) => ({
-                              ...prev,
-                              description: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        type="submit"
-                        isLoading={
-                          createMilestoneMutation.isPending ||
-                          updateMilestoneMutation.isPending
-                        }
-                      >
-                        {editingMilestoneId ? 'Update' : 'Add'} Milestone
-                      </Button>
-                      {editingMilestoneId && (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => {
-                            setMilestoneForm({
-                              name: '',
-                              description: '',
-                              status: 'NOT_STARTED',
-                              dueDate: '',
-                            });
-                            setEditingMilestoneId(null);
-                          }}
-                        >
-                          Cancel Edit
-                        </Button>
-                      )}
-                    </div>
-                  </form>
-                </CardBody>
-              </Card>
-
-              {milestonesQuery.isLoading && (
-                <Card>
-                  <CardBody>
-                    <p className="text-neutral-600 dark:text-neutral-400">
-                      Loading milestones...
-                    </p>
-                  </CardBody>
-                </Card>
-              )}
-
-              {milestones.length === 0 && !milestonesQuery.isLoading && (
-                <Card>
-                  <CardBody>
-                    <p className="text-neutral-600 dark:text-neutral-400">
-                      {EMPTY_STATES.noMilestones}
-                    </p>
-                  </CardBody>
-                </Card>
-              )}
-
-              {milestones.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {milestones.map((milestone) => (
-                    <Card key={milestone.id}>
-                      <CardBody>
-                        <div className="space-y-3">
-                          <div>
-                            <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                              {milestone.name}
-                            </h4>
-                            {milestone.description && (
-                              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                                {milestone.description}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={
-                                milestone.status === 'IN_PROGRESS'
-                                  ? 'default'
-                                  : milestone.status === 'DONE'
-                                    ? 'success'
-                                    : 'secondary'
-                              }
-                            >
-                              {formatStatus(milestone.status)}
-                            </Badge>
-                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                              Due: {formatDate(milestone.dueDate)}
-                            </span>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleEditMilestone(milestone)}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteMilestone(milestone.id)
-                              }
-                              isLoading={deleteMilestoneMutation.isPending}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
           </TabsContent>
 
           <TabsContent value="meetings">
