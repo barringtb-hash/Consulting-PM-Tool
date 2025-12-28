@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { Modal } from '../../ui/Modal';
+import { Input } from '../../ui/Input';
+import { Textarea } from '../../ui/Textarea';
+import { Button } from '../../ui/Button';
 
 export interface MeetingFormValues {
   title: string;
@@ -37,33 +41,28 @@ function MeetingFormModal({
     }
   }, [initialValues, isOpen]);
 
-  if (!isOpen) {
-    return null;
-  }
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     await onSubmit(values);
   };
 
   return (
-    <section aria-label="meeting-modal" className="task-modal">
-      <h3>{heading}</h3>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="meeting-title">Title</label>
-          <input
-            id="meeting-title"
-            value={values.title}
-            onChange={(event) =>
-              setValues((prev) => ({ ...prev, title: event.target.value }))
-            }
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="meeting-date">Date</label>
-          <input
+    <Modal isOpen={isOpen} onClose={onCancel} title={heading} size="lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Title"
+          id="meeting-title"
+          value={values.title}
+          onChange={(event) =>
+            setValues((prev) => ({ ...prev, title: event.target.value }))
+          }
+          required
+          placeholder="Enter meeting title"
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Date"
             id="meeting-date"
             type="date"
             value={values.date}
@@ -72,10 +71,9 @@ function MeetingFormModal({
             }
             required
           />
-        </div>
-        <div>
-          <label htmlFor="meeting-time">Time</label>
-          <input
+
+          <Input
+            label="Time"
             id="meeting-time"
             type="time"
             value={values.time}
@@ -85,58 +83,74 @@ function MeetingFormModal({
             required
           />
         </div>
-        <div>
-          <label htmlFor="meeting-attendees">Attendees</label>
-          <input
-            id="meeting-attendees"
-            placeholder="Comma-separated"
-            value={values.attendees}
-            onChange={(event) =>
-              setValues((prev) => ({ ...prev, attendees: event.target.value }))
-            }
-          />
-        </div>
-        <div>
-          <label htmlFor="meeting-notes">Notes</label>
-          <textarea
-            id="meeting-notes"
-            value={values.notes}
-            onChange={(event) =>
-              setValues((prev) => ({ ...prev, notes: event.target.value }))
-            }
-          />
-        </div>
-        <div>
-          <label htmlFor="meeting-decisions">Decisions</label>
-          <textarea
-            id="meeting-decisions"
-            value={values.decisions}
-            onChange={(event) =>
-              setValues((prev) => ({ ...prev, decisions: event.target.value }))
-            }
-          />
-        </div>
-        <div>
-          <label htmlFor="meeting-risks">Risks</label>
-          <textarea
-            id="meeting-risks"
-            value={values.risks}
-            onChange={(event) =>
-              setValues((prev) => ({ ...prev, risks: event.target.value }))
-            }
-          />
-        </div>
-        {error && <p role="alert">{error}</p>}
-        <div>
-          <button type="submit" disabled={isSubmitting}>
-            Save
-          </button>
-          <button type="button" onClick={onCancel} disabled={isSubmitting}>
+
+        <Input
+          label="Attendees"
+          id="meeting-attendees"
+          placeholder="Enter names separated by commas"
+          value={values.attendees}
+          onChange={(event) =>
+            setValues((prev) => ({ ...prev, attendees: event.target.value }))
+          }
+        />
+
+        <Textarea
+          label="Notes"
+          id="meeting-notes"
+          value={values.notes}
+          onChange={(event) =>
+            setValues((prev) => ({ ...prev, notes: event.target.value }))
+          }
+          rows={3}
+          placeholder="Meeting notes and discussion points..."
+        />
+
+        <Textarea
+          label="Decisions"
+          id="meeting-decisions"
+          value={values.decisions}
+          onChange={(event) =>
+            setValues((prev) => ({ ...prev, decisions: event.target.value }))
+          }
+          rows={3}
+          placeholder="Key decisions made during the meeting..."
+        />
+
+        <Textarea
+          label="Risks"
+          id="meeting-risks"
+          value={values.risks}
+          onChange={(event) =>
+            setValues((prev) => ({ ...prev, risks: event.target.value }))
+          }
+          rows={3}
+          placeholder="Identified risks or concerns..."
+        />
+
+        {error && (
+          <p
+            role="alert"
+            className="text-sm text-danger-600 dark:text-danger-400"
+          >
+            {error}
+          </p>
+        )}
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
             Cancel
-          </button>
+          </Button>
+          <Button type="submit" isLoading={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Meeting'}
+          </Button>
         </div>
       </form>
-    </section>
+    </Modal>
   );
 }
 
