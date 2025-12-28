@@ -4,6 +4,17 @@ import { z } from 'zod';
 // Input length limits for security (prevents resource exhaustion)
 const MAX_TITLE_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 5000;
+const MAX_ASSIGNEES = 50;
+
+// Assignee IDs schema with uniqueness validation
+const assigneeIdsSchema = z
+  .array(z.number().int().positive())
+  .max(MAX_ASSIGNEES, `Cannot assign more than ${MAX_ASSIGNEES} users`)
+  .refine(
+    (ids) => new Set(ids).size === ids.length,
+    'Duplicate assignee IDs are not allowed',
+  )
+  .optional();
 
 const nullableDate = z.preprocess(
   (value) => (value === null ? null : value),
@@ -37,7 +48,7 @@ export const taskCreateSchema = z.object({
   dueDate: z.coerce.date().optional(),
   milestoneId: z.number().int().positive().optional(),
   parentTaskId: z.number().int().positive().optional(),
-  assigneeIds: z.array(z.number().int().positive()).optional(),
+  assigneeIds: assigneeIdsSchema,
 });
 
 // Schema for creating a subtask (inherits projectId from parent)
@@ -48,7 +59,7 @@ export const subtaskCreateSchema = z.object({
   status: z.nativeEnum(taskStatusEnum).optional(),
   dueDate: z.coerce.date().optional(),
   milestoneId: z.number().int().positive().optional(),
-  assigneeIds: z.array(z.number().int().positive()).optional(),
+  assigneeIds: assigneeIdsSchema,
 });
 
 // Schema for updating a subtask's status

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, UserPlus, Check } from 'lucide-react';
 import { Modal } from '../../ui/Modal';
 import { Input } from '../../ui/Input';
@@ -101,6 +101,27 @@ export function TaskFormModal({
     useState<TaskStatus>('NOT_STARTED');
   const [selectedAssignees, setSelectedAssignees] = useState<number[]>([]);
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Click outside handler for assignee dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        assigneeDropdownRef.current &&
+        !assigneeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowAssigneeDropdown(false);
+      }
+    };
+
+    if (showAssigneeDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAssigneeDropdown]);
 
   // Inline milestone creation state
   const [showCreateMilestone, setShowCreateMilestone] = useState(false);
@@ -507,7 +528,7 @@ export function TaskFormModal({
 
         {/* Assignees Section */}
         {projectMembers.length > 0 && (
-          <div>
+          <div ref={assigneeDropdownRef}>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
               Assignees
             </label>
