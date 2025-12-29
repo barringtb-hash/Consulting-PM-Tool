@@ -247,6 +247,29 @@ Consulting-PM-Tool/
    }
    ```
 
+6. **Infrastructure Components**:
+   - `cache/redis.client.ts`: Redis caching for sessions and data
+   - `queue/queue.config.ts`: BullMQ job queue configuration
+   - `websocket/websocket.server.ts`: Real-time WebSocket server
+   - `notifications/`: Email and in-app notification service
+   - `integrations/`: OAuth providers and data sync
+
+7. **Core Services** (`apps/api/src/services/`):
+   - `project.service.ts`: Project CRUD and templates
+   - `task.service.ts`: Task management and Kanban
+   - `milestone.service.ts`: Milestone tracking
+   - `lead.service.ts`: Lead management and conversion
+   - `client.service.ts`: Legacy client operations (use Account instead)
+   - `user.service.ts`: User management
+   - `document.service.ts`: Document handling
+   - `asset.service.ts`: AI asset management
+   - `audit.service.ts`: Audit logging
+   - `llm.service.ts`: OpenAI LLM integration
+   - `projectMember.service.ts`: Project member management
+   - `projectStatus.service.ts`: Project status updates
+   - `content-lint.service.ts`: Content validation
+   - `tenant-health.service.ts`: Tenant health monitoring
+
 ### Database Models (Prisma)
 
 Key models in `pmo/prisma/schema.prisma`:
