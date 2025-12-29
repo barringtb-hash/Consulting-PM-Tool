@@ -160,7 +160,9 @@ function StatCard({
           )}
         </div>
       </div>
-      <div className={`rounded-xl p-2 sm:p-3 shrink-0 ${iconColorClasses[iconColor]}`}>
+      <div
+        className={`rounded-xl p-2 sm:p-3 shrink-0 ${iconColorClasses[iconColor]}`}
+      >
         <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
       </div>
     </div>

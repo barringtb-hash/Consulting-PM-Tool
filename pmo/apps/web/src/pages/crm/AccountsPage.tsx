@@ -156,23 +156,33 @@ function AccountsPage(): JSX.Element {
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">Total Accounts</div>
-            <div className="text-xl sm:text-2xl font-semibold">{stats.total}</div>
+            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              Total Accounts
+            </div>
+            <div className="text-xl sm:text-2xl font-semibold">
+              {stats.total}
+            </div>
           </Card>
           <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">Customers</div>
+            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              Customers
+            </div>
             <div className="text-xl sm:text-2xl font-semibold text-green-600">
               {stats.byType?.CUSTOMER ?? 0}
             </div>
           </Card>
           <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">Prospects</div>
+            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              Prospects
+            </div>
             <div className="text-xl sm:text-2xl font-semibold text-blue-600">
               {stats.byType?.PROSPECT ?? 0}
             </div>
           </Card>
           <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">At Risk</div>
+            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              At Risk
+            </div>
             <div className="text-xl sm:text-2xl font-semibold text-red-600">
               {stats.healthDistribution?.critical ?? 0}
             </div>

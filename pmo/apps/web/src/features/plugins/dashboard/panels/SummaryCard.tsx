@@ -70,7 +70,9 @@ export function SummaryCard({
           {isLoading ? (
             <div className="h-8 sm:h-10 w-16 sm:w-20 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
           ) : (
-            <div className={`text-2xl sm:text-3xl font-bold ${valueColors[variant]}`}>
+            <div
+              className={`text-2xl sm:text-3xl font-bold ${valueColors[variant]}`}
+            >
               {value}
             </div>
           )}
