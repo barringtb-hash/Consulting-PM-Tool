@@ -7,11 +7,8 @@ import {
   Trash2,
   MessageSquare,
   Clock,
-  User,
-  Tag,
   AlertCircle,
   CheckCircle2,
-  Copy,
   Sparkles,
   ChevronDown,
   ExternalLink,
@@ -25,10 +22,20 @@ import {
   useAddComment,
   useGenerateAIPrompt,
 } from '../../api/hooks/useBugTracking';
-import type { IssueStatus, IssuePriority, IssueType } from '../../api/bug-tracking';
+import type {
+  IssueStatus,
+  IssuePriority,
+  IssueType,
+} from '../../api/bug-tracking';
 
 // Status badge colors
-const STATUS_CONFIG: Record<IssueStatus, { label: string; variant: 'default' | 'secondary' | 'success' | 'destructive' | 'warning' }> = {
+const STATUS_CONFIG: Record<
+  IssueStatus,
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'success' | 'destructive' | 'warning';
+  }
+> = {
   OPEN: { label: 'Open', variant: 'destructive' },
   TRIAGING: { label: 'Triaging', variant: 'warning' },
   IN_PROGRESS: { label: 'In Progress', variant: 'default' },
@@ -39,21 +46,32 @@ const STATUS_CONFIG: Record<IssueStatus, { label: string; variant: 'default' | '
 };
 
 // Priority badge colors
-const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> = {
-  LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
-  MEDIUM: { label: 'Medium', color: 'bg-blue-100 text-blue-700' },
-  HIGH: { label: 'High', color: 'bg-orange-100 text-orange-700' },
-  CRITICAL: { label: 'Critical', color: 'bg-red-100 text-red-700' },
-};
+const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> =
+  {
+    LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
+    MEDIUM: { label: 'Medium', color: 'bg-blue-100 text-blue-700' },
+    HIGH: { label: 'High', color: 'bg-orange-100 text-orange-700' },
+    CRITICAL: { label: 'Critical', color: 'bg-red-100 text-red-700' },
+  };
 
 // Type icons
-const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> = {
-  BUG: { label: 'Bug', icon: <Bug className="h-5 w-5 text-red-500" /> },
-  ISSUE: { label: 'Issue', icon: <AlertCircle className="h-5 w-5 text-yellow-500" /> },
-  FEATURE_REQUEST: { label: 'Feature Request', icon: <Sparkles className="h-5 w-5 text-green-500" /> },
-  IMPROVEMENT: { label: 'Improvement', icon: <CheckCircle2 className="h-5 w-5 text-blue-500" /> },
-  TASK: { label: 'Task', icon: <Clock className="h-5 w-5 text-gray-500" /> },
-};
+const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
+  {
+    BUG: { label: 'Bug', icon: <Bug className="h-5 w-5 text-red-500" /> },
+    ISSUE: {
+      label: 'Issue',
+      icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
+    },
+    FEATURE_REQUEST: {
+      label: 'Feature Request',
+      icon: <Sparkles className="h-5 w-5 text-green-500" />,
+    },
+    IMPROVEMENT: {
+      label: 'Improvement',
+      icon: <CheckCircle2 className="h-5 w-5 text-blue-500" />,
+    },
+    TASK: { label: 'Task', icon: <Clock className="h-5 w-5 text-gray-500" /> },
+  };
 
 export default function IssueDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,7 +86,6 @@ export default function IssueDetailPage() {
   const generateAIPrompt = useGenerateAIPrompt();
 
   const [newComment, setNewComment] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
   const [showAIPromptOptions, setShowAIPromptOptions] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
 
@@ -153,7 +170,11 @@ export default function IssueDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/bug-tracking')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/bug-tracking')}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -164,17 +185,24 @@ export default function IssueDetailPage() {
               </h1>
             </div>
             <div className="flex items-center gap-3 mt-2">
-              <Badge variant={STATUS_CONFIG[issue.status]?.variant || 'default'}>
+              <Badge
+                variant={STATUS_CONFIG[issue.status]?.variant || 'default'}
+              >
                 {STATUS_CONFIG[issue.status]?.label || issue.status}
               </Badge>
-              <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}>
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
+              >
                 {PRIORITY_CONFIG[issue.priority]?.label || issue.priority}
               </span>
               {issue.labels.map((label) => (
                 <span
                   key={label.id}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                  style={{ backgroundColor: label.color + '20', color: label.color }}
+                  style={{
+                    backgroundColor: label.color + '20',
+                    color: label.color,
+                  }}
                 >
                   {label.name}
                 </span>
@@ -213,25 +241,33 @@ export default function IssueDetailPage() {
                     onClick={() => handleCopyAIPrompt(false)}
                   >
                     <div className="font-medium">Basic Prompt</div>
-                    <div className="text-gray-500 text-xs">Issue details + stack trace</div>
+                    <div className="text-gray-500 text-xs">
+                      Issue details + stack trace
+                    </div>
                   </button>
                   <button
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded"
                     onClick={() => handleCopyAIPrompt(true)}
                   >
                     <div className="font-medium">Full Context</div>
-                    <div className="text-gray-500 text-xs">Include comments + error logs</div>
+                    <div className="text-gray-500 text-xs">
+                      Include comments + error logs
+                    </div>
                   </button>
                   <div className="border-t my-1" />
                   <div className="px-3 py-2 text-xs text-gray-500">
-                    Tip: Use <code className="bg-gray-100 px-1 rounded">/implement-issue {issue.id}</code> in Claude Code
+                    Tip:{' '}
+                    <code className="bg-gray-100 px-1 rounded">
+                      /implement-issue {issue.id}
+                    </code>{' '}
+                    in Claude Code
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          <Button variant="outline" onClick={() => setIsEditing(true)}>
+          <Button variant="outline" onClick={() => navigate(`/bug-tracking/${issue.id}/edit`)}>
             <Edit2 className="h-4 w-4 mr-2" />
             Edit
           </Button>
@@ -282,21 +318,29 @@ export default function IssueDetailPage() {
                       {comment.user?.name?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div>
-                      <span className="font-medium">{comment.user?.name || 'System'}</span>
+                      <span className="font-medium">
+                        {comment.user?.name || 'System'}
+                      </span>
                       {comment.isSystem && (
-                        <Badge variant="secondary" className="ml-2 text-xs">System</Badge>
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          System
+                        </Badge>
                       )}
                     </div>
                     <span className="text-sm text-gray-500">
                       {new Date(comment.createdAt).toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-gray-700 whitespace-pre-wrap pl-10">{comment.content}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap pl-10">
+                    {comment.content}
+                  </p>
                 </div>
               ))}
 
               {(!comments || comments.length === 0) && (
-                <p className="text-gray-400 text-center py-4">No comments yet</p>
+                <p className="text-gray-400 text-center py-4">
+                  No comments yet
+                </p>
               )}
 
               {/* Add Comment */}
@@ -305,10 +349,15 @@ export default function IssueDetailPage() {
                   placeholder="Add a comment..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' && !e.shiftKey && handleAddComment()
+                  }
                   className="flex-1"
                 />
-                <Button onClick={handleAddComment} disabled={!newComment.trim() || addComment.isPending}>
+                <Button
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim() || addComment.isPending}
+                >
                   {addComment.isPending ? 'Adding...' : 'Comment'}
                 </Button>
               </div>
@@ -326,11 +375,15 @@ export default function IssueDetailPage() {
                 <span className="text-gray-500">Status</span>
                 <select
                   value={issue.status}
-                  onChange={(e) => handleStatusChange(e.target.value as IssueStatus)}
+                  onChange={(e) =>
+                    handleStatusChange(e.target.value as IssueStatus)
+                  }
                   className="border rounded px-2 py-1 text-sm"
                 >
                   {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                    <option key={key} value={key}>{config.label}</option>
+                    <option key={key} value={key}>
+                      {config.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -345,14 +398,18 @@ export default function IssueDetailPage() {
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Priority</span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}>
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
+                >
                   {PRIORITY_CONFIG[issue.priority]?.label}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Source</span>
-                <span className="text-gray-700">{issue.source.replace('_', ' ')}</span>
+                <span className="text-gray-700">
+                  {issue.source.replace('_', ' ')}
+                </span>
               </div>
 
               {issue.errorCount > 1 && (
@@ -413,7 +470,9 @@ export default function IssueDetailPage() {
               {issue.resolvedAt && (
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500">Resolved</span>
-                  <span>{new Date(issue.resolvedAt).toLocaleDateString()}</span>
+                  <span>
+                    {new Date(issue.resolvedAt).toLocaleDateString()}
+                  </span>
                 </div>
               )}
             </div>
@@ -427,7 +486,10 @@ export default function IssueDetailPage() {
                 {issue.project && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Project</span>
-                    <Link to={`/projects/${issue.project.id}`} className="text-blue-600 hover:underline flex items-center gap-1">
+                    <Link
+                      to={`/projects/${issue.project.id}`}
+                      className="text-blue-600 hover:underline flex items-center gap-1"
+                    >
                       {issue.project.name}
                       <ExternalLink className="h-3 w-3" />
                     </Link>
@@ -436,7 +498,10 @@ export default function IssueDetailPage() {
                 {issue.account && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Account</span>
-                    <Link to={`/crm/accounts/${issue.account.id}`} className="text-blue-600 hover:underline flex items-center gap-1">
+                    <Link
+                      to={`/crm/accounts/${issue.account.id}`}
+                      className="text-blue-600 hover:underline flex items-center gap-1"
+                    >
                       {issue.account.name}
                       <ExternalLink className="h-3 w-3" />
                     </Link>
@@ -445,7 +510,12 @@ export default function IssueDetailPage() {
                 {issue.url && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">URL</span>
-                    <a href={issue.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 truncate max-w-[150px]">
+                    <a
+                      href={issue.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline flex items-center gap-1 truncate max-w-[150px]"
+                    >
                       {new URL(issue.url).pathname}
                       <ExternalLink className="h-3 w-3" />
                     </a>
@@ -476,7 +546,12 @@ export default function IssueDetailPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Browser</span>
                     <span className="truncate max-w-[150px]">
-                      {(issue.browserInfo as { browser?: string; version?: string })?.browser || 'Unknown'}
+                      {(
+                        issue.browserInfo as {
+                          browser?: string;
+                          version?: string;
+                        }
+                      )?.browser || 'Unknown'}
                     </span>
                   </div>
                 )}

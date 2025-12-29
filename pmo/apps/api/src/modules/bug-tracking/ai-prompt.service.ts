@@ -7,7 +7,67 @@
 
 import { prisma } from '../../prisma/client';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
-import { IssueType, IssuePriority, IssueStatus, IssueSource } from '@prisma/client';
+import {
+  IssueType,
+  IssuePriority,
+  IssueStatus,
+  IssueSource,
+} from '@prisma/client';
+
+// Type for issue with all included relations
+interface IssueWithRelations {
+  id: number;
+  tenantId: string | null;
+  title: string;
+  description: string | null;
+  type: IssueType;
+  status: IssueStatus;
+  priority: IssuePriority;
+  source: IssueSource;
+  stackTrace: string | null;
+  browserInfo: Record<string, unknown> | null;
+  requestInfo: Record<string, unknown> | null;
+  environment: string | null;
+  appVersion: string | null;
+  url: string | null;
+  errorCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  reportedBy: { id: number; name: string; email: string } | null;
+  assignedTo: { id: number; name: string; email: string } | null;
+  labels: Array<{ id: number; name: string; color: string; description: string | null }>;
+  project: { id: number; name: string } | null;
+  account: { id: number; name: string } | null;
+  comments?: Array<{
+    id: number;
+    content: string;
+    createdAt: Date;
+    user: { id: number; name: string } | null;
+  }>;
+  errorLogs?: Array<{
+    id: number;
+    message: string;
+    stackTrace: string | null;
+    source: IssueSource;
+    level: string;
+    url: string | null;
+    createdAt: Date;
+  }>;
+}
+
+interface IssueLabel {
+  id: number;
+  name: string;
+  color: string;
+  description: string | null;
+}
+
+interface IssueComment {
+  id: number;
+  content: string;
+  createdAt: Date;
+  user: { id: number; name: string } | null;
+}
 
 // ============================================================================
 // TYPES
@@ -141,7 +201,10 @@ export async function generateAIPrompt(
 // PROMPT GENERATORS
 // ============================================================================
 
-function generateMarkdownPrompt(issue: any, opts: AIPromptOptions): string {
+function generateMarkdownPrompt(
+  issue: IssueWithRelations,
+  opts: AIPromptOptions,
+): string {
   const sections: string[] = [];
 
   // Header
@@ -156,7 +219,9 @@ function generateMarkdownPrompt(issue: any, opts: AIPromptOptions): string {
   sections.push(`**Status:** ${formatEnum(issue.status)}`);
 
   if (issue.labels.length > 0) {
-    sections.push(`**Labels:** ${issue.labels.map((l: any) => l.name).join(', ')}`);
+    sections.push(
+      `**Labels:** ${issue.labels.map((l: IssueLabel) => l.name).join(', ')}`,
+    );
   }
 
   if (issue.project) {
@@ -307,7 +372,10 @@ function generateMarkdownPrompt(issue: any, opts: AIPromptOptions): string {
   return sections.join('\n');
 }
 
-function generatePlainPrompt(issue: any, opts: AIPromptOptions): string {
+function generatePlainPrompt(
+  issue: IssueWithRelations,
+  opts: AIPromptOptions,
+): string {
   const lines: string[] = [];
 
   const taskType = getTaskTypeLabel(issue.type);
@@ -327,7 +395,9 @@ function generatePlainPrompt(issue: any, opts: AIPromptOptions): string {
   }
 
   if (issue.labels.length > 0) {
-    lines.push(`Labels: ${issue.labels.map((l: any) => l.name).join(', ')}`);
+    lines.push(
+      `Labels: ${issue.labels.map((l: IssueLabel) => l.name).join(', ')}`,
+    );
   }
 
   if (issue.errorCount > 1) {
@@ -341,7 +411,10 @@ function generatePlainPrompt(issue: any, opts: AIPromptOptions): string {
   return lines.join('\n');
 }
 
-function generateJsonPrompt(issue: any, opts: AIPromptOptions): string {
+function generateJsonPrompt(
+  issue: IssueWithRelations,
+  opts: AIPromptOptions,
+): string {
   const prompt = {
     task: {
       id: issue.id,
@@ -352,7 +425,7 @@ function generateJsonPrompt(issue: any, opts: AIPromptOptions): string {
       source: issue.source,
     },
     description: issue.description,
-    labels: issue.labels.map((l: any) => l.name),
+    labels: issue.labels.map((l: IssueLabel) => l.name),
     project: issue.project?.name || null,
     environment: {
       env: issue.environment,
@@ -366,7 +439,7 @@ function generateJsonPrompt(issue: any, opts: AIPromptOptions): string {
     suggestedFiles: opts.includeSuggestedFiles ? extractSuggestedFiles(issue) : [],
     acceptanceCriteria: generateAcceptanceCriteria(issue).split('\n'),
     comments: opts.includeComments
-      ? issue.comments?.map((c: any) => ({
+      ? issue.comments?.map((c: IssueComment) => ({
           author: c.user?.name || 'Unknown',
           content: c.content,
           date: c.createdAt,
@@ -405,7 +478,7 @@ function formatEnum(value: string): string {
     .join(' ');
 }
 
-function extractSuggestedFiles(issue: any): string[] {
+function extractSuggestedFiles(issue: IssueWithRelations): string[] {
   const files: Set<string> = new Set();
 
   // Extract files from stack trace
@@ -452,7 +525,7 @@ function extractSuggestedFiles(issue: any): string[] {
   return Array.from(files).slice(0, 10);
 }
 
-function generateAcceptanceCriteria(issue: any): string {
+function generateAcceptanceCriteria(issue: IssueWithRelations): string {
   const criteria: string[] = [];
 
   switch (issue.type) {
@@ -493,7 +566,7 @@ function generateAcceptanceCriteria(issue: any): string {
   }
 
   // Add label-specific criteria
-  const labelNames = issue.labels.map((l: any) => l.name.toLowerCase());
+  const labelNames = issue.labels.map((l: IssueLabel) => l.name.toLowerCase());
 
   if (labelNames.includes('security')) {
     criteria.push('- [ ] Security implications reviewed');

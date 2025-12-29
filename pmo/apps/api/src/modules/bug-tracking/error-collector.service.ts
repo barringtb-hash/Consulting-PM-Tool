@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { prisma } from '../../prisma/client';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
-import { IssueSource, IssueStatus, IssuePriority } from '@prisma/client';
+import { IssueSource, IssuePriority } from '@prisma/client';
 import { createIssue } from './bug-tracking.service';
 import {
   ClientErrorInput,

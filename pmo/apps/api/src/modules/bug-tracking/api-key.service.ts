@@ -187,7 +187,7 @@ export function hasPermission(
   }
 
   // Check for wildcard permissions (e.g., 'issues:*' matches 'issues:read')
-  const [resource, action] = required.split(':');
+  const [resource, _action] = required.split(':');
   if (permissions.includes(`${resource}:*`)) {
     return true;
   }

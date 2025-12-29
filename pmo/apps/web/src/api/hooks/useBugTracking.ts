@@ -225,10 +225,12 @@ export function useDeleteComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ commentId, issueId }: { commentId: number; issueId: number }) =>
+    mutationFn: ({ commentId }: { commentId: number; issueId: number }) =>
       api.deleteComment(commentId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: bugTrackingKeys.comments(variables.issueId) });
+      queryClient.invalidateQueries({
+        queryKey: bugTrackingKeys.comments(variables.issueId),
+      });
     },
   });
 }

@@ -8,14 +8,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  XCircle,
-  ChevronDown,
-  MoreHorizontal,
-  User,
-  Tag,
 } from 'lucide-react';
 import { Button, Input, Badge, Card } from '../../ui';
-import { useIssues, useIssueStats, useLabels } from '../../api/hooks/useBugTracking';
+import { useIssues, useIssueStats } from '../../api/hooks/useBugTracking';
 import type { IssueStatus, IssuePriority, IssueType, Issue } from '../../api/bug-tracking';
 
 // Status badge colors
@@ -139,7 +134,6 @@ export default function IssuesPage() {
   });
 
   const { data: stats } = useIssueStats();
-  const { data: labels } = useLabels();
 
   const issues = issuesData?.data || [];
   const pagination = issuesData?.pagination;

@@ -196,7 +196,7 @@ export async function listIssues(
 export async function updateIssue(
   id: number,
   input: UpdateIssueInput,
-  updatedById?: number
+  _updatedById?: number,
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
   const { labelIds, ...updateData } = input;
@@ -463,7 +463,7 @@ export async function getIssueStats(): Promise<IssueStats> {
     bySource,
     resolvedToday,
     createdToday,
-    avgResolutionTime,
+    _avgResolutionTime,
   ] = await Promise.all([
     prisma.issue.count({ where }),
     prisma.issue.groupBy({
