@@ -270,7 +270,10 @@ export async function bulkAssign(
   issueIds: number[],
   assignedToId: number | null,
 ): Promise<{ updated: number }> {
-  return http.post('/bug-tracking/issues/bulk/assign', { issueIds, assignedToId });
+  return http.post('/bug-tracking/issues/bulk/assign', {
+    issueIds,
+    assignedToId,
+  });
 }
 
 export async function bulkAddLabels(
