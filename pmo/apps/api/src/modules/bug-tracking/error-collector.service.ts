@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { prisma } from '../../prisma/client';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
-import { IssueSource, IssuePriority } from '@prisma/client';
+import { IssueSource, IssuePriority, Prisma } from '@prisma/client';
 import { createIssue } from './bug-tracking.service';
 import {
   ClientErrorInput,
@@ -397,16 +397,21 @@ export async function getErrorStats(since?: Date) {
       _count: true,
     }),
     // Get hourly counts for last 24 hours
-    prisma.$queryRaw`
-      SELECT
-        DATE_TRUNC('hour', "createdAt") as hour,
-        COUNT(*) as count
-      FROM "ErrorLog"
-      WHERE "createdAt" >= NOW() - INTERVAL '24 hours'
-      ${tenantId ? prisma.$queryRaw`AND "tenantId" = ${tenantId}` : prisma.$queryRaw``}
-      GROUP BY DATE_TRUNC('hour', "createdAt")
-      ORDER BY hour DESC
-    `.catch(() => []), // Fallback if raw query fails
+    (async () => {
+      const tenantFilter = tenantId
+        ? Prisma.sql`AND "tenantId" = ${tenantId}`
+        : Prisma.empty;
+      return prisma.$queryRaw`
+        SELECT
+          DATE_TRUNC('hour', "createdAt") as hour,
+          COUNT(*) as count
+        FROM "ErrorLog"
+        WHERE "createdAt" >= NOW() - INTERVAL '24 hours'
+        ${tenantFilter}
+        GROUP BY DATE_TRUNC('hour', "createdAt")
+        ORDER BY hour DESC
+      `;
+    })().catch(() => []), // Fallback if raw query fails
   ]);
 
   return {

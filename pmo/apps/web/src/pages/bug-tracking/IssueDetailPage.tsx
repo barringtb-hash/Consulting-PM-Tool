@@ -517,7 +517,13 @@ export default function IssueDetailPage() {
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline flex items-center gap-1 truncate max-w-[150px]"
                     >
-                      {new URL(issue.url).pathname}
+                      {(() => {
+                        try {
+                          return new URL(issue.url).pathname;
+                        } catch {
+                          return issue.url;
+                        }
+                      })()}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>

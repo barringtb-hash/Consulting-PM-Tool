@@ -53,7 +53,7 @@ interface ErrorTrackerConfig {
 }
 
 const DEFAULT_CONFIG: ErrorTrackerConfig = {
-  apiEndpoint: '/api/bug-tracking/errors/client',
+  apiEndpoint: `${import.meta.env.VITE_API_BASE_URL || '/api'}/bug-tracking/errors/client`,
   flushIntervalMs: 5000,
   maxQueueSize: 50,
   enabled: true,
@@ -372,7 +372,6 @@ class ErrorTracker {
 
 // Create singleton instance
 export const errorTracker = new ErrorTracker({
-  apiEndpoint: `${import.meta.env.VITE_API_BASE_URL || ''}/bug-tracking/errors/client`,
   environment: import.meta.env.MODE,
   appVersion: import.meta.env.VITE_APP_VERSION,
 });

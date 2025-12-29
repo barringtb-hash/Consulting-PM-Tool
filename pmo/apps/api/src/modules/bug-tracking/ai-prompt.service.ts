@@ -520,16 +520,20 @@ function extractSuggestedFiles(issue: IssueWithRelations): string[] {
 
   // Add URL-based suggestions
   if (issue.url) {
-    const urlPath = new URL(issue.url, 'http://localhost').pathname;
-    if (urlPath.startsWith('/api/')) {
-      // Suggest route files
-      const routePart = urlPath.replace('/api/', '').split('/')[0];
-      files.add(`pmo/apps/api/src/routes/${routePart}.routes.ts`);
-      files.add(`pmo/apps/api/src/services/${routePart}.service.ts`);
-    } else if (urlPath !== '/') {
-      // Suggest page files
-      const pagePart = urlPath.replace(/^\//, '').split('/')[0];
-      files.add(`pmo/apps/web/src/pages/${pagePart}/*.tsx`);
+    try {
+      const urlPath = new URL(issue.url, 'http://localhost').pathname;
+      if (urlPath.startsWith('/api/')) {
+        // Suggest route files
+        const routePart = urlPath.replace('/api/', '').split('/')[0];
+        files.add(`pmo/apps/api/src/routes/${routePart}.routes.ts`);
+        files.add(`pmo/apps/api/src/services/${routePart}.service.ts`);
+      } else if (urlPath !== '/') {
+        // Suggest page files
+        const pagePart = urlPath.replace(/^\//, '').split('/')[0];
+        files.add(`pmo/apps/web/src/pages/${pagePart}/*.tsx`);
+      }
+    } catch {
+      // Ignore invalid URLs
     }
   }
 

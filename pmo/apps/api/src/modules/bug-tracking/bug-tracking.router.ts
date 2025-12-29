@@ -219,7 +219,12 @@ function verifyWebhookSecret(secretEnvVar: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const secret = process.env[secretEnvVar];
     if (!secret) {
-      // If no secret configured, allow (for development)
+      // In production, fail closed if no secret is configured
+      if (process.env.NODE_ENV === 'production') {
+        console.error(`Error: ${secretEnvVar} not configured in production`);
+        return res.status(500).json({ error: 'Webhook secret not configured' });
+      }
+      // In development, allow without secret but warn
       console.warn(`Warning: ${secretEnvVar} not configured`);
       return next();
     }
