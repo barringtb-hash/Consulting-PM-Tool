@@ -467,25 +467,25 @@ function MyTasksPage(): JSX.Element {
                 <table className="w-full">
                   <thead className="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider w-8">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider w-12">
                         Done
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider min-w-[200px]">
                         Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider min-w-[120px]">
                         Project
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider min-w-[140px]">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider w-24">
                         Priority
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider w-28">
                         Due Date
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 dark:text-neutral-300 uppercase tracking-wider w-24">
                         Actions
                       </th>
                     </tr>
@@ -506,7 +506,7 @@ function MyTasksPage(): JSX.Element {
                         }}
                       >
                         <td
-                          className="px-6 py-4"
+                          className="px-4 py-4"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Checkbox
@@ -515,8 +515,8 @@ function MyTasksPage(): JSX.Element {
                             aria-label={`Mark task "${task.title}" as ${task.status === 'DONE' ? 'not done' : 'done'}`}
                           />
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="max-w-md">
+                        <td className="px-4 py-4">
+                          <div className="min-w-[200px]">
                             {task.parentTask && (
                               <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5 flex items-center gap-1">
                                 <span className="text-neutral-400 dark:text-neutral-500">
@@ -546,7 +546,7 @@ function MyTasksPage(): JSX.Element {
                           </div>
                         </td>
                         <td
-                          className="px-6 py-4 whitespace-nowrap"
+                          className="px-4 py-4"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {task.projectName && (
@@ -559,10 +559,10 @@ function MyTasksPage(): JSX.Element {
                           )}
                         </td>
                         <td
-                          className="px-6 py-4 whitespace-nowrap"
+                          className="px-4 py-4"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant={STATUS_BADGE_VARIANTS[task.status]}>
                               {formatStatusLabel(task.status)}
                             </Badge>
@@ -585,7 +585,7 @@ function MyTasksPage(): JSX.Element {
                             </select>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <Badge
                             variant={
                               task.priority
@@ -596,11 +596,11 @@ function MyTasksPage(): JSX.Element {
                             {formatPriorityLabel(task.priority)}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
                           {formatDate(task.dueDate)}
                         </td>
                         <td
-                          className="px-6 py-4 whitespace-nowrap text-right text-sm"
+                          className="px-4 py-4 whitespace-nowrap text-right text-sm"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Link

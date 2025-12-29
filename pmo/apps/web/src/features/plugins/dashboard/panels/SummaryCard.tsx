@@ -59,22 +59,24 @@ export function SummaryCard({
 
   return (
     <Card {...wrapperProps}>
-      <CardBody>
-        <div className="flex flex-col gap-2">
+      <CardBody className="p-3 sm:p-4">
+        <div className="flex flex-col gap-1 sm:gap-2">
           <CardTitle
             as="h2"
-            className="text-sm font-medium text-neutral-600 dark:text-neutral-300"
+            className="text-xs sm:text-sm font-medium text-neutral-600 dark:text-neutral-300 leading-tight"
           >
             {title}
           </CardTitle>
           {isLoading ? (
-            <div className="h-10 w-20 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
+            <div className="h-8 sm:h-10 w-16 sm:w-20 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
           ) : (
-            <div className={`text-3xl font-bold ${valueColors[variant]}`}>
+            <div
+              className={`text-2xl sm:text-3xl font-bold ${valueColors[variant]}`}
+            >
               {value}
             </div>
           )}
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
             {description}
           </p>
         </div>

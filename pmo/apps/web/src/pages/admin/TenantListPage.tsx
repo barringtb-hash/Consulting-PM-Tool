@@ -99,18 +99,18 @@ export function TenantListPage(): JSX.Element {
         <Container>
           {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <Card>
-                <CardBody className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                      <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg shrink-0">
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                         {stats.total}
                       </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
                         Total Tenants
                       </p>
                     </div>
@@ -118,16 +118,16 @@ export function TenantListPage(): JSX.Element {
                 </CardBody>
               </Card>
               <Card>
-                <CardBody className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                      <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg shrink-0">
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                         {stats.byStatus?.ACTIVE || 0}
                       </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
                         Active
                       </p>
                     </div>
@@ -135,16 +135,16 @@ export function TenantListPage(): JSX.Element {
                 </CardBody>
               </Card>
               <Card>
-                <CardBody className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                      <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg shrink-0">
+                      <Target className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                         {stats.byPlan?.TRIAL || 0}
                       </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
                         On Trial
                       </p>
                     </div>
@@ -152,16 +152,16 @@ export function TenantListPage(): JSX.Element {
                 </CardBody>
               </Card>
               <Card>
-                <CardBody className="py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                      <Building2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg shrink-0">
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                         {stats.byPlan?.ENTERPRISE || 0}
                       </p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
                         Enterprise
                       </p>
                     </div>

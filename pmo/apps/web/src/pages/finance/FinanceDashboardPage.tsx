@@ -124,21 +124,21 @@ function StatCard({
   };
 
   const cardContent = (
-    <div className="flex items-start justify-between h-full">
+    <div className="flex items-start justify-between gap-2 h-full">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-500 dark:text-neutral-400 truncate">
+        <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-neutral-400 leading-tight">
           {title}
         </p>
-        <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-neutral-100">
+        <p className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-neutral-100">
           {value}
         </p>
         {subtitle && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400 truncate">
+          <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
             {subtitle}
           </p>
         )}
         {/* Always render trend row to maintain consistent height */}
-        <div className="mt-2 flex items-center gap-1.5 min-h-[20px]">
+        <div className="mt-2 flex items-center gap-1.5 min-h-[20px] flex-wrap">
           {trend !== undefined && (
             <>
               {trend >= 0 ? (
@@ -147,12 +147,12 @@ function StatCard({
                 <TrendingDown className="h-4 w-4 text-green-500" />
               )}
               <span
-                className={`text-sm font-medium ${trend >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}
+                className={`text-xs sm:text-sm font-medium ${trend >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}
               >
                 {Math.abs(trend)}%
               </span>
               {trendLabel && (
-                <span className="text-sm text-gray-400 dark:text-neutral-500">
+                <span className="text-xs sm:text-sm text-gray-400 dark:text-neutral-500">
                   {trendLabel}
                 </span>
               )}
@@ -160,8 +160,10 @@ function StatCard({
           )}
         </div>
       </div>
-      <div className={`rounded-xl p-3 shrink-0 ${iconColorClasses[iconColor]}`}>
-        <Icon className="h-6 w-6" />
+      <div
+        className={`rounded-xl p-2 sm:p-3 shrink-0 ${iconColorClasses[iconColor]}`}
+      >
+        <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
       </div>
     </div>
   );
@@ -172,14 +174,14 @@ function StatCard({
         to={href}
         className="block rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-900 h-full"
       >
-        <Card className="p-6 h-full hover:shadow-md transition-shadow duration-200">
+        <Card className="p-4 sm:p-6 h-full hover:shadow-md transition-shadow duration-200">
           {cardContent}
         </Card>
       </Link>
     );
   }
 
-  return <Card className="p-6 h-full">{cardContent}</Card>;
+  return <Card className="p-4 sm:p-6 h-full">{cardContent}</Card>;
 }
 
 function CategoryBreakdown({
@@ -290,9 +292,9 @@ export default function FinanceDashboardPage() {
 
       {/* Key Metrics */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="p-6 animate-pulse">
+            <Card key={i} className="p-4 sm:p-6 animate-pulse">
               <div className="h-4 bg-gray-200 dark:bg-neutral-700 rounded w-1/2 mb-4" />
               <div className="h-8 bg-gray-200 dark:bg-neutral-700 rounded w-2/3 mb-2" />
               <div className="h-4 bg-gray-200 dark:bg-neutral-700 rounded w-1/3" />
@@ -300,7 +302,7 @@ export default function FinanceDashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Expenses (MTD)"
             value={formatCurrency(overview?.totalExpenseAmount || 0)}
@@ -675,46 +677,46 @@ export default function FinanceDashboardPage() {
 
       {/* Quick Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-5 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/20 p-3 shrink-0">
-              <PieChart className="h-6 w-6 text-green-600 dark:text-green-400" />
+        <Card className="p-4 sm:p-5 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/20 p-2 sm:p-3 shrink-0">
+              <PieChart className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-500 dark:text-neutral-400 truncate">
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-neutral-400 leading-tight">
                 Annual Recurring Cost
               </p>
-              <p className="text-xl font-bold text-gray-900 dark:text-neutral-100">
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-neutral-100">
                 {formatCurrency(recurringStats?.annualTotal || 0)}
               </p>
             </div>
           </div>
         </Card>
-        <Card className="p-5 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/20 p-3 shrink-0">
-              <Wallet className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+        <Card className="p-4 sm:p-5 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="rounded-xl bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/20 p-2 sm:p-3 shrink-0">
+              <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-500 dark:text-neutral-400 truncate">
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-neutral-400 leading-tight">
                 Total Budgeted
               </p>
-              <p className="text-xl font-bold text-gray-900 dark:text-neutral-100">
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-neutral-100">
                 {formatCurrency(budgetStats?.totalBudgeted || 0)}
               </p>
             </div>
           </div>
         </Card>
-        <Card className="p-5 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/20 p-3 shrink-0">
-              <DollarSign className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+        <Card className="p-4 sm:p-5 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/20 p-2 sm:p-3 shrink-0">
+              <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-500 dark:text-neutral-400 truncate">
+              <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-neutral-400 leading-tight">
                 Budget Spent
               </p>
-              <p className="text-xl font-bold text-gray-900 dark:text-neutral-100">
+              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-neutral-100">
                 {formatCurrency(budgetStats?.totalSpent || 0)}
               </p>
             </div>
