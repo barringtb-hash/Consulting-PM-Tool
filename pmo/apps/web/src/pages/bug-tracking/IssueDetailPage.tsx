@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import {
   Bug,
@@ -12,6 +12,11 @@ import {
   Sparkles,
   ChevronDown,
   ExternalLink,
+  Paperclip,
+  Upload,
+  Image,
+  FileText,
+  X,
 } from 'lucide-react';
 import { Button, Badge, Card, Input } from '../../ui';
 import {
@@ -21,6 +26,9 @@ import {
   useComments,
   useAddComment,
   useGenerateAIPrompt,
+  useAttachments,
+  useUploadAttachments,
+  useDeleteAttachment,
 } from '../../api/hooks/useBugTracking';
 import type {
   IssueStatus,
@@ -80,14 +88,19 @@ export default function IssueDetailPage() {
 
   const { data: issue, isLoading } = useIssue(issueId);
   const { data: comments } = useComments(issueId);
+  const { data: attachments } = useAttachments(issueId);
   const updateIssue = useUpdateIssue();
   const deleteIssue = useDeleteIssue();
   const addComment = useAddComment();
   const generateAIPrompt = useGenerateAIPrompt();
+  const uploadAttachments = useUploadAttachments();
+  const deleteAttachment = useDeleteAttachment();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newComment, setNewComment] = useState('');
   const [showAIPromptOptions, setShowAIPromptOptions] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleCopyAIPrompt = async (includeComments = false) => {
     try {
@@ -143,6 +156,59 @@ export default function IssueDetailPage() {
     } catch (error) {
       console.error('Failed to update status:', error);
     }
+  };
+
+  const handleFileUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+
+    try {
+      await uploadAttachments.mutateAsync({
+        issueId,
+        files: fileArray,
+      });
+    } catch (error) {
+      console.error('Failed to upload files:', error);
+      alert(error instanceof Error ? error.message : 'Failed to upload files');
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: number) => {
+    if (!window.confirm('Are you sure you want to delete this attachment?'))
+      return;
+
+    try {
+      await deleteAttachment.mutateAsync({
+        attachmentId,
+        issueId,
+      });
+    } catch (error) {
+      console.error('Failed to delete attachment:', error);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   if (isLoading) {
@@ -305,6 +371,122 @@ export default function IssueDetailPage() {
               </pre>
             </Card>
           )}
+
+          {/* Attachments */}
+          <Card className="p-6">
+            <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+              <Paperclip className="h-5 w-5" />
+              Attachments ({attachments?.length || 0})
+            </h2>
+
+            {/* Upload Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 mb-4 text-center transition-colors ${
+                isDragging
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.txt,.csv,.json"
+                className="hidden"
+                onChange={(e) =>
+                  e.target.files && handleFileUpload(e.target.files)
+                }
+              />
+              <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+              <p className="text-sm text-gray-600 mb-2">
+                Drag & drop screenshots or files here, or{' '}
+                <button
+                  type="button"
+                  className="text-blue-600 hover:underline font-medium"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  browse
+                </button>
+              </p>
+              <p className="text-xs text-gray-400">
+                Supported: Images, PDF, TXT, CSV, JSON (max 5MB each)
+              </p>
+              {uploadAttachments.isPending && (
+                <p className="text-sm text-blue-600 mt-2">Uploading...</p>
+              )}
+            </div>
+
+            {/* Attachment List */}
+            {attachments && attachments.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {attachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="border rounded-lg p-3 flex items-start gap-3 group hover:bg-gray-50"
+                  >
+                    {attachment.mimeType.startsWith('image/') ? (
+                      <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                        <img
+                          src={attachment.url}
+                          alt={attachment.filename}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 flex-shrink-0 rounded bg-gray-100 flex items-center justify-center">
+                        {attachment.mimeType.includes('pdf') ? (
+                          <FileText className="h-8 w-8 text-red-500" />
+                        ) : (
+                          <FileText className="h-8 w-8 text-gray-400" />
+                        )}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-sm font-medium text-gray-900 truncate"
+                        title={attachment.filename}
+                      >
+                        {attachment.filename}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatFileSize(attachment.size)} •{' '}
+                        {new Date(attachment.createdAt).toLocaleDateString()}
+                      </p>
+                      <div className="flex gap-2 mt-1">
+                        {attachment.mimeType.startsWith('image/') && (
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <Image className="h-3 w-3" />
+                            View
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          className="text-xs text-red-600 hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400 text-center py-2">
+                No attachments yet. Upload screenshots to provide visual context
+                for AI prompts.
+              </p>
+            )}
+          </Card>
 
           {/* Comments */}
           <Card className="p-6">

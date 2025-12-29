@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import multer from 'multer';
 import { requireAuth, AuthenticatedRequest } from '../../auth/auth.middleware';
 import {
   tenantMiddleware,
@@ -10,7 +11,35 @@ import * as bugService from './bug-tracking.service';
 import * as errorService from './error-collector.service';
 import * as apiKeyService from './api-key.service';
 import * as aiPromptService from './ai-prompt.service';
+import * as attachmentService from './attachment.service';
 import { IssueType, IssuePriority, IssueStatus, IssueSource } from './types';
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 5, // Max 5 files per upload
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      'application/pdf',
+      'text/plain',
+      'text/csv',
+      'application/json',
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid file type: ${file.mimetype}`));
+    }
+  },
+});
 
 const router = Router();
 
@@ -601,6 +630,145 @@ router.delete(
       }
       console.error('Error deleting comment:', error);
       res.status(500).json({ error: 'Failed to delete comment' });
+    }
+  },
+);
+
+// ============================================================================
+// ATTACHMENT ROUTES
+// ============================================================================
+
+// GET /bug-tracking/issues/:id/attachments - List attachments for an issue
+router.get(
+  '/bug-tracking/issues/:id/attachments',
+  requireAuth,
+  tenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+      const attachments = await attachmentService.getAttachments(issueId);
+      res.json(attachments);
+    } catch (error) {
+      if ((error as Error).message === 'Issue not found') {
+        return res.status(404).json({ error: 'Issue not found' });
+      }
+      console.error('Error listing attachments:', error);
+      res.status(500).json({ error: 'Failed to list attachments' });
+    }
+  },
+);
+
+// POST /bug-tracking/issues/:id/attachments - Upload attachment(s)
+router.post(
+  '/bug-tracking/issues/:id/attachments',
+  requireAuth,
+  tenantMiddleware,
+  upload.array('files', 5),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+      const files = req.files as Express.Multer.File[];
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded' });
+      }
+
+      const attachments = await Promise.all(
+        files.map((file) =>
+          attachmentService.createAttachment({
+            issueId,
+            filename: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            data: file.buffer,
+          }),
+        ),
+      );
+
+      res.status(201).json(attachments);
+    } catch (error) {
+      const message = (error as Error).message;
+      if (message === 'Issue not found') {
+        return res.status(404).json({ error: message });
+      }
+      if (
+        message.includes('Invalid file type') ||
+        message.includes('File too large')
+      ) {
+        return res.status(400).json({ error: message });
+      }
+      console.error('Error uploading attachments:', error);
+      res.status(500).json({ error: 'Failed to upload attachments' });
+    }
+  },
+);
+
+// GET /bug-tracking/attachments/:id - Get a single attachment
+router.get(
+  '/bug-tracking/attachments/:id',
+  requireAuth,
+  tenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const attachment = await attachmentService.getAttachment(id);
+      res.json(attachment);
+    } catch (error) {
+      if ((error as Error).message === 'Attachment not found') {
+        return res.status(404).json({ error: 'Attachment not found' });
+      }
+      console.error('Error getting attachment:', error);
+      res.status(500).json({ error: 'Failed to get attachment' });
+    }
+  },
+);
+
+// DELETE /bug-tracking/attachments/:id - Delete an attachment
+router.delete(
+  '/bug-tracking/attachments/:id',
+  requireAuth,
+  tenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      await attachmentService.deleteAttachment(id);
+      res.status(204).send();
+    } catch (error) {
+      if ((error as Error).message === 'Attachment not found') {
+        return res.status(404).json({ error: 'Attachment not found' });
+      }
+      console.error('Error deleting attachment:', error);
+      res.status(500).json({ error: 'Failed to delete attachment' });
+    }
+  },
+);
+
+// GET /bug-tracking/issues/:id/attachments/ai - Get attachment info for AI prompts
+router.get(
+  '/bug-tracking/issues/:id/attachments/ai',
+  requireAuth,
+  tenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+      const includeImages = req.query.includeImages === 'true';
+
+      const descriptions =
+        await attachmentService.getAttachmentDescriptions(issueId);
+
+      if (includeImages) {
+        const images =
+          await attachmentService.getImageAttachmentsForAI(issueId);
+        res.json({ descriptions, images });
+      } else {
+        res.json({ descriptions });
+      }
+    } catch (error) {
+      if ((error as Error).message === 'Issue not found') {
+        return res.status(404).json({ error: 'Issue not found' });
+      }
+      console.error('Error getting attachment info for AI:', error);
+      res.status(500).json({ error: 'Failed to get attachment info' });
     }
   },
 );

@@ -390,3 +390,69 @@ export function useBatchAIPrompts() {
       api.getBatchAIPrompts(options),
   });
 }
+
+// ============================================================================
+// ATTACHMENT HOOKS
+// ============================================================================
+
+export const attachmentKeys = {
+  all: ['attachments'] as const,
+  list: (issueId: number) => [...attachmentKeys.all, 'list', issueId] as const,
+  detail: (id: number) => [...attachmentKeys.all, 'detail', id] as const,
+  aiInfo: (issueId: number, includeImages: boolean) =>
+    [...attachmentKeys.all, 'ai', issueId, includeImages] as const,
+};
+
+export function useAttachments(issueId: number) {
+  return useQuery({
+    queryKey: attachmentKeys.list(issueId),
+    queryFn: () => api.listAttachments(issueId),
+    enabled: !!issueId,
+  });
+}
+
+export function useUploadAttachments() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ issueId, files }: { issueId: number; files: File[] }) =>
+      api.uploadAttachments(issueId, files),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: attachmentKeys.list(variables.issueId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: bugTrackingKeys.issueDetail(variables.issueId),
+      });
+    },
+  });
+}
+
+export function useDeleteAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ attachmentId }: { attachmentId: number; issueId: number }) =>
+      api.deleteAttachment(attachmentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: attachmentKeys.list(variables.issueId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: bugTrackingKeys.issueDetail(variables.issueId),
+      });
+    },
+  });
+}
+
+export function useAttachmentAIInfo(
+  issueId: number,
+  includeImages = false,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: attachmentKeys.aiInfo(issueId, includeImages),
+    queryFn: () => api.getAttachmentAIInfo(issueId, includeImages),
+    enabled: enabled && !!issueId,
+  });
+}
