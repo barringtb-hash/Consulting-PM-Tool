@@ -53,7 +53,7 @@ interface IssueWithRelations {
     userId: number | null;
     isSystem: boolean;
     issueId: number;
-    user: { id: number; name: string } | null;
+    user?: { id: number; name: string } | null;
   }>;
   errorLogs?: Array<{
     id: number;
