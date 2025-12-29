@@ -295,11 +295,10 @@ async function searchExistingBugs(
 ): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
   const { query } = args as { query: string };
 
-  const result = await bugTrackingService.listIssues({
-    search: query,
-    limit: 5,
-    page: 1,
-  });
+  const result = await bugTrackingService.listIssues(
+    { search: query },
+    { limit: 5, page: 1 },
+  );
 
   if (result.data.length === 0) {
     return {
@@ -332,9 +331,10 @@ async function searchExistingBugs(
 /**
  * Get bug status by ID
  */
-async function getBugStatus(
-  args: Record<string, unknown>,
-): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
+async function getBugStatus(args: Record<string, unknown>): Promise<{
+  content: Array<{ type: 'text'; text: string }>;
+  isError?: boolean;
+}> {
   const { issueId } = args as { issueId: string };
   const id = parseInt(issueId, 10);
 
@@ -346,7 +346,14 @@ async function getBugStatus(
   }
 
   try {
-    const issue = await bugTrackingService.getIssue(id);
+    const issue = await bugTrackingService.getIssueById(id);
+
+    if (!issue) {
+      return {
+        content: [{ type: 'text', text: `Bug report #${issueId} not found.` }],
+        isError: true,
+      };
+    }
 
     return {
       content: [

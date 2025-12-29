@@ -102,10 +102,8 @@ async function captureApiError(
       statusCode,
       environment: process.env.NODE_ENV || 'development',
       serverInfo: {
-        route: req.route?.path,
-        params: req.params,
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
+        hostname: req.hostname,
+        region: process.env.RENDER_REGION || 'unknown',
       },
     });
 
