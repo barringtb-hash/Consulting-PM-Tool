@@ -1,0 +1,60 @@
+name: Documentation Validation
+
+on:
+  pull_request:
+    paths:
+      - 'pmo/apps/api/src/**'
+      - 'pmo/apps/web/src/**'
+      - 'pmo/prisma/schema.prisma'
+      - 'Docs/**'
+      - 'CLAUDE.md'
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./pmo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check for undocumented modules
+        run: node scripts/validate-module-docs.mjs
+
+      - name: Validate CLAUDE.md file references
+        run: node scripts/validate-claude-md.mjs
+
+      - name: Check for stale documentation
+        run: |
+          echo "Checking for documentation freshness..."
+
+          # Check if schema changed but CLAUDE.md wasn't updated
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "schema.prisma"; then
+            if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "CLAUDE.md"; then
+              echo "::warning::Prisma schema was modified but CLAUDE.md was not updated. Please verify database documentation is current."
+            fi
+          fi
+
+          # Check if new module was added
+          NEW_MODULES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "apps/api/src/modules/.*/.*\\.ts" | cut -d'/' -f5 | sort -u)
+          if [ -n "$NEW_MODULES" ]; then
+            echo "Module files changed in: $NEW_MODULES"
+            echo "::notice::Please ensure Docs/MODULES.md is updated if new modules were added."
+          fi
+
+      - name: Generate documentation report
+        if: always()
+        run: |
+          echo "## Documentation Validation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Module Documentation | ${{ job.status == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| CLAUDE.md References | ${{ job.status == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
