@@ -4,7 +4,7 @@
  * Provides functions for interacting with the bug tracking API endpoints.
  */
 
-import { get, post, put, del } from './http';
+import { http } from './http';
 
 // ============================================================================
 // TYPES
@@ -192,7 +192,7 @@ export async function listIssues(
     }
   });
 
-  return get(`/bug-tracking/issues?${searchParams.toString()}`);
+  return http.get(`/bug-tracking/issues?${searchParams.toString()}`);
 }
 
 export interface CreateIssueInput {
@@ -207,11 +207,11 @@ export interface CreateIssueInput {
 }
 
 export async function createIssue(input: CreateIssueInput): Promise<Issue> {
-  return post('/bug-tracking/issues', input);
+  return http.post('/bug-tracking/issues', input);
 }
 
 export async function getIssue(id: number): Promise<Issue> {
-  return get(`/bug-tracking/issues/${id}`);
+  return http.get(`/bug-tracking/issues/${id}`);
 }
 
 export interface UpdateIssueInput {
@@ -230,29 +230,29 @@ export async function updateIssue(
   id: number,
   input: UpdateIssueInput,
 ): Promise<Issue> {
-  return put(`/bug-tracking/issues/${id}`, input);
+  return http.put(`/bug-tracking/issues/${id}`, input);
 }
 
 export async function deleteIssue(id: number): Promise<void> {
-  return del(`/bug-tracking/issues/${id}`);
+  return http.delete(`/bug-tracking/issues/${id}`);
 }
 
 export async function assignIssue(
   id: number,
   assignedToId: number | null,
 ): Promise<Issue> {
-  return post(`/bug-tracking/issues/${id}/assign`, { assignedToId });
+  return http.post(`/bug-tracking/issues/${id}/assign`, { assignedToId });
 }
 
 export async function changeIssueStatus(
   id: number,
   status: IssueStatus,
 ): Promise<Issue> {
-  return post(`/bug-tracking/issues/${id}/status`, { status });
+  return http.post(`/bug-tracking/issues/${id}/status`, { status });
 }
 
 export async function getIssueStats(): Promise<IssueStats> {
-  return get('/bug-tracking/issues/stats');
+  return http.get('/bug-tracking/issues/stats');
 }
 
 // ============================================================================
@@ -263,21 +263,21 @@ export async function bulkUpdateStatus(
   issueIds: number[],
   status: IssueStatus,
 ): Promise<{ updated: number }> {
-  return post('/bug-tracking/issues/bulk/status', { issueIds, status });
+  return http.post('/bug-tracking/issues/bulk/status', { issueIds, status });
 }
 
 export async function bulkAssign(
   issueIds: number[],
   assignedToId: number | null,
 ): Promise<{ updated: number }> {
-  return post('/bug-tracking/issues/bulk/assign', { issueIds, assignedToId });
+  return http.post('/bug-tracking/issues/bulk/assign', { issueIds, assignedToId });
 }
 
 export async function bulkAddLabels(
   issueIds: number[],
   labelIds: number[],
 ): Promise<{ updated: number }> {
-  return post('/bug-tracking/issues/bulk/labels', { issueIds, labelIds });
+  return http.post('/bug-tracking/issues/bulk/labels', { issueIds, labelIds });
 }
 
 // ============================================================================
@@ -285,7 +285,7 @@ export async function bulkAddLabels(
 // ============================================================================
 
 export async function listLabels(): Promise<IssueLabel[]> {
-  return get('/bug-tracking/labels');
+  return http.get('/bug-tracking/labels');
 }
 
 export interface CreateLabelInput {
@@ -297,18 +297,18 @@ export interface CreateLabelInput {
 export async function createLabel(
   input: CreateLabelInput,
 ): Promise<IssueLabel> {
-  return post('/bug-tracking/labels', input);
+  return http.post('/bug-tracking/labels', input);
 }
 
 export async function updateLabel(
   id: number,
   input: Partial<CreateLabelInput>,
 ): Promise<IssueLabel> {
-  return put(`/bug-tracking/labels/${id}`, input);
+  return http.put(`/bug-tracking/labels/${id}`, input);
 }
 
 export async function deleteLabel(id: number): Promise<void> {
-  return del(`/bug-tracking/labels/${id}`);
+  return http.delete(`/bug-tracking/labels/${id}`);
 }
 
 // ============================================================================
@@ -316,18 +316,18 @@ export async function deleteLabel(id: number): Promise<void> {
 // ============================================================================
 
 export async function listComments(issueId: number): Promise<IssueComment[]> {
-  return get(`/bug-tracking/issues/${issueId}/comments`);
+  return http.get(`/bug-tracking/issues/${issueId}/comments`);
 }
 
 export async function addComment(
   issueId: number,
   content: string,
 ): Promise<IssueComment> {
-  return post(`/bug-tracking/issues/${issueId}/comments`, { content });
+  return http.post(`/bug-tracking/issues/${issueId}/comments`, { content });
 }
 
 export async function deleteComment(commentId: number): Promise<void> {
-  return del(`/bug-tracking/comments/${commentId}`);
+  return http.delete(`/bug-tracking/comments/${commentId}`);
 }
 
 // ============================================================================
@@ -350,12 +350,12 @@ export async function listErrors(
       searchParams.set(key, String(value));
     }
   });
-  return get(`/bug-tracking/errors?${searchParams.toString()}`);
+  return http.get(`/bug-tracking/errors?${searchParams.toString()}`);
 }
 
 export async function getErrorStats(since?: string): Promise<ErrorStats> {
   const params = since ? `?since=${since}` : '';
-  return get(`/bug-tracking/errors/stats${params}`);
+  return http.get(`/bug-tracking/errors/stats${params}`);
 }
 
 export async function getIssueErrors(
@@ -363,7 +363,7 @@ export async function getIssueErrors(
   limit?: number,
 ): Promise<ErrorLog[]> {
   const params = limit ? `?limit=${limit}` : '';
-  return get(`/bug-tracking/issues/${issueId}/errors${params}`);
+  return http.get(`/bug-tracking/issues/${issueId}/errors${params}`);
 }
 
 // ============================================================================
@@ -371,7 +371,7 @@ export async function getIssueErrors(
 // ============================================================================
 
 export async function listApiKeys(): Promise<ApiKey[]> {
-  return get('/bug-tracking/api-keys');
+  return http.get('/bug-tracking/api-keys');
 }
 
 export interface CreateApiKeyInput {
@@ -383,15 +383,15 @@ export interface CreateApiKeyInput {
 export async function createApiKey(
   input: CreateApiKeyInput,
 ): Promise<CreateApiKeyResult> {
-  return post('/bug-tracking/api-keys', input);
+  return http.post('/bug-tracking/api-keys', input);
 }
 
 export async function revokeApiKey(id: number): Promise<ApiKey> {
-  return post(`/bug-tracking/api-keys/${id}/revoke`, {});
+  return http.post(`/bug-tracking/api-keys/${id}/revoke`, {});
 }
 
 export async function deleteApiKey(id: number): Promise<void> {
-  return del(`/bug-tracking/api-keys/${id}`);
+  return http.delete(`/bug-tracking/api-keys/${id}`);
 }
 
 // ============================================================================
@@ -449,7 +449,7 @@ export async function getIssueAIPrompt(
     params.set('customInstructions', options.customInstructions);
 
   const queryString = params.toString();
-  return get(
+  return http.get(
     `/bug-tracking/issues/${issueId}/ai-prompt${queryString ? `?${queryString}` : ''}`,
   );
 }
@@ -465,7 +465,7 @@ export interface BatchPromptOptions {
 export async function getBatchAIPrompts(
   options: BatchPromptOptions,
 ): Promise<{ prompts: AIPromptResponse[] } | AIPromptResponse> {
-  return post('/bug-tracking/ai-prompts/batch', options);
+  return http.post('/bug-tracking/ai-prompts/batch', options);
 }
 
 export interface AIPromptFormats {
@@ -478,5 +478,5 @@ export interface AIPromptFormats {
 }
 
 export async function getAIPromptFormats(): Promise<AIPromptFormats> {
-  return get('/bug-tracking/ai-prompt/formats');
+  return http.get('/bug-tracking/ai-prompt/formats');
 }
