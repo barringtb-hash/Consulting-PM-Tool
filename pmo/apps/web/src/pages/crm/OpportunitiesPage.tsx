@@ -97,40 +97,40 @@ function OpportunitiesPage(): JSX.Element {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <DollarSign className="h-4 w-4" />
-              Pipeline Value
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="p-3 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span className="leading-tight">Pipeline Value</span>
             </div>
-            <div className="text-2xl font-semibold">
+            <div className="text-xl sm:text-2xl font-semibold">
               {formatCurrency(stats.totalValue)}
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <TrendingUp className="h-4 w-4" />
-              Weighted Value
+          <Card className="p-3 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span className="leading-tight">Weighted Value</span>
             </div>
-            <div className="text-2xl font-semibold text-green-600">
+            <div className="text-xl sm:text-2xl font-semibold text-green-600">
               {formatCurrency(stats.weightedValue)}
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Target className="h-4 w-4" />
-              Win Rate
+          <Card className="p-3 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <Target className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span className="leading-tight">Win Rate</span>
             </div>
-            <div className="text-2xl font-semibold text-blue-600">
+            <div className="text-xl sm:text-2xl font-semibold text-blue-600">
               {(stats.winRate * 100).toFixed(1)}%
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Clock className="h-4 w-4" />
-              Avg Deal Size
+          <Card className="p-3 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span className="leading-tight">Avg Deal Size</span>
             </div>
-            <div className="text-2xl font-semibold">
+            <div className="text-xl sm:text-2xl font-semibold">
               {formatCurrency(stats.averageDealSize)}
             </div>
           </Card>

@@ -140,7 +140,7 @@ export function DashboardPanelGrid({
 
   // Apply position-specific grid styles
   const gridStyles: Record<DashboardPanelPosition, string> = {
-    'summary-cards': 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4',
+    'summary-cards': 'grid grid-cols-2 lg:grid-cols-4 gap-4',
     'main-left': 'space-y-6',
     'main-right': 'space-y-6',
     'full-width': 'space-y-6',

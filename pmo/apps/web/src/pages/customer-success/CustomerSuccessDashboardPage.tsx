@@ -56,9 +56,9 @@ function PortfolioHealthSummary(): JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="p-6">
+          <Card key={i} className="p-4 sm:p-6">
             <div className="animate-pulse">
               <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2 mb-3" />
               <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3 mb-2" />
@@ -81,22 +81,22 @@ function PortfolioHealthSummary(): JSX.Element {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="p-6 h-full">
-        <div className="flex items-start justify-between">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
               Portfolio Health
             </p>
-            <p className="text-3xl font-bold text-neutral-900 dark:text-white mt-1">
+            <p className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mt-1">
               {summary.averageScore}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-tight">
               {summary.averageChurnRisk * 100}% avg churn risk
             </p>
           </div>
           <div
-            className={`p-3 rounded-xl shrink-0 ${
+            className={`p-2 sm:p-3 rounded-xl shrink-0 ${
               summary.averageScore >= 70
                 ? 'bg-success-100 dark:bg-success-900/30'
                 : summary.averageScore >= 40
@@ -105,24 +105,24 @@ function PortfolioHealthSummary(): JSX.Element {
             }`}
           >
             {summary.averageScore >= 70 ? (
-              <TrendingUp className="w-6 h-6 text-success-600 dark:text-success-400" />
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-success-600 dark:text-success-400" />
             ) : (
-              <TrendingDown className="w-6 h-6 text-danger-600 dark:text-danger-400" />
+              <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-danger-600 dark:text-danger-400" />
             )}
           </div>
         </div>
       </Card>
 
-      <Card className="p-6 h-full">
-        <div className="flex items-start justify-between">
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
               Healthy Clients
             </p>
-            <p className="text-3xl font-bold text-success-600 dark:text-success-400 mt-1">
+            <p className="text-2xl sm:text-3xl font-bold text-success-600 dark:text-success-400 mt-1">
               {summary.healthyCount}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-tight">
               {summary.totalClients > 0
                 ? Math.round(
                     (summary.healthyCount / summary.totalClients) * 100,
@@ -131,46 +131,46 @@ function PortfolioHealthSummary(): JSX.Element {
               % of portfolio
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-success-100 dark:bg-success-900/30 shrink-0">
-            <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
+          <div className="p-2 sm:p-3 rounded-xl bg-success-100 dark:bg-success-900/30 shrink-0">
+            <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-success-600 dark:text-success-400" />
           </div>
         </div>
       </Card>
 
-      <Card className="p-6 h-full">
-        <div className="flex items-start justify-between">
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
               At Risk
             </p>
-            <p className="text-3xl font-bold text-warning-600 dark:text-warning-400 mt-1">
+            <p className="text-2xl sm:text-3xl font-bold text-warning-600 dark:text-warning-400 mt-1">
               {summary.atRiskCount}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-tight">
               Needs attention
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-warning-100 dark:bg-warning-900/30 shrink-0">
-            <AlertTriangle className="w-6 h-6 text-warning-600 dark:text-warning-400" />
+          <div className="p-2 sm:p-3 rounded-xl bg-warning-100 dark:bg-warning-900/30 shrink-0">
+            <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-warning-600 dark:text-warning-400" />
           </div>
         </div>
       </Card>
 
-      <Card className="p-6 h-full">
-        <div className="flex items-start justify-between">
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
               Critical
             </p>
-            <p className="text-3xl font-bold text-danger-600 dark:text-danger-400 mt-1">
+            <p className="text-2xl sm:text-3xl font-bold text-danger-600 dark:text-danger-400 mt-1">
               {summary.criticalCount}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-tight">
               Immediate action required
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-danger-100 dark:bg-danger-900/30 shrink-0">
-            <AlertCircle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
+          <div className="p-2 sm:p-3 rounded-xl bg-danger-100 dark:bg-danger-900/30 shrink-0">
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-danger-600 dark:text-danger-400" />
           </div>
         </div>
       </Card>
