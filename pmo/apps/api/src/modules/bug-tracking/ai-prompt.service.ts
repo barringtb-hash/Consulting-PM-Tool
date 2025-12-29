@@ -49,6 +49,10 @@ interface IssueWithRelations {
     id: number;
     content: string;
     createdAt: Date;
+    updatedAt: Date;
+    userId: number | null;
+    isSystem: boolean;
+    issueId: number;
     user: { id: number; name: string } | null;
   }>;
   errorLogs?: Array<{
