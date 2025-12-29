@@ -2,6 +2,47 @@
 
 This document provides a comprehensive guide for AI assistants working with the AI CRM Platform codebase.
 
+---
+
+## ⚠️ CRITICAL: Documentation Maintenance Requirements
+
+**Before implementing ANY code changes, AI assistants MUST:**
+
+1. **Perform Impact Assessment**: Review the following documents to understand what components may be affected:
+   - `Docs/CODEBASE-INVENTORY.md` - Complete mapping of all modules, services, routes, pages
+   - `Docs/MODULE-MAP.md` - Auto-generated module inventory
+   - `CLAUDE.md` - This file (architecture and key files reference)
+
+2. **Update Documentation After Changes**: When modifying the codebase, update the relevant documentation:
+
+   | Change Type | Required Documentation Updates |
+   |-------------|-------------------------------|
+   | New API module | `CLAUDE.md` (Key Files), `Docs/MODULES.md`, `Docs/CODEBASE-INVENTORY.md` |
+   | New service | `CLAUDE.md` (Core Services section) |
+   | New API route | `CLAUDE.md` (API endpoints table) |
+   | New frontend page | `CLAUDE.md` (routing section), `Docs/CODEBASE-INVENTORY.md` |
+   | Database schema change | `CLAUDE.md` (Database Models section) |
+   | New environment variable | `CLAUDE.md` (Environment Variables section) |
+   | Infrastructure change | `CLAUDE.md` (Infrastructure Components section) |
+
+3. **Run Validation Scripts**: Before committing, run these scripts to verify documentation:
+   ```bash
+   cd pmo
+   node scripts/validate-module-docs.mjs    # Checks all modules are documented
+   node scripts/validate-claude-md.mjs      # Validates file references
+   node scripts/generate-module-map.mjs     # Regenerates MODULE-MAP.md
+   ```
+
+4. **PR Documentation Checklist**: Every PR must address the documentation checklist in the PR template (`.github/PULL_REQUEST_TEMPLATE.md`).
+
+**Why This Matters**: Keeping documentation synchronized with code prevents:
+- Breaking changes from undocumented dependencies
+- New developers/AI assistants from missing critical context
+- Technical debt from outdated documentation
+- Failed deployments from missing configuration documentation
+
+---
+
 ## Project Overview
 
 The AI CRM Platform is a full-stack monorepo application that has evolved from a consulting PMO tool into a comprehensive multi-tenant CRM SaaS platform with AI-powered modules. It consists of a React + TypeScript frontend and a Node.js + Express + TypeScript API backend.
