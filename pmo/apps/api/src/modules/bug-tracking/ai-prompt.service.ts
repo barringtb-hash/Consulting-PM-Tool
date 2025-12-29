@@ -12,6 +12,7 @@ import {
   IssuePriority,
   IssueStatus,
   IssueSource,
+  Prisma,
 } from '@prisma/client';
 
 // Type for issue with all included relations
@@ -25,8 +26,9 @@ interface IssueWithRelations {
   priority: IssuePriority;
   source: IssueSource;
   stackTrace: string | null;
-  browserInfo: Record<string, unknown> | null;
-  requestInfo: Record<string, unknown> | null;
+  componentStack: string | null;
+  browserInfo: Prisma.JsonValue;
+  requestInfo: Prisma.JsonValue;
   environment: string | null;
   appVersion: string | null;
   url: string | null;
@@ -56,6 +58,7 @@ interface IssueWithRelations {
     source: IssueSource;
     level: string;
     url: string | null;
+    statusCode: number | null;
     createdAt: Date;
   }>;
 }
@@ -87,10 +90,14 @@ export interface AIPromptOptions {
   includeErrorLogs?: boolean;
   /** Maximum number of error logs to include */
   errorLogLimit?: number;
+  /** Maximum number of error logs to include (alias for errorLogLimit) */
+  maxErrorLogs?: number;
   /** Include comments/discussion */
   includeComments?: boolean;
   /** Include suggested files to investigate */
   includeSuggestedFiles?: boolean;
+  /** Include related issues */
+  includeRelatedIssues?: boolean;
   /** Custom instructions to append */
   customInstructions?: string;
   /** Output format */

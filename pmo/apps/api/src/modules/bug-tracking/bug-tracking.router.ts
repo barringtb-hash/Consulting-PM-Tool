@@ -28,7 +28,7 @@ const createIssueSchema = z.object({
   projectId: z.number().int().positive().optional(),
   accountId: z.number().int().positive().optional(),
   labelIds: z.array(z.number().int().positive()).optional(),
-  customFields: z.record(z.unknown()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateIssueSchema = z.object({
@@ -41,7 +41,7 @@ const updateIssueSchema = z.object({
   projectId: z.number().int().positive().nullable().optional(),
   accountId: z.number().int().positive().nullable().optional(),
   labelIds: z.array(z.number().int().positive()).optional(),
-  customFields: z.record(z.unknown()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 const createLabelSchema = z.object({
@@ -313,7 +313,7 @@ router.post(
         return res.status(400).json({ errors: parsed.error.flatten() });
       }
 
-      const issue = await bugService.createIssue(parsed.data, req.user?.id);
+      const issue = await bugService.createIssue(parsed.data, req.userId);
       res.status(201).json(issue);
     } catch (error) {
       console.error('Error creating issue:', error);
@@ -373,7 +373,7 @@ router.put(
         return res.status(400).json({ errors: parsed.error.flatten() });
       }
 
-      const issue = await bugService.updateIssue(id, parsed.data, req.user?.id);
+      const issue = await bugService.updateIssue(id, parsed.data, req.userId);
       res.json(issue);
     } catch (error) {
       if ((error as Error).message === 'Issue not found') {
@@ -413,7 +413,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const assignedToId = req.body.assignedToId as number | null;
+      const body = req.body as { assignedToId?: number | null };
+      const assignedToId = body.assignedToId ?? null;
 
       const issue = await bugService.assignIssue(id, assignedToId);
       res.json(issue);
@@ -435,9 +436,10 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const status = req.body.status as IssueStatus;
+      const body = req.body as { status?: IssueStatus };
+      const status = body.status;
 
-      if (!Object.values(IssueStatus).includes(status)) {
+      if (!status || !Object.values(IssueStatus).includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
       }
 
@@ -566,7 +568,7 @@ router.post(
       const comment = await bugService.addComment(
         issueId,
         parsed.data,
-        req.user?.id,
+        req.userId,
       );
       res.status(201).json(comment);
     } catch (error) {
@@ -587,7 +589,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      await bugService.deleteComment(id, req.user?.id);
+      await bugService.deleteComment(id, req.userId);
       res.status(204).send();
     } catch (error) {
       const message = (error as Error).message;

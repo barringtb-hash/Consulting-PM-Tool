@@ -259,9 +259,7 @@ export async function processVercelLogs(logs: VercelLogMessage[]) {
         statusCode: log.statusCode || log.proxy?.statusCode,
         environment: 'production',
         serverInfo: {
-          source: log.source,
           deploymentId: log.deploymentId,
-          projectId: log.projectId,
           region: log.proxy?.region,
         },
         rawPayload: log as unknown as Record<string, unknown>,
@@ -308,7 +306,7 @@ export async function processRenderLogs(logs: RenderLogEvent[]) {
         serverInfo: {
           serviceId: log.serviceId,
           serviceName: log.serviceName,
-          deployId: log.deployId,
+          deploymentId: log.deployId,
           instanceId: log.instanceId,
         },
         rawPayload: log as unknown as Record<string, unknown>,
