@@ -5,7 +5,8 @@
  */
 
 import * as bugTrackingService from '../../bug-tracking/bug-tracking.service';
-import { IssueType, IssuePriority } from '@prisma/client';
+import * as errorService from '../../bug-tracking/error-collector.service';
+import { IssueType, IssuePriority, IssueSource } from '@prisma/client';
 
 interface ToolDefinition {
   name: string;
@@ -99,6 +100,61 @@ export const bugTrackingTools: ToolDefinition[] = [
       required: ['issueId'],
     },
   },
+  {
+    name: 'get_runtime_errors',
+    description:
+      'Get recent runtime errors from the application including Vercel, Render, API, and browser errors. Use this to investigate production issues or check for recent problems.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: {
+          type: 'string',
+          description:
+            'Filter by error source. VERCEL_LOG for Vercel edge/serverless, RENDER_LOG for Render backend, API_ERROR for API errors, BROWSER_ERROR for client-side errors',
+          enum: [
+            'VERCEL_LOG',
+            'RENDER_LOG',
+            'API_ERROR',
+            'BROWSER_ERROR',
+            'AI_ASSISTANT',
+          ],
+        },
+        level: {
+          type: 'string',
+          description:
+            'Filter by error level (error, warn, info). Defaults to all levels.',
+          enum: ['error', 'warn', 'info'],
+        },
+        limit: {
+          type: 'string',
+          description:
+            'Maximum number of errors to return (default: 10, max: 50)',
+        },
+        hoursAgo: {
+          type: 'string',
+          description:
+            'Only show errors from the last N hours (e.g., "24" for last 24 hours)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'get_error_statistics',
+    description:
+      'Get error statistics and trends to understand the health of the application. Shows error counts by source, level, and hourly trends.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        hoursAgo: {
+          type: 'string',
+          description:
+            'Time range in hours to analyze (e.g., "24" for last 24 hours, "168" for last week). Defaults to 24 hours.',
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 /**
@@ -119,6 +175,10 @@ export async function executeBugTrackingTool(
         return await searchExistingBugs(args);
       case 'get_bug_status':
         return await getBugStatus(args);
+      case 'get_runtime_errors':
+        return await getRuntimeErrors(args);
+      case 'get_error_statistics':
+        return await getErrorStatistics(args);
       default:
         return {
           content: [
@@ -279,4 +339,137 @@ ${issue.description ? `\n**Description:**\n${issue.description}` : ''}`,
       isError: true,
     };
   }
+}
+
+/**
+ * Get recent runtime errors
+ */
+async function getRuntimeErrors(
+  args: Record<string, unknown>,
+): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
+  const { source, level, limit, hoursAgo } = args as {
+    source?: string;
+    level?: string;
+    limit?: string;
+    hoursAgo?: string;
+  };
+
+  const limitNum = Math.min(parseInt(limit || '10', 10) || 10, 50);
+  const since = hoursAgo
+    ? new Date(Date.now() - parseInt(hoursAgo, 10) * 60 * 60 * 1000)
+    : undefined;
+
+  const errors = await errorService.getRecentErrorLogs({
+    source: source as IssueSource | undefined,
+    level,
+    limit: limitNum,
+    since,
+  });
+
+  if (errors.length === 0) {
+    const timeRange = hoursAgo ? `the last ${hoursAgo} hours` : 'recently';
+    const sourceFilter = source ? ` from ${source}` : '';
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `No runtime errors found${sourceFilter} ${timeRange}. The application appears to be running smoothly.`,
+        },
+      ],
+    };
+  }
+
+  const errorList = errors
+    .slice(0, 10) // Limit display to 10 for readability
+    .map((error) => {
+      const timestamp = new Date(error.createdAt).toLocaleString();
+      const issueLink = error.issue
+        ? ` (Issue #${error.issue.id}: ${error.issue.status})`
+        : '';
+      return `- **[${error.source}]** ${timestamp}\n  ${error.message}${issueLink}`;
+    })
+    .join('\n\n');
+
+  const summary = `Found ${errors.length} runtime error(s)${source ? ` from ${source}` : ''}${hoursAgo ? ` in the last ${hoursAgo} hours` : ''}:`;
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `${summary}\n\n${errorList}${errors.length > 10 ? `\n\n... and ${errors.length - 10} more errors` : ''}`,
+      },
+    ],
+  };
+}
+
+/**
+ * Get error statistics
+ */
+async function getErrorStatistics(
+  args: Record<string, unknown>,
+): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
+  const { hoursAgo } = args as { hoursAgo?: string };
+
+  const since = hoursAgo
+    ? new Date(Date.now() - parseInt(hoursAgo, 10) * 60 * 60 * 1000)
+    : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default 24 hours
+
+  const stats = await errorService.getErrorStats(since);
+
+  const timeRange = hoursAgo || '24';
+
+  if (stats.total === 0) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `No errors recorded in the last ${timeRange} hours. The application is running without errors.`,
+        },
+      ],
+    };
+  }
+
+  // Format by source
+  const sourceBreakdown = Object.entries(stats.bySource)
+    .map(([src, count]) => `  - ${src}: ${count}`)
+    .join('\n');
+
+  // Format by level
+  const levelBreakdown = Object.entries(stats.byLevel)
+    .map(([lvl, count]) => `  - ${lvl}: ${count}`)
+    .join('\n');
+
+  // Determine health status
+  let healthStatus = 'Healthy';
+  const errorRate = (stats.byLevel?.error || 0) / stats.total;
+  if (errorRate > 0.5) {
+    healthStatus = 'Critical - High error rate';
+  } else if (errorRate > 0.2) {
+    healthStatus = 'Warning - Elevated error rate';
+  } else if (stats.total > 100) {
+    healthStatus = 'Warning - High volume of issues';
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `**Error Statistics (Last ${timeRange} hours)**
+
+**Status:** ${healthStatus}
+**Total Errors:** ${stats.total}
+
+**By Source:**
+${sourceBreakdown || '  No data'}
+
+**By Level:**
+${levelBreakdown || '  No data'}
+
+${stats.bySource?.VERCEL_LOG ? `\n**Note:** ${stats.bySource.VERCEL_LOG} errors from Vercel (frontend/edge functions)` : ''}
+${stats.bySource?.RENDER_LOG ? `**Note:** ${stats.bySource.RENDER_LOG} errors from Render (API backend)` : ''}
+${stats.bySource?.API_ERROR ? `**Note:** ${stats.bySource.API_ERROR} API errors captured by server middleware` : ''}
+${stats.bySource?.BROWSER_ERROR ? `**Note:** ${stats.bySource.BROWSER_ERROR} browser/client-side errors` : ''}`,
+      },
+    ],
+  };
 }
