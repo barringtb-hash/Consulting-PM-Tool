@@ -483,3 +483,75 @@ export interface AIPromptFormats {
 export async function getAIPromptFormats(): Promise<AIPromptFormats> {
   return http.get('/bug-tracking/ai-prompt/formats');
 }
+
+// ============================================================================
+// ATTACHMENT API
+// ============================================================================
+
+export interface IssueAttachment {
+  id: number;
+  issueId: number;
+  filename: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+  dataUrl?: string;
+}
+
+export async function listAttachments(
+  issueId: number,
+): Promise<IssueAttachment[]> {
+  return http.get(`/bug-tracking/issues/${issueId}/attachments`);
+}
+
+export async function uploadAttachments(
+  issueId: number,
+  files: File[],
+): Promise<IssueAttachment[]> {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL || '/api'}/bug-tracking/issues/${issueId}/attachments`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to upload attachments');
+  }
+
+  return response.json();
+}
+
+export async function getAttachment(id: number): Promise<IssueAttachment> {
+  return http.get(`/bug-tracking/attachments/${id}`);
+}
+
+export async function deleteAttachment(id: number): Promise<void> {
+  return http.delete(`/bug-tracking/attachments/${id}`);
+}
+
+export interface AttachmentAIInfo {
+  descriptions: string[];
+  images?: Array<{
+    filename: string;
+    mimeType: string;
+    dataUrl: string;
+  }>;
+}
+
+export async function getAttachmentAIInfo(
+  issueId: number,
+  includeImages = false,
+): Promise<AttachmentAIInfo> {
+  const params = includeImages ? '?includeImages=true' : '';
+  return http.get(`/bug-tracking/issues/${issueId}/attachments/ai${params}`);
+}

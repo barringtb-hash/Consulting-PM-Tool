@@ -14,6 +14,7 @@ import {
   IssueSource,
   Prisma,
 } from '@prisma/client';
+import * as attachmentService from './attachment.service';
 
 // Type for issue with all included relations
 interface IssueWithRelations {
@@ -102,6 +103,8 @@ export interface AIPromptOptions {
   includeSuggestedFiles?: boolean;
   /** Include related issues */
   includeRelatedIssues?: boolean;
+  /** Include attachments (screenshots, files) */
+  includeAttachments?: boolean;
   /** Custom instructions to append */
   customInstructions?: string;
   /** Output format */
@@ -121,8 +124,15 @@ export interface AIPromptResult {
     source: IssueSource;
     errorCount: number;
     commentCount: number;
+    attachmentCount: number;
     labels: string[];
   };
+  /** Image attachments for multimodal AI processing */
+  images?: Array<{
+    filename: string;
+    mimeType: string;
+    dataUrl: string;
+  }>;
 }
 
 const DEFAULT_OPTIONS: AIPromptOptions = {
@@ -132,6 +142,7 @@ const DEFAULT_OPTIONS: AIPromptOptions = {
   errorLogLimit: 5,
   includeComments: true,
   includeSuggestedFiles: true,
+  includeAttachments: true,
   format: 'markdown',
 };
 
@@ -181,21 +192,36 @@ export async function generateAIPrompt(
     throw new Error('Issue not found');
   }
 
+  // Fetch attachments if requested
+  let attachmentDescriptions: string[] = [];
+  let images: Array<{ filename: string; mimeType: string; dataUrl: string }> =
+    [];
+
+  if (opts.includeAttachments) {
+    try {
+      attachmentDescriptions =
+        await attachmentService.getAttachmentDescriptions(issueId);
+      images = await attachmentService.getImageAttachmentsForAI(issueId);
+    } catch {
+      // Ignore attachment errors, they're optional
+    }
+  }
+
   // Generate prompt based on format
   let prompt: string;
   switch (opts.format) {
     case 'json':
-      prompt = generateJsonPrompt(issue, opts);
+      prompt = generateJsonPrompt(issue, opts, attachmentDescriptions);
       break;
     case 'plain':
-      prompt = generatePlainPrompt(issue, opts);
+      prompt = generatePlainPrompt(issue, opts, attachmentDescriptions);
       break;
     case 'markdown':
     default:
-      prompt = generateMarkdownPrompt(issue, opts);
+      prompt = generateMarkdownPrompt(issue, opts, attachmentDescriptions);
   }
 
-  return {
+  const result: AIPromptResult = {
     prompt,
     issueId: issue.id,
     issueTitle: issue.title,
@@ -208,9 +234,17 @@ export async function generateAIPrompt(
       source: issue.source,
       errorCount: issue.errorCount,
       commentCount: issue.comments?.length || 0,
+      attachmentCount: attachmentDescriptions.length,
       labels: issue.labels.map((l) => l.name),
     },
   };
+
+  // Include image data URLs for multimodal AI processing
+  if (images.length > 0) {
+    result.images = images;
+  }
+
+  return result;
 }
 
 // ============================================================================
@@ -220,6 +254,7 @@ export async function generateAIPrompt(
 function generateMarkdownPrompt(
   issue: IssueWithRelations,
   opts: AIPromptOptions,
+  attachmentDescriptions: string[] = [],
 ): string {
   const sections: string[] = [];
 
@@ -335,6 +370,24 @@ function generateMarkdownPrompt(
     }
   }
 
+  // Attachments (screenshots, files)
+  if (opts.includeAttachments && attachmentDescriptions.length > 0) {
+    sections.push('### Attachments');
+    sections.push('');
+    sections.push(
+      '_The following screenshots and files have been attached to provide visual context:_',
+    );
+    sections.push('');
+    for (const desc of attachmentDescriptions) {
+      sections.push(`- ${desc}`);
+    }
+    sections.push('');
+    sections.push(
+      '> **Note:** Image attachments are included separately for multimodal AI processing.',
+    );
+    sections.push('');
+  }
+
   // Suggested files
   if (opts.includeSuggestedFiles) {
     const suggestedFiles = extractSuggestedFiles(issue);
@@ -393,6 +446,7 @@ function generateMarkdownPrompt(
 function generatePlainPrompt(
   issue: IssueWithRelations,
   opts: AIPromptOptions,
+  attachmentDescriptions: string[] = [],
 ): string {
   const lines: string[] = [];
 
@@ -409,6 +463,12 @@ function generatePlainPrompt(
   if (opts.includeStackTrace && issue.stackTrace) {
     lines.push('STACK TRACE:');
     lines.push(issue.stackTrace);
+    lines.push('');
+  }
+
+  if (attachmentDescriptions.length > 0) {
+    lines.push('ATTACHMENTS:');
+    attachmentDescriptions.forEach((desc) => lines.push(`- ${desc}`));
     lines.push('');
   }
 
@@ -432,6 +492,7 @@ function generatePlainPrompt(
 function generateJsonPrompt(
   issue: IssueWithRelations,
   opts: AIPromptOptions,
+  attachmentDescriptions: string[] = [],
 ): string {
   const prompt = {
     task: {
@@ -454,6 +515,7 @@ function generateJsonPrompt(
     },
     stackTrace: opts.includeStackTrace ? issue.stackTrace : undefined,
     errorCount: issue.errorCount,
+    attachments: attachmentDescriptions,
     suggestedFiles: opts.includeSuggestedFiles
       ? extractSuggestedFiles(issue)
       : [],

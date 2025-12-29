@@ -8,12 +8,14 @@
  * 1. Cookie Parser - Parse cookies for JWT auth
  * 2. CORS - Dynamic CORS based on request path
  * 3. JSON Body Parser - Parse JSON request bodies
- * 4. Health Check - /api/healthz endpoint
- * 5. Public Routes - Unauthenticated endpoints (public leads, widget)
- * 6. Feature Flags - Module availability endpoint
- * 7. Auth Routes - Login/logout/me endpoints
- * 8. Protected Routes - All authenticated API routes
- * 9. Error Handler - Global error handling (must be last)
+ * 4. API Metrics - Collect latency, error rates, throughput
+ * 5. API Error Capture - Auto-capture errors for bug tracking
+ * 6. Health Check - /api/healthz endpoint
+ * 7. Public Routes - Unauthenticated endpoints (public leads, widget)
+ * 8. Feature Flags - Module availability endpoint
+ * 9. Auth Routes - Login/logout/me endpoints
+ * 10. Protected Routes - All authenticated API routes
+ * 11. Error Handler - Global error handling (must be last)
  *
  * Route Organization:
  * - Core Routes: /api/auth, /api/clients, /api/projects, /api/tasks
@@ -113,6 +115,7 @@ import projectsRouter from './routes/projects';
 import tasksRouter from './routes/task.routes';
 import usersRouter from './routes/users';
 import { errorHandler } from './middleware/error.middleware';
+import { apiErrorCaptureMiddleware } from './middleware/api-error-capture.middleware';
 import { env } from './config/env';
 import { isModuleEnabled, logEnabledModules } from './modules/module-config';
 import { requireModule } from './middleware/module-guard.middleware';
@@ -291,6 +294,11 @@ export function createApp(): express.Express {
   // ============ API METRICS MIDDLEWARE ============
   // Collect API latency, error rates, and throughput metrics
   app.use(apiMetricsMiddleware);
+
+  // ============ API ERROR CAPTURE MIDDLEWARE ============
+  // Automatically capture and report API errors to the bug tracking system
+  // Captures 5xx errors and 404s on config endpoints (indicates misconfiguration)
+  app.use(apiErrorCaptureMiddleware);
 
   // ============ CORE ROUTES (always enabled) ============
   app.use('/api', authRouter);

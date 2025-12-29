@@ -293,6 +293,21 @@ export function AIAssistantSidebar(): JSX.Element | null {
                   </button>
                 ))}
               </div>
+              <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-2">
+                  Found a problem?
+                </p>
+                <button
+                  onClick={() =>
+                    handleQuickAction(
+                      'I want to report a bug. Please help me describe it so you can create a bug report.',
+                    )
+                  }
+                  className="text-xs px-3 py-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-800"
+                >
+                  Report a Bug
+                </button>
+              </div>
             </div>
           </div>
         ) : (
