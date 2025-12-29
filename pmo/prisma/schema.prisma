@@ -235,8 +235,8 @@ model User {
   addedProjectMembers ProjectMember[]    @relation("ProjectMemberAddedBy") // Members this user added
   documents           Document[]
   tasks               Task[]
-  taskAssignments     TaskAssignee[]  @relation("TaskAssignments") // Tasks user is assigned to
-  tasksAssignedByMe   TaskAssignee[]  @relation("TaskAssignedBy")  // Task assignments made by this user
+  taskAssignments     TaskAssignee[]     @relation("TaskAssignments") // Tasks user is assigned to
+  tasksAssignedByMe   TaskAssignee[]     @relation("TaskAssignedBy") // Task assignments made by this user
   createdAssets       AIAsset[]
   ownedLeads          InboundLead[]
   createdContents     MarketingContent[]
@@ -280,6 +280,12 @@ model User {
   aiUsageEvents         AIUsageEvent[]
   acknowledgedAnomalies Anomaly[]      @relation("AnomalyAcknowledgedBy")
   resolvedAnomalies     Anomaly[]      @relation("AnomalyResolvedBy")
+
+  // Bug Tracking relations
+  reportedIssues Issue[]        @relation("IssueReportedBy")
+  assignedIssues Issue[]        @relation("IssueAssignedTo")
+  issueComments  IssueComment[]
+  errorLogs      ErrorLog[]
 
   // Password reset tokens
   passwordResets PasswordReset[]
@@ -490,6 +496,9 @@ model Project {
   budgets  Budget[]
   expenses Expense[]
 
+  // Bug Tracking relations
+  issues Issue[]
+
   @@index([status])
   @@index([renewalDate])
   @@index([healthStatus, renewalDate])
@@ -588,11 +597,11 @@ model Task {
 
 // Join table for Task-User many-to-many relationship (multiple assignees per task)
 model TaskAssignee {
-  id        Int      @id @default(autoincrement())
-  taskId    Int
-  userId    Int
-  assignedAt DateTime @default(now())
-  assignedById Int?   // User who made the assignment (null for self-assignment)
+  id           Int      @id @default(autoincrement())
+  taskId       Int
+  userId       Int
+  assignedAt   DateTime @default(now())
+  assignedById Int? // User who made the assignment (null for self-assignment)
 
   task       Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user       User  @relation("TaskAssignments", fields: [userId], references: [id], onDelete: Cascade)
@@ -6946,6 +6955,12 @@ model Tenant {
   ctas                 CTA[]
   playbooks            Playbook[]
 
+  // Bug Tracking relations
+  issues             Issue[]
+  issueLabels        IssueLabel[]
+  errorLogs          ErrorLog[]
+  bugTrackingApiKeys BugTrackingApiKey[]
+
   @@index([slug])
   @@index([status])
 }
@@ -7109,6 +7124,9 @@ model Account {
   // Scheduling relations
   schedulingConfig       SchedulingConfig? // Type A: Appointment scheduling (one-to-one with Account)
   shiftSchedulingConfigs ShiftSchedulingConfig[] // Type B: Shift scheduling
+
+  // Bug Tracking relations
+  issues Issue[]
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
@@ -8387,4 +8405,255 @@ enum AlertDeliveryStatus {
   SENT
   FAILED
   THROTTLED
+}
+
+// ============================================================================
+// BUG TRACKING SYSTEM
+// ============================================================================
+
+enum IssueType {
+  BUG
+  ISSUE
+  FEATURE_REQUEST
+  IMPROVEMENT
+  TASK
+}
+
+enum IssuePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IssueStatus {
+  OPEN
+  TRIAGING
+  IN_PROGRESS
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+  WONT_FIX
+}
+
+enum IssueSource {
+  MANUAL // User-created
+  AI_ASSISTANT // AI-submitted via API
+  BROWSER_ERROR // Frontend error capture
+  API_ERROR // Backend error capture
+  VERCEL_LOG // Vercel log drain
+  RENDER_LOG // Render log stream
+  ANOMALY // Promoted from monitoring anomaly
+}
+
+/**
+ * Issue - Bug, issue, or feature request tracking
+ * Supports both user-reported issues and automated error collection.
+ * Multi-tenant with optional system-wide issues (tenantId = null).
+ */
+model Issue {
+  id       Int     @id @default(autoincrement())
+  tenantId String? // Multi-tenant (null for system-wide platform issues)
+
+  // Core fields
+  title       String        @db.VarChar(500)
+  description String?       @db.Text
+  type        IssueType     @default(BUG)
+  status      IssueStatus   @default(OPEN)
+  priority    IssuePriority @default(MEDIUM)
+  source      IssueSource   @default(MANUAL)
+
+  // Assignment & ownership
+  reportedById Int? // User who reported (null for automated)
+  assignedToId Int?
+
+  // Links to other entities
+  projectId Int? // Optional: link to project
+  accountId Int? // Optional: link to account
+  anomalyId String? // Optional: linked monitoring anomaly
+
+  // Error-specific fields (for automated issues)
+  errorHash      String? // Deduplication hash for auto-errors
+  errorCount     Int     @default(1) // How many times this error occurred
+  stackTrace     String? @db.Text
+  browserInfo    Json? // { browser, version, os, device }
+  requestInfo    Json? // { method, url, headers, statusCode }
+  componentStack String? @db.Text // React component stack
+
+  // Environment context
+  environment String? // development, staging, production
+  appVersion  String? // App version when issue occurred
+  url         String? // URL where error occurred
+
+  // Metadata
+  customFields Json?
+
+  // Timestamps
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  resolvedAt DateTime?
+  closedAt   DateTime?
+
+  // Relations
+  tenant      Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reportedBy  User?             @relation("IssueReportedBy", fields: [reportedById], references: [id], onDelete: SetNull)
+  assignedTo  User?             @relation("IssueAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  project     Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  account     Account?          @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  labels      IssueLabel[]      @relation("IssueLabels")
+  comments    IssueComment[]
+  attachments IssueAttachment[]
+  errorLogs   ErrorLog[]
+
+  @@unique([tenantId, errorHash]) // Prevent duplicate auto-errors per tenant
+  @@index([tenantId])
+  @@index([status])
+  @@index([priority])
+  @@index([type])
+  @@index([source])
+  @@index([assignedToId])
+  @@index([reportedById])
+  @@index([createdAt])
+  @@index([errorHash])
+}
+
+/**
+ * IssueLabel - Tags for categorizing issues
+ */
+model IssueLabel {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+
+  name        String  @db.VarChar(50)
+  color       String  @db.VarChar(7) // Hex color (#RRGGBB)
+  description String? @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  issues Issue[] @relation("IssueLabels")
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+/**
+ * IssueComment - Comments/discussion on issues
+ */
+model IssueComment {
+  id      Int  @id @default(autoincrement())
+  issueId Int
+  userId  Int?
+
+  content  String  @db.Text
+  isSystem Boolean @default(false) // Auto-generated comments (status changes, etc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([issueId])
+  @@index([userId])
+}
+
+/**
+ * IssueAttachment - Files attached to issues
+ */
+model IssueAttachment {
+  id      Int @id @default(autoincrement())
+  issueId Int
+
+  filename String
+  url      String
+  mimeType String
+  size     Int // File size in bytes
+
+  createdAt DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+}
+
+/**
+ * ErrorLog - Raw error log entries
+ * Stores individual error occurrences before deduplication.
+ * Can be linked to an Issue after grouping.
+ */
+model ErrorLog {
+  id       Int     @id @default(autoincrement())
+  issueId  Int? // Linked issue (after grouping)
+  tenantId String?
+
+  // Error details
+  message    String      @db.Text
+  stackTrace String?     @db.Text
+  source     IssueSource
+  level      String      @default("error") // error, warn, fatal
+
+  // Context
+  userId     Int?
+  sessionId  String?
+  requestId  String?
+  url        String?
+  method     String?
+  statusCode Int?
+
+  // Environment
+  environment String?
+  appVersion  String?
+  browserInfo Json? // { userAgent, browser, version, os, device, screenSize }
+  serverInfo  Json? // { hostname, region, instanceId, deploymentId }
+
+  // Raw data
+  rawPayload Json?
+
+  createdAt DateTime @default(now())
+
+  issue  Issue?  @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([issueId])
+  @@index([tenantId])
+  @@index([source])
+  @@index([level])
+  @@index([createdAt])
+}
+
+/**
+ * BugTrackingApiKey - API keys for AI assistant and webhook access
+ * Used for authenticating AI assistants and external services
+ * when submitting bugs/issues programmatically.
+ */
+model BugTrackingApiKey {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+
+  name      String // Descriptive name for the key
+  keyHash   String @unique // Hashed API key (bcrypt)
+  keyPrefix String // First 8 chars for identification (bt_xxxxxxxx)
+
+  // Permissions
+  permissions String[] // ['issues:write', 'issues:read', 'errors:write']
+
+  // Usage tracking
+  lastUsedAt DateTime?
+  usageCount Int       @default(0)
+
+  // Expiration
+  expiresAt DateTime?
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([keyHash])
+  @@index([keyPrefix])
 }

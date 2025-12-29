@@ -61,7 +61,9 @@ export type ModuleId =
   | 'demoAITools'
   | 'demoMarketing'
   // Finance Tracking module
-  | 'financeTracking';
+  | 'financeTracking'
+  // Bug Tracking module
+  | 'bugTracking';
 
 /**
  * Navigation group identifiers
@@ -694,6 +696,25 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     description:
       'Admin-only finance tracking: expenses, budgets, recurring costs, and profitability analysis',
   },
+
+  // ============ BUG TRACKING MODULE ============
+  bugTracking: {
+    id: 'bugTracking',
+    label: 'Bug Tracking',
+    navGroup: 'projects',
+    path: '/bug-tracking',
+    additionalPaths: [
+      '/bug-tracking/:id',
+      '/bug-tracking/new',
+      '/bug-tracking/labels',
+      '/bug-tracking/errors',
+    ],
+    icon: 'Bug',
+    isCore: false,
+    apiPrefixes: ['/api/bug-tracking'],
+    description:
+      'Bug tracking, issue management, and error monitoring with AI assistant integration and external log collection',
+  },
 };
 
 /**
@@ -768,6 +789,8 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'demoMarketing',
   // Finance Tracking
   'financeTracking',
+  // Bug Tracking
+  'bugTracking',
 ];
 
 /**

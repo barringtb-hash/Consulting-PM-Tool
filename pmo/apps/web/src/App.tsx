@@ -214,6 +214,11 @@ const RecurringCostFormPage = lazy(
   () => import('./pages/finance/RecurringCostFormPage'),
 );
 
+// Bug Tracking pages
+const BugTrackingIssuesPage = lazy(
+  () => import('./pages/bug-tracking/IssuesPage'),
+);
+
 /**
  * Loading fallback for lazy-loaded pages
  */
@@ -899,6 +904,28 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <RecurringCostFormPage />
+                    </LazyPage>
+                  }
+                />
+              </>
+            )}
+
+            {/* Bug Tracking module */}
+            {isModuleEnabled('bugTracking') && (
+              <>
+                <Route
+                  path="/bug-tracking"
+                  element={
+                    <LazyPage>
+                      <BugTrackingIssuesPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/bug-tracking/:id"
+                  element={
+                    <LazyPage>
+                      <BugTrackingIssuesPage />
                     </LazyPage>
                   }
                 />
