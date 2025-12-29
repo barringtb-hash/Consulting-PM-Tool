@@ -126,6 +126,9 @@ Consulting-PM-Tool/
 │   │       │   │   ├── predictive-maintenance/ # Predictive Maintenance (Phase 3)
 │   │       │   │   ├── revenue-management/ # Revenue Management (Phase 3)
 │   │       │   │   ├── safety-monitor/   # Safety Monitor (Phase 3)
+│   │       │   │   ├── ai-monitoring/    # AI usage tracking & cost monitoring
+│   │       │   │   ├── bug-tracking/     # Issue tracking & error collection
+│   │       │   │   ├── brand-profiles/   # Brand identity management
 │   │       │   │   ├── customer-success/ # Customer Success Platform
 │   │       │   │   └── feature-flags/    # Feature toggle system
 │   │       │   ├── prisma/       # Prisma client configuration
@@ -455,6 +458,24 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Predictive Maintenance | `pmo/apps/api/src/modules/predictive-maintenance/` |
 | Revenue Management | `pmo/apps/api/src/modules/revenue-management/` |
 | Safety Monitor | `pmo/apps/api/src/modules/safety-monitor/` |
+| **AI Monitoring & Operations** | |
+| AI Monitoring module | `pmo/apps/api/src/modules/ai-monitoring/` |
+| AI Usage service | `pmo/apps/api/src/modules/ai-monitoring/ai-usage.service.ts` |
+| AI Client (tracked calls) | `pmo/apps/api/src/modules/ai-monitoring/ai-client.ts` |
+| Predictive analytics | `pmo/apps/api/src/modules/ai-monitoring/predictive.service.ts` |
+| Operations Dashboard | `pmo/apps/web/src/pages/operations/OperationsDashboardPage.tsx` |
+| AI Usage page | `pmo/apps/web/src/pages/operations/AIUsagePage.tsx` |
+| **Bug Tracking** | |
+| Bug Tracking module | `pmo/apps/api/src/modules/bug-tracking/` |
+| Bug Tracking router | `pmo/apps/api/src/modules/bug-tracking/bug-tracking.router.ts` |
+| Bug Tracking service | `pmo/apps/api/src/modules/bug-tracking/bug-tracking.service.ts` |
+| Error Collector service | `pmo/apps/api/src/modules/bug-tracking/error-collector.service.ts` |
+| AI Prompt service | `pmo/apps/api/src/modules/bug-tracking/ai-prompt.service.ts` |
+| Issues page | `pmo/apps/web/src/pages/bug-tracking/IssuesPage.tsx` |
+| Issue Detail page | `pmo/apps/web/src/pages/bug-tracking/IssueDetailPage.tsx` |
+| **Brand Profiles** | |
+| Brand Profile router | `pmo/apps/api/src/modules/brand-profiles/brand-profile.router.ts` |
+| Brand Profile service | `pmo/apps/api/src/modules/brand-profiles/brand-profile.service.ts` |
 | **Customer Success** | |
 | Customer Success module | `pmo/apps/api/src/modules/customer-success/` |
 | Customer Success pages | `pmo/apps/web/src/pages/customer-success/` |
@@ -480,7 +501,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Activity service | `pmo/apps/api/src/crm/services/activity.service.ts` |
 | Activity routes | `pmo/apps/api/src/crm/routes/activity.routes.ts` |
 | CRM module exports | `pmo/apps/api/src/crm/index.ts` |
-| Pipeline page (UI) | `pmo/apps/web/src/pages/PipelinePage.tsx` |
+| Opportunities page (Pipeline UI) | `pmo/apps/web/src/pages/crm/OpportunitiesPage.tsx` |
 | Account detail page | `pmo/apps/web/src/pages/crm/AccountDetailPage.tsx` |
 | Opportunity detail page | `pmo/apps/web/src/pages/crm/OpportunityDetailPage.tsx` |
 | Lead service (with conversion) | `pmo/apps/api/src/services/lead.service.ts` |

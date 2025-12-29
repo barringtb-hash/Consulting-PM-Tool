@@ -82,6 +82,16 @@ These modules can be enabled/disabled per customer:
 | `pipeline` | Pipeline | opportunities | Sales pipeline visualization | `/sales/pipeline` |
 | `admin` | Admin | None | User & module administration | `/admin/users`, `/admin/modules` |
 | `customerSuccess` | Customer Success | accounts | Customer health scoring, success plans, playbooks | `/customer-success/*` |
+| `brandProfiles` | Brand Profiles | accounts | Brand identity, voice, and asset management | `/marketing/brands` |
+
+### Operations & Monitoring Modules
+
+These modules provide operational visibility and debugging capabilities:
+
+| Module ID | Label | Dependencies | Description | Routes |
+|-----------|-------|--------------|-------------|--------|
+| `aiMonitoring` | AI Monitoring | None | AI usage tracking, cost monitoring, predictive analytics | `/operations/ai-usage`, `/operations/dashboard` |
+| `bugTracking` | Bug Tracking | None | Issue tracking, error collection, external integrations | `/bug-tracking/issues`, `/bug-tracking/issues/:id` |
 
 ### AI Tools Modules
 
@@ -146,6 +156,11 @@ complianceMonitor    → requires → accounts
 predictiveMaintenance→ requires → accounts
 revenueManagement    → requires → accounts
 safetyMonitor        → requires → accounts
+
+# Operations & Support
+aiMonitoring         → requires → (none, standalone)
+bugTracking          → requires → (none, standalone)
+brandProfiles        → requires → accounts
 ```
 
 ---
@@ -184,7 +199,8 @@ VITE_ENABLED_MODULES=dashboard,tasks,crm,accounts,opportunities,activities,pipel
 | Manufacturing | `dashboard,tasks,crm,accounts,projects,predictiveMaintenance,safetyMonitor,inventoryForecasting` |
 | Hospitality | `dashboard,tasks,crm,accounts,projects,scheduling,revenueManagement,chatbot` |
 | AI-Enabled CRM | `dashboard,tasks,crm,accounts,opportunities,activities,pipeline,chatbot,documentAnalyzer,leadScoring,customerSuccess` |
-| Full Platform | `dashboard,tasks,crm,accounts,opportunities,activities,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer,customerSuccess,productDescriptions,scheduling,intake,contentGenerator,leadScoring,priorAuth,inventoryForecasting,complianceMonitor,predictiveMaintenance,revenueManagement,safetyMonitor` |
+| Full Platform | `dashboard,tasks,crm,accounts,opportunities,activities,projects,assets,marketing,leads,pipeline,admin,chatbot,documentAnalyzer,customerSuccess,productDescriptions,scheduling,intake,contentGenerator,leadScoring,priorAuth,inventoryForecasting,complianceMonitor,predictiveMaintenance,revenueManagement,safetyMonitor,aiMonitoring,bugTracking,brandProfiles` |
+| Operations Team | `dashboard,tasks,crm,accounts,admin,aiMonitoring,bugTracking` |
 
 ### Method 2: Admin UI (Per-Tenant)
 
