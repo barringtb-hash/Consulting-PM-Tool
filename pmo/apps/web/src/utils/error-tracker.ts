@@ -376,9 +376,9 @@ export const errorTracker = new ErrorTracker({
   appVersion: import.meta.env.VITE_APP_VERSION,
 });
 
-// Auto-initialize in production
-if (import.meta.env.PROD) {
-  errorTracker.init();
-}
+// Auto-initialize in all environments
+// This ensures errors are captured even in staging/preview deployments
+// The server will still handle deduplication and issue creation
+errorTracker.init();
 
 export default errorTracker;
