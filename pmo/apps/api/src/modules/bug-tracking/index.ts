@@ -37,6 +37,7 @@ export * from './types';
 export * from './bug-tracking.service';
 export * from './error-collector.service';
 export * from './api-key.service';
+export * from './ai-prompt.service';
 
 // Export router
 export { default as bugTrackingRouter } from './bug-tracking.router';

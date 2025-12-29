@@ -218,6 +218,9 @@ const RecurringCostFormPage = lazy(
 const BugTrackingIssuesPage = lazy(
   () => import('./pages/bug-tracking/IssuesPage'),
 );
+const BugTrackingIssueDetailPage = lazy(
+  () => import('./pages/bug-tracking/IssueDetailPage'),
+);
 
 /**
  * Loading fallback for lazy-loaded pages
@@ -925,7 +928,7 @@ function App(): JSX.Element {
                   path="/bug-tracking/:id"
                   element={
                     <LazyPage>
-                      <BugTrackingIssuesPage />
+                      <BugTrackingIssueDetailPage />
                     </LazyPage>
                   }
                 />

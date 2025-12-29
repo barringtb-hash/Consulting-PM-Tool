@@ -339,3 +339,78 @@ export async function revokeApiKey(id: number): Promise<ApiKey> {
 export async function deleteApiKey(id: number): Promise<void> {
   return del(`/bug-tracking/api-keys/${id}`);
 }
+
+// ============================================================================
+// AI PROMPT API
+// ============================================================================
+
+export interface AIPromptOptions {
+  format?: 'markdown' | 'plain' | 'json';
+  includeComments?: boolean;
+  includeErrorLogs?: boolean;
+  includeRelatedIssues?: boolean;
+  maxErrorLogs?: number;
+  customInstructions?: string;
+}
+
+export interface AIPromptResponse {
+  prompt: string;
+  issue: {
+    id: number;
+    title: string;
+    type: IssueType;
+    priority: IssuePriority;
+    status: IssueStatus;
+  };
+  context: {
+    suggestedFiles?: string[];
+    stackTrace?: string;
+    environment?: string;
+    errorCount?: number;
+    relatedIssues?: Array<{ id: number; title: string; status: IssueStatus }>;
+  };
+  metadata: {
+    generatedAt: string;
+    format: string;
+    includesComments: boolean;
+    includesErrorLogs: boolean;
+  };
+}
+
+export async function getIssueAIPrompt(
+  issueId: number,
+  options: AIPromptOptions = {}
+): Promise<AIPromptResponse> {
+  const params = new URLSearchParams();
+  if (options.format) params.set('format', options.format);
+  if (options.includeComments !== undefined) params.set('includeComments', String(options.includeComments));
+  if (options.includeErrorLogs !== undefined) params.set('includeErrorLogs', String(options.includeErrorLogs));
+  if (options.includeRelatedIssues !== undefined) params.set('includeRelatedIssues', String(options.includeRelatedIssues));
+  if (options.maxErrorLogs !== undefined) params.set('maxErrorLogs', String(options.maxErrorLogs));
+  if (options.customInstructions) params.set('customInstructions', options.customInstructions);
+
+  const queryString = params.toString();
+  return get(`/bug-tracking/issues/${issueId}/ai-prompt${queryString ? `?${queryString}` : ''}`);
+}
+
+export interface BatchPromptOptions {
+  issueIds: number[];
+  format?: 'markdown' | 'plain' | 'json';
+  includeComments?: boolean;
+  includeErrorLogs?: boolean;
+  combined?: boolean;
+}
+
+export async function getBatchAIPrompts(options: BatchPromptOptions): Promise<{ prompts: AIPromptResponse[] } | AIPromptResponse> {
+  return post('/bug-tracking/ai-prompts/batch', options);
+}
+
+export interface AIPromptFormats {
+  formats: string[];
+  options: Record<string, { description: string; default?: unknown; max?: number; maxLength?: number }>;
+  slashCommand: { command: string; description: string; usage: string };
+}
+
+export async function getAIPromptFormats(): Promise<AIPromptFormats> {
+  return get('/bug-tracking/ai-prompt/formats');
+}

@@ -6,6 +6,7 @@ import { runWithTenantContext } from '../../tenant/tenant.context';
 import * as bugService from './bug-tracking.service';
 import * as errorService from './error-collector.service';
 import * as apiKeyService from './api-key.service';
+import * as aiPromptService from './ai-prompt.service';
 import { IssueType, IssuePriority, IssueStatus, IssueSource } from './types';
 
 const router = Router();
@@ -118,6 +119,23 @@ const bulkAssignSchema = bulkActionSchema.extend({
 
 const bulkLabelSchema = bulkActionSchema.extend({
   labelIds: z.array(z.number().int().positive()).min(1),
+});
+
+const aiPromptOptionsSchema = z.object({
+  format: z.enum(['markdown', 'plain', 'json']).optional(),
+  includeComments: z.boolean().optional(),
+  includeErrorLogs: z.boolean().optional(),
+  includeRelatedIssues: z.boolean().optional(),
+  maxErrorLogs: z.number().int().positive().max(50).optional(),
+  customInstructions: z.string().max(2000).optional(),
+});
+
+const batchPromptSchema = z.object({
+  issueIds: z.array(z.number().int().positive()).min(1).max(20),
+  format: z.enum(['markdown', 'plain', 'json']).optional(),
+  includeComments: z.boolean().optional(),
+  includeErrorLogs: z.boolean().optional(),
+  combined: z.boolean().optional(),
 });
 
 // ============================================================================
@@ -891,6 +909,137 @@ router.post(
       console.error('Error processing Render logs:', error);
       res.status(500).json({ error: 'Failed to process Render logs' });
     }
+  }
+);
+
+// ============================================================================
+// AI PROMPT GENERATION ROUTES
+// ============================================================================
+
+// GET /bug-tracking/issues/:id/ai-prompt - Generate AI prompt for single issue
+router.get(
+  '/bug-tracking/issues/:id/ai-prompt',
+  requireAuth,
+  tenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+
+      // Parse query params as options
+      const options: aiPromptService.AIPromptOptions = {
+        format: (req.query.format as 'markdown' | 'plain' | 'json') || 'markdown',
+        includeComments: req.query.includeComments === 'true',
+        includeErrorLogs: req.query.includeErrorLogs !== 'false', // default true
+        includeRelatedIssues: req.query.includeRelatedIssues === 'true',
+        maxErrorLogs: req.query.maxErrorLogs ? Number(req.query.maxErrorLogs) : 10,
+        customInstructions: req.query.customInstructions as string | undefined,
+      };
+
+      const prompt = await aiPromptService.generateAIPrompt(issueId, options);
+      res.json(prompt);
+    } catch (error) {
+      if ((error as Error).message === 'Issue not found') {
+        return res.status(404).json({ error: 'Issue not found' });
+      }
+      console.error('Error generating AI prompt:', error);
+      res.status(500).json({ error: 'Failed to generate AI prompt' });
+    }
+  }
+);
+
+// POST /bug-tracking/issues/:id/ai-prompt - Generate AI prompt with options in body
+router.post(
+  '/bug-tracking/issues/:id/ai-prompt',
+  requireAuth,
+  tenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+      const parsed = aiPromptOptionsSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        return res.status(400).json({ errors: parsed.error.flatten() });
+      }
+
+      const prompt = await aiPromptService.generateAIPrompt(issueId, parsed.data);
+      res.json(prompt);
+    } catch (error) {
+      if ((error as Error).message === 'Issue not found') {
+        return res.status(404).json({ error: 'Issue not found' });
+      }
+      console.error('Error generating AI prompt:', error);
+      res.status(500).json({ error: 'Failed to generate AI prompt' });
+    }
+  }
+);
+
+// POST /bug-tracking/ai-prompts/batch - Generate AI prompts for multiple issues
+router.post(
+  '/bug-tracking/ai-prompts/batch',
+  requireAuth,
+  tenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const parsed = batchPromptSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        return res.status(400).json({ errors: parsed.error.flatten() });
+      }
+
+      const { issueIds, combined, ...options } = parsed.data;
+
+      if (combined) {
+        // Generate a single combined prompt for all issues
+        const prompt = await aiPromptService.generateCombinedPrompt(issueIds, options);
+        res.json(prompt);
+      } else {
+        // Generate individual prompts for each issue
+        const prompts = await aiPromptService.generateBatchPrompts(issueIds, options);
+        res.json({ prompts });
+      }
+    } catch (error) {
+      console.error('Error generating batch AI prompts:', error);
+      res.status(500).json({ error: 'Failed to generate AI prompts' });
+    }
+  }
+);
+
+// GET /bug-tracking/ai-prompt/formats - Get available prompt formats and options
+router.get(
+  '/bug-tracking/ai-prompt/formats',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    res.json({
+      formats: ['markdown', 'plain', 'json'],
+      options: {
+        includeComments: {
+          description: 'Include issue comments in the prompt',
+          default: false,
+        },
+        includeErrorLogs: {
+          description: 'Include associated error logs',
+          default: true,
+        },
+        includeRelatedIssues: {
+          description: 'Include related issues (same labels)',
+          default: false,
+        },
+        maxErrorLogs: {
+          description: 'Maximum number of error logs to include',
+          default: 10,
+          max: 50,
+        },
+        customInstructions: {
+          description: 'Custom instructions to append to the prompt',
+          maxLength: 2000,
+        },
+      },
+      slashCommand: {
+        command: '/implement-issue',
+        description: 'Generate an implementation prompt for a bug tracking issue',
+        usage: '/implement-issue <issue-id> [options]',
+      },
+    });
   }
 );
 

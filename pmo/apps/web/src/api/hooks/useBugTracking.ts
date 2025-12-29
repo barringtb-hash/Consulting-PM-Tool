@@ -302,3 +302,43 @@ export function useDeleteApiKey() {
     },
   });
 }
+
+// ============================================================================
+// AI PROMPT HOOKS
+// ============================================================================
+
+export const aiPromptKeys = {
+  all: ['ai-prompt'] as const,
+  issue: (issueId: number, options?: api.AIPromptOptions) => [...aiPromptKeys.all, 'issue', issueId, options] as const,
+  formats: () => [...aiPromptKeys.all, 'formats'] as const,
+};
+
+export function useIssueAIPrompt(issueId: number, options: api.AIPromptOptions = {}, enabled = true) {
+  return useQuery({
+    queryKey: aiPromptKeys.issue(issueId, options),
+    queryFn: () => api.getIssueAIPrompt(issueId, options),
+    enabled: enabled && !!issueId,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+}
+
+export function useAIPromptFormats() {
+  return useQuery({
+    queryKey: aiPromptKeys.formats(),
+    queryFn: () => api.getAIPromptFormats(),
+    staleTime: 30 * 60 * 1000, // Cache for 30 minutes
+  });
+}
+
+export function useGenerateAIPrompt() {
+  return useMutation({
+    mutationFn: ({ issueId, options }: { issueId: number; options?: api.AIPromptOptions }) =>
+      api.getIssueAIPrompt(issueId, options),
+  });
+}
+
+export function useBatchAIPrompts() {
+  return useMutation({
+    mutationFn: (options: api.BatchPromptOptions) => api.getBatchAIPrompts(options),
+  });
+}
