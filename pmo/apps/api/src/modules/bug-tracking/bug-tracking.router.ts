@@ -22,12 +22,12 @@ const upload = multer({
     files: 5, // Max 5 files per upload
   },
   fileFilter: (_req, file, cb) => {
+    // Note: SVG is excluded due to XSS risk (can contain embedded JavaScript)
     const allowedTypes = [
       'image/jpeg',
       'image/png',
       'image/gif',
       'image/webp',
-      'image/svg+xml',
       'application/pdf',
       'text/plain',
       'text/csv',

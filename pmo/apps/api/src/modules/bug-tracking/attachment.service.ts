@@ -32,17 +32,49 @@ export interface AttachmentWithDataUrl {
 }
 
 // Allowed MIME types for uploads
+// Note: SVG is intentionally excluded due to XSS risk (can contain embedded JavaScript)
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
   'image/png',
   'image/gif',
   'image/webp',
-  'image/svg+xml',
   'application/pdf',
   'text/plain',
   'text/csv',
   'application/json',
 ];
+
+/**
+ * Sanitize filename to prevent path traversal and other security issues
+ * Removes dangerous characters and path components
+ */
+function sanitizeFilename(filename: string): string {
+  // Remove path components (prevent path traversal)
+  let sanitized = filename.replace(/^.*[\\/]/, '');
+
+  // Remove null bytes
+  sanitized = sanitized.replace(/\0/g, '');
+
+  // Remove or replace dangerous characters
+  sanitized = sanitized.replace(/[<>:"/\\|?*]/g, '_');
+
+  // Remove leading/trailing dots and spaces
+  sanitized = sanitized.replace(/^[\s.]+|[\s.]+$/g, '');
+
+  // Limit length to 255 characters
+  if (sanitized.length > 255) {
+    const ext = sanitized.slice(sanitized.lastIndexOf('.'));
+    const name = sanitized.slice(0, sanitized.lastIndexOf('.'));
+    sanitized = name.slice(0, 255 - ext.length) + ext;
+  }
+
+  // Fallback if filename is empty after sanitization
+  if (!sanitized || sanitized.length === 0) {
+    sanitized = 'attachment';
+  }
+
+  return sanitized;
+}
 
 // Maximum file size (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -83,6 +115,9 @@ export async function createAttachment(
     throw new Error('Issue not found');
   }
 
+  // Sanitize filename to prevent security issues
+  const sanitizedFilename = sanitizeFilename(input.filename);
+
   // Convert buffer to base64 data URL
   const base64Data = input.data.toString('base64');
   const dataUrl = `data:${input.mimeType};base64,${base64Data}`;
@@ -92,7 +127,7 @@ export async function createAttachment(
   const attachment = await prisma.issueAttachment.create({
     data: {
       issueId: input.issueId,
-      filename: input.filename,
+      filename: sanitizedFilename,
       url: dataUrl, // Store data URL directly for simplicity
       mimeType: input.mimeType,
       size: input.size,

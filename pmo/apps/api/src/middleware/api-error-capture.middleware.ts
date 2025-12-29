@@ -40,8 +40,9 @@ const MAX_CAPTURES_PER_WINDOW = 10;
 
 /**
  * Clear old rate limit entries periodically
+ * Use unref() so this interval doesn't prevent graceful shutdown
  */
-setInterval(() => {
+const rateLimitCleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [key, timestamp] of errorCaptureRateLimit.entries()) {
     if (now - timestamp > RATE_LIMIT_WINDOW_MS) {
@@ -49,6 +50,9 @@ setInterval(() => {
     }
   }
 }, 60000);
+
+// Allow Node.js to exit even if this interval is still active
+rateLimitCleanupInterval.unref();
 
 /**
  * Check if an error should be captured based on rate limiting

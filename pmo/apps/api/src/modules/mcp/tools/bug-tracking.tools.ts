@@ -203,9 +203,10 @@ export async function executeBugTrackingTool(
 /**
  * Create a new bug report
  */
-async function createBugReport(
-  args: Record<string, unknown>,
-): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
+async function createBugReport(args: Record<string, unknown>): Promise<{
+  content: Array<{ type: 'text'; text: string }>;
+  isError?: boolean;
+}> {
   const {
     title,
     description,
@@ -221,6 +222,35 @@ async function createBugReport(
     browser?: string;
     stepsToReproduce?: string;
   };
+
+  // Validate required fields
+  if (!title || typeof title !== 'string' || title.trim().length === 0) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Error: A title is required to create a bug report. Please provide a clear, concise title describing the issue.',
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  if (
+    !description ||
+    typeof description !== 'string' ||
+    description.trim().length === 0
+  ) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Error: A description is required to create a bug report. Please provide details about the issue including what happened and what you expected.',
+        },
+      ],
+      isError: true,
+    };
+  }
 
   // Build full description with additional context
   let fullDescription = description;
