@@ -78,7 +78,7 @@ interface IssueComment {
   id: number;
   content: string;
   createdAt: Date;
-  user: { id: number; name: string } | null;
+  user?: { id: number; name: string } | null;
 }
 
 // ============================================================================
