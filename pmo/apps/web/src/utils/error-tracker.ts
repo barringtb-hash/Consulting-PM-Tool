@@ -17,7 +17,11 @@
 interface ClientError {
   message: string;
   stack?: string;
-  source: 'window.onerror' | 'unhandledrejection' | 'react-error-boundary' | 'manual';
+  source:
+    | 'window.onerror'
+    | 'unhandledrejection'
+    | 'react-error-boundary'
+    | 'manual';
   url: string;
   line?: number;
   column?: number;
@@ -206,10 +210,7 @@ class ErrorTracker {
     try {
       if (sync && navigator.sendBeacon) {
         // Use sendBeacon for page unload (more reliable)
-        navigator.sendBeacon(
-          this.config.apiEndpoint,
-          JSON.stringify(payload)
-        );
+        navigator.sendBeacon(this.config.apiEndpoint, JSON.stringify(payload));
       } else {
         await fetch(this.config.apiEndpoint, {
           method: 'POST',
@@ -223,7 +224,9 @@ class ErrorTracker {
     } catch (e) {
       // Re-queue errors on failure (but don't exceed max)
       if (this.queue.length < this.config.maxQueueSize) {
-        this.queue.push(...errors.slice(0, this.config.maxQueueSize - this.queue.length));
+        this.queue.push(
+          ...errors.slice(0, this.config.maxQueueSize - this.queue.length),
+        );
       }
       console.debug('[ErrorTracker] Failed to send errors:', e);
     }
@@ -300,7 +303,7 @@ class ErrorTracker {
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
       const char = content.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return hash.toString(16);
@@ -340,7 +343,11 @@ class ErrorTracker {
     } else if (ua.includes('Android')) {
       os = 'Android';
       device = 'Mobile';
-    } else if (ua.includes('iOS') || ua.includes('iPhone') || ua.includes('iPad')) {
+    } else if (
+      ua.includes('iOS') ||
+      ua.includes('iPhone') ||
+      ua.includes('iPad')
+    ) {
       os = 'iOS';
       device = ua.includes('iPad') ? 'Tablet' : 'Mobile';
     }

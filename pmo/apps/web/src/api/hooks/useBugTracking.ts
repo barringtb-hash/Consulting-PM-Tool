@@ -12,15 +12,21 @@ import * as api from '../bug-tracking';
 export const bugTrackingKeys = {
   all: ['bug-tracking'] as const,
   issues: () => [...bugTrackingKeys.all, 'issues'] as const,
-  issueList: (params: api.ListIssuesParams) => [...bugTrackingKeys.issues(), 'list', params] as const,
-  issueDetail: (id: number) => [...bugTrackingKeys.issues(), 'detail', id] as const,
+  issueList: (params: api.ListIssuesParams) =>
+    [...bugTrackingKeys.issues(), 'list', params] as const,
+  issueDetail: (id: number) =>
+    [...bugTrackingKeys.issues(), 'detail', id] as const,
   issueStats: () => [...bugTrackingKeys.issues(), 'stats'] as const,
   labels: () => [...bugTrackingKeys.all, 'labels'] as const,
-  comments: (issueId: number) => [...bugTrackingKeys.all, 'comments', issueId] as const,
+  comments: (issueId: number) =>
+    [...bugTrackingKeys.all, 'comments', issueId] as const,
   errors: () => [...bugTrackingKeys.all, 'errors'] as const,
-  errorList: (params: api.ListErrorsParams) => [...bugTrackingKeys.errors(), 'list', params] as const,
-  errorStats: (since?: string) => [...bugTrackingKeys.errors(), 'stats', since] as const,
-  issueErrors: (issueId: number) => [...bugTrackingKeys.errors(), 'issue', issueId] as const,
+  errorList: (params: api.ListErrorsParams) =>
+    [...bugTrackingKeys.errors(), 'list', params] as const,
+  errorStats: (since?: string) =>
+    [...bugTrackingKeys.errors(), 'stats', since] as const,
+  issueErrors: (issueId: number) =>
+    [...bugTrackingKeys.errors(), 'issue', issueId] as const,
   apiKeys: () => [...bugTrackingKeys.all, 'api-keys'] as const,
 };
 
@@ -89,8 +95,13 @@ export function useAssignIssue() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, assignedToId }: { id: number; assignedToId: number | null }) =>
-      api.assignIssue(id, assignedToId),
+    mutationFn: ({
+      id,
+      assignedToId,
+    }: {
+      id: number;
+      assignedToId: number | null;
+    }) => api.assignIssue(id, assignedToId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: bugTrackingKeys.issues() });
       queryClient.setQueryData(bugTrackingKeys.issueDetail(data.id), data);
@@ -119,8 +130,13 @@ export function useBulkUpdateStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ issueIds, status }: { issueIds: number[]; status: api.IssueStatus }) =>
-      api.bulkUpdateStatus(issueIds, status),
+    mutationFn: ({
+      issueIds,
+      status,
+    }: {
+      issueIds: number[];
+      status: api.IssueStatus;
+    }) => api.bulkUpdateStatus(issueIds, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bugTrackingKeys.issues() });
     },
@@ -131,8 +147,13 @@ export function useBulkAssign() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ issueIds, assignedToId }: { issueIds: number[]; assignedToId: number | null }) =>
-      api.bulkAssign(issueIds, assignedToId),
+    mutationFn: ({
+      issueIds,
+      assignedToId,
+    }: {
+      issueIds: number[];
+      assignedToId: number | null;
+    }) => api.bulkAssign(issueIds, assignedToId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bugTrackingKeys.issues() });
     },
@@ -143,8 +164,13 @@ export function useBulkAddLabels() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ issueIds, labelIds }: { issueIds: number[]; labelIds: number[] }) =>
-      api.bulkAddLabels(issueIds, labelIds),
+    mutationFn: ({
+      issueIds,
+      labelIds,
+    }: {
+      issueIds: number[];
+      labelIds: number[];
+    }) => api.bulkAddLabels(issueIds, labelIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bugTrackingKeys.issues() });
     },
@@ -177,8 +203,13 @@ export function useUpdateLabel() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: number; input: Partial<api.CreateLabelInput> }) =>
-      api.updateLabel(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: number;
+      input: Partial<api.CreateLabelInput>;
+    }) => api.updateLabel(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bugTrackingKeys.labels() });
     },
@@ -215,8 +246,12 @@ export function useAddComment() {
     mutationFn: ({ issueId, content }: { issueId: number; content: string }) =>
       api.addComment(issueId, content),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: bugTrackingKeys.comments(variables.issueId) });
-      queryClient.invalidateQueries({ queryKey: bugTrackingKeys.issueDetail(variables.issueId) });
+      queryClient.invalidateQueries({
+        queryKey: bugTrackingKeys.comments(variables.issueId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: bugTrackingKeys.issueDetail(variables.issueId),
+      });
     },
   });
 }
@@ -311,11 +346,16 @@ export function useDeleteApiKey() {
 
 export const aiPromptKeys = {
   all: ['ai-prompt'] as const,
-  issue: (issueId: number, options?: api.AIPromptOptions) => [...aiPromptKeys.all, 'issue', issueId, options] as const,
+  issue: (issueId: number, options?: api.AIPromptOptions) =>
+    [...aiPromptKeys.all, 'issue', issueId, options] as const,
   formats: () => [...aiPromptKeys.all, 'formats'] as const,
 };
 
-export function useIssueAIPrompt(issueId: number, options: api.AIPromptOptions = {}, enabled = true) {
+export function useIssueAIPrompt(
+  issueId: number,
+  options: api.AIPromptOptions = {},
+  enabled = true,
+) {
   return useQuery({
     queryKey: aiPromptKeys.issue(issueId, options),
     queryFn: () => api.getIssueAIPrompt(issueId, options),
@@ -334,13 +374,19 @@ export function useAIPromptFormats() {
 
 export function useGenerateAIPrompt() {
   return useMutation({
-    mutationFn: ({ issueId, options }: { issueId: number; options?: api.AIPromptOptions }) =>
-      api.getIssueAIPrompt(issueId, options),
+    mutationFn: ({
+      issueId,
+      options,
+    }: {
+      issueId: number;
+      options?: api.AIPromptOptions;
+    }) => api.getIssueAIPrompt(issueId, options),
   });
 }
 
 export function useBatchAIPrompts() {
   return useMutation({
-    mutationFn: (options: api.BatchPromptOptions) => api.getBatchAIPrompts(options),
+    mutationFn: (options: api.BatchPromptOptions) =>
+      api.getBatchAIPrompts(options),
   });
 }

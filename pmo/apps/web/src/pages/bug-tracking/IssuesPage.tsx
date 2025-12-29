@@ -11,10 +11,21 @@ import {
 } from 'lucide-react';
 import { Button, Input, Badge, Card } from '../../ui';
 import { useIssues, useIssueStats } from '../../api/hooks/useBugTracking';
-import type { IssueStatus, IssuePriority, IssueType, Issue } from '../../api/bug-tracking';
+import type {
+  IssueStatus,
+  IssuePriority,
+  IssueType,
+  Issue,
+} from '../../api/bug-tracking';
 
 // Status badge colors
-const STATUS_CONFIG: Record<IssueStatus, { label: string; variant: 'default' | 'secondary' | 'success' | 'destructive' | 'warning' }> = {
+const STATUS_CONFIG: Record<
+  IssueStatus,
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'success' | 'destructive' | 'warning';
+  }
+> = {
   OPEN: { label: 'Open', variant: 'destructive' },
   TRIAGING: { label: 'Triaging', variant: 'warning' },
   IN_PROGRESS: { label: 'In Progress', variant: 'default' },
@@ -25,21 +36,32 @@ const STATUS_CONFIG: Record<IssueStatus, { label: string; variant: 'default' | '
 };
 
 // Priority badge colors
-const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> = {
-  LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
-  MEDIUM: { label: 'Medium', color: 'bg-blue-100 text-blue-700' },
-  HIGH: { label: 'High', color: 'bg-orange-100 text-orange-700' },
-  CRITICAL: { label: 'Critical', color: 'bg-red-100 text-red-700' },
-};
+const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> =
+  {
+    LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
+    MEDIUM: { label: 'Medium', color: 'bg-blue-100 text-blue-700' },
+    HIGH: { label: 'High', color: 'bg-orange-100 text-orange-700' },
+    CRITICAL: { label: 'Critical', color: 'bg-red-100 text-red-700' },
+  };
 
 // Type icons
-const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> = {
-  BUG: { label: 'Bug', icon: <Bug className="h-4 w-4 text-red-500" /> },
-  ISSUE: { label: 'Issue', icon: <AlertCircle className="h-4 w-4 text-yellow-500" /> },
-  FEATURE_REQUEST: { label: 'Feature', icon: <Plus className="h-4 w-4 text-green-500" /> },
-  IMPROVEMENT: { label: 'Improvement', icon: <CheckCircle2 className="h-4 w-4 text-blue-500" /> },
-  TASK: { label: 'Task', icon: <Clock className="h-4 w-4 text-gray-500" /> },
-};
+const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
+  {
+    BUG: { label: 'Bug', icon: <Bug className="h-4 w-4 text-red-500" /> },
+    ISSUE: {
+      label: 'Issue',
+      icon: <AlertCircle className="h-4 w-4 text-yellow-500" />,
+    },
+    FEATURE_REQUEST: {
+      label: 'Feature',
+      icon: <Plus className="h-4 w-4 text-green-500" />,
+    },
+    IMPROVEMENT: {
+      label: 'Improvement',
+      icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
+    },
+    TASK: { label: 'Task', icon: <Clock className="h-4 w-4 text-gray-500" /> },
+  };
 
 function IssueRow({ issue }: { issue: Issue }) {
   const navigate = useNavigate();
@@ -57,13 +79,18 @@ function IssueRow({ issue }: { issue: Issue }) {
       </td>
       <td className="px-4 py-3">
         <div className="flex flex-col gap-1">
-          <span className="font-medium text-gray-900 line-clamp-1">{issue.title}</span>
+          <span className="font-medium text-gray-900 line-clamp-1">
+            {issue.title}
+          </span>
           <div className="flex items-center gap-2 flex-wrap">
             {issue.labels.map((label) => (
               <span
                 key={label.id}
                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                style={{ backgroundColor: label.color + '20', color: label.color }}
+                style={{
+                  backgroundColor: label.color + '20',
+                  color: label.color,
+                }}
               >
                 {label.name}
               </span>
@@ -77,7 +104,9 @@ function IssueRow({ issue }: { issue: Issue }) {
         </Badge>
       </td>
       <td className="px-4 py-3">
-        <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}>
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
+        >
           {PRIORITY_CONFIG[issue.priority]?.label || issue.priority}
         </span>
       </td>
@@ -87,7 +116,9 @@ function IssueRow({ issue }: { issue: Issue }) {
             <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
               {issue.assignedTo.name.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm text-gray-700">{issue.assignedTo.name}</span>
+            <span className="text-sm text-gray-700">
+              {issue.assignedTo.name}
+            </span>
           </div>
         ) : (
           <span className="text-sm text-gray-400">Unassigned</span>
@@ -147,10 +178,15 @@ export default function IssuesPage() {
             <Bug className="h-6 w-6" />
             Bug Tracking
           </h1>
-          <p className="text-gray-500 mt-1">Track bugs, issues, and feature requests</p>
+          <p className="text-gray-500 mt-1">
+            Track bugs, issues, and feature requests
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate('/bug-tracking/errors')}>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/bug-tracking/errors')}
+          >
             Error Dashboard
           </Button>
           <Button onClick={() => navigate('/bug-tracking/new')}>
@@ -228,11 +264,17 @@ export default function IssuesPage() {
             <select
               className="border rounded px-3 py-1.5 text-sm"
               value={statusFilter.length === 1 ? statusFilter[0] : ''}
-              onChange={(e) => setStatusFilter(e.target.value ? [e.target.value as IssueStatus] : [])}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value ? [e.target.value as IssueStatus] : [],
+                )
+              }
             >
               <option value="">All Status</option>
               {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                <option key={key} value={key}>{config.label}</option>
+                <option key={key} value={key}>
+                  {config.label}
+                </option>
               ))}
             </select>
 
@@ -240,11 +282,17 @@ export default function IssuesPage() {
             <select
               className="border rounded px-3 py-1.5 text-sm"
               value={priorityFilter.length === 1 ? priorityFilter[0] : ''}
-              onChange={(e) => setPriorityFilter(e.target.value ? [e.target.value as IssuePriority] : [])}
+              onChange={(e) =>
+                setPriorityFilter(
+                  e.target.value ? [e.target.value as IssuePriority] : [],
+                )
+              }
             >
               <option value="">All Priority</option>
               {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
-                <option key={key} value={key}>{config.label}</option>
+                <option key={key} value={key}>
+                  {config.label}
+                </option>
               ))}
             </select>
           </div>
@@ -257,32 +305,56 @@ export default function IssuesPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assignee</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Type
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Title
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Priority
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Assignee
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Created
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Activity
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td
+                    colSpan={7}
+                    className="px-4 py-8 text-center text-gray-500"
+                  >
                     Loading issues...
                   </td>
                 </tr>
               ) : issues.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-                    No issues found. <Link to="/bug-tracking/new" className="text-blue-600 hover:underline">Create one</Link>
+                  <td
+                    colSpan={7}
+                    className="px-4 py-8 text-center text-gray-500"
+                  >
+                    No issues found.{' '}
+                    <Link
+                      to="/bug-tracking/new"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Create one
+                    </Link>
                   </td>
                 </tr>
               ) : (
-                issues.map((issue) => (
-                  <IssueRow key={issue.id} issue={issue} />
-                ))
+                issues.map((issue) => <IssueRow key={issue.id} issue={issue} />)
               )}
             </tbody>
           </table>
@@ -292,9 +364,9 @@ export default function IssuesPage() {
         {pagination && pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t">
             <div className="text-sm text-gray-500">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-              {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-              {pagination.total} issues
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
+              of {pagination.total} issues
             </div>
             <div className="flex items-center gap-2">
               <Button

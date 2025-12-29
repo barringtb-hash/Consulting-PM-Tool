@@ -1,7 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { requireAuth, AuthenticatedRequest } from '../../auth/auth.middleware';
-import { tenantMiddleware, optionalTenantMiddleware } from '../../tenant/tenant.middleware';
+import {
+  tenantMiddleware,
+  optionalTenantMiddleware,
+} from '../../tenant/tenant.middleware';
 import { runWithTenantContext } from '../../tenant/tenant.context';
 import * as bugService from './bug-tracking.service';
 import * as errorService from './error-collector.service';
@@ -49,7 +52,10 @@ const createLabelSchema = z.object({
 
 const updateLabelSchema = z.object({
   name: z.string().min(1).max(50).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   description: z.string().max(255).optional(),
 });
 
@@ -60,7 +66,11 @@ const createCommentSchema = z.object({
 const createApiKeySchema = z.object({
   name: z.string().min(1).max(100),
   permissions: z.array(z.string()).min(1),
-  expiresAt: z.string().datetime().optional().transform((val) => val ? new Date(val) : undefined),
+  expiresAt: z
+    .string()
+    .datetime()
+    .optional()
+    .transform((val) => (val ? new Date(val) : undefined)),
 });
 
 const aiSubmitSchema = z.object({
@@ -69,32 +79,41 @@ const aiSubmitSchema = z.object({
   description: z.string().min(1),
   priority: z.nativeEnum(IssuePriority).optional(),
   labels: z.array(z.string()).optional(),
-  metadata: z.object({
-    conversationId: z.string().optional(),
-    userId: z.number().optional(),
-    context: z.string().optional(),
-    suggestedSolution: z.string().optional(),
-  }).optional(),
+  metadata: z
+    .object({
+      conversationId: z.string().optional(),
+      userId: z.number().optional(),
+      context: z.string().optional(),
+      suggestedSolution: z.string().optional(),
+    })
+    .optional(),
 });
 
 const clientErrorSchema = z.object({
   message: z.string().min(1),
   stack: z.string().optional(),
-  source: z.enum(['window.onerror', 'unhandledrejection', 'react-error-boundary', 'manual']),
+  source: z.enum([
+    'window.onerror',
+    'unhandledrejection',
+    'react-error-boundary',
+    'manual',
+  ]),
   url: z.string(),
   line: z.number().optional(),
   column: z.number().optional(),
   componentStack: z.string().optional(),
-  browserInfo: z.object({
-    userAgent: z.string().optional(),
-    language: z.string().optional(),
-    platform: z.string().optional(),
-    screenSize: z.string().optional(),
-    browser: z.string().optional(),
-    version: z.string().optional(),
-    os: z.string().optional(),
-    device: z.string().optional(),
-  }).optional(),
+  browserInfo: z
+    .object({
+      userAgent: z.string().optional(),
+      language: z.string().optional(),
+      platform: z.string().optional(),
+      screenSize: z.string().optional(),
+      browser: z.string().optional(),
+      version: z.string().optional(),
+      os: z.string().optional(),
+      device: z.string().optional(),
+    })
+    .optional(),
   sessionId: z.string().optional(),
   userId: z.number().optional(),
   environment: z.string().optional(),
@@ -153,7 +172,7 @@ interface ApiKeyRequest extends Request {
 async function requireApiKey(
   req: ApiKeyRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const apiKey = req.headers['x-api-key'] as string;
 
@@ -183,7 +202,9 @@ function requirePermission(permission: string) {
     }
 
     if (!apiKeyService.hasPermission(req.apiKey.permissions, permission)) {
-      return res.status(403).json({ error: `Missing permission: ${permission}` });
+      return res
+        .status(403)
+        .json({ error: `Missing permission: ${permission}` });
     }
 
     next();
@@ -225,7 +246,10 @@ router.get(
     try {
       const filters = {
         status: req.query.status as IssueStatus | IssueStatus[] | undefined,
-        priority: req.query.priority as IssuePriority | IssuePriority[] | undefined,
+        priority: req.query.priority as
+          | IssuePriority
+          | IssuePriority[]
+          | undefined,
         type: req.query.type as IssueType | IssueType[] | undefined,
         source: req.query.source as IssueSource | IssueSource[] | undefined,
         assignedToId: req.query.assignedToId
@@ -254,7 +278,12 @@ router.get(
       const pagination = {
         page: req.query.page ? Number(req.query.page) : 1,
         limit: req.query.limit ? Math.min(Number(req.query.limit), 100) : 20,
-        sortBy: (req.query.sortBy as 'createdAt' | 'updatedAt' | 'priority' | 'status') || 'createdAt',
+        sortBy:
+          (req.query.sortBy as
+            | 'createdAt'
+            | 'updatedAt'
+            | 'priority'
+            | 'status') || 'createdAt',
         sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',
       };
 
@@ -264,7 +293,7 @@ router.get(
       console.error('Error listing issues:', error);
       res.status(500).json({ error: 'Failed to list issues' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/issues - Create issue
@@ -285,7 +314,7 @@ router.post(
       console.error('Error creating issue:', error);
       res.status(500).json({ error: 'Failed to create issue' });
     }
-  }
+  },
 );
 
 // GET /bug-tracking/issues/stats - Get statistics
@@ -301,7 +330,7 @@ router.get(
       console.error('Error getting issue stats:', error);
       res.status(500).json({ error: 'Failed to get statistics' });
     }
-  }
+  },
 );
 
 // GET /bug-tracking/issues/:id - Get issue by ID
@@ -323,7 +352,7 @@ router.get(
       console.error('Error getting issue:', error);
       res.status(500).json({ error: 'Failed to get issue' });
     }
-  }
+  },
 );
 
 // PUT /bug-tracking/issues/:id - Update issue
@@ -348,7 +377,7 @@ router.put(
       console.error('Error updating issue:', error);
       res.status(500).json({ error: 'Failed to update issue' });
     }
-  }
+  },
 );
 
 // DELETE /bug-tracking/issues/:id - Delete issue
@@ -368,7 +397,7 @@ router.delete(
       console.error('Error deleting issue:', error);
       res.status(500).json({ error: 'Failed to delete issue' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/issues/:id/assign - Assign issue
@@ -390,7 +419,7 @@ router.post(
       console.error('Error assigning issue:', error);
       res.status(500).json({ error: 'Failed to assign issue' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/issues/:id/status - Change status
@@ -416,7 +445,7 @@ router.post(
       console.error('Error changing status:', error);
       res.status(500).json({ error: 'Failed to change status' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -437,14 +466,14 @@ router.post(
 
       const result = await bugService.bulkUpdateStatus(
         parsed.data.issueIds,
-        parsed.data.status
+        parsed.data.status,
       );
       res.json({ updated: result.count });
     } catch (error) {
       console.error('Error bulk updating status:', error);
       res.status(500).json({ error: 'Failed to bulk update status' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/issues/bulk/assign - Bulk assign
@@ -461,14 +490,14 @@ router.post(
 
       const result = await bugService.bulkAssign(
         parsed.data.issueIds,
-        parsed.data.assignedToId
+        parsed.data.assignedToId,
       );
       res.json({ updated: result.count });
     } catch (error) {
       console.error('Error bulk assigning:', error);
       res.status(500).json({ error: 'Failed to bulk assign' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/issues/bulk/labels - Bulk add labels
@@ -485,14 +514,14 @@ router.post(
 
       const result = await bugService.bulkAddLabels(
         parsed.data.issueIds,
-        parsed.data.labelIds
+        parsed.data.labelIds,
       );
       res.json(result);
     } catch (error) {
       console.error('Error bulk adding labels:', error);
       res.status(500).json({ error: 'Failed to bulk add labels' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -513,7 +542,7 @@ router.get(
       console.error('Error listing comments:', error);
       res.status(500).json({ error: 'Failed to list comments' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/issues/:id/comments - Add comment
@@ -532,7 +561,7 @@ router.post(
       const comment = await bugService.addComment(
         issueId,
         parsed.data,
-        req.user?.id
+        req.user?.id,
       );
       res.status(201).json(comment);
     } catch (error) {
@@ -542,7 +571,7 @@ router.post(
       console.error('Error adding comment:', error);
       res.status(500).json({ error: 'Failed to add comment' });
     }
-  }
+  },
 );
 
 // DELETE /bug-tracking/comments/:id - Delete comment
@@ -566,7 +595,7 @@ router.delete(
       console.error('Error deleting comment:', error);
       res.status(500).json({ error: 'Failed to delete comment' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -586,7 +615,7 @@ router.get(
       console.error('Error listing labels:', error);
       res.status(500).json({ error: 'Failed to list labels' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/labels - Create label
@@ -607,7 +636,7 @@ router.post(
       console.error('Error creating label:', error);
       res.status(500).json({ error: 'Failed to create label' });
     }
-  }
+  },
 );
 
 // PUT /bug-tracking/labels/:id - Update label
@@ -632,7 +661,7 @@ router.put(
       console.error('Error updating label:', error);
       res.status(500).json({ error: 'Failed to update label' });
     }
-  }
+  },
 );
 
 // DELETE /bug-tracking/labels/:id - Delete label
@@ -652,7 +681,7 @@ router.delete(
       console.error('Error deleting label:', error);
       res.status(500).json({ error: 'Failed to delete label' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -672,7 +701,7 @@ router.get(
       console.error('Error listing API keys:', error);
       res.status(500).json({ error: 'Failed to list API keys' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/api-keys - Create API key
@@ -693,7 +722,7 @@ router.post(
       console.error('Error creating API key:', error);
       res.status(500).json({ error: 'Failed to create API key' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/api-keys/:id/revoke - Revoke API key
@@ -717,7 +746,7 @@ router.post(
       console.error('Error revoking API key:', error);
       res.status(500).json({ error: 'Failed to revoke API key' });
     }
-  }
+  },
 );
 
 // DELETE /bug-tracking/api-keys/:id - Delete API key
@@ -737,7 +766,7 @@ router.delete(
       console.error('Error deleting API key:', error);
       res.status(500).json({ error: 'Failed to delete API key' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -758,7 +787,11 @@ router.post(
 
       // Run with the API key's tenant context
       const issue = await runWithTenantContext(
-        { tenantId: req.apiKey!.tenantId, tenantSlug: '', tenantPlan: 'STARTER' },
+        {
+          tenantId: req.apiKey!.tenantId,
+          tenantSlug: '',
+          tenantPlan: 'STARTER',
+        },
         async () => {
           return bugService.createIssue({
             title: parsed.data.title,
@@ -768,7 +801,7 @@ router.post(
             source: 'AI_ASSISTANT',
             customFields: parsed.data.metadata,
           });
-        }
+        },
       );
 
       res.status(201).json(issue);
@@ -776,7 +809,7 @@ router.post(
       console.error('Error submitting AI issue:', error);
       res.status(500).json({ error: 'Failed to submit issue' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -797,7 +830,9 @@ router.post(
           return res.status(400).json({ errors: parsed.error.flatten() });
         }
 
-        const results = await errorService.ingestClientErrors(parsed.data.errors);
+        const results = await errorService.ingestClientErrors(
+          parsed.data.errors,
+        );
         res.status(201).json({ processed: results.length });
       } else {
         const parsed = clientErrorSchema.safeParse(req.body);
@@ -812,7 +847,7 @@ router.post(
       console.error('Error ingesting client error:', error);
       res.status(500).json({ error: 'Failed to ingest error' });
     }
-  }
+  },
 );
 
 // GET /bug-tracking/errors - Get recent error logs
@@ -826,7 +861,9 @@ router.get(
         source: req.query.source as IssueSource | undefined,
         level: req.query.level as string | undefined,
         limit: req.query.limit ? Number(req.query.limit) : 100,
-        since: req.query.since ? new Date(req.query.since as string) : undefined,
+        since: req.query.since
+          ? new Date(req.query.since as string)
+          : undefined,
       };
 
       const errors = await errorService.getRecentErrorLogs(options);
@@ -835,7 +872,7 @@ router.get(
       console.error('Error getting error logs:', error);
       res.status(500).json({ error: 'Failed to get error logs' });
     }
-  }
+  },
 );
 
 // GET /bug-tracking/errors/stats - Get error statistics
@@ -854,7 +891,7 @@ router.get(
       console.error('Error getting error stats:', error);
       res.status(500).json({ error: 'Failed to get error statistics' });
     }
-  }
+  },
 );
 
 // GET /bug-tracking/issues/:id/errors - Get error logs for an issue
@@ -873,7 +910,7 @@ router.get(
       console.error('Error getting issue errors:', error);
       res.status(500).json({ error: 'Failed to get issue errors' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -893,7 +930,7 @@ router.post(
       console.error('Error processing Vercel logs:', error);
       res.status(500).json({ error: 'Failed to process Vercel logs' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/webhooks/render - Render log stream
@@ -909,7 +946,7 @@ router.post(
       console.error('Error processing Render logs:', error);
       res.status(500).json({ error: 'Failed to process Render logs' });
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -927,11 +964,14 @@ router.get(
 
       // Parse query params as options
       const options: aiPromptService.AIPromptOptions = {
-        format: (req.query.format as 'markdown' | 'plain' | 'json') || 'markdown',
+        format:
+          (req.query.format as 'markdown' | 'plain' | 'json') || 'markdown',
         includeComments: req.query.includeComments === 'true',
         includeErrorLogs: req.query.includeErrorLogs !== 'false', // default true
         includeRelatedIssues: req.query.includeRelatedIssues === 'true',
-        maxErrorLogs: req.query.maxErrorLogs ? Number(req.query.maxErrorLogs) : 10,
+        maxErrorLogs: req.query.maxErrorLogs
+          ? Number(req.query.maxErrorLogs)
+          : 10,
         customInstructions: req.query.customInstructions as string | undefined,
       };
 
@@ -944,7 +984,7 @@ router.get(
       console.error('Error generating AI prompt:', error);
       res.status(500).json({ error: 'Failed to generate AI prompt' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/issues/:id/ai-prompt - Generate AI prompt with options in body
@@ -961,7 +1001,10 @@ router.post(
         return res.status(400).json({ errors: parsed.error.flatten() });
       }
 
-      const prompt = await aiPromptService.generateAIPrompt(issueId, parsed.data);
+      const prompt = await aiPromptService.generateAIPrompt(
+        issueId,
+        parsed.data,
+      );
       res.json(prompt);
     } catch (error) {
       if ((error as Error).message === 'Issue not found') {
@@ -970,7 +1013,7 @@ router.post(
       console.error('Error generating AI prompt:', error);
       res.status(500).json({ error: 'Failed to generate AI prompt' });
     }
-  }
+  },
 );
 
 // POST /bug-tracking/ai-prompts/batch - Generate AI prompts for multiple issues
@@ -990,18 +1033,24 @@ router.post(
 
       if (combined) {
         // Generate a single combined prompt for all issues
-        const prompt = await aiPromptService.generateCombinedPrompt(issueIds, options);
+        const prompt = await aiPromptService.generateCombinedPrompt(
+          issueIds,
+          options,
+        );
         res.json(prompt);
       } else {
         // Generate individual prompts for each issue
-        const prompts = await aiPromptService.generateBatchPrompts(issueIds, options);
+        const prompts = await aiPromptService.generateBatchPrompts(
+          issueIds,
+          options,
+        );
         res.json({ prompts });
       }
     } catch (error) {
       console.error('Error generating batch AI prompts:', error);
       res.status(500).json({ error: 'Failed to generate AI prompts' });
     }
-  }
+  },
 );
 
 // GET /bug-tracking/ai-prompt/formats - Get available prompt formats and options
@@ -1036,11 +1085,12 @@ router.get(
       },
       slashCommand: {
         command: '/implement-issue',
-        description: 'Generate an implementation prompt for a bug tracking issue',
+        description:
+          'Generate an implementation prompt for a bug tracking issue',
         usage: '/implement-issue <issue-id> [options]',
       },
     });
-  }
+  },
 );
 
 export default router;

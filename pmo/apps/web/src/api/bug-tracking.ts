@@ -10,10 +10,29 @@ import { get, post, put, del } from './http';
 // TYPES
 // ============================================================================
 
-export type IssueType = 'BUG' | 'ISSUE' | 'FEATURE_REQUEST' | 'IMPROVEMENT' | 'TASK';
+export type IssueType =
+  | 'BUG'
+  | 'ISSUE'
+  | 'FEATURE_REQUEST'
+  | 'IMPROVEMENT'
+  | 'TASK';
 export type IssuePriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type IssueStatus = 'OPEN' | 'TRIAGING' | 'IN_PROGRESS' | 'IN_REVIEW' | 'RESOLVED' | 'CLOSED' | 'WONT_FIX';
-export type IssueSource = 'MANUAL' | 'AI_ASSISTANT' | 'BROWSER_ERROR' | 'API_ERROR' | 'VERCEL_LOG' | 'RENDER_LOG' | 'ANOMALY';
+export type IssueStatus =
+  | 'OPEN'
+  | 'TRIAGING'
+  | 'IN_PROGRESS'
+  | 'IN_REVIEW'
+  | 'RESOLVED'
+  | 'CLOSED'
+  | 'WONT_FIX';
+export type IssueSource =
+  | 'MANUAL'
+  | 'AI_ASSISTANT'
+  | 'BROWSER_ERROR'
+  | 'API_ERROR'
+  | 'VERCEL_LOG'
+  | 'RENDER_LOG'
+  | 'ANOMALY';
 
 export interface Issue {
   id: number;
@@ -158,7 +177,9 @@ export interface ListIssuesParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-export async function listIssues(params: ListIssuesParams = {}): Promise<PaginatedResponse<Issue>> {
+export async function listIssues(
+  params: ListIssuesParams = {},
+): Promise<PaginatedResponse<Issue>> {
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
@@ -205,7 +226,10 @@ export interface UpdateIssueInput {
   labelIds?: number[];
 }
 
-export async function updateIssue(id: number, input: UpdateIssueInput): Promise<Issue> {
+export async function updateIssue(
+  id: number,
+  input: UpdateIssueInput,
+): Promise<Issue> {
   return put(`/bug-tracking/issues/${id}`, input);
 }
 
@@ -213,11 +237,17 @@ export async function deleteIssue(id: number): Promise<void> {
   return del(`/bug-tracking/issues/${id}`);
 }
 
-export async function assignIssue(id: number, assignedToId: number | null): Promise<Issue> {
+export async function assignIssue(
+  id: number,
+  assignedToId: number | null,
+): Promise<Issue> {
   return post(`/bug-tracking/issues/${id}/assign`, { assignedToId });
 }
 
-export async function changeIssueStatus(id: number, status: IssueStatus): Promise<Issue> {
+export async function changeIssueStatus(
+  id: number,
+  status: IssueStatus,
+): Promise<Issue> {
   return post(`/bug-tracking/issues/${id}/status`, { status });
 }
 
@@ -229,15 +259,24 @@ export async function getIssueStats(): Promise<IssueStats> {
 // BULK OPERATIONS
 // ============================================================================
 
-export async function bulkUpdateStatus(issueIds: number[], status: IssueStatus): Promise<{ updated: number }> {
+export async function bulkUpdateStatus(
+  issueIds: number[],
+  status: IssueStatus,
+): Promise<{ updated: number }> {
   return post('/bug-tracking/issues/bulk/status', { issueIds, status });
 }
 
-export async function bulkAssign(issueIds: number[], assignedToId: number | null): Promise<{ updated: number }> {
+export async function bulkAssign(
+  issueIds: number[],
+  assignedToId: number | null,
+): Promise<{ updated: number }> {
   return post('/bug-tracking/issues/bulk/assign', { issueIds, assignedToId });
 }
 
-export async function bulkAddLabels(issueIds: number[], labelIds: number[]): Promise<{ updated: number }> {
+export async function bulkAddLabels(
+  issueIds: number[],
+  labelIds: number[],
+): Promise<{ updated: number }> {
   return post('/bug-tracking/issues/bulk/labels', { issueIds, labelIds });
 }
 
@@ -255,11 +294,16 @@ export interface CreateLabelInput {
   description?: string;
 }
 
-export async function createLabel(input: CreateLabelInput): Promise<IssueLabel> {
+export async function createLabel(
+  input: CreateLabelInput,
+): Promise<IssueLabel> {
   return post('/bug-tracking/labels', input);
 }
 
-export async function updateLabel(id: number, input: Partial<CreateLabelInput>): Promise<IssueLabel> {
+export async function updateLabel(
+  id: number,
+  input: Partial<CreateLabelInput>,
+): Promise<IssueLabel> {
   return put(`/bug-tracking/labels/${id}`, input);
 }
 
@@ -275,7 +319,10 @@ export async function listComments(issueId: number): Promise<IssueComment[]> {
   return get(`/bug-tracking/issues/${issueId}/comments`);
 }
 
-export async function addComment(issueId: number, content: string): Promise<IssueComment> {
+export async function addComment(
+  issueId: number,
+  content: string,
+): Promise<IssueComment> {
   return post(`/bug-tracking/issues/${issueId}/comments`, { content });
 }
 
@@ -294,7 +341,9 @@ export interface ListErrorsParams {
   since?: string;
 }
 
-export async function listErrors(params: ListErrorsParams = {}): Promise<ErrorLog[]> {
+export async function listErrors(
+  params: ListErrorsParams = {},
+): Promise<ErrorLog[]> {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -309,7 +358,10 @@ export async function getErrorStats(since?: string): Promise<ErrorStats> {
   return get(`/bug-tracking/errors/stats${params}`);
 }
 
-export async function getIssueErrors(issueId: number, limit?: number): Promise<ErrorLog[]> {
+export async function getIssueErrors(
+  issueId: number,
+  limit?: number,
+): Promise<ErrorLog[]> {
   const params = limit ? `?limit=${limit}` : '';
   return get(`/bug-tracking/issues/${issueId}/errors${params}`);
 }
@@ -328,7 +380,9 @@ export interface CreateApiKeyInput {
   expiresAt?: string;
 }
 
-export async function createApiKey(input: CreateApiKeyInput): Promise<CreateApiKeyResult> {
+export async function createApiKey(
+  input: CreateApiKeyInput,
+): Promise<CreateApiKeyResult> {
   return post('/bug-tracking/api-keys', input);
 }
 
@@ -379,18 +433,25 @@ export interface AIPromptResponse {
 
 export async function getIssueAIPrompt(
   issueId: number,
-  options: AIPromptOptions = {}
+  options: AIPromptOptions = {},
 ): Promise<AIPromptResponse> {
   const params = new URLSearchParams();
   if (options.format) params.set('format', options.format);
-  if (options.includeComments !== undefined) params.set('includeComments', String(options.includeComments));
-  if (options.includeErrorLogs !== undefined) params.set('includeErrorLogs', String(options.includeErrorLogs));
-  if (options.includeRelatedIssues !== undefined) params.set('includeRelatedIssues', String(options.includeRelatedIssues));
-  if (options.maxErrorLogs !== undefined) params.set('maxErrorLogs', String(options.maxErrorLogs));
-  if (options.customInstructions) params.set('customInstructions', options.customInstructions);
+  if (options.includeComments !== undefined)
+    params.set('includeComments', String(options.includeComments));
+  if (options.includeErrorLogs !== undefined)
+    params.set('includeErrorLogs', String(options.includeErrorLogs));
+  if (options.includeRelatedIssues !== undefined)
+    params.set('includeRelatedIssues', String(options.includeRelatedIssues));
+  if (options.maxErrorLogs !== undefined)
+    params.set('maxErrorLogs', String(options.maxErrorLogs));
+  if (options.customInstructions)
+    params.set('customInstructions', options.customInstructions);
 
   const queryString = params.toString();
-  return get(`/bug-tracking/issues/${issueId}/ai-prompt${queryString ? `?${queryString}` : ''}`);
+  return get(
+    `/bug-tracking/issues/${issueId}/ai-prompt${queryString ? `?${queryString}` : ''}`,
+  );
 }
 
 export interface BatchPromptOptions {
@@ -401,13 +462,18 @@ export interface BatchPromptOptions {
   combined?: boolean;
 }
 
-export async function getBatchAIPrompts(options: BatchPromptOptions): Promise<{ prompts: AIPromptResponse[] } | AIPromptResponse> {
+export async function getBatchAIPrompts(
+  options: BatchPromptOptions,
+): Promise<{ prompts: AIPromptResponse[] } | AIPromptResponse> {
   return post('/bug-tracking/ai-prompts/batch', options);
 }
 
 export interface AIPromptFormats {
   formats: string[];
-  options: Record<string, { description: string; default?: unknown; max?: number; maxLength?: number }>;
+  options: Record<
+    string,
+    { description: string; default?: unknown; max?: number; maxLength?: number }
+  >;
   slashCommand: { command: string; description: string; usage: string };
 }
 

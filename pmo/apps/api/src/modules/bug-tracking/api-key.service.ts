@@ -16,7 +16,7 @@ const KEY_PREFIX = 'bt_'; // Bug Tracking API key prefix
  * Returns the raw key only once - it cannot be retrieved later
  */
 export async function createApiKey(
-  input: CreateApiKeyInput
+  input: CreateApiKeyInput,
 ): Promise<ApiKeyResult> {
   const tenantId = getTenantId();
 
@@ -179,7 +179,7 @@ export async function deleteApiKey(keyId: number) {
  */
 export function hasPermission(
   permissions: string[],
-  required: string
+  required: string,
 ): boolean {
   // Check for exact match
   if (permissions.includes(required)) {

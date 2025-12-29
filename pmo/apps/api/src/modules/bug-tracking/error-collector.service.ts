@@ -21,7 +21,7 @@ import {
 export function generateErrorHash(
   message: string,
   stackTrace?: string,
-  source?: string
+  source?: string,
 ): string {
   // Normalize the stack trace - take first 3 lines and remove line numbers/columns
   const normalizedStack = stackTrace
@@ -53,7 +53,7 @@ async function findOrCreateIssueForError(
     environment?: string;
     appVersion?: string;
     url?: string;
-  }
+  },
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
 
@@ -115,7 +115,7 @@ export async function ingestClientError(error: ClientErrorInput) {
   const errorHash = generateErrorHash(
     error.message,
     error.stack,
-    'BROWSER_ERROR'
+    'BROWSER_ERROR',
   );
 
   // Create error log entry
@@ -161,7 +161,9 @@ export async function ingestClientError(error: ClientErrorInput) {
  */
 export async function ingestClientErrors(errors: ClientErrorInput[]) {
   const results = await Promise.all(
-    errors.map((error) => ingestClientError(error).catch((e) => ({ error: e })))
+    errors.map((error) =>
+      ingestClientError(error).catch((e) => ({ error: e })),
+    ),
   );
   return results;
 }
@@ -178,7 +180,7 @@ export async function ingestServerError(error: ServerErrorInput) {
   const errorHash = generateErrorHash(
     error.message,
     error.stackTrace,
-    error.source
+    error.source,
   );
 
   // Create error log entry
@@ -239,7 +241,7 @@ export async function processVercelLogs(logs: VercelLogMessage[]) {
       (log.statusCode && log.statusCode >= 500) ||
       log.message.toLowerCase().includes('error') ||
       log.message.toLowerCase().includes('exception') ||
-      log.message.toLowerCase().includes('fatal')
+      log.message.toLowerCase().includes('fatal'),
   );
 
   const results = [];
@@ -291,7 +293,7 @@ export async function processRenderLogs(logs: RenderLogEvent[]) {
       log.message.includes('Error:') ||
       log.message.includes('FATAL') ||
       log.message.includes('Uncaught') ||
-      log.message.includes('UnhandledPromiseRejection')
+      log.message.includes('UnhandledPromiseRejection'),
   );
 
   const results = [];
@@ -332,7 +334,7 @@ export async function processRenderLogs(logs: RenderLogEvent[]) {
  */
 export async function getErrorLogsForIssue(
   issueId: number,
-  limit: number = 50
+  limit: number = 50,
 ) {
   return prisma.errorLog.findMany({
     where: { issueId },
@@ -350,7 +352,7 @@ export async function getRecentErrorLogs(
     level?: string;
     limit?: number;
     since?: Date;
-  } = {}
+  } = {},
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
   const { source, level, limit = 100, since } = options;
@@ -411,11 +413,11 @@ export async function getErrorStats(since?: Date) {
     total,
     bySource: bySource.reduce(
       (acc, s) => ({ ...acc, [s.source]: s._count }),
-      {} as Record<string, number>
+      {} as Record<string, number>,
     ),
     byLevel: byLevel.reduce(
       (acc, l) => ({ ...acc, [l.level]: l._count }),
-      {} as Record<string, number>
+      {} as Record<string, number>,
     ),
     hourlyTrend,
   };
@@ -455,7 +457,9 @@ function formatClientErrorDescription(error: ClientErrorInput): string {
   if (error.browserInfo) {
     parts.push('', '**Browser Info:**');
     if (error.browserInfo.browser) {
-      parts.push(`- Browser: ${error.browserInfo.browser} ${error.browserInfo.version || ''}`);
+      parts.push(
+        `- Browser: ${error.browserInfo.browser} ${error.browserInfo.version || ''}`,
+      );
     }
     if (error.browserInfo.os) {
       parts.push(`- OS: ${error.browserInfo.os}`);

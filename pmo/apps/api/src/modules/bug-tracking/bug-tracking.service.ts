@@ -1,6 +1,12 @@
 import { prisma } from '../../prisma/client';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
-import { Prisma, IssueStatus, IssuePriority, IssueType, IssueSource } from '@prisma/client';
+import {
+  Prisma,
+  IssueStatus,
+  IssuePriority,
+  IssueType,
+  IssueSource,
+} from '@prisma/client';
 import {
   CreateIssueInput,
   UpdateIssueInput,
@@ -21,7 +27,7 @@ import {
  */
 export async function createIssue(
   input: CreateIssueInput,
-  reportedById?: number
+  reportedById?: number,
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
   const { labelIds, ...issueData } = input;
@@ -41,16 +47,15 @@ export async function createIssue(
       labels: true,
       project: { select: { id: true, name: true } },
       account: { select: { id: true, name: true } },
-      _count: { select: { comments: true, attachments: true, errorLogs: true } },
+      _count: {
+        select: { comments: true, attachments: true, errorLogs: true },
+      },
     },
   });
 
   // Add system comment for issue creation
   if (reportedById) {
-    await addSystemComment(
-      issue.id,
-      `Issue created by user`
-    );
+    await addSystemComment(issue.id, `Issue created by user`);
   }
 
   return issue;
@@ -86,7 +91,9 @@ export async function getIssueById(id: number) {
         take: 10,
         orderBy: { createdAt: 'desc' },
       },
-      _count: { select: { comments: true, attachments: true, errorLogs: true } },
+      _count: {
+        select: { comments: true, attachments: true, errorLogs: true },
+      },
     },
   });
 }
@@ -96,7 +103,7 @@ export async function getIssueById(id: number) {
  */
 export async function listIssues(
   filters: IssueFilters = {},
-  pagination: PaginationOptions = {}
+  pagination: PaginationOptions = {},
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
   const {
@@ -155,10 +162,16 @@ export async function listIssues(
     ];
   }
   if (filters.createdAfter) {
-    where.createdAt = { ...(where.createdAt as object), gte: filters.createdAfter };
+    where.createdAt = {
+      ...(where.createdAt as object),
+      gte: filters.createdAfter,
+    };
   }
   if (filters.createdBefore) {
-    where.createdAt = { ...(where.createdAt as object), lte: filters.createdBefore };
+    where.createdAt = {
+      ...(where.createdAt as object),
+      lte: filters.createdBefore,
+    };
   }
 
   const [issues, total] = await Promise.all([
@@ -170,7 +183,9 @@ export async function listIssues(
         labels: true,
         project: { select: { id: true, name: true } },
         account: { select: { id: true, name: true } },
-        _count: { select: { comments: true, attachments: true, errorLogs: true } },
+        _count: {
+          select: { comments: true, attachments: true, errorLogs: true },
+        },
       },
       orderBy: { [sortBy]: sortOrder },
       skip: (page - 1) * limit,
@@ -216,8 +231,15 @@ export async function updateIssue(
   if (input.status && input.status !== existing.status) {
     changes.push(`Status changed from ${existing.status} to ${input.status}`);
   }
-  if (input.assignedToId !== undefined && input.assignedToId !== existing.assignedToId) {
-    changes.push(input.assignedToId ? `Assigned to user #${input.assignedToId}` : 'Unassigned');
+  if (
+    input.assignedToId !== undefined &&
+    input.assignedToId !== existing.assignedToId
+  ) {
+    changes.push(
+      input.assignedToId
+        ? `Assigned to user #${input.assignedToId}`
+        : 'Unassigned',
+    );
   }
 
   const issue = await prisma.issue.update({
@@ -239,7 +261,9 @@ export async function updateIssue(
       labels: true,
       project: { select: { id: true, name: true } },
       account: { select: { id: true, name: true } },
-      _count: { select: { comments: true, attachments: true, errorLogs: true } },
+      _count: {
+        select: { comments: true, attachments: true, errorLogs: true },
+      },
     },
   });
 
@@ -364,7 +388,7 @@ export async function deleteLabel(id: number) {
 export async function addComment(
   issueId: number,
   input: CreateCommentInput,
-  userId?: number
+  userId?: number,
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
 
@@ -430,7 +454,7 @@ export async function deleteComment(id: number, userId?: number) {
 
   // Only allow deleting own comments (unless system comment)
   if (comment.userId && userId && comment.userId !== userId) {
-    throw new Error('Cannot delete other user\'s comments');
+    throw new Error("Cannot delete other user's comments");
   }
 
   // Don't allow deleting system comments
@@ -537,7 +561,7 @@ export async function getIssueStats(): Promise<IssueStats> {
   // Convert grouped results to records
   const statusRecord = Object.values(IssueStatus).reduce(
     (acc, status) => ({ ...acc, [status]: 0 }),
-    {} as Record<IssueStatus, number>
+    {} as Record<IssueStatus, number>,
   );
   byStatus.forEach((s) => {
     statusRecord[s.status] = s._count;
@@ -545,7 +569,7 @@ export async function getIssueStats(): Promise<IssueStats> {
 
   const priorityRecord = Object.values(IssuePriority).reduce(
     (acc, priority) => ({ ...acc, [priority]: 0 }),
-    {} as Record<IssuePriority, number>
+    {} as Record<IssuePriority, number>,
   );
   byPriority.forEach((p) => {
     priorityRecord[p.priority] = p._count;
@@ -553,7 +577,7 @@ export async function getIssueStats(): Promise<IssueStats> {
 
   const typeRecord = Object.values(IssueType).reduce(
     (acc, type) => ({ ...acc, [type]: 0 }),
-    {} as Record<IssueType, number>
+    {} as Record<IssueType, number>,
   );
   byType.forEach((t) => {
     typeRecord[t.type] = t._count;
@@ -561,7 +585,7 @@ export async function getIssueStats(): Promise<IssueStats> {
 
   const sourceRecord = Object.values(IssueSource).reduce(
     (acc, source) => ({ ...acc, [source]: 0 }),
-    {} as Record<IssueSource, number>
+    {} as Record<IssueSource, number>,
   );
   bySource.forEach((s) => {
     sourceRecord[s.source] = s._count;
@@ -593,12 +617,16 @@ export async function getIssueStats(): Promise<IssueStats> {
 /**
  * Bulk update issue status
  */
-export async function bulkUpdateStatus(issueIds: number[], status: IssueStatus) {
+export async function bulkUpdateStatus(
+  issueIds: number[],
+  status: IssueStatus,
+) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
 
   const updateData: Prisma.IssueUpdateManyMutationInput = {
     status,
-    resolvedAt: status === 'RESOLVED' || status === 'CLOSED' ? new Date() : undefined,
+    resolvedAt:
+      status === 'RESOLVED' || status === 'CLOSED' ? new Date() : undefined,
     closedAt: status === 'CLOSED' ? new Date() : undefined,
   };
 
@@ -613,7 +641,10 @@ export async function bulkUpdateStatus(issueIds: number[], status: IssueStatus) 
 /**
  * Bulk assign issues
  */
-export async function bulkAssign(issueIds: number[], assignedToId: number | null) {
+export async function bulkAssign(
+  issueIds: number[],
+  assignedToId: number | null,
+) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
 
   return prisma.issue.updateMany({
@@ -650,8 +681,8 @@ export async function bulkAddLabels(issueIds: number[], labelIds: number[]) {
             connect: labelIds.map((labelId) => ({ id: labelId })),
           },
         },
-      })
-    )
+      }),
+    ),
   );
 
   return { updated: validIds.length };

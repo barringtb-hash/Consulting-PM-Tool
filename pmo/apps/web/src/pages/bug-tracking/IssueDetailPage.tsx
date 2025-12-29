@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router';
 import {
   Bug,
   ArrowLeft,
@@ -267,7 +267,10 @@ export default function IssueDetailPage() {
             )}
           </div>
 
-          <Button variant="outline" onClick={() => navigate(`/bug-tracking/${issue.id}/edit`)}>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/bug-tracking/${issue.id}/edit`)}
+          >
             <Edit2 className="h-4 w-4 mr-2" />
             Edit
           </Button>
@@ -470,9 +473,7 @@ export default function IssueDetailPage() {
               {issue.resolvedAt && (
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500">Resolved</span>
-                  <span>
-                    {new Date(issue.resolvedAt).toLocaleDateString()}
-                  </span>
+                  <span>{new Date(issue.resolvedAt).toLocaleDateString()}</span>
                 </div>
               )}
             </div>

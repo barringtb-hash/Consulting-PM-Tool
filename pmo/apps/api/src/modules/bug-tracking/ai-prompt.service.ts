@@ -35,7 +35,12 @@ interface IssueWithRelations {
   updatedAt: Date;
   reportedBy: { id: number; name: string; email: string } | null;
   assignedTo: { id: number; name: string; email: string } | null;
-  labels: Array<{ id: number; name: string; color: string; description: string | null }>;
+  labels: Array<{
+    id: number;
+    name: string;
+    color: string;
+    description: string | null;
+  }>;
   project: { id: number; name: string } | null;
   account: { id: number; name: string } | null;
   comments?: Array<{
@@ -128,7 +133,7 @@ const DEFAULT_OPTIONS: AIPromptOptions = {
  */
 export async function generateAIPrompt(
   issueId: number,
-  options: AIPromptOptions = {}
+  options: AIPromptOptions = {},
 ): Promise<AIPromptResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const tenantId = hasTenantContext() ? getTenantId() : null;
@@ -362,11 +367,13 @@ function generateMarkdownPrompt(
   // Implementation guidelines
   sections.push('### Implementation Guidelines');
   sections.push('');
-  sections.push('1. Read and understand the issue thoroughly before making changes');
+  sections.push(
+    '1. Read and understand the issue thoroughly before making changes',
+  );
   sections.push('2. Check existing code patterns in the codebase');
   sections.push('3. Write tests for your changes');
   sections.push('4. Ensure no regressions are introduced');
-  sections.push('5. Follow the project\'s coding conventions');
+  sections.push("5. Follow the project's coding conventions");
   sections.push('');
 
   return sections.join('\n');
@@ -436,7 +443,9 @@ function generateJsonPrompt(
     },
     stackTrace: opts.includeStackTrace ? issue.stackTrace : undefined,
     errorCount: issue.errorCount,
-    suggestedFiles: opts.includeSuggestedFiles ? extractSuggestedFiles(issue) : [],
+    suggestedFiles: opts.includeSuggestedFiles
+      ? extractSuggestedFiles(issue)
+      : [],
     acceptanceCriteria: generateAcceptanceCriteria(issue).split('\n'),
     comments: opts.includeComments
       ? issue.comments?.map((c: IssueComment) => ({
@@ -483,13 +492,13 @@ function extractSuggestedFiles(issue: IssueWithRelations): string[] {
 
   // Extract files from stack trace
   if (issue.stackTrace) {
-    const fileMatches = issue.stackTrace.match(/(?:at\s+)?[\w./\\-]+\.(ts|tsx|js|jsx):\d+/g);
+    const fileMatches = issue.stackTrace.match(
+      /(?:at\s+)?[\w./\\-]+\.(ts|tsx|js|jsx):\d+/g,
+    );
     if (fileMatches) {
       for (const match of fileMatches) {
         // Clean up the path
-        const cleanPath = match
-          .replace(/^at\s+/, '')
-          .replace(/:\d+.*$/, '');
+        const cleanPath = match.replace(/^at\s+/, '').replace(/:\d+.*$/, '');
 
         // Only include project files (not node_modules)
         if (!cleanPath.includes('node_modules')) {
@@ -501,7 +510,9 @@ function extractSuggestedFiles(issue: IssueWithRelations): string[] {
 
   // Extract from component stack
   if (issue.componentStack) {
-    const componentMatches = issue.componentStack.match(/[\w./\\-]+\.(tsx|jsx)/g);
+    const componentMatches = issue.componentStack.match(
+      /[\w./\\-]+\.(tsx|jsx)/g,
+    );
     if (componentMatches) {
       componentMatches.forEach((m: string) => files.add(m));
     }
@@ -600,7 +611,7 @@ function generateAcceptanceCriteria(issue: IssueWithRelations): string {
  */
 export async function generateBatchPrompts(
   issueIds: number[],
-  options: AIPromptOptions = {}
+  options: AIPromptOptions = {},
 ): Promise<AIPromptResult[]> {
   const results: AIPromptResult[] = [];
 
@@ -622,7 +633,7 @@ export async function generateBatchPrompts(
  */
 export async function generateCombinedPrompt(
   issueIds: number[],
-  options: AIPromptOptions = {}
+  options: AIPromptOptions = {},
 ): Promise<string> {
   const prompts = await generateBatchPrompts(issueIds, options);
 
@@ -633,7 +644,9 @@ export async function generateCombinedPrompt(
   const sections: string[] = [];
   sections.push('# Implementation Tasks');
   sections.push('');
-  sections.push(`This document contains ${prompts.length} related tasks to implement.`);
+  sections.push(
+    `This document contains ${prompts.length} related tasks to implement.`,
+  );
   sections.push('');
   sections.push('---');
   sections.push('');

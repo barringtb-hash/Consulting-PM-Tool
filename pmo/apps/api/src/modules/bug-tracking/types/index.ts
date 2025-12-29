@@ -90,7 +90,11 @@ export interface CreateCommentInput {
 export interface ClientErrorInput {
   message: string;
   stack?: string;
-  source: 'window.onerror' | 'unhandledrejection' | 'react-error-boundary' | 'manual';
+  source:
+    | 'window.onerror'
+    | 'unhandledrejection'
+    | 'react-error-boundary'
+    | 'manual';
   url: string;
   line?: number;
   column?: number;
