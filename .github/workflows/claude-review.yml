@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-      
+
     steps:
       - name: React with eyes emoji to show review started
         uses: actions/github-script@v7
@@ -23,21 +23,40 @@ jobs:
               issue_number: context.payload.pull_request.number,
               body: '👀 Claude is reviewing this PR...'
             });
-            
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Run Claude Code Review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Review this PR for:
-            - Potential bugs or issues
-            - Code quality
-            - Security concerns
-            
-            Format your response as follows:
-            - If you find issues, list them clearly with details.
-            - If everything looks good and there are no issues, start your response with 👍 and provide a brief approval message.
+            Review this PR for code quality, security, and documentation.
+
+            ## Code Quality Checks
+            - Potential bugs or logic errors
+            - Performance issues
+            - Code style and best practices
+
+            ## Security Checks
+            - SQL injection, XSS, or other vulnerabilities
+            - Hardcoded secrets or credentials
+            - Insecure API patterns
+
+            ## Documentation Checks
+            - New public functions should have JSDoc with @param, @returns, @throws
+            - New API endpoints should be documented in CLAUDE.md
+            - New modules should be added to Docs/MODULES.md
+            - Database schema changes should update CLAUDE.md models section
+            - New environment variables should be documented
+
+            ## Response Format
+            Use these icons to categorize findings:
+            - 🐛 **Bug**: [description]
+            - ⚠️ **Security**: [concern]
+            - 📝 **Missing Docs**: [what needs documenting]
+            - 💡 **Suggestion**: [improvement idea]
+
+            If everything looks good with no issues, start your response with 👍 and a brief approval message.

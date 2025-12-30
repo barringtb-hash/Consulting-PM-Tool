@@ -1,3 +1,31 @@
 #!/usr/bin/env sh
 cd "$(dirname "$0")/.."
+
+# Run lint-staged (formatting/linting)
 npx lint-staged
+
+# Documentation reminders based on changed files
+echo ""
+echo "📚 Documentation Reminders:"
+
+# Check if Prisma schema changed
+if git diff --cached --name-only | grep -q "schema.prisma"; then
+  echo "  ⚠️  Prisma schema modified - verify that the CLAUDE.md database section is current"
+fi
+
+# Check if new module files added
+if git diff --cached --name-only | grep -q "apps/api/src/modules/.*/.*\.ts"; then
+  echo "  ⚠️  Module files changed - ensure Docs/MODULES.md is updated if new"
+fi
+
+# Check if new API routes added
+if git diff --cached --name-only | grep -q "apps/api/src/routes/.*\.ts"; then
+  echo "  ⚠️  API routes changed - ensure CLAUDE.md API endpoints are documented"
+fi
+
+# Check if new pages added
+if git diff --cached --name-only | grep -q "apps/web/src/pages/.*Page\.tsx"; then
+  echo "  ⚠️  Page components changed - ensure CLAUDE.md routing section is current"
+fi
+
+echo ""

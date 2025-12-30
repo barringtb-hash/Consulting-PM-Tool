@@ -2,6 +2,47 @@
 
 This document provides a comprehensive guide for AI assistants working with the AI CRM Platform codebase.
 
+---
+
+## ⚠️ CRITICAL: Documentation Maintenance Requirements
+
+**Before implementing ANY code changes, AI assistants MUST:**
+
+1. **Perform Impact Assessment**: Review the following documents to understand what components may be affected:
+   - `Docs/CODEBASE-INVENTORY.md` - Complete mapping of all modules, services, routes, pages
+   - `Docs/MODULE-MAP.md` - Auto-generated module inventory
+   - `CLAUDE.md` - This file (architecture and key files reference)
+
+2. **Update Documentation After Changes**: When modifying the codebase, update the relevant documentation:
+
+   | Change Type | Required Documentation Updates |
+   |-------------|-------------------------------|
+   | New API module | `CLAUDE.md` (Key Files), `Docs/MODULES.md`, `Docs/CODEBASE-INVENTORY.md` |
+   | New service | `CLAUDE.md` (Core Services section) |
+   | New API route | `CLAUDE.md` (API endpoints table) |
+   | New frontend page | `CLAUDE.md` (routing section), `Docs/CODEBASE-INVENTORY.md` |
+   | Database schema change | `CLAUDE.md` (Database Models section) |
+   | New environment variable | `CLAUDE.md` (Environment Variables section) |
+   | Infrastructure change | `CLAUDE.md` (Infrastructure Components section) |
+
+3. **Run Validation Scripts**: Before committing, run these scripts to verify documentation:
+   ```bash
+   cd pmo
+   node scripts/validate-module-docs.mjs    # Checks all modules are documented
+   node scripts/validate-claude-md.mjs      # Validates file references
+   node scripts/generate-module-map.mjs     # Regenerates MODULE-MAP.md
+   ```
+
+4. **PR Documentation Checklist**: Every PR must address the documentation checklist in the PR template (`.github/PULL_REQUEST_TEMPLATE.md`).
+
+**Why This Matters**: Keeping documentation synchronized with code prevents:
+- Breaking changes from undocumented dependencies
+- New developers/AI assistants from missing critical context
+- Technical debt from outdated documentation
+- Failed deployments from missing configuration documentation
+
+---
+
 ## Project Overview
 
 The AI CRM Platform is a full-stack monorepo application that has evolved from a consulting PMO tool into a comprehensive multi-tenant CRM SaaS platform with AI-powered modules. It consists of a React + TypeScript frontend and a Node.js + Express + TypeScript API backend.
@@ -126,6 +167,9 @@ Consulting-PM-Tool/
 │   │       │   │   ├── predictive-maintenance/ # Predictive Maintenance (Phase 3)
 │   │       │   │   ├── revenue-management/ # Revenue Management (Phase 3)
 │   │       │   │   ├── safety-monitor/   # Safety Monitor (Phase 3)
+│   │       │   │   ├── ai-monitoring/    # AI usage tracking & cost monitoring
+│   │       │   │   ├── bug-tracking/     # Issue tracking & error collection
+│   │       │   │   ├── brand-profiles/   # Brand identity management
 │   │       │   │   ├── customer-success/ # Customer Success Platform
 │   │       │   │   └── feature-flags/    # Feature toggle system
 │   │       │   ├── prisma/       # Prisma client configuration
@@ -243,6 +287,29 @@ Consulting-PM-Tool/
      return res.status(400).json({ errors: parsed.error.flatten() });
    }
    ```
+
+6. **Infrastructure Components**:
+   - `cache/redis.client.ts`: Redis caching for sessions and data
+   - `queue/queue.config.ts`: BullMQ job queue configuration
+   - `websocket/websocket.server.ts`: Real-time WebSocket server
+   - `notifications/`: Email and in-app notification service
+   - `integrations/`: OAuth providers and data sync
+
+7. **Core Services** (`apps/api/src/services/`):
+   - `project.service.ts`: Project CRUD and templates
+   - `task.service.ts`: Task management and Kanban
+   - `milestone.service.ts`: Milestone tracking
+   - `lead.service.ts`: Lead management and conversion
+   - `client.service.ts`: Legacy client operations (use Account instead)
+   - `user.service.ts`: User management
+   - `document.service.ts`: Document handling
+   - `asset.service.ts`: AI asset management
+   - `audit.service.ts`: Audit logging
+   - `llm.service.ts`: OpenAI LLM integration
+   - `projectMember.service.ts`: Project member management
+   - `projectStatus.service.ts`: Project status updates
+   - `content-lint.service.ts`: Content validation
+   - `tenant-health.service.ts`: Tenant health monitoring
 
 ### Database Models (Prisma)
 
@@ -455,6 +522,24 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Predictive Maintenance | `pmo/apps/api/src/modules/predictive-maintenance/` |
 | Revenue Management | `pmo/apps/api/src/modules/revenue-management/` |
 | Safety Monitor | `pmo/apps/api/src/modules/safety-monitor/` |
+| **AI Monitoring & Operations** | |
+| AI Monitoring module | `pmo/apps/api/src/modules/ai-monitoring/` |
+| AI Usage service | `pmo/apps/api/src/modules/ai-monitoring/ai-usage.service.ts` |
+| AI Client (tracked calls) | `pmo/apps/api/src/modules/ai-monitoring/ai-client.ts` |
+| Predictive analytics | `pmo/apps/api/src/modules/ai-monitoring/predictive.service.ts` |
+| Operations Dashboard | `pmo/apps/web/src/pages/operations/OperationsDashboardPage.tsx` |
+| AI Usage page | `pmo/apps/web/src/pages/operations/AIUsagePage.tsx` |
+| **Bug Tracking** | |
+| Bug Tracking module | `pmo/apps/api/src/modules/bug-tracking/` |
+| Bug Tracking router | `pmo/apps/api/src/modules/bug-tracking/bug-tracking.router.ts` |
+| Bug Tracking service | `pmo/apps/api/src/modules/bug-tracking/bug-tracking.service.ts` |
+| Error Collector service | `pmo/apps/api/src/modules/bug-tracking/error-collector.service.ts` |
+| AI Prompt service | `pmo/apps/api/src/modules/bug-tracking/ai-prompt.service.ts` |
+| Issues page | `pmo/apps/web/src/pages/bug-tracking/IssuesPage.tsx` |
+| Issue Detail page | `pmo/apps/web/src/pages/bug-tracking/IssueDetailPage.tsx` |
+| **Brand Profiles** | |
+| Brand Profile router | `pmo/apps/api/src/modules/brand-profiles/brand-profile.router.ts` |
+| Brand Profile service | `pmo/apps/api/src/modules/brand-profiles/brand-profile.service.ts` |
 | **Customer Success** | |
 | Customer Success module | `pmo/apps/api/src/modules/customer-success/` |
 | Customer Success pages | `pmo/apps/web/src/pages/customer-success/` |
@@ -480,7 +565,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Activity service | `pmo/apps/api/src/crm/services/activity.service.ts` |
 | Activity routes | `pmo/apps/api/src/crm/routes/activity.routes.ts` |
 | CRM module exports | `pmo/apps/api/src/crm/index.ts` |
-| Pipeline page (UI) | `pmo/apps/web/src/pages/PipelinePage.tsx` |
+| Opportunities page (Pipeline UI) | `pmo/apps/web/src/pages/crm/OpportunitiesPage.tsx` |
 | Account detail page | `pmo/apps/web/src/pages/crm/AccountDetailPage.tsx` |
 | Opportunity detail page | `pmo/apps/web/src/pages/crm/OpportunityDetailPage.tsx` |
 | Lead service (with conversion) | `pmo/apps/api/src/services/lead.service.ts` |
