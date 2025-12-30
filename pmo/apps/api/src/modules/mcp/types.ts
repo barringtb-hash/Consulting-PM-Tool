@@ -68,6 +68,8 @@ export interface AIQueryRequest {
   query: string;
   /** User ID for ownership filtering */
   userId?: number;
+  /** User role for permission checking */
+  userRole?: 'USER' | 'ADMIN';
   /** Optional context filters */
   context?: {
     clientId?: number;

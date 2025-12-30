@@ -10,9 +10,9 @@ import { mcpClient } from './mcp-client.service';
 import type { AIQueryRequest, AIQueryResponse } from './types';
 
 /**
- * System prompt for the AI assistant
+ * Base system prompt for the AI assistant
  */
-const SYSTEM_PROMPT = `You are an AI assistant for a consulting CRM tool. You help users manage their clients, projects, tasks, meetings, and bug tracking.
+const BASE_SYSTEM_PROMPT = `You are an AI assistant for a consulting CRM tool. You help users manage their clients, projects, tasks, and meetings.
 
 You have access to the following tools to query and update CRM data:
 
@@ -38,12 +38,10 @@ MEETING TOOLS:
 - get_recent_meetings: Get meetings from the last few days
 - prepare_meeting_brief: Generate a comprehensive brief for a client meeting
 
-BUG TRACKING TOOLS:
+BUG TRACKING TOOLS (for reporting issues):
 - create_bug_report: Create a new bug report or issue when a user reports a problem
 - search_existing_bugs: Search for existing bug reports to check if an issue has already been reported
 - get_bug_status: Get the current status and details of a specific bug report by ID
-- get_runtime_errors: Get recent runtime errors from the application (Vercel, Render, API, browser errors)
-- get_error_statistics: Get error statistics and trends to understand the health of the application
 
 When answering questions:
 1. Use the appropriate tools to gather information
@@ -51,25 +49,59 @@ When answering questions:
 3. Provide specific details and actionable insights
 4. If creating or updating data, confirm the action was successful
 5. For bug reports, first check if a similar issue exists using search_existing_bugs
-6. For error queries, use get_runtime_errors to show actual errors from the system
 
 Be concise but thorough. Focus on providing value to busy consultants.`;
 
 /**
- * Convert MCP tools to OpenAI function format
+ * Admin-only tools section for the system prompt
  */
-function toolsToFunctions() {
+const ADMIN_TOOLS_PROMPT = `
+
+ADMIN-ONLY ERROR MONITORING TOOLS:
+- get_runtime_errors: Get recent runtime errors from the application (Vercel, Render, API, browser errors)
+- get_error_statistics: Get error statistics and trends to understand the health of the application
+
+For error queries, use get_runtime_errors to show actual errors from the system.`;
+
+/**
+ * Admin-only tool names that require ADMIN role
+ */
+const ADMIN_ONLY_TOOLS = new Set([
+  'get_runtime_errors',
+  'get_error_statistics',
+]);
+
+/**
+ * Build the system prompt based on user role
+ */
+function buildSystemPrompt(userRole?: 'USER' | 'ADMIN'): string {
+  if (userRole === 'ADMIN') {
+    return BASE_SYSTEM_PROMPT + ADMIN_TOOLS_PROMPT;
+  }
+  return BASE_SYSTEM_PROMPT;
+}
+
+/**
+ * Convert MCP tools to OpenAI function format, filtering by user role
+ */
+function toolsToFunctions(userRole?: 'USER' | 'ADMIN') {
   const tools = mcpClient.listTools();
-  return tools.then((toolList) =>
-    toolList.map((tool) => ({
+  return tools.then((toolList) => {
+    // Filter out admin-only tools for non-admin users
+    const filteredTools =
+      userRole === 'ADMIN'
+        ? toolList
+        : toolList.filter((tool) => !ADMIN_ONLY_TOOLS.has(tool.name));
+
+    return filteredTools.map((tool) => ({
       type: 'function' as const,
       function: {
         name: tool.name,
         description: tool.description,
         parameters: tool.inputSchema,
       },
-    })),
-  );
+    }));
+  });
 }
 
 /**
@@ -88,7 +120,9 @@ export async function processAIQuery(
     };
   }
 
-  const tools = await toolsToFunctions();
+  // Build system prompt and filter tools based on user role
+  const systemPrompt = buildSystemPrompt(request.userRole);
+  const tools = await toolsToFunctions(request.userRole);
   const toolCalls: AIQueryResponse['toolCalls'] = [];
   const sources: AIQueryResponse['sources'] = [];
 
@@ -102,7 +136,7 @@ export async function processAIQuery(
       type: 'function';
       function: { name: string; arguments: string };
     }>;
-  }> = [{ role: 'system', content: SYSTEM_PROMPT }];
+  }> = [{ role: 'system', content: systemPrompt }];
 
   // Add conversation history if provided
   if (request.history) {
@@ -174,6 +208,26 @@ export async function processAIQuery(
         if (request.userId) {
           functionArgs._userId = request.userId;
         }
+
+        // Check permission for admin-only tools (defense in depth)
+        if (
+          ADMIN_ONLY_TOOLS.has(functionName) &&
+          request.userRole !== 'ADMIN'
+        ) {
+          // Return access denied for admin-only tools
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify({
+              error: 'Access denied',
+              message: 'This tool requires administrator privileges.',
+            }),
+          });
+          continue;
+        }
+
+        // Inject userRole for tools that need it
+        functionArgs._userRole = request.userRole;
 
         // Execute the tool
         const result = await mcpClient.callTool(functionName, functionArgs);

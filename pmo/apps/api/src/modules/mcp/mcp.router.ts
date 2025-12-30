@@ -10,6 +10,7 @@ import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import { mcpClient } from './mcp-client.service';
 import { processAIQuery, executeDirectQuery } from './ai-query.service';
+import { prisma } from '../../prisma/client';
 
 const router = Router();
 
@@ -80,9 +81,16 @@ router.post(
     }
 
     try {
+      // Fetch user role for permission checking
+      const user = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: { role: true },
+      });
+
       const result = await processAIQuery({
         ...parsed.data,
         userId: req.userId,
+        userRole: user?.role as 'USER' | 'ADMIN' | undefined,
       });
       res.json(result);
     } catch (error) {
