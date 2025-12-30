@@ -343,6 +343,8 @@ export async function getErrorLogsForIssue(
 
 /**
  * Get recent error logs
+ * For admin users, includes both tenant-specific errors AND errors without tenant context
+ * (browser errors captured without authentication)
  */
 export async function getRecentErrorLogs(
   options: {
@@ -350,14 +352,39 @@ export async function getRecentErrorLogs(
     level?: string;
     limit?: number;
     since?: Date;
+    includeGlobalErrors?: boolean;
   } = {},
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
-  const { source, level, limit = 100, since } = options;
+  const {
+    source,
+    level,
+    limit = 100,
+    since,
+    includeGlobalErrors = true,
+  } = options;
+
+  // Build tenant filter: include tenant-specific errors AND errors without tenant context
+  // This ensures browser errors (captured without auth) are visible to admins
+  let tenantFilter:
+    | { tenantId?: string | null }
+    | { OR: Array<{ tenantId: string | null }> }
+    | undefined;
+  if (tenantId) {
+    if (includeGlobalErrors) {
+      // Include both tenant errors and null-tenant errors (browser errors without auth)
+      tenantFilter = {
+        OR: [{ tenantId }, { tenantId: null }],
+      };
+    } else {
+      tenantFilter = { tenantId };
+    }
+  }
+  // If no tenant context, return all errors (admin mode or test mode)
 
   return prisma.errorLog.findMany({
     where: {
-      tenantId: tenantId || undefined,
+      ...tenantFilter,
       source: source || undefined,
       level: level || undefined,
       createdAt: since ? { gte: since } : undefined,
@@ -374,11 +401,31 @@ export async function getRecentErrorLogs(
 
 /**
  * Get error statistics
+ * Includes both tenant-specific errors AND errors without tenant context
  */
-export async function getErrorStats(since?: Date) {
+export async function getErrorStats(
+  since?: Date,
+  includeGlobalErrors: boolean = true,
+) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
+
+  // Build tenant filter to include errors without tenant context (browser errors)
+  let tenantFilter:
+    | { tenantId?: string | null }
+    | { OR: Array<{ tenantId: string | null }> }
+    | undefined;
+  if (tenantId) {
+    if (includeGlobalErrors) {
+      tenantFilter = {
+        OR: [{ tenantId }, { tenantId: null }],
+      };
+    } else {
+      tenantFilter = { tenantId };
+    }
+  }
+
   const where = {
-    tenantId: tenantId || undefined,
+    ...tenantFilter,
     createdAt: since ? { gte: since } : undefined,
   };
 
@@ -396,8 +443,11 @@ export async function getErrorStats(since?: Date) {
     }),
     // Get hourly counts for last 24 hours
     (async () => {
+      // Include both tenant-specific errors and errors without tenant (browser errors)
       const tenantFilter = tenantId
-        ? Prisma.sql`AND "tenantId" = ${tenantId}`
+        ? includeGlobalErrors
+          ? Prisma.sql`AND ("tenantId" = ${tenantId} OR "tenantId" IS NULL)`
+          : Prisma.sql`AND "tenantId" = ${tenantId}`
         : Prisma.empty;
       return prisma.$queryRaw`
         SELECT

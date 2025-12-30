@@ -179,8 +179,16 @@ export async function processAIQuery(
     if (!response.ok) {
       const error = await response.text();
       console.error('OpenAI API error:', error);
+      // Provide more helpful error message for debugging
+      const isRateLimited = response.status === 429;
+      const isAuthError = response.status === 401;
+      const errorMessage = isAuthError
+        ? 'AI query processing is not available - the OpenAI API key may be invalid or expired.'
+        : isRateLimited
+          ? 'AI query processing is temporarily unavailable due to rate limiting. Please try again in a moment.'
+          : 'Sorry, I encountered an error processing your request. Please try again.';
       return {
-        response: 'Sorry, I encountered an error processing your request.',
+        response: errorMessage,
         toolCalls: [],
         sources: [],
       };
