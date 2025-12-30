@@ -13,11 +13,14 @@ import {
   User,
   AlertCircle,
   GripVertical,
+  ImagePlus,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useAIAssistant } from './AIAssistantContext';
 import { useAIQuery, type AIQueryResponse } from '../../api/hooks';
 import { MarkdownText } from './MarkdownText';
+import { createIssue, uploadAttachments } from '../../api/bug-tracking';
 
 interface Message {
   id: string;
@@ -54,9 +57,12 @@ export function AIAssistantSidebar(): JSX.Element | null {
   const [input, setInput] = useState('');
   const [width, setWidth] = useState(getInitialWidth);
   const [isResizing, setIsResizing] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [isUploadingBug, setIsUploadingBug] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const aiQuery = useAIQuery();
 
@@ -201,6 +207,91 @@ export function AIAssistantSidebar(): JSX.Element | null {
 
   const clearHistory = () => {
     setMessages([]);
+    setSelectedImages([]);
+  };
+
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+    setSelectedImages((prev) => [...prev, ...imageFiles].slice(0, 5)); // Max 5 images
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Remove a selected image
+  const removeImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Submit bug report with screenshots
+  const submitBugReport = async () => {
+    if (!input.trim() && selectedImages.length === 0) return;
+    if (isUploadingBug) return;
+
+    setIsUploadingBug(true);
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: `🐛 Bug Report: ${input.trim() || 'Screenshot attached'}${selectedImages.length > 0 ? ` (${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''})` : ''}`,
+    };
+
+    const assistantMessage: Message = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      isLoading: true,
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+
+    try {
+      // Create the bug issue
+      const issue = await createIssue({
+        title: input.trim() || 'Bug Report from AI Assistant',
+        description: `**Reported via AI Assistant**\n\n${input.trim() || 'See attached screenshot(s).'}\n\n**Page URL:** ${window.location.href}\n**Timestamp:** ${new Date().toISOString()}`,
+        type: 'BUG',
+        priority: 'MEDIUM',
+      });
+
+      // Upload images if any
+      if (selectedImages.length > 0) {
+        await uploadAttachments(issue.id, selectedImages);
+      }
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMessage.id
+            ? {
+                ...m,
+                content: `✅ Bug report created successfully!\n\n**Issue #${issue.id}:** ${issue.title}\n\nYou can view and track this issue in the [Bug Tracking](/bug-tracking) section.${selectedImages.length > 0 ? `\n\n${selectedImages.length} screenshot${selectedImages.length > 1 ? 's' : ''} attached.` : ''}`,
+                isLoading: false,
+              }
+            : m,
+        ),
+      );
+
+      setInput('');
+      setSelectedImages([]);
+    } catch (error) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMessage.id
+            ? {
+                ...m,
+                content: `❌ Failed to create bug report: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                isLoading: false,
+                isError: true,
+              }
+            : m,
+        ),
+      );
+    } finally {
+      setIsUploadingBug(false);
+    }
   };
 
   // Don't render anything if not open
@@ -366,35 +457,117 @@ export function AIAssistantSidebar(): JSX.Element | null {
       </div>
 
       {/* Input */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex-shrink-0 p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800"
-      >
-        <div className="flex gap-2">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask me anything..."
-            className="flex-1 resize-none rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-            rows={1}
-            disabled={aiQuery.isPending}
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            disabled={!input.trim() || aiQuery.isPending}
-          >
-            {aiQuery.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-      </form>
+      <div className="flex-shrink-0 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        {/* Image Preview */}
+        {selectedImages.length > 0 && (
+          <div className="px-4 pt-3 pb-1">
+            <div className="flex flex-wrap gap-2">
+              {selectedImages.map((file, index) => (
+                <div
+                  key={index}
+                  className="relative group w-16 h-16 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-600"
+                >
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`Screenshot ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              {selectedImages.length}/5 screenshots for bug report
+            </p>
+          </div>
+        )}
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+
+        <form
+          onSubmit={
+            selectedImages.length > 0
+              ? (e) => {
+                  e.preventDefault();
+                  submitBugReport();
+                }
+              : handleSubmit
+          }
+          className="p-4"
+        >
+          <div className="flex gap-2">
+            {/* Image upload button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={
+                aiQuery.isPending ||
+                isUploadingBug ||
+                selectedImages.length >= 5
+              }
+              title="Attach screenshot for bug report"
+              className="flex-shrink-0"
+            >
+              <ImagePlus className="w-4 h-4" />
+            </Button>
+
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                selectedImages.length > 0
+                  ? 'Describe the bug...'
+                  : 'Ask me anything...'
+              }
+              className="flex-1 resize-none rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+              rows={1}
+              disabled={aiQuery.isPending || isUploadingBug}
+            />
+            <Button
+              type="submit"
+              variant={selectedImages.length > 0 ? 'danger' : 'primary'}
+              size="sm"
+              disabled={
+                (selectedImages.length === 0 && !input.trim()) ||
+                aiQuery.isPending ||
+                isUploadingBug
+              }
+              title={
+                selectedImages.length > 0 ? 'Submit bug report' : 'Send message'
+              }
+            >
+              {aiQuery.isPending || isUploadingBug ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          {selectedImages.length > 0 && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+              📸 Screenshot mode: Click send to create a bug report
+            </p>
+          )}
+        </form>
+      </div>
     </div>
   );
 }

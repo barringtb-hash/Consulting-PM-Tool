@@ -2,6 +2,19 @@ import { getStoredToken } from './token-storage';
 import { getStoredTenantId } from './tenant-storage';
 import { buildApiUrl } from './config';
 
+// Import error tracker for HTTP error capture
+// Using dynamic import to avoid circular dependency and ensure it's initialized
+let errorTrackerModule: typeof import('../utils/error-tracker') | null = null;
+const getErrorTracker = async () => {
+  if (!errorTrackerModule) {
+    errorTrackerModule = await import('../utils/error-tracker');
+  }
+  return errorTrackerModule.errorTracker;
+};
+
+// Track URLs that should not be reported to avoid infinite loops
+const ERROR_TRACKING_ENDPOINTS = ['/bug-tracking/errors'];
+
 export interface ApiError extends Error {
   status?: number;
   details?: unknown;
@@ -162,7 +175,10 @@ async function fetchWithAbort(
   }
 }
 
-export async function handleResponse<T>(response: Response): Promise<T> {
+export async function handleResponse<T>(
+  response: Response,
+  requestUrl?: string,
+): Promise<T> {
   const contentType = response.headers.get('content-type');
   const isJson = contentType?.includes('application/json');
   const payload = isJson
@@ -181,10 +197,45 @@ export async function handleResponse<T>(response: Response): Promise<T> {
     apiError.status = response.status;
     apiError.details = payload;
 
+    // Report HTTP errors to bug tracking (skip error tracking endpoints to avoid loops)
+    const shouldTrack =
+      requestUrl &&
+      !ERROR_TRACKING_ENDPOINTS.some((endpoint) =>
+        requestUrl.includes(endpoint),
+      );
+
+    if (shouldTrack && response.status >= 400) {
+      // Fire and forget - don't await to avoid blocking the response
+      reportHttpError(response, apiError, requestUrl).catch(() => {
+        // Silently ignore tracking failures
+      });
+    }
+
     throw apiError;
   }
 
   return (payload as T) ?? (null as T);
+}
+
+/**
+ * Report HTTP errors to the bug tracking system
+ */
+async function reportHttpError(
+  response: Response,
+  error: ApiError,
+  requestUrl: string,
+): Promise<void> {
+  try {
+    const tracker = await getErrorTracker();
+    tracker.captureError({
+      message: `HTTP ${response.status}: ${error.message}`,
+      source: 'manual',
+      url: requestUrl,
+      stack: `API Error at ${requestUrl}\nStatus: ${response.status}\nDetails: ${JSON.stringify(error.details, null, 2)}`,
+    });
+  } catch {
+    // Silently fail - don't let error tracking break the app
+  }
 }
 
 /**
@@ -209,11 +260,12 @@ export interface HttpRequestOptions {
  */
 export const http = {
   async get<T>(path: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await fetchWithAbort(buildApiUrl(path), {
+    const url = buildApiUrl(path);
+    const response = await fetchWithAbort(url, {
       method: 'GET',
       ...options,
     });
-    return handleResponse<T>(response);
+    return handleResponse<T>(response, url);
   },
 
   async post<T>(
@@ -221,12 +273,13 @@ export const http = {
     body?: unknown,
     options?: HttpRequestOptions,
   ): Promise<T> {
-    const response = await fetchWithAbort(buildApiUrl(path), {
+    const url = buildApiUrl(path);
+    const response = await fetchWithAbort(url, {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
       ...options,
     });
-    return handleResponse<T>(response);
+    return handleResponse<T>(response, url);
   },
 
   async put<T>(
@@ -234,12 +287,13 @@ export const http = {
     body?: unknown,
     options?: HttpRequestOptions,
   ): Promise<T> {
-    const response = await fetchWithAbort(buildApiUrl(path), {
+    const url = buildApiUrl(path);
+    const response = await fetchWithAbort(url, {
       method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
       ...options,
     });
-    return handleResponse<T>(response);
+    return handleResponse<T>(response, url);
   },
 
   async patch<T>(
@@ -247,20 +301,22 @@ export const http = {
     body?: unknown,
     options?: HttpRequestOptions,
   ): Promise<T> {
-    const response = await fetchWithAbort(buildApiUrl(path), {
+    const url = buildApiUrl(path);
+    const response = await fetchWithAbort(url, {
       method: 'PATCH',
       body: body ? JSON.stringify(body) : undefined,
       ...options,
     });
-    return handleResponse<T>(response);
+    return handleResponse<T>(response, url);
   },
 
   async delete<T>(path: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await fetchWithAbort(buildApiUrl(path), {
+    const url = buildApiUrl(path);
+    const response = await fetchWithAbort(url, {
       method: 'DELETE',
       ...options,
     });
-    return handleResponse<T>(response);
+    return handleResponse<T>(response, url);
   },
 };
 
