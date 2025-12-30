@@ -34,6 +34,9 @@ import { queryClient } from './api/queries';
 import { ToastProvider } from './ui/Toast';
 import './index.css';
 
+// Initialize error tracking for bug capture (auto-initializes on import)
+import './utils/error-tracker';
+
 // Get the root DOM element - fails fast if not found
 const rootElement = document.getElementById('root');
 
