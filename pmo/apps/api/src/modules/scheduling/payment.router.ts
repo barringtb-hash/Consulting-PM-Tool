@@ -111,6 +111,14 @@ router.put(
         parsed.data,
       );
 
+      if (!config) {
+        res.status(503).json({
+          error:
+            'Payment configuration is currently unavailable. Please try again later.',
+        });
+        return;
+      }
+
       res.json({
         data: {
           id: config.id,
