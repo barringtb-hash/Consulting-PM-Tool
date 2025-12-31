@@ -89,11 +89,82 @@ const OAUTH_CONFIG = {
 };
 
 // ============================================================================
+// OAUTH CONFIGURATION VALIDATION
+// ============================================================================
+
+/**
+ * Check if Zoom OAuth is properly configured
+ */
+export function isZoomOAuthConfigured(): boolean {
+  return Boolean(
+    OAUTH_CONFIG.zoom.clientId &&
+    OAUTH_CONFIG.zoom.clientSecret &&
+    OAUTH_CONFIG.zoom.redirectUri,
+  );
+}
+
+/**
+ * Check if Google Meet OAuth is properly configured
+ */
+export function isGoogleMeetOAuthConfigured(): boolean {
+  return Boolean(
+    OAUTH_CONFIG.googleMeet.clientId &&
+    OAUTH_CONFIG.googleMeet.clientSecret &&
+    OAUTH_CONFIG.googleMeet.redirectUri,
+  );
+}
+
+/**
+ * Check if Microsoft Teams OAuth is properly configured
+ */
+export function isTeamsOAuthConfigured(): boolean {
+  return Boolean(
+    OAUTH_CONFIG.teams.clientId &&
+    OAUTH_CONFIG.teams.clientSecret &&
+    OAUTH_CONFIG.teams.redirectUri,
+  );
+}
+
+/**
+ * Check if a specific video platform OAuth is configured
+ */
+export function isPlatformOAuthConfigured(platform: VideoPlatform): boolean {
+  switch (platform) {
+    case 'ZOOM':
+      return isZoomOAuthConfigured();
+    case 'GOOGLE_MEET':
+      return isGoogleMeetOAuthConfigured();
+    case 'TEAMS':
+      return isTeamsOAuthConfigured();
+    default:
+      return false;
+  }
+}
+
+/**
+ * Get OAuth configuration status for all video platforms
+ */
+export function getVideoOAuthStatus(): Record<
+  VideoPlatform,
+  { configured: boolean; platform: VideoPlatform }
+> {
+  return {
+    ZOOM: { configured: isZoomOAuthConfigured(), platform: 'ZOOM' },
+    GOOGLE_MEET: {
+      configured: isGoogleMeetOAuthConfigured(),
+      platform: 'GOOGLE_MEET',
+    },
+    TEAMS: { configured: isTeamsOAuthConfigured(), platform: 'TEAMS' },
+  };
+}
+
+// ============================================================================
 // OAUTH FLOWS
 // ============================================================================
 
 /**
  * Generate OAuth authorization URL for a platform
+ * @throws Error if the platform's OAuth is not configured
  */
 export function getOAuthUrl(
   platform: VideoPlatform,
@@ -105,6 +176,11 @@ export function getOAuthUrl(
 
   switch (platform) {
     case 'ZOOM': {
+      if (!isZoomOAuthConfigured()) {
+        throw new Error(
+          'Zoom integration is not configured. Please set ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET, and ZOOM_REDIRECT_URI environment variables.',
+        );
+      }
       const params = new URLSearchParams({
         response_type: 'code',
         client_id: OAUTH_CONFIG.zoom.clientId,
@@ -115,6 +191,11 @@ export function getOAuthUrl(
     }
 
     case 'GOOGLE_MEET': {
+      if (!isGoogleMeetOAuthConfigured()) {
+        throw new Error(
+          'Google Meet integration is not configured. Please set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_MEET_REDIRECT_URI environment variables.',
+        );
+      }
       const params = new URLSearchParams({
         response_type: 'code',
         client_id: OAUTH_CONFIG.googleMeet.clientId,
@@ -128,6 +209,11 @@ export function getOAuthUrl(
     }
 
     case 'TEAMS': {
+      if (!isTeamsOAuthConfigured()) {
+        throw new Error(
+          'Microsoft Teams integration is not configured. Please set MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, and MICROSOFT_TEAMS_REDIRECT_URI environment variables.',
+        );
+      }
       const { tenantId } = OAUTH_CONFIG.teams;
       const params = new URLSearchParams({
         response_type: 'code',

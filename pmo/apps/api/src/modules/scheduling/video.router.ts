@@ -39,6 +39,15 @@ const updateVideoConfigSchema = z.object({
 // ============================================================================
 
 /**
+ * GET /api/scheduling/video/oauth/status
+ * Check which video platforms have OAuth properly configured
+ */
+router.get('/video/oauth/status', requireAuth, async (_req, res) => {
+  const status = videoService.getVideoOAuthStatus();
+  return res.json({ data: status });
+});
+
+/**
  * GET /api/scheduling/:configId/video/oauth/:platform
  * Get OAuth authorization URL for a video platform
  */
@@ -61,6 +70,15 @@ router.get(
       return res.json({ data: { authUrl } });
     } catch (error) {
       console.error('Failed to get OAuth URL:', error);
+
+      // Check if this is a configuration error and return a helpful message
+      if (error instanceof Error && error.message.includes('not configured')) {
+        return res.status(503).json({
+          error: error.message,
+          code: 'OAUTH_NOT_CONFIGURED',
+        });
+      }
+
       return res.status(500).json({ error: 'Failed to get authorization URL' });
     }
   },
