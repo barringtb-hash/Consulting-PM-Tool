@@ -343,14 +343,29 @@ export async function saveCalendarIntegration(
  * Get calendar integrations for a config
  */
 export async function getCalendarIntegrations(configId: number) {
-  return prisma.calendarIntegration.findMany({
-    where: { configId },
-    include: {
-      provider: {
-        select: { id: true, name: true },
+  try {
+    return await prisma.calendarIntegration.findMany({
+      where: { configId },
+      include: {
+        provider: {
+          select: { id: true, name: true },
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    // Handle case where table doesn't exist yet (P2021 = table does not exist)
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2021'
+    ) {
+      console.warn(
+        'CalendarIntegration table does not exist yet. Run migrations to create it.',
+      );
+      return [];
+    }
+    throw error;
+  }
 }
 
 /**
