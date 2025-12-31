@@ -1680,6 +1680,9 @@ model SchedulingConfig {
   videoMeetingConfigs  VideoMeetingConfig[]
   paymentConfig        PaymentConfig?
 
+  // Shift scheduling link (Type B scheduling uses this to find its config)
+  shiftSchedulingConfig ShiftSchedulingConfig?
+
   @@index([accountId, isActive])
   @@index([clientId, isActive])
   @@index([tenantId])
@@ -2144,11 +2147,15 @@ model PaymentTransaction {
 
 /**
  * ShiftSchedulingConfig - Configuration for employee/shift scheduling
+ * NOTE: This model is linked to SchedulingConfig via schedulingConfigId
+ * to allow the frontend to use the same config ID for both appointment
+ * and shift scheduling features.
  */
 model ShiftSchedulingConfig {
-  id        Int    @id @default(autoincrement())
-  tenantId  String
-  accountId Int? // Link to CRM Account/business
+  id                 Int    @id @default(autoincrement())
+  tenantId           String
+  accountId          Int? // Link to CRM Account/business
+  schedulingConfigId Int?   @unique // Link to SchedulingConfig for unified ID lookup
 
   // Business settings
   businessName String
@@ -2176,15 +2183,17 @@ model ShiftSchedulingConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  account   Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  employees ShiftEmployee[]
-  shifts    Shift[]
-  schedules ShiftSchedule[]
-  locations ShiftLocation[]
-  roles     ShiftRole[]
+  account          Account?          @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  schedulingConfig SchedulingConfig? @relation(fields: [schedulingConfigId], references: [id], onDelete: SetNull)
+  employees        ShiftEmployee[]
+  shifts           Shift[]
+  schedules        ShiftSchedule[]
+  locations        ShiftLocation[]
+  roles            ShiftRole[]
 
   @@index([tenantId])
   @@index([accountId])
+  @@index([schedulingConfigId])
 }
 
 /**

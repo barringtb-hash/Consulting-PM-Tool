@@ -81,7 +81,7 @@ interface TimeOffInput {
 // ============================================================================
 
 /**
- * Get shift scheduling config by ID
+ * Get shift scheduling config by its own ID
  */
 export async function getShiftConfig(configId: number) {
   return prisma.shiftSchedulingConfig.findFirst({
@@ -90,7 +90,68 @@ export async function getShiftConfig(configId: number) {
 }
 
 /**
- * Get or create shift scheduling config
+ * Get shift scheduling config by SchedulingConfig ID (preferred method)
+ * This allows the frontend to use the same config ID for both
+ * appointment scheduling and shift scheduling.
+ */
+export async function getShiftConfigBySchedulingConfigId(
+  schedulingConfigId: number,
+) {
+  return prisma.shiftSchedulingConfig.findFirst({
+    where: { schedulingConfigId },
+  });
+}
+
+/**
+ * Get or create shift scheduling config by SchedulingConfig ID.
+ * This is the primary method used by the shift router to ensure
+ * a ShiftSchedulingConfig exists when a SchedulingConfig is accessed.
+ */
+export async function getOrCreateShiftConfigBySchedulingConfigId(
+  schedulingConfigId: number,
+  tenantId: string,
+) {
+  // First, try to find existing by schedulingConfigId
+  const existing = await prisma.shiftSchedulingConfig.findFirst({
+    where: { schedulingConfigId },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  // Look up the SchedulingConfig to get business name and account info
+  const schedulingConfig = await prisma.schedulingConfig.findUnique({
+    where: { id: schedulingConfigId },
+    include: { account: true, client: true },
+  });
+
+  if (!schedulingConfig) {
+    return null;
+  }
+
+  // Create a new ShiftSchedulingConfig linked to the SchedulingConfig
+  const businessName =
+    schedulingConfig.practiceName ||
+    schedulingConfig.account?.name ||
+    schedulingConfig.client?.name ||
+    'Default Business';
+
+  return prisma.shiftSchedulingConfig.create({
+    data: {
+      tenantId,
+      schedulingConfigId,
+      accountId: schedulingConfig.accountId,
+      businessName,
+      timezone: schedulingConfig.timezone || 'America/New_York',
+      weeklyOvertimeThreshold: 40,
+    },
+  });
+}
+
+/**
+ * Get or create shift scheduling config (legacy - by ShiftSchedulingConfig ID)
+ * @deprecated Use getOrCreateShiftConfigBySchedulingConfigId instead
  */
 export async function getOrCreateShiftConfig(
   configId: number,
