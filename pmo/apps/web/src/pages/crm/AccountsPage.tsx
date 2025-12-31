@@ -154,123 +154,123 @@ function AccountsPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
-              Total Accounts
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold">
-              {stats.total}
-            </div>
-          </Card>
-          <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
-              Customers
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold text-green-600">
-              {stats.byType?.CUSTOMER ?? 0}
-            </div>
-          </Card>
-          <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
-              Prospects
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold text-blue-600">
-              {stats.byType?.PROSPECT ?? 0}
-            </div>
-          </Card>
-          <Card className="p-3 sm:p-4">
-            <div className="text-xs sm:text-sm text-gray-500 leading-tight">
-              At Risk
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold text-red-600">
-              {stats.healthDistribution?.critical ?? 0}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Quick Create Form */}
-      <Card className="p-4">
-        <form onSubmit={handleCreateAccount} className="flex gap-2">
-          <Input
-            value={newAccountName}
-            onChange={(e) => setNewAccountName(e.target.value)}
-            placeholder="Enter account name..."
-            className="flex-1"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!newAccountName.trim() || createAccount.isPending}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Account
-          </Button>
-        </form>
-      </Card>
-
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                value={filters.search}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, search: e.target.value }))
-                }
-                placeholder="Search accounts..."
-                className="pl-10"
-              />
-            </div>
-          </div>
-          <Select
-            value={filters.type}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                type: e.target.value as AccountType | '',
-              }))
-            }
-          >
-            <option value="">All Types</option>
-            <option value="PROSPECT">Prospect</option>
-            <option value="CUSTOMER">Customer</option>
-            <option value="PARTNER">Partner</option>
-            <option value="COMPETITOR">Competitor</option>
-            <option value="CHURNED">Churned</option>
-            <option value="OTHER">Other</option>
-          </Select>
-        </div>
-      </Card>
-
-      {/* Accounts List */}
-      <Card>
-        {accountsQuery.isLoading ? (
-          <div className="p-8 text-center text-gray-500">
-            Loading accounts...
-          </div>
-        ) : accounts.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            {filters.search || filters.type
-              ? 'No accounts match your filters'
-              : EMPTY_STATES.accounts}
-          </div>
-        ) : (
-          <div className="divide-y">
-            {accounts.map((account) => (
-              <AccountRow
-                key={account.id}
-                account={account}
-                onDelete={() => handleDeleteAccount(account.id)}
-              />
-            ))}
+        {stats && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-3 sm:p-4">
+              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+                Total Accounts
+              </div>
+              <div className="text-xl sm:text-2xl font-semibold">
+                {stats.total}
+              </div>
+            </Card>
+            <Card className="p-3 sm:p-4">
+              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+                Customers
+              </div>
+              <div className="text-xl sm:text-2xl font-semibold text-green-600">
+                {stats.byType?.CUSTOMER ?? 0}
+              </div>
+            </Card>
+            <Card className="p-3 sm:p-4">
+              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+                Prospects
+              </div>
+              <div className="text-xl sm:text-2xl font-semibold text-blue-600">
+                {stats.byType?.PROSPECT ?? 0}
+              </div>
+            </Card>
+            <Card className="p-3 sm:p-4">
+              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+                At Risk
+              </div>
+              <div className="text-xl sm:text-2xl font-semibold text-red-600">
+                {stats.healthDistribution?.critical ?? 0}
+              </div>
+            </Card>
           </div>
         )}
-      </Card>
+
+        {/* Quick Create Form */}
+        <Card className="p-4">
+          <form onSubmit={handleCreateAccount} className="flex gap-2">
+            <Input
+              value={newAccountName}
+              onChange={(e) => setNewAccountName(e.target.value)}
+              placeholder="Enter account name..."
+              className="flex-1"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!newAccountName.trim() || createAccount.isPending}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Account
+            </Button>
+          </form>
+        </Card>
+
+        {/* Filters */}
+        <Card className="p-4">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  value={filters.search}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, search: e.target.value }))
+                  }
+                  placeholder="Search accounts..."
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select
+              value={filters.type}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  type: e.target.value as AccountType | '',
+                }))
+              }
+            >
+              <option value="">All Types</option>
+              <option value="PROSPECT">Prospect</option>
+              <option value="CUSTOMER">Customer</option>
+              <option value="PARTNER">Partner</option>
+              <option value="COMPETITOR">Competitor</option>
+              <option value="CHURNED">Churned</option>
+              <option value="OTHER">Other</option>
+            </Select>
+          </div>
+        </Card>
+
+        {/* Accounts List */}
+        <Card>
+          {accountsQuery.isLoading ? (
+            <div className="p-8 text-center text-gray-500">
+              Loading accounts...
+            </div>
+          ) : accounts.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              {filters.search || filters.type
+                ? 'No accounts match your filters'
+                : EMPTY_STATES.accounts}
+            </div>
+          ) : (
+            <div className="divide-y">
+              {accounts.map((account) => (
+                <AccountRow
+                  key={account.id}
+                  account={account}
+                  onDelete={() => handleDeleteAccount(account.id)}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   );

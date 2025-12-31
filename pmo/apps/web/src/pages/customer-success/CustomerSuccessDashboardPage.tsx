@@ -437,21 +437,21 @@ function CustomerSuccessDashboardPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Portfolio Health Summary */}
-      <PortfolioHealthSummary />
+        <PortfolioHealthSummary />
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cockpit - 2/3 width */}
-        <div className="lg:col-span-2">
-          <CockpitSection />
-        </div>
+        {/* Main content grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Cockpit - 2/3 width */}
+          <div className="lg:col-span-2">
+            <CockpitSection />
+          </div>
 
-        {/* Sidebar - 1/3 width */}
-        <div className="space-y-6">
-          <HealthScoresCard />
-          <PlaybooksCard />
+          {/* Sidebar - 1/3 width */}
+          <div className="space-y-6">
+            <HealthScoresCard />
+            <PlaybooksCard />
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

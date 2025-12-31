@@ -93,159 +93,159 @@ function CTAFormPage(): JSX.Element {
 
       <div className="container-padding py-6">
         <Card className="p-6 max-w-3xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Client Selection */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Client <span className="text-danger-500">*</span>
-            </label>
-            <Select
-              value={formData.clientId?.toString() ?? ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFormData((prev) => ({
-                  ...prev,
-                  clientId: value === '' ? undefined : parseInt(value, 10),
-                }));
-              }}
-              disabled={clientsLoading}
-            >
-              <option value="">Select a client...</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Title <span className="text-danger-500">*</span>
-            </label>
-            <Input
-              value={formData.title ?? ''}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, title: e.target.value }))
-              }
-              placeholder="Enter CTA title..."
-            />
-          </div>
-
-          {/* Type and Priority */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Client Selection */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Type <span className="text-danger-500">*</span>
+                Client <span className="text-danger-500">*</span>
               </label>
               <Select
-                value={formData.type ?? 'RISK'}
-                onChange={(e) =>
+                value={formData.clientId?.toString() ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setFormData((prev) => ({
                     ...prev,
-                    type: e.target.value as CreateCTAInput['type'],
-                  }))
-                }
+                    clientId: value === '' ? undefined : parseInt(value, 10),
+                  }));
+                }}
+                disabled={clientsLoading}
               >
-                {CTA_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
+                <option value="">Select a client...</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
                   </option>
                 ))}
               </Select>
             </div>
 
+            {/* Title */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Priority
+                Title <span className="text-danger-500">*</span>
               </label>
-              <Select
-                value={formData.priority ?? 'MEDIUM'}
+              <Input
+                value={formData.title ?? ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, title: e.target.value }))
+                }
+                placeholder="Enter CTA title..."
+              />
+            </div>
+
+            {/* Type and Priority */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Type <span className="text-danger-500">*</span>
+                </label>
+                <Select
+                  value={formData.type ?? 'RISK'}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      type: e.target.value as CreateCTAInput['type'],
+                    }))
+                  }
+                >
+                  {CTA_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Priority
+                </label>
+                <Select
+                  value={formData.priority ?? 'MEDIUM'}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      priority: e.target.value as CreateCTAInput['priority'],
+                    }))
+                  }
+                >
+                  {CTA_PRIORITIES.map((priority) => (
+                    <option key={priority.value} value={priority.value}>
+                      {priority.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+
+            {/* Due Date */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Due Date
+              </label>
+              <Input
+                type="date"
+                value={formData.dueDate ?? ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, dueDate: e.target.value }))
+                }
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Description
+              </label>
+              <textarea
+                value={formData.description ?? ''}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    priority: e.target.value as CreateCTAInput['priority'],
+                    description: e.target.value,
                   }))
                 }
-              >
-                {CTA_PRIORITIES.map((priority) => (
-                  <option key={priority.value} value={priority.value}>
-                    {priority.label}
-                  </option>
-                ))}
-              </Select>
+                placeholder="Enter CTA description..."
+                rows={3}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
             </div>
-          </div>
 
-          {/* Due Date */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Due Date
-            </label>
-            <Input
-              type="date"
-              value={formData.dueDate ?? ''}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, dueDate: e.target.value }))
-              }
-            />
-          </div>
+            {/* Reason */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Reason
+              </label>
+              <textarea
+                value={formData.reason ?? ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, reason: e.target.value }))
+                }
+                placeholder="Why is this CTA needed?"
+                rows={2}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Description
-            </label>
-            <textarea
-              value={formData.description ?? ''}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-              placeholder="Enter CTA description..."
-              rows={3}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Reason */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Reason
-            </label>
-            <textarea
-              value={formData.reason ?? ''}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, reason: e.target.value }))
-              }
-              placeholder="Why is this CTA needed?"
-              rows={2}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => navigate('/customer-success')}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={createCTA.isPending}
-              isLoading={createCTA.isPending}
-            >
-              Create CTA
-            </Button>
-          </div>
-        </form>
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/customer-success')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={createCTA.isPending}
+                isLoading={createCTA.isPending}
+              >
+                Create CTA
+              </Button>
+            </div>
+          </form>
         </Card>
       </div>
     </div>

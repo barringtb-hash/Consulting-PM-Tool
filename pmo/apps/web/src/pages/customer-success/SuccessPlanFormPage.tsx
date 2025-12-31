@@ -110,141 +110,141 @@ function SuccessPlanFormPage(): JSX.Element {
 
       <div className="container-padding py-6">
         <Card className="p-6 max-w-3xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Client Selection */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Client <span className="text-danger-500">*</span>
-            </label>
-            <Select
-              value={formData.clientId?.toString() ?? ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFormData((prev) => ({
-                  ...prev,
-                  clientId: value === '' ? undefined : parseInt(value, 10),
-                }));
-              }}
-              disabled={clientsLoading}
-            >
-              <option value="">Select a client...</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Plan Name */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Plan Name <span className="text-danger-500">*</span>
-            </label>
-            <Input
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="Enter success plan name..."
-            />
-          </div>
-
-          {/* Start and Target Dates */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Client Selection */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Start Date
+                Client <span className="text-danger-500">*</span>
               </label>
-              <Input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) =>
+              <Select
+                value={formData.clientId?.toString() ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value;
                   setFormData((prev) => ({
                     ...prev,
-                    startDate: e.target.value,
-                  }))
+                    clientId: value === '' ? undefined : parseInt(value, 10),
+                  }));
+                }}
+                disabled={clientsLoading}
+              >
+                <option value="">Select a client...</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {/* Plan Name */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Plan Name <span className="text-danger-500">*</span>
+              </label>
+              <Input
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
+                placeholder="Enter success plan name..."
               />
             </div>
 
+            {/* Start and Target Dates */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Start Date
+                </label>
+                <Input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      startDate: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Target Date
+                </label>
+                <Input
+                  type="date"
+                  value={formData.targetDate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      targetDate: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                Target Date
+                Description
               </label>
-              <Input
-                type="date"
-                value={formData.targetDate}
+              <textarea
+                value={formData.description}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    targetDate: e.target.value,
+                    description: e.target.value,
                   }))
                 }
+                placeholder="Describe the goals and scope of this success plan..."
+                rows={4}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
-          </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-              placeholder="Describe the goals and scope of this success plan..."
-              rows={4}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
+            {/* Customer Visibility */}
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isCustomerVisible"
+                checked={formData.isCustomerVisible}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isCustomerVisible: e.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500"
+              />
+              <label
+                htmlFor="isCustomerVisible"
+                className="text-sm text-neutral-700 dark:text-neutral-300"
+              >
+                Make this plan visible to the customer
+              </label>
+            </div>
 
-          {/* Customer Visibility */}
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="isCustomerVisible"
-              checked={formData.isCustomerVisible}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  isCustomerVisible: e.target.checked,
-                }))
-              }
-              className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500"
-            />
-            <label
-              htmlFor="isCustomerVisible"
-              className="text-sm text-neutral-700 dark:text-neutral-300"
-            >
-              Make this plan visible to the customer
-            </label>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => navigate('/customer-success')}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={createSuccessPlan.isPending}
-              isLoading={createSuccessPlan.isPending}
-            >
-              Create Success Plan
-            </Button>
-          </div>
-        </form>
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/customer-success')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={createSuccessPlan.isPending}
+                isLoading={createSuccessPlan.isPending}
+              >
+                Create Success Plan
+              </Button>
+            </div>
+          </form>
         </Card>
       </div>
     </div>
