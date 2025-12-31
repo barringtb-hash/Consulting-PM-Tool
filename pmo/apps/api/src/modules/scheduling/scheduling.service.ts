@@ -1091,6 +1091,10 @@ export async function getSchedulingAnalytics(
         lte: dateRange.end,
       },
     },
+    include: {
+      provider: true,
+      appointmentType: true,
+    },
   });
 
   const total = appointments.length;
@@ -1098,8 +1102,84 @@ export async function getSchedulingAnalytics(
   const noShows = appointments.filter((a) => a.status === 'NO_SHOW').length;
   const cancelled = appointments.filter((a) => a.status === 'CANCELLED').length;
 
-  const noShowRate = total > 0 ? (noShows / total) * 100 : 0;
-  const completionRate = total > 0 ? (completed / total) * 100 : 0;
+  // Return rates as decimals (0-1), not percentages, as frontend expects
+  const noShowRate = total > 0 ? noShows / total : 0;
+  const completionRate = total > 0 ? completed / total : 0;
+
+  // Calculate utilization rate (completed / (total - cancelled))
+  const effectiveTotal = total - cancelled;
+  const utilizationRate = effectiveTotal > 0 ? completed / effectiveTotal : 0;
+
+  // Calculate average lead time (days between createdAt and scheduledAt)
+  let totalLeadTimeDays = 0;
+  let validLeadTimeCount = 0;
+  for (const apt of appointments) {
+    if (apt.createdAt && apt.scheduledAt) {
+      const leadTimeMs =
+        new Date(apt.scheduledAt).getTime() - new Date(apt.createdAt).getTime();
+      const leadTimeDays = leadTimeMs / (1000 * 60 * 60 * 24);
+      if (leadTimeDays >= 0) {
+        totalLeadTimeDays += leadTimeDays;
+        validLeadTimeCount++;
+      }
+    }
+  }
+  const averageLeadTimeDays =
+    validLeadTimeCount > 0 ? totalLeadTimeDays / validLeadTimeCount : 0;
+
+  // Group by provider
+  const providerMap = new Map<
+    number,
+    {
+      providerId: number;
+      providerName: string;
+      total: number;
+      completed: number;
+      noShows: number;
+    }
+  >();
+  for (const apt of appointments) {
+    if (apt.providerId && apt.provider) {
+      const existing = providerMap.get(apt.providerId);
+      if (existing) {
+        existing.total++;
+        if (apt.status === 'COMPLETED') existing.completed++;
+        if (apt.status === 'NO_SHOW') existing.noShows++;
+      } else {
+        providerMap.set(apt.providerId, {
+          providerId: apt.providerId,
+          providerName: apt.provider.name,
+          total: 1,
+          completed: apt.status === 'COMPLETED' ? 1 : 0,
+          noShows: apt.status === 'NO_SHOW' ? 1 : 0,
+        });
+      }
+    }
+  }
+  const byProvider = Array.from(providerMap.values());
+
+  // Group by appointment type
+  const typeMap = new Map<
+    number,
+    { typeId: number; typeName: string; total: number; completed: number }
+  >();
+  for (const apt of appointments) {
+    if (apt.appointmentTypeId && apt.appointmentType) {
+      const existing = typeMap.get(apt.appointmentTypeId);
+      if (existing) {
+        existing.total++;
+        if (apt.status === 'COMPLETED') existing.completed++;
+      } else {
+        typeMap.set(apt.appointmentTypeId, {
+          typeId: apt.appointmentTypeId,
+          typeName: apt.appointmentType.name,
+          total: 1,
+          completed: apt.status === 'COMPLETED' ? 1 : 0,
+        });
+      }
+    }
+  }
+  const byAppointmentType = Array.from(typeMap.values());
 
   // Prediction accuracy
   const predictions = await prisma.noShowPredictionLog.findMany({
@@ -1131,8 +1211,12 @@ export async function getSchedulingAnalytics(
     noShowAppointments: noShows,
     cancelledAppointments: cancelled,
     noShowRate,
+    utilizationRate,
+    averageLeadTimeDays,
     completionRate,
     predictionAccuracy,
+    byProvider,
+    byAppointmentType,
     dateRange,
   };
 }
