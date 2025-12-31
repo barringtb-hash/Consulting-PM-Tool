@@ -175,3 +175,4 @@ CREATE INDEX IF NOT EXISTS "BookingIntakeForm_bookingPageId_idx" ON "BookingInta
 CREATE INDEX IF NOT EXISTS "BookingIntakeFormResponse_formId_idx" ON "BookingIntakeFormResponse"("formId");
 CREATE INDEX IF NOT EXISTS "BookingIntakeFormResponse_appointmentId_idx" ON "BookingIntakeFormResponse"("appointmentId");
 CREATE INDEX IF NOT EXISTS "Appointment_bookingPageId_idx" ON "Appointment"("bookingPageId");
+CREATE INDEX IF NOT EXISTS "Appointment_confirmationCode_idx" ON "Appointment"("confirmationCode");
