@@ -30,8 +30,18 @@ import {
   XCircle,
   Briefcase,
   Brain,
+  Tag,
+  Settings,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
-import { ShiftSchedulingTab, AIInsightsTab } from './scheduling';
+import {
+  ShiftSchedulingTab,
+  AIInsightsTab,
+  IntegrationsSettingsTab,
+  ProviderFormModal,
+  AppointmentTypeFormModal,
+} from './scheduling';
 
 // Types
 interface SchedulingConfig {
@@ -121,6 +131,20 @@ async function fetchProviders(configId: number): Promise<Provider[]> {
   return data.providers || [];
 }
 
+async function fetchAppointmentTypes(configId: number): Promise<AppointmentType[]> {
+  const res = await fetch(
+    buildApiUrl(`/scheduling/${configId}/appointment-types`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch appointment types') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.appointmentTypes || [];
+}
+
 async function fetchAppointments(
   configId: number,
   params: { date?: string; providerId?: number; status?: string },
@@ -196,12 +220,18 @@ function SchedulingPage(): JSX.Element {
     | 'calendar'
     | 'appointments'
     | 'providers'
+    | 'appointment-types'
+    | 'integrations'
     | 'analytics'
     | 'shifts'
     | 'ai-insights'
   >('calendar');
   const [showCreateConfigModal, setShowCreateConfigModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [showProviderModal, setShowProviderModal] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
+  const [showAppointmentTypeModal, setShowAppointmentTypeModal] = useState(false);
+  const [editingAppointmentType, setEditingAppointmentType] = useState<AppointmentType | null>(null);
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -216,6 +246,12 @@ function SchedulingPage(): JSX.Element {
   const providersQuery = useQuery({
     queryKey: ['scheduling-providers', selectedConfigId],
     queryFn: () => fetchProviders(selectedConfigId!),
+    enabled: !!selectedConfigId,
+  });
+
+  const appointmentTypesQuery = useQuery({
+    queryKey: ['scheduling-appointment-types', selectedConfigId],
+    queryFn: () => fetchAppointmentTypes(selectedConfigId!),
     enabled: !!selectedConfigId,
   });
 
@@ -241,10 +277,12 @@ function SchedulingPage(): JSX.Element {
   useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(providersQuery.error);
   useRedirectOnUnauthorized(appointmentsQuery.error);
+  useRedirectOnUnauthorized(appointmentTypesQuery.error);
 
   const accounts = accountsQuery.data?.data ?? [];
   const providers = providersQuery.data ?? [];
   const appointments = appointmentsQuery.data ?? [];
+  const appointmentTypes = appointmentTypesQuery.data ?? [];
 
   const selectedConfig = useMemo(() => {
     const configList = configsQuery.data ?? [];
@@ -409,7 +447,9 @@ function SchedulingPage(): JSX.Element {
               { id: 'calendar', label: 'Calendar', icon: Calendar },
               { id: 'appointments', label: 'Appointments', icon: Clock },
               { id: 'providers', label: 'Providers', icon: Users },
-              { id: 'shifts', label: 'Shift Scheduling', icon: Briefcase },
+              { id: 'appointment-types', label: 'Services', icon: Tag },
+              { id: 'integrations', label: 'Integrations', icon: Settings },
+              { id: 'shifts', label: 'Shifts', icon: Briefcase },
               { id: 'ai-insights', label: 'AI Insights', icon: Brain },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
             ].map(({ id, label, icon: Icon }) => (
@@ -756,8 +796,14 @@ function SchedulingPage(): JSX.Element {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Providers</h3>
-                    <Button size="sm">
+                    <h3 className="text-lg font-semibold">Service Providers</h3>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingProvider(null);
+                        setShowProviderModal(true);
+                      }}
+                    >
                       <Plus className="w-4 h-4" />
                       Add Provider
                     </Button>
@@ -765,16 +811,28 @@ function SchedulingPage(): JSX.Element {
                 </CardHeader>
                 <CardBody>
                   {providers.length === 0 ? (
-                    <p className="text-center text-neutral-500 dark:text-neutral-400 py-8">
-                      No providers configured. Add providers to enable
-                      scheduling.
-                    </p>
+                    <div className="text-center py-8">
+                      <User className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+                      <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+                        No providers configured. Add providers to enable
+                        scheduling.
+                      </p>
+                      <Button
+                        onClick={() => {
+                          setEditingProvider(null);
+                          setShowProviderModal(true);
+                        }}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Your First Provider
+                      </Button>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {providers.map((provider) => (
                         <div
                           key={provider.id}
-                          className="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg"
+                          className="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
@@ -784,24 +842,124 @@ function SchedulingPage(): JSX.Element {
                               <p className="font-medium text-neutral-900 dark:text-neutral-100">
                                 {provider.name}
                               </p>
-                              {provider.specialty && (
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                  {provider.specialty}
-                                </p>
-                              )}
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                {provider.specialty || 'General'}
+                                {provider.email && ` • ${provider.email}`}
+                              </p>
                             </div>
                           </div>
-                          <Badge
-                            variant={provider.isActive ? 'success' : 'neutral'}
-                          >
-                            {provider.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={provider.isActive ? 'success' : 'neutral'}
+                            >
+                              {provider.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingProvider(provider);
+                                setShowProviderModal(true);
+                              }}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </CardBody>
               </Card>
+            )}
+
+            {/* Appointment Types Tab */}
+            {activeTab === 'appointment-types' && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Appointment Types</h3>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingAppointmentType(null);
+                        setShowAppointmentTypeModal(true);
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Type
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {appointmentTypes.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Tag className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+                      <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+                        No appointment types configured. Create types to define
+                        your services.
+                      </p>
+                      <Button
+                        onClick={() => {
+                          setEditingAppointmentType(null);
+                          setShowAppointmentTypeModal(true);
+                        }}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Create Your First Type
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {appointmentTypes.map((type) => (
+                        <div
+                          key={type.id}
+                          className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-8 rounded"
+                                style={{ backgroundColor: type.color || '#3B82F6' }}
+                              />
+                              <div>
+                                <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                                  {type.name}
+                                </p>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                  {type.durationMinutes} min
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingAppointmentType(type);
+                                setShowAppointmentTypeModal(true);
+                              }}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Badge
+                              variant={type.isActive ? 'success' : 'neutral'}
+                            >
+                              {type.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            )}
+
+            {/* Integrations Tab */}
+            {activeTab === 'integrations' && selectedConfig && (
+              <IntegrationsSettingsTab configId={selectedConfig.id} />
             )}
 
             {/* Shift Scheduling Tab */}
@@ -937,6 +1095,30 @@ function SchedulingPage(): JSX.Element {
             </CardBody>
           </Card>
         </div>
+      )}
+
+      {/* Provider Form Modal */}
+      {showProviderModal && selectedConfig && (
+        <ProviderFormModal
+          configId={selectedConfig.id}
+          provider={editingProvider}
+          onClose={() => {
+            setShowProviderModal(false);
+            setEditingProvider(null);
+          }}
+        />
+      )}
+
+      {/* Appointment Type Form Modal */}
+      {showAppointmentTypeModal && selectedConfig && (
+        <AppointmentTypeFormModal
+          configId={selectedConfig.id}
+          appointmentType={editingAppointmentType}
+          onClose={() => {
+            setShowAppointmentTypeModal(false);
+            setEditingAppointmentType(null);
+          }}
+        />
       )}
     </div>
   );

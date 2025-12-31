@@ -19,6 +19,7 @@ import { Card, Button, Badge } from '../../../ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildApiUrl } from '../../../api/config';
 import { buildOptions } from '../../../api/http';
+import { VideoSettingsModal } from './VideoSettingsModal';
 
 interface IntegrationsSettingsTabProps {
   configId: number;
@@ -179,6 +180,8 @@ export function IntegrationsSettingsTab({
   const [activeSection, setActiveSection] = useState<
     'calendar' | 'video' | 'payment' | 'notifications'
   >('calendar');
+  const [selectedVideoConfig, setSelectedVideoConfig] =
+    useState<VideoConfig | null>(null);
 
   // Fetch data
   const calendarQuery = useQuery({
@@ -441,6 +444,14 @@ export function IntegrationsSettingsTab({
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setSelectedVideoConfig(config)}
+                        title="Configure settings"
+                      >
+                        <Settings className="h-4 w-4 text-gray-500" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() =>
                           disconnectVideoMutation.mutate(config.id)
                         }
@@ -453,6 +464,15 @@ export function IntegrationsSettingsTab({
                 ))}
               </div>
             </Card>
+          )}
+
+          {/* Video Settings Modal */}
+          {selectedVideoConfig && (
+            <VideoSettingsModal
+              configId={configId}
+              videoConfig={selectedVideoConfig}
+              onClose={() => setSelectedVideoConfig(null)}
+            />
           )}
 
           {/* Connect Video Platform */}
