@@ -261,7 +261,7 @@ function SafetyMonitorPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Safety Monitor"
         subtitle="Digital safety checklists, incident reporting, and OSHA compliance tracking"
@@ -274,7 +274,8 @@ function SafetyMonitorPage(): JSX.Element {
         }
       />
 
-      {/* Configuration Selector */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Configuration Selector */}
       <Card>
         <CardBody>
           <div className="flex gap-4 flex-wrap">

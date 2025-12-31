@@ -19,10 +19,12 @@ import {
   BookOpen,
   Clock,
   ChevronRight,
+  Heart,
 } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
+import { PageHeader } from '../../ui/PageHeader';
 import {
   usePortfolioHealthSummary,
   useCockpit,
@@ -416,29 +418,25 @@ function PlaybooksCard(): JSX.Element {
  */
 function CustomerSuccessDashboardPage(): JSX.Element {
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Customer Success
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Monitor customer health, manage CTAs, and drive outcomes with your
-            customer success platform.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Link to="/customer-success/ctas/new">
-            <Button variant="primary">New CTA</Button>
-          </Link>
-          <Link to="/customer-success/success-plans/new">
-            <Button variant="secondary">New Success Plan</Button>
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title="Customer Success"
+        description="Monitor customer health, manage CTAs, and drive outcomes with your customer success platform."
+        icon={Heart}
+        actions={
+          <div className="flex gap-3">
+            <Link to="/customer-success/ctas/new">
+              <Button variant="primary">New CTA</Button>
+            </Link>
+            <Link to="/customer-success/success-plans/new">
+              <Button variant="secondary">New Success Plan</Button>
+            </Link>
+          </div>
+        }
+      />
 
-      {/* Portfolio Health Summary */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Portfolio Health Summary */}
       <PortfolioHealthSummary />
 
       {/* Main content grid */}
@@ -453,6 +451,7 @@ function CustomerSuccessDashboardPage(): JSX.Element {
           <HealthScoresCard />
           <PlaybooksCard />
         </div>
+      </div>
       </div>
     </div>
   );

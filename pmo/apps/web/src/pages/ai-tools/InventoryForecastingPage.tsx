@@ -234,7 +234,7 @@ function InventoryForecastingPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Inventory Forecasting"
         subtitle="ML-powered inventory forecasting with seasonal trends and automated alerts"
@@ -247,7 +247,8 @@ function InventoryForecastingPage(): JSX.Element {
         }
       />
 
-      {/* Configuration Selector */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Configuration Selector */}
       <Card>
         <CardBody>
           <div className="flex gap-4 flex-wrap">

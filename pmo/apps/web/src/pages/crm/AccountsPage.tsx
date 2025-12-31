@@ -146,13 +146,14 @@ function AccountsPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Accounts"
         description="Manage your CRM accounts and companies"
       />
 
-      {/* Stats Cards */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="p-3 sm:p-4">
@@ -270,6 +271,7 @@ function AccountsPage(): JSX.Element {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 }

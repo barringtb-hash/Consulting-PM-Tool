@@ -6,7 +6,6 @@
  */
 
 import { PageHeader } from '../ui/PageHeader';
-import { Section } from '../ui/Section';
 import { Card, CardBody } from '../ui/Card';
 import { Button } from '../ui/Button';
 import {
@@ -87,18 +86,18 @@ function DashboardContent(): JSX.Element {
  */
 function DashboardPage(): JSX.Element {
   return (
-    <>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Dashboard"
         description="Welcome to your AI Consulting PMO workspace. Track your clients, projects, tasks, and AI assets."
       />
 
-      <Section>
+      <div className="container-padding py-6">
         <DashboardPluginProvider>
           <DashboardContent />
         </DashboardPluginProvider>
-      </Section>
-    </>
+      </div>
+    </div>
   );
 }
 

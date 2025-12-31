@@ -73,23 +73,26 @@ function CTAFormPage(): JSX.Element {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-3xl mx-auto">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate('/customer-success')}
-        className="mb-4"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Dashboard
-      </Button>
-
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
-        title="New CTA"
+        title={
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/customer-success')}
+              className="-ml-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <span>New CTA</span>
+          </div>
+        }
         description="Create a new Call-to-Action to track customer success tasks"
       />
 
-      <Card className="p-6 mt-6">
+      <div className="container-padding py-6">
+        <Card className="p-6 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Client Selection */}
           <div>
@@ -243,7 +246,8 @@ function CTAFormPage(): JSX.Element {
             </Button>
           </div>
         </form>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

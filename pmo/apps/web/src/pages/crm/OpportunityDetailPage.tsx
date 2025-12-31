@@ -130,35 +130,41 @@ function OpportunityDetailPage(): JSX.Element {
 
   if (!opportunityId || Number.isNaN(opportunityId)) {
     return (
-      <main className="p-8">
-        <p>Invalid opportunity ID.</p>
-        <Link to="/crm/opportunities" className="text-blue-600 hover:underline">
-          Back to opportunities
-        </Link>
-      </main>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="container-padding py-8">
+          <p>Invalid opportunity ID.</p>
+          <Link to="/crm/opportunities" className="text-blue-600 hover:underline">
+            Back to opportunities
+          </Link>
+        </div>
+      </div>
     );
   }
 
   if (opportunityQuery.isLoading) {
     return (
-      <main className="p-8">
-        <p className="text-gray-500">Loading opportunity...</p>
-      </main>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="container-padding py-8">
+          <p className="text-gray-500">Loading opportunity...</p>
+        </div>
+      </div>
     );
   }
 
   if (opportunityQuery.error) {
     return (
-      <main className="p-8">
-        <p className="text-red-600">
-          {opportunityQuery.error instanceof Error
-            ? opportunityQuery.error.message
-            : 'Unable to load opportunity'}
-        </p>
-        <Link to="/crm/opportunities" className="text-blue-600 hover:underline">
-          Back to opportunities
-        </Link>
-      </main>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="container-padding py-8">
+          <p className="text-red-600">
+            {opportunityQuery.error instanceof Error
+              ? opportunityQuery.error.message
+              : 'Unable to load opportunity'}
+          </p>
+          <Link to="/crm/opportunities" className="text-blue-600 hover:underline">
+            Back to opportunities
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -257,7 +263,7 @@ function OpportunityDetailPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title={opportunity.name}
         description={opportunity.account?.name ?? 'No account'}
@@ -287,7 +293,8 @@ function OpportunityDetailPage(): JSX.Element {
         </div>
       </PageHeader>
 
-      {/* Summary Stats */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Summary Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
@@ -708,6 +715,7 @@ function OpportunityDetailPage(): JSX.Element {
             </CardBody>
           </Card>
         </div>
+      </div>
       </div>
 
       {/* Lost Dialog */}

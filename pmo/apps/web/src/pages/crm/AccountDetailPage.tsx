@@ -161,35 +161,41 @@ function AccountDetailPage(): JSX.Element {
 
   if (!accountId || Number.isNaN(accountId)) {
     return (
-      <main className="p-8">
-        <p>Invalid account ID.</p>
-        <Link to="/crm/accounts" className="text-blue-600 hover:underline">
-          Back to accounts
-        </Link>
-      </main>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="container-padding py-8">
+          <p>Invalid account ID.</p>
+          <Link to="/crm/accounts" className="text-blue-600 hover:underline">
+            Back to accounts
+          </Link>
+        </div>
+      </div>
     );
   }
 
   if (accountQuery.isLoading) {
     return (
-      <main className="p-8">
-        <p className="text-gray-500">Loading account...</p>
-      </main>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="container-padding py-8">
+          <p className="text-gray-500">Loading account...</p>
+        </div>
+      </div>
     );
   }
 
   if (accountQuery.error) {
     return (
-      <main className="p-8">
-        <p className="text-red-600">
-          {accountQuery.error instanceof Error
-            ? accountQuery.error.message
-            : 'Unable to load account'}
-        </p>
-        <Link to="/crm/accounts" className="text-blue-600 hover:underline">
-          Back to accounts
-        </Link>
-      </main>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="container-padding py-8">
+          <p className="text-red-600">
+            {accountQuery.error instanceof Error
+              ? accountQuery.error.message
+              : 'Unable to load account'}
+          </p>
+          <Link to="/crm/accounts" className="text-blue-600 hover:underline">
+            Back to accounts
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -258,7 +264,7 @@ function AccountDetailPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title={account.name}
         description={account.industry ?? 'No industry specified'}
@@ -287,7 +293,8 @@ function AccountDetailPage(): JSX.Element {
         </div>
       </PageHeader>
 
-      {/* Summary Stats */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Summary Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
@@ -722,6 +729,7 @@ function AccountDetailPage(): JSX.Element {
             </CardBody>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );

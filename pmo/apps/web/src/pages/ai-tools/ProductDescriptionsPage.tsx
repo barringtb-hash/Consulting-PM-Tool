@@ -15,6 +15,7 @@ import { Input } from '../../ui/Input';
 import { Select } from '../../ui/Select';
 import { Badge } from '../../ui/Badge';
 import { useToast } from '../../ui/Toast';
+import { PageHeader } from '../../ui/PageHeader';
 import { useClients } from '../../api/hooks/clients';
 import { BulkJobPanel } from '../../components/product-descriptions/BulkJobPanel';
 import {
@@ -435,24 +436,21 @@ function ProductDescriptionsPage(): JSX.Element {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-            Product Descriptions
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Generate AI-powered product descriptions for multiple marketplaces
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateConfigModal(true)}>
-          <Plus className="w-4 h-4" />
-          New Profile
-        </Button>
-      </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title="Product Descriptions"
+        description="Generate AI-powered product descriptions for multiple marketplaces"
+        icon={Package}
+        actions={
+          <Button onClick={() => setShowCreateConfigModal(true)}>
+            <Plus className="w-4 h-4 mr-1" />
+            New Profile
+          </Button>
+        }
+      />
 
-      {/* Configuration Selector */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Configuration Selector */}
       <Card className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-end gap-4">
           <div className="flex-1">
@@ -842,6 +840,7 @@ function ProductDescriptionsPage(): JSX.Element {
           )}
         </>
       )}
+      </div>
 
       {/* Create Config Modal */}
       {showCreateConfigModal && (

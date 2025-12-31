@@ -21,7 +21,6 @@ import {
   Award,
 } from 'lucide-react';
 import { PageHeader } from '../../ui/PageHeader';
-import { Section } from '../../ui/Section';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
 import {
@@ -686,31 +685,30 @@ function TimeToValueSection(): JSX.Element {
  */
 function CustomerSuccessAnalyticsPage(): JSX.Element {
   return (
-    <>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="CS Analytics"
         description="Track customer success metrics, performance trends, and key indicators across your portfolio."
+        icon={BarChart3}
       />
 
-      <Section>
-        <div className="space-y-6">
-          {/* Summary stats */}
-          <DashboardSummarySection />
+      <div className="container-padding py-6 space-y-6">
+        {/* Summary stats */}
+        <DashboardSummarySection />
 
-          {/* Main analytics grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PortfolioAnalyticsSection />
-            <CTAAnalyticsSection />
-          </div>
-
-          {/* Performance and TTV */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CSMPerformanceSection />
-            <TimeToValueSection />
-          </div>
+        {/* Main analytics grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PortfolioAnalyticsSection />
+          <CTAAnalyticsSection />
         </div>
-      </Section>
-    </>
+
+        {/* Performance and TTV */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CSMPerformanceSection />
+          <TimeToValueSection />
+        </div>
+      </div>
+    </div>
   );
 }
 
