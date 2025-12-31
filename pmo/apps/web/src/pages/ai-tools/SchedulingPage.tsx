@@ -600,7 +600,9 @@ function SchedulingPage(): JSX.Element {
                                       }
                                     >
                                       <CheckCircle className="w-4 h-4" />
-                                      <span className="sm:hidden ml-1">Confirm</span>
+                                      <span className="sm:hidden ml-1">
+                                        Confirm
+                                      </span>
                                     </Button>
                                     <Button
                                       size="sm"
@@ -613,7 +615,9 @@ function SchedulingPage(): JSX.Element {
                                       }
                                     >
                                       <XCircle className="w-4 h-4" />
-                                      <span className="sm:hidden ml-1">Cancel</span>
+                                      <span className="sm:hidden ml-1">
+                                        Cancel
+                                      </span>
                                     </Button>
                                   </div>
                                 )}

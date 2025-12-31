@@ -270,10 +270,18 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                             )}
                           </div>
                           <div className="flex sm:flex-col gap-2 sm:gap-1 flex-shrink-0">
-                            <Button size="sm" variant="secondary" className="flex-1 sm:flex-none">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="flex-1 sm:flex-none"
+                            >
                               Send Reminder
                             </Button>
-                            <Button size="sm" variant="secondary" className="flex-1 sm:flex-none">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="flex-1 sm:flex-none"
+                            >
                               Confirm
                             </Button>
                           </div>

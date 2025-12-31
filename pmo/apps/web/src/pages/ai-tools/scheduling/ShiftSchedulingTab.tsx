@@ -444,7 +444,9 @@ export function ShiftSchedulingTab({
                                   weekday: 'short',
                                 })}
                               </p>
-                              <p className="font-semibold text-sm sm:text-base">{day.getDate()}</p>
+                              <p className="font-semibold text-sm sm:text-base">
+                                {day.getDate()}
+                              </p>
                             </div>
                             <div className="space-y-1">
                               {dayShifts.map((shift) => (
