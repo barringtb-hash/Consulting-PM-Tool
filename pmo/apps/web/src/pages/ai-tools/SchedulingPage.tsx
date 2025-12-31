@@ -33,7 +33,6 @@ import {
   Tag,
   Settings,
   Edit2,
-  Trash2,
 } from 'lucide-react';
 import {
   ShiftSchedulingTab,
@@ -131,7 +130,9 @@ async function fetchProviders(configId: number): Promise<Provider[]> {
   return data.providers || [];
 }
 
-async function fetchAppointmentTypes(configId: number): Promise<AppointmentType[]> {
+async function fetchAppointmentTypes(
+  configId: number,
+): Promise<AppointmentType[]> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/appointment-types`),
     buildOptions(),
@@ -230,8 +231,10 @@ function SchedulingPage(): JSX.Element {
   const [showBookModal, setShowBookModal] = useState(false);
   const [showProviderModal, setShowProviderModal] = useState(false);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
-  const [showAppointmentTypeModal, setShowAppointmentTypeModal] = useState(false);
-  const [editingAppointmentType, setEditingAppointmentType] = useState<AppointmentType | null>(null);
+  const [showAppointmentTypeModal, setShowAppointmentTypeModal] =
+    useState(false);
+  const [editingAppointmentType, setEditingAppointmentType] =
+    useState<AppointmentType | null>(null);
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -850,7 +853,9 @@ function SchedulingPage(): JSX.Element {
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge
-                              variant={provider.isActive ? 'success' : 'neutral'}
+                              variant={
+                                provider.isActive ? 'success' : 'neutral'
+                              }
                             >
                               {provider.isActive ? 'Active' : 'Inactive'}
                             </Badge>
@@ -920,7 +925,9 @@ function SchedulingPage(): JSX.Element {
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-3 h-8 rounded"
-                                style={{ backgroundColor: type.color || '#3B82F6' }}
+                                style={{
+                                  backgroundColor: type.color || '#3B82F6',
+                                }}
                               />
                               <div>
                                 <p className="font-medium text-neutral-900 dark:text-neutral-100">

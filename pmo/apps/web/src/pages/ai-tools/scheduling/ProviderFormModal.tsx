@@ -3,19 +3,8 @@
  * Create and edit service providers with availability schedule
  */
 
-import { useState, useEffect } from 'react';
-import {
-  X,
-  User,
-  Mail,
-  Phone,
-  Briefcase,
-  Clock,
-  Plus,
-  Trash2,
-  Save,
-  Loader2,
-} from 'lucide-react';
+import { useState } from 'react';
+import { X, User, Clock, Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '../../../ui/Card';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';

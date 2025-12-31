@@ -28,7 +28,9 @@ export function OAuthCallbackPage({
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>(
     'processing',
   );
-  const [message, setMessage] = useState<string>('Processing authentication...');
+  const [message, setMessage] = useState<string>(
+    'Processing authentication...',
+  );
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,7 +52,9 @@ export function OAuthCallbackPage({
       if (!code) {
         setStatus('error');
         setMessage('Missing authorization code');
-        setErrorDetails('The OAuth callback did not include an authorization code.');
+        setErrorDetails(
+          'The OAuth callback did not include an authorization code.',
+        );
         return;
       }
 
@@ -91,12 +95,17 @@ export function OAuthCallbackPage({
         const response = await fetch(callbackUrl.toString(), {
           ...buildOptions(),
           method: integrationType === 'video' ? 'POST' : 'GET',
-          body: integrationType === 'video' ? JSON.stringify({ code, state }) : undefined,
+          body:
+            integrationType === 'video'
+              ? JSON.stringify({ code, state })
+              : undefined,
         });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to complete authentication');
+          throw new Error(
+            errorData.error || 'Failed to complete authentication',
+          );
         }
 
         setStatus('success');
@@ -104,7 +113,9 @@ export function OAuthCallbackPage({
       } catch (err) {
         setStatus('error');
         setMessage('Failed to complete authentication');
-        setErrorDetails(err instanceof Error ? err.message : 'Unknown error occurred');
+        setErrorDetails(
+          err instanceof Error ? err.message : 'Unknown error occurred',
+        );
       }
     };
 
@@ -197,7 +208,9 @@ export function OAuthCallbackPage({
                 onClick={() => navigate('/ai-tools/scheduling')}
                 variant={status === 'success' ? 'primary' : 'secondary'}
               >
-                {status === 'success' ? 'Continue to Scheduling' : 'Back to Scheduling'}
+                {status === 'success'
+                  ? 'Continue to Scheduling'
+                  : 'Back to Scheduling'}
               </Button>
               {status === 'error' && (
                 <Button

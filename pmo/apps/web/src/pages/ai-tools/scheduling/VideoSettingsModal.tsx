@@ -43,10 +43,15 @@ interface VideoSettingsModalProps {
   onSuccess?: () => void;
 }
 
+interface UpdateVideoConfigData {
+  isActive?: boolean;
+  defaultSettings?: VideoConfig['defaultSettings'];
+}
+
 async function updateVideoConfig(
   configId: number,
   videoConfigId: number,
-  data: { isActive?: boolean; defaultSettings?: VideoConfig['defaultSettings'] },
+  data: UpdateVideoConfigData,
 ): Promise<VideoConfig> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/video/config/${videoConfigId}`),
@@ -72,6 +77,48 @@ const PLATFORM_COLORS: Record<string, string> = {
   GOOGLE_MEET: 'bg-green-100 text-green-700',
   TEAMS: 'bg-purple-100 text-purple-700',
 };
+
+// SettingRow component defined outside the main component
+interface SettingRowProps {
+  icon: React.ElementType;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
+
+function SettingRow({
+  icon: Icon,
+  label,
+  description,
+  checked,
+  onChange,
+}: SettingRowProps): JSX.Element {
+  return (
+    <div className="flex items-start justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+      <div className="flex items-start gap-3">
+        <Icon className="w-5 h-5 text-neutral-500 mt-0.5" />
+        <div>
+          <p className="font-medium text-neutral-900 dark:text-neutral-100">
+            {label}
+          </p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            {description}
+          </p>
+        </div>
+      </div>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="sr-only peer"
+        />
+        <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-blue-600"></div>
+      </label>
+    </div>
+  );
+}
 
 export function VideoSettingsModal({
   configId,
@@ -127,43 +174,6 @@ export function VideoSettingsModal({
     e.preventDefault();
     updateMutation.mutate();
   };
-
-  const SettingRow = ({
-    icon: Icon,
-    label,
-    description,
-    checked,
-    onChange,
-  }: {
-    icon: React.ElementType;
-    label: string;
-    description: string;
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-  }) => (
-    <div className="flex items-start justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-      <div className="flex items-start gap-3">
-        <Icon className="w-5 h-5 text-neutral-500 mt-0.5" />
-        <div>
-          <p className="font-medium text-neutral-900 dark:text-neutral-100">
-            {label}
-          </p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            {description}
-          </p>
-        </div>
-      </div>
-      <label className="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="sr-only peer"
-        />
-        <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-blue-600"></div>
-      </label>
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">

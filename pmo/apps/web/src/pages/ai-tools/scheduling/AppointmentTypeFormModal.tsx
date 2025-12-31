@@ -4,15 +4,7 @@
  */
 
 import { useState } from 'react';
-import {
-  X,
-  Clock,
-  DollarSign,
-  Palette,
-  Save,
-  Loader2,
-  Tag,
-} from 'lucide-react';
+import { X, Clock, DollarSign, Palette, Save, Loader2 } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '../../../ui/Card';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';

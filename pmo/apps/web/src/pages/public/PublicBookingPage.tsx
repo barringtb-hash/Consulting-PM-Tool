@@ -15,7 +15,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  ExternalLink,
 } from 'lucide-react';
+import {
+  generateCalendarLinks,
+  downloadICSFile,
+} from '../../utils/calendarUtils';
 
 // Types
 interface BookingPage {
@@ -75,6 +80,7 @@ interface BookingConfirmation {
     status: string;
     provider: { id: number; name: string; title: string | null } | null;
     appointmentType: { id: number; name: string } | null;
+    videoMeetingUrl?: string;
   };
   confirmationCode: string;
   message: string;
@@ -314,6 +320,14 @@ export default function PublicBookingPage() {
 
   // Confirmation step
   if (step === 'confirm' && confirmation) {
+    const calendarLinks = generateCalendarLinks({
+      title: confirmation.appointment.appointmentType?.name || 'Appointment',
+      startTime: confirmation.appointment.scheduledAt,
+      durationMinutes: confirmation.appointment.durationMinutes,
+      description: `Confirmation: ${confirmation.confirmationCode}`,
+      location: confirmation.appointment.videoMeetingUrl || '',
+    });
+
     return (
       <div
         className="min-h-screen bg-gray-50"
@@ -379,8 +393,73 @@ export default function PublicBookingPage() {
               )}
             </div>
 
-            <p className="text-sm text-gray-500">
+            {/* Video Meeting Link */}
+            {confirmation.appointment.videoMeetingUrl && (
+              <a
+                href={confirmation.appointment.videoMeetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 mb-6 rounded-lg text-white font-medium"
+                style={{ backgroundColor: bookingPage.primaryColor }}
+              >
+                <ExternalLink className="w-5 h-5" />
+                Join Video Meeting
+              </a>
+            )}
+
+            {/* Add to Calendar */}
+            <div className="mb-6">
+              <p className="text-sm text-gray-500 mb-3">Add to Calendar</p>
+              <div className="flex gap-2 justify-center flex-wrap">
+                <a
+                  href={calendarLinks.google}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                >
+                  Google
+                </a>
+                <a
+                  href={calendarLinks.outlook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                >
+                  Outlook
+                </a>
+                <button
+                  onClick={() =>
+                    downloadICSFile({
+                      title:
+                        confirmation.appointment.appointmentType?.name ||
+                        'Appointment',
+                      startTime: confirmation.appointment.scheduledAt,
+                      durationMinutes: confirmation.appointment.durationMinutes,
+                      description: `Confirmation: ${confirmation.confirmationCode}`,
+                      location: confirmation.appointment.videoMeetingUrl || '',
+                    })
+                  }
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                >
+                  Download .ics
+                </button>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-4">
               A confirmation email has been sent to your email address.
+            </p>
+
+            {/* Manage Booking Link */}
+            <p className="text-sm text-gray-500">
+              Need to reschedule or cancel?{' '}
+              <a
+                href={`/booking/${slug}/manage?code=${confirmation.confirmationCode}`}
+                className="underline font-medium"
+                style={{ color: bookingPage.primaryColor }}
+              >
+                Manage Your Booking
+              </a>
             </p>
           </div>
         </div>
