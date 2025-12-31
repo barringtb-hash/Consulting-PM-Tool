@@ -124,13 +124,38 @@ interface OutlookCalendarEvent {
 }
 
 // ============================================================================
+// OAUTH CONFIGURATION VALIDATION
+// ============================================================================
+
+/**
+ * Check if Google OAuth is properly configured
+ */
+export function isGoogleOAuthConfigured(): boolean {
+  return Boolean(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET);
+}
+
+/**
+ * Check if Microsoft OAuth is properly configured
+ */
+export function isMicrosoftOAuthConfigured(): boolean {
+  return Boolean(MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET);
+}
+
+// ============================================================================
 // GOOGLE OAUTH FLOW
 // ============================================================================
 
 /**
  * Generate Google OAuth authorization URL
+ * @throws Error if Google OAuth is not configured
  */
 export function getGoogleAuthUrl(state: string): string {
+  if (!isGoogleOAuthConfigured()) {
+    throw new Error(
+      'Google Calendar integration is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.',
+    );
+  }
+
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
@@ -553,8 +578,15 @@ export async function deleteGoogleCalendarEvent(
 
 /**
  * Generate Microsoft OAuth authorization URL
+ * @throws Error if Microsoft OAuth is not configured
  */
 export function getMicrosoftAuthUrl(state: string): string {
+  if (!isMicrosoftOAuthConfigured()) {
+    throw new Error(
+      'Microsoft/Outlook Calendar integration is not configured. Please set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET environment variables.',
+    );
+  }
+
   const params = new URLSearchParams({
     client_id: MICROSOFT_CLIENT_ID,
     redirect_uri: MICROSOFT_REDIRECT_URI,
