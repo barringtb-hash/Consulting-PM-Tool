@@ -261,7 +261,7 @@ function SafetyMonitorPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Safety Monitor"
         subtitle="Digital safety checklists, incident reporting, and OSHA compliance tracking"
@@ -274,377 +274,383 @@ function SafetyMonitorPage(): JSX.Element {
         }
       />
 
-      {/* Configuration Selector */}
-      <Card>
-        <CardBody>
-          <div className="flex gap-4 flex-wrap">
-            <Select
-              label="Select Configuration"
-              value={selectedConfigId?.toString() || ''}
-              onChange={(e) =>
-                setSelectedConfigId(
-                  e.target.value ? parseInt(e.target.value, 10) : null,
-                )
-              }
-            >
-              <option value="">Select a configuration...</option>
-              {configsQuery.data?.map((config) => (
-                <option key={config.id} value={config.id}>
-                  {config.client?.name || `Config ${config.id}`}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Tabs */}
-      {selectedConfigId && (
-        <div className="border-b border-neutral-200 dark:border-neutral-700">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: HardHat },
-              { id: 'checklists', label: 'Checklists', icon: ClipboardCheck },
-              { id: 'incidents', label: 'Incidents', icon: AlertTriangle },
-              { id: 'training', label: 'Training', icon: GraduationCap },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Overview Tab */}
-      {selectedConfigId && activeTab === 'overview' && selectedConfig && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    OSHA Logging
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.oshaLoggingEnabled ? 'Enabled' : 'Disabled'}
-                  </p>
-                </div>
-                <FileText className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Auto Incident Report
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.autoIncidentReporting
-                      ? 'Enabled'
-                      : 'Disabled'}
-                  </p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Training Tracking
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.trainingTrackingEnabled
-                      ? 'Enabled'
-                      : 'Disabled'}
-                  </p>
-                </div>
-                <GraduationCap className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Checklist Frequency
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.checklistFrequencyDays} days
-                  </p>
-                </div>
-                <ClipboardCheck className="h-8 w-8 text-green-500" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Checklists Tab */}
-      {selectedConfigId && activeTab === 'checklists' && (
+      <div className="container-padding py-6 space-y-6">
+        {/* Configuration Selector */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Safety Checklists</h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Checklist
-              </Button>
-            </div>
-          </CardHeader>
           <CardBody>
-            {checklistsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading checklists...
-              </div>
-            ) : checklistsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No checklists configured. Create your first safety checklist.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {checklistsQuery.data?.map((checklist) => (
-                  <div
-                    key={checklist.id}
-                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <ClipboardCheck className="h-6 w-6 text-neutral-400 dark:text-neutral-500" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {checklist.name}
-                          </p>
-                          {checklist.isRequired && (
-                            <Badge variant="secondary">Required</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          {checklist.category} • {checklist.itemCount} items
-                        </p>
-                        {checklist.lastCompletedAt && (
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                            Last completed:{' '}
-                            {new Date(
-                              checklist.lastCompletedAt,
-                            ).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                          {checklist.completionRate}%
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          Completion
-                        </p>
-                      </div>
-                      <div className="w-20 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            checklist.completionRate >= 80
-                              ? 'bg-green-500'
-                              : checklist.completionRate >= 50
-                                ? 'bg-yellow-500'
-                                : 'bg-red-500'
-                          }`}
-                          style={{ width: `${checklist.completionRate}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Incidents Tab */}
-      {selectedConfigId && activeTab === 'incidents' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Safety Incidents</h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Report Incident
-              </Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {incidentsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading incidents...
-              </div>
-            ) : incidentsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No incidents reported. Your safety record is clean.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {incidentsQuery.data?.map((incident) => (
-                  <div
-                    key={incident.id}
-                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              SEVERITY_VARIANTS[incident.severity] || 'neutral'
-                            }
-                          >
-                            {incident.severity}
-                          </Badge>
-                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {incident.type}
-                          </span>
-                        </div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                          {incident.description}
-                        </p>
-                        {incident.location && (
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-                            Location: {incident.location}
-                          </p>
-                        )}
-                        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-                          Reported:{' '}
-                          {new Date(incident.reportedAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          INCIDENT_STATUS_VARIANTS[incident.status] || 'neutral'
-                        }
-                      >
-                        {incident.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Training Tab */}
-      {selectedConfigId && activeTab === 'training' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Training Compliance</h3>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  queryClient.invalidateQueries({
-                    queryKey: ['safety-training'],
-                  })
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                label="Select Configuration"
+                value={selectedConfigId?.toString() || ''}
+                onChange={(e) =>
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
                 }
               >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+                <option value="">Select a configuration...</option>
+                {configsQuery.data?.map((config) => (
+                  <option key={config.id} value={config.id}>
+                    {config.client?.name || `Config ${config.id}`}
+                  </option>
+                ))}
+              </Select>
             </div>
-          </CardHeader>
-          <CardBody>
-            {trainingQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading training records...
+          </CardBody>
+        </Card>
+
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: HardHat },
+                { id: 'checklists', label: 'Checklists', icon: ClipboardCheck },
+                { id: 'incidents', label: 'Incidents', icon: AlertTriangle },
+                { id: 'training', label: 'Training', icon: GraduationCap },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      OSHA Logging
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.oshaLoggingEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <FileText className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Auto Incident Report
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.autoIncidentReporting
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Training Tracking
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.trainingTrackingEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <GraduationCap className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Checklist Frequency
+                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.checklistFrequencyDays} days
+                    </p>
+                  </div>
+                  <ClipboardCheck className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Checklists Tab */}
+        {selectedConfigId && activeTab === 'checklists' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Safety Checklists</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Checklist
+                </Button>
               </div>
-            ) : trainingQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No training records. Add training requirements to track
-                compliance.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Course
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Employee
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Due Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Expires
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {trainingQuery.data?.map((record) => (
-                      <tr key={record.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {record.courseName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {record.employeeName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            {record.status === 'COMPLETED' ? (
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                            ) : record.status === 'OVERDUE' ? (
-                              <XCircle className="h-4 w-4 text-red-500" />
-                            ) : (
-                              <Clock className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardBody>
+              {checklistsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading checklists...
+                </div>
+              ) : checklistsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No checklists configured. Create your first safety checklist.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {checklistsQuery.data?.map((checklist) => (
+                    <div
+                      key={checklist.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <ClipboardCheck className="h-6 w-6 text-neutral-400 dark:text-neutral-500" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {checklist.name}
+                            </p>
+                            {checklist.isRequired && (
+                              <Badge variant="secondary">Required</Badge>
                             )}
+                          </div>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {checklist.category} • {checklist.itemCount} items
+                          </p>
+                          {checklist.lastCompletedAt && (
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                              Last completed:{' '}
+                              {new Date(
+                                checklist.lastCompletedAt,
+                              ).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                            {checklist.completionRate}%
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Completion
+                          </p>
+                        </div>
+                        <div className="w-20 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              checklist.completionRate >= 80
+                                ? 'bg-green-500'
+                                : checklist.completionRate >= 50
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
+                            }`}
+                            style={{ width: `${checklist.completionRate}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Incidents Tab */}
+        {selectedConfigId && activeTab === 'incidents' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Safety Incidents</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Report Incident
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {incidentsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading incidents...
+                </div>
+              ) : incidentsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No incidents reported. Your safety record is clean.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {incidentsQuery.data?.map((incident) => (
+                    <div
+                      key={incident.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
                             <Badge
                               variant={
-                                TRAINING_STATUS_VARIANTS[record.status] ||
+                                SEVERITY_VARIANTS[incident.severity] ||
                                 'neutral'
                               }
                             >
-                              {record.status}
+                              {incident.severity}
                             </Badge>
+                            <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {incident.type}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
-                          {record.dueDate
-                            ? new Date(record.dueDate).toLocaleDateString()
-                            : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
-                          {record.expiresAt
-                            ? new Date(record.expiresAt).toLocaleDateString()
-                            : 'Never'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                            {incident.description}
+                          </p>
+                          {incident.location && (
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                              Location: {incident.location}
+                            </p>
+                          )}
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                            Reported:{' '}
+                            {new Date(incident.reportedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={
+                            INCIDENT_STATUS_VARIANTS[incident.status] ||
+                            'neutral'
+                          }
+                        >
+                          {incident.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Training Tab */}
+        {selectedConfigId && activeTab === 'training' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Training Compliance</h3>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['safety-training'],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
+            </CardHeader>
+            <CardBody>
+              {trainingQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading training records...
+                </div>
+              ) : trainingQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No training records. Add training requirements to track
+                  compliance.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Course
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Employee
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Due Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Expires
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {trainingQuery.data?.map((record) => (
+                        <tr key={record.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            {record.courseName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {record.employeeName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              {record.status === 'COMPLETED' ? (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              ) : record.status === 'OVERDUE' ? (
+                                <XCircle className="h-4 w-4 text-red-500" />
+                              ) : (
+                                <Clock className="h-4 w-4 text-yellow-500" />
+                              )}
+                              <Badge
+                                variant={
+                                  TRAINING_STATUS_VARIANTS[record.status] ||
+                                  'neutral'
+                                }
+                              >
+                                {record.status}
+                              </Badge>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
+                            {record.dueDate
+                              ? new Date(record.dueDate).toLocaleDateString()
+                              : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
+                            {record.expiresAt
+                              ? new Date(record.expiresAt).toLocaleDateString()
+                              : 'Never'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </div>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (

@@ -89,158 +89,166 @@ function OpportunitiesPage(): JSX.Element {
   const closingSoon = closingSoonQuery.data ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Opportunities"
         description="Manage your sales pipeline and deals"
       />
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-3 sm:p-4">
-            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
-              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-              <span className="leading-tight">Pipeline Value</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold">
-              {formatCurrency(stats.totalValue)}
-            </div>
-          </Card>
-          <Card className="p-3 sm:p-4">
-            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
-              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-              <span className="leading-tight">Weighted Value</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold text-green-600">
-              {formatCurrency(stats.weightedValue)}
-            </div>
-          </Card>
-          <Card className="p-3 sm:p-4">
-            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
-              <Target className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-              <span className="leading-tight">Win Rate</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold text-blue-600">
-              {(stats.winRate * 100).toFixed(1)}%
-            </div>
-          </Card>
-          <Card className="p-3 sm:p-4">
-            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-              <span className="leading-tight">Avg Deal Size</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-semibold">
-              {formatCurrency(stats.averageDealSize)}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Closing Soon */}
-      {closingSoon.length > 0 && (
-        <Card className="p-4">
-          <h3 className="font-medium mb-3">Closing This Week</h3>
-          <div className="flex flex-wrap gap-2">
-            {closingSoon.map((opp) => (
-              <div
-                key={opp.id}
-                className="flex items-center gap-2 px-3 py-2 bg-yellow-50 rounded-lg border border-yellow-200"
-              >
-                <span className="font-medium">{opp.name}</span>
-                <span className="text-sm text-gray-600">
-                  {formatCurrency(opp.amount)}
-                </span>
-                <Badge variant="warning">
-                  {opp.daysUntilClose} day{opp.daysUntilClose !== 1 ? 's' : ''}
-                </Badge>
+      <div className="container-padding py-6 space-y-6">
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                <span className="leading-tight">Pipeline Value</span>
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                value={filters.search}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, search: e.target.value }))
-                }
-                placeholder="Search opportunities..."
-                className="pl-10"
-              />
-            </div>
-          </div>
-          <Select
-            value={filters.stageType}
-            onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                stageType: e.target.value as Filters['stageType'],
-              }))
-            }
-          >
-            <option value="">All Stages</option>
-            <option value="OPEN">Open</option>
-            <option value="WON">Won</option>
-            <option value="LOST">Lost</option>
-          </Select>
-        </div>
-      </Card>
-
-      {/* Pipeline by Stage */}
-      {stats && (
-        <Card className="p-4">
-          <h3 className="font-medium mb-4">Pipeline by Stage</h3>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
-            {stats.byStage.map((stage) => (
-              <div
-                key={stage.stageId}
-                className="p-3 bg-gray-50 rounded-lg border"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-sm">{stage.stageName}</span>
-                  <Badge variant={getStageVariant(stage.stageType)}>
-                    {stage.count}
-                  </Badge>
-                </div>
-                <div className="text-lg font-semibold">
-                  {formatCurrency(stage.value)}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Weighted: {formatCurrency(stage.weightedValue)}
-                </div>
+              <div className="text-xl sm:text-2xl font-semibold">
+                {formatCurrency(stats.totalValue)}
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Opportunities List */}
-      <Card>
-        {opportunitiesQuery.isLoading ? (
-          <div className="p-8 text-center text-gray-500">
-            Loading opportunities...
-          </div>
-        ) : opportunities.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            {filters.search || filters.stageType
-              ? 'No opportunities match your filters'
-              : EMPTY_STATES.opportunities}
-          </div>
-        ) : (
-          <div className="divide-y">
-            {opportunities.map((opportunity) => (
-              <OpportunityRow key={opportunity.id} opportunity={opportunity} />
-            ))}
+            </Card>
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                <span className="leading-tight">Weighted Value</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-semibold text-green-600">
+                {formatCurrency(stats.weightedValue)}
+              </div>
+            </Card>
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+                <Target className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                <span className="leading-tight">Win Rate</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-semibold text-blue-600">
+                {(stats.winRate * 100).toFixed(1)}%
+              </div>
+            </Card>
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                <span className="leading-tight">Avg Deal Size</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-semibold">
+                {formatCurrency(stats.averageDealSize)}
+              </div>
+            </Card>
           </div>
         )}
-      </Card>
+
+        {/* Closing Soon */}
+        {closingSoon.length > 0 && (
+          <Card className="p-4">
+            <h3 className="font-medium mb-3">Closing This Week</h3>
+            <div className="flex flex-wrap gap-2">
+              {closingSoon.map((opp) => (
+                <div
+                  key={opp.id}
+                  className="flex items-center gap-2 px-3 py-2 bg-yellow-50 rounded-lg border border-yellow-200"
+                >
+                  <span className="font-medium">{opp.name}</span>
+                  <span className="text-sm text-gray-600">
+                    {formatCurrency(opp.amount)}
+                  </span>
+                  <Badge variant="warning">
+                    {opp.daysUntilClose} day
+                    {opp.daysUntilClose !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Filters */}
+        <Card className="p-4">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  value={filters.search}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, search: e.target.value }))
+                  }
+                  placeholder="Search opportunities..."
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select
+              value={filters.stageType}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  stageType: e.target.value as Filters['stageType'],
+                }))
+              }
+            >
+              <option value="">All Stages</option>
+              <option value="OPEN">Open</option>
+              <option value="WON">Won</option>
+              <option value="LOST">Lost</option>
+            </Select>
+          </div>
+        </Card>
+
+        {/* Pipeline by Stage */}
+        {stats && (
+          <Card className="p-4">
+            <h3 className="font-medium mb-4">Pipeline by Stage</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
+              {stats.byStage.map((stage) => (
+                <div
+                  key={stage.stageId}
+                  className="p-3 bg-gray-50 rounded-lg border"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-sm">
+                      {stage.stageName}
+                    </span>
+                    <Badge variant={getStageVariant(stage.stageType)}>
+                      {stage.count}
+                    </Badge>
+                  </div>
+                  <div className="text-lg font-semibold">
+                    {formatCurrency(stage.value)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Weighted: {formatCurrency(stage.weightedValue)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Opportunities List */}
+        <Card>
+          {opportunitiesQuery.isLoading ? (
+            <div className="p-8 text-center text-gray-500">
+              Loading opportunities...
+            </div>
+          ) : opportunities.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              {filters.search || filters.stageType
+                ? 'No opportunities match your filters'
+                : EMPTY_STATES.opportunities}
+            </div>
+          ) : (
+            <div className="divide-y">
+              {opportunities.map((opportunity) => (
+                <OpportunityRow
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

@@ -207,11 +207,11 @@ function CTAsListPage(): JSX.Element {
   const ctas = data?.data ?? [];
 
   return (
-    <>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="CTAs"
         description="View and manage all Calls-to-Action across your customer portfolio."
-        icon={<Target className="w-6 h-6" />}
+        icon={Target}
         actions={
           <Link to="/customer-success/ctas/new">
             <Button variant="primary">
@@ -222,7 +222,7 @@ function CTAsListPage(): JSX.Element {
         }
       />
 
-      <div className="p-6">
+      <div className="container-padding py-6 space-y-6">
         {/* Summary stats */}
         <CTASummaryStats />
 
@@ -387,7 +387,7 @@ function CTAsListPage(): JSX.Element {
           </p>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
