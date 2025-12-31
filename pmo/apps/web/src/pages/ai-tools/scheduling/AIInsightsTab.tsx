@@ -126,7 +126,7 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                   No-Show Rate
                 </p>
                 <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-                  {analytics
+                  {analytics && analytics.noShowRate != null
                     ? `${(analytics.noShowRate * 100).toFixed(1)}%`
                     : '-'}
                 </p>
@@ -145,7 +145,7 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                   Utilization Rate
                 </p>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {analytics
+                  {analytics && analytics.utilizationRate != null
                     ? `${(analytics.utilizationRate * 100).toFixed(1)}%`
                     : '-'}
                 </p>
@@ -164,7 +164,7 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                   Avg Lead Time
                 </p>
                 <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-                  {analytics
+                  {analytics && analytics.averageLeadTimeDays != null
                     ? `${analytics.averageLeadTimeDays.toFixed(1)}d`
                     : '-'}
                 </p>
@@ -363,31 +363,37 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                   </div>
                 )}
 
-                {analytics && analytics.utilizationRate < 0.7 && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                      Low utilization detected
-                    </p>
-                    <p className="text-xs text-blue-600 dark:text-blue-300">
-                      Consider offering same-day appointments or reducing slot
-                      buffer times.
-                    </p>
-                  </div>
-                )}
+                {analytics &&
+                  analytics.utilizationRate != null &&
+                  analytics.utilizationRate < 0.7 && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Low utilization detected
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300">
+                        Consider offering same-day appointments or reducing slot
+                        buffer times.
+                      </p>
+                    </div>
+                  )}
 
-                {analytics && analytics.noShowRate > 0.1 && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                      Elevated no-show rate
-                    </p>
-                    <p className="text-xs text-yellow-600 dark:text-yellow-300">
-                      Enable overbooking for high-risk slots to compensate for
-                      expected no-shows.
-                    </p>
-                  </div>
-                )}
+                {analytics &&
+                  analytics.noShowRate != null &&
+                  analytics.noShowRate > 0.1 && (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                        Elevated no-show rate
+                      </p>
+                      <p className="text-xs text-yellow-600 dark:text-yellow-300">
+                        Enable overbooking for high-risk slots to compensate for
+                        expected no-shows.
+                      </p>
+                    </div>
+                  )}
 
-                {(!analytics || analytics.utilizationRate >= 0.9) && (
+                {(!analytics ||
+                  analytics.utilizationRate == null ||
+                  analytics.utilizationRate >= 0.9) && (
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <p className="text-sm font-medium text-green-800 dark:text-green-200">
                       Schedule is well optimized
