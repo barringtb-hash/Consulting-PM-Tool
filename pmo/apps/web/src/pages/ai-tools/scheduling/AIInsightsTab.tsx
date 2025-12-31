@@ -183,19 +183,20 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-primary-500" />
+                  <Brain className="w-5 h-5 text-primary-500 flex-shrink-0" />
                   <h3 className="font-semibold">High-Risk Appointments</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-neutral-500">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm text-neutral-500 hidden sm:inline">
                     Risk threshold:
                   </span>
                   <select
                     value={riskThreshold}
                     onChange={(e) => setRiskThreshold(Number(e.target.value))}
-                    className="text-sm border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1"
+                    className="text-sm border border-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 rounded px-2 py-1"
+                    aria-label="Risk threshold"
                   >
                     <option value={0.3}>30%</option>
                     <option value={0.4}>40%</option>
@@ -239,7 +240,7 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                     return (
                       <div
                         key={appt.id}
-                        className={`p-4 rounded-lg border ${
+                        className={`p-3 sm:p-4 rounded-lg border ${
                           riskLevel === 'critical'
                             ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
                             : riskLevel === 'high'
@@ -247,9 +248,9 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                               : 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10'
                         }`}
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                               <span className="font-medium">
                                 {appt.patientName}
                               </span>
@@ -268,11 +269,11 @@ export function AIInsightsTab({ configId }: AIInsightsTabProps): JSX.Element {
                               </p>
                             )}
                           </div>
-                          <div className="flex flex-col gap-1">
-                            <Button size="sm" variant="secondary">
+                          <div className="flex sm:flex-col gap-2 sm:gap-1 flex-shrink-0">
+                            <Button size="sm" variant="secondary" className="flex-1 sm:flex-none">
                               Send Reminder
                             </Button>
-                            <Button size="sm" variant="secondary">
+                            <Button size="sm" variant="secondary" className="flex-1 sm:flex-none">
                               Confirm
                             </Button>
                           </div>
