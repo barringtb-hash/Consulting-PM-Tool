@@ -81,7 +81,10 @@ interface TimeOffInput {
 // ============================================================================
 
 /**
- * Get shift scheduling config by its own ID
+ * Get shift scheduling config by its own ID.
+ *
+ * @param configId - The ID of the shift scheduling configuration to retrieve.
+ * @returns The matching shift scheduling configuration, or null if not found.
  */
 export async function getShiftConfig(configId: number) {
   return prisma.shiftSchedulingConfig.findFirst({
@@ -90,9 +93,12 @@ export async function getShiftConfig(configId: number) {
 }
 
 /**
- * Get shift scheduling config by SchedulingConfig ID (preferred method)
+ * Get shift scheduling config by SchedulingConfig ID (preferred method).
  * This allows the frontend to use the same config ID for both
  * appointment scheduling and shift scheduling.
+ *
+ * @param schedulingConfigId - The ID of the parent SchedulingConfig.
+ * @returns The matching ShiftSchedulingConfig, or null if not found.
  */
 export async function getShiftConfigBySchedulingConfigId(
   schedulingConfigId: number,
@@ -106,52 +112,94 @@ export async function getShiftConfigBySchedulingConfigId(
  * Get or create shift scheduling config by SchedulingConfig ID.
  * This is the primary method used by the shift router to ensure
  * a ShiftSchedulingConfig exists when a SchedulingConfig is accessed.
+ *
+ * Uses a transaction to prevent race conditions when multiple requests
+ * try to create the config simultaneously.
+ *
+ * @param schedulingConfigId - ID of the associated SchedulingConfig.
+ * @param tenantId - Tenant identifier used when creating the config.
+ * @returns The existing or newly created ShiftSchedulingConfig, or null
+ *   if the SchedulingConfig does not exist or belongs to a different tenant.
  */
 export async function getOrCreateShiftConfigBySchedulingConfigId(
   schedulingConfigId: number,
   tenantId: string,
 ) {
-  // First, try to find existing by schedulingConfigId
-  const existing = await prisma.shiftSchedulingConfig.findFirst({
-    where: { schedulingConfigId },
-  });
+  // Use a transaction to prevent race conditions
+  return prisma.$transaction(async (tx) => {
+    // First, try to find existing by schedulingConfigId
+    const existing = await tx.shiftSchedulingConfig.findFirst({
+      where: { schedulingConfigId },
+    });
 
-  if (existing) {
-    return existing;
-  }
+    if (existing) {
+      return existing;
+    }
 
-  // Look up the SchedulingConfig to get business name and account info
-  const schedulingConfig = await prisma.schedulingConfig.findUnique({
-    where: { id: schedulingConfigId },
-    include: { account: true, client: true },
-  });
+    // Look up the SchedulingConfig to get business name and account info
+    const schedulingConfig = await tx.schedulingConfig.findUnique({
+      where: { id: schedulingConfigId },
+      include: { account: true, client: true },
+    });
 
-  if (!schedulingConfig) {
-    return null;
-  }
+    if (!schedulingConfig) {
+      return null;
+    }
 
-  // Create a new ShiftSchedulingConfig linked to the SchedulingConfig
-  const businessName =
-    schedulingConfig.practiceName ||
-    schedulingConfig.account?.name ||
-    schedulingConfig.client?.name ||
-    'Default Business';
+    // Validate that the SchedulingConfig belongs to the same tenant
+    if (schedulingConfig.tenantId && schedulingConfig.tenantId !== tenantId) {
+      console.warn(
+        `Tenant mismatch: SchedulingConfig ${schedulingConfigId} belongs to tenant ` +
+          `${schedulingConfig.tenantId}, but request is from tenant ${tenantId}`,
+      );
+      return null;
+    }
 
-  return prisma.shiftSchedulingConfig.create({
-    data: {
-      tenantId,
-      schedulingConfigId,
-      accountId: schedulingConfig.accountId,
-      businessName,
-      timezone: schedulingConfig.timezone || 'America/New_York',
-      weeklyOvertimeThreshold: 40,
-    },
+    // Create a new ShiftSchedulingConfig linked to the SchedulingConfig
+    const businessName =
+      schedulingConfig.practiceName ||
+      schedulingConfig.account?.name ||
+      schedulingConfig.client?.name ||
+      'Default Business';
+
+    try {
+      return await tx.shiftSchedulingConfig.create({
+        data: {
+          tenantId,
+          schedulingConfigId,
+          accountId: schedulingConfig.accountId,
+          businessName,
+          timezone: schedulingConfig.timezone || 'America/New_York',
+          weeklyOvertimeThreshold: 40,
+        },
+      });
+    } catch (error) {
+      // Handle unique constraint violation (race condition)
+      // If another request created the record, fetch and return it
+      if (
+        error instanceof Error &&
+        error.message.includes('Unique constraint')
+      ) {
+        const created = await tx.shiftSchedulingConfig.findFirst({
+          where: { schedulingConfigId },
+        });
+        if (created) {
+          return created;
+        }
+      }
+      throw error;
+    }
   });
 }
 
 /**
- * Get or create shift scheduling config (legacy - by ShiftSchedulingConfig ID)
- * @deprecated Use getOrCreateShiftConfigBySchedulingConfigId instead
+ * Get or create shift scheduling config (legacy - by ShiftSchedulingConfig ID).
+ *
+ * @deprecated Since v2.0.0. Use {@link getOrCreateShiftConfigBySchedulingConfigId}
+ * instead. This legacy method does not link to SchedulingConfig.
+ * @param configId - The ID of the shift scheduling config.
+ * @param tenantId - The tenant identifier, required for creation.
+ * @returns The existing or newly created config, or null if creation not possible.
  */
 export async function getOrCreateShiftConfig(
   configId: number,

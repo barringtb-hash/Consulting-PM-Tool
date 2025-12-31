@@ -40,6 +40,10 @@ interface ShiftRequest extends TenantRequest {
  * Middleware to resolve ShiftSchedulingConfig from SchedulingConfig ID.
  * The frontend passes the SchedulingConfig ID, but we need the ShiftSchedulingConfig ID
  * for database operations. This middleware resolves (and creates if needed) the mapping.
+ *
+ * @param req - Express request with tenant context, augmented with shiftConfigId.
+ * @param res - Express response for sending error responses.
+ * @param next - Express next function to continue to route handler.
  */
 async function resolveShiftConfig(
   req: ShiftRequest,
@@ -52,11 +56,12 @@ async function resolveShiftConfig(
     return;
   }
 
-  // Get tenant ID - fallback to empty string if not available (development mode)
-  const tenantId = hasTenantContext() ? getTenantId() : '';
+  // Get tenant ID - undefined if not available (development mode)
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
   if (!tenantId) {
     // In development without tenant context, try to look up by schedulingConfigId only
+    // We cannot create new configs without a tenant ID
     const shiftConfig =
       await shiftService.getShiftConfigBySchedulingConfigId(schedulingConfigId);
     if (shiftConfig) {
@@ -64,11 +69,12 @@ async function resolveShiftConfig(
       next();
       return;
     }
-    // If no config exists and no tenant, return 404
+    // If no config exists and no tenant, return 404 with helpful message
     res.status(404).json({
       error: 'Shift configuration not found',
       message:
-        'No shift scheduling configuration exists for this scheduling config.',
+        'No shift scheduling configuration exists for this scheduling config. ' +
+        'In development mode without tenant context, configurations cannot be auto-created.',
     });
     return;
   }
@@ -82,8 +88,10 @@ async function resolveShiftConfig(
 
   if (!shiftConfig) {
     res.status(404).json({
-      error: 'Scheduling configuration not found',
-      message: 'The referenced scheduling configuration does not exist.',
+      error: 'Shift configuration unavailable',
+      message:
+        'The referenced scheduling configuration could not be resolved. ' +
+        'It may not exist, or you may not have access to it.',
     });
     return;
   }
