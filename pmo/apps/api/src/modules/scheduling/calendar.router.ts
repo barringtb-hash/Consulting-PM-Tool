@@ -26,6 +26,29 @@ const initiateOAuthSchema = z.object({
 // ============================================================================
 
 /**
+ * GET /api/scheduling/calendar/oauth/status
+ * Check which calendar integrations are available (configured)
+ */
+router.get(
+  '/oauth/status',
+  requireAuth,
+  async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
+    res.json({
+      data: {
+        google: {
+          configured: calendarService.isGoogleOAuthConfigured(),
+          platform: 'GOOGLE',
+        },
+        outlook: {
+          configured: calendarService.isMicrosoftOAuthConfigured(),
+          platform: 'OUTLOOK',
+        },
+      },
+    });
+  },
+);
+
+/**
  * POST /api/scheduling/calendar/oauth/initiate
  * Start OAuth flow for calendar integration
  */
@@ -71,6 +94,16 @@ router.post(
       });
     } catch (error) {
       console.error('Error initiating OAuth:', error);
+
+      // Check if this is a configuration error and return a helpful message
+      if (error instanceof Error && error.message.includes('not configured')) {
+        res.status(503).json({
+          error: error.message,
+          code: 'OAUTH_NOT_CONFIGURED',
+        });
+        return;
+      }
+
       res.status(500).json({ error: 'Failed to initiate OAuth flow' });
     }
   },
