@@ -7,8 +7,8 @@ SELECT
     'default-tenant-' || gen_random_uuid()::text,
     'Default Organization',
     'default',
-    'PROFESSIONAL',
-    'ACTIVE',
+    'PROFESSIONAL'::"TenantPlan",
+    'ACTIVE'::"TenantStatus",
     NOW(),
     NOW()
 WHERE NOT EXISTS (
@@ -21,7 +21,7 @@ INSERT INTO "TenantUser" ("tenantId", "userId", "role", "createdAt", "updatedAt"
 SELECT
     t.id,
     u.id,
-    CASE WHEN u.role = 'SUPER_ADMIN' THEN 'OWNER' ELSE 'MEMBER' END,
+    CASE WHEN u.role = 'SUPER_ADMIN' THEN 'OWNER'::"TenantRole" ELSE 'MEMBER'::"TenantRole" END,
     NOW(),
     NOW()
 FROM "User" u
