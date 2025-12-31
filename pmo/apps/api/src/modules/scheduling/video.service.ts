@@ -468,18 +468,33 @@ export async function getVideoConfig(configId: number) {
  * Get all video configs for a scheduling config
  */
 export async function getVideoConfigs(configId: number) {
-  return prisma.videoMeetingConfig.findMany({
-    where: { configId },
-    select: {
-      id: true,
-      platform: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true,
-      defaultSettings: true,
-      // Never expose tokens
-    },
-  });
+  try {
+    return await prisma.videoMeetingConfig.findMany({
+      where: { configId },
+      select: {
+        id: true,
+        platform: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        defaultSettings: true,
+        // Never expose tokens
+      },
+    });
+  } catch (error) {
+    // Handle case where table doesn't exist yet (P2021 = table does not exist)
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2021'
+    ) {
+      console.warn(
+        'VideoMeetingConfig table does not exist yet. Run migrations to create it.',
+      );
+      return [];
+    }
+    throw error;
+  }
 }
 
 /**

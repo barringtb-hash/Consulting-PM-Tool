@@ -147,11 +147,26 @@ function flattenObject(
 export async function getPaymentConfig(
   configId: number,
 ): Promise<PaymentConfigDetails | null> {
-  const config = await prisma.paymentConfig.findFirst({
-    where: { configId },
-  });
+  try {
+    const config = await prisma.paymentConfig.findFirst({
+      where: { configId },
+    });
 
-  return config;
+    return config;
+  } catch (error) {
+    // Handle case where table doesn't exist yet (P2021 = table does not exist)
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2021'
+    ) {
+      console.warn(
+        'PaymentConfig table does not exist yet. Run migrations to create it.',
+      );
+      return null;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -170,41 +185,56 @@ export async function upsertPaymentConfig(
     currency?: string;
     refundPolicy?: string; // Ignored - not in schema
   },
-) {
-  // Map incoming data to actual schema fields
-  const schemaData: {
-    stripeOnboarded?: boolean;
-    collectPaymentAt?: PaymentTiming;
-    currency?: string;
-  } = {};
+): Promise<PaymentConfigDetails | null> {
+  try {
+    // Map incoming data to actual schema fields
+    const schemaData: {
+      stripeOnboarded?: boolean;
+      collectPaymentAt?: PaymentTiming;
+      currency?: string;
+    } = {};
 
-  if (data.enabled !== undefined) {
-    schemaData.stripeOnboarded = data.enabled;
-  }
-  if (data.paymentTiming !== undefined) {
-    schemaData.collectPaymentAt = data.paymentTiming;
-  }
-  if (data.currency !== undefined) {
-    schemaData.currency = data.currency;
-  }
+    if (data.enabled !== undefined) {
+      schemaData.stripeOnboarded = data.enabled;
+    }
+    if (data.paymentTiming !== undefined) {
+      schemaData.collectPaymentAt = data.paymentTiming;
+    }
+    if (data.currency !== undefined) {
+      schemaData.currency = data.currency;
+    }
 
-  const existing = await prisma.paymentConfig.findFirst({
-    where: { configId },
-  });
-
-  if (existing) {
-    return prisma.paymentConfig.update({
-      where: { id: existing.id },
-      data: schemaData,
+    const existing = await prisma.paymentConfig.findFirst({
+      where: { configId },
     });
-  }
 
-  return prisma.paymentConfig.create({
-    data: {
-      configId,
-      ...schemaData,
-    },
-  });
+    if (existing) {
+      return prisma.paymentConfig.update({
+        where: { id: existing.id },
+        data: schemaData,
+      });
+    }
+
+    return prisma.paymentConfig.create({
+      data: {
+        configId,
+        ...schemaData,
+      },
+    });
+  } catch (error) {
+    // Handle case where table doesn't exist yet (P2021 = table does not exist)
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2021'
+    ) {
+      console.warn(
+        'PaymentConfig table does not exist yet. Run migrations to create it.',
+      );
+      return null;
+    }
+    throw error;
+  }
 }
 
 // ============================================================================
