@@ -258,24 +258,26 @@ export function IntegrationsSettingsTab({
   return (
     <div className="space-y-6">
       {/* Section Tabs */}
-      <div className="flex gap-2 border-b pb-4">
-        {sections.map((section) => {
-          const Icon = section.icon;
-          return (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                activeSection === section.id
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {section.label}
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-1.5 sm:gap-2 border-b pb-4 min-w-max">
+          {sections.map((section) => {
+            const Icon = section.icon;
+            return (
+              <button
+                key={section.id}
+                onClick={() => setActiveSection(section.id)}
+                className={`flex items-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+                  activeSection === section.id
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                {section.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Calendar Integrations */}
@@ -296,10 +298,10 @@ export function IntegrationsSettingsTab({
                 {calendarIntegrations.map((integration) => (
                   <div
                     key={integration.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 flex-shrink-0">
                         {integration.platform === 'GOOGLE' ? (
                           <span className="text-lg font-bold text-red-500">
                             G
@@ -310,13 +312,13 @@ export function IntegrationsSettingsTab({
                           </span>
                         )}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium">
                           {integration.platform === 'GOOGLE'
                             ? 'Google Calendar'
                             : 'Outlook Calendar'}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 truncate">
                           {integration.calendarId}
                         </p>
                         {integration.lastSyncAt && (
@@ -327,7 +329,7 @@ export function IntegrationsSettingsTab({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {integration.syncEnabled ? (
                         <Badge variant="success">
                           <Check className="mr-1 h-3 w-3" />
@@ -412,13 +414,13 @@ export function IntegrationsSettingsTab({
                 {videoConfigs.map((config) => (
                   <div
                     key={config.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                        <Video className="h-5 w-5 text-blue-600" />
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
+                        <Video className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium">
                           {config.platform === 'ZOOM'
                             ? 'Zoom'
@@ -432,7 +434,7 @@ export function IntegrationsSettingsTab({
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {config.isActive ? (
                         <Badge variant="success">
                           <Check className="mr-1 h-3 w-3" />

@@ -270,42 +270,44 @@ export function ShiftSchedulingTab({
       )}
 
       {/* Sub-tab Navigation */}
-      <div className="flex gap-2 border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto">
-        {[
-          { id: 'schedules', label: 'Schedules', icon: Calendar },
-          { id: 'employees', label: 'Employees', icon: Users },
-          {
-            id: 'time-off',
-            label: 'Time Off',
-            icon: FileText,
-            badge: timeOffRequests.length,
-          },
-          {
-            id: 'swaps',
-            label: 'Swap Requests',
-            icon: ArrowLeftRight,
-            badge: swapRequests.length,
-          },
-          { id: 'coverage', label: 'Coverage', icon: Clock },
-        ].map(({ id, label, icon: Icon, badge }) => (
-          <button
-            key={id}
-            onClick={() => setActiveSubTab(id as typeof activeSubTab)}
-            className={`flex items-center gap-2 px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${
-              activeSubTab === id
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-            {label}
-            {badge && badge > 0 && (
-              <Badge variant="warning" className="ml-1 text-xs">
-                {badge}
-              </Badge>
-            )}
-          </button>
-        ))}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-1 sm:gap-2 border-b border-neutral-200 dark:border-neutral-700 min-w-max">
+          {[
+            { id: 'schedules', label: 'Schedules', icon: Calendar },
+            { id: 'employees', label: 'Employees', icon: Users },
+            {
+              id: 'time-off',
+              label: 'Time Off',
+              icon: FileText,
+              badge: timeOffRequests.length,
+            },
+            {
+              id: 'swaps',
+              label: 'Swaps',
+              icon: ArrowLeftRight,
+              badge: swapRequests.length,
+            },
+            { id: 'coverage', label: 'Coverage', icon: Clock },
+          ].map(({ id, label, icon: Icon, badge }) => (
+            <button
+              key={id}
+              onClick={() => setActiveSubTab(id as typeof activeSubTab)}
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b-2 whitespace-nowrap transition-colors text-sm sm:text-base ${
+                activeSubTab === id
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+              }`}
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              {label}
+              {badge && badge > 0 && (
+                <Badge variant="warning" className="ml-1 text-xs">
+                  {badge}
+                </Badge>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Schedules Tab */}
@@ -427,47 +429,51 @@ export function ShiftSchedulingTab({
                   </div>
 
                   {/* Week Grid */}
-                  <div className="grid grid-cols-7 gap-2">
-                    {weekDays.map((day) => {
-                      const dayShifts = shiftsByDay[day.toDateString()] || [];
-                      return (
-                        <div
-                          key={day.toISOString()}
-                          className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-2 min-h-[150px]"
-                        >
-                          <div className="text-center mb-2">
-                            <p className="text-xs text-neutral-500">
-                              {day.toLocaleDateString('en-US', {
-                                weekday: 'short',
-                              })}
-                            </p>
-                            <p className="font-semibold">{day.getDate()}</p>
+                  <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="grid grid-cols-7 gap-1.5 sm:gap-2 min-w-[600px] sm:min-w-0">
+                      {weekDays.map((day) => {
+                        const dayShifts = shiftsByDay[day.toDateString()] || [];
+                        return (
+                          <div
+                            key={day.toISOString()}
+                            className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-1.5 sm:p-2 min-h-[120px] sm:min-h-[150px]"
+                          >
+                            <div className="text-center mb-2">
+                              <p className="text-xs text-neutral-500">
+                                {day.toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                })}
+                              </p>
+                              <p className="font-semibold text-sm sm:text-base">
+                                {day.getDate()}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              {dayShifts.map((shift) => (
+                                <div
+                                  key={shift.id}
+                                  className={`text-xs p-1 sm:p-1.5 rounded ${
+                                    shift.employeeId
+                                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200'
+                                      : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
+                                  }`}
+                                >
+                                  <p className="font-medium truncate">
+                                    {shift.employee
+                                      ? `${shift.employee.firstName} ${shift.employee.lastName[0]}.`
+                                      : 'Open'}
+                                  </p>
+                                  <p className="opacity-80 text-[10px] sm:text-xs">
+                                    {formatTime(shift.startTime)} -{' '}
+                                    {formatTime(shift.endTime)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            {dayShifts.map((shift) => (
-                              <div
-                                key={shift.id}
-                                className={`text-xs p-1.5 rounded ${
-                                  shift.employeeId
-                                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200'
-                                    : 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
-                                }`}
-                              >
-                                <p className="font-medium truncate">
-                                  {shift.employee
-                                    ? `${shift.employee.firstName} ${shift.employee.lastName[0]}.`
-                                    : 'Open'}
-                                </p>
-                                <p className="opacity-80">
-                                  {formatTime(shift.startTime)} -{' '}
-                                  {formatTime(shift.endTime)}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </CardBody>
               </Card>
@@ -560,9 +566,9 @@ export function ShiftSchedulingTab({
                 {timeOffRequests.map((request) => (
                   <div
                     key={request.id}
-                    className="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg"
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium">
                         {request.employee?.firstName}{' '}
                         {request.employee?.lastName}
@@ -572,12 +578,12 @@ export function ShiftSchedulingTab({
                         {formatDate(request.endDate)} ({request.type})
                       </p>
                       {request.reason && (
-                        <p className="text-sm text-neutral-600 mt-1">
+                        <p className="text-sm text-neutral-600 mt-1 line-clamp-2">
                           {request.reason}
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       <Button
                         size="sm"
                         variant="secondary"
@@ -594,6 +600,7 @@ export function ShiftSchedulingTab({
                         }
                       >
                         <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="sm:hidden ml-1">Approve</span>
                       </Button>
                       <Button
                         size="sm"
@@ -611,6 +618,7 @@ export function ShiftSchedulingTab({
                         }
                       >
                         <XCircle className="w-4 h-4 text-red-500" />
+                        <span className="sm:hidden ml-1">Deny</span>
                       </Button>
                     </div>
                   </div>
@@ -637,9 +645,9 @@ export function ShiftSchedulingTab({
                 {swapRequests.map((request) => (
                   <div
                     key={request.id}
-                    className="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg"
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium">
                         {request.requester?.firstName}{' '}
                         {request.requester?.lastName}
@@ -659,12 +667,12 @@ export function ShiftSchedulingTab({
                         </p>
                       )}
                       {request.reason && (
-                        <p className="text-sm text-neutral-600 mt-1">
+                        <p className="text-sm text-neutral-600 mt-1 line-clamp-2">
                           {request.reason}
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       <Button
                         size="sm"
                         variant="secondary"
@@ -685,6 +693,7 @@ export function ShiftSchedulingTab({
                         }
                       >
                         <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="sm:hidden ml-1">Approve</span>
                       </Button>
                       <Button
                         size="sm"
@@ -702,6 +711,7 @@ export function ShiftSchedulingTab({
                         }
                       >
                         <XCircle className="w-4 h-4 text-red-500" />
+                        <span className="sm:hidden ml-1">Deny</span>
                       </Button>
                     </div>
                   </div>

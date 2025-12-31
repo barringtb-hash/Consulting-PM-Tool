@@ -445,30 +445,32 @@ function SchedulingPage(): JSX.Element {
 
         {/* Tab Navigation */}
         {selectedConfig && (
-          <div className="flex gap-2 border-b border-neutral-200 dark:border-neutral-700">
-            {[
-              { id: 'calendar', label: 'Calendar', icon: Calendar },
-              { id: 'appointments', label: 'Appointments', icon: Clock },
-              { id: 'providers', label: 'Providers', icon: Users },
-              { id: 'appointment-types', label: 'Services', icon: Tag },
-              { id: 'integrations', label: 'Integrations', icon: Settings },
-              { id: 'shifts', label: 'Shifts', icon: Briefcase },
-              { id: 'ai-insights', label: 'AI Insights', icon: Brain },
-              { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === id
-                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-1 sm:gap-2 border-b border-neutral-200 dark:border-neutral-700 min-w-max">
+              {[
+                { id: 'calendar', label: 'Calendar', icon: Calendar },
+                { id: 'appointments', label: 'Appointments', icon: Clock },
+                { id: 'providers', label: 'Providers', icon: Users },
+                { id: 'appointment-types', label: 'Services', icon: Tag },
+                { id: 'integrations', label: 'Integrations', icon: Settings },
+                { id: 'shifts', label: 'Shifts', icon: Briefcase },
+                { id: 'ai-insights', label: 'AI Insights', icon: Brain },
+                { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b-2 transition-colors whitespace-nowrap text-sm sm:text-base ${
+                    activeTab === id
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                      : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -539,16 +541,16 @@ function SchedulingPage(): JSX.Element {
                           {appointments.map((appt) => (
                             <div
                               key={appt.id}
-                              className={`p-4 rounded-lg border ${
+                              className={`p-3 sm:p-4 rounded-lg border ${
                                 appt.noShowRiskScore &&
                                 appt.noShowRiskScore > 0.5
                                   ? 'border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20'
                                   : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800'
                               }`}
                             >
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                                     <span className="font-medium text-neutral-900 dark:text-neutral-100">
                                       {appt.patientName}
                                     </span>
@@ -585,36 +587,42 @@ function SchedulingPage(): JSX.Element {
                                     </p>
                                   )}
                                 </div>
-                                <div className="flex gap-2">
-                                  {appt.status === 'SCHEDULED' && (
-                                    <>
-                                      <Button
-                                        size="sm"
-                                        variant="secondary"
-                                        onClick={() =>
-                                          updateStatusMutation.mutate({
-                                            appointmentId: appt.id,
-                                            status: 'CONFIRMED',
-                                          })
-                                        }
-                                      >
-                                        <CheckCircle className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="secondary"
-                                        onClick={() =>
-                                          updateStatusMutation.mutate({
-                                            appointmentId: appt.id,
-                                            status: 'CANCELLED',
-                                          })
-                                        }
-                                      >
-                                        <XCircle className="w-4 h-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
+                                {appt.status === 'SCHEDULED' && (
+                                  <div className="flex gap-2 flex-shrink-0">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      aria-label="Confirm appointment"
+                                      onClick={() =>
+                                        updateStatusMutation.mutate({
+                                          appointmentId: appt.id,
+                                          status: 'CONFIRMED',
+                                        })
+                                      }
+                                    >
+                                      <CheckCircle className="w-4 h-4" />
+                                      <span className="sm:hidden ml-1">
+                                        Confirm
+                                      </span>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      aria-label="Cancel appointment"
+                                      onClick={() =>
+                                        updateStatusMutation.mutate({
+                                          appointmentId: appt.id,
+                                          status: 'CANCELLED',
+                                        })
+                                      }
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                      <span className="sm:hidden ml-1">
+                                        Cancel
+                                      </span>
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}
