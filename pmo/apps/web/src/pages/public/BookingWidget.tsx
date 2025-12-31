@@ -154,6 +154,20 @@ function getDaysInRange(start: Date, count: number): Date[] {
   return dates;
 }
 
+/**
+ * Get user's timezone with fallback for older browsers
+ */
+function getUserTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) return tz;
+  } catch {
+    // Intl API not supported
+  }
+  // Fallback to UTC if timezone detection fails
+  return 'UTC';
+}
+
 type WidgetStep = 'service' | 'time' | 'details' | 'done';
 
 export function BookingWidget(): JSX.Element {
@@ -288,7 +302,7 @@ export function BookingWidget(): JSX.Element {
       patientName: customerName,
       patientEmail: customerEmail,
       patientPhone: customerPhone || undefined,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: getUserTimezone(),
     });
   };
 

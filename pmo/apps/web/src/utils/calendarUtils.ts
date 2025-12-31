@@ -108,9 +108,13 @@ function generateICSContent(params: CalendarEventParams): string {
   // Generate a unique ID for the event
   const uid = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}@scheduling`;
 
-  // Escape special characters in ICS
+  // Escape special characters in ICS (RFC 5545 compliant)
   const escapeICS = (str: string): string => {
-    return str.replace(/[\\;,]/g, '\\$&').replace(/\n/g, '\\n');
+    return str
+      .replace(/[\\;,]/g, '\\$&')
+      .replace(/\r\n/g, '\\n')
+      .replace(/\r/g, '\\n')
+      .replace(/\n/g, '\\n');
   };
 
   const lines = [
@@ -182,16 +186,37 @@ export function formatEventTime(dateString: string): string {
 }
 
 /**
- * Get relative time (e.g., "in 2 days", "tomorrow")
+ * Get relative time (e.g., "in 2 days", "tomorrow", "yesterday", "2 days ago")
  */
 export function getRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = date.getTime() - now.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+  // Handle past dates
+  if (diffMs < 0) {
+    const absDiffHours = Math.abs(diffHours);
+    const absDiffDays = Math.abs(diffDays);
+
+    if (absDiffDays === 0) {
+      if (absDiffHours <= 1) {
+        return 'just now';
+      } else {
+        return `${absDiffHours} hours ago`;
+      }
+    } else if (absDiffDays === 1) {
+      return 'yesterday';
+    } else if (absDiffDays <= 7) {
+      return `${absDiffDays} days ago`;
+    } else {
+      return formatEventDate(dateString);
+    }
+  }
+
+  // Handle future dates
   if (diffDays === 0) {
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     if (diffHours <= 0) {
       return 'now';
     } else if (diffHours === 1) {

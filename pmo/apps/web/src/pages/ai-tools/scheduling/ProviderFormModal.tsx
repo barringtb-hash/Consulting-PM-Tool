@@ -198,9 +198,10 @@ export function ProviderFormModal({
     field: 'start' | 'end',
     value: string,
   ) => {
-    const currentSlots = [...formData.availabilitySchedule[day]];
-    currentSlots[index] = { ...currentSlots[index], [field]: value };
-    updateSchedule(day, currentSlots);
+    const updatedSlots = formData.availabilitySchedule[day].map((slot, i) =>
+      i === index ? { ...slot, [field]: value } : slot,
+    );
+    updateSchedule(day, updatedSlots);
   };
 
   const copyToAllWeekdays = () => {

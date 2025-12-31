@@ -71,8 +71,17 @@ export function OAuthCallbackPage({
             throw new Error(`Unknown calendar platform: ${platform}`);
           }
         } else if (integrationType === 'video') {
-          // Parse configId from state
-          const stateData = state ? JSON.parse(atob(state)) : {};
+          // Parse configId from state with proper error handling
+          let stateData: { configId?: number } = {};
+          if (state) {
+            try {
+              stateData = JSON.parse(atob(state));
+            } catch {
+              throw new Error(
+                'Invalid OAuth state parameter. Please try connecting again.',
+              );
+            }
+          }
           const configId = stateData.configId;
 
           if (!configId) {
