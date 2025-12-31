@@ -503,783 +503,818 @@ function DocumentAnalyzerPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Configuration Selector */}
-      <Card>
-        <CardBody>
-          <div className="flex gap-4 flex-wrap">
-            <div className="flex-1 min-w-[200px]">
-              <Select
-                label="Select Configuration"
-                value={selectedConfigId?.toString() || ''}
-                onChange={(e) =>
-                  setSelectedConfigId(
-                    e.target.value ? parseInt(e.target.value, 10) : null,
-                  )
-                }
-              >
-                <option value="">Select a configuration...</option>
-                {configsQuery.data?.map((config) => (
-                  <option key={config.id} value={config.id}>
-                    {config.client?.name || `Config ${config.id}`} (
-                    {config.industryType})
-                  </option>
-                ))}
-              </Select>
-            </div>
-
-            {selectedConfigId && activeTab === 'documents' && (
-              <div className="w-48">
-                <Select
-                  label="Status Filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="">All Statuses</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="FAILED">Failed</option>
-                  <option value="NEEDS_REVIEW">Needs Review</option>
-                </Select>
-              </div>
-            )}
-
-            {selectedConfigId && activeTab === 'analytics' && (
-              <div className="w-48">
-                <Select
-                  label="Period"
-                  value={analyticsPeriod}
-                  onChange={(e) => setAnalyticsPeriod(e.target.value)}
-                >
-                  <option value="DAILY">Daily</option>
-                  <option value="WEEKLY">Weekly</option>
-                  <option value="MONTHLY">Monthly</option>
-                  <option value="QUARTERLY">Quarterly</option>
-                </Select>
-              </div>
-            )}
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Tabs */}
-      {selectedConfigId && (
-        <div className="border-b border-neutral-200 dark:border-neutral-700">
-          <nav className="-mb-px flex space-x-8 overflow-x-auto">
-            {tabs.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Overview Tab */}
-      {selectedConfigId && activeTab === 'overview' && selectedConfig && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Industry
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {selectedConfig.industryType}
-                    </p>
-                  </div>
-                  <Building2 className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Auto-Classify
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {selectedConfig.enableAutoClassification
-                        ? 'Enabled'
-                        : 'Disabled'}
-                    </p>
-                  </div>
-                  <Zap className="h-8 w-8 text-yellow-500" />
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Compliance
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {selectedConfig.enableCompliance ? 'Enabled' : 'Disabled'}
-                    </p>
-                  </div>
-                  <Shield className="h-8 w-8 text-green-500" />
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Retention
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {selectedConfig.retentionDays} days
-                    </p>
-                  </div>
-                  <Clock className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold">Features</h3>
-              </CardHeader>
-              <CardBody>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>OCR (Optical Character Recognition)</span>
-                    <Badge
-                      variant={selectedConfig.enableOCR ? 'success' : 'neutral'}
-                    >
-                      {selectedConfig.enableOCR ? 'On' : 'Off'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Named Entity Recognition (NER)</span>
-                    <Badge
-                      variant={selectedConfig.enableNER ? 'success' : 'neutral'}
-                    >
-                      {selectedConfig.enableNER ? 'On' : 'Off'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Version Comparison</span>
-                    <Badge
-                      variant={
-                        selectedConfig.enableVersionCompare
-                          ? 'success'
-                          : 'neutral'
-                      }
-                    >
-                      {selectedConfig.enableVersionCompare ? 'On' : 'Off'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Auto-Routing</span>
-                    <Badge
-                      variant={
-                        selectedConfig.enableAutoRouting ? 'success' : 'neutral'
-                      }
-                    >
-                      {selectedConfig.enableAutoRouting ? 'On' : 'Off'}
-                    </Badge>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold">Configuration</h3>
-              </CardHeader>
-              <CardBody>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>Classification Threshold</span>
-                    <span className="font-mono">
-                      {Math.round(selectedConfig.classificationThreshold * 100)}
-                      %
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Status</span>
-                    <Badge
-                      variant={
-                        selectedConfig.isActive ? 'success' : 'secondary'
-                      }
-                    >
-                      {selectedConfig.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Client</span>
-                    <span>{selectedConfig.client?.name || 'Unknown'}</span>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/* Documents Tab */}
-      {selectedConfigId && activeTab === 'documents' && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Analyzed Documents</h3>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    queryClient.invalidateQueries({
-                      queryKey: ['analyzed-documents'],
-                    })
+          <CardBody>
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <Select
+                  label="Select Configuration"
+                  value={selectedConfigId?.toString() || ''}
+                  onChange={(e) =>
+                    setSelectedConfigId(
+                      e.target.value ? parseInt(e.target.value, 10) : null,
+                    )
                   }
                 >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-                <Button onClick={() => setShowUploadModal(true)}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Document
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {documentsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500">
-                Loading documents...
-              </div>
-            ) : documentsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500">
-                No documents found. Upload a document to get started.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                        Filename
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                        Compliance
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {documentsQuery.data?.map((doc) => (
-                      <tr key={doc.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {doc.filename}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {doc.category && (
-                            <span
-                              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${CATEGORY_COLORS[doc.category] || CATEGORY_COLORS.GENERAL}`}
-                            >
-                              {doc.category}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                          {doc.documentType || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge
-                            variant={STATUS_VARIANTS[doc.status] || 'neutral'}
-                          >
-                            {doc.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            {doc.complianceStatus &&
-                              COMPLIANCE_ICONS[doc.complianceStatus]}
-                            {doc.riskScore !== null && (
-                              <span className="text-xs text-neutral-500">
-                                ({Math.round(doc.riskScore)}%)
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                          {doc.totalAmount
-                            ? `$${doc.totalAmount.toLocaleString()}`
-                            : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {doc.status === 'PENDING' && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => analyzeMutation.mutate(doc.id)}
-                              disabled={analyzeMutation.isPending}
-                            >
-                              Analyze
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Templates Tab */}
-      {selectedConfigId && activeTab === 'templates' && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Template Library</h3>
-                <Select
-                  value={templateCategory}
-                  onChange={(e) => setTemplateCategory(e.target.value)}
-                >
-                  <option value="">All Categories</option>
-                  {templatesQuery.data?.categories?.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                  <option value="">Select a configuration...</option>
+                  {configsQuery.data?.map((config) => (
+                    <option key={config.id} value={config.id}>
+                      {config.client?.name || `Config ${config.id}`} (
+                      {config.industryType})
                     </option>
                   ))}
                 </Select>
               </div>
-            </CardHeader>
-            <CardBody>
-              {templatesQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500">
-                  Loading templates...
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredTemplates.map((template) => (
-                    <div
-                      key={template.documentType}
-                      className="border rounded-lg p-4 hover:border-blue-500 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                            {template.name}
-                          </h4>
-                          <p className="text-sm text-neutral-500 mt-1">
-                            {template.description}
-                          </p>
-                        </div>
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${CATEGORY_COLORS[template.category] || CATEGORY_COLORS.GENERAL}`}
-                        >
-                          {template.category}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
-                        <span>{template.fieldDefinitions.length} fields</span>
-                        {template.industryType && (
-                          <span>{template.industryType}</span>
-                        )}
-                        <span>
-                          {Math.round(template.confidenceThreshold * 100)}%
-                          threshold
-                        </span>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button size="sm" variant="secondary">
-                          Preview
-                        </Button>
-                        <Button size="sm">Use Template</Button>
-                      </div>
-                    </div>
-                  ))}
+
+              {selectedConfigId && activeTab === 'documents' && (
+                <div className="w-48">
+                  <Select
+                    label="Status Filter"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="PROCESSING">Processing</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="NEEDS_REVIEW">Needs Review</option>
+                  </Select>
                 </div>
               )}
-            </CardBody>
-          </Card>
-        </div>
-      )}
 
-      {/* Integrations Tab */}
-      {selectedConfigId && activeTab === 'integrations' && (
-        <div className="space-y-6">
+              {selectedConfigId && activeTab === 'analytics' && (
+                <div className="w-48">
+                  <Select
+                    label="Period"
+                    value={analyticsPeriod}
+                    onChange={(e) => setAnalyticsPeriod(e.target.value)}
+                  >
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="MONTHLY">Monthly</option>
+                    <option value="QUARTERLY">Quarterly</option>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8 overflow-x-auto">
+              {tabs.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Industry
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {selectedConfig.industryType}
+                      </p>
+                    </div>
+                    <Building2 className="h-8 w-8 text-purple-500" />
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Auto-Classify
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {selectedConfig.enableAutoClassification
+                          ? 'Enabled'
+                          : 'Disabled'}
+                      </p>
+                    </div>
+                    <Zap className="h-8 w-8 text-yellow-500" />
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Compliance
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {selectedConfig.enableCompliance
+                          ? 'Enabled'
+                          : 'Disabled'}
+                      </p>
+                    </div>
+                    <Shield className="h-8 w-8 text-green-500" />
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Retention
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {selectedConfig.retentionDays} days
+                      </p>
+                    </div>
+                    <Clock className="h-8 w-8 text-blue-500" />
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Features</h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span>OCR (Optical Character Recognition)</span>
+                      <Badge
+                        variant={
+                          selectedConfig.enableOCR ? 'success' : 'neutral'
+                        }
+                      >
+                        {selectedConfig.enableOCR ? 'On' : 'Off'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Named Entity Recognition (NER)</span>
+                      <Badge
+                        variant={
+                          selectedConfig.enableNER ? 'success' : 'neutral'
+                        }
+                      >
+                        {selectedConfig.enableNER ? 'On' : 'Off'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Version Comparison</span>
+                      <Badge
+                        variant={
+                          selectedConfig.enableVersionCompare
+                            ? 'success'
+                            : 'neutral'
+                        }
+                      >
+                        {selectedConfig.enableVersionCompare ? 'On' : 'Off'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Auto-Routing</span>
+                      <Badge
+                        variant={
+                          selectedConfig.enableAutoRouting
+                            ? 'success'
+                            : 'neutral'
+                        }
+                      >
+                        {selectedConfig.enableAutoRouting ? 'On' : 'Off'}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Configuration</h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span>Classification Threshold</span>
+                      <span className="font-mono">
+                        {Math.round(
+                          selectedConfig.classificationThreshold * 100,
+                        )}
+                        %
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Status</span>
+                      <Badge
+                        variant={
+                          selectedConfig.isActive ? 'success' : 'secondary'
+                        }
+                      >
+                        {selectedConfig.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Client</span>
+                      <span>{selectedConfig.client?.name || 'Unknown'}</span>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Documents Tab */}
+        {selectedConfigId && activeTab === 'documents' && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  Connected Integrations
-                </h3>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Integration
-                </Button>
+                <h3 className="text-lg font-semibold">Analyzed Documents</h3>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      queryClient.invalidateQueries({
+                        queryKey: ['analyzed-documents'],
+                      })
+                    }
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <Button onClick={() => setShowUploadModal(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Document
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardBody>
-              {integrationsQuery.isLoading ? (
+              {documentsQuery.isLoading ? (
                 <div className="text-center py-8 text-neutral-500">
-                  Loading integrations...
+                  Loading documents...
                 </div>
-              ) : integrationsQuery.data?.length === 0 ? (
+              ) : documentsQuery.data?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500">
-                  <Plug className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No integrations configured</p>
-                  <p className="text-sm mt-2">
-                    Connect to QuickBooks, Xero, Salesforce, DocuSign, and more.
-                  </p>
+                  No documents found. Upload a document to get started.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {integrationsQuery.data?.map((integration) => (
-                    <div key={integration.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{integration.name}</h4>
-                        <Badge
-                          variant={integration.isActive ? 'success' : 'neutral'}
-                        >
-                          {integration.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-neutral-500 mt-1">
-                        {integration.integrationType}
-                      </p>
-                      {integration.lastSyncAt && (
-                        <p className="text-xs text-neutral-400 mt-2">
-                          Last sync:{' '}
-                          {new Date(
-                            integration.lastSyncAt,
-                          ).toLocaleDateString()}
-                          {integration.lastSyncStatus &&
-                            ` (${integration.lastSyncStatus})`}
-                        </p>
-                      )}
-                      <div className="mt-3 flex gap-2">
-                        <Button size="sm" variant="secondary">
-                          Configure
-                        </Button>
-                        <Button size="sm" variant="secondary">
-                          Sync Now
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                          Filename
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                          Category
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                          Compliance
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {documentsQuery.data?.map((doc) => (
+                        <tr key={doc.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            {doc.filename}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {doc.category && (
+                              <span
+                                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${CATEGORY_COLORS[doc.category] || CATEGORY_COLORS.GENERAL}`}
+                              >
+                                {doc.category}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+                            {doc.documentType || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge
+                              variant={STATUS_VARIANTS[doc.status] || 'neutral'}
+                            >
+                              {doc.status}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              {doc.complianceStatus &&
+                                COMPLIANCE_ICONS[doc.complianceStatus]}
+                              {doc.riskScore !== null && (
+                                <span className="text-xs text-neutral-500">
+                                  ({Math.round(doc.riskScore)}%)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+                            {doc.totalAmount
+                              ? `$${doc.totalAmount.toLocaleString()}`
+                              : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {doc.status === 'PENDING' && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => analyzeMutation.mutate(doc.id)}
+                                disabled={analyzeMutation.isPending}
+                              >
+                                Analyze
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardBody>
           </Card>
+        )}
 
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Available Integrations</h3>
-            </CardHeader>
-            <CardBody>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {[
-                  'QuickBooks',
-                  'Xero',
-                  'Salesforce',
-                  'DocuSign',
-                  'Google Drive',
-                  'SharePoint',
-                  'Dropbox',
-                  'Slack',
-                  'Webhook',
-                ].map((name) => (
-                  <button
-                    key={name}
-                    className="border rounded-lg p-4 text-center hover:border-blue-500 transition-colors"
+        {/* Templates Tab */}
+        {selectedConfigId && activeTab === 'templates' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Template Library</h3>
+                  <Select
+                    value={templateCategory}
+                    onChange={(e) => setTemplateCategory(e.target.value)}
                   >
-                    <div className="text-2xl mb-2">
-                      {name === 'QuickBooks' && '📊'}
-                      {name === 'Xero' && '📈'}
-                      {name === 'Salesforce' && '☁️'}
-                      {name === 'DocuSign' && '✍️'}
-                      {name === 'Google Drive' && '📁'}
-                      {name === 'SharePoint' && '📂'}
-                      {name === 'Dropbox' && '📦'}
-                      {name === 'Slack' && '💬'}
-                      {name === 'Webhook' && '🔗'}
-                    </div>
-                    <span className="text-sm font-medium">{name}</span>
-                  </button>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Analytics Tab */}
-      {selectedConfigId && activeTab === 'analytics' && (
-        <div className="space-y-6">
-          {dashboardQuery.isLoading ? (
-            <div className="text-center py-8 text-neutral-500">
-              Loading analytics...
-            </div>
-          ) : dashboardQuery.data ? (
-            <>
-              {/* ROI Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardBody>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-neutral-500">
-                          Documents Processed
-                        </p>
-                        <p className="text-2xl font-bold">
-                          {dashboardQuery.data.roi.documentsProcessed}
-                        </p>
-                      </div>
-                      <FileText className="h-8 w-8 text-blue-500" />
-                    </div>
-                  </CardBody>
-                </Card>
-                <Card>
-                  <CardBody>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-neutral-500">Time Saved</p>
-                        <p className="text-2xl font-bold">
-                          {Math.round(dashboardQuery.data.roi.timeSavedMinutes)}{' '}
-                          min
-                        </p>
-                        <p className="text-xs text-green-500">
-                          {Math.round(
-                            dashboardQuery.data.roi.timeSavingsPercentage,
-                          )}
-                          % faster
-                        </p>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-green-500" />
-                    </div>
-                  </CardBody>
-                </Card>
-                <Card>
-                  <CardBody>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-neutral-500">
-                          Est. Cost Saved
-                        </p>
-                        <p className="text-2xl font-bold">
-                          $
-                          {Math.round(
-                            dashboardQuery.data.roi.estimatedCostSaved,
-                          ).toLocaleString()}
-                        </p>
-                      </div>
-                      <DollarSign className="h-8 w-8 text-yellow-500" />
-                    </div>
-                  </CardBody>
-                </Card>
-                <Card>
-                  <CardBody>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-neutral-500">Success Rate</p>
-                        <p className="text-2xl font-bold">
-                          {Math.round(
-                            dashboardQuery.data.processing.successRate,
-                          )}
-                          %
-                        </p>
-                      </div>
-                      <CheckCircle className="h-8 w-8 text-green-500" />
-                    </div>
-                  </CardBody>
-                </Card>
-              </div>
-
-              {/* Processing Stats */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <h3 className="text-lg font-semibold">Processing Stats</h3>
-                  </CardHeader>
-                  <CardBody>
-                    <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <span>Total Documents</span>
-                        <span className="font-semibold">
-                          {dashboardQuery.data.processing.totalDocuments}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Successful</span>
-                        <span className="font-semibold text-green-600">
-                          {dashboardQuery.data.processing.successfulDocuments}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Failed</span>
-                        <span className="font-semibold text-red-600">
-                          {dashboardQuery.data.processing.failedDocuments}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Avg Processing Time</span>
-                        <span className="font-semibold">
-                          {Math.round(
-                            dashboardQuery.data.processing.avgProcessingTimeMs,
-                          )}
-                          ms
-                        </span>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <h3 className="text-lg font-semibold">Compliance Stats</h3>
-                  </CardHeader>
-                  <CardBody>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />{' '}
-                          Pass
-                        </span>
-                        <span className="font-semibold">
-                          {dashboardQuery.data.compliance.passCount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" />{' '}
-                          Warning
-                        </span>
-                        <span className="font-semibold">
-                          {dashboardQuery.data.compliance.warningCount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">
-                          <XCircle className="h-4 w-4 text-red-500" /> Fail
-                        </span>
-                        <span className="font-semibold">
-                          {dashboardQuery.data.compliance.failCount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Pass Rate</span>
-                        <span className="font-semibold">
-                          {Math.round(dashboardQuery.data.compliance.passRate)}%
-                        </span>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
-              </div>
-
-              {/* Category Breakdown */}
-              <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold">Category Breakdown</h3>
-                </CardHeader>
-                <CardBody>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {dashboardQuery.data.categories.map((cat) => (
-                      <div
-                        key={cat.category}
-                        className="text-center p-4 border rounded-lg"
-                      >
-                        <span
-                          className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${CATEGORY_COLORS[cat.category] || CATEGORY_COLORS.GENERAL}`}
-                        >
-                          {cat.category}
-                        </span>
-                        <p className="text-2xl font-bold mt-2">{cat.count}</p>
-                        <p className="text-xs text-neutral-500">
-                          {Math.round(cat.percentage)}%
-                        </p>
-                      </div>
+                    <option value="">All Categories</option>
+                    {templatesQuery.data?.categories?.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
                     ))}
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardBody>
+                {templatesQuery.isLoading ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    Loading templates...
                   </div>
-                </CardBody>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold">Recent Activity</h3>
-                </CardHeader>
-                <CardBody>
-                  <div className="space-y-2">
-                    {dashboardQuery.data.recentActivity.map((item) => (
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredTemplates.map((template) => (
                       <div
-                        key={item.id}
-                        className="flex items-center justify-between py-2 border-b last:border-0"
+                        key={template.documentType}
+                        className="border rounded-lg p-4 hover:border-blue-500 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-4 w-4 text-neutral-400" />
-                          <span className="text-sm">{item.filename}</span>
-                          {item.category && (
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS.GENERAL}`}
-                            >
-                              {item.category}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge
-                            variant={STATUS_VARIANTS[item.status] || 'neutral'}
-                            className="text-xs"
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                              {template.name}
+                            </h4>
+                            <p className="text-sm text-neutral-500 mt-1">
+                              {template.description}
+                            </p>
+                          </div>
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${CATEGORY_COLORS[template.category] || CATEGORY_COLORS.GENERAL}`}
                           >
-                            {item.status}
-                          </Badge>
-                          {item.processedAt && (
-                            <span className="text-xs text-neutral-500">
-                              {new Date(item.processedAt).toLocaleString()}
-                            </span>
+                            {template.category}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
+                          <span>{template.fieldDefinitions.length} fields</span>
+                          {template.industryType && (
+                            <span>{template.industryType}</span>
                           )}
+                          <span>
+                            {Math.round(template.confidenceThreshold * 100)}%
+                            threshold
+                          </span>
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <Button size="sm" variant="secondary">
+                            Preview
+                          </Button>
+                          <Button size="sm">Use Template</Button>
                         </div>
                       </div>
                     ))}
                   </div>
-                </CardBody>
-              </Card>
-            </>
-          ) : (
-            <div className="text-center py-8 text-neutral-500">
-              No analytics data available. Process some documents to see
-              metrics.
-            </div>
-          )}
-        </div>
-      )}
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Integrations Tab */}
+        {selectedConfigId && activeTab === 'integrations' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">
+                    Connected Integrations
+                  </h3>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Integration
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardBody>
+                {integrationsQuery.isLoading ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    Loading integrations...
+                  </div>
+                ) : integrationsQuery.data?.length === 0 ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    <Plug className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No integrations configured</p>
+                    <p className="text-sm mt-2">
+                      Connect to QuickBooks, Xero, Salesforce, DocuSign, and
+                      more.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {integrationsQuery.data?.map((integration) => (
+                      <div
+                        key={integration.id}
+                        className="border rounded-lg p-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold">{integration.name}</h4>
+                          <Badge
+                            variant={
+                              integration.isActive ? 'success' : 'neutral'
+                            }
+                          >
+                            {integration.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-neutral-500 mt-1">
+                          {integration.integrationType}
+                        </p>
+                        {integration.lastSyncAt && (
+                          <p className="text-xs text-neutral-400 mt-2">
+                            Last sync:{' '}
+                            {new Date(
+                              integration.lastSyncAt,
+                            ).toLocaleDateString()}
+                            {integration.lastSyncStatus &&
+                              ` (${integration.lastSyncStatus})`}
+                          </p>
+                        )}
+                        <div className="mt-3 flex gap-2">
+                          <Button size="sm" variant="secondary">
+                            Configure
+                          </Button>
+                          <Button size="sm" variant="secondary">
+                            Sync Now
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h3 className="text-lg font-semibold">
+                  Available Integrations
+                </h3>
+              </CardHeader>
+              <CardBody>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {[
+                    'QuickBooks',
+                    'Xero',
+                    'Salesforce',
+                    'DocuSign',
+                    'Google Drive',
+                    'SharePoint',
+                    'Dropbox',
+                    'Slack',
+                    'Webhook',
+                  ].map((name) => (
+                    <button
+                      key={name}
+                      className="border rounded-lg p-4 text-center hover:border-blue-500 transition-colors"
+                    >
+                      <div className="text-2xl mb-2">
+                        {name === 'QuickBooks' && '📊'}
+                        {name === 'Xero' && '📈'}
+                        {name === 'Salesforce' && '☁️'}
+                        {name === 'DocuSign' && '✍️'}
+                        {name === 'Google Drive' && '📁'}
+                        {name === 'SharePoint' && '📂'}
+                        {name === 'Dropbox' && '📦'}
+                        {name === 'Slack' && '💬'}
+                        {name === 'Webhook' && '🔗'}
+                      </div>
+                      <span className="text-sm font-medium">{name}</span>
+                    </button>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {selectedConfigId && activeTab === 'analytics' && (
+          <div className="space-y-6">
+            {dashboardQuery.isLoading ? (
+              <div className="text-center py-8 text-neutral-500">
+                Loading analytics...
+              </div>
+            ) : dashboardQuery.data ? (
+              <>
+                {/* ROI Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardBody>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-neutral-500">
+                            Documents Processed
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {dashboardQuery.data.roi.documentsProcessed}
+                          </p>
+                        </div>
+                        <FileText className="h-8 w-8 text-blue-500" />
+                      </div>
+                    </CardBody>
+                  </Card>
+                  <Card>
+                    <CardBody>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-neutral-500">Time Saved</p>
+                          <p className="text-2xl font-bold">
+                            {Math.round(
+                              dashboardQuery.data.roi.timeSavedMinutes,
+                            )}{' '}
+                            min
+                          </p>
+                          <p className="text-xs text-green-500">
+                            {Math.round(
+                              dashboardQuery.data.roi.timeSavingsPercentage,
+                            )}
+                            % faster
+                          </p>
+                        </div>
+                        <TrendingUp className="h-8 w-8 text-green-500" />
+                      </div>
+                    </CardBody>
+                  </Card>
+                  <Card>
+                    <CardBody>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-neutral-500">
+                            Est. Cost Saved
+                          </p>
+                          <p className="text-2xl font-bold">
+                            $
+                            {Math.round(
+                              dashboardQuery.data.roi.estimatedCostSaved,
+                            ).toLocaleString()}
+                          </p>
+                        </div>
+                        <DollarSign className="h-8 w-8 text-yellow-500" />
+                      </div>
+                    </CardBody>
+                  </Card>
+                  <Card>
+                    <CardBody>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-neutral-500">
+                            Success Rate
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {Math.round(
+                              dashboardQuery.data.processing.successRate,
+                            )}
+                            %
+                          </p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-500" />
+                      </div>
+                    </CardBody>
+                  </Card>
+                </div>
+
+                {/* Processing Stats */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <h3 className="text-lg font-semibold">
+                        Processing Stats
+                      </h3>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span>Total Documents</span>
+                          <span className="font-semibold">
+                            {dashboardQuery.data.processing.totalDocuments}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Successful</span>
+                          <span className="font-semibold text-green-600">
+                            {dashboardQuery.data.processing.successfulDocuments}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Failed</span>
+                          <span className="font-semibold text-red-600">
+                            {dashboardQuery.data.processing.failedDocuments}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Avg Processing Time</span>
+                          <span className="font-semibold">
+                            {Math.round(
+                              dashboardQuery.data.processing
+                                .avgProcessingTimeMs,
+                            )}
+                            ms
+                          </span>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <h3 className="text-lg font-semibold">
+                        Compliance Stats
+                      </h3>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />{' '}
+                            Pass
+                          </span>
+                          <span className="font-semibold">
+                            {dashboardQuery.data.compliance.passCount}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-yellow-500" />{' '}
+                            Warning
+                          </span>
+                          <span className="font-semibold">
+                            {dashboardQuery.data.compliance.warningCount}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="flex items-center gap-2">
+                            <XCircle className="h-4 w-4 text-red-500" /> Fail
+                          </span>
+                          <span className="font-semibold">
+                            {dashboardQuery.data.compliance.failCount}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Pass Rate</span>
+                          <span className="font-semibold">
+                            {Math.round(
+                              dashboardQuery.data.compliance.passRate,
+                            )}
+                            %
+                          </span>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                </div>
+
+                {/* Category Breakdown */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold">
+                      Category Breakdown
+                    </h3>
+                  </CardHeader>
+                  <CardBody>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {dashboardQuery.data.categories.map((cat) => (
+                        <div
+                          key={cat.category}
+                          className="text-center p-4 border rounded-lg"
+                        >
+                          <span
+                            className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${CATEGORY_COLORS[cat.category] || CATEGORY_COLORS.GENERAL}`}
+                          >
+                            {cat.category}
+                          </span>
+                          <p className="text-2xl font-bold mt-2">{cat.count}</p>
+                          <p className="text-xs text-neutral-500">
+                            {Math.round(cat.percentage)}%
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+
+                {/* Recent Activity */}
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold">Recent Activity</h3>
+                  </CardHeader>
+                  <CardBody>
+                    <div className="space-y-2">
+                      {dashboardQuery.data.recentActivity.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between py-2 border-b last:border-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-4 w-4 text-neutral-400" />
+                            <span className="text-sm">{item.filename}</span>
+                            {item.category && (
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS.GENERAL}`}
+                              >
+                                {item.category}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge
+                              variant={
+                                STATUS_VARIANTS[item.status] || 'neutral'
+                              }
+                              className="text-xs"
+                            >
+                              {item.status}
+                            </Badge>
+                            {item.processedAt && (
+                              <span className="text-xs text-neutral-500">
+                                {new Date(item.processedAt).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              </>
+            ) : (
+              <div className="text-center py-8 text-neutral-500">
+                No analytics data available. Process some documents to see
+                metrics.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (

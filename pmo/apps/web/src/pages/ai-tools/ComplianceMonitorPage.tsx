@@ -267,379 +267,383 @@ function ComplianceMonitorPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Configuration Selector */}
-      <Card>
-        <CardBody>
-          <div className="flex gap-4 flex-wrap">
-            <Select
-              label="Select Configuration"
-              value={selectedConfigId?.toString() || ''}
-              onChange={(e) =>
-                setSelectedConfigId(
-                  e.target.value ? parseInt(e.target.value, 10) : null,
-                )
-              }
-            >
-              <option value="">Select a configuration...</option>
-              {configsQuery.data?.map((config) => (
-                <option key={config.id} value={config.id}>
-                  {config.client?.name || `Config ${config.id}`}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Tabs */}
-      {selectedConfigId && (
-        <div className="border-b border-neutral-200 dark:border-neutral-700">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: Shield },
-              { id: 'rules', label: 'Rules', icon: FileText },
-              { id: 'violations', label: 'Violations', icon: AlertTriangle },
-              { id: 'audits', label: 'Audits', icon: CheckCircle },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Overview Tab */}
-      {selectedConfigId && activeTab === 'overview' && selectedConfig && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Frameworks
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedConfig.frameworks.map((fw) => (
-                      <Badge key={fw} variant="primary">
-                        {fw}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <Shield className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Auto Scan
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.autoScanEnabled ? 'Enabled' : 'Disabled'}
-                  </p>
-                </div>
-                <RefreshCw className="h-8 w-8 text-green-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Scan Frequency
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.scanFrequencyHours}h
-                  </p>
-                </div>
-                <FileText className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Risk Threshold
-                  </p>
-                  <p className="text-2xl font-bold text-orange-500">
-                    {selectedConfig.riskThreshold}
-                  </p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Rules Tab */}
-      {selectedConfigId && activeTab === 'rules' && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                Compliance Rules
-              </h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Rule
-              </Button>
-            </div>
-          </CardHeader>
           <CardBody>
-            {rulesQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                Loading rules...
-              </div>
-            ) : rulesQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                No rules configured. Add compliance rules to monitor.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Code
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Framework
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Severity
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {rulesQuery.data?.map((rule) => (
-                      <tr key={rule.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-900 dark:text-neutral-100">
-                          {rule.code}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {rule.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant="primary">{rule.framework}</Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge
-                            variant={
-                              SEVERITY_VARIANTS[rule.severity] || 'neutral'
-                            }
-                          >
-                            {rule.severity}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {rule.isActive ? (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Violations Tab */}
-      {selectedConfigId && activeTab === 'violations' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                Compliance Violations
-              </h3>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  queryClient.invalidateQueries({
-                    queryKey: ['compliance-violations'],
-                  })
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                label="Select Configuration"
+                value={selectedConfigId?.toString() || ''}
+                onChange={(e) =>
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
                 }
               >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+                <option value="">Select a configuration...</option>
+                {configsQuery.data?.map((config) => (
+                  <option key={config.id} value={config.id}>
+                    {config.client?.name || `Config ${config.id}`}
+                  </option>
+                ))}
+              </Select>
             </div>
-          </CardHeader>
-          <CardBody>
-            {violationsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                Loading violations...
-              </div>
-            ) : violationsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                No violations detected. Your compliance status is healthy.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {violationsQuery.data?.map((violation) => (
-                  <div
-                    key={violation.id}
-                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
-                            {violation.ruleCode}
-                          </span>
-                          <Badge
-                            variant={
-                              SEVERITY_VARIANTS[violation.severity] || 'neutral'
-                            }
-                          >
-                            {violation.severity}
-                          </Badge>
-                        </div>
-                        <p className="font-medium mt-1 text-neutral-900 dark:text-neutral-100">
-                          {violation.ruleName}
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                          Detected:{' '}
-                          {new Date(violation.detectedAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={STATUS_VARIANTS[violation.status] || 'neutral'}
-                      >
-                        {violation.status}
-                      </Badge>
+          </CardBody>
+        </Card>
+
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: Shield },
+                { id: 'rules', label: 'Rules', icon: FileText },
+                { id: 'violations', label: 'Violations', icon: AlertTriangle },
+                { id: 'audits', label: 'Audits', icon: CheckCircle },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Frameworks
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {selectedConfig.frameworks.map((fw) => (
+                        <Badge key={fw} variant="primary">
+                          {fw}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
+                  <Shield className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Auto Scan
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.autoScanEnabled ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                  <RefreshCw className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Scan Frequency
+                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.scanFrequencyHours}h
+                    </p>
+                  </div>
+                  <FileText className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Risk Threshold
+                    </p>
+                    <p className="text-2xl font-bold text-orange-500">
+                      {selectedConfig.riskThreshold}
+                    </p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
 
-      {/* Audits Tab */}
-      {selectedConfigId && activeTab === 'audits' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                Compliance Audits
-              </h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Start Audit
-              </Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {auditsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                Loading audits...
+        {/* Rules Tab */}
+        {selectedConfigId && activeTab === 'rules' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  Compliance Rules
+                </h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Rule
+                </Button>
               </div>
-            ) : auditsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                No audits performed yet. Start your first compliance audit.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Score
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Findings
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                        Started
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {auditsQuery.data?.map((audit) => (
-                      <tr key={audit.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {audit.type}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge
-                            variant={
-                              audit.status === 'COMPLETED'
-                                ? 'success'
-                                : audit.status === 'IN_PROGRESS'
-                                  ? 'warning'
-                                  : 'neutral'
-                            }
-                          >
-                            {audit.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {audit.score !== null ? (
-                            <span
-                              className={
-                                audit.score >= 80
-                                  ? 'text-green-600 dark:text-green-400'
-                                  : audit.score >= 60
-                                    ? 'text-yellow-600 dark:text-yellow-400'
-                                    : 'text-red-600 dark:text-red-400'
+            </CardHeader>
+            <CardBody>
+              {rulesQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                  Loading rules...
+                </div>
+              ) : rulesQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                  No rules configured. Add compliance rules to monitor.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Code
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Framework
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Severity
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {rulesQuery.data?.map((rule) => (
+                        <tr key={rule.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-900 dark:text-neutral-100">
+                            {rule.code}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {rule.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant="primary">{rule.framework}</Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge
+                              variant={
+                                SEVERITY_VARIANTS[rule.severity] || 'neutral'
                               }
                             >
-                              {audit.score}%
-                            </span>
-                          ) : (
-                            <span className="text-neutral-600 dark:text-neutral-400">
-                              -
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {audit.findings}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                          {new Date(audit.startedAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                              {rule.severity}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {rule.isActive ? (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <XCircle className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Violations Tab */}
+        {selectedConfigId && activeTab === 'violations' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  Compliance Violations
+                </h3>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['compliance-violations'],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
+            </CardHeader>
+            <CardBody>
+              {violationsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                  Loading violations...
+                </div>
+              ) : violationsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                  No violations detected. Your compliance status is healthy.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {violationsQuery.data?.map((violation) => (
+                    <div
+                      key={violation.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm text-neutral-900 dark:text-neutral-100">
+                              {violation.ruleCode}
+                            </span>
+                            <Badge
+                              variant={
+                                SEVERITY_VARIANTS[violation.severity] ||
+                                'neutral'
+                              }
+                            >
+                              {violation.severity}
+                            </Badge>
+                          </div>
+                          <p className="font-medium mt-1 text-neutral-900 dark:text-neutral-100">
+                            {violation.ruleName}
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                            Detected:{' '}
+                            {new Date(violation.detectedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={
+                            STATUS_VARIANTS[violation.status] || 'neutral'
+                          }
+                        >
+                          {violation.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Audits Tab */}
+        {selectedConfigId && activeTab === 'audits' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  Compliance Audits
+                </h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Start Audit
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {auditsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                  Loading audits...
+                </div>
+              ) : auditsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                  No audits performed yet. Start your first compliance audit.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Score
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Findings
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                          Started
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {auditsQuery.data?.map((audit) => (
+                        <tr key={audit.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {audit.type}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge
+                              variant={
+                                audit.status === 'COMPLETED'
+                                  ? 'success'
+                                  : audit.status === 'IN_PROGRESS'
+                                    ? 'warning'
+                                    : 'neutral'
+                              }
+                            >
+                              {audit.status}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {audit.score !== null ? (
+                              <span
+                                className={
+                                  audit.score >= 80
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : audit.score >= 60
+                                      ? 'text-yellow-600 dark:text-yellow-400'
+                                      : 'text-red-600 dark:text-red-400'
+                                }
+                              >
+                                {audit.score}%
+                              </span>
+                            ) : (
+                              <span className="text-neutral-600 dark:text-neutral-400">
+                                -
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {audit.findings}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+                            {new Date(audit.startedAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </div>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (

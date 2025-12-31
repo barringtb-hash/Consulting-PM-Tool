@@ -257,383 +257,384 @@ function RevenueManagementPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Configuration Selector */}
-      <Card>
-        <CardBody>
-          <div className="flex gap-4 flex-wrap">
-            <Select
-              label="Select Configuration"
-              value={selectedConfigId?.toString() || ''}
-              onChange={(e) =>
-                setSelectedConfigId(
-                  e.target.value ? parseInt(e.target.value, 10) : null,
-                )
-              }
-            >
-              <option value="">Select a configuration...</option>
-              {configsQuery.data?.map((config) => (
-                <option key={config.id} value={config.id}>
-                  {config.client?.name || `Config ${config.id}`}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Tabs */}
-      {selectedConfigId && (
-        <div className="border-b border-neutral-200 dark:border-neutral-700">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: BarChart3 },
-              { id: 'pricing', label: 'Pricing', icon: DollarSign },
-              { id: 'competitors', label: 'Competitors', icon: Eye },
-              { id: 'forecasts', label: 'Forecasts', icon: TrendingUp },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Overview Tab */}
-      {selectedConfigId && activeTab === 'overview' && selectedConfig && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Pricing Strategy
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {STRATEGY_LABELS[selectedConfig.pricingStrategy] ||
-                      selectedConfig.pricingStrategy}
-                  </p>
-                </div>
-                <Target className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Price Range
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {(selectedConfig.minPriceMultiplier * 100).toFixed(0)}% -{' '}
-                    {(selectedConfig.maxPriceMultiplier * 100).toFixed(0)}%
-                  </p>
-                </div>
-                <DollarSign className="h-8 w-8 text-green-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Competitor Tracking
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.competitorTrackingEnabled
-                      ? 'Enabled'
-                      : 'Disabled'}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Demand Forecast
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.demandForecastEnabled
-                      ? 'Enabled'
-                      : 'Disabled'}
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Pricing Tab */}
-      {selectedConfigId && activeTab === 'pricing' && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Pricing Rules</h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Rule
-              </Button>
-            </div>
-          </CardHeader>
           <CardBody>
-            {pricingQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading pricing rules...
-              </div>
-            ) : pricingQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No pricing rules configured. Add rules to enable dynamic
-                pricing.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Base Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Current Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Change
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {pricingQuery.data?.map((rule) => (
-                      <tr key={rule.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {rule.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
-                          {rule.productCategory || 'All'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {formatCurrency(rule.basePrice)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {formatCurrency(rule.currentPrice)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div
-                            className={`flex items-center gap-1 text-sm ${rule.priceChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-                          >
-                            {rule.priceChange >= 0 ? (
-                              <TrendingUp className="h-4 w-4" />
-                            ) : (
-                              <TrendingDown className="h-4 w-4" />
-                            )}
-                            {rule.priceChange >= 0 ? '+' : ''}
-                            {rule.priceChange.toFixed(1)}%
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge
-                            variant={rule.isActive ? 'success' : 'neutral'}
-                          >
-                            {rule.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Competitors Tab */}
-      {selectedConfigId && activeTab === 'competitors' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Competitor Tracking</h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Competitor
-              </Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {competitorsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading competitors...
-              </div>
-            ) : competitorsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No competitors being tracked. Add competitors to monitor their
-                pricing.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {competitorsQuery.data?.map((competitor) => (
-                  <div
-                    key={competitor.id}
-                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                        {competitor.name}
-                      </p>
-                      {competitor.website && (
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          {competitor.website}
-                        </p>
-                      )}
-                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-                        {competitor.productsTracked} products tracked
-                        {competitor.lastScrapedAt &&
-                          ` • Last updated: ${new Date(competitor.lastScrapedAt).toLocaleDateString()}`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={competitor.isActive ? 'success' : 'neutral'}
-                      >
-                        {competitor.isActive ? 'Active' : 'Paused'}
-                      </Badge>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                          queryClient.invalidateQueries({
-                            queryKey: ['revenue-competitors'],
-                          })
-                        }
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Forecasts Tab */}
-      {selectedConfigId && activeTab === 'forecasts' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Revenue Forecasts</h3>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  queryClient.invalidateQueries({
-                    queryKey: ['revenue-forecasts'],
-                  })
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                label="Select Configuration"
+                value={selectedConfigId?.toString() || ''}
+                onChange={(e) =>
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
                 }
               >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+                <option value="">Select a configuration...</option>
+                {configsQuery.data?.map((config) => (
+                  <option key={config.id} value={config.id}>
+                    {config.client?.name || `Config ${config.id}`}
+                  </option>
+                ))}
+              </Select>
             </div>
-          </CardHeader>
-          <CardBody>
-            {forecastsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading forecasts...
-              </div>
-            ) : forecastsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No forecasts generated yet. Forecasts will appear once you have
-                enough historical data.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Period
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Predicted Revenue
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Predicted Demand
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Confidence
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Generated
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {forecastsQuery.data?.map((forecast) => (
-                      <tr key={forecast.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {forecast.period}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {formatCurrency(forecast.predictedRevenue)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {forecast.predictedDemand.toLocaleString()} units
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-16 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2 mr-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  forecast.confidence >= 80
-                                    ? 'bg-green-500'
-                                    : forecast.confidence >= 60
-                                      ? 'bg-yellow-500'
-                                      : 'bg-red-500'
-                                }`}
-                                style={{ width: `${forecast.confidence}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-neutral-900 dark:text-neutral-100">
-                              {forecast.confidence}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
-                          {new Date(forecast.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </CardBody>
         </Card>
-      )}
+
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: BarChart3 },
+                { id: 'pricing', label: 'Pricing', icon: DollarSign },
+                { id: 'competitors', label: 'Competitors', icon: Eye },
+                { id: 'forecasts', label: 'Forecasts', icon: TrendingUp },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Pricing Strategy
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {STRATEGY_LABELS[selectedConfig.pricingStrategy] ||
+                        selectedConfig.pricingStrategy}
+                    </p>
+                  </div>
+                  <Target className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Price Range
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {(selectedConfig.minPriceMultiplier * 100).toFixed(0)}% -{' '}
+                      {(selectedConfig.maxPriceMultiplier * 100).toFixed(0)}%
+                    </p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Competitor Tracking
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.competitorTrackingEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <Users className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Demand Forecast
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.demandForecastEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Pricing Tab */}
+        {selectedConfigId && activeTab === 'pricing' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Pricing Rules</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Rule
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {pricingQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading pricing rules...
+                </div>
+              ) : pricingQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No pricing rules configured. Add rules to enable dynamic
+                  pricing.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Category
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Base Price
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Current Price
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Change
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {pricingQuery.data?.map((rule) => (
+                        <tr key={rule.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            {rule.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
+                            {rule.productCategory || 'All'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {formatCurrency(rule.basePrice)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            {formatCurrency(rule.currentPrice)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div
+                              className={`flex items-center gap-1 text-sm ${rule.priceChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                            >
+                              {rule.priceChange >= 0 ? (
+                                <TrendingUp className="h-4 w-4" />
+                              ) : (
+                                <TrendingDown className="h-4 w-4" />
+                              )}
+                              {rule.priceChange >= 0 ? '+' : ''}
+                              {rule.priceChange.toFixed(1)}%
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge
+                              variant={rule.isActive ? 'success' : 'neutral'}
+                            >
+                              {rule.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Competitors Tab */}
+        {selectedConfigId && activeTab === 'competitors' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Competitor Tracking</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Competitor
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {competitorsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading competitors...
+                </div>
+              ) : competitorsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No competitors being tracked. Add competitors to monitor their
+                  pricing.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {competitorsQuery.data?.map((competitor) => (
+                    <div
+                      key={competitor.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                          {competitor.name}
+                        </p>
+                        {competitor.website && (
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {competitor.website}
+                          </p>
+                        )}
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                          {competitor.productsTracked} products tracked
+                          {competitor.lastScrapedAt &&
+                            ` • Last updated: ${new Date(competitor.lastScrapedAt).toLocaleDateString()}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={competitor.isActive ? 'success' : 'neutral'}
+                        >
+                          {competitor.isActive ? 'Active' : 'Paused'}
+                        </Badge>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            queryClient.invalidateQueries({
+                              queryKey: ['revenue-competitors'],
+                            })
+                          }
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Forecasts Tab */}
+        {selectedConfigId && activeTab === 'forecasts' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Revenue Forecasts</h3>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['revenue-forecasts'],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {forecastsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading forecasts...
+                </div>
+              ) : forecastsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No forecasts generated yet. Forecasts will appear once you
+                  have enough historical data.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Period
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Predicted Revenue
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Predicted Demand
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Confidence
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Generated
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {forecastsQuery.data?.map((forecast) => (
+                        <tr key={forecast.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            {forecast.period}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {formatCurrency(forecast.predictedRevenue)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {forecast.predictedDemand.toLocaleString()} units
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-16 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2 mr-2">
+                                <div
+                                  className={`h-2 rounded-full ${
+                                    forecast.confidence >= 80
+                                      ? 'bg-green-500'
+                                      : forecast.confidence >= 60
+                                        ? 'bg-yellow-500'
+                                        : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${forecast.confidence}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-neutral-900 dark:text-neutral-100">
+                                {forecast.confidence}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
+                            {new Date(forecast.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </div>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (

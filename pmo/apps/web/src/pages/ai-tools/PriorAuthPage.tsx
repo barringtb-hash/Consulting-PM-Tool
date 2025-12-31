@@ -324,369 +324,377 @@ function PriorAuthPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Configuration Selector */}
-      <Card>
-        <CardBody>
-          <div className="flex gap-4 flex-wrap">
-            <Select
-              label="Select Configuration"
-              value={selectedConfigId?.toString() || ''}
-              onChange={(e) =>
-                setSelectedConfigId(
-                  e.target.value ? parseInt(e.target.value, 10) : null,
-                )
-              }
-            >
-              <option value="">Select a configuration...</option>
-              {configsQuery.data?.map((config) => (
-                <option key={config.id} value={config.id}>
-                  {config.client?.name ||
-                    config.practiceName ||
-                    `Config ${config.id}`}
-                </option>
-              ))}
-            </Select>
-
-            {selectedConfigId && activeTab === 'requests' && (
-              <Select
-                label="Status"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All Statuses</option>
-                <option value="DRAFT">Draft</option>
-                <option value="SUBMITTED">Submitted</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="DENIED">Denied</option>
-              </Select>
-            )}
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Tabs */}
-      {selectedConfigId && (
-        <div className="border-b border-neutral-200 dark:border-neutral-700">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: ShieldCheck },
-              { id: 'requests', label: 'Requests', icon: FileText },
-              { id: 'appeals', label: 'Appeals', icon: Scale },
-              { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Overview Tab */}
-      {selectedConfigId && activeTab === 'overview' && selectedConfig && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Practice
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.practiceName || 'Not set'}
-                  </p>
-                </div>
-                <ShieldCheck className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    NPI
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.practiceNPI || 'Not set'}
-                  </p>
-                </div>
-                <FileText className="h-8 w-8 text-green-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    EHR System
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.ehrSystem || 'Not connected'}
-                  </p>
-                </div>
-                <Settings className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    HIPAA
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.isHipaaEnabled ? 'Enabled' : 'Disabled'}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Requests Tab */}
-      {selectedConfigId && activeTab === 'requests' && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">PA Requests</h3>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  queryClient.invalidateQueries({ queryKey: ['pa-requests'] })
+          <CardBody>
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                label="Select Configuration"
+                value={selectedConfigId?.toString() || ''}
+                onChange={(e) =>
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
                 }
               >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+                <option value="">Select a configuration...</option>
+                {configsQuery.data?.map((config) => (
+                  <option key={config.id} value={config.id}>
+                    {config.client?.name ||
+                      config.practiceName ||
+                      `Config ${config.id}`}
+                  </option>
+                ))}
+              </Select>
+
+              {selectedConfigId && activeTab === 'requests' && (
+                <Select
+                  label="Status"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="SUBMITTED">Submitted</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="DENIED">Denied</option>
+                </Select>
+              )}
             </div>
-          </CardHeader>
-          <CardBody>
-            {requestsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading requests...
-              </div>
-            ) : requestsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No PA requests found. Create your first request to get started.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Request #
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Patient
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Payer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Service
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Urgency
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {requestsQuery.data?.map((request) => (
-                      <tr key={request.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
-                          {request.requestNumber}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {request.patientName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
-                          {request.payerName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {request.serviceType}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge
-                            variant={
-                              URGENCY_VARIANTS[request.urgency] || 'neutral'
-                            }
-                          >
-                            {request.urgency}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            {STATUS_ICONS[request.status]}
-                            <Badge
-                              variant={
-                                STATUS_VARIANTS[request.status] || 'neutral'
-                              }
-                            >
-                              {request.status.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex gap-1">
-                            {request.status === 'DRAFT' && (
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  submitMutation.mutate(request.id)
-                                }
-                                disabled={submitMutation.isPending}
-                              >
-                                <Send className="h-3 w-3 mr-1" />
-                                Submit
-                              </Button>
-                            )}
-                            {['SUBMITTED', 'PENDING'].includes(
-                              request.status,
-                            ) && (
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() =>
-                                  checkStatusMutation.mutate(request.id)
-                                }
-                                disabled={checkStatusMutation.isPending}
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Check
-                              </Button>
-                            )}
-                            {request.status === 'DENIED' &&
-                              request.appealStatus === 'NOT_APPEALED' && (
-                                <Button size="sm" variant="secondary">
-                                  <Scale className="h-3 w-3 mr-1" />
-                                  Appeal
-                                </Button>
-                              )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </CardBody>
         </Card>
-      )}
 
-      {/* Analytics Tab */}
-      {selectedConfigId && activeTab === 'analytics' && analyticsQuery.data && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: ShieldCheck },
+                { id: 'requests', label: 'Requests', icon: FileText },
+                { id: 'appeals', label: 'Appeals', icon: Scale },
+                { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Practice
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.practiceName || 'Not set'}
+                    </p>
+                  </div>
+                  <ShieldCheck className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      NPI
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.practiceNPI || 'Not set'}
+                    </p>
+                  </div>
+                  <FileText className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      EHR System
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.ehrSystem || 'Not connected'}
+                    </p>
+                  </div>
+                  <Settings className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      HIPAA
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.isHipaaEnabled ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Requests Tab */}
+        {selectedConfigId && activeTab === 'requests' && (
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">Summary</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">PA Requests</h3>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    queryClient.invalidateQueries({ queryKey: ['pa-requests'] })
+                  }
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardBody>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                  <div className="text-3xl font-bold">
-                    {analyticsQuery.data.summary.totalRequests}
-                  </div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Total Requests
-                  </div>
-                </div>
-                <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                    {analyticsQuery.data.summary.approvedRequests}
-                  </div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Approved
-                  </div>
-                </div>
-                <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
-                  <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-                    {analyticsQuery.data.summary.deniedRequests}
-                  </div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Denied
-                  </div>
-                </div>
-                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
-                  <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                    {analyticsQuery.data.summary.pendingRequests}
-                  </div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Pending
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-center">
-                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                  {analyticsQuery.data.summary.approvalRate}%
-                </div>
-                <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Approval Rate
-                </div>
-              </div>
-              {analyticsQuery.data.summary.avgTurnaround !== null && (
-                <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {analyticsQuery.data.summary.avgTurnaround.toFixed(1)} days
-                  </div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Avg. Turnaround
-                  </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Denial Reasons</h3>
-            </CardHeader>
-            <CardBody>
-              {Object.keys(analyticsQuery.data.denialReasons).length === 0 ? (
+              {requestsQuery.isLoading ? (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  No denials recorded yet.
+                  Loading requests...
+                </div>
+              ) : requestsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No PA requests found. Create your first request to get
+                  started.
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {Object.entries(analyticsQuery.data.denialReasons).map(
-                    ([reason, count]) => (
-                      <div
-                        key={reason}
-                        className="flex items-center justify-between p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg"
-                      >
-                        <span className="text-sm">
-                          {reason.replace(/_/g, ' ')}
-                        </span>
-                        <span className="text-lg font-semibold">{count}</span>
-                      </div>
-                    ),
-                  )}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Request #
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Patient
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Payer
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Service
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Urgency
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {requestsQuery.data?.map((request) => (
+                        <tr key={request.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
+                            {request.requestNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {request.patientName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+                            {request.payerName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {request.serviceType}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge
+                              variant={
+                                URGENCY_VARIANTS[request.urgency] || 'neutral'
+                              }
+                            >
+                              {request.urgency}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              {STATUS_ICONS[request.status]}
+                              <Badge
+                                variant={
+                                  STATUS_VARIANTS[request.status] || 'neutral'
+                                }
+                              >
+                                {request.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex gap-1">
+                              {request.status === 'DRAFT' && (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    submitMutation.mutate(request.id)
+                                  }
+                                  disabled={submitMutation.isPending}
+                                >
+                                  <Send className="h-3 w-3 mr-1" />
+                                  Submit
+                                </Button>
+                              )}
+                              {['SUBMITTED', 'PENDING'].includes(
+                                request.status,
+                              ) && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() =>
+                                    checkStatusMutation.mutate(request.id)
+                                  }
+                                  disabled={checkStatusMutation.isPending}
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Check
+                                </Button>
+                              )}
+                              {request.status === 'DENIED' &&
+                                request.appealStatus === 'NOT_APPEALED' && (
+                                  <Button size="sm" variant="secondary">
+                                    <Scale className="h-3 w-3 mr-1" />
+                                    Appeal
+                                  </Button>
+                                )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardBody>
           </Card>
-        </div>
-      )}
+        )}
+
+        {/* Analytics Tab */}
+        {selectedConfigId &&
+          activeTab === 'analytics' &&
+          analyticsQuery.data && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Summary</h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                      <div className="text-3xl font-bold">
+                        {analyticsQuery.data.summary.totalRequests}
+                      </div>
+                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Total Requests
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                        {analyticsQuery.data.summary.approvedRequests}
+                      </div>
+                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Approved
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                      <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                        {analyticsQuery.data.summary.deniedRequests}
+                      </div>
+                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Denied
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
+                      <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                        {analyticsQuery.data.summary.pendingRequests}
+                      </div>
+                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Pending
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-center">
+                    <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                      {analyticsQuery.data.summary.approvalRate}%
+                    </div>
+                    <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Approval Rate
+                    </div>
+                  </div>
+                  {analyticsQuery.data.summary.avgTurnaround !== null && (
+                    <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg text-center">
+                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        {analyticsQuery.data.summary.avgTurnaround.toFixed(1)}{' '}
+                        days
+                      </div>
+                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Avg. Turnaround
+                      </div>
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Denial Reasons</h3>
+                </CardHeader>
+                <CardBody>
+                  {Object.keys(analyticsQuery.data.denialReasons).length ===
+                  0 ? (
+                    <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                      No denials recorded yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {Object.entries(analyticsQuery.data.denialReasons).map(
+                        ([reason, count]) => (
+                          <div
+                            key={reason}
+                            className="flex items-center justify-between p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg"
+                          >
+                            <span className="text-sm">
+                              {reason.replace(/_/g, ' ')}
+                            </span>
+                            <span className="text-lg font-semibold">
+                              {count}
+                            </span>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            </div>
+          )}
+      </div>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (

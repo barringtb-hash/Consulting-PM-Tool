@@ -306,226 +306,227 @@ function ContentGeneratorPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Configuration Selector */}
-      <Card>
-        <CardBody>
-          <div className="flex gap-4 flex-wrap">
-            <Select
-              label="Select Configuration"
-              value={selectedConfigId?.toString() || ''}
-              onChange={(e) =>
-                setSelectedConfigId(
-                  e.target.value ? parseInt(e.target.value, 10) : null,
-                )
-              }
-            >
-              <option value="">Select a configuration...</option>
-              {configsQuery.data?.map((config) => (
-                <option key={config.id} value={config.id}>
-                  {config.client?.name || `Config ${config.id}`}
-                </option>
-              ))}
-            </Select>
-
-            {selectedConfigId && (
-              <>
-                <Select
-                  label="Content Type"
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                >
-                  <option value="">All Types</option>
-                  {CONTENT_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </Select>
-
-                <Select
-                  label="Status"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="">All Statuses</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="PENDING_REVIEW">Pending Review</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="PUBLISHED">Published</option>
-                </Select>
-              </>
-            )}
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Tabs */}
-      {selectedConfigId && (
-        <div className="border-b border-neutral-200 dark:border-neutral-700">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: PenTool },
-              { id: 'contents', label: 'Contents', icon: FileText },
-              { id: 'templates', label: 'Templates', icon: Settings },
-              { id: 'workflows', label: 'Workflows', icon: CheckCircle },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Overview Tab */}
-      {selectedConfigId && activeTab === 'overview' && selectedConfig && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    SEO Optimization
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.enableSEO ? 'Enabled' : 'Disabled'}
-                  </p>
-                </div>
-                <BarChart3 className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Plagiarism Check
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.enablePlagiarismCheck
-                      ? 'Enabled'
-                      : 'Disabled'}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Default Tone
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.defaultTone || 'Not set'}
-                  </p>
-                </div>
-                <PenTool className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Default Length
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {selectedConfig.defaultLength || 'Medium'}
-                  </p>
-                </div>
-                <FileText className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Contents Tab */}
-      {selectedConfigId && activeTab === 'contents' && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Generated Content</h3>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  queryClient.invalidateQueries({
-                    queryKey: ['generated-contents'],
-                  })
+          <CardBody>
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                label="Select Configuration"
+                value={selectedConfigId?.toString() || ''}
+                onChange={(e) =>
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
                 }
               >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {contentsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading content...
-              </div>
-            ) : contentsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No content found. Generate your first piece of content!
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {contentsQuery.data?.map((content) => (
-                  <div
-                    key={content.id}
-                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-medium">{content.title}</h4>
-                        <div className="flex gap-2 mt-1">
-                          <Badge variant="neutral">
-                            {content.type.replace('_', ' ')}
-                          </Badge>
-                          <Badge
-                            variant={
-                              STATUS_VARIANTS[content.approvalStatus] ||
-                              'neutral'
-                            }
-                          >
-                            {content.approvalStatus.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right text-sm text-neutral-500 dark:text-neutral-400">
-                        {content.seoScore !== null && (
-                          <div>SEO: {content.seoScore}%</div>
-                        )}
-                        {content.voiceConsistencyScore !== null && (
-                          <div>
-                            Voice:{' '}
-                            {Math.round(content.voiceConsistencyScore * 100)}%
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
-                      {content.content}
-                    </p>
-                  </div>
+                <option value="">Select a configuration...</option>
+                {configsQuery.data?.map((config) => (
+                  <option key={config.id} value={config.id}>
+                    {config.client?.name || `Config ${config.id}`}
+                  </option>
                 ))}
-              </div>
-            )}
+              </Select>
+
+              {selectedConfigId && (
+                <>
+                  <Select
+                    label="Content Type"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <option value="">All Types</option>
+                    {CONTENT_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </Select>
+
+                  <Select
+                    label="Status"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="PENDING_REVIEW">Pending Review</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="PUBLISHED">Published</option>
+                  </Select>
+                </>
+              )}
+            </div>
           </CardBody>
         </Card>
-      )}
+
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: PenTool },
+                { id: 'contents', label: 'Contents', icon: FileText },
+                { id: 'templates', label: 'Templates', icon: Settings },
+                { id: 'workflows', label: 'Workflows', icon: CheckCircle },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      SEO Optimization
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.enableSEO ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                  <BarChart3 className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Plagiarism Check
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.enablePlagiarismCheck
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Default Tone
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.defaultTone || 'Not set'}
+                    </p>
+                  </div>
+                  <PenTool className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Default Length
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {selectedConfig.defaultLength || 'Medium'}
+                    </p>
+                  </div>
+                  <FileText className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Contents Tab */}
+        {selectedConfigId && activeTab === 'contents' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Generated Content</h3>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['generated-contents'],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {contentsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading content...
+                </div>
+              ) : contentsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No content found. Generate your first piece of content!
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {contentsQuery.data?.map((content) => (
+                    <div
+                      key={content.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-medium">{content.title}</h4>
+                          <div className="flex gap-2 mt-1">
+                            <Badge variant="neutral">
+                              {content.type.replace('_', ' ')}
+                            </Badge>
+                            <Badge
+                              variant={
+                                STATUS_VARIANTS[content.approvalStatus] ||
+                                'neutral'
+                              }
+                            >
+                              {content.approvalStatus.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right text-sm text-neutral-500 dark:text-neutral-400">
+                          {content.seoScore !== null && (
+                            <div>SEO: {content.seoScore}%</div>
+                          )}
+                          {content.voiceConsistencyScore !== null && (
+                            <div>
+                              Voice:{' '}
+                              {Math.round(content.voiceConsistencyScore * 100)}%
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
+                        {content.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </div>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (

@@ -249,326 +249,334 @@ function InventoryForecastingPage(): JSX.Element {
 
       <div className="container-padding py-6 space-y-6">
         {/* Configuration Selector */}
-      <Card>
-        <CardBody>
-          <div className="flex gap-4 flex-wrap">
-            <Select
-              label="Select Configuration"
-              value={selectedConfigId?.toString() || ''}
-              onChange={(e) =>
-                setSelectedConfigId(
-                  e.target.value ? parseInt(e.target.value, 10) : null,
-                )
-              }
-            >
-              <option value="">Select a configuration...</option>
-              {configsQuery.data?.map((config) => (
-                <option key={config.id} value={config.id}>
-                  {config.client?.name || `Config ${config.id}`}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Tabs */}
-      {selectedConfigId && (
-        <div className="border-b border-neutral-200 dark:border-neutral-700">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: TrendingUp },
-              { id: 'locations', label: 'Locations', icon: MapPin },
-              { id: 'products', label: 'Products', icon: Package },
-              { id: 'alerts', label: 'Alerts', icon: AlertTriangle },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as typeof activeTab)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      )}
-
-      {/* Overview Tab */}
-      {selectedConfigId && activeTab === 'overview' && selectedConfig && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Forecast Horizon
-                  </p>
-                  <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.forecastHorizonDays} days
-                  </p>
-                </div>
-                <BarChart3 className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Seasonality
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.seasonalityEnabled ? 'Enabled' : 'Disabled'}
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Auto Reorder
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    {selectedConfig.autoReorderEnabled ? 'Enabled' : 'Disabled'}
-                  </p>
-                </div>
-                <RefreshCw className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Alert Threshold
-                  </p>
-                  <p className="text-2xl font-bold text-orange-500">
-                    {selectedConfig.alertThreshold}%
-                  </p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {/* Locations Tab */}
-      {selectedConfigId && activeTab === 'locations' && (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Inventory Locations</h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Location
-              </Button>
-            </div>
-          </CardHeader>
           <CardBody>
-            {locationsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading locations...
-              </div>
-            ) : locationsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No locations configured. Add your first location to get started.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {locationsQuery.data?.map((location) => (
-                  <div
-                    key={location.id}
-                    className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
-                      <div>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                          {location.name}
-                        </p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          {location.address || 'No address'}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant={location.isActive ? 'success' : 'neutral'}>
-                      {location.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Products Tab */}
-      {selectedConfigId && activeTab === 'products' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Products</h3>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Product
-              </Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {productsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading products...
-              </div>
-            ) : productsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No products configured. Add your first product to get started.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        SKU
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Current Stock
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Reorder Point
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Lead Time
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
-                    {productsQuery.data?.map((product) => (
-                      <tr key={product.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-900 dark:text-neutral-100">
-                          {product.sku}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {product.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span
-                            className={
-                              product.currentStock <= product.reorderPoint
-                                ? 'text-red-600 dark:text-red-400 font-medium'
-                                : 'text-neutral-900 dark:text-neutral-100'
-                            }
-                          >
-                            {product.currentStock}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {product.reorderPoint}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {product.leadTimeDays} days
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Alerts Tab */}
-      {selectedConfigId && activeTab === 'alerts' && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Inventory Alerts</h3>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  queryClient.invalidateQueries({
-                    queryKey: ['inventory-alerts'],
-                  })
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                label="Select Configuration"
+                value={selectedConfigId?.toString() || ''}
+                onChange={(e) =>
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
                 }
               >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+                <option value="">Select a configuration...</option>
+                {configsQuery.data?.map((config) => (
+                  <option key={config.id} value={config.id}>
+                    {config.client?.name || `Config ${config.id}`}
+                  </option>
+                ))}
+              </Select>
             </div>
-          </CardHeader>
-          <CardBody>
-            {alertsQuery.isLoading ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                Loading alerts...
+          </CardBody>
+        </Card>
+
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: TrendingUp },
+                { id: 'locations', label: 'Locations', icon: MapPin },
+                { id: 'products', label: 'Products', icon: Package },
+                { id: 'alerts', label: 'Alerts', icon: AlertTriangle },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Forecast Horizon
+                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.forecastHorizonDays} days
+                    </p>
+                  </div>
+                  <BarChart3 className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Seasonality
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.seasonalityEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Auto Reorder
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.autoReorderEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <RefreshCw className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Alert Threshold
+                    </p>
+                    <p className="text-2xl font-bold text-orange-500">
+                      {selectedConfig.alertThreshold}%
+                    </p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Locations Tab */}
+        {selectedConfigId && activeTab === 'locations' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Inventory Locations</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Location
+                </Button>
               </div>
-            ) : alertsQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                No active alerts. Your inventory levels are healthy.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {alertsQuery.data?.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className={`border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 ${alert.isResolved ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle
-                          className={`h-5 w-5 mt-0.5 ${
-                            alert.severity === 'CRITICAL'
-                              ? 'text-red-500'
-                              : alert.severity === 'HIGH'
-                                ? 'text-orange-500'
-                                : 'text-yellow-500'
-                          }`}
-                        />
+            </CardHeader>
+            <CardBody>
+              {locationsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading locations...
+                </div>
+              ) : locationsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No locations configured. Add your first location to get
+                  started.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {locationsQuery.data?.map((location) => (
+                    <div
+                      key={location.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
                         <div>
                           <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {alert.type}
+                            {location.name}
                           </p>
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                            {alert.message}
-                          </p>
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-                            {new Date(alert.createdAt).toLocaleString()}
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {location.address || 'No address'}
                           </p>
                         </div>
                       </div>
                       <Badge
-                        variant={
-                          alert.isResolved
-                            ? 'neutral'
-                            : ALERT_SEVERITY_VARIANTS[alert.severity] ||
-                              'neutral'
-                        }
+                        variant={location.isActive ? 'success' : 'neutral'}
                       >
-                        {alert.isResolved ? 'Resolved' : alert.severity}
+                        {location.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Products Tab */}
+        {selectedConfigId && activeTab === 'products' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Products</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Product
+                </Button>
               </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
+            </CardHeader>
+            <CardBody>
+              {productsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading products...
+                </div>
+              ) : productsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No products configured. Add your first product to get started.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          SKU
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Current Stock
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Reorder Point
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Lead Time
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {productsQuery.data?.map((product) => (
+                        <tr key={product.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-900 dark:text-neutral-100">
+                            {product.sku}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {product.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span
+                              className={
+                                product.currentStock <= product.reorderPoint
+                                  ? 'text-red-600 dark:text-red-400 font-medium'
+                                  : 'text-neutral-900 dark:text-neutral-100'
+                              }
+                            >
+                              {product.currentStock}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {product.reorderPoint}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {product.leadTimeDays} days
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Alerts Tab */}
+        {selectedConfigId && activeTab === 'alerts' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Inventory Alerts</h3>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['inventory-alerts'],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {alertsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading alerts...
+                </div>
+              ) : alertsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No active alerts. Your inventory levels are healthy.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {alertsQuery.data?.map((alert) => (
+                    <div
+                      key={alert.id}
+                      className={`border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 ${alert.isResolved ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle
+                            className={`h-5 w-5 mt-0.5 ${
+                              alert.severity === 'CRITICAL'
+                                ? 'text-red-500'
+                                : alert.severity === 'HIGH'
+                                  ? 'text-orange-500'
+                                  : 'text-yellow-500'
+                            }`}
+                          />
+                          <div>
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {alert.type}
+                            </p>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                              {alert.message}
+                            </p>
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                              {new Date(alert.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge
+                          variant={
+                            alert.isResolved
+                              ? 'neutral'
+                              : ALERT_SEVERITY_VARIANTS[alert.severity] ||
+                                'neutral'
+                          }
+                        >
+                          {alert.isResolved ? 'Resolved' : alert.severity}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </div>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
