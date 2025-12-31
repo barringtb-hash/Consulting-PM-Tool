@@ -66,9 +66,7 @@ interface CalendarEventInput {
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
-const GOOGLE_REDIRECT_URI =
-  process.env.GOOGLE_REDIRECT_URI ||
-  'http://localhost:3001/api/scheduling/calendar/google/callback';
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || '';
 
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
@@ -78,9 +76,7 @@ const GOOGLE_SCOPES = [
 // Microsoft/Outlook OAuth configuration
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID || '';
 const MICROSOFT_CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET || '';
-const MICROSOFT_REDIRECT_URI =
-  process.env.MICROSOFT_REDIRECT_URI ||
-  'http://localhost:3001/api/scheduling/calendar/outlook/callback';
+const MICROSOFT_REDIRECT_URI = process.env.MICROSOFT_REDIRECT_URI || '';
 const MICROSOFT_TENANT = process.env.MICROSOFT_TENANT || 'common';
 
 const MICROSOFT_SCOPES = ['openid', 'offline_access', 'Calendars.ReadWrite'];
@@ -131,14 +127,18 @@ interface OutlookCalendarEvent {
  * Check if Google OAuth is properly configured
  */
 export function isGoogleOAuthConfigured(): boolean {
-  return Boolean(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET);
+  return Boolean(
+    GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REDIRECT_URI,
+  );
 }
 
 /**
  * Check if Microsoft OAuth is properly configured
  */
 export function isMicrosoftOAuthConfigured(): boolean {
-  return Boolean(MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET);
+  return Boolean(
+    MICROSOFT_CLIENT_ID && MICROSOFT_CLIENT_SECRET && MICROSOFT_REDIRECT_URI,
+  );
 }
 
 // ============================================================================
@@ -152,7 +152,7 @@ export function isMicrosoftOAuthConfigured(): boolean {
 export function getGoogleAuthUrl(state: string): string {
   if (!isGoogleOAuthConfigured()) {
     throw new Error(
-      'Google Calendar integration is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.',
+      'Google Calendar integration is not configured. Please set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI environment variables.',
     );
   }
 
@@ -583,7 +583,7 @@ export async function deleteGoogleCalendarEvent(
 export function getMicrosoftAuthUrl(state: string): string {
   if (!isMicrosoftOAuthConfigured()) {
     throw new Error(
-      'Microsoft/Outlook Calendar integration is not configured. Please set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET environment variables.',
+      'Microsoft/Outlook Calendar integration is not configured. Please set MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, and MICROSOFT_REDIRECT_URI environment variables.',
     );
   }
 
