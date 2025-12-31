@@ -2,11 +2,20 @@
  * Shift Scheduling Router
  *
  * API endpoints for Type B Employee/Shift Scheduling.
+ *
+ * NOTE: Routes accept a SchedulingConfig ID (from appointment scheduling)
+ * and internally resolve it to the corresponding ShiftSchedulingConfig.
+ * This allows the frontend to use the same config ID for both scheduling types.
  */
 
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import {
+  tenantMiddleware,
+  TenantRequest,
+} from '../../tenant/tenant.middleware';
+import { hasTenantContext, getTenantId } from '../../tenant/tenant.context';
 import * as shiftService from './shift.service';
 import {
   EmploymentType,
@@ -18,6 +27,78 @@ import {
 } from '@prisma/client';
 
 const router = Router();
+
+// Apply tenant middleware to all shift routes for consistent behavior
+router.use(tenantMiddleware);
+
+// Extended request type with resolved shift config
+interface ShiftRequest extends TenantRequest {
+  shiftConfigId?: number;
+}
+
+/**
+ * Middleware to resolve ShiftSchedulingConfig from SchedulingConfig ID.
+ * The frontend passes the SchedulingConfig ID, but we need the ShiftSchedulingConfig ID
+ * for database operations. This middleware resolves (and creates if needed) the mapping.
+ *
+ * @param req - Express request with tenant context, augmented with shiftConfigId.
+ * @param res - Express response for sending error responses.
+ * @param next - Express next function to continue to route handler.
+ */
+async function resolveShiftConfig(
+  req: ShiftRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const schedulingConfigId = parseInt(req.params.configId, 10);
+  if (isNaN(schedulingConfigId)) {
+    res.status(400).json({ error: 'Invalid config ID' });
+    return;
+  }
+
+  // Get tenant ID - undefined if not available (development mode)
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  if (!tenantId) {
+    // In development without tenant context, try to look up by schedulingConfigId only
+    // We cannot create new configs without a tenant ID
+    const shiftConfig =
+      await shiftService.getShiftConfigBySchedulingConfigId(schedulingConfigId);
+    if (shiftConfig) {
+      req.shiftConfigId = shiftConfig.id;
+      next();
+      return;
+    }
+    // If no config exists and no tenant, return 404 with helpful message
+    res.status(404).json({
+      error: 'Shift configuration not found',
+      message:
+        'No shift scheduling configuration exists for this scheduling config. ' +
+        'In development mode without tenant context, configurations cannot be auto-created.',
+    });
+    return;
+  }
+
+  // Get or create the ShiftSchedulingConfig
+  const shiftConfig =
+    await shiftService.getOrCreateShiftConfigBySchedulingConfigId(
+      schedulingConfigId,
+      tenantId,
+    );
+
+  if (!shiftConfig) {
+    res.status(404).json({
+      error: 'Shift configuration unavailable',
+      message:
+        'The referenced scheduling configuration could not be resolved. ' +
+        'It may not exist, or you may not have access to it.',
+    });
+    return;
+  }
+
+  req.shiftConfigId = shiftConfig.id;
+  next();
+}
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -115,19 +196,16 @@ const updateConfigSchema = z.object({
 /**
  * GET /api/scheduling/shifts/config/:configId
  * Get shift scheduling configuration
+ * NOTE: configId is the SchedulingConfig ID, which is resolved to ShiftSchedulingConfig
  */
 router.get(
   '/config/:configId',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
-
-      const config = await shiftService.getShiftConfig(configId);
+      const shiftConfigId = req.shiftConfigId!;
+      const config = await shiftService.getShiftConfig(shiftConfigId);
       if (!config) {
         res.status(404).json({ error: 'Shift configuration not found' });
         return;
@@ -147,13 +225,10 @@ router.get(
 router.put(
   '/config/:configId',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const parsed = updateConfigSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -162,7 +237,7 @@ router.put(
       }
 
       const config = await shiftService.updateShiftConfig(
-        configId,
+        shiftConfigId,
         parsed.data,
       );
       res.json({ data: config });
@@ -184,15 +259,11 @@ router.put(
 router.get(
   '/:configId/locations',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
-
-      const locations = await shiftService.getLocations(configId);
+      const shiftConfigId = req.shiftConfigId!;
+      const locations = await shiftService.getLocations(shiftConfigId);
       res.json({ data: locations });
     } catch (error) {
       console.error('Error listing locations:', error);
@@ -208,13 +279,10 @@ router.get(
 router.post(
   '/:configId/locations',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const parsed = createLocationSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -222,7 +290,10 @@ router.post(
         return;
       }
 
-      const location = await shiftService.createLocation(configId, parsed.data);
+      const location = await shiftService.createLocation(
+        shiftConfigId,
+        parsed.data,
+      );
       res.status(201).json({ data: location });
     } catch (error) {
       console.error('Error creating location:', error);
@@ -296,15 +367,11 @@ router.delete(
 router.get(
   '/:configId/roles',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
-
-      const roles = await shiftService.getRoles(configId);
+      const shiftConfigId = req.shiftConfigId!;
+      const roles = await shiftService.getRoles(shiftConfigId);
       res.json({ data: roles });
     } catch (error) {
       console.error('Error listing roles:', error);
@@ -320,13 +387,10 @@ router.get(
 router.post(
   '/:configId/roles',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const parsed = createRoleSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -334,7 +398,7 @@ router.post(
         return;
       }
 
-      const role = await shiftService.createRole(configId, parsed.data);
+      const role = await shiftService.createRole(shiftConfigId, parsed.data);
       res.status(201).json({ data: role });
     } catch (error) {
       console.error('Error creating role:', error);
@@ -408,13 +472,10 @@ router.delete(
 router.get(
   '/:configId/employees',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const filters = {
         isActive:
@@ -430,7 +491,7 @@ router.get(
         employmentType: req.query.employmentType as EmploymentType | undefined,
       };
 
-      const employees = await shiftService.getEmployees(configId, filters);
+      const employees = await shiftService.getEmployees(shiftConfigId, filters);
       res.json({ data: employees });
     } catch (error) {
       console.error('Error listing employees:', error);
@@ -446,13 +507,10 @@ router.get(
 router.post(
   '/:configId/employees',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const parsed = createEmployeeSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -460,7 +518,10 @@ router.post(
         return;
       }
 
-      const employee = await shiftService.createEmployee(configId, parsed.data);
+      const employee = await shiftService.createEmployee(
+        shiftConfigId,
+        parsed.data,
+      );
       res.status(201).json({ data: employee });
     } catch (error) {
       console.error('Error creating employee:', error);
@@ -618,15 +679,12 @@ router.get(
 router.get(
   '/:configId/time-off',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
-      const requests = await shiftService.getTimeOffRequests(configId, {
+      const requests = await shiftService.getTimeOffRequests(shiftConfigId, {
         employeeId: req.query.employeeId
           ? parseInt(req.query.employeeId as string, 10)
           : undefined,
@@ -742,15 +800,12 @@ router.post(
 router.get(
   '/:configId/schedules',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
-      const schedules = await shiftService.getSchedules(configId, {
+      const schedules = await shiftService.getSchedules(shiftConfigId, {
         status: req.query.status as ScheduleStatus | undefined,
       });
       res.json({ data: schedules });
@@ -768,13 +823,10 @@ router.get(
 router.post(
   '/:configId/schedules',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const parsed = createScheduleSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -783,7 +835,7 @@ router.post(
       }
 
       const schedule = await shiftService.createSchedule({
-        configId,
+        configId: shiftConfigId,
         ...parsed.data,
       });
       res.status(201).json({ data: schedule });
@@ -1125,15 +1177,12 @@ router.post(
 router.get(
   '/:configId/swaps',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
-      const requests = await shiftService.getShiftSwapRequests(configId, {
+      const requests = await shiftService.getShiftSwapRequests(shiftConfigId, {
         status: req.query.status as SwapStatus | undefined,
       });
       res.json({ data: requests });
@@ -1257,13 +1306,10 @@ router.post(
 router.get(
   '/:configId/hours',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const startDate = req.query.startDate
         ? new Date(req.query.startDate as string)
@@ -1273,7 +1319,7 @@ router.get(
         : new Date();
 
       const hours = await shiftService.getEmployeeHours(
-        configId,
+        shiftConfigId,
         startDate,
         endDate,
       );
@@ -1296,13 +1342,10 @@ router.get(
 router.get(
   '/:configId/open-shifts',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const filters = {
         locationId: req.query.locationId
@@ -1319,7 +1362,7 @@ router.get(
           : undefined,
       };
 
-      const shifts = await shiftService.getOpenShifts(configId, filters);
+      const shifts = await shiftService.getOpenShifts(shiftConfigId, filters);
       res.json({ data: shifts });
     } catch (error) {
       console.error('Error getting open shifts:', error);
@@ -1478,13 +1521,10 @@ router.get(
 router.get(
   '/:configId/labor-projection',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       const startDate = req.query.startDate
         ? new Date(req.query.startDate as string)
@@ -1494,7 +1534,7 @@ router.get(
         : new Date();
 
       const projection = await shiftService.getLaborCostProjection(
-        configId,
+        shiftConfigId,
         startDate,
         endDate,
       );
@@ -1517,13 +1557,10 @@ router.get(
 router.get(
   '/:configId/overtime-alerts',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       // Get week start date (default to current week)
       const weekStartDate = req.query.weekStart
@@ -1536,7 +1573,7 @@ router.get(
           })();
 
       const alerts = await shiftService.getOvertimeAlerts(
-        configId,
+        shiftConfigId,
         weekStartDate,
       );
       res.json({ data: alerts });
@@ -1554,13 +1591,10 @@ router.get(
 router.get(
   '/:configId/overtime-summary',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  resolveShiftConfig,
+  async (req: ShiftRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
-        res.status(400).json({ error: 'Invalid config ID' });
-        return;
-      }
+      const shiftConfigId = req.shiftConfigId!;
 
       // Get week start date (default to current week)
       const weekStartDate = req.query.weekStart
@@ -1573,7 +1607,7 @@ router.get(
           })();
 
       const summary = await shiftService.getWeeklyOvertimeSummary(
-        configId,
+        shiftConfigId,
         weekStartDate,
       );
       res.json({ data: summary });
