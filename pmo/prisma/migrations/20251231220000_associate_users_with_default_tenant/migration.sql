@@ -21,11 +21,15 @@ INSERT INTO "TenantUser" ("tenantId", "userId", "role", "createdAt", "updatedAt"
 SELECT
     t.id,
     u.id,
-    CASE WHEN u.role = 'SUPER_ADMIN' THEN 'OWNER'::"TenantRole" ELSE 'MEMBER'::"TenantRole" END,
+    CASE
+        WHEN u.role = 'SUPER_ADMIN' THEN 'OWNER'::"TenantRole"
+        WHEN u.role = 'ADMIN' THEN 'ADMIN'::"TenantRole"
+        ELSE 'MEMBER'::"TenantRole"
+    END,
     NOW(),
     NOW()
 FROM "User" u
-CROSS JOIN (SELECT id FROM "Tenant" ORDER BY "createdAt" ASC LIMIT 1) t
+CROSS JOIN (SELECT id FROM "Tenant" WHERE "slug" = 'default' LIMIT 1) t
 WHERE NOT EXISTS (
     SELECT 1 FROM "TenantUser" tu WHERE tu."userId" = u.id
 )
