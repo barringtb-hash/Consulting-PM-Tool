@@ -62,6 +62,11 @@ ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "bookingPageId" INTEGER;
 ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "confirmationCode" TEXT;
 ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "customerTimezone" TEXT;
 
+-- Video meeting columns for Appointment
+ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "videoMeetingUrl" TEXT;
+ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "videoMeetingId" TEXT;
+ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "videoMeetingPassword" TEXT;
+
 -- AppointmentType table missing columns (depositPercent may have been added manually)
 ALTER TABLE "AppointmentType" ADD COLUMN IF NOT EXISTS "depositPercent" INTEGER;
 
