@@ -10,6 +10,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { Button, Input, Badge, Card } from '../../ui';
+import { PageHeader } from '../../ui/PageHeader';
 import { useIssues, useIssueStats } from '../../api/hooks/useBugTracking';
 import type {
   IssueStatus,
@@ -170,33 +171,29 @@ export default function IssuesPage() {
   const pagination = issuesData?.pagination;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-            <Bug className="h-6 w-6" />
-            Bug Tracking
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Track bugs, issues, and feature requests
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/bug-tracking/errors')}
-          >
-            Error Dashboard
-          </Button>
-          <Button onClick={() => navigate('/bug-tracking/new')}>
-            <Plus className="h-4 w-4 mr-1" />
-            New Issue
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title="Bug Tracking"
+        description="Track bugs, issues, and feature requests"
+        icon={Bug}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/bug-tracking/errors')}
+            >
+              Error Dashboard
+            </Button>
+            <Button onClick={() => navigate('/bug-tracking/new')}>
+              <Plus className="h-4 w-4 mr-1" />
+              New Issue
+            </Button>
+          </div>
+        }
+      />
 
-      {/* Stats Cards */}
+      <div className="container-padding py-6 space-y-6">
+        {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-4">
@@ -392,6 +389,7 @@ export default function IssuesPage() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 }

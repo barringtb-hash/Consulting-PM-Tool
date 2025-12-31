@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button, Badge, Card, Input } from '../../ui';
+import { PageHeader } from '../../ui/PageHeader';
 import {
   useIssue,
   useUpdateIssue,
@@ -213,141 +214,145 @@ export default function IssueDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading issue...</div>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading issue...</div>
+        </div>
       </div>
     );
   }
 
   if (!issue) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="text-gray-500">Issue not found</div>
-        <Button variant="outline" onClick={() => navigate('/bug-tracking')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Issues
-        </Button>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="text-gray-500">Issue not found</div>
+          <Button variant="outline" onClick={() => navigate('/bug-tracking')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Issues
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/bug-tracking')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              {TYPE_CONFIG[issue.type]?.icon}
-              <h1 className="text-2xl font-semibold text-gray-900">
-                #{issue.id} {issue.title}
-              </h1>
-            </div>
-            <div className="flex items-center gap-3 mt-2">
-              <Badge
-                variant={STATUS_CONFIG[issue.status]?.variant || 'default'}
-              >
-                {STATUS_CONFIG[issue.status]?.label || issue.status}
-              </Badge>
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
-              >
-                {PRIORITY_CONFIG[issue.priority]?.label || issue.priority}
-              </span>
-              {issue.labels.map((label) => (
-                <span
-                  key={label.id}
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                  style={{
-                    backgroundColor: label.color + '20',
-                    color: label.color,
-                  }}
-                >
-                  {label.name}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* AI Prompt Button */}
-          <div className="relative">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title={
+          <div className="flex items-center gap-3">
             <Button
-              variant="outline"
-              onClick={() => setShowAIPromptOptions(!showAIPromptOptions)}
-              disabled={generateAIPrompt.isPending}
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/bug-tracking')}
+              className="-ml-2"
             >
-              {promptCopied ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Copy as AI Prompt
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </>
-              )}
+              <ArrowLeft className="h-4 w-4" />
             </Button>
+            {TYPE_CONFIG[issue.type]?.icon}
+            <span>#{issue.id} {issue.title}</span>
+          </div>
+        }
+        description={
+          <div className="flex items-center gap-3 mt-1">
+            <Badge
+              variant={STATUS_CONFIG[issue.status]?.variant || 'default'}
+            >
+              {STATUS_CONFIG[issue.status]?.label || issue.status}
+            </Badge>
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
+            >
+              {PRIORITY_CONFIG[issue.priority]?.label || issue.priority}
+            </span>
+            {issue.labels.map((label) => (
+              <span
+                key={label.id}
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                style={{
+                  backgroundColor: label.color + '20',
+                  color: label.color,
+                }}
+              >
+                {label.name}
+              </span>
+            ))}
+          </div>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            {/* AI Prompt Button */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                onClick={() => setShowAIPromptOptions(!showAIPromptOptions)}
+                disabled={generateAIPrompt.isPending}
+              >
+                {promptCopied ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Copy as AI Prompt
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </>
+                )}
+              </Button>
 
-            {showAIPromptOptions && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border rounded-lg shadow-lg z-10">
-                <div className="p-2">
-                  <button
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded"
-                    onClick={() => handleCopyAIPrompt(false)}
-                  >
-                    <div className="font-medium">Basic Prompt</div>
-                    <div className="text-gray-500 text-xs">
-                      Issue details + stack trace
+              {showAIPromptOptions && (
+                <div className="absolute right-0 mt-2 w-64 bg-white border rounded-lg shadow-lg z-10">
+                  <div className="p-2">
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded"
+                      onClick={() => handleCopyAIPrompt(false)}
+                    >
+                      <div className="font-medium">Basic Prompt</div>
+                      <div className="text-gray-500 text-xs">
+                        Issue details + stack trace
+                      </div>
+                    </button>
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded"
+                      onClick={() => handleCopyAIPrompt(true)}
+                    >
+                      <div className="font-medium">Full Context</div>
+                      <div className="text-gray-500 text-xs">
+                        Include comments + error logs
+                      </div>
+                    </button>
+                    <div className="border-t my-1" />
+                    <div className="px-3 py-2 text-xs text-gray-500">
+                      Tip:{' '}
+                      <code className="bg-gray-100 px-1 rounded">
+                        /implement-issue {issue.id}
+                      </code>{' '}
+                      in Claude Code
                     </div>
-                  </button>
-                  <button
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded"
-                    onClick={() => handleCopyAIPrompt(true)}
-                  >
-                    <div className="font-medium">Full Context</div>
-                    <div className="text-gray-500 text-xs">
-                      Include comments + error logs
-                    </div>
-                  </button>
-                  <div className="border-t my-1" />
-                  <div className="px-3 py-2 text-xs text-gray-500">
-                    Tip:{' '}
-                    <code className="bg-gray-100 px-1 rounded">
-                      /implement-issue {issue.id}
-                    </code>{' '}
-                    in Claude Code
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/bug-tracking/${issue.id}/edit`)}
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteIssue}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
           </div>
+        }
+      />
 
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/bug-tracking/${issue.id}/edit`)}
-          >
-            <Edit2 className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button variant="destructive" onClick={handleDeleteIssue}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-6">
+      <div className="container-padding py-6 space-y-6">
+        <div className="grid grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="col-span-2 space-y-6">
           {/* Description */}
@@ -747,6 +752,7 @@ export default function IssueDetailPage() {
               </div>
             </Card>
           )}
+        </div>
         </div>
       </div>
     </div>
