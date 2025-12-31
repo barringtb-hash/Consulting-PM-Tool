@@ -568,7 +568,7 @@ function SchedulingPage(): JSX.Element {
                                           {Math.round(
                                             appt.noShowRiskScore * 100,
                                           )}
-                                          % risk
+                                          % no-show risk
                                         </Badge>
                                       )}
                                   </div>
@@ -592,6 +592,7 @@ function SchedulingPage(): JSX.Element {
                                     <Button
                                       size="sm"
                                       variant="secondary"
+                                      aria-label="Confirm appointment"
                                       onClick={() =>
                                         updateStatusMutation.mutate({
                                           appointmentId: appt.id,
@@ -607,6 +608,7 @@ function SchedulingPage(): JSX.Element {
                                     <Button
                                       size="sm"
                                       variant="secondary"
+                                      aria-label="Cancel appointment"
                                       onClick={() =>
                                         updateStatusMutation.mutate({
                                           appointmentId: appt.id,
