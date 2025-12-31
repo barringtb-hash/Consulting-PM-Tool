@@ -107,6 +107,16 @@ const MonitoringAssistantPage = lazy(() =>
 const PublicBookingPage = lazy(
   () => import('./pages/public/PublicBookingPage'),
 );
+const BookingWidget = lazy(() =>
+  import('./pages/public/BookingWidget').then((m) => ({
+    default: m.BookingWidget,
+  })),
+);
+const BookingManagementPage = lazy(() =>
+  import('./pages/public/BookingManagementPage').then((m) => ({
+    default: m.BookingManagementPage,
+  })),
+);
 
 // Phase 1 AI Tools pages
 const ChatbotPage = lazy(() => import('./pages/ai-tools/ChatbotPage'));
@@ -114,6 +124,31 @@ const ProductDescriptionsPage = lazy(
   () => import('./pages/ai-tools/ProductDescriptionsPage'),
 );
 const SchedulingPage = lazy(() => import('./pages/ai-tools/SchedulingPage'));
+const GoogleCalendarCallback = lazy(() =>
+  import('./pages/ai-tools/scheduling/OAuthCallbackPage').then((m) => ({
+    default: m.GoogleCalendarCallback,
+  })),
+);
+const OutlookCalendarCallback = lazy(() =>
+  import('./pages/ai-tools/scheduling/OAuthCallbackPage').then((m) => ({
+    default: m.OutlookCalendarCallback,
+  })),
+);
+const ZoomCallback = lazy(() =>
+  import('./pages/ai-tools/scheduling/OAuthCallbackPage').then((m) => ({
+    default: m.ZoomCallback,
+  })),
+);
+const GoogleMeetCallback = lazy(() =>
+  import('./pages/ai-tools/scheduling/OAuthCallbackPage').then((m) => ({
+    default: m.GoogleMeetCallback,
+  })),
+);
+const TeamsCallback = lazy(() =>
+  import('./pages/ai-tools/scheduling/OAuthCallbackPage').then((m) => ({
+    default: m.TeamsCallback,
+  })),
+);
 const IntakePage = lazy(() => import('./pages/ai-tools/IntakePage'));
 
 // Phase 2 AI Tools pages
@@ -275,6 +310,34 @@ function App(): JSX.Element {
               }
             >
               <PublicBookingPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/booking/:slug/widget"
+          element={
+            <Suspense
+              fallback={
+                <div className="min-h-screen bg-white flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              }
+            >
+              <BookingWidget />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/booking/:slug/manage"
+          element={
+            <Suspense
+              fallback={
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              }
+            >
+              <BookingManagementPage />
             </Suspense>
           }
         />
@@ -523,14 +586,57 @@ function App(): JSX.Element {
 
             {/* AI Scheduling module (Tool 1.3) */}
             {isModuleEnabled('scheduling') && (
-              <Route
-                path="/ai-tools/scheduling"
-                element={
-                  <LazyPage>
-                    <SchedulingPage />
-                  </LazyPage>
-                }
-              />
+              <>
+                <Route
+                  path="/ai-tools/scheduling"
+                  element={
+                    <LazyPage>
+                      <SchedulingPage />
+                    </LazyPage>
+                  }
+                />
+                {/* OAuth Callback Routes for Scheduling Integrations */}
+                <Route
+                  path="/ai-tools/scheduling/callback/google-calendar"
+                  element={
+                    <LazyPage>
+                      <GoogleCalendarCallback />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/ai-tools/scheduling/callback/outlook-calendar"
+                  element={
+                    <LazyPage>
+                      <OutlookCalendarCallback />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/ai-tools/scheduling/callback/zoom"
+                  element={
+                    <LazyPage>
+                      <ZoomCallback />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/ai-tools/scheduling/callback/google-meet"
+                  element={
+                    <LazyPage>
+                      <GoogleMeetCallback />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/ai-tools/scheduling/callback/teams"
+                  element={
+                    <LazyPage>
+                      <TeamsCallback />
+                    </LazyPage>
+                  }
+                />
+              </>
             )}
 
             {/* Client Intake module (Tool 1.4) */}
