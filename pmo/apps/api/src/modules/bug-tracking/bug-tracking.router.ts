@@ -108,10 +108,25 @@ const aiSubmitSchema = z.object({
   description: z.string().min(1),
   priority: z.nativeEnum(IssuePriority).optional(),
   labels: z.array(z.string()).optional(),
+  // User context - when provided, automatically sets reportedBy and optionally assignedTo
+  reportedById: z.number().int().positive().optional(),
+  assignedToId: z.number().int().positive().optional(),
+  // Environment context
+  environment: z.string().optional(),
+  browserInfo: z
+    .object({
+      browser: z.string().optional(),
+      version: z.string().optional(),
+      os: z.string().optional(),
+      device: z.string().optional(),
+      screenSize: z.string().optional(),
+      userAgent: z.string().optional(),
+    })
+    .optional(),
   metadata: z
     .object({
       conversationId: z.string().optional(),
-      userId: z.number().optional(),
+      userId: z.number().optional(), // @deprecated - use reportedById instead
       context: z.string().optional(),
       suggestedSolution: z.string().optional(),
     })
@@ -960,6 +975,10 @@ router.post(
         return res.status(400).json({ errors: parsed.error.flatten() });
       }
 
+      // Determine reportedById - prefer explicit field, fall back to metadata.userId for backward compatibility
+      const reportedById =
+        parsed.data.reportedById || parsed.data.metadata?.userId;
+
       // Run with the API key's tenant context
       const issue = await runWithTenantContext(
         {
@@ -968,14 +987,20 @@ router.post(
           tenantPlan: 'STARTER',
         },
         async () => {
-          return bugService.createIssue({
-            title: parsed.data.title,
-            description: parsed.data.description,
-            type: parsed.data.type,
-            priority: parsed.data.priority,
-            source: 'AI_ASSISTANT',
-            customFields: parsed.data.metadata,
-          });
+          return bugService.createIssue(
+            {
+              title: parsed.data.title,
+              description: parsed.data.description,
+              type: parsed.data.type,
+              priority: parsed.data.priority,
+              source: 'AI_ASSISTANT',
+              assignedToId: parsed.data.assignedToId,
+              environment: parsed.data.environment,
+              browserInfo: parsed.data.browserInfo as Record<string, unknown>,
+              customFields: parsed.data.metadata,
+            },
+            reportedById,
+          );
         },
       );
 

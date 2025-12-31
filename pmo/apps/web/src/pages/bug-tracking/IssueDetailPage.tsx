@@ -103,15 +103,24 @@ export default function IssueDetailPage() {
   const [promptCopied, setPromptCopied] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleCopyAIPrompt = async (includeComments = false) => {
+  const handleCopyAIPrompt = async (
+    mode: 'basic' | 'full' | 'comprehensive',
+  ) => {
     try {
+      const options = {
+        format: 'markdown' as const,
+        includeStackTrace: true,
+        includeEnvironmentInfo: true,
+        includeErrorLogs: mode !== 'basic',
+        maxErrorLogs: mode === 'comprehensive' ? 10 : 5,
+        includeComments: mode !== 'basic',
+        includeSuggestedFiles: true,
+        includeAttachments: true,
+      };
+
       const result = await generateAIPrompt.mutateAsync({
         issueId,
-        options: {
-          format: 'markdown',
-          includeComments,
-          includeErrorLogs: true,
-        },
+        options,
       });
 
       await navigator.clipboard.writeText(result.prompt);
@@ -303,33 +312,44 @@ export default function IssueDetailPage() {
               </Button>
 
               {showAIPromptOptions && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border rounded-lg shadow-lg z-10">
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-neutral-800 border dark:border-neutral-700 rounded-lg shadow-lg z-10">
                   <div className="p-2">
                     <button
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded"
-                      onClick={() => handleCopyAIPrompt(false)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-neutral-700 rounded"
+                      onClick={() => handleCopyAIPrompt('basic')}
                     >
-                      <div className="font-medium">Basic Prompt</div>
-                      <div className="text-gray-500 text-xs">
-                        Issue details + stack trace
+                      <div className="font-medium">Quick Prompt</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                        Issue details + stack trace + suggested files
                       </div>
                     </button>
                     <button
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded"
-                      onClick={() => handleCopyAIPrompt(true)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-neutral-700 rounded"
+                      onClick={() => handleCopyAIPrompt('full')}
                     >
                       <div className="font-medium">Full Context</div>
-                      <div className="text-gray-500 text-xs">
-                        Include comments + error logs
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                        + Comments, error logs, environment info
                       </div>
                     </button>
-                    <div className="border-t my-1" />
-                    <div className="px-3 py-2 text-xs text-gray-500">
-                      Tip:{' '}
-                      <code className="bg-gray-100 px-1 rounded">
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-neutral-700 rounded border-l-2 border-blue-500"
+                      onClick={() => handleCopyAIPrompt('comprehensive')}
+                    >
+                      <div className="font-medium text-blue-600 dark:text-blue-400">
+                        Comprehensive (Recommended)
+                      </div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                        All context + 10 error logs + reporter info
+                      </div>
+                    </button>
+                    <div className="border-t dark:border-neutral-700 my-1" />
+                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                      <strong>Tip:</strong> Use{' '}
+                      <code className="bg-gray-100 dark:bg-neutral-700 px-1 rounded">
                         /implement-issue {issue.id}
                       </code>{' '}
-                      in Claude Code
+                      in Claude Code for best results.
                     </div>
                   </div>
                 </div>

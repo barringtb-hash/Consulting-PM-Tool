@@ -144,9 +144,22 @@ export interface AISubmitInput {
   description: string;
   priority?: IssuePriority;
   labels?: string[];
+  // User context - automatically sets the reportedBy and optionally assignedTo fields
+  reportedById?: number;
+  assignedToId?: number;
+  // Environment context
+  environment?: string;
+  browserInfo?: {
+    browser?: string;
+    version?: string;
+    os?: string;
+    device?: string;
+    screenSize?: string;
+    userAgent?: string;
+  };
   metadata?: {
     conversationId?: string;
-    userId?: number;
+    userId?: number; // @deprecated - use reportedById instead
     context?: string;
     suggestedSolution?: string;
   };
