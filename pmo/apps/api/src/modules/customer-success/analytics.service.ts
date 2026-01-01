@@ -320,7 +320,7 @@ export async function getCSMPerformanceMetrics(): Promise<
   // Group success plans by ownerId for O(1) lookup
   const successPlansByOwner = new Map<
     number,
-    Array<{ clientId: number; status: string }>
+    Array<{ clientId: number | null; status: string }>
   >();
   for (const plan of allSuccessPlans) {
     if (!successPlansByOwner.has(plan.ownerId)) {
@@ -329,8 +329,14 @@ export async function getCSMPerformanceMetrics(): Promise<
     successPlansByOwner.get(plan.ownerId)!.push(plan);
   }
 
-  // Collect all unique client IDs across all users
-  const allClientIds = [...new Set(allSuccessPlans.map((sp) => sp.clientId))];
+  // Collect all unique client IDs across all users (filter out null values)
+  const allClientIds = [
+    ...new Set(
+      allSuccessPlans
+        .map((sp) => sp.clientId)
+        .filter((id): id is number => id !== null),
+    ),
+  ];
 
   // BATCH FETCH 2: Get all CTAs for all users in one query
   const allCTAs = await prisma.cTA.findMany({
@@ -373,7 +379,7 @@ export async function getCSMPerformanceMetrics(): Promise<
             project: { clientId: { in: allClientIds } },
             date: { gte: thirtyDaysAgo },
           },
-          select: { project: { select: { clientId: true } } },
+          include: { project: { select: { clientId: true } } },
         })
       : [];
 
@@ -392,7 +398,11 @@ export async function getCSMPerformanceMetrics(): Promise<
   for (const user of users) {
     const userSuccessPlans = successPlansByOwner.get(user.id) ?? [];
     const uniqueClientIds = [
-      ...new Set(userSuccessPlans.map((sp) => sp.clientId)),
+      ...new Set(
+        userSuccessPlans
+          .map((sp) => sp.clientId)
+          .filter((id): id is number => id !== null),
+      ),
     ];
 
     // Calculate avg health score from pre-fetched data

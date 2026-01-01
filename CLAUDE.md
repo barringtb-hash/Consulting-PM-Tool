@@ -72,10 +72,12 @@ The AI CRM Platform is a full-stack monorepo application that has evolved from a
 - **Phase 2 - Business Intelligence**: Document Analyzer (OCR), Content Generator, Lead Scoring, Prior Authorization
 - **Phase 3 - Industry-Specific**: Inventory Forecasting, Compliance Monitor, Predictive Maintenance, Revenue Management, Safety Monitor
 
-**Customer Success Platform**:
-- Customer health scoring and engagement tracking
-- Success plans and playbooks
-- CTAs (Calls-to-Action) and automated alerts
+**Customer Success Platform** (merged into Account module):
+- Account health scoring with multi-dimensional metrics (usage, support, engagement, sentiment, financial)
+- Success plans with objectives, tasks, and customer goals tracking
+- Playbooks for standardized CS workflows
+- CTAs (Calls-to-Action) with priority, snooze, and outcome tracking
+- Portfolio-level health dashboard and CTA cockpit
 
 ## Quick Reference
 
@@ -540,9 +542,14 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | **Brand Profiles** | |
 | Brand Profile router | `pmo/apps/api/src/modules/brand-profiles/brand-profile.router.ts` |
 | Brand Profile service | `pmo/apps/api/src/modules/brand-profiles/brand-profile.service.ts` |
-| **Customer Success** | |
-| Customer Success module | `pmo/apps/api/src/modules/customer-success/` |
-| Customer Success pages | `pmo/apps/web/src/pages/customer-success/` |
+| **Customer Success (merged into Account)** | |
+| Account Health service | `pmo/apps/api/src/crm/services/account-health.service.ts` |
+| Account CTA service | `pmo/apps/api/src/crm/services/account-cta.service.ts` |
+| Account Success Plan service | `pmo/apps/api/src/crm/services/account-success-plan.service.ts` |
+| Playbook service | `pmo/apps/api/src/crm/services/playbook.service.ts` |
+| Playbook routes | `pmo/apps/api/src/crm/routes/playbook.routes.ts` |
+| CS validation schemas | `pmo/apps/api/src/validation/crm/account-health.schema.ts`, `account-cta.schema.ts`, `account-success-plan.schema.ts`, `playbook.schema.ts` |
+| Legacy Customer Success module | `pmo/apps/api/src/modules/customer-success/` (deprecated) |
 | **Finance Tracking** | |
 | Finance router | `pmo/apps/api/src/modules/finance-tracking/finance.router.ts` |
 | Finance services | `pmo/apps/api/src/modules/finance-tracking/services/` |
@@ -573,6 +580,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Migration: Leads → CRMContacts | `pmo/apps/api/src/scripts/migrate-leads-to-crm-contacts.ts` |
 | Migration: Clients → Accounts | `pmo/apps/api/src/scripts/migrate-clients-to-accounts.ts` |
 | Migration: Pipeline → Opportunities | `pmo/apps/api/src/scripts/migrate-project-pipeline-to-opportunities.ts` |
+| Migration: Customer Success → Accounts | `pmo/apps/api/src/scripts/migrate-customer-success-to-accounts.ts` |
 | CRM validation schemas | `pmo/apps/api/src/validation/crm/` |
 | Technical Debt Report | `Docs/TECHNICAL-DEBT-REPORT.md` |
 
@@ -645,6 +653,32 @@ For the comprehensive CRM transformation plan, see [Docs/CRM-TRANSFORMATION-PLAN
 | | `GET /api/crm/accounts/:id/hierarchy` - Account hierarchy |
 | | `GET /api/crm/accounts/:id/timeline` - Activity timeline |
 | | `POST /api/crm/accounts/:id/merge` - Merge accounts |
+| **Account Health** | `GET /api/crm/accounts/:id/health` - Get health score |
+| | `POST /api/crm/accounts/:id/health/calculate` - Calculate health score |
+| | `GET /api/crm/accounts/:id/health/history` - Health history |
+| | `GET /api/crm/accounts/portfolio/health` - Portfolio health summary |
+| | `GET /api/crm/accounts/portfolio/health/accounts` - Accounts by health |
+| **Account CTAs** | `GET/POST /api/crm/accounts/:id/ctas`, `GET/PUT/DELETE /api/crm/accounts/:id/ctas/:ctaId` |
+| | `POST /api/crm/accounts/:id/ctas/:ctaId/close` - Close CTA |
+| | `POST /api/crm/accounts/:id/ctas/:ctaId/snooze` - Snooze CTA |
+| | `GET /api/crm/accounts/:id/ctas/summary` - CTA summary |
+| | `GET /api/crm/accounts/portfolio/ctas` - Portfolio CTAs |
+| | `GET /api/crm/accounts/portfolio/ctas/cockpit` - CTA cockpit |
+| | `GET /api/crm/accounts/portfolio/ctas/summary` - Portfolio CTA summary |
+| **Account Success Plans** | `GET/POST /api/crm/accounts/:id/success-plans`, `GET/PUT/DELETE /api/crm/accounts/:id/success-plans/:planId` |
+| | `POST /api/crm/accounts/:id/success-plans/:planId/activate` - Activate plan |
+| | `POST /api/crm/accounts/:id/success-plans/:planId/hold` - Put on hold |
+| | `POST /api/crm/accounts/:id/success-plans/:planId/complete` - Complete plan |
+| | `POST/PUT/DELETE /api/crm/accounts/:id/success-plans/:planId/objectives/:objectiveId` - Manage objectives |
+| | `POST /api/crm/accounts/:id/success-plans/:planId/objectives/:objectiveId/tasks` - Add task |
+| | `PUT /api/crm/accounts/:id/success-plans/:planId/objectives/:objectiveId/tasks/:taskId/status` - Update task status |
+| | `GET /api/crm/accounts/portfolio/success-plans` - Portfolio success plans |
+| **Playbooks** | `GET/POST /api/crm/playbooks`, `GET/PUT/DELETE /api/crm/playbooks/:id` |
+| | `POST /api/crm/playbooks/:id/clone` - Clone playbook |
+| | `GET /api/crm/playbooks/categories` - List categories |
+| | `GET /api/crm/playbooks/popular` - Popular playbooks |
+| | `POST/PUT/DELETE /api/crm/playbooks/:id/tasks/:taskId` - Manage tasks |
+| | `POST /api/crm/playbooks/:id/tasks/reorder` - Reorder tasks |
 | **Opportunities** | `GET/POST /api/crm/opportunities`, `GET/PUT/DELETE /api/crm/opportunities/:id` |
 | | `GET /api/crm/opportunities/pipeline-stats` - Pipeline statistics |
 | | `GET /api/crm/opportunities/closing-soon` - Deals closing soon |
@@ -702,6 +736,7 @@ Lead conversion parameters:
 | `migrate-leads-to-crm-contacts.ts` | Migrate InboundLead to CRMContact |
 | `migrate-clients-to-accounts.ts` | Migrate Client to Account |
 | `migrate-project-pipeline-to-opportunities.ts` | Migrate Project pipeline data to Opportunities |
+| `migrate-customer-success-to-accounts.ts` | Migrate Customer Success CTAs, Success Plans, and Health Scores to Account-linked entities |
 
 Run migration scripts from `/pmo/apps/api`:
 ```bash

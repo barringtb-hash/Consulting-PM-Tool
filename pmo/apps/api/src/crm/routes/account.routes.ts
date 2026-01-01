@@ -8,6 +8,9 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import * as accountService from '../services/account.service';
+import * as accountHealthService from '../services/account-health.service';
+import * as accountCTAService from '../services/account-cta.service';
+import * as accountSuccessPlanService from '../services/account-success-plan.service';
 import {
   requireAuth,
   type AuthenticatedRequest,
@@ -17,6 +20,26 @@ import {
   requireTenant,
   type TenantRequest,
 } from '../../tenant/tenant.middleware';
+import {
+  calculateHealthScoreSchema,
+  getHealthHistorySchema,
+} from '../../validation/crm/account-health.schema';
+import {
+  createCTASchema,
+  updateCTASchema,
+  listCTAsSchema,
+  closeCTASchema,
+  snoozeCTASchema,
+} from '../../validation/crm/account-cta.schema';
+import {
+  createSuccessPlanSchema,
+  updateSuccessPlanSchema,
+  listSuccessPlansSchema,
+  createObjectiveSchema,
+  updateObjectiveSchema,
+  createTaskSchema,
+  updateTaskStatusSchema,
+} from '../../validation/crm/account-success-plan.schema';
 
 // Helper to check if error is a "not found" error (Prisma or custom)
 function isNotFoundError(error: unknown): boolean {
@@ -409,6 +432,757 @@ router.post(
     } catch (error) {
       if (isNotFoundError(error)) {
         return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+// ============================================================================
+// CUSTOMER SUCCESS - HEALTH SCORE ROUTES
+// ============================================================================
+
+/**
+ * GET /api/crm/accounts/portfolio/health
+ * Get portfolio health summary across all accounts
+ */
+router.get(
+  '/portfolio/health',
+  requireAuth,
+  requireTenant,
+  async (_req: TenantRequest, res: Response) => {
+    const summary = await accountHealthService.getPortfolioHealthSummary();
+    res.json({ data: summary });
+  },
+);
+
+/**
+ * GET /api/crm/accounts/:id/health
+ * Get current health score for an account
+ */
+router.get(
+  '/:id/health',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    const health = await accountHealthService.getAccountHealthScore(id);
+    if (!health) {
+      return res.status(404).json({ error: 'Account not found' });
+    }
+
+    res.json({ data: health });
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/health/calculate
+ * Calculate and update health score for an account
+ */
+router.post(
+  '/:id/health/calculate',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    const parsed = calculateHealthScoreSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const health = await accountHealthService.calculateAccountHealthScore({
+        accountId: id,
+        ...parsed.data,
+      });
+      res.json({ data: health });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/health/auto-calculate
+ * Auto-calculate health score from CRM data
+ */
+router.post(
+  '/:id/health/auto-calculate',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    try {
+      const health =
+        await accountHealthService.autoCalculateAccountHealthScore(id);
+      res.json({ data: health });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * GET /api/crm/accounts/:id/health/history
+ * Get health score history for trend analysis
+ */
+router.get(
+  '/:id/health/history',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    const parsed = getHealthHistorySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const history = await accountHealthService.getAccountHealthScoreHistory(
+      id,
+      parsed.data.days,
+    );
+    res.json({ data: history });
+  },
+);
+
+// ============================================================================
+// CUSTOMER SUCCESS - CTA ROUTES
+// ============================================================================
+
+/**
+ * GET /api/crm/accounts/portfolio/ctas
+ * Get all CTAs across accounts (portfolio view)
+ */
+router.get(
+  '/portfolio/ctas',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const parsed = listCTAsSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const result = await accountCTAService.listAccountCTAs(parsed.data);
+    res.json(result);
+  },
+);
+
+/**
+ * GET /api/crm/accounts/portfolio/ctas/summary
+ * Get CTA summary across portfolio
+ */
+router.get(
+  '/portfolio/ctas/summary',
+  requireAuth,
+  requireTenant,
+  async (_req: TenantRequest, res: Response) => {
+    const summary = await accountCTAService.getAccountCTASummary();
+    res.json({ data: summary });
+  },
+);
+
+/**
+ * GET /api/crm/accounts/portfolio/ctas/cockpit
+ * Get CTA cockpit view for current user
+ */
+router.get(
+  '/portfolio/ctas/cockpit',
+  requireAuth,
+  requireTenant,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const cockpit = await accountCTAService.getAccountCTACockpit(req.userId!);
+    res.json({ data: cockpit });
+  },
+);
+
+/**
+ * GET /api/crm/accounts/:id/ctas
+ * List CTAs for an account
+ */
+router.get(
+  '/:id/ctas',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    const parsed = listCTAsSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const result = await accountCTAService.listAccountCTAs({
+      ...parsed.data,
+      accountId: id,
+    });
+    res.json(result);
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/ctas
+ * Create a CTA for an account
+ */
+router.post(
+  '/:id/ctas',
+  requireAuth,
+  requireTenant,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    const parsed = createCTASchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const cta = await accountCTAService.createAccountCTA({
+      accountId: id,
+      ownerId: req.userId!,
+      ...parsed.data,
+    });
+    res.status(201).json({ data: cta });
+  },
+);
+
+/**
+ * GET /api/crm/accounts/:id/ctas/:ctaId
+ * Get a specific CTA
+ */
+router.get(
+  '/:id/ctas/:ctaId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const ctaId = parseInt(req.params.ctaId, 10);
+    if (isNaN(ctaId)) {
+      return res.status(400).json({ error: 'Invalid CTA ID' });
+    }
+
+    const cta = await accountCTAService.getAccountCTAById(ctaId);
+    if (!cta) {
+      return res.status(404).json({ error: 'CTA not found' });
+    }
+
+    res.json({ data: cta });
+  },
+);
+
+/**
+ * PUT /api/crm/accounts/:id/ctas/:ctaId
+ * Update a CTA
+ */
+router.put(
+  '/:id/ctas/:ctaId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const ctaId = parseInt(req.params.ctaId, 10);
+    if (isNaN(ctaId)) {
+      return res.status(400).json({ error: 'Invalid CTA ID' });
+    }
+
+    const parsed = updateCTASchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const cta = await accountCTAService.updateAccountCTA(ctaId, parsed.data);
+      res.json({ data: cta });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'CTA not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * DELETE /api/crm/accounts/:id/ctas/:ctaId
+ * Delete a CTA
+ */
+router.delete(
+  '/:id/ctas/:ctaId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const ctaId = parseInt(req.params.ctaId, 10);
+    if (isNaN(ctaId)) {
+      return res.status(400).json({ error: 'Invalid CTA ID' });
+    }
+
+    try {
+      await accountCTAService.deleteAccountCTA(ctaId);
+      res.status(204).send();
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'CTA not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/ctas/:ctaId/close
+ * Close a CTA with outcome
+ */
+router.post(
+  '/:id/ctas/:ctaId/close',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const ctaId = parseInt(req.params.ctaId, 10);
+    if (isNaN(ctaId)) {
+      return res.status(400).json({ error: 'Invalid CTA ID' });
+    }
+
+    const parsed = closeCTASchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const cta = await accountCTAService.closeAccountCTA(
+        ctaId,
+        parsed.data.outcome,
+        parsed.data.resolutionNotes,
+      );
+      res.json({ data: cta });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'CTA not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/ctas/:ctaId/snooze
+ * Snooze a CTA
+ */
+router.post(
+  '/:id/ctas/:ctaId/snooze',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const ctaId = parseInt(req.params.ctaId, 10);
+    if (isNaN(ctaId)) {
+      return res.status(400).json({ error: 'Invalid CTA ID' });
+    }
+
+    const parsed = snoozeCTASchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const cta = await accountCTAService.snoozeAccountCTA(
+        ctaId,
+        parsed.data.snoozeUntil,
+      );
+      res.json({ data: cta });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'CTA not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+// ============================================================================
+// CUSTOMER SUCCESS - SUCCESS PLAN ROUTES
+// ============================================================================
+
+/**
+ * GET /api/crm/accounts/portfolio/success-plans
+ * Get all success plans across accounts
+ */
+router.get(
+  '/portfolio/success-plans',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const parsed = listSuccessPlansSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const result = await accountSuccessPlanService.listAccountSuccessPlans(
+      parsed.data,
+    );
+    res.json(result);
+  },
+);
+
+/**
+ * GET /api/crm/accounts/portfolio/success-plans/summary
+ * Get success plan summary across portfolio
+ */
+router.get(
+  '/portfolio/success-plans/summary',
+  requireAuth,
+  requireTenant,
+  async (_req: TenantRequest, res: Response) => {
+    const summary =
+      await accountSuccessPlanService.getAccountSuccessPlanSummary();
+    res.json({ data: summary });
+  },
+);
+
+/**
+ * GET /api/crm/accounts/:id/success-plans
+ * List success plans for an account
+ */
+router.get(
+  '/:id/success-plans',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    const parsed = listSuccessPlansSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const result = await accountSuccessPlanService.listAccountSuccessPlans({
+      ...parsed.data,
+      accountId: id,
+    });
+    res.json(result);
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/success-plans
+ * Create a success plan for an account
+ */
+router.post(
+  '/:id/success-plans',
+  requireAuth,
+  requireTenant,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+
+    const parsed = createSuccessPlanSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    const plan = await accountSuccessPlanService.createAccountSuccessPlan({
+      accountId: id,
+      ownerId: req.userId!,
+      ...parsed.data,
+    });
+    res.status(201).json({ data: plan });
+  },
+);
+
+/**
+ * GET /api/crm/accounts/:id/success-plans/:planId
+ * Get a specific success plan
+ */
+router.get(
+  '/:id/success-plans/:planId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const planId = parseInt(req.params.planId, 10);
+    if (isNaN(planId)) {
+      return res.status(400).json({ error: 'Invalid success plan ID' });
+    }
+
+    const plan =
+      await accountSuccessPlanService.getAccountSuccessPlanById(planId);
+    if (!plan) {
+      return res.status(404).json({ error: 'Success plan not found' });
+    }
+
+    res.json({ data: plan });
+  },
+);
+
+/**
+ * PUT /api/crm/accounts/:id/success-plans/:planId
+ * Update a success plan
+ */
+router.put(
+  '/:id/success-plans/:planId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const planId = parseInt(req.params.planId, 10);
+    if (isNaN(planId)) {
+      return res.status(400).json({ error: 'Invalid success plan ID' });
+    }
+
+    const parsed = updateSuccessPlanSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const plan = await accountSuccessPlanService.updateAccountSuccessPlan(
+        planId,
+        parsed.data,
+      );
+      res.json({ data: plan });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Success plan not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * DELETE /api/crm/accounts/:id/success-plans/:planId
+ * Delete a success plan
+ */
+router.delete(
+  '/:id/success-plans/:planId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const planId = parseInt(req.params.planId, 10);
+    if (isNaN(planId)) {
+      return res.status(400).json({ error: 'Invalid success plan ID' });
+    }
+
+    try {
+      await accountSuccessPlanService.deleteAccountSuccessPlan(planId);
+      res.status(204).send();
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Success plan not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/success-plans/:planId/activate
+ * Activate a draft success plan
+ */
+router.post(
+  '/:id/success-plans/:planId/activate',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const planId = parseInt(req.params.planId, 10);
+    if (isNaN(planId)) {
+      return res.status(400).json({ error: 'Invalid success plan ID' });
+    }
+
+    try {
+      const plan = await accountSuccessPlanService.activateSuccessPlan(planId);
+      res.json({ data: plan });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Success plan not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/success-plans/:planId/objectives
+ * Add an objective to a success plan
+ */
+router.post(
+  '/:id/success-plans/:planId/objectives',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const planId = parseInt(req.params.planId, 10);
+    if (isNaN(planId)) {
+      return res.status(400).json({ error: 'Invalid success plan ID' });
+    }
+
+    const parsed = createObjectiveSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const plan = await accountSuccessPlanService.addObjective({
+        successPlanId: planId,
+        ...parsed.data,
+      });
+      res.status(201).json({ data: plan });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Success plan not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * PUT /api/crm/accounts/:id/success-plans/:planId/objectives/:objectiveId
+ * Update an objective
+ */
+router.put(
+  '/:id/success-plans/:planId/objectives/:objectiveId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const objectiveId = parseInt(req.params.objectiveId, 10);
+    if (isNaN(objectiveId)) {
+      return res.status(400).json({ error: 'Invalid objective ID' });
+    }
+
+    const parsed = updateObjectiveSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const plan = await accountSuccessPlanService.updateObjective(
+        objectiveId,
+        parsed.data,
+      );
+      res.json({ data: plan });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Objective not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * DELETE /api/crm/accounts/:id/success-plans/:planId/objectives/:objectiveId
+ * Delete an objective
+ */
+router.delete(
+  '/:id/success-plans/:planId/objectives/:objectiveId',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const objectiveId = parseInt(req.params.objectiveId, 10);
+    if (isNaN(objectiveId)) {
+      return res.status(400).json({ error: 'Invalid objective ID' });
+    }
+
+    try {
+      const plan = await accountSuccessPlanService.deleteObjective(objectiveId);
+      res.json({ data: plan });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Objective not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * POST /api/crm/accounts/:id/success-plans/:planId/objectives/:objectiveId/tasks
+ * Add a task to an objective
+ */
+router.post(
+  '/:id/success-plans/:planId/objectives/:objectiveId/tasks',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const objectiveId = parseInt(req.params.objectiveId, 10);
+    if (isNaN(objectiveId)) {
+      return res.status(400).json({ error: 'Invalid objective ID' });
+    }
+
+    const parsed = createTaskSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const plan = await accountSuccessPlanService.addTask({
+        objectiveId,
+        ...parsed.data,
+      });
+      res.status(201).json({ data: plan });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Objective not found' });
+      }
+      throw error;
+    }
+  },
+);
+
+/**
+ * PATCH /api/crm/accounts/:id/success-plans/:planId/objectives/:objectiveId/tasks/:taskId/status
+ * Update a task status
+ */
+router.patch(
+  '/:id/success-plans/:planId/objectives/:objectiveId/tasks/:taskId/status',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const taskId = parseInt(req.params.taskId, 10);
+    if (isNaN(taskId)) {
+      return res.status(400).json({ error: 'Invalid task ID' });
+    }
+
+    const parsed = updateTaskStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten() });
+    }
+
+    try {
+      const plan = await accountSuccessPlanService.updateTaskStatus(
+        taskId,
+        parsed.data.status,
+      );
+      res.json({ data: plan });
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        return res.status(404).json({ error: 'Task not found' });
       }
       throw error;
     }
