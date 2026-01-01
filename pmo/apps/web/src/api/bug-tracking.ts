@@ -55,10 +55,12 @@ export interface Issue {
   environment: string | null;
   appVersion: string | null;
   url: string | null;
+  module: string | null; // Module where error occurred
   createdAt: string;
   updatedAt: string;
   resolvedAt: string | null;
   closedAt: string | null;
+  tenant: { id: string; name: string } | null; // Tenant info
   reportedBy: { id: number; name: string; email: string } | null;
   assignedTo: { id: number; name: string; email: string } | null;
   labels: IssueLabel[];
@@ -106,6 +108,7 @@ export interface ErrorLog {
   statusCode: number | null;
   environment: string | null;
   appVersion: string | null;
+  module: string | null;
   browserInfo: Record<string, unknown> | null;
   serverInfo: Record<string, unknown> | null;
   createdAt: string;
@@ -172,7 +175,9 @@ export interface ListIssuesParams {
   reportedById?: number;
   projectId?: number;
   accountId?: number;
+  module?: string;
   search?: string;
+  includeClosed?: boolean;
   sortBy?: 'createdAt' | 'updatedAt' | 'priority' | 'status';
   sortOrder?: 'asc' | 'desc';
 }

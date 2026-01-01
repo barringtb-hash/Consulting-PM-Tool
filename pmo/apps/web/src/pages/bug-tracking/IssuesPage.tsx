@@ -112,6 +112,23 @@ function IssueRow({ issue }: { issue: Issue }) {
         </span>
       </td>
       <td className="px-4 py-3">
+        <div className="flex flex-col gap-1">
+          {issue.tenant && (
+            <span className="text-xs text-blue-600 font-medium">
+              {issue.tenant.name}
+            </span>
+          )}
+          {issue.module && (
+            <span className="text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+              {issue.module}
+            </span>
+          )}
+          {!issue.tenant && !issue.module && (
+            <span className="text-xs text-gray-400">-</span>
+          )}
+        </div>
+      </td>
+      <td className="px-4 py-3">
         {issue.assignedTo ? (
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
@@ -153,6 +170,7 @@ export default function IssuesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<IssuePriority[]>([]);
+  const [showClosed, setShowClosed] = useState(false);
   const [page, setPage] = useState(1);
 
   const { data: issuesData, isLoading } = useIssues({
@@ -161,6 +179,7 @@ export default function IssuesPage() {
     search: search || undefined,
     status: statusFilter.length > 0 ? statusFilter : undefined,
     priority: priorityFilter.length > 0 ? priorityFilter : undefined,
+    includeClosed: showClosed,
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
@@ -294,6 +313,17 @@ export default function IssuesPage() {
                   </option>
                 ))}
               </select>
+
+              {/* Show Closed toggle */}
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showClosed}
+                  onChange={(e) => setShowClosed(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Show Closed
+              </label>
             </div>
           </div>
         </Card>
@@ -317,6 +347,9 @@ export default function IssuesPage() {
                     Priority
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tenant / Module
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Assignee
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -331,7 +364,7 @@ export default function IssuesPage() {
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-4 py-8 text-center text-gray-500"
                     >
                       Loading issues...
@@ -340,7 +373,7 @@ export default function IssuesPage() {
                 ) : issues.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-4 py-8 text-center text-gray-500"
                     >
                       No issues found.{' '}

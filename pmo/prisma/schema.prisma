@@ -8493,6 +8493,7 @@ model Issue {
   environment String? // development, staging, production
   appVersion  String? // App version when issue occurred
   url         String? // URL where error occurred
+  module      String? // Module where error occurred (e.g., chatbot, crm, finance)
 
   // Metadata
   customFields Json?
@@ -8524,6 +8525,7 @@ model Issue {
   @@index([reportedById])
   @@index([createdAt])
   @@index([errorHash])
+  @@index([module])
 }
 
 /**
@@ -8614,6 +8616,7 @@ model ErrorLog {
   // Environment
   environment String?
   appVersion  String?
+  module      String? // Module where error occurred (e.g., chatbot, crm, finance)
   browserInfo Json? // { userAgent, browser, version, os, device, screenSize }
   serverInfo  Json? // { hostname, region, instanceId, deploymentId }
 
@@ -8631,6 +8634,7 @@ model ErrorLog {
   @@index([source])
   @@index([level])
   @@index([createdAt])
+  @@index([module])
 }
 
 /**

@@ -42,6 +42,7 @@ export async function createIssue(
         : undefined,
     },
     include: {
+      tenant: { select: { id: true, name: true } },
       reportedBy: { select: { id: true, name: true, email: true } },
       assignedTo: { select: { id: true, name: true, email: true } },
       labels: true,
@@ -75,6 +76,7 @@ export async function getIssueById(id: number) {
   return prisma.issue.findFirst({
     where,
     include: {
+      tenant: { select: { id: true, name: true } },
       reportedBy: { select: { id: true, name: true, email: true } },
       assignedTo: { select: { id: true, name: true, email: true } },
       labels: true,
@@ -124,6 +126,9 @@ export async function listIssues(
     where.status = Array.isArray(filters.status)
       ? { in: filters.status }
       : filters.status;
+  } else if (!filters.includeClosed) {
+    // By default, exclude CLOSED and WONT_FIX issues unless explicitly requested
+    where.status = { notIn: ['CLOSED', 'WONT_FIX'] };
   }
   if (filters.priority) {
     where.priority = Array.isArray(filters.priority)
@@ -152,6 +157,9 @@ export async function listIssues(
   if (filters.accountId) {
     where.accountId = filters.accountId;
   }
+  if (filters.module) {
+    where.module = filters.module;
+  }
   if (filters.labelIds?.length) {
     where.labels = { some: { id: { in: filters.labelIds } } };
   }
@@ -178,6 +186,7 @@ export async function listIssues(
     prisma.issue.findMany({
       where,
       include: {
+        tenant: { select: { id: true, name: true } },
         reportedBy: { select: { id: true, name: true, email: true } },
         assignedTo: { select: { id: true, name: true, email: true } },
         labels: true,
@@ -256,6 +265,7 @@ export async function updateIssue(
       closedAt: input.status === 'CLOSED' ? new Date() : undefined,
     },
     include: {
+      tenant: { select: { id: true, name: true } },
       reportedBy: { select: { id: true, name: true, email: true } },
       assignedTo: { select: { id: true, name: true, email: true } },
       labels: true,

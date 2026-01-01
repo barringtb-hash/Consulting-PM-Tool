@@ -160,6 +160,8 @@ const clientErrorSchema = z.object({
     .optional(),
   sessionId: z.string().optional(),
   userId: z.number().optional(),
+  tenantId: z.string().optional(),
+  module: z.string().optional(),
   environment: z.string().optional(),
   appVersion: z.string().optional(),
 });
@@ -315,6 +317,7 @@ router.get(
         accountId: req.query.accountId
           ? Number(req.query.accountId)
           : undefined,
+        module: req.query.module as string | undefined,
         search: req.query.search as string | undefined,
         createdAfter: req.query.createdAfter
           ? new Date(req.query.createdAfter as string)
@@ -322,6 +325,7 @@ router.get(
         createdBefore: req.query.createdBefore
           ? new Date(req.query.createdBefore as string)
           : undefined,
+        includeClosed: req.query.includeClosed === 'true',
       };
 
       const pagination = {

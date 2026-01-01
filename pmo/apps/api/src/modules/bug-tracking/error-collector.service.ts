@@ -53,6 +53,7 @@ async function findOrCreateIssueForError(
     environment?: string;
     appVersion?: string;
     url?: string;
+    module?: string;
   },
   reportedById?: number,
 ) {
@@ -115,7 +116,9 @@ function determinePriority(source: IssueSource): IssuePriority {
  * Ingest errors from browser clients
  */
 export async function ingestClientError(error: ClientErrorInput) {
-  const tenantId = hasTenantContext() ? getTenantId() : null;
+  // Use provided tenantId or fall back to context
+  const tenantId =
+    error.tenantId || (hasTenantContext() ? getTenantId() : null);
   const errorHash = generateErrorHash(
     error.message,
     error.stack,
@@ -133,6 +136,7 @@ export async function ingestClientError(error: ClientErrorInput) {
       url: error.url,
       userId: error.userId,
       sessionId: error.sessionId,
+      module: error.module,
       environment: error.environment || process.env.NODE_ENV,
       appVersion: error.appVersion,
       browserInfo: error.browserInfo as Record<string, unknown>,
@@ -151,6 +155,7 @@ export async function ingestClientError(error: ClientErrorInput) {
       environment: error.environment,
       appVersion: error.appVersion,
       url: error.url,
+      module: error.module,
     },
     error.userId, // Set reportedById to the user who encountered the error
   );
@@ -184,7 +189,9 @@ export async function ingestClientErrors(errors: ClientErrorInput[]) {
  * Ingest errors from server/API
  */
 export async function ingestServerError(error: ServerErrorInput) {
-  const tenantId = hasTenantContext() ? getTenantId() : null;
+  // Use provided tenantId or fall back to context
+  const tenantId =
+    error.tenantId || (hasTenantContext() ? getTenantId() : null);
   const errorHash = generateErrorHash(
     error.message,
     error.stackTrace,
@@ -203,6 +210,7 @@ export async function ingestServerError(error: ServerErrorInput) {
       method: error.method,
       statusCode: error.statusCode,
       requestId: error.requestId,
+      module: error.module,
       environment: error.environment || process.env.NODE_ENV,
       appVersion: error.appVersion,
       serverInfo: error.serverInfo as Record<string, unknown>,
@@ -224,6 +232,7 @@ export async function ingestServerError(error: ServerErrorInput) {
     environment: error.environment,
     appVersion: error.appVersion,
     url: error.url,
+    module: error.module,
   });
 
   // Link error log to issue
@@ -461,6 +470,14 @@ function formatClientErrorDescription(error: ClientErrorInput): string {
     `**URL:** ${error.url}`,
   ];
 
+  if (error.module) {
+    parts.push(`**Module:** ${error.module}`);
+  }
+
+  if (error.tenantId) {
+    parts.push(`**Tenant ID:** ${error.tenantId}`);
+  }
+
   if (error.line || error.column) {
     parts.push(`**Location:** Line ${error.line}, Column ${error.column}`);
   }
@@ -503,6 +520,14 @@ function formatServerErrorDescription(error: ServerErrorInput): string {
     '',
     `**Source:** ${error.source}`,
   ];
+
+  if (error.module) {
+    parts.push(`**Module:** ${error.module}`);
+  }
+
+  if (error.tenantId) {
+    parts.push(`**Tenant ID:** ${error.tenantId}`);
+  }
 
   if (error.url) {
     parts.push(`**URL:** ${error.method || 'GET'} ${error.url}`);
