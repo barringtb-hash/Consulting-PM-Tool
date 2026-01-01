@@ -1297,4 +1297,172 @@ router.get(
   },
 );
 
+// ============================================================================
+// EXTERNAL AI ACCESS ROUTES (API Key Auth)
+// These routes allow external AI tools (like Claude Code) to access issue data
+// using API keys instead of session-based authentication.
+// ============================================================================
+
+// GET /bug-tracking/external/issues/:id/prompt - Get AI prompt via API key
+router.get(
+  '/bug-tracking/external/issues/:id/prompt',
+  requireApiKey,
+  requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+
+      // Parse query params as options
+      const options: aiPromptService.AIPromptOptions = {
+        format:
+          (req.query.format as 'markdown' | 'plain' | 'json') || 'markdown',
+        includeComments: req.query.includeComments === 'true',
+        includeErrorLogs: req.query.includeErrorLogs !== 'false',
+        includeRelatedIssues: req.query.includeRelatedIssues === 'true',
+        maxErrorLogs: req.query.maxErrorLogs
+          ? Number(req.query.maxErrorLogs)
+          : 10,
+        customInstructions: req.query.customInstructions as string | undefined,
+      };
+
+      // Run with the API key's tenant context
+      const prompt = await runWithTenantContext(
+        {
+          tenantId: req.apiKey!.tenantId,
+          tenantSlug: '',
+          tenantPlan: 'STARTER',
+        },
+        async () => {
+          return aiPromptService.generateAIPrompt(issueId, options);
+        },
+      );
+
+      res.json(prompt);
+    } catch (error) {
+      if ((error as Error).message === 'Issue not found') {
+        return res.status(404).json({ error: 'Issue not found' });
+      }
+      console.error('Error generating AI prompt (external):', error);
+      res.status(500).json({ error: 'Failed to generate AI prompt' });
+    }
+  },
+);
+
+// GET /bug-tracking/external/issues - List issues via API key
+router.get(
+  '/bug-tracking/external/issues',
+  requireApiKey,
+  requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const filters = {
+        status: req.query.status as IssueStatus | IssueStatus[] | undefined,
+        priority: req.query.priority as
+          | IssuePriority
+          | IssuePriority[]
+          | undefined,
+        type: req.query.type as IssueType | IssueType[] | undefined,
+        search: req.query.search as string | undefined,
+        includeClosed: req.query.includeClosed === 'true',
+      };
+
+      const pagination = {
+        page: req.query.page ? Number(req.query.page) : 1,
+        limit: req.query.limit ? Math.min(Number(req.query.limit), 50) : 20,
+        sortBy:
+          (req.query.sortBy as 'createdAt' | 'updatedAt' | 'priority') ||
+          'createdAt',
+        sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',
+      };
+
+      // Run with the API key's tenant context
+      const result = await runWithTenantContext(
+        {
+          tenantId: req.apiKey!.tenantId,
+          tenantSlug: '',
+          tenantPlan: 'STARTER',
+        },
+        async () => {
+          return bugService.listIssues(filters, pagination);
+        },
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error listing issues (external):', error);
+      res.status(500).json({ error: 'Failed to list issues' });
+    }
+  },
+);
+
+// GET /bug-tracking/external/issues/:id - Get single issue via API key
+router.get(
+  '/bug-tracking/external/issues/:id',
+  requireApiKey,
+  requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+
+      // Run with the API key's tenant context
+      const issue = await runWithTenantContext(
+        {
+          tenantId: req.apiKey!.tenantId,
+          tenantSlug: '',
+          tenantPlan: 'STARTER',
+        },
+        async () => {
+          return bugService.getIssueById(issueId);
+        },
+      );
+
+      if (!issue) {
+        return res.status(404).json({ error: 'Issue not found' });
+      }
+
+      res.json(issue);
+    } catch (error) {
+      console.error('Error getting issue (external):', error);
+      res.status(500).json({ error: 'Failed to get issue' });
+    }
+  },
+);
+
+// POST /bug-tracking/external/issues/:id/status - Update issue status via API key
+router.post(
+  '/bug-tracking/external/issues/:id/status',
+  requireApiKey,
+  requirePermission(apiKeyService.PERMISSIONS.ISSUES_WRITE),
+  async (req: ApiKeyRequest, res: Response) => {
+    try {
+      const issueId = Number(req.params.id);
+      const { status } = req.body as { status?: IssueStatus };
+
+      if (!status || !Object.values(IssueStatus).includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+      }
+
+      // Run with the API key's tenant context
+      const issue = await runWithTenantContext(
+        {
+          tenantId: req.apiKey!.tenantId,
+          tenantSlug: '',
+          tenantPlan: 'STARTER',
+        },
+        async () => {
+          return bugService.changeIssueStatus(issueId, status);
+        },
+      );
+
+      res.json(issue);
+    } catch (error) {
+      if ((error as Error).message === 'Issue not found') {
+        return res.status(404).json({ error: 'Issue not found' });
+      }
+      console.error('Error updating issue status (external):', error);
+      res.status(500).json({ error: 'Failed to update issue status' });
+    }
+  },
+);
+
 export default router;
