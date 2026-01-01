@@ -45,8 +45,8 @@ export interface UpdateAccountCTAInput {
   title?: string;
   description?: string;
   reason?: string;
-  dueDate?: Date;
-  snoozeUntil?: Date;
+  dueDate?: Date | null;
+  snoozeUntil?: Date | null;
   resolutionNotes?: string;
   outcome?: string;
   ownerId?: number;

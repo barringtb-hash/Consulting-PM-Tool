@@ -343,7 +343,7 @@ async function calculateEngagementScoreFromAccountData(
     where: {
       accountId,
       createdAt: { gte: thirtyDaysAgo },
-      activityType: { in: ['MEETING', 'CALL', 'EMAIL'] },
+      type: { in: ['MEETING', 'CALL', 'EMAIL'] },
     },
   });
 
@@ -369,7 +369,7 @@ async function calculateSupportScoreFromAccountData(
     where: {
       accountId,
       createdAt: { gte: thirtyDaysAgo },
-      activityType: 'NOTE',
+      type: 'NOTE',
     },
   });
 
@@ -394,7 +394,7 @@ async function calculateSentimentScoreFromAccountData(
     },
     select: {
       stage: {
-        select: { stageType: true },
+        select: { type: true },
       },
     },
     orderBy: { actualCloseDate: 'desc' },
@@ -403,11 +403,9 @@ async function calculateSentimentScoreFromAccountData(
 
   if (opportunities.length === 0) return 50; // Neutral if no data
 
-  const wonCount = opportunities.filter(
-    (o) => o.stage?.stageType === 'WON',
-  ).length;
+  const wonCount = opportunities.filter((o) => o.stage?.type === 'WON').length;
   const _lostCount = opportunities.filter(
-    (o) => o.stage?.stageType === 'LOST',
+    (o) => o.stage?.type === 'LOST',
   ).length;
 
   const winRate = wonCount / opportunities.length;

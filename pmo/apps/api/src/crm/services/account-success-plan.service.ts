@@ -31,8 +31,8 @@ export interface UpdateAccountSuccessPlanInput {
   name?: string;
   description?: string;
   status?: SuccessPlanStatus;
-  startDate?: Date;
-  targetDate?: Date;
+  startDate?: Date | null;
+  targetDate?: Date | null;
   customerGoals?: Prisma.InputJsonValue;
   isCustomerVisible?: boolean;
   customerNotes?: string;
@@ -51,7 +51,7 @@ export interface UpdateObjectiveInput {
   title?: string;
   description?: string;
   status?: ObjectiveStatus;
-  dueDate?: Date;
+  dueDate?: Date | null;
   successCriteria?: string;
   progressPercent?: number;
 }

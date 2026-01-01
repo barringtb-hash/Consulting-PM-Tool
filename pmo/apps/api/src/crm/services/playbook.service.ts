@@ -29,8 +29,8 @@ export interface UpdatePlaybookInput {
   name?: string;
   description?: string;
   status?: PlaybookStatus;
-  ctaType?: CTAType;
-  category?: string;
+  ctaType?: CTAType | null;
+  category?: string | null;
 }
 
 export interface PlaybookWithTasks {
