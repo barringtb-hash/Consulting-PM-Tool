@@ -756,6 +756,12 @@ function AccountDetailPage(): JSX.Element {
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500" />
                   </div>
+                ) : ctasQuery.error ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <p className="text-red-500 text-sm">
+                      Failed to load CTAs. Please try again.
+                    </p>
+                  </div>
                 ) : ctas.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full mb-3">
@@ -844,6 +850,12 @@ function AccountDetailPage(): JSX.Element {
                 {successPlansQuery.isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" />
+                  </div>
+                ) : successPlansQuery.error ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <p className="text-red-500 text-sm">
+                      Failed to load Success Plans. Please try again.
+                    </p>
                   </div>
                 ) : successPlans.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
