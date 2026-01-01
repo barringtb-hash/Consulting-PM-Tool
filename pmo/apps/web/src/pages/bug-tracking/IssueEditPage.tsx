@@ -189,7 +189,9 @@ export default function IssueEditPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-6">
           {/* Title */}
           <Card className="p-6">
-            <h2 className="text-lg font-medium mb-4">Basic Information</h2>
+            <h2 className="text-lg font-medium mb-4 dark:text-white">
+              Basic Information
+            </h2>
             <div className="space-y-4">
               <div>
                 <label
@@ -231,7 +233,9 @@ export default function IssueEditPage() {
 
           {/* Type, Priority, Status */}
           <Card className="p-6">
-            <h2 className="text-lg font-medium mb-4">Classification</h2>
+            <h2 className="text-lg font-medium mb-4 dark:text-white">
+              Classification
+            </h2>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label
@@ -298,7 +302,9 @@ export default function IssueEditPage() {
           {/* Labels */}
           {labels && labels.length > 0 && (
             <Card className="p-6">
-              <h2 className="text-lg font-medium mb-4">Labels</h2>
+              <h2 className="text-lg font-medium mb-4 dark:text-white">
+                Labels
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {labels.map((label) => (
                   <button

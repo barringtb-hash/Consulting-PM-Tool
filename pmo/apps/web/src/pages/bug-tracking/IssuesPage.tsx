@@ -39,10 +39,23 @@ const STATUS_CONFIG: Record<
 // Priority badge colors
 const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> =
   {
-    LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
-    MEDIUM: { label: 'Medium', color: 'bg-blue-100 text-blue-700' },
-    HIGH: { label: 'High', color: 'bg-orange-100 text-orange-700' },
-    CRITICAL: { label: 'Critical', color: 'bg-red-100 text-red-700' },
+    LOW: {
+      label: 'Low',
+      color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    },
+    MEDIUM: {
+      label: 'Medium',
+      color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+    },
+    HIGH: {
+      label: 'High',
+      color:
+        'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
+    },
+    CRITICAL: {
+      label: 'Critical',
+      color: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
+    },
   };
 
 // Type icons
@@ -69,18 +82,20 @@ function IssueRow({ issue }: { issue: Issue }) {
 
   return (
     <tr
-      className="hover:bg-gray-50 cursor-pointer"
+      className="hover:bg-gray-50 dark:hover:bg-neutral-800 cursor-pointer"
       onClick={() => navigate(`/bug-tracking/${issue.id}`)}
     >
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {TYPE_CONFIG[issue.type]?.icon}
-          <span className="text-sm text-gray-500">#{issue.id}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            #{issue.id}
+          </span>
         </div>
       </td>
       <td className="px-4 py-3">
         <div className="flex flex-col gap-1">
-          <span className="font-medium text-gray-900 line-clamp-1">
+          <span className="font-medium text-gray-900 dark:text-white line-clamp-1">
             {issue.title}
           </span>
           <div className="flex items-center gap-2 flex-wrap">
@@ -112,24 +127,43 @@ function IssueRow({ issue }: { issue: Issue }) {
         </span>
       </td>
       <td className="px-4 py-3">
+        <div className="flex flex-col gap-1">
+          {issue.tenant && (
+            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+              {issue.tenant.name}
+            </span>
+          )}
+          {issue.module && (
+            <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded">
+              {issue.module}
+            </span>
+          )}
+          {!issue.tenant && !issue.module && (
+            <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+          )}
+        </div>
+      </td>
+      <td className="px-4 py-3">
         {issue.assignedTo ? (
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+            <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-xs font-medium dark:text-white">
               {issue.assignedTo.name.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
               {issue.assignedTo.name}
             </span>
           </div>
         ) : (
-          <span className="text-sm text-gray-400">Unassigned</span>
+          <span className="text-sm text-gray-400 dark:text-gray-500">
+            Unassigned
+          </span>
         )}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500">
+      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
         {new Date(issue.createdAt).toLocaleDateString()}
       </td>
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           {issue._count.comments > 0 && (
             <span className="flex items-center gap-1">
               <span>💬</span>
@@ -153,6 +187,7 @@ export default function IssuesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<IssuePriority[]>([]);
+  const [showClosed, setShowClosed] = useState(false);
   const [page, setPage] = useState(1);
 
   const { data: issuesData, isLoading } = useIssues({
@@ -161,6 +196,7 @@ export default function IssuesPage() {
     search: search || undefined,
     status: statusFilter.length > 0 ? statusFilter : undefined,
     priority: priorityFilter.length > 0 ? priorityFilter : undefined,
+    includeClosed: showClosed,
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
@@ -199,8 +235,12 @@ export default function IssuesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Open Issues</p>
-                  <p className="text-2xl font-semibold">{stats.openCount}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Open Issues
+                  </p>
+                  <p className="text-2xl font-semibold dark:text-white">
+                    {stats.openCount}
+                  </p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-red-500 opacity-50" />
               </div>
@@ -208,8 +248,12 @@ export default function IssuesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Created Today</p>
-                  <p className="text-2xl font-semibold">{stats.createdToday}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Created Today
+                  </p>
+                  <p className="text-2xl font-semibold dark:text-white">
+                    {stats.createdToday}
+                  </p>
                 </div>
                 <Plus className="h-8 w-8 text-blue-500 opacity-50" />
               </div>
@@ -217,8 +261,10 @@ export default function IssuesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Resolved Today</p>
-                  <p className="text-2xl font-semibold">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Resolved Today
+                  </p>
+                  <p className="text-2xl font-semibold dark:text-white">
                     {stats.resolvedToday}
                   </p>
                 </div>
@@ -228,8 +274,10 @@ export default function IssuesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Avg Resolution</p>
-                  <p className="text-2xl font-semibold">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Avg Resolution
+                  </p>
+                  <p className="text-2xl font-semibold dark:text-white">
                     {stats.avgResolutionTimeHours
                       ? `${stats.avgResolutionTimeHours}h`
                       : 'N/A'}
@@ -246,7 +294,7 @@ export default function IssuesPage() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
                 <Input
                   placeholder="Search issues..."
                   value={search}
@@ -257,11 +305,11 @@ export default function IssuesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
+              <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
 
               {/* Status filter */}
               <select
-                className="border rounded px-3 py-1.5 text-sm"
+                className="border rounded px-3 py-1.5 text-sm bg-white dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
                 value={statusFilter.length === 1 ? statusFilter[0] : ''}
                 onChange={(e) =>
                   setStatusFilter(
@@ -279,7 +327,7 @@ export default function IssuesPage() {
 
               {/* Priority filter */}
               <select
-                className="border rounded px-3 py-1.5 text-sm"
+                className="border rounded px-3 py-1.5 text-sm bg-white dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
                 value={priorityFilter.length === 1 ? priorityFilter[0] : ''}
                 onChange={(e) =>
                   setPriorityFilter(
@@ -294,6 +342,17 @@ export default function IssuesPage() {
                   </option>
                 ))}
               </select>
+
+              {/* Show Closed toggle */}
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showClosed}
+                  onChange={(e) => setShowClosed(e.target.checked)}
+                  className="rounded border-gray-300 dark:border-neutral-600 dark:bg-neutral-700"
+                />
+                Show Closed
+              </label>
             </div>
           </div>
         </Card>
@@ -302,37 +361,40 @@ export default function IssuesPage() {
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-gray-50 dark:bg-neutral-800 border-b dark:border-neutral-700">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Type
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Title
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Priority
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Tenant / Module
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Assignee
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Created
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Activity
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y dark:divide-neutral-700">
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={7}
-                      className="px-4 py-8 text-center text-gray-500"
+                      colSpan={8}
+                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                     >
                       Loading issues...
                     </td>
@@ -340,13 +402,13 @@ export default function IssuesPage() {
                 ) : issues.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
-                      className="px-4 py-8 text-center text-gray-500"
+                      colSpan={8}
+                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                     >
                       No issues found.{' '}
                       <Link
                         to="/bug-tracking/new"
-                        className="text-blue-600 hover:underline"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         Create one
                       </Link>
@@ -363,8 +425,8 @@ export default function IssuesPage() {
 
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t">
-              <div className="text-sm text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t dark:border-neutral-700">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
                 {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
                 of {pagination.total} issues
@@ -378,7 +440,7 @@ export default function IssuesPage() {
                 >
                   Previous
                 </Button>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button

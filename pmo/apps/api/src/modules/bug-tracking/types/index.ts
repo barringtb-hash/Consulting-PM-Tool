@@ -28,6 +28,7 @@ export interface CreateIssueInput {
   environment?: string;
   appVersion?: string;
   url?: string;
+  module?: string; // Module where error occurred (e.g., chatbot, crm, finance)
   customFields?: Record<string, unknown>;
 }
 
@@ -54,10 +55,12 @@ export interface IssueFilters {
   reportedById?: number;
   projectId?: number;
   accountId?: number;
+  module?: string; // Filter by module
   labelIds?: number[];
   search?: string;
   createdAfter?: Date;
   createdBefore?: Date;
+  includeClosed?: boolean; // Include CLOSED and WONT_FIX issues (default: false)
 }
 
 export interface PaginationOptions {
@@ -111,6 +114,8 @@ export interface ClientErrorInput {
   };
   sessionId?: string;
   userId?: number;
+  tenantId?: string; // Tenant where error occurred
+  module?: string; // Module where error occurred (e.g., chatbot, crm, finance)
   environment?: string;
   appVersion?: string;
 }
@@ -124,6 +129,8 @@ export interface ServerErrorInput {
   method?: string;
   statusCode?: number;
   requestId?: string;
+  tenantId?: string; // Tenant where error occurred
+  module?: string; // Module where error occurred (e.g., chatbot, crm, finance)
   environment?: string;
   appVersion?: string;
   serverInfo?: {
