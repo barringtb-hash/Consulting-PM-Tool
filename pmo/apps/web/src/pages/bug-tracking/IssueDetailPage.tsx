@@ -320,7 +320,7 @@ export default function IssueDetailPage() {
                     >
                       <div className="font-medium">Quick Prompt</div>
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        Issue details + stack trace + suggested files
+                        Issue details + stack trace (minimal context)
                       </div>
                     </button>
                     <button
@@ -329,7 +329,7 @@ export default function IssueDetailPage() {
                     >
                       <div className="font-medium">Full Context</div>
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        + Comments, error logs, environment info
+                        + Comments, 5 error logs, environment info
                       </div>
                     </button>
                     <button
@@ -340,7 +340,7 @@ export default function IssueDetailPage() {
                         Comprehensive (Recommended)
                       </div>
                       <div className="text-gray-500 dark:text-gray-400 text-xs">
-                        All context + 10 error logs + reporter info
+                        All context + 10 error logs for deep analysis
                       </div>
                     </button>
                     <div className="border-t dark:border-neutral-700 my-1" />

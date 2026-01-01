@@ -32,7 +32,7 @@ export const bugTrackingTools: ToolDefinition[] = [
   {
     name: 'create_bug_report',
     description:
-      'Create a new bug report or issue in the bug tracking system. Use this when a user reports a bug, issue, or problem with the application. The report will be automatically assigned to the current user. IMPORTANT: Always ask the user for steps to reproduce, expected behavior, and actual behavior if not provided.',
+      'Create a new bug report or issue in the bug tracking system. Use this when a user reports a bug, issue, or problem with the application. The report will be automatically marked as reported by the current user. Use the assignToSelf parameter to also assign the issue to them. IMPORTANT: Always ask the user for steps to reproduce, expected behavior, and actual behavior if not provided.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -49,7 +49,7 @@ export const bugTrackingTools: ToolDefinition[] = [
         stepsToReproduce: {
           type: 'string',
           description:
-            'Numbered steps to reproduce the issue (e.g., "1. Go to Settings\\n2. Click Users\\n3. Change role"). Ask user if not provided.',
+            'Numbered steps to reproduce the issue (e.g., "1. Go to Settings\\n2. Click Users\\n3. Change role"). Ask the user if not provided.',
         },
         expectedBehavior: {
           type: 'string',

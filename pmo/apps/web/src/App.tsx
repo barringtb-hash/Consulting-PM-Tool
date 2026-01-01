@@ -256,6 +256,9 @@ const BugTrackingIssuesPage = lazy(
 const BugTrackingIssueDetailPage = lazy(
   () => import('./pages/bug-tracking/IssueDetailPage'),
 );
+const BugTrackingIssueEditPage = lazy(
+  () => import('./pages/bug-tracking/IssueEditPage'),
+);
 
 /**
  * Loading fallback for lazy-loaded pages
@@ -1035,6 +1038,14 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <BugTrackingIssueDetailPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
+                  path="/bug-tracking/:id/edit"
+                  element={
+                    <LazyPage>
+                      <BugTrackingIssueEditPage />
                     </LazyPage>
                   }
                 />
