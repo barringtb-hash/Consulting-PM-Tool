@@ -8,6 +8,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Key,
 } from 'lucide-react';
 import { Button, Input, Badge, Card } from '../../ui';
 import { PageHeader } from '../../ui/PageHeader';
@@ -214,6 +215,13 @@ export default function IssuesPage() {
         icon={Bug}
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/bug-tracking/api-keys')}
+            >
+              <Key className="h-4 w-4 mr-1" />
+              API Keys
+            </Button>
             <Button
               variant="outline"
               onClick={() => navigate('/bug-tracking/errors')}
