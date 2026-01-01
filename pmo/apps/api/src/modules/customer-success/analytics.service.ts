@@ -398,7 +398,11 @@ export async function getCSMPerformanceMetrics(): Promise<
   for (const user of users) {
     const userSuccessPlans = successPlansByOwner.get(user.id) ?? [];
     const uniqueClientIds = [
-      ...new Set(userSuccessPlans.map((sp) => sp.clientId)),
+      ...new Set(
+        userSuccessPlans
+          .map((sp) => sp.clientId)
+          .filter((id): id is number => id !== null),
+      ),
     ];
 
     // Calculate avg health score from pre-fetched data
