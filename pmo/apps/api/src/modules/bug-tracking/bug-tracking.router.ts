@@ -1303,6 +1303,49 @@ router.get(
 // using API keys instead of session-based authentication.
 // ============================================================================
 
+/**
+ * Parse a query parameter as a positive integer with bounds checking
+ */
+function parsePositiveInt(
+  value: unknown,
+  defaultValue: number,
+  max?: number,
+): number {
+  if (typeof value !== 'string') {
+    return defaultValue;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return defaultValue;
+  }
+  if (typeof max === 'number') {
+    return Math.min(parsed, max);
+  }
+  return parsed;
+}
+
+/**
+ * Validate that a value is a valid positive integer issue ID
+ */
+function isValidIssueId(value: number): boolean {
+  return Number.isInteger(value) && value > 0;
+}
+
+/**
+ * Build tenant context from API key, fetching actual tenant info if needed
+ * For now, tenantSlug and tenantPlan are set to safe defaults since the
+ * bug tracking service only needs tenantId for row-level filtering.
+ */
+function buildApiKeyTenantContext(apiKey: { tenantId: string }) {
+  return {
+    tenantId: apiKey.tenantId,
+    // These are safe defaults - the services use tenantId for filtering
+    // Plan-gated features would need to fetch actual tenant data
+    tenantSlug: '',
+    tenantPlan: 'STARTER' as const,
+  };
+}
+
 // GET /bug-tracking/external/issues/:id/prompt - Get AI prompt via API key
 router.get(
   '/bug-tracking/external/issues/:id/prompt',
@@ -1312,30 +1355,28 @@ router.get(
     try {
       const issueId = Number(req.params.id);
 
-      // Parse query params as options
+      if (!isValidIssueId(issueId)) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
+
+      // Parse and validate query params
+      const maxErrorLogs = parsePositiveInt(req.query.maxErrorLogs, 10, 50);
+
       const options: aiPromptService.AIPromptOptions = {
         format:
           (req.query.format as 'markdown' | 'plain' | 'json') || 'markdown',
         includeComments: req.query.includeComments === 'true',
         includeErrorLogs: req.query.includeErrorLogs !== 'false',
         includeRelatedIssues: req.query.includeRelatedIssues === 'true',
-        maxErrorLogs: req.query.maxErrorLogs
-          ? Number(req.query.maxErrorLogs)
-          : 10,
+        maxErrorLogs,
         customInstructions: req.query.customInstructions as string | undefined,
       };
 
       // Run with the API key's tenant context
-      const prompt = await runWithTenantContext(
-        {
-          tenantId: req.apiKey!.tenantId,
-          tenantSlug: '',
-          tenantPlan: 'STARTER',
-        },
-        async () => {
-          return aiPromptService.generateAIPrompt(issueId, options);
-        },
-      );
+      const tenantContext = buildApiKeyTenantContext(req.apiKey!);
+      const prompt = await runWithTenantContext(tenantContext, async () => {
+        return aiPromptService.generateAIPrompt(issueId, options);
+      });
 
       res.json(prompt);
     } catch (error) {
@@ -1366,9 +1407,13 @@ router.get(
         includeClosed: req.query.includeClosed === 'true',
       };
 
+      // Parse and validate pagination params
+      const page = parsePositiveInt(req.query.page, 1);
+      const limit = parsePositiveInt(req.query.limit, 20, 50);
+
       const pagination = {
-        page: req.query.page ? Number(req.query.page) : 1,
-        limit: req.query.limit ? Math.min(Number(req.query.limit), 50) : 20,
+        page,
+        limit,
         sortBy:
           (req.query.sortBy as 'createdAt' | 'updatedAt' | 'priority') ||
           'createdAt',
@@ -1376,16 +1421,10 @@ router.get(
       };
 
       // Run with the API key's tenant context
-      const result = await runWithTenantContext(
-        {
-          tenantId: req.apiKey!.tenantId,
-          tenantSlug: '',
-          tenantPlan: 'STARTER',
-        },
-        async () => {
-          return bugService.listIssues(filters, pagination);
-        },
-      );
+      const tenantContext = buildApiKeyTenantContext(req.apiKey!);
+      const result = await runWithTenantContext(tenantContext, async () => {
+        return bugService.listIssues(filters, pagination);
+      });
 
       res.json(result);
     } catch (error) {
@@ -1404,17 +1443,15 @@ router.get(
     try {
       const issueId = Number(req.params.id);
 
+      if (!isValidIssueId(issueId)) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
+
       // Run with the API key's tenant context
-      const issue = await runWithTenantContext(
-        {
-          tenantId: req.apiKey!.tenantId,
-          tenantSlug: '',
-          tenantPlan: 'STARTER',
-        },
-        async () => {
-          return bugService.getIssueById(issueId);
-        },
-      );
+      const tenantContext = buildApiKeyTenantContext(req.apiKey!);
+      const issue = await runWithTenantContext(tenantContext, async () => {
+        return bugService.getIssueById(issueId);
+      });
 
       if (!issue) {
         return res.status(404).json({ error: 'Issue not found' });
@@ -1436,6 +1473,11 @@ router.post(
   async (req: ApiKeyRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+
+      if (!isValidIssueId(issueId)) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
+
       const { status } = req.body as { status?: IssueStatus };
 
       if (!status || !Object.values(IssueStatus).includes(status)) {
@@ -1443,16 +1485,10 @@ router.post(
       }
 
       // Run with the API key's tenant context
-      const issue = await runWithTenantContext(
-        {
-          tenantId: req.apiKey!.tenantId,
-          tenantSlug: '',
-          tenantPlan: 'STARTER',
-        },
-        async () => {
-          return bugService.changeIssueStatus(issueId, status);
-        },
-      );
+      const tenantContext = buildApiKeyTenantContext(req.apiKey!);
+      const issue = await runWithTenantContext(tenantContext, async () => {
+        return bugService.changeIssueStatus(issueId, status);
+      });
 
       res.json(issue);
     } catch (error) {
