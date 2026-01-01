@@ -20,6 +20,9 @@ import {
   Edit2,
   Archive,
   RefreshCw,
+  AlertTriangle,
+  Clock,
+  Target,
 } from 'lucide-react';
 
 import {
@@ -28,6 +31,8 @@ import {
   useArchiveAccount,
   useRestoreAccount,
   useOpportunities,
+  useAccountCTAs,
+  useAccountSuccessPlans,
   type AccountType,
   type AccountUpdatePayload,
 } from '../../api/hooks/crm';
@@ -154,6 +159,22 @@ function AccountDetailPage(): JSX.Element {
     accountId ? { accountId, limit: 5 } : undefined,
   );
 
+  // Fetch CTAs (Customer Success feature)
+  const ctasQuery = useAccountCTAs(accountId, {
+    status: ['OPEN', 'IN_PROGRESS'],
+    sortBy: 'dueDate',
+    sortOrder: 'asc',
+    limit: 5,
+  });
+
+  // Fetch Success Plans (Customer Success feature)
+  const successPlansQuery = useAccountSuccessPlans(accountId, {
+    status: ['ACTIVE', 'DRAFT'],
+    sortBy: 'targetDate',
+    sortOrder: 'asc',
+    limit: 5,
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<AccountUpdatePayload>>({});
 
@@ -201,6 +222,8 @@ function AccountDetailPage(): JSX.Element {
 
   const account = accountQuery.data!;
   const opportunities = opportunitiesQuery.data?.data ?? [];
+  const ctas = ctasQuery.data ?? [];
+  const successPlans = successPlansQuery.data ?? [];
 
   const handleStartEdit = () => {
     setEditForm({
@@ -626,6 +649,135 @@ function AccountDetailPage(): JSX.Element {
                           </div>
                         </div>
                       </Link>
+                    ))}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* CTAs - Customer Success */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    Calls to Action
+                  </CardTitle>
+                  <Button variant="secondary" size="sm">
+                    New CTA
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardBody>
+                {ctasQuery.isLoading ? (
+                  <p className="text-gray-500">Loading CTAs...</p>
+                ) : ctas.length === 0 ? (
+                  <p className="text-gray-500">No open CTAs</p>
+                ) : (
+                  <div className="space-y-3">
+                    {ctas.map((cta) => (
+                      <div
+                        key={cta.id}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="font-medium">{cta.title}</div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              {cta.type.replace('_', ' ')} • {cta.status}
+                            </div>
+                          </div>
+                          <Badge
+                            variant={
+                              cta.priority === 'CRITICAL'
+                                ? 'destructive'
+                                : cta.priority === 'HIGH'
+                                  ? 'warning'
+                                  : 'default'
+                            }
+                          >
+                            {cta.priority}
+                          </Badge>
+                        </div>
+                        {cta.dueDate && (
+                          <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
+                            <Clock className="h-3 w-3" />
+                            Due: {formatDate(cta.dueDate)}
+                            {new Date(cta.dueDate) < new Date() && (
+                              <Badge variant="destructive" className="ml-2">
+                                Overdue
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Success Plans - Customer Success */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-green-500" />
+                    Success Plans
+                  </CardTitle>
+                  <Button variant="secondary" size="sm">
+                    New Plan
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardBody>
+                {successPlansQuery.isLoading ? (
+                  <p className="text-gray-500">Loading success plans...</p>
+                ) : successPlans.length === 0 ? (
+                  <p className="text-gray-500">No active success plans</p>
+                ) : (
+                  <div className="space-y-3">
+                    {successPlans.map((plan) => (
+                      <div
+                        key={plan.id}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="font-medium">{plan.name}</div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              {plan.status}
+                              {plan.targetDate &&
+                                ` • Target: ${formatDate(plan.targetDate)}`}
+                            </div>
+                          </div>
+                          <Badge
+                            variant={
+                              plan.status === 'ACTIVE'
+                                ? 'success'
+                                : plan.status === 'DRAFT'
+                                  ? 'default'
+                                  : 'warning'
+                            }
+                          >
+                            {plan.status}
+                          </Badge>
+                        </div>
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <span className="text-gray-500">Progress</span>
+                            <span className="font-medium">
+                              {plan.progressPercent}%
+                            </span>
+                          </div>
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-green-500 rounded-full transition-all"
+                              style={{ width: `${plan.progressPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
