@@ -683,7 +683,7 @@ export async function getSuccessPlanSummary(ownerId?: number): Promise<{
     planName: obj.successPlan.name,
     objectiveTitle: obj.title,
     dueDate: obj.dueDate!,
-    clientName: obj.successPlan.client.name,
+    clientName: obj.successPlan.client?.name ?? 'Unknown',
   }));
 
   return {

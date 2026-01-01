@@ -730,12 +730,12 @@ export type ObjectiveStatus =
   | 'COMPLETED'
   | 'BLOCKED';
 export type TaskStatus =
+  | 'NOT_STARTED'
   | 'BACKLOG'
-  | 'TODO'
   | 'IN_PROGRESS'
   | 'BLOCKED'
   | 'DONE';
-export type TaskPriority = 'P0' | 'P1' | 'P2' | 'P3';
+export type TaskPriority = 'P0' | 'P1' | 'P2';
 
 export interface CustomerGoal {
   goal: string;

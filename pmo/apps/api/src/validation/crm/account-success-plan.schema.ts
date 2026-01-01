@@ -81,13 +81,13 @@ export const updateObjectiveSchema = z.object({
 export const createTaskSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
-  priority: z.enum(['P0', 'P1', 'P2', 'P3']).optional().default('P1'),
+  priority: z.enum(['P0', 'P1', 'P2']).optional().default('P1'),
   dueDate: z.coerce.date().optional(),
   ownerId: z.number().int().positive().optional(),
 });
 
 export const updateTaskStatusSchema = z.object({
-  status: z.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE']),
+  status: z.enum(['NOT_STARTED', 'BACKLOG', 'IN_PROGRESS', 'BLOCKED', 'DONE']),
 });
 
 export type CreateSuccessPlanInput = z.infer<typeof createSuccessPlanSchema>;
