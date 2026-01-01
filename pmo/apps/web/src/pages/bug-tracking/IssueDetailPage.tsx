@@ -57,10 +57,23 @@ const STATUS_CONFIG: Record<
 // Priority badge colors
 const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> =
   {
-    LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
-    MEDIUM: { label: 'Medium', color: 'bg-blue-100 text-blue-700' },
-    HIGH: { label: 'High', color: 'bg-orange-100 text-orange-700' },
-    CRITICAL: { label: 'Critical', color: 'bg-red-100 text-red-700' },
+    LOW: {
+      label: 'Low',
+      color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    },
+    MEDIUM: {
+      label: 'Medium',
+      color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+    },
+    HIGH: {
+      label: 'High',
+      color:
+        'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
+    },
+    CRITICAL: {
+      label: 'Critical',
+      color: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
+    },
   };
 
 // Type icons
@@ -225,7 +238,9 @@ export default function IssueDetailPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading issue...</div>
+          <div className="text-gray-500 dark:text-gray-400">
+            Loading issue...
+          </div>
         </div>
       </div>
     );
@@ -235,7 +250,9 @@ export default function IssueDetailPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="text-gray-500">Issue not found</div>
+          <div className="text-gray-500 dark:text-gray-400">
+            Issue not found
+          </div>
           <Button variant="outline" onClick={() => navigate('/bug-tracking')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Issues
@@ -377,20 +394,28 @@ export default function IssueDetailPage() {
           <div className="col-span-2 space-y-6">
             {/* Description */}
             <Card className="p-6">
-              <h2 className="text-lg font-medium mb-4">Description</h2>
+              <h2 className="text-lg font-medium mb-4 dark:text-white">
+                Description
+              </h2>
               {issue.description ? (
-                <div className="prose prose-sm max-w-none">
-                  <p className="whitespace-pre-wrap">{issue.description}</p>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <p className="whitespace-pre-wrap dark:text-gray-300">
+                    {issue.description}
+                  </p>
                 </div>
               ) : (
-                <p className="text-gray-400 italic">No description provided</p>
+                <p className="text-gray-400 dark:text-gray-500 italic">
+                  No description provided
+                </p>
               )}
             </Card>
 
             {/* Stack Trace (if exists) */}
             {issue.stackTrace && (
               <Card className="p-6">
-                <h2 className="text-lg font-medium mb-4">Stack Trace</h2>
+                <h2 className="text-lg font-medium mb-4 dark:text-white">
+                  Stack Trace
+                </h2>
                 <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm">
                   {issue.stackTrace}
                 </pre>
@@ -399,7 +424,7 @@ export default function IssueDetailPage() {
 
             {/* Attachments */}
             <Card className="p-6">
-              <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-medium mb-4 flex items-center gap-2 dark:text-white">
                 <Paperclip className="h-5 w-5" />
                 Attachments ({attachments?.length || 0})
               </h2>
@@ -408,8 +433,8 @@ export default function IssueDetailPage() {
               <div
                 className={`border-2 border-dashed rounded-lg p-6 mb-4 text-center transition-colors ${
                   isDragging
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-neutral-500'
                 }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -425,22 +450,24 @@ export default function IssueDetailPage() {
                     e.target.files && handleFileUpload(e.target.files)
                   }
                 />
-                <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600 mb-2">
+                <Upload className="h-8 w-8 mx-auto text-gray-400 dark:text-gray-500 mb-2" />
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                   Drag & drop screenshots or files here, or{' '}
                   <button
                     type="button"
-                    className="text-blue-600 hover:underline font-medium"
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     browse
                   </button>
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   Supported: Images, PDF, TXT, CSV, JSON (max 5MB each)
                 </p>
                 {uploadAttachments.isPending && (
-                  <p className="text-sm text-blue-600 mt-2">Uploading...</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+                    Uploading...
+                  </p>
                 )}
               </div>
 
@@ -450,10 +477,10 @@ export default function IssueDetailPage() {
                   {attachments.map((attachment) => (
                     <div
                       key={attachment.id}
-                      className="border rounded-lg p-3 flex items-start gap-3 group hover:bg-gray-50"
+                      className="border dark:border-neutral-700 rounded-lg p-3 flex items-start gap-3 group hover:bg-gray-50 dark:hover:bg-neutral-800"
                     >
                       {attachment.mimeType.startsWith('image/') ? (
-                        <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                        <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100 dark:bg-neutral-700">
                           <img
                             src={attachment.url}
                             alt={attachment.filename}
@@ -461,22 +488,22 @@ export default function IssueDetailPage() {
                           />
                         </div>
                       ) : (
-                        <div className="w-16 h-16 flex-shrink-0 rounded bg-gray-100 flex items-center justify-center">
+                        <div className="w-16 h-16 flex-shrink-0 rounded bg-gray-100 dark:bg-neutral-700 flex items-center justify-center">
                           {attachment.mimeType.includes('pdf') ? (
                             <FileText className="h-8 w-8 text-red-500" />
                           ) : (
-                            <FileText className="h-8 w-8 text-gray-400" />
+                            <FileText className="h-8 w-8 text-gray-400 dark:text-gray-500" />
                           )}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p
-                          className="text-sm font-medium text-gray-900 truncate"
+                          className="text-sm font-medium text-gray-900 dark:text-white truncate"
                           title={attachment.filename}
                         >
                           {attachment.filename}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {formatFileSize(attachment.size)} •{' '}
                           {new Date(attachment.createdAt).toLocaleDateString()}
                         </p>
@@ -486,7 +513,7 @@ export default function IssueDetailPage() {
                               href={attachment.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                             >
                               <Image className="h-3 w-3" />
                               View
@@ -497,7 +524,7 @@ export default function IssueDetailPage() {
                             onClick={() =>
                               handleDeleteAttachment(attachment.id)
                             }
-                            className="text-xs text-red-600 hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="h-3 w-3" />
                             Delete
@@ -508,7 +535,7 @@ export default function IssueDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400 text-center py-2">
+                <p className="text-gray-400 dark:text-gray-500 text-center py-2">
                   No attachments yet. Upload screenshots to provide visual
                   context for AI prompts.
                 </p>
@@ -517,20 +544,23 @@ export default function IssueDetailPage() {
 
             {/* Comments */}
             <Card className="p-6">
-              <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-medium mb-4 flex items-center gap-2 dark:text-white">
                 <MessageSquare className="h-5 w-5" />
                 Comments ({comments?.length || 0})
               </h2>
 
               <div className="space-y-4">
                 {comments?.map((comment) => (
-                  <div key={comment.id} className="border-b pb-4 last:border-0">
+                  <div
+                    key={comment.id}
+                    className="border-b dark:border-neutral-700 pb-4 last:border-0"
+                  >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                      <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-sm font-medium dark:text-white">
                         {comment.user?.name?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <div>
-                        <span className="font-medium">
+                        <span className="font-medium dark:text-white">
                           {comment.user?.name || 'System'}
                         </span>
                         {comment.isSystem && (
@@ -539,24 +569,24 @@ export default function IssueDetailPage() {
                           </Badge>
                         )}
                       </div>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         {new Date(comment.createdAt).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-gray-700 whitespace-pre-wrap pl-10">
+                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap pl-10">
                       {comment.content}
                     </p>
                   </div>
                 ))}
 
                 {(!comments || comments.length === 0) && (
-                  <p className="text-gray-400 text-center py-4">
+                  <p className="text-gray-400 dark:text-gray-500 text-center py-4">
                     No comments yet
                   </p>
                 )}
 
                 {/* Add Comment */}
-                <div className="flex gap-2 mt-4 pt-4 border-t">
+                <div className="flex gap-2 mt-4 pt-4 border-t dark:border-neutral-700">
                   <Input
                     placeholder="Add a comment..."
                     value={newComment}
@@ -581,16 +611,18 @@ export default function IssueDetailPage() {
           <div className="space-y-6">
             {/* Details */}
             <Card className="p-6">
-              <h3 className="font-medium mb-4">Details</h3>
+              <h3 className="font-medium mb-4 dark:text-white">Details</h3>
               <div className="space-y-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Status</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Status
+                  </span>
                   <select
                     value={issue.status}
                     onChange={(e) =>
                       handleStatusChange(e.target.value as IssueStatus)
                     }
-                    className="border rounded px-2 py-1 text-sm"
+                    className="border dark:border-neutral-700 rounded px-2 py-1 text-sm bg-white dark:bg-neutral-800 dark:text-white"
                   >
                     {Object.entries(STATUS_CONFIG).map(([key, config]) => (
                       <option key={key} value={key}>
@@ -601,15 +633,17 @@ export default function IssueDetailPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Type</span>
-                  <div className="flex items-center gap-1">
+                  <span className="text-gray-500 dark:text-gray-400">Type</span>
+                  <div className="flex items-center gap-1 dark:text-gray-300">
                     {TYPE_CONFIG[issue.type]?.icon}
                     <span>{TYPE_CONFIG[issue.type]?.label}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Priority</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Priority
+                  </span>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
                   >
@@ -618,16 +652,22 @@ export default function IssueDetailPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Source</span>
-                  <span className="text-gray-700">
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Source
+                  </span>
+                  <span className="text-gray-700 dark:text-gray-300">
                     {issue.source.replace('_', ' ')}
                   </span>
                 </div>
 
                 {issue.errorCount > 1 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Error Count</span>
-                    <span className="text-gray-700">{issue.errorCount}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Error Count
+                    </span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {issue.errorCount}
+                    </span>
                   </div>
                 )}
               </div>
@@ -635,33 +675,45 @@ export default function IssueDetailPage() {
 
             {/* People */}
             <Card className="p-6">
-              <h3 className="font-medium mb-4">People</h3>
+              <h3 className="font-medium mb-4 dark:text-white">People</h3>
               <div className="space-y-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Assignee</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Assignee
+                  </span>
                   {issue.assignedTo ? (
                     <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                      <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-xs font-medium dark:text-white">
                         {issue.assignedTo.name.charAt(0).toUpperCase()}
                       </div>
-                      <span>{issue.assignedTo.name}</span>
+                      <span className="dark:text-gray-300">
+                        {issue.assignedTo.name}
+                      </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400">Unassigned</span>
+                    <span className="text-gray-400 dark:text-gray-500">
+                      Unassigned
+                    </span>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Reporter</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Reporter
+                  </span>
                   {issue.reportedBy ? (
                     <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                      <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-xs font-medium dark:text-white">
                         {issue.reportedBy.name.charAt(0).toUpperCase()}
                       </div>
-                      <span>{issue.reportedBy.name}</span>
+                      <span className="dark:text-gray-300">
+                        {issue.reportedBy.name}
+                      </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400">System</span>
+                    <span className="text-gray-400 dark:text-gray-500">
+                      System
+                    </span>
                   )}
                 </div>
               </div>
@@ -669,20 +721,30 @@ export default function IssueDetailPage() {
 
             {/* Dates */}
             <Card className="p-6">
-              <h3 className="font-medium mb-4">Dates</h3>
+              <h3 className="font-medium mb-4 dark:text-white">Dates</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Created</span>
-                  <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Created
+                  </span>
+                  <span className="dark:text-gray-300">
+                    {new Date(issue.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Updated</span>
-                  <span>{new Date(issue.updatedAt).toLocaleDateString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Updated
+                  </span>
+                  <span className="dark:text-gray-300">
+                    {new Date(issue.updatedAt).toLocaleDateString()}
+                  </span>
                 </div>
                 {issue.resolvedAt && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Resolved</span>
-                    <span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Resolved
+                    </span>
+                    <span className="dark:text-gray-300">
                       {new Date(issue.resolvedAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -693,14 +755,16 @@ export default function IssueDetailPage() {
             {/* Links */}
             {(issue.project || issue.account || issue.url) && (
               <Card className="p-6">
-                <h3 className="font-medium mb-4">Links</h3>
+                <h3 className="font-medium mb-4 dark:text-white">Links</h3>
                 <div className="space-y-3 text-sm">
                   {issue.project && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Project</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Project
+                      </span>
                       <Link
                         to={`/projects/${issue.project.id}`}
-                        className="text-blue-600 hover:underline flex items-center gap-1"
+                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                       >
                         {issue.project.name}
                         <ExternalLink className="h-3 w-3" />
@@ -709,10 +773,12 @@ export default function IssueDetailPage() {
                   )}
                   {issue.account && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Account</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Account
+                      </span>
                       <Link
                         to={`/crm/accounts/${issue.account.id}`}
-                        className="text-blue-600 hover:underline flex items-center gap-1"
+                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                       >
                         {issue.account.name}
                         <ExternalLink className="h-3 w-3" />
@@ -721,12 +787,14 @@ export default function IssueDetailPage() {
                   )}
                   {issue.url && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500">URL</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        URL
+                      </span>
                       <a
                         href={issue.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline flex items-center gap-1 truncate max-w-[150px]"
+                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 truncate max-w-[150px]"
                       >
                         {(() => {
                           try {
@@ -746,24 +814,36 @@ export default function IssueDetailPage() {
             {/* Environment Info */}
             {(issue.environment || issue.appVersion || issue.browserInfo) && (
               <Card className="p-6">
-                <h3 className="font-medium mb-4">Environment</h3>
+                <h3 className="font-medium mb-4 dark:text-white">
+                  Environment
+                </h3>
                 <div className="space-y-3 text-sm">
                   {issue.environment && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Environment</span>
-                      <span>{issue.environment}</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Environment
+                      </span>
+                      <span className="dark:text-gray-300">
+                        {issue.environment}
+                      </span>
                     </div>
                   )}
                   {issue.appVersion && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500">App Version</span>
-                      <span>{issue.appVersion}</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        App Version
+                      </span>
+                      <span className="dark:text-gray-300">
+                        {issue.appVersion}
+                      </span>
                     </div>
                   )}
                   {issue.browserInfo && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Browser</span>
-                      <span className="truncate max-w-[150px]">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Browser
+                      </span>
+                      <span className="truncate max-w-[150px] dark:text-gray-300">
                         {(
                           issue.browserInfo as {
                             browser?: string;
