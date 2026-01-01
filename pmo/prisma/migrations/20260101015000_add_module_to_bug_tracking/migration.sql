@@ -1,11 +1,11 @@
--- AlterTable
-ALTER TABLE "Issue" ADD COLUMN "module" TEXT;
+-- AlterTable (idempotent)
+ALTER TABLE "Issue" ADD COLUMN IF NOT EXISTS "module" TEXT;
 
--- AlterTable
-ALTER TABLE "ErrorLog" ADD COLUMN "module" TEXT;
+-- AlterTable (idempotent)
+ALTER TABLE "ErrorLog" ADD COLUMN IF NOT EXISTS "module" TEXT;
 
--- CreateIndex
-CREATE INDEX "Issue_module_idx" ON "Issue"("module");
+-- CreateIndex (idempotent)
+CREATE INDEX IF NOT EXISTS "Issue_module_idx" ON "Issue"("module");
 
--- CreateIndex
-CREATE INDEX "ErrorLog_module_idx" ON "ErrorLog"("module");
+-- CreateIndex (idempotent)
+CREATE INDEX IF NOT EXISTS "ErrorLog_module_idx" ON "ErrorLog"("module");
