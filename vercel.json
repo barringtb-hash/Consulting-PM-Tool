@@ -3,7 +3,16 @@
   "buildCommand": "cd apps/web && HUSKY=0 npm install && npm run build",
   "outputDirectory": "apps/web/dist",
   "installCommand": "HUSKY=0 npm install",
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/assets/:path*", "destination": "/assets/:path*" },
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ]
 }
