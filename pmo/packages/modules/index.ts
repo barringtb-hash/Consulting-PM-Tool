@@ -289,6 +289,9 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
   },
 
   // ============ CUSTOMER SUCCESS PLATFORM ============
+  // NOTE: Customer Success features have been merged into the Account module (CRM).
+  // CTAs, Success Plans, and Health Scores are now managed per-Account.
+  // This module is kept for backward compatibility but hidden from navigation.
   customerSuccess: {
     id: 'customerSuccess',
     label: 'Customer Success',
@@ -304,16 +307,17 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     ],
     icon: 'HeartHandshake',
     isCore: false,
-    dependencies: ['clients', 'projects'],
+    dependencies: ['crm', 'crmAccounts'],
     apiPrefixes: [
       '/api/customer-success',
-      '/api/health-scores',
-      '/api/ctas',
-      '/api/success-plans',
-      '/api/playbooks',
+      '/api/crm/accounts/:accountId/health',
+      '/api/crm/accounts/:accountId/ctas',
+      '/api/crm/accounts/:accountId/success-plans',
+      '/api/crm/playbooks',
     ],
     description:
-      'Customer Success Platform with health scoring, CTAs, success plans, playbooks, and analytics - inspired by Gainsight',
+      'Customer Success Platform - DEPRECATED: Features merged into Account module. CTAs, Success Plans, and Health Scores are now managed per-Account.',
+    showInNavigation: false, // Hidden - features merged into Account detail page
   },
 
   // ============ MCP INTEGRATION MODULE ============
