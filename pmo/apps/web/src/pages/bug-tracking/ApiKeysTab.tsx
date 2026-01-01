@@ -19,6 +19,7 @@ import {
 import { Button, Input, Badge, Card } from '../../ui';
 import { Modal } from '../../ui/Modal';
 import { PageHeader } from '../../ui/PageHeader';
+import { useToast } from '../../ui/Toast';
 import {
   useApiKeys,
   useCreateApiKey,
@@ -64,6 +65,7 @@ const DEFAULT_PERMISSIONS = ['issues:read', 'issues:write'];
 
 export function ApiKeysTab() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyResult, setNewKeyResult] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -74,17 +76,24 @@ export function ApiKeysTab() {
   const deleteApiKey = useDeleteApiKey();
 
   const handleCopyKey = async (key: string) => {
-    await navigator.clipboard.writeText(key);
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
+    try {
+      await navigator.clipboard.writeText(key);
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy API key:', error);
+      showToast('Failed to copy API key. Please copy it manually.', 'error');
+    }
   };
 
   const handleCreateKey = async (name: string, permissions: string[]) => {
     try {
       const result = await createApiKey.mutateAsync({ name, permissions });
       setNewKeyResult(result.key);
+      showToast('API key created successfully', 'success');
     } catch (error) {
       console.error('Failed to create API key:', error);
+      showToast('Failed to create API key', 'error');
     }
   };
 
@@ -96,8 +105,10 @@ export function ApiKeysTab() {
     ) {
       try {
         await revokeApiKey.mutateAsync(id);
+        showToast('API key revoked', 'success');
       } catch (error) {
         console.error('Failed to revoke API key:', error);
+        showToast('Failed to revoke API key', 'error');
       }
     }
   };
@@ -106,8 +117,10 @@ export function ApiKeysTab() {
     if (confirm('Are you sure you want to permanently delete this API key?')) {
       try {
         await deleteApiKey.mutateAsync(id);
+        showToast('API key deleted', 'success');
       } catch (error) {
         console.error('Failed to delete API key:', error);
+        showToast('Failed to delete API key', 'error');
       }
     }
   };
@@ -148,7 +161,7 @@ export function ApiKeysTab() {
               </p>
               <pre className="mt-2 p-2 bg-blue-100 dark:bg-blue-900/40 rounded text-xs overflow-x-auto">
                 {`export BUG_TRACKER_API_KEY="bt_your_key_here"
-export BUG_TRACKER_API_URL="https://your-api.onrender.com/api"`}
+export BUG_TRACKER_API_URL="https://<your-api-domain>/api"`}
               </pre>
               <p className="text-blue-700 dark:text-blue-300 mt-2">
                 Then use{' '}
@@ -278,6 +291,7 @@ export BUG_TRACKER_API_URL="https://your-api.onrender.com/api"`}
                 <Input
                   value={newKeyResult}
                   readOnly
+                  autoComplete="off"
                   className="font-mono text-sm"
                 />
                 <Button
@@ -339,10 +353,14 @@ function CreateApiKeyModal({
     <Modal isOpen={true} onClose={onClose} title="Create API Key">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1 dark:text-white">
+          <label
+            htmlFor="api-key-name"
+            className="block text-sm font-medium mb-1 dark:text-white"
+          >
             Key Name
           </label>
           <Input
+            id="api-key-name"
             placeholder="e.g., Claude Code, CI Pipeline"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -354,16 +372,18 @@ function CreateApiKeyModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2 dark:text-white">
+          <span className="block text-sm font-medium mb-2 dark:text-white">
             Permissions
-          </label>
+          </span>
           <div className="space-y-2">
             {AVAILABLE_PERMISSIONS.map((perm) => (
               <label
                 key={perm.id}
+                htmlFor={`perm-${perm.id}`}
                 className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-neutral-800 cursor-pointer"
               >
                 <input
+                  id={`perm-${perm.id}`}
                   type="checkbox"
                   checked={permissions.includes(perm.id)}
                   onChange={() => togglePermission(perm.id)}
