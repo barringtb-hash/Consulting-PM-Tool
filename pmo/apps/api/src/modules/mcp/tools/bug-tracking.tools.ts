@@ -368,11 +368,17 @@ async function createBugReport(args: Record<string, unknown>): Promise<{
     _userId, // Set reportedById to the current user
   );
 
-  const assignmentInfo = issue.assignedTo
-    ? `\n- **Assigned to:** ${issue.assignedTo.name}`
+  // Extract user info from the issue response (includes relations)
+  const issueWithRelations = issue as typeof issue & {
+    assignedTo?: { name: string } | null;
+    reportedBy?: { name: string } | null;
+  };
+
+  const assignmentInfo = issueWithRelations.assignedTo
+    ? `\n- **Assigned to:** ${issueWithRelations.assignedTo.name}`
     : '\n- **Assigned to:** Unassigned';
-  const reporterInfo = issue.reportedBy
-    ? `\n- **Reported by:** ${issue.reportedBy.name}`
+  const reporterInfo = issueWithRelations.reportedBy
+    ? `\n- **Reported by:** ${issueWithRelations.reportedBy.name}`
     : '';
 
   // Build summary of what info was captured
