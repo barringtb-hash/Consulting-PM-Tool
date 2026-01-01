@@ -32,7 +32,7 @@ export const bugTrackingTools: ToolDefinition[] = [
   {
     name: 'create_bug_report',
     description:
-      'Create a new bug report or issue in the bug tracking system. Use this when a user reports a bug, issue, or problem with the application.',
+      'Create a new bug report or issue in the bug tracking system. Use this when a user reports a bug, issue, or problem with the application. The report will be automatically marked as reported by the current user. Use the assignToSelf parameter to also assign the issue to them. IMPORTANT: Always ask the user for steps to reproduce, expected behavior, and actual behavior if not provided.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -44,7 +44,27 @@ export const bugTrackingTools: ToolDefinition[] = [
         description: {
           type: 'string',
           description:
-            'Detailed description of the bug including steps to reproduce, expected behavior, and actual behavior',
+            'Detailed description of the bug. Should include context about what the user was trying to do.',
+        },
+        stepsToReproduce: {
+          type: 'string',
+          description:
+            'Numbered steps to reproduce the issue (e.g., "1. Go to Settings\\n2. Click Users\\n3. Change role"). Ask the user if not provided.',
+        },
+        expectedBehavior: {
+          type: 'string',
+          description:
+            'What should happen according to the user (e.g., "Role should update successfully")',
+        },
+        actualBehavior: {
+          type: 'string',
+          description:
+            'What actually happened (e.g., "Error message appears: member not found")',
+        },
+        errorMessage: {
+          type: 'string',
+          description:
+            'Any error messages the user saw, copied exactly as displayed',
         },
         type: {
           type: 'string',
@@ -62,9 +82,20 @@ export const bugTrackingTools: ToolDefinition[] = [
           description:
             "User's browser if provided (e.g., 'Safari 26.2', 'Chrome 120')",
         },
-        stepsToReproduce: {
+        pageUrl: {
           type: 'string',
-          description: 'Steps to reproduce the issue, if provided by the user',
+          description:
+            'The URL/page where the issue occurred (e.g., "/settings/users")',
+        },
+        workaround: {
+          type: 'string',
+          description: 'Any workaround the user has found, if applicable',
+        },
+        assignToSelf: {
+          type: 'string',
+          description:
+            'If "true", automatically assign the issue to the reporting user. Defaults to false.',
+          enum: ['true', 'false'],
         },
       },
       required: ['title', 'description'],
@@ -210,17 +241,31 @@ async function createBugReport(args: Record<string, unknown>): Promise<{
   const {
     title,
     description,
+    stepsToReproduce,
+    expectedBehavior,
+    actualBehavior,
+    errorMessage,
     type = 'BUG',
     priority = 'MEDIUM',
     browser,
-    stepsToReproduce,
+    pageUrl,
+    workaround,
+    assignToSelf,
+    _userId, // Injected by MCP router
   } = args as {
     title: string;
     description: string;
+    stepsToReproduce?: string;
+    expectedBehavior?: string;
+    actualBehavior?: string;
+    errorMessage?: string;
     type?: string;
     priority?: string;
     browser?: string;
-    stepsToReproduce?: string;
+    pageUrl?: string;
+    workaround?: string;
+    assignToSelf?: string;
+    _userId?: number;
   };
 
   // Validate required fields
@@ -252,24 +297,103 @@ async function createBugReport(args: Record<string, unknown>): Promise<{
     };
   }
 
-  // Build full description with additional context
-  let fullDescription = description;
-  if (stepsToReproduce) {
-    fullDescription += `\n\n**Steps to Reproduce:**\n${stepsToReproduce}`;
-  }
-  if (browser) {
-    fullDescription += `\n\n**Browser:** ${browser}`;
-  }
-  fullDescription += `\n\n*Reported via AI Assistant*`;
+  // Build a well-structured description with all context
+  const descriptionParts: string[] = [];
 
-  const issue = await bugTrackingService.createIssue({
-    title,
-    description: fullDescription,
-    type: type as IssueType,
-    priority: priority as IssuePriority,
-    source: 'AI_ASSISTANT',
-    browserInfo: browser ? { browser } : undefined,
-  });
+  // Main description
+  descriptionParts.push(description);
+
+  // Steps to reproduce
+  if (stepsToReproduce) {
+    descriptionParts.push('');
+    descriptionParts.push('**Steps to Reproduce:**');
+    descriptionParts.push(stepsToReproduce);
+  }
+
+  // Expected vs Actual behavior
+  if (expectedBehavior) {
+    descriptionParts.push('');
+    descriptionParts.push(`**Expected Behavior:** ${expectedBehavior}`);
+  }
+  if (actualBehavior) {
+    descriptionParts.push(`**Actual Behavior:** ${actualBehavior}`);
+  }
+
+  // Error message
+  if (errorMessage) {
+    descriptionParts.push('');
+    descriptionParts.push('**Error Message:**');
+    descriptionParts.push('```');
+    descriptionParts.push(errorMessage);
+    descriptionParts.push('```');
+  }
+
+  // Page URL
+  if (pageUrl) {
+    descriptionParts.push('');
+    descriptionParts.push(`**Page/URL:** ${pageUrl}`);
+  }
+
+  // Browser info
+  if (browser) {
+    descriptionParts.push(`**Browser:** ${browser}`);
+  }
+
+  // Workaround
+  if (workaround) {
+    descriptionParts.push('');
+    descriptionParts.push(`**Known Workaround:** ${workaround}`);
+  }
+
+  // Source attribution
+  descriptionParts.push('');
+  descriptionParts.push('*Reported via AI Assistant*');
+
+  const fullDescription = descriptionParts.join('\n');
+
+  // Determine if we should assign to the current user
+  const shouldAssignToSelf = assignToSelf === 'true' && _userId;
+
+  const issue = await bugTrackingService.createIssue(
+    {
+      title,
+      description: fullDescription,
+      type: type as IssueType,
+      priority: priority as IssuePriority,
+      source: 'AI_ASSISTANT',
+      url: pageUrl,
+      browserInfo: browser ? { browser } : undefined,
+      assignedToId: shouldAssignToSelf ? _userId : undefined,
+    },
+    _userId, // Set reportedById to the current user
+  );
+
+  // Extract user info from the issue response (includes relations)
+  const issueWithRelations = issue as typeof issue & {
+    assignedTo?: { name: string } | null;
+    reportedBy?: { name: string } | null;
+  };
+
+  const assignmentInfo = issueWithRelations.assignedTo
+    ? `\n- **Assigned to:** ${issueWithRelations.assignedTo.name}`
+    : '\n- **Assigned to:** Unassigned';
+  const reporterInfo = issueWithRelations.reportedBy
+    ? `\n- **Reported by:** ${issueWithRelations.reportedBy.name}`
+    : '';
+
+  // Build summary of what info was captured
+  const capturedInfo: string[] = [];
+  if (stepsToReproduce) capturedInfo.push('steps to reproduce');
+  if (expectedBehavior || actualBehavior)
+    capturedInfo.push('expected/actual behavior');
+  if (errorMessage) capturedInfo.push('error message');
+  if (browser) capturedInfo.push('browser info');
+  if (pageUrl) capturedInfo.push('page URL');
+
+  const capturedSummary =
+    capturedInfo.length > 0
+      ? `\n\nCaptured: ${capturedInfo.join(', ')}`
+      : '\n\n⚠️ **Tip:** For faster resolution, consider adding steps to reproduce, expected/actual behavior, and any error messages.';
 
   return {
     content: [
@@ -279,7 +403,7 @@ async function createBugReport(args: Record<string, unknown>): Promise<{
 - **Title:** ${issue.title}
 - **Type:** ${issue.type}
 - **Priority:** ${issue.priority}
-- **Status:** ${issue.status}
+- **Status:** ${issue.status}${reporterInfo}${assignmentInfo}${capturedSummary}
 
 The issue has been added to the bug tracking system and will be reviewed by the development team.`,
       },

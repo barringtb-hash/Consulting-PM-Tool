@@ -54,6 +54,7 @@ async function findOrCreateIssueForError(
     appVersion?: string;
     url?: string;
   },
+  reportedById?: number,
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
 
@@ -77,13 +78,16 @@ async function findOrCreateIssueForError(
     });
   }
 
-  // Create new issue
-  return createIssue({
-    ...createData,
-    errorHash,
-    type: 'BUG',
-    priority: determinePriority(createData.source),
-  });
+  // Create new issue - pass reportedById if provided
+  return createIssue(
+    {
+      ...createData,
+      errorHash,
+      type: 'BUG',
+      priority: determinePriority(createData.source),
+    },
+    reportedById,
+  );
 }
 
 /**
@@ -135,17 +139,21 @@ export async function ingestClientError(error: ClientErrorInput) {
     },
   });
 
-  // Find or create issue
-  const issue = await findOrCreateIssueForError(errorHash, {
-    title: truncateTitle(error.message),
-    description: formatClientErrorDescription(error),
-    source: 'BROWSER_ERROR',
-    stackTrace: error.stack,
-    browserInfo: error.browserInfo as Record<string, unknown>,
-    environment: error.environment,
-    appVersion: error.appVersion,
-    url: error.url,
-  });
+  // Find or create issue - pass userId as reportedById if available
+  const issue = await findOrCreateIssueForError(
+    errorHash,
+    {
+      title: truncateTitle(error.message),
+      description: formatClientErrorDescription(error),
+      source: 'BROWSER_ERROR',
+      stackTrace: error.stack,
+      browserInfo: error.browserInfo as Record<string, unknown>,
+      environment: error.environment,
+      appVersion: error.appVersion,
+      url: error.url,
+    },
+    error.userId, // Set reportedById to the user who encountered the error
+  );
 
   // Link error log to issue
   await prisma.errorLog.update({

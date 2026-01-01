@@ -279,8 +279,30 @@ function generateMarkdownPrompt(
     sections.push(`**Project:** ${issue.project.name}`);
   }
 
+  if (issue.account) {
+    sections.push(`**Account:** ${issue.account.name}`);
+  }
+
   if (issue.source !== 'MANUAL') {
     sections.push(`**Source:** ${formatEnum(issue.source)} (auto-detected)`);
+  }
+
+  // People information
+  if (issue.reportedBy) {
+    sections.push(
+      `**Reported By:** ${issue.reportedBy.name} (${issue.reportedBy.email})`,
+    );
+  }
+  if (issue.assignedTo) {
+    sections.push(
+      `**Assigned To:** ${issue.assignedTo.name} (${issue.assignedTo.email})`,
+    );
+  }
+
+  // Timestamps
+  sections.push(`**Created:** ${new Date(issue.createdAt).toISOString()}`);
+  if (issue.errorCount > 1) {
+    sections.push(`**Error Occurrences:** ${issue.errorCount} times`);
   }
 
   sections.push('');
@@ -288,7 +310,52 @@ function generateMarkdownPrompt(
   // Description
   sections.push('### Description');
   sections.push('');
-  sections.push(issue.description || '_No description provided._');
+  if (issue.description) {
+    sections.push(issue.description);
+
+    // Check if description lacks key details and add guidance for the AI
+    const descLower = issue.description.toLowerCase();
+    const missingContext: string[] = [];
+
+    if (!descLower.includes('step') && !descLower.includes('reproduce')) {
+      missingContext.push('Steps to reproduce are not explicitly documented');
+    }
+    if (!descLower.includes('expect') && !descLower.includes('should')) {
+      missingContext.push('Expected behavior is not explicitly stated');
+    }
+    if (
+      !descLower.includes('actual') &&
+      !descLower.includes('instead') &&
+      !descLower.includes('error')
+    ) {
+      missingContext.push('Actual/observed behavior details are sparse');
+    }
+
+    if (missingContext.length > 0) {
+      sections.push('');
+      sections.push(
+        '> **Note for AI:** The description may be incomplete. Please:',
+      );
+      for (const missing of missingContext) {
+        sections.push(`> - ${missing}`);
+      }
+      sections.push(
+        '> - Investigate the stack trace and error logs for additional context',
+      );
+      sections.push(
+        '> - Check the suggested files to understand the code flow',
+      );
+    }
+  } else {
+    sections.push('_No description provided._');
+    sections.push('');
+    sections.push('> **Note for AI:** This issue lacks a description. Please:');
+    sections.push('> - Analyze the stack trace to understand what went wrong');
+    sections.push('> - Review the environment info and error logs');
+    sections.push(
+      '> - Investigate the suggested files to identify the root cause',
+    );
+  }
   sections.push('');
 
   // Stack trace
