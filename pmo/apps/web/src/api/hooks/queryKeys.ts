@@ -212,6 +212,58 @@ export const queryKeys = {
     details: () => [...queryKeys.accounts.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.accounts.details(), id] as const,
     stats: () => [...queryKeys.accounts.all, 'stats'] as const,
+    // Account Health Score
+    health: (id: number) =>
+      [...queryKeys.accounts.detail(id), 'health'] as const,
+    healthHistory: (id: number, days?: number) =>
+      [...queryKeys.accounts.health(id), 'history', days] as const,
+    portfolioHealth: () =>
+      [...queryKeys.accounts.all, 'portfolio', 'health'] as const,
+    accountsByHealth: (params?: Record<string, unknown>) =>
+      [...queryKeys.accounts.portfolioHealth(), 'accounts', params] as const,
+    // Account CTAs
+    ctas: (id: number) => [...queryKeys.accounts.detail(id), 'ctas'] as const,
+    ctaList: (id: number, params?: Record<string, unknown>) =>
+      [...queryKeys.accounts.ctas(id), 'list', params] as const,
+    ctaDetail: (id: number, ctaId: number) =>
+      [...queryKeys.accounts.ctas(id), ctaId] as const,
+    ctaSummary: (id: number) =>
+      [...queryKeys.accounts.ctas(id), 'summary'] as const,
+    portfolioCTAs: (params?: Record<string, unknown>) =>
+      [...queryKeys.accounts.all, 'portfolio', 'ctas', params] as const,
+    ctaCockpit: () =>
+      [...queryKeys.accounts.all, 'portfolio', 'ctas', 'cockpit'] as const,
+    portfolioCTASummary: (all?: boolean) =>
+      [...queryKeys.accounts.all, 'portfolio', 'ctas', 'summary', all] as const,
+    // Account Success Plans
+    successPlans: (id: number) =>
+      [...queryKeys.accounts.detail(id), 'success-plans'] as const,
+    successPlanList: (id: number, params?: Record<string, unknown>) =>
+      [...queryKeys.accounts.successPlans(id), 'list', params] as const,
+    successPlanDetail: (id: number, planId: number) =>
+      [...queryKeys.accounts.successPlans(id), planId] as const,
+    portfolioSuccessPlans: (params?: Record<string, unknown>) =>
+      [
+        ...queryKeys.accounts.all,
+        'portfolio',
+        'success-plans',
+        params,
+      ] as const,
+  },
+
+  // ---------------------------------------------------------------------------
+  // CRM Playbooks Module
+  // ---------------------------------------------------------------------------
+  playbooks: {
+    all: ['playbooks'] as const,
+    lists: () => [...queryKeys.playbooks.all, 'list'] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.playbooks.lists(), params] as const,
+    details: () => [...queryKeys.playbooks.all, 'detail'] as const,
+    detail: (id: number) => [...queryKeys.playbooks.details(), id] as const,
+    categories: () => [...queryKeys.playbooks.all, 'categories'] as const,
+    popular: (limit?: number) =>
+      [...queryKeys.playbooks.all, 'popular', limit] as const,
   },
 
   // ---------------------------------------------------------------------------

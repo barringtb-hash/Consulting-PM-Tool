@@ -88,6 +88,7 @@ import customerSuccessRouter from './modules/customer-success/customer-success.r
 import accountRouter from './crm/routes/account.routes';
 import opportunityRouter from './crm/routes/opportunity.routes';
 import activityRouter from './crm/routes/activity.routes';
+import playbookRouter from './crm/routes/playbook.routes';
 // Tenant Routes
 import tenantRouter from './tenant/tenant.routes';
 // Notification Routes
@@ -341,10 +342,11 @@ export function createApp(): express.Express {
   app.use('/api/monitoring', monitoringRouter);
 
   // ============ CRM ROUTES ============
-  // CRM module routes for accounts, opportunities, and activities
+  // CRM module routes for accounts, opportunities, activities, and playbooks
   app.use('/api/crm/accounts', accountRouter);
   app.use('/api/crm/opportunities', opportunityRouter);
   app.use('/api/crm/activities', activityRouter);
+  app.use('/api/crm/playbooks', playbookRouter);
 
   // ============ CRM PLATFORM ROUTES (Phase 3-6) ============
   // Module licensing and feature gating
@@ -406,7 +408,10 @@ export function createApp(): express.Express {
   app.use('/api/mcp', requireModule('mcp'), mcpRouter);
 
   // ============ CUSTOMER SUCCESS PLATFORM ============
-  // Customer Success routes - Gainsight-inspired CS platform for SMB
+  // DEPRECATED: Legacy Customer Success routes have been merged into Account module
+  // Use /api/crm/accounts/:id/health, /api/crm/accounts/:id/ctas,
+  // /api/crm/accounts/:id/success-plans, and /api/crm/playbooks instead.
+  // Legacy routes kept for backwards compatibility during migration period.
   if (isModuleEnabled('customerSuccess')) {
     app.use(
       '/api/customer-success',

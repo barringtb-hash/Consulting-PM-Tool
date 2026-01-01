@@ -6236,13 +6236,64 @@ model HealthScoreHistory {
 }
 
 /**
+ * AccountHealthScoreHistory - Health score snapshots linked to Account
+ * Replaces CustomerHealthScore for Account-centric health tracking
+ */
+model AccountHealthScoreHistory {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  accountId Int
+
+  // Composite score (0-100)
+  overallScore Int
+  category     HealthScoreCategory @default(AT_RISK)
+
+  // Individual dimension scores (0-100)
+  usageScore      Int? // Product adoption, feature usage, login frequency
+  supportScore    Int? // Ticket volume, resolution time, escalations
+  engagementScore Int? // Meeting attendance, response time, executive involvement
+  sentimentScore  Int? // NPS, CSAT, conversation sentiment
+  financialScore  Int? // Payment history, ARR changes, upsell/downsell
+
+  // Dimension weights used for this calculation
+  usageWeight      Int @default(40)
+  supportWeight    Int @default(25)
+  engagementWeight Int @default(20)
+  sentimentWeight  Int @default(15)
+  financialWeight  Int @default(0)
+
+  // Trend tracking
+  previousScore   Int?
+  scoreTrend      String? // UP, DOWN, STABLE
+  trendPercentage Float?  // Percentage change from previous
+
+  // Risk indicators
+  churnRisk          Float? // 0-1 probability score
+  expansionPotential Float? // 0-1 probability score
+
+  // Metadata
+  calculationNotes String? // Explanation of score factors
+  calculatedAt     DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([accountId, calculatedAt(sort: Desc)])
+  @@index([category, calculatedAt])
+}
+
+/**
  * SuccessPlan - Goal-based customer success plans
  * Based on Gainsight's Success Plans with objectives and milestones
  */
 model SuccessPlan {
   id        Int     @id @default(autoincrement())
   tenantId  String? // Multi-tenant support
-  clientId  Int
+  clientId  Int?    // Legacy - use accountId for new plans
+  accountId Int?    // Primary reference for Account-based plans
   projectId Int?
   ownerId   Int
 
@@ -6270,13 +6321,15 @@ model SuccessPlan {
   updatedAt DateTime @updatedAt
 
   tenant     Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client     Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client     Client?            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account    Account?           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   project    Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
   owner      User               @relation(fields: [ownerId], references: [id])
   objectives SuccessObjective[]
 
   @@index([tenantId])
   @@index([clientId, status])
+  @@index([accountId, status])
   @@index([ownerId, status])
 }
 
@@ -6346,7 +6399,8 @@ model SuccessTask {
 model CTA {
   id        Int     @id @default(autoincrement())
   tenantId  String? // Multi-tenant support
-  clientId  Int
+  clientId  Int?    // Legacy - use accountId for new CTAs
+  accountId Int?    // Primary reference for Account-based CTAs
   projectId Int?
   ownerId   Int
 
@@ -6383,7 +6437,8 @@ model CTA {
   updatedAt DateTime @updatedAt
 
   tenant   Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client   Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client   Client?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account  Account?  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   owner    User      @relation(fields: [ownerId], references: [id])
   playbook Playbook? @relation(fields: [playbookId], references: [id], onDelete: SetNull)
@@ -6391,6 +6446,7 @@ model CTA {
 
   @@index([tenantId])
   @@index([clientId, status])
+  @@index([accountId, status])
   @@index([ownerId, status, priority])
   @@index([type, status])
   @@index([dueDate, status])
@@ -6959,10 +7015,11 @@ model Tenant {
   aiUsageSummaries AIUsageSummary[]
 
   // Customer Success relations
-  customerHealthScores CustomerHealthScore[]
-  successPlans         SuccessPlan[]
-  ctas                 CTA[]
-  playbooks            Playbook[]
+  customerHealthScores     CustomerHealthScore[]     // Legacy - linked to Client
+  accountHealthScoreHistory AccountHealthScoreHistory[] // New - linked to Account
+  successPlans             SuccessPlan[]
+  ctas                     CTA[]
+  playbooks                Playbook[]
 
   // Bug Tracking relations
   issues             Issue[]
@@ -7136,6 +7193,11 @@ model Account {
 
   // Bug Tracking relations
   issues Issue[]
+
+  // Customer Success relations (merged from legacy Customer Success module)
+  ctas                     CTA[]
+  successPlans             SuccessPlan[]
+  healthScoreHistory       AccountHealthScoreHistory[]
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
