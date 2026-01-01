@@ -639,47 +639,6 @@ function AccountDetailPage(): JSX.Element {
               </CardBody>
             </Card>
 
-            {/* Health & Engagement */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Health & Engagement</CardTitle>
-              </CardHeader>
-              <CardBody className="space-y-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-500 mb-2">
-                    Health Score
-                  </div>
-                  <HealthScoreIndicator score={account.healthScore} />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-500 mb-2">
-                    Engagement Score
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 rounded-full transition-all"
-                        style={{ width: `${account.engagementScore}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium w-16">
-                      {account.engagementScore}%
-                    </span>
-                  </div>
-                </div>
-                {account.churnRisk != null && account.churnRisk > 0 && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-500 mb-2">
-                      Churn Risk
-                    </div>
-                    <Badge variant="destructive">
-                      {Math.round(account.churnRisk * 100)}% Risk
-                    </Badge>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-
             {/* Opportunities */}
             <Card>
               <CardHeader>
@@ -944,7 +903,48 @@ function AccountDetailPage(): JSX.Element {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+            {/* Health & Engagement */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Health & Engagement</CardTitle>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                <div>
+                  <div className="text-sm font-medium text-gray-500 mb-2">
+                    Health Score
+                  </div>
+                  <HealthScoreIndicator score={account.healthScore} />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-500 mb-2">
+                    Engagement Score
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all"
+                        style={{ width: `${account.engagementScore}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium w-16">
+                      {account.engagementScore}%
+                    </span>
+                  </div>
+                </div>
+                {account.churnRisk != null && account.churnRisk > 0 && (
+                  <div>
+                    <div className="text-sm font-medium text-gray-500 mb-2">
+                      Churn Risk
+                    </div>
+                    <Badge variant="destructive">
+                      {Math.round(account.churnRisk * 100)}% Risk
+                    </Badge>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
             {/* Quick Actions */}
             <Card>
               <CardHeader>
