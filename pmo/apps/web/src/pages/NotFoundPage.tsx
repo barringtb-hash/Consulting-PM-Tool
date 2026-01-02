@@ -22,7 +22,8 @@ export function NotFoundPage(): JSX.Element {
             Page Not Found
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-2">
-            The page you're looking for doesn't exist or has been moved.
+            The page you&apos;re looking for doesn&apos;t exist or has been
+            moved.
           </p>
         </div>
 
