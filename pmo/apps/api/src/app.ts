@@ -36,6 +36,7 @@ import assetsRouter from './routes/assets';
 import clientsRouter from './routes/clients';
 // contactsRouter removed - legacy PMO contacts replaced by CRMContact
 import documentsRouter from './routes/documents';
+import projectDocumentsRouter from './routes/projectDocuments';
 import healthRouter from './routes/health';
 import leadsRouter from './routes/leads';
 import publicLeadsRouter from './routes/public-leads';
@@ -281,7 +282,13 @@ export function createApp(): express.Express {
         // Safari's ITP may block cookies, so we use Authorization header as fallback
         // Content-Type is needed for JSON requests
         // X-Tenant-ID is needed for multi-tenant context
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+        // X-API-Key is needed for external API access (bug tracking, etc.)
+        allowedHeaders: [
+          'Content-Type',
+          'Authorization',
+          'X-Tenant-ID',
+          'X-API-Key',
+        ],
         // Allow browser to read these headers from responses
         exposedHeaders: ['Content-Type'],
         // Cache preflight response for 24 hours to reduce OPTIONS requests
@@ -301,12 +308,22 @@ export function createApp(): express.Express {
   // Captures 5xx errors and 404s on config endpoints (indicates misconfiguration)
   app.use(apiErrorCaptureMiddleware);
 
+  // ============ BUG TRACKING MODULE ============
+  // Bug tracking, issue management, and error monitoring
+  // CRITICAL: Must be registered BEFORE tasksRouter, milestonesRouter, meetingRouter,
+  // and projectDocumentsRouter because those routers have router.use(requireAuth) and
+  // are mounted under /api, intercepting ALL /api/* requests (even ones not matching
+  // their routes), which would block unauthenticated access to /api/bug-tracking/external/*.
+  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
+
   // ============ CORE ROUTES (always enabled) ============
   app.use('/api', authRouter);
   app.use('/api/clients', clientsRouter);
   // /api/contacts removed - legacy PMO contacts replaced by CRMContact
   app.use('/api/documents', documentsRouter);
   app.use('/api/projects', projectsRouter);
+  app.use('/api/project-documents', projectDocumentsRouter); // Project document templates
+  app.use('/api', projectDocumentsRouter); // Also registers /api/projects/:projectId/documents
   app.use('/api', tasksRouter);
   app.use('/api', milestonesRouter);
   app.use('/api', meetingRouter);

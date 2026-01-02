@@ -44,6 +44,24 @@ const upload = multer({
 const router = Router();
 
 // ============================================================================
+// DEBUG: Log ALL requests entering this router
+// ============================================================================
+router.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(
+    `[BUG-TRACKING ROUTER] Received: ${req.method} ${req.path} | Original URL: ${req.originalUrl}`,
+  );
+  next();
+});
+
+// ============================================================================
+// DEBUG: Public diagnostic endpoint - MUST be first to avoid any interference
+// ============================================================================
+router.get('/bug-tracking/debug/ping', (_req: Request, res: Response) => {
+  console.log('[BUG-TRACKING] Debug ping endpoint hit');
+  res.json({ pong: true, timestamp: new Date().toISOString() });
+});
+
+// ============================================================================
 // VALIDATION SCHEMAS
 // ============================================================================
 
@@ -1296,6 +1314,27 @@ router.get(
     });
   },
 );
+
+// ============================================================================
+// EXTERNAL API DIAGNOSTIC ROUTE
+// This endpoint helps verify the external routes are deployed and accessible
+// ============================================================================
+
+// GET /bug-tracking/external/status - Public status check for external API
+router.get('/bug-tracking/external/status', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    message: 'Bug tracking external API is available',
+    version: '1.0.0',
+    endpoints: [
+      'GET /api/bug-tracking/external/issues',
+      'GET /api/bug-tracking/external/issues/:id',
+      'GET /api/bug-tracking/external/issues/:id/prompt',
+      'POST /api/bug-tracking/external/issues/:id/status',
+    ],
+    authRequired: 'X-API-Key header',
+  });
+});
 
 // ============================================================================
 // EXTERNAL AI ACCESS ROUTES (API Key Auth)
