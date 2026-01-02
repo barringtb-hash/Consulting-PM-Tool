@@ -127,6 +127,7 @@ const createAccountSchema = z.object({
 });
 
 const updateAccountSchema = createAccountSchema.partial().extend({
+  ownerId: z.number().int().positive().optional(),
   healthScore: z.number().min(0).max(100).optional(),
   engagementScore: z.number().min(0).max(100).optional(),
   churnRisk: z.number().min(0).max(1).optional(),

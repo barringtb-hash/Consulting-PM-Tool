@@ -143,7 +143,7 @@ export default function ExpenseFormPage() {
   );
 
   // Filter projects by selected account
-  const filteredProjects = projectsData?.projects.filter(
+  const filteredProjects = (projectsData ?? []).filter(
     (p) => !selectedAccountId || p.accountId === Number(selectedAccountId),
   );
 

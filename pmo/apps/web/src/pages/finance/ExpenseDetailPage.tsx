@@ -7,7 +7,6 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import {
-  ArrowLeft,
   Edit,
   Trash2,
   Check,
@@ -23,7 +22,7 @@ import {
   FileText,
   CreditCard,
 } from 'lucide-react';
-import { Card, Button, Modal } from '../../ui';
+import { Card, Button, Modal, Breadcrumb } from '../../ui';
 import {
   useExpense,
   useApproveExpense,
@@ -163,26 +162,30 @@ export default function ExpenseDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Finance', href: '/finance' },
+          { label: 'Expenses', href: '/finance/expenses' },
+          { label: expense.description },
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="secondary" as={Link} to="/finance/expenses">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {expense.description}
-            </h1>
-            <div className="flex items-center gap-3 mt-1">
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${statusConfig.bgColor} ${statusConfig.color}`}
-              >
-                {statusConfig.label}
-              </span>
-              <span className="text-gray-500">
-                Created {formatDateTime(expense.createdAt)}
-              </span>
-            </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {expense.description}
+          </h1>
+          <div className="flex items-center gap-3 mt-1">
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${statusConfig.bgColor} ${statusConfig.color}`}
+            >
+              {statusConfig.label}
+            </span>
+            <span className="text-gray-500">
+              Created {formatDateTime(expense.createdAt)}
+            </span>
           </div>
         </div>
 

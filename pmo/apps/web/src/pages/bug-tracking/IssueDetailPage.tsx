@@ -267,20 +267,17 @@ export default function IssueDetailPage() {
       <PageHeader
         title={
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/bug-tracking')}
-              className="-ml-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
             {TYPE_CONFIG[issue.type]?.icon}
             <span>
               #{issue.id} {issue.title}
             </span>
           </div>
         }
+        breadcrumbs={[
+          { label: 'Bug Tracking', href: '/bug-tracking' },
+          { label: 'Issues', href: '/bug-tracking' },
+          { label: `#${issue.id}` },
+        ]}
         description={
           <div className="flex items-center gap-3 mt-1">
             <Badge variant={STATUS_CONFIG[issue.status]?.variant || 'default'}>

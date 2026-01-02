@@ -15,6 +15,10 @@ import {
   Building2,
   Target,
   DollarSign,
+  Receipt,
+  PieChart,
+  RefreshCw,
+  Bug,
   LucideIcon,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
@@ -39,6 +43,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Building2,
   Target,
   DollarSign,
+  Receipt,
+  PieChart,
+  RefreshCw,
+  Bug,
 };
 
 /**
