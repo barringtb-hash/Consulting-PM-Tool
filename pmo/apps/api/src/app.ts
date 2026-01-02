@@ -308,6 +308,14 @@ export function createApp(): express.Express {
   // Captures 5xx errors and 404s on config endpoints (indicates misconfiguration)
   app.use(apiErrorCaptureMiddleware);
 
+  // ============ BUG TRACKING MODULE ============
+  // Bug tracking, issue management, and error monitoring
+  // CRITICAL: Must be registered BEFORE tasksRouter, milestonesRouter, and
+  // projectDocumentsRouter because those routers have router.use(requireAuth)
+  // and are mounted at /api, intercepting ALL /api/* requests (even ones not
+  // matching their routes), which blocks unauthenticated /api/bug-tracking/external/*.
+  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
+
   // ============ CORE ROUTES (always enabled) ============
   app.use('/api', authRouter);
   app.use('/api/clients', clientsRouter);
@@ -428,13 +436,6 @@ export function createApp(): express.Express {
       customerSuccessRouter,
     );
   }
-
-  // ============ BUG TRACKING MODULE ============
-  // Bug tracking, issue management, and error monitoring
-  // IMPORTANT: Must be registered BEFORE AI Tool routers because those routers
-  // have router.use(requireAuth) which would intercept unauthenticated requests
-  // to /api/bug-tracking/external/* endpoints before they reach this router.
-  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
 
   // ============ AI TOOL MODULES ============
   // AI Tool routes are ALWAYS registered to ensure proper error messages.
