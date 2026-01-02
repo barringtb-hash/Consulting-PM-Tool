@@ -36,6 +36,7 @@ import assetsRouter from './routes/assets';
 import clientsRouter from './routes/clients';
 // contactsRouter removed - legacy PMO contacts replaced by CRMContact
 import documentsRouter from './routes/documents';
+import projectDocumentsRouter from './routes/projectDocuments';
 import healthRouter from './routes/health';
 import leadsRouter from './routes/leads';
 import publicLeadsRouter from './routes/public-leads';
@@ -313,6 +314,8 @@ export function createApp(): express.Express {
   // /api/contacts removed - legacy PMO contacts replaced by CRMContact
   app.use('/api/documents', documentsRouter);
   app.use('/api/projects', projectsRouter);
+  app.use('/api/project-documents', projectDocumentsRouter); // Project document templates
+  app.use('/api', projectDocumentsRouter); // Also registers /api/projects/:projectId/documents
   app.use('/api', tasksRouter);
   app.use('/api', milestonesRouter);
   app.use('/api', meetingRouter);

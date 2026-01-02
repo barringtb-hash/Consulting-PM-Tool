@@ -287,6 +287,10 @@ model User {
   issueComments  IssueComment[]
   errorLogs      ErrorLog[]
 
+  // Project Document relations
+  projectDocumentsEdited        ProjectDocument[]        @relation("ProjectDocumentEditor")
+  projectDocumentVersionsEdited ProjectDocumentVersion[] @relation("ProjectDocumentVersionEditor")
+
   // Password reset tokens
   passwordResets PasswordReset[]
 }
@@ -498,6 +502,9 @@ model Project {
 
   // Bug Tracking relations
   issues Issue[]
+
+  // Project Document Templates
+  projectDocuments ProjectDocument[]
 
   @@index([status])
   @@index([renewalDate])
@@ -7027,6 +7034,9 @@ model Tenant {
   errorLogs          ErrorLog[]
   bugTrackingApiKeys BugTrackingApiKey[]
 
+  // Project Document Templates
+  projectDocuments ProjectDocument[]
+
   @@index([slug])
   @@index([status])
 }
@@ -8731,4 +8741,120 @@ model BugTrackingApiKey {
   @@index([tenantId])
   @@index([keyHash])
   @@index([keyPrefix])
+}
+
+// ============================================================================
+// Project Document Templates
+// ============================================================================
+
+/**
+ * ProjectDocumentType - Types of structured project documents
+ * Based on AI consulting documentation framework
+ */
+enum ProjectDocumentType {
+  // Core Project Documents
+  PROJECT_PLAN          // Scope, schedule, milestones, deliverables
+  STATUS_REPORT         // Progress with RAG status, accomplishments, risks
+  RISK_REGISTER         // Likelihood, impact scoring, mitigation strategies
+  ISSUE_LOG             // Problem tracking, severity, resolution
+  MEETING_NOTES         // Decisions, action items, parking lot
+  LESSONS_LEARNED       // Post-project insights and recommendations
+  COMMUNICATION_PLAN    // Stakeholders, channels, cadence, escalation
+
+  // Lifecycle Documents
+  KICKOFF_AGENDA        // Project alignment meeting structure
+  CHANGE_REQUEST        // Scope change with impact analysis
+  PROJECT_CLOSURE       // Handoff checklist and transition
+  KNOWLEDGE_TRANSFER    // System documentation for handoff
+
+  // AI Project-Specific Documents
+  AI_FEASIBILITY        // Problem, data, technical, org, financial assessment
+  AI_LIMITATIONS        // Capabilities, failure modes, edge cases
+  MONITORING_MAINTENANCE // Drift detection, retraining, incident response
+  DATA_REQUIREMENTS     // Client data specifications
+  DELIVERABLE_CHECKLIST // Quality gates before client delivery
+}
+
+/**
+ * ProjectDocumentStatus - Document lifecycle status
+ */
+enum ProjectDocumentStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  ARCHIVED
+}
+
+/**
+ * ProjectDocumentCategory - Categories for grouping templates
+ */
+enum ProjectDocumentCategory {
+  CORE            // Essential project management documents
+  LIFECYCLE       // Project phase-specific documents
+  AI_SPECIFIC     // AI/ML project documentation
+}
+
+/**
+ * ProjectDocument - Structured project documents from templates
+ * Each document is an instance of a template filled in for a specific project
+ */
+model ProjectDocument {
+  id        Int                     @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Document metadata
+  templateType ProjectDocumentType
+  category     ProjectDocumentCategory
+  name         String                     // User-customizable name
+  description  String?                    // Optional description
+  status       ProjectDocumentStatus      @default(DRAFT)
+
+  // Content stored as structured JSON based on templateType
+  content Json @db.JsonB
+
+  // Version tracking
+  version      Int      @default(1)
+  lastEditedBy Int?
+  lastEditedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant   Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project  Project                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  editor   User?                    @relation("ProjectDocumentEditor", fields: [lastEditedBy], references: [id], onDelete: SetNull)
+  versions ProjectDocumentVersion[]
+
+  @@unique([projectId, templateType, name])
+  @@index([projectId])
+  @@index([tenantId])
+  @@index([templateType])
+  @@index([status])
+  @@index([category])
+}
+
+/**
+ * ProjectDocumentVersion - Version history for project documents
+ * Stores snapshots of document content for audit and rollback
+ */
+model ProjectDocumentVersion {
+  id         Int @id @default(autoincrement())
+  documentId Int
+
+  version   Int
+  content   Json     @db.JsonB
+  status    ProjectDocumentStatus
+  editedBy  Int?
+  editedAt  DateTime
+  changeLog String?  // Optional description of changes
+
+  createdAt DateTime @default(now())
+
+  document ProjectDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  editor   User?           @relation("ProjectDocumentVersionEditor", fields: [editedBy], references: [id], onDelete: SetNull)
+
+  @@unique([documentId, version])
+  @@index([documentId])
 }

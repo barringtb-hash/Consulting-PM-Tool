@@ -165,6 +165,42 @@ export {
 export type { Document, DocumentFilters, DocumentPayload } from './documents';
 
 // ============================================================================
+// Project Documents Module (Templates)
+// ============================================================================
+
+export {
+  // Template queries
+  useDocumentTemplates,
+  useDocumentTemplate,
+  // Document queries
+  useProjectDocuments,
+  useProjectDocumentStats,
+  useProjectDocument,
+  // Document mutations
+  useCreateProjectDocument,
+  useUpdateProjectDocument,
+  useUpdateProjectDocumentStatus,
+  useCloneProjectDocument,
+  useDeleteProjectDocument,
+  // Version queries and mutations
+  useDocumentVersions,
+  useDocumentVersion,
+  useRestoreDocumentVersion,
+} from './projectDocuments';
+export type {
+  TemplateInfo,
+  ProjectDocument,
+  ProjectDocumentStats,
+  ProjectDocumentVersion,
+  ProjectDocumentType,
+  ProjectDocumentStatus,
+  ProjectDocumentCategory,
+  ListProjectDocumentsParams,
+  CreateProjectDocumentPayload,
+  UpdateProjectDocumentPayload,
+} from './projectDocuments';
+
+// ============================================================================
 // Assets Module
 // ============================================================================
 
