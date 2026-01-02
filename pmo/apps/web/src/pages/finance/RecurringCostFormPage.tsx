@@ -18,25 +18,44 @@ import {
   useCategories,
 } from '../../api/hooks/useFinance';
 import { useAccounts } from '../../api/hooks/crm';
-import { useProjects } from '../../api/hooks/projects';
 
 const recurringCostFormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
   description: z.string().max(1000).optional(),
-  type: z.enum(['SUBSCRIPTION', 'LICENSE', 'SERVICE', 'EMPLOYEE', 'OTHER']),
+  type: z.enum([
+    'SUBSCRIPTION',
+    'LICENSE',
+    'PAYROLL',
+    'BENEFITS',
+    'CONTRACTOR',
+    'RENT',
+    'UTILITIES',
+    'INSURANCE',
+    'MAINTENANCE',
+    'OTHER',
+  ]),
   amount: z.coerce.number().positive('Amount must be positive'),
   currency: z.string().length(3).default('USD'),
-  frequency: z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']),
+  frequency: z.enum([
+    'WEEKLY',
+    'BIWEEKLY',
+    'MONTHLY',
+    'QUARTERLY',
+    'SEMIANNUALLY',
+    'YEARLY',
+  ]),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
   nextDueDate: z.string().min(1, 'Next due date is required'),
-  categoryId: z.coerce.number().positive().optional().or(z.literal('')),
+  categoryId: z.coerce
+    .number()
+    .positive('Category is required')
+    .or(z.literal('').transform(() => undefined)),
   accountId: z.coerce.number().positive().optional().or(z.literal('')),
-  projectId: z.coerce.number().positive().optional().or(z.literal('')),
   vendorName: z.string().max(255).optional(),
-  notes: z.string().max(2000).optional(),
-  autoCreateExpense: z.boolean().default(false),
-  status: z.enum(['ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']).optional(),
+  status: z
+    .enum(['DRAFT', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED'])
+    .optional(),
 });
 
 type RecurringCostFormData = z.infer<typeof recurringCostFormSchema>;
@@ -53,26 +72,54 @@ const TYPE_OPTIONS = [
     description: 'Software licenses, certifications',
   },
   {
-    value: 'SERVICE',
-    label: 'Service',
-    description: 'Ongoing services, maintenance',
+    value: 'PAYROLL',
+    label: 'Payroll',
+    description: 'Employee salaries and wages',
   },
   {
-    value: 'EMPLOYEE',
-    label: 'Employee',
-    description: 'Salary, contractor fees',
+    value: 'BENEFITS',
+    label: 'Benefits',
+    description: 'Health insurance, retirement plans',
+  },
+  {
+    value: 'CONTRACTOR',
+    label: 'Contractor',
+    description: 'Freelancer and contractor fees',
+  },
+  {
+    value: 'RENT',
+    label: 'Rent',
+    description: 'Office space, equipment rental',
+  },
+  {
+    value: 'UTILITIES',
+    label: 'Utilities',
+    description: 'Electricity, water, internet',
+  },
+  {
+    value: 'INSURANCE',
+    label: 'Insurance',
+    description: 'Business insurance policies',
+  },
+  {
+    value: 'MAINTENANCE',
+    label: 'Maintenance',
+    description: 'Equipment and facility maintenance',
   },
   { value: 'OTHER', label: 'Other', description: 'Other recurring costs' },
 ];
 
 const FREQUENCY_OPTIONS = [
   { value: 'WEEKLY', label: 'Weekly' },
+  { value: 'BIWEEKLY', label: 'Bi-weekly' },
   { value: 'MONTHLY', label: 'Monthly' },
   { value: 'QUARTERLY', label: 'Quarterly' },
+  { value: 'SEMIANNUALLY', label: 'Semi-annually' },
   { value: 'YEARLY', label: 'Yearly' },
 ];
 
 const STATUS_OPTIONS = [
+  { value: 'DRAFT', label: 'Draft' },
   { value: 'ACTIVE', label: 'Active' },
   { value: 'PAUSED', label: 'Paused' },
   { value: 'CANCELLED', label: 'Cancelled' },
@@ -89,7 +136,6 @@ export default function RecurringCostFormPage() {
   );
   const { data: categoriesData } = useCategories({});
   const { data: accountsData } = useAccounts({});
-  const { data: projectsData } = useProjects({});
 
   const createRecurringCost = useCreateRecurringCost();
   const updateRecurringCost = useUpdateRecurringCost();
@@ -116,21 +162,12 @@ export default function RecurringCostFormPage() {
       nextDueDate: new Date().toISOString().split('T')[0],
       categoryId: '',
       accountId: '',
-      projectId: '',
       vendorName: '',
-      notes: '',
-      autoCreateExpense: false,
       status: 'ACTIVE',
     },
   });
 
-  const selectedAccountId = watch('accountId');
   const startDate = watch('startDate');
-
-  // Filter projects by selected account
-  const filteredProjects = projectsData?.filter(
-    (p) => !selectedAccountId || p.accountId === Number(selectedAccountId),
-  );
 
   // Auto-set next due date when start date changes
   useEffect(() => {
@@ -153,10 +190,7 @@ export default function RecurringCostFormPage() {
         nextDueDate: recurringCost.nextDueDate.split('T')[0],
         categoryId: recurringCost.categoryId || '',
         accountId: recurringCost.accountId || '',
-        projectId: recurringCost.projectId || '',
         vendorName: recurringCost.vendorName || '',
-        notes: recurringCost.notes || '',
-        autoCreateExpense: recurringCost.autoCreateExpense,
         status: recurringCost.status,
       });
     }
@@ -165,10 +199,16 @@ export default function RecurringCostFormPage() {
   const onSubmit = async (data: RecurringCostFormData) => {
     try {
       const payload = {
-        ...data,
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        amount: data.amount,
+        currency: data.currency,
+        frequency: data.frequency,
         categoryId: data.categoryId ? Number(data.categoryId) : undefined,
         accountId: data.accountId ? Number(data.accountId) : undefined,
-        projectId: data.projectId ? Number(data.projectId) : undefined,
+        vendorName: data.vendorName,
+        status: data.status,
         startDate: new Date(data.startDate).toISOString(),
         endDate: data.endDate
           ? new Date(data.endDate).toISOString()
@@ -187,6 +227,7 @@ export default function RecurringCostFormPage() {
       navigate('/finance/recurring-costs');
     } catch (error) {
       console.error('Failed to save recurring cost:', error);
+      // Display error to user - the mutation hooks should handle toast notifications
     }
   };
 

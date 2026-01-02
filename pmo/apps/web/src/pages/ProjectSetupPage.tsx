@@ -14,6 +14,25 @@ import { Textarea } from '../ui/Textarea';
 import { PageHeader } from '../ui/PageHeader';
 import { useToast } from '../ui/Toast';
 
+/**
+ * Format a date string (YYYY-MM-DD) to local display format.
+ * Handles both HTML date input values and ISO date strings.
+ */
+function formatLocalDate(dateStr: string): string {
+  if (!dateStr) return '';
+  // Extract YYYY-MM-DD from ISO string if needed
+  const datePart = dateStr.split('T')[0];
+  if (!datePart || !/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return '';
+  const [year, month, day] = datePart.split('-').map(Number);
+  // Create date in local timezone
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 // Project templates based on AI Consulting PMO model
 interface ProjectTemplate {
   id: string;
@@ -360,12 +379,10 @@ function ProjectSetupPage(): JSX.Element {
       <PageHeader
         title="New Project Setup"
         description="Create a new project using guided workflow templates"
-        action={
-          <Button variant="secondary" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Button>
-        }
+        breadcrumbs={[
+          { label: 'Projects', href: '/projects' },
+          { label: 'New Project' },
+        ]}
       />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -881,9 +898,9 @@ function ProjectSetupPage(): JSX.Element {
                     </h4>
                     <p className="text-neutral-900 dark:text-neutral-100">
                       {formData.startDate && formData.endDate
-                        ? `${new Date(formData.startDate).toLocaleDateString()} - ${new Date(formData.endDate).toLocaleDateString()}`
+                        ? `${formatLocalDate(formData.startDate)} - ${formatLocalDate(formData.endDate)}`
                         : formData.startDate
-                          ? `From ${new Date(formData.startDate).toLocaleDateString()}`
+                          ? `From ${formatLocalDate(formData.startDate)}`
                           : 'Not specified'}
                     </p>
                   </div>

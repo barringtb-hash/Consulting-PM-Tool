@@ -62,6 +62,9 @@ export type ModuleId =
   | 'demoMarketing'
   // Finance Tracking module
   | 'financeTracking'
+  | 'financeExpenses'
+  | 'financeBudgets'
+  | 'financeRecurringCosts'
   // Bug Tracking module
   | 'bugTracking';
 
@@ -686,19 +689,57 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
   // ============ FINANCE TRACKING MODULE ============
   financeTracking: {
     id: 'financeTracking',
-    label: 'Finance',
+    label: 'Finance Dashboard',
     navGroup: 'finance',
     path: '/finance',
-    additionalPaths: [
-      '/finance/expenses',
-      '/finance/budgets',
-      '/finance/recurring-costs',
-    ],
     icon: 'DollarSign',
     isCore: false,
     apiPrefixes: ['/api/finance'],
     description:
       'Admin-only finance tracking: expenses, budgets, recurring costs, and profitability analysis',
+  },
+  financeExpenses: {
+    id: 'financeExpenses',
+    label: 'Expenses',
+    navGroup: 'finance',
+    path: '/finance/expenses',
+    additionalPaths: [
+      '/finance/expenses/new',
+      '/finance/expenses/:id',
+      '/finance/expenses/:id/edit',
+    ],
+    icon: 'Receipt',
+    isCore: false,
+    dependencies: ['financeTracking'],
+    apiPrefixes: ['/api/finance/expenses'],
+    description: 'Expense tracking with approval workflows and AI categorization',
+  },
+  financeBudgets: {
+    id: 'financeBudgets',
+    label: 'Budgets',
+    navGroup: 'finance',
+    path: '/finance/budgets',
+    additionalPaths: ['/finance/budgets/new', '/finance/budgets/:id'],
+    icon: 'PieChart',
+    isCore: false,
+    dependencies: ['financeTracking'],
+    apiPrefixes: ['/api/finance/budgets'],
+    description: 'Budget management by category, account, or project',
+  },
+  financeRecurringCosts: {
+    id: 'financeRecurringCosts',
+    label: 'Recurring Costs',
+    navGroup: 'finance',
+    path: '/finance/recurring-costs',
+    additionalPaths: [
+      '/finance/recurring-costs/new',
+      '/finance/recurring-costs/:id',
+    ],
+    icon: 'RefreshCw',
+    isCore: false,
+    dependencies: ['financeTracking'],
+    apiPrefixes: ['/api/finance/recurring-costs'],
+    description: 'Track subscriptions and recurring expenses with auto-generation',
   },
 
   // ============ BUG TRACKING MODULE ============
@@ -793,6 +834,9 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'demoMarketing',
   // Finance Tracking
   'financeTracking',
+  'financeExpenses',
+  'financeBudgets',
+  'financeRecurringCosts',
   // Bug Tracking
   'bugTracking',
 ];

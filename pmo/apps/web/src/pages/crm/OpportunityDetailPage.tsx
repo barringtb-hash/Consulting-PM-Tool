@@ -10,7 +10,6 @@ import {
   Building2,
   DollarSign,
   Calendar,
-  ArrowLeft,
   Edit2,
   Trash2,
   TrendingUp,
@@ -273,14 +272,13 @@ function OpportunityDetailPage(): JSX.Element {
       <PageHeader
         title={opportunity.name}
         description={opportunity.account?.name ?? 'No account'}
+        breadcrumbs={[
+          { label: 'CRM', href: '/crm/opportunities' },
+          { label: 'Opportunities', href: '/crm/opportunities' },
+          { label: opportunity.name },
+        ]}
         action={
           <div className="flex items-center gap-2">
-            <Link to="/crm/opportunities">
-              <Button variant="secondary">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
             {!isEditing && isOpen && (
               <Button onClick={handleStartEdit}>
                 <Edit2 className="h-4 w-4 mr-2" />

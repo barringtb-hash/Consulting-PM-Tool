@@ -29,7 +29,12 @@ function formatStatus(status: ProjectStatus): string {
 
 function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return '—';
-  const date = new Date(dateString);
+  // Extract YYYY-MM-DD from ISO string to avoid timezone issues
+  const datePart = dateString.split('T')[0];
+  if (!datePart || !/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return '—';
+  const [year, month, day] = datePart.split('-').map(Number);
+  // Create date in local timezone
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

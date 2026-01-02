@@ -16,7 +16,6 @@ import {
   Users,
   DollarSign,
   Calendar,
-  ArrowLeft,
   Edit2,
   Archive,
   RefreshCw,
@@ -37,6 +36,7 @@ import {
   useAccountSuccessPlans,
   useCreateAccountCTA,
   useCreateAccountSuccessPlan,
+  useCalculateAccountHealthScore,
   type AccountType,
   type AccountUpdatePayload,
   type CreateCTAPayload,
@@ -188,6 +188,9 @@ function AccountDetailPage(): JSX.Element {
   // Mutation hooks for creating CTAs and Success Plans
   const createCTA = useCreateAccountCTA(accountId ?? 0);
   const createSuccessPlan = useCreateAccountSuccessPlan(accountId ?? 0);
+
+  // Health score calculation mutation
+  const calculateHealthScore = useCalculateAccountHealthScore(accountId ?? 0);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<AccountUpdatePayload>>({});
@@ -367,14 +370,13 @@ function AccountDetailPage(): JSX.Element {
       <PageHeader
         title={account.name}
         description={account.industry ?? 'No industry specified'}
+        breadcrumbs={[
+          { label: 'CRM', href: '/crm/accounts' },
+          { label: 'Accounts', href: '/crm/accounts' },
+          { label: account.name },
+        ]}
         action={
           <div className="flex items-center gap-2">
-            <Link to="/crm/accounts">
-              <Button variant="secondary">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
             {!isEditing && (
               <Button onClick={handleStartEdit}>
                 <Edit2 className="h-4 w-4 mr-2" />
@@ -942,6 +944,47 @@ function AccountDetailPage(): JSX.Element {
                     </Badge>
                   </div>
                 )}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      calculateHealthScore.mutate(undefined, {
+                        onSuccess: () => {
+                          showToast({
+                            title: 'Health Score Recalculated',
+                            description:
+                              'The health score has been updated based on current data.',
+                            type: 'success',
+                          });
+                          accountQuery.refetch();
+                        },
+                        onError: (error) => {
+                          showToast({
+                            title: 'Failed to recalculate',
+                            description:
+                              error.message || 'Please try again later.',
+                            type: 'error',
+                          });
+                        },
+                      });
+                    }}
+                    disabled={calculateHealthScore.isPending}
+                  >
+                    {calculateHealthScore.isPending ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Calculating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Recalculate Health
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardBody>
             </Card>
 
@@ -1083,14 +1126,10 @@ function AccountDetailPage(): JSX.Element {
                 }
               >
                 <option value="RISK">Risk</option>
-                <option value="EXPANSION">Expansion</option>
-                <option value="RENEWAL">Renewal</option>
-                <option value="ONBOARDING">Onboarding</option>
-                <option value="ENGAGEMENT">Engagement</option>
-                <option value="ADVOCACY">Advocacy</option>
-                <option value="ESCALATION">Escalation</option>
+                <option value="OPPORTUNITY">Opportunity</option>
                 <option value="LIFECYCLE">Lifecycle</option>
-                <option value="OTHER">Other</option>
+                <option value="ACTIVITY">Activity</option>
+                <option value="OBJECTIVE">Objective</option>
               </Select>
             </div>
             <div>

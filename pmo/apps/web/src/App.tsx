@@ -1036,6 +1036,15 @@ function App(): JSX.Element {
                     </LazyPage>
                   }
                 />
+                {/* Static routes must come before dynamic :id routes */}
+                <Route
+                  path="/bug-tracking/api-keys"
+                  element={
+                    <LazyPage>
+                      <BugTrackingApiKeysPage />
+                    </LazyPage>
+                  }
+                />
                 <Route
                   path="/bug-tracking/:id"
                   element={
@@ -1049,14 +1058,6 @@ function App(): JSX.Element {
                   element={
                     <LazyPage>
                       <BugTrackingIssueEditPage />
-                    </LazyPage>
-                  }
-                />
-                <Route
-                  path="/bug-tracking/api-keys"
-                  element={
-                    <LazyPage>
-                      <BugTrackingApiKeysPage />
                     </LazyPage>
                   }
                 />
