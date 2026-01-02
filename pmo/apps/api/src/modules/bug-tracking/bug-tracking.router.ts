@@ -44,6 +44,14 @@ const upload = multer({
 const router = Router();
 
 // ============================================================================
+// DEBUG: Public diagnostic endpoint - MUST be first to avoid any interference
+// ============================================================================
+router.get('/bug-tracking/debug/ping', (_req: Request, res: Response) => {
+  console.log('[BUG-TRACKING] Debug ping endpoint hit');
+  res.json({ pong: true, timestamp: new Date().toISOString() });
+});
+
+// ============================================================================
 // VALIDATION SCHEMAS
 // ============================================================================
 
