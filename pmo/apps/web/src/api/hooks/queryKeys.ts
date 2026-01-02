@@ -111,6 +111,33 @@ export const queryKeys = {
   },
 
   // ---------------------------------------------------------------------------
+  // Project Documents Module (Templates)
+  // ---------------------------------------------------------------------------
+  projectDocuments: {
+    all: ['projectDocuments'] as const,
+    templates: () => [...queryKeys.projectDocuments.all, 'templates'] as const,
+    template: (type: string) =>
+      [...queryKeys.projectDocuments.templates(), type] as const,
+    byProject: (projectId: number) =>
+      [...queryKeys.projectDocuments.all, 'project', projectId] as const,
+    list: (projectId: number, filters?: Record<string, unknown>) =>
+      [
+        ...queryKeys.projectDocuments.byProject(projectId),
+        'list',
+        filters,
+      ] as const,
+    stats: (projectId: number) =>
+      [...queryKeys.projectDocuments.byProject(projectId), 'stats'] as const,
+    details: () => [...queryKeys.projectDocuments.all, 'detail'] as const,
+    detail: (id: number) =>
+      [...queryKeys.projectDocuments.details(), id] as const,
+    versions: (id: number) =>
+      [...queryKeys.projectDocuments.detail(id), 'versions'] as const,
+    version: (id: number, version: number) =>
+      [...queryKeys.projectDocuments.versions(id), version] as const,
+  },
+
+  // ---------------------------------------------------------------------------
   // Assets Module
   // ---------------------------------------------------------------------------
   assets: {

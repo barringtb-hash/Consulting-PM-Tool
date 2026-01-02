@@ -13,6 +13,7 @@ import {
   UserPlus,
   Lock,
   Globe,
+  FileText,
 } from 'lucide-react';
 import {
   useClient,
@@ -29,6 +30,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 import { ProjectOverviewTab } from '../features/projects/ProjectOverviewTab';
 import { ProjectTasksTab } from '../features/projects/ProjectTasksTab';
+import { ProjectDocumentsTab } from '../features/projects/ProjectDocumentsTab';
 import { ProjectStatusTab } from '../features/status/ProjectStatusTab';
 import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
 import { Badge } from '../ui/Badge';
@@ -613,6 +615,10 @@ function ProjectDashboardPage(): JSX.Element {
               <FolderOpen className="w-4 h-4" />
               Assets
             </TabsTrigger>
+            <TabsTrigger value="documents">
+              <FileText className="w-4 h-4" />
+              Documents
+            </TabsTrigger>
             <TabsTrigger value="marketing">
               <Megaphone className="w-4 h-4" />
               Marketing
@@ -783,6 +789,10 @@ function ProjectDashboardPage(): JSX.Element {
                 </CardBody>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <ProjectDocumentsTab projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="marketing">
