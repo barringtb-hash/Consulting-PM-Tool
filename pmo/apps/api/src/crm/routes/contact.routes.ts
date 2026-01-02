@@ -13,6 +13,9 @@ import {
   tenantMiddleware,
   type TenantRequest,
 } from '../../tenant/tenant.middleware';
+import { createChildLogger } from '../../utils/logger';
+
+const log = createChildLogger({ module: 'contact-routes' });
 
 // Helper to check if error is a "not found" error
 function isNotFoundError(error: unknown): boolean {
@@ -75,7 +78,7 @@ const createContactSchema = z.object({
   isPrimary: z.boolean().optional(),
   doNotContact: z.boolean().optional(),
   linkedinUrl: z.string().url().max(500).optional().nullable(),
-  twitterUrl: z.string().max(100).optional().nullable(),
+  twitterUrl: z.string().url().max(500).optional().nullable(),
   address: z
     .object({
       street: z.string().optional(),
@@ -125,7 +128,7 @@ router.get('/stats', async (req: TenantRequest, res: Response) => {
     const stats = await contactService.getContactStats();
     res.json({ data: stats });
   } catch (error) {
-    console.error('Error fetching contact stats:', error);
+    log.error('Error fetching contact stats', { error });
     res.status(500).json({ error: 'Failed to fetch contact statistics' });
   }
 });
@@ -155,7 +158,7 @@ router.get('/', async (req: TenantRequest, res: Response) => {
 
     res.json({ data: result });
   } catch (error) {
-    console.error('Error listing contacts:', error);
+    log.error('Error listing contacts', { error });
     res.status(500).json({ error: 'Failed to list contacts' });
   }
 });
@@ -176,7 +179,7 @@ router.get(
       const contacts = await contactService.listContactsByAccount(accountId);
       res.json({ data: contacts });
     } catch (error) {
-      console.error('Error listing contacts for account:', error);
+      log.error('Error listing contacts for account', { error });
       res.status(500).json({ error: 'Failed to list contacts' });
     }
   },
@@ -201,7 +204,7 @@ router.get('/:id', async (req: TenantRequest, res: Response) => {
 
     res.json({ data: contact });
   } catch (error) {
-    console.error('Error fetching contact:', error);
+    log.error('Error fetching contact', { error });
     res.status(500).json({ error: 'Failed to fetch contact' });
   }
 });
@@ -229,7 +232,7 @@ router.post('/', async (req: TenantRequest, res: Response) => {
     const contact = await contactService.createContact(input);
     res.status(201).json({ data: contact });
   } catch (error) {
-    console.error('Error creating contact:', error);
+    log.error('Error creating contact', { error });
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
@@ -270,7 +273,7 @@ router.put('/:id', async (req: TenantRequest, res: Response) => {
       res.status(404).json({ error: 'Contact not found' });
       return;
     }
-    console.error('Error updating contact:', error);
+    log.error('Error updating contact', { error });
     res.status(500).json({ error: 'Failed to update contact' });
   }
 });
@@ -293,7 +296,7 @@ router.delete('/:id', async (req: TenantRequest, res: Response) => {
       res.status(404).json({ error: 'Contact not found' });
       return;
     }
-    console.error('Error deleting contact:', error);
+    log.error('Error deleting contact', { error });
     res.status(500).json({ error: 'Failed to delete contact' });
   }
 });
@@ -319,7 +322,7 @@ router.post('/:id/restore', async (req: TenantRequest, res: Response) => {
       res.status(404).json({ error: 'Archived contact not found' });
       return;
     }
-    console.error('Error restoring contact:', error);
+    log.error('Error restoring contact', { error });
     res.status(500).json({ error: 'Failed to restore contact' });
   }
 });

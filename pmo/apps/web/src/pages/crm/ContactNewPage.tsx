@@ -53,9 +53,11 @@ const contactFormSchema = z.object({
       'REFERRAL',
       'LINKEDIN',
       'COLD_CALL',
-      'EMAIL',
+      'COLD_EMAIL',
       'EVENT',
       'PARTNER',
+      'INBOUND',
+      'OUTBOUND',
       'OTHER',
     ])
     .optional()
@@ -68,7 +70,12 @@ const contactFormSchema = z.object({
     .max(500)
     .optional()
     .or(z.literal('')),
-  twitterUrl: z.string().max(100).optional().or(z.literal('')),
+  twitterUrl: z
+    .string()
+    .url('Invalid URL')
+    .max(500)
+    .optional()
+    .or(z.literal('')),
 });
 
 type ContactFormData = z.infer<typeof contactFormSchema>;
@@ -88,9 +95,11 @@ const LEAD_SOURCE_OPTIONS: { value: CRMLeadSource; label: string }[] = [
   { value: 'REFERRAL', label: 'Referral' },
   { value: 'LINKEDIN', label: 'LinkedIn' },
   { value: 'COLD_CALL', label: 'Cold Call' },
-  { value: 'EMAIL', label: 'Email' },
+  { value: 'COLD_EMAIL', label: 'Cold Email' },
   { value: 'EVENT', label: 'Event' },
   { value: 'PARTNER', label: 'Partner' },
+  { value: 'INBOUND', label: 'Inbound' },
+  { value: 'OUTBOUND', label: 'Outbound' },
   { value: 'OTHER', label: 'Other' },
 ];
 
@@ -403,12 +412,12 @@ export default function ContactNewPage() {
                   htmlFor="twitterUrl"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
-                  Twitter Handle
+                  Twitter URL
                 </label>
                 <Input
                   id="twitterUrl"
                   {...register('twitterUrl')}
-                  placeholder="@johndoe"
+                  placeholder="https://twitter.com/johndoe"
                 />
               </div>
             </div>
