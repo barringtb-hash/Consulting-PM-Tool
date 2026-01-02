@@ -19,6 +19,22 @@ import {
   ContentChannel,
   CampaignStatus,
   TenantRole,
+  // CRM enums
+  AccountType,
+  AccountEmployeeCount,
+  ContactLifecycle,
+  CRMLeadSource,
+  PipelineStageType,
+  OpportunityStatus,
+  // Bug tracking enums
+  IssueType,
+  IssueStatus,
+  IssuePriority,
+  IssueSource,
+  // Lead enums
+  LeadStatus,
+  LeadSource,
+  ServiceInterest,
 } from '@prisma/client';
 
 if (!process.env.DATABASE_URL) {
@@ -877,6 +893,465 @@ const campaignSeeds = [
   },
 ];
 
+// ============================================================================
+// CRM SEED DATA
+// ============================================================================
+
+// CRM Accounts - mirrors clients but as proper CRM entities
+const accountSeeds = [
+  {
+    name: 'Acme Manufacturing',
+    website: 'https://acme-mfg.example.com',
+    phone: '+1-312-555-0100',
+    type: AccountType.CUSTOMER,
+    industry: 'Industrial Manufacturing',
+    employeeCount: AccountEmployeeCount.MEDIUM,
+    annualRevenue: 50000000,
+    ownerEmail: 'avery.chen@pmo.test',
+    healthScore: 72,
+    engagementScore: 65,
+    churnRisk: 0.15,
+    tags: ['manufacturing', 'predictive-maintenance', 'pilot'],
+  },
+  {
+    name: 'Brightside Health Group',
+    website: 'https://brightside-health.example.com',
+    phone: '+1-415-555-0100',
+    type: AccountType.CUSTOMER,
+    industry: 'Healthcare',
+    employeeCount: AccountEmployeeCount.SMALL,
+    annualRevenue: 15000000,
+    ownerEmail: 'priya.desai@pmo.test',
+    healthScore: 85,
+    engagementScore: 78,
+    churnRisk: 0.08,
+    tags: ['healthcare', 'automation', 'document-analysis'],
+  },
+  {
+    name: 'TechForward Inc',
+    website: 'https://techforward.example.com',
+    phone: '+1-650-555-0200',
+    type: AccountType.PROSPECT,
+    industry: 'Technology',
+    employeeCount: AccountEmployeeCount.LARGE,
+    annualRevenue: 200000000,
+    ownerEmail: 'marco.silva@pmo.test',
+    healthScore: 50,
+    engagementScore: 60,
+    churnRisk: 0.25,
+    tags: ['technology', 'ai-strategy', 'enterprise'],
+  },
+  {
+    name: 'GreenEnergy Solutions',
+    website: 'https://greenenergy.example.com',
+    phone: '+1-303-555-0300',
+    type: AccountType.PROSPECT,
+    industry: 'Energy & Utilities',
+    employeeCount: AccountEmployeeCount.MEDIUM,
+    annualRevenue: 75000000,
+    ownerEmail: 'avery.chen@pmo.test',
+    healthScore: 50,
+    engagementScore: 45,
+    churnRisk: 0.3,
+    tags: ['energy', 'sustainability', 'iot'],
+  },
+  {
+    name: 'Velocity Logistics',
+    website: 'https://velocity-logistics.example.com',
+    phone: '+1-214-555-0400',
+    type: AccountType.CUSTOMER,
+    industry: 'Transportation & Logistics',
+    employeeCount: AccountEmployeeCount.LARGE,
+    annualRevenue: 120000000,
+    ownerEmail: 'admin@pmo.test',
+    healthScore: 68,
+    engagementScore: 70,
+    churnRisk: 0.12,
+    tags: ['logistics', 'supply-chain', 'optimization'],
+  },
+];
+
+// CRM Contacts linked to accounts
+const crmContactSeeds = [
+  // Acme Manufacturing contacts
+  {
+    accountName: 'Acme Manufacturing',
+    firstName: 'Dana',
+    lastName: 'Patel',
+    email: 'dana.patel@acme-mfg.example.com',
+    phone: '+1-312-555-0101',
+    jobTitle: 'Operations Director',
+    department: 'Operations',
+    lifecycle: ContactLifecycle.CUSTOMER,
+    leadSource: CRMLeadSource.REFERRAL,
+    isPrimary: true,
+    ownerEmail: 'avery.chen@pmo.test',
+  },
+  {
+    accountName: 'Acme Manufacturing',
+    firstName: 'Miguel',
+    lastName: 'Rodriguez',
+    email: 'miguel.rodriguez@acme-mfg.example.com',
+    phone: '+1-312-555-0118',
+    jobTitle: 'Maintenance Manager',
+    department: 'Maintenance',
+    lifecycle: ContactLifecycle.CUSTOMER,
+    leadSource: CRMLeadSource.REFERRAL,
+    isPrimary: false,
+    ownerEmail: 'avery.chen@pmo.test',
+  },
+  // Brightside Health contacts
+  {
+    accountName: 'Brightside Health Group',
+    firstName: 'Sarah',
+    lastName: 'Kim',
+    email: 'sarah.kim@brightside-health.example.com',
+    phone: '+1-415-555-0199',
+    jobTitle: 'Innovation Lead',
+    department: 'Innovation',
+    lifecycle: ContactLifecycle.CUSTOMER,
+    leadSource: CRMLeadSource.LINKEDIN,
+    isPrimary: true,
+    ownerEmail: 'priya.desai@pmo.test',
+  },
+  {
+    accountName: 'Brightside Health Group',
+    firstName: 'Omar',
+    lastName: 'Greene',
+    email: 'omar.greene@brightside-health.example.com',
+    phone: '+1-415-555-0142',
+    jobTitle: 'IT Manager',
+    department: 'IT',
+    lifecycle: ContactLifecycle.CUSTOMER,
+    leadSource: CRMLeadSource.LINKEDIN,
+    isPrimary: false,
+    ownerEmail: 'priya.desai@pmo.test',
+  },
+  // TechForward prospects
+  {
+    accountName: 'TechForward Inc',
+    firstName: 'Jennifer',
+    lastName: 'Walsh',
+    email: 'jennifer.walsh@techforward.example.com',
+    phone: '+1-650-555-0201',
+    jobTitle: 'VP of Engineering',
+    department: 'Engineering',
+    lifecycle: ContactLifecycle.SQL,
+    leadSource: CRMLeadSource.EVENT,
+    leadScore: 85,
+    isPrimary: true,
+    ownerEmail: 'marco.silva@pmo.test',
+  },
+  // GreenEnergy prospects
+  {
+    accountName: 'GreenEnergy Solutions',
+    firstName: 'Marcus',
+    lastName: 'Thompson',
+    email: 'marcus.thompson@greenenergy.example.com',
+    phone: '+1-303-555-0301',
+    jobTitle: 'CTO',
+    department: 'Technology',
+    lifecycle: ContactLifecycle.MQL,
+    leadSource: CRMLeadSource.WEBSITE,
+    leadScore: 65,
+    isPrimary: true,
+    ownerEmail: 'avery.chen@pmo.test',
+  },
+  // Velocity Logistics contacts
+  {
+    accountName: 'Velocity Logistics',
+    firstName: 'Robert',
+    lastName: 'Chen',
+    email: 'robert.chen@velocity-logistics.example.com',
+    phone: '+1-214-555-0401',
+    jobTitle: 'Director of Operations',
+    department: 'Operations',
+    lifecycle: ContactLifecycle.CUSTOMER,
+    leadSource: CRMLeadSource.COLD_CALL,
+    isPrimary: true,
+    ownerEmail: 'admin@pmo.test',
+  },
+];
+
+// Default pipeline stages
+const pipelineStageSeeds = [
+  {
+    name: 'Lead',
+    description: 'Initial lead qualification',
+    order: 1,
+    probability: 10,
+    type: PipelineStageType.OPEN,
+    color: '#6366F1',
+    rottenDays: 7,
+  },
+  {
+    name: 'Discovery',
+    description: 'Discovery calls and needs assessment',
+    order: 2,
+    probability: 25,
+    type: PipelineStageType.OPEN,
+    color: '#8B5CF6',
+    rottenDays: 14,
+  },
+  {
+    name: 'Proposal',
+    description: 'Proposal preparation and presentation',
+    order: 3,
+    probability: 50,
+    type: PipelineStageType.OPEN,
+    color: '#A855F7',
+    rottenDays: 21,
+  },
+  {
+    name: 'Negotiation',
+    description: 'Contract negotiation and terms discussion',
+    order: 4,
+    probability: 75,
+    type: PipelineStageType.OPEN,
+    color: '#D946EF',
+    rottenDays: 14,
+  },
+  {
+    name: 'Closed Won',
+    description: 'Deal successfully closed',
+    order: 5,
+    probability: 100,
+    type: PipelineStageType.WON,
+    color: '#22C55E',
+  },
+  {
+    name: 'Closed Lost',
+    description: 'Deal lost to competitor or no decision',
+    order: 6,
+    probability: 0,
+    type: PipelineStageType.LOST,
+    color: '#EF4444',
+  },
+];
+
+// Opportunities - sales pipeline data
+const opportunitySeeds = [
+  {
+    name: 'Acme Predictive Maintenance Phase 2',
+    description: 'Expansion of predictive maintenance system to additional plants',
+    accountName: 'Acme Manufacturing',
+    stageName: 'Proposal',
+    amount: 250000,
+    probability: 50,
+    expectedCloseDate: new Date('2024-06-30'),
+    ownerEmail: 'avery.chen@pmo.test',
+    leadSource: CRMLeadSource.REFERRAL,
+    tags: ['expansion', 'manufacturing', 'ai'],
+  },
+  {
+    name: 'Brightside Patient Portal AI',
+    description: 'AI-powered patient portal with chatbot integration',
+    accountName: 'Brightside Health Group',
+    stageName: 'Negotiation',
+    amount: 175000,
+    probability: 75,
+    expectedCloseDate: new Date('2024-04-15'),
+    ownerEmail: 'priya.desai@pmo.test',
+    leadSource: CRMLeadSource.LINKEDIN,
+    tags: ['healthcare', 'chatbot', 'patient-experience'],
+  },
+  {
+    name: 'TechForward AI Strategy Engagement',
+    description: 'Comprehensive AI strategy and roadmap development',
+    accountName: 'TechForward Inc',
+    stageName: 'Discovery',
+    amount: 500000,
+    probability: 25,
+    expectedCloseDate: new Date('2024-08-01'),
+    ownerEmail: 'marco.silva@pmo.test',
+    leadSource: CRMLeadSource.EVENT,
+    tags: ['strategy', 'enterprise', 'transformation'],
+  },
+  {
+    name: 'GreenEnergy IoT Analytics Platform',
+    description: 'Real-time energy analytics and optimization platform',
+    accountName: 'GreenEnergy Solutions',
+    stageName: 'Lead',
+    amount: 150000,
+    probability: 10,
+    expectedCloseDate: new Date('2024-09-30'),
+    ownerEmail: 'avery.chen@pmo.test',
+    leadSource: CRMLeadSource.WEBSITE,
+    tags: ['iot', 'analytics', 'sustainability'],
+  },
+  {
+    name: 'Velocity Supply Chain Optimization',
+    description: 'AI-driven supply chain optimization and demand forecasting',
+    accountName: 'Velocity Logistics',
+    stageName: 'Closed Won',
+    amount: 325000,
+    probability: 100,
+    expectedCloseDate: new Date('2024-02-28'),
+    actualCloseDate: new Date('2024-02-25'),
+    ownerEmail: 'admin@pmo.test',
+    leadSource: CRMLeadSource.COLD_CALL,
+    tags: ['logistics', 'forecasting', 'optimization'],
+  },
+  {
+    name: 'Velocity Fleet Management AI',
+    description: 'Predictive fleet maintenance and route optimization',
+    accountName: 'Velocity Logistics',
+    stageName: 'Proposal',
+    amount: 200000,
+    probability: 50,
+    expectedCloseDate: new Date('2024-07-15'),
+    ownerEmail: 'admin@pmo.test',
+    leadSource: CRMLeadSource.REFERRAL,
+    tags: ['fleet', 'maintenance', 'routing'],
+  },
+];
+
+// ============================================================================
+// BUG TRACKING SEED DATA
+// ============================================================================
+
+// Bug tracking labels
+const issueLabelSeeds = [
+  { name: 'bug', color: '#EF4444', description: 'Something isn\'t working correctly' },
+  { name: 'feature', color: '#3B82F6', description: 'New feature request' },
+  { name: 'enhancement', color: '#8B5CF6', description: 'Improvement to existing functionality' },
+  { name: 'documentation', color: '#6366F1', description: 'Documentation improvements' },
+  { name: 'urgent', color: '#DC2626', description: 'Needs immediate attention' },
+  { name: 'ui/ux', color: '#EC4899', description: 'User interface or experience issue' },
+  { name: 'api', color: '#14B8A6', description: 'API-related issue' },
+  { name: 'performance', color: '#F59E0B', description: 'Performance optimization needed' },
+  { name: 'security', color: '#7C3AED', description: 'Security-related concern' },
+  { name: 'good-first-issue', color: '#22C55E', description: 'Good for newcomers' },
+];
+
+// Sample issues for testing
+const issueSeeds = [
+  {
+    title: 'Dashboard charts not loading on slow connections',
+    description: 'When loading the operations dashboard on a slow network connection, the charts fail to render and show a blank state instead of a loading indicator.',
+    type: IssueType.BUG,
+    status: IssueStatus.OPEN,
+    priority: IssuePriority.MEDIUM,
+    source: IssueSource.MANUAL,
+    reportedByEmail: 'priya.desai@pmo.test',
+    assignedToEmail: 'marco.silva@pmo.test',
+    labels: ['bug', 'ui/ux'],
+    environment: 'production',
+  },
+  {
+    title: 'Add bulk export for opportunities',
+    description: 'Users need the ability to export multiple opportunities to CSV/Excel format for reporting purposes.',
+    type: IssueType.FEATURE_REQUEST,
+    status: IssueStatus.TRIAGING,
+    priority: IssuePriority.LOW,
+    source: IssueSource.MANUAL,
+    reportedByEmail: 'admin@pmo.test',
+    labels: ['feature', 'enhancement'],
+  },
+  {
+    title: 'API rate limiting error messages are unclear',
+    description: 'When the API rate limit is hit, the error message doesn\'t clearly indicate how long to wait before retrying.',
+    type: IssueType.IMPROVEMENT,
+    status: IssueStatus.IN_PROGRESS,
+    priority: IssuePriority.MEDIUM,
+    source: IssueSource.MANUAL,
+    reportedByEmail: 'avery.chen@pmo.test',
+    assignedToEmail: 'priya.desai@pmo.test',
+    labels: ['api', 'enhancement'],
+    environment: 'production',
+  },
+  {
+    title: 'Health score calculation includes archived accounts',
+    description: 'The portfolio health dashboard incorrectly includes archived accounts in the average health score calculation.',
+    type: IssueType.BUG,
+    status: IssueStatus.RESOLVED,
+    priority: IssuePriority.HIGH,
+    source: IssueSource.MANUAL,
+    reportedByEmail: 'admin@pmo.test',
+    assignedToEmail: 'avery.chen@pmo.test',
+    labels: ['bug', 'urgent'],
+    environment: 'production',
+  },
+  {
+    title: 'Add dark mode support',
+    description: 'Implement system-wide dark mode theme option for better accessibility and user preference.',
+    type: IssueType.FEATURE_REQUEST,
+    status: IssueStatus.OPEN,
+    priority: IssuePriority.LOW,
+    source: IssueSource.AI_ASSISTANT,
+    labels: ['feature', 'ui/ux', 'good-first-issue'],
+  },
+];
+
+// ============================================================================
+// LEADS SEED DATA
+// ============================================================================
+
+// Inbound leads for testing lead management
+const inboundLeadSeeds = [
+  {
+    name: 'David Chen',
+    email: 'david.chen@startup-inc.example.com',
+    company: 'StartupInc',
+    website: 'https://startup-inc.example.com',
+    source: LeadSource.WEBSITE_CONTACT,
+    serviceInterest: ServiceInterest.STRATEGY,
+    message: 'Looking for AI strategy consulting for our Series A startup. We have a budget of ~$50k for initial engagement.',
+    status: LeadStatus.NEW,
+    ownerEmail: 'avery.chen@pmo.test',
+    page: '/contact',
+    utmSource: 'google',
+    utmMedium: 'cpc',
+    utmCampaign: 'ai-consulting-2024',
+  },
+  {
+    name: 'Amanda Foster',
+    email: 'amanda.foster@retailco.example.com',
+    company: 'RetailCo',
+    website: 'https://retailco.example.com',
+    source: LeadSource.LINKEDIN,
+    serviceInterest: ServiceInterest.IMPLEMENTATION,
+    message: 'Need help implementing AI-powered inventory management. Currently using spreadsheets for 50+ locations.',
+    status: LeadStatus.CONTACTED,
+    ownerEmail: 'priya.desai@pmo.test',
+  },
+  {
+    name: 'James Wilson',
+    email: 'james.wilson@finserv.example.com',
+    company: 'FinServ Partners',
+    website: 'https://finserv-partners.example.com',
+    source: LeadSource.REFERRAL,
+    serviceInterest: ServiceInterest.POC,
+    message: 'Referred by Velocity Logistics. Interested in fraud detection AI proof of concept.',
+    status: LeadStatus.QUALIFIED,
+    ownerEmail: 'marco.silva@pmo.test',
+  },
+  {
+    name: 'Lisa Park',
+    email: 'lisa.park@edutech.example.com',
+    company: 'EduTech Learning',
+    source: LeadSource.EVENT,
+    serviceInterest: ServiceInterest.TRAINING,
+    message: 'Met at AI Summit 2024. Looking for AI training for our engineering team.',
+    status: LeadStatus.CONTACTED,
+    ownerEmail: 'admin@pmo.test',
+  },
+  {
+    name: 'Michael Brown',
+    email: 'michael.brown@mfg-solutions.example.com',
+    company: 'MFG Solutions',
+    website: 'https://mfg-solutions.example.com',
+    source: LeadSource.WEBSITE_DOWNLOAD,
+    serviceInterest: ServiceInterest.PMO_ADVISORY,
+    message: 'Downloaded the predictive maintenance whitepaper. Interested in discussing implementation.',
+    status: LeadStatus.NEW,
+    ownerEmail: 'avery.chen@pmo.test',
+    page: '/resources/predictive-maintenance-whitepaper',
+    utmSource: 'linkedin',
+    utmMedium: 'social',
+  },
+];
+
 async function main() {
   const bcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
 
@@ -1506,6 +1981,398 @@ async function main() {
       });
     }
   }
+
+  // ============================================================================
+  // SEED CRM DATA
+  // ============================================================================
+  console.log('  ✓ Seeding CRM data...');
+
+  // Create CRM Accounts
+  const accountMap = new Map<string, number>();
+  for (const accountSeed of accountSeeds) {
+    const ownerId = userMap.get(accountSeed.ownerEmail);
+    if (!ownerId) {
+      throw new Error(`Owner ${accountSeed.ownerEmail} not found for account seeding.`);
+    }
+
+    const existingAccount = await prisma.account.findFirst({
+      where: { tenantId: defaultTenant.id, name: accountSeed.name },
+    });
+
+    const account = existingAccount
+      ? await prisma.account.update({
+          where: { id: existingAccount.id },
+          data: {
+            website: accountSeed.website,
+            phone: accountSeed.phone,
+            type: accountSeed.type,
+            industry: accountSeed.industry,
+            employeeCount: accountSeed.employeeCount,
+            annualRevenue: accountSeed.annualRevenue,
+            healthScore: accountSeed.healthScore,
+            engagementScore: accountSeed.engagementScore,
+            churnRisk: accountSeed.churnRisk,
+            tags: accountSeed.tags,
+            ownerId,
+            archived: false,
+          },
+        })
+      : await prisma.account.create({
+          data: {
+            tenantId: defaultTenant.id,
+            name: accountSeed.name,
+            website: accountSeed.website,
+            phone: accountSeed.phone,
+            type: accountSeed.type,
+            industry: accountSeed.industry,
+            employeeCount: accountSeed.employeeCount,
+            annualRevenue: accountSeed.annualRevenue,
+            healthScore: accountSeed.healthScore,
+            engagementScore: accountSeed.engagementScore,
+            churnRisk: accountSeed.churnRisk,
+            tags: accountSeed.tags,
+            ownerId,
+          },
+        });
+
+    accountMap.set(account.name, account.id);
+  }
+  console.log(`  ✓ Created/updated ${accountSeeds.length} CRM accounts`);
+
+  // Create default sales pipeline with stages
+  const existingPipeline = await prisma.pipeline.findFirst({
+    where: { tenantId: defaultTenant.id, isDefault: true },
+  });
+
+  const pipeline = existingPipeline
+    ? await prisma.pipeline.update({
+        where: { id: existingPipeline.id },
+        data: {
+          name: 'Default Sales Pipeline',
+          description: 'Standard sales pipeline for consulting engagements',
+          isActive: true,
+        },
+      })
+    : await prisma.pipeline.create({
+        data: {
+          tenantId: defaultTenant.id,
+          name: 'Default Sales Pipeline',
+          description: 'Standard sales pipeline for consulting engagements',
+          isDefault: true,
+          isActive: true,
+        },
+      });
+  console.log(`  ✓ Created/updated default pipeline`);
+
+  // Create pipeline stages
+  const stageMap = new Map<string, number>();
+  for (const stageSeed of pipelineStageSeeds) {
+    const existingStage = await prisma.salesPipelineStage.findFirst({
+      where: { pipelineId: pipeline.id, name: stageSeed.name },
+    });
+
+    const stage = existingStage
+      ? await prisma.salesPipelineStage.update({
+          where: { id: existingStage.id },
+          data: {
+            description: stageSeed.description,
+            order: stageSeed.order,
+            probability: stageSeed.probability,
+            type: stageSeed.type,
+            color: stageSeed.color,
+            rottenDays: stageSeed.rottenDays,
+          },
+        })
+      : await prisma.salesPipelineStage.create({
+          data: {
+            pipelineId: pipeline.id,
+            name: stageSeed.name,
+            description: stageSeed.description,
+            order: stageSeed.order,
+            probability: stageSeed.probability,
+            type: stageSeed.type,
+            color: stageSeed.color,
+            rottenDays: stageSeed.rottenDays,
+          },
+        });
+
+    stageMap.set(stage.name, stage.id);
+  }
+  console.log(`  ✓ Created/updated ${pipelineStageSeeds.length} pipeline stages`);
+
+  // Create CRM Contacts
+  for (const contactSeed of crmContactSeeds) {
+    const accountId = accountMap.get(contactSeed.accountName);
+    if (!accountId) {
+      throw new Error(`Account ${contactSeed.accountName} not found for CRM contact seeding.`);
+    }
+
+    const ownerId = contactSeed.ownerEmail ? userMap.get(contactSeed.ownerEmail) : undefined;
+
+    const existingContact = await prisma.cRMContact.findFirst({
+      where: {
+        tenantId: defaultTenant.id,
+        email: contactSeed.email,
+      },
+    });
+
+    if (existingContact) {
+      await prisma.cRMContact.update({
+        where: { id: existingContact.id },
+        data: {
+          accountId,
+          firstName: contactSeed.firstName,
+          lastName: contactSeed.lastName,
+          phone: contactSeed.phone,
+          jobTitle: contactSeed.jobTitle,
+          department: contactSeed.department,
+          lifecycle: contactSeed.lifecycle,
+          leadSource: contactSeed.leadSource,
+          leadScore: contactSeed.leadScore,
+          isPrimary: contactSeed.isPrimary,
+          ownerId,
+          archived: false,
+        },
+      });
+    } else {
+      await prisma.cRMContact.create({
+        data: {
+          tenantId: defaultTenant.id,
+          accountId,
+          firstName: contactSeed.firstName,
+          lastName: contactSeed.lastName,
+          email: contactSeed.email,
+          phone: contactSeed.phone,
+          jobTitle: contactSeed.jobTitle,
+          department: contactSeed.department,
+          lifecycle: contactSeed.lifecycle,
+          leadSource: contactSeed.leadSource,
+          leadScore: contactSeed.leadScore,
+          isPrimary: contactSeed.isPrimary,
+          ownerId,
+        },
+      });
+    }
+  }
+  console.log(`  ✓ Created/updated ${crmContactSeeds.length} CRM contacts`);
+
+  // Create Opportunities
+  for (const oppSeed of opportunitySeeds) {
+    const accountId = accountMap.get(oppSeed.accountName);
+    if (!accountId) {
+      throw new Error(`Account ${oppSeed.accountName} not found for opportunity seeding.`);
+    }
+
+    const stageId = stageMap.get(oppSeed.stageName);
+    if (!stageId) {
+      throw new Error(`Stage ${oppSeed.stageName} not found for opportunity seeding.`);
+    }
+
+    const ownerId = userMap.get(oppSeed.ownerEmail);
+    if (!ownerId) {
+      throw new Error(`Owner ${oppSeed.ownerEmail} not found for opportunity seeding.`);
+    }
+
+    const status = oppSeed.stageName === 'Closed Won'
+      ? OpportunityStatus.WON
+      : oppSeed.stageName === 'Closed Lost'
+        ? OpportunityStatus.LOST
+        : OpportunityStatus.OPEN;
+
+    const weightedAmount = oppSeed.amount * (oppSeed.probability / 100);
+
+    const existingOpp = await prisma.opportunity.findFirst({
+      where: { tenantId: defaultTenant.id, name: oppSeed.name },
+    });
+
+    if (existingOpp) {
+      await prisma.opportunity.update({
+        where: { id: existingOpp.id },
+        data: {
+          description: oppSeed.description,
+          accountId,
+          pipelineId: pipeline.id,
+          stageId,
+          amount: oppSeed.amount,
+          probability: oppSeed.probability,
+          weightedAmount,
+          status,
+          expectedCloseDate: oppSeed.expectedCloseDate,
+          actualCloseDate: oppSeed.actualCloseDate,
+          leadSource: oppSeed.leadSource,
+          tags: oppSeed.tags,
+          ownerId,
+        },
+      });
+    } else {
+      await prisma.opportunity.create({
+        data: {
+          tenantId: defaultTenant.id,
+          name: oppSeed.name,
+          description: oppSeed.description,
+          accountId,
+          pipelineId: pipeline.id,
+          stageId,
+          amount: oppSeed.amount,
+          probability: oppSeed.probability,
+          weightedAmount,
+          status,
+          expectedCloseDate: oppSeed.expectedCloseDate,
+          actualCloseDate: oppSeed.actualCloseDate,
+          leadSource: oppSeed.leadSource,
+          tags: oppSeed.tags,
+          ownerId,
+        },
+      });
+    }
+  }
+  console.log(`  ✓ Created/updated ${opportunitySeeds.length} opportunities`);
+
+  // ============================================================================
+  // SEED BUG TRACKING DATA
+  // ============================================================================
+  console.log('  ✓ Seeding bug tracking data...');
+
+  // Create issue labels
+  const labelMap = new Map<string, number>();
+  for (const labelSeed of issueLabelSeeds) {
+    const existingLabel = await prisma.issueLabel.findFirst({
+      where: { tenantId: defaultTenant.id, name: labelSeed.name },
+    });
+
+    const label = existingLabel
+      ? await prisma.issueLabel.update({
+          where: { id: existingLabel.id },
+          data: {
+            color: labelSeed.color,
+            description: labelSeed.description,
+          },
+        })
+      : await prisma.issueLabel.create({
+          data: {
+            tenantId: defaultTenant.id,
+            name: labelSeed.name,
+            color: labelSeed.color,
+            description: labelSeed.description,
+          },
+        });
+
+    labelMap.set(label.name, label.id);
+  }
+  console.log(`  ✓ Created/updated ${issueLabelSeeds.length} issue labels`);
+
+  // Create sample issues
+  for (const issueSeed of issueSeeds) {
+    const reportedById = issueSeed.reportedByEmail
+      ? userMap.get(issueSeed.reportedByEmail)
+      : undefined;
+    const assignedToId = issueSeed.assignedToEmail
+      ? userMap.get(issueSeed.assignedToEmail)
+      : undefined;
+
+    const existingIssue = await prisma.issue.findFirst({
+      where: { tenantId: defaultTenant.id, title: issueSeed.title },
+    });
+
+    const labelIds = issueSeed.labels
+      .map((name) => labelMap.get(name))
+      .filter((id): id is number => id !== undefined);
+
+    if (existingIssue) {
+      await prisma.issue.update({
+        where: { id: existingIssue.id },
+        data: {
+          description: issueSeed.description,
+          type: issueSeed.type,
+          status: issueSeed.status,
+          priority: issueSeed.priority,
+          source: issueSeed.source,
+          reportedById,
+          assignedToId,
+          environment: issueSeed.environment,
+          labels: {
+            set: labelIds.map((id) => ({ id })),
+          },
+        },
+      });
+    } else {
+      await prisma.issue.create({
+        data: {
+          tenantId: defaultTenant.id,
+          title: issueSeed.title,
+          description: issueSeed.description,
+          type: issueSeed.type,
+          status: issueSeed.status,
+          priority: issueSeed.priority,
+          source: issueSeed.source,
+          reportedById,
+          assignedToId,
+          environment: issueSeed.environment,
+          labels: {
+            connect: labelIds.map((id) => ({ id })),
+          },
+        },
+      });
+    }
+  }
+  console.log(`  ✓ Created/updated ${issueSeeds.length} sample issues`);
+
+  // ============================================================================
+  // SEED INBOUND LEADS
+  // ============================================================================
+  console.log('  ✓ Seeding inbound leads...');
+
+  for (const leadSeed of inboundLeadSeeds) {
+    const ownerUserId = leadSeed.ownerEmail
+      ? userMap.get(leadSeed.ownerEmail)
+      : undefined;
+
+    const existingLead = await prisma.inboundLead.findFirst({
+      where: { tenantId: defaultTenant.id, email: leadSeed.email },
+    });
+
+    if (existingLead) {
+      await prisma.inboundLead.update({
+        where: { id: existingLead.id },
+        data: {
+          name: leadSeed.name,
+          company: leadSeed.company,
+          website: leadSeed.website,
+          source: leadSeed.source,
+          serviceInterest: leadSeed.serviceInterest,
+          message: leadSeed.message,
+          status: leadSeed.status,
+          ownerUserId,
+          page: leadSeed.page,
+          utmSource: leadSeed.utmSource,
+          utmMedium: leadSeed.utmMedium,
+          utmCampaign: leadSeed.utmCampaign,
+        },
+      });
+    } else {
+      await prisma.inboundLead.create({
+        data: {
+          tenantId: defaultTenant.id,
+          name: leadSeed.name,
+          email: leadSeed.email,
+          company: leadSeed.company,
+          website: leadSeed.website,
+          source: leadSeed.source,
+          serviceInterest: leadSeed.serviceInterest,
+          message: leadSeed.message,
+          status: leadSeed.status,
+          ownerUserId,
+          page: leadSeed.page,
+          utmSource: leadSeed.utmSource,
+          utmMedium: leadSeed.utmMedium,
+          utmCampaign: leadSeed.utmCampaign,
+        },
+      });
+    }
+  }
+  console.log(`  ✓ Created/updated ${inboundLeadSeeds.length} inbound leads`);
+
+  console.log('\n✅ Seed data complete!');
 }
 
 type TaskSeedInput = {
