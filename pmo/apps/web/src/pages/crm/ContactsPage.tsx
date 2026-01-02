@@ -143,18 +143,22 @@ function ContactsPage(): JSX.Element {
             </Card>
             <Card className="p-4">
               <div className="text-sm text-gray-500">New This Month</div>
-              <div className="text-2xl font-semibold">{stats.recentContacts}</div>
+              <div className="text-2xl font-semibold">
+                {stats.recentContacts}
+              </div>
             </Card>
             <Card className="p-4">
               <div className="text-sm text-gray-500">Customers</div>
               <div className="text-2xl font-semibold">
-                {stats.byLifecycle.find((l) => l.lifecycle === 'CUSTOMER')?.count ?? 0}
+                {stats.byLifecycle.find((l) => l.lifecycle === 'CUSTOMER')
+                  ?.count ?? 0}
               </div>
             </Card>
             <Card className="p-4">
               <div className="text-sm text-gray-500">Leads</div>
               <div className="text-2xl font-semibold">
-                {stats.byLifecycle.find((l) => l.lifecycle === 'LEAD')?.count ?? 0}
+                {stats.byLifecycle.find((l) => l.lifecycle === 'LEAD')?.count ??
+                  0}
               </div>
             </Card>
           </div>
@@ -199,7 +203,9 @@ function ContactsPage(): JSX.Element {
 
         {/* Contacts List */}
         {contactsQuery.isLoading ? (
-          <div className="text-center py-8 text-gray-500">Loading contacts...</div>
+          <div className="text-center py-8 text-gray-500">
+            Loading contacts...
+          </div>
         ) : contacts.length === 0 ? (
           <Card className="p-8 text-center">
             <User className="h-12 w-12 mx-auto text-gray-400 mb-4" />
@@ -238,9 +244,7 @@ function ContactsPage(): JSX.Element {
                         )}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                        {contact.jobTitle && (
-                          <span>{contact.jobTitle}</span>
-                        )}
+                        {contact.jobTitle && <span>{contact.jobTitle}</span>}
                         {contact.account && (
                           <span className="flex items-center gap-1">
                             <Building2 className="h-3 w-3" />

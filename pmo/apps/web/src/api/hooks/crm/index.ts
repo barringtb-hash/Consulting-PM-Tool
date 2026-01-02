@@ -1491,7 +1491,10 @@ export function useCreateCRMContact(): UseMutationResult<
     mutationFn: (payload: ContactPayload) => createContact(payload),
     onSuccess: (contact) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.crmContacts.all });
-      queryClient.setQueryData(queryKeys.crmContacts.detail(contact.id), contact);
+      queryClient.setQueryData(
+        queryKeys.crmContacts.detail(contact.id),
+        contact,
+      );
       // Also invalidate account contacts if linked
       if (contact.accountId) {
         queryClient.invalidateQueries({

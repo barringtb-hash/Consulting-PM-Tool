@@ -8,9 +8,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import * as contactService from '../services/contact.service';
-import {
-  requireAuth,
-} from '../../auth/auth.middleware';
+import { requireAuth } from '../../auth/auth.middleware';
 import {
   tenantMiddleware,
   type TenantRequest,
@@ -48,19 +46,44 @@ const createContactSchema = z.object({
   mobile: z.string().max(50).optional().nullable(),
   jobTitle: z.string().max(100).optional().nullable(),
   department: z.string().max(100).optional().nullable(),
-  lifecycle: z.enum(['LEAD', 'MQL', 'SQL', 'OPPORTUNITY', 'CUSTOMER', 'EVANGELIST', 'CHURNED']).optional(),
-  leadSource: z.enum(['WEBSITE', 'REFERRAL', 'LINKEDIN', 'COLD_CALL', 'EMAIL', 'EVENT', 'PARTNER', 'OTHER']).optional().nullable(),
+  lifecycle: z
+    .enum([
+      'LEAD',
+      'MQL',
+      'SQL',
+      'OPPORTUNITY',
+      'CUSTOMER',
+      'EVANGELIST',
+      'CHURNED',
+    ])
+    .optional(),
+  leadSource: z
+    .enum([
+      'WEBSITE',
+      'REFERRAL',
+      'LINKEDIN',
+      'COLD_CALL',
+      'EMAIL',
+      'EVENT',
+      'PARTNER',
+      'OTHER',
+    ])
+    .optional()
+    .nullable(),
   isPrimary: z.boolean().optional(),
   doNotContact: z.boolean().optional(),
   linkedinUrl: z.string().url().max(500).optional().nullable(),
   twitterUrl: z.string().max(100).optional().nullable(),
-  address: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    postalCode: z.string().optional(),
-    country: z.string().optional(),
-  }).optional().nullable(),
+  address: z
+    .object({
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      postalCode: z.string().optional(),
+      country: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
   ownerId: z.number().int().positive().optional(),
   tags: z.array(z.string()).optional(),
   customFields: z.record(z.string(), z.unknown()).optional(),
@@ -76,7 +99,10 @@ const listContactsSchema = z.object({
   lifecycle: z.string().optional(),
   leadSource: z.string().optional(),
   ownerId: z.coerce.number().int().positive().optional(),
-  archived: z.string().optional().transform((val) => (val === undefined ? undefined : val === 'true')),
+  archived: z
+    .string()
+    .optional()
+    .transform((val) => (val === undefined ? undefined : val === 'true')),
   search: z.string().optional(),
   tags: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),
@@ -109,7 +135,12 @@ router.get('/', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = listContactsSchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid query parameters', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({
+          error: 'Invalid query parameters',
+          details: parsed.error.format(),
+        });
       return;
     }
 
@@ -132,21 +163,24 @@ router.get('/', async (req: TenantRequest, res: Response) => {
 /**
  * GET /crm/contacts/by-account/:accountId - List contacts for a specific account
  */
-router.get('/by-account/:accountId', async (req: TenantRequest, res: Response) => {
-  try {
-    const accountId = parseInt(req.params.accountId, 10);
-    if (isNaN(accountId)) {
-      res.status(400).json({ error: 'Invalid account ID' });
-      return;
-    }
+router.get(
+  '/by-account/:accountId',
+  async (req: TenantRequest, res: Response) => {
+    try {
+      const accountId = parseInt(req.params.accountId, 10);
+      if (isNaN(accountId)) {
+        res.status(400).json({ error: 'Invalid account ID' });
+        return;
+      }
 
-    const contacts = await contactService.listContactsByAccount(accountId);
-    res.json({ data: contacts });
-  } catch (error) {
-    console.error('Error listing contacts for account:', error);
-    res.status(500).json({ error: 'Failed to list contacts' });
-  }
-});
+      const contacts = await contactService.listContactsByAccount(accountId);
+      res.json({ data: contacts });
+    } catch (error) {
+      console.error('Error listing contacts for account:', error);
+      res.status(500).json({ error: 'Failed to list contacts' });
+    }
+  },
+);
 
 /**
  * GET /crm/contacts/:id - Get contact by ID
@@ -179,7 +213,12 @@ router.post('/', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = createContactSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid contact data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({
+          error: 'Invalid contact data',
+          details: parsed.error.format(),
+        });
       return;
     }
 
@@ -193,8 +232,13 @@ router.post('/', async (req: TenantRequest, res: Response) => {
     res.status(201).json({ data: contact });
   } catch (error) {
     console.error('Error creating contact:', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      res.status(409).json({ error: 'A contact with this email already exists' });
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      res
+        .status(409)
+        .json({ error: 'A contact with this email already exists' });
       return;
     }
     res.status(500).json({ error: 'Failed to create contact' });
@@ -214,7 +258,12 @@ router.put('/:id', async (req: TenantRequest, res: Response) => {
 
     const parsed = updateContactSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Invalid contact data', details: parsed.error.format() });
+      res
+        .status(400)
+        .json({
+          error: 'Invalid contact data',
+          details: parsed.error.format(),
+        });
       return;
     }
 
@@ -267,7 +316,10 @@ router.post('/:id/restore', async (req: TenantRequest, res: Response) => {
     const contact = await contactService.restoreContact(id);
     res.json({ data: contact });
   } catch (error) {
-    if (isNotFoundError(error) || (error instanceof Error && error.message === 'Archived contact not found')) {
+    if (
+      isNotFoundError(error) ||
+      (error instanceof Error && error.message === 'Archived contact not found')
+    ) {
       res.status(404).json({ error: 'Archived contact not found' });
       return;
     }

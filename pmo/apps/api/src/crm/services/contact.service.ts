@@ -25,8 +25,23 @@ export interface CreateContactInput {
   mobile?: string;
   jobTitle?: string;
   department?: string;
-  lifecycle?: 'LEAD' | 'MQL' | 'SQL' | 'OPPORTUNITY' | 'CUSTOMER' | 'EVANGELIST' | 'CHURNED';
-  leadSource?: 'WEBSITE' | 'REFERRAL' | 'LINKEDIN' | 'COLD_CALL' | 'EMAIL' | 'EVENT' | 'PARTNER' | 'OTHER';
+  lifecycle?:
+    | 'LEAD'
+    | 'MQL'
+    | 'SQL'
+    | 'OPPORTUNITY'
+    | 'CUSTOMER'
+    | 'EVANGELIST'
+    | 'CHURNED';
+  leadSource?:
+    | 'WEBSITE'
+    | 'REFERRAL'
+    | 'LINKEDIN'
+    | 'COLD_CALL'
+    | 'EMAIL'
+    | 'EVENT'
+    | 'PARTNER'
+    | 'OTHER';
   isPrimary?: boolean;
   doNotContact?: boolean;
   linkedinUrl?: string;
@@ -52,8 +67,23 @@ export interface UpdateContactInput {
   mobile?: string;
   jobTitle?: string;
   department?: string;
-  lifecycle?: 'LEAD' | 'MQL' | 'SQL' | 'OPPORTUNITY' | 'CUSTOMER' | 'EVANGELIST' | 'CHURNED';
-  leadSource?: 'WEBSITE' | 'REFERRAL' | 'LINKEDIN' | 'COLD_CALL' | 'EMAIL' | 'EVENT' | 'PARTNER' | 'OTHER';
+  lifecycle?:
+    | 'LEAD'
+    | 'MQL'
+    | 'SQL'
+    | 'OPPORTUNITY'
+    | 'CUSTOMER'
+    | 'EVANGELIST'
+    | 'CHURNED';
+  leadSource?:
+    | 'WEBSITE'
+    | 'REFERRAL'
+    | 'LINKEDIN'
+    | 'COLD_CALL'
+    | 'EMAIL'
+    | 'EVENT'
+    | 'PARTNER'
+    | 'OTHER';
   leadScore?: number;
   isPrimary?: boolean;
   doNotContact?: boolean;
@@ -214,7 +244,8 @@ export async function listContacts(
   }
 
   if (filters.leadSource) {
-    where.leadSource = filters.leadSource as Prisma.EnumCRMLeadSourceNullableFilter;
+    where.leadSource =
+      filters.leadSource as Prisma.EnumCRMLeadSourceNullableFilter;
   }
 
   if (filters.ownerId) {
@@ -332,10 +363,16 @@ export async function updateContact(id: number, input: UpdateContactInput) {
       doNotContact: input.doNotContact,
       linkedinUrl: input.linkedinUrl,
       twitterUrl: input.twitterUrl,
-      address: input.address !== undefined ? (input.address as Prisma.InputJsonValue) : undefined,
+      address:
+        input.address !== undefined
+          ? (input.address as Prisma.InputJsonValue)
+          : undefined,
       ownerId: input.ownerId,
       tags: input.tags,
-      customFields: input.customFields !== undefined ? (input.customFields as Prisma.InputJsonValue) : undefined,
+      customFields:
+        input.customFields !== undefined
+          ? (input.customFields as Prisma.InputJsonValue)
+          : undefined,
       archived: input.archived,
     },
     include: {

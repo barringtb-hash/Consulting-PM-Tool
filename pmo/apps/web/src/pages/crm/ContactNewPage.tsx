@@ -28,17 +28,47 @@ import { useToast } from '../../ui/Toast';
 const contactFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
-  email: z.string().email('Invalid email').max(255).optional().or(z.literal('')),
+  email: z
+    .string()
+    .email('Invalid email')
+    .max(255)
+    .optional()
+    .or(z.literal('')),
   phone: z.string().max(50).optional().or(z.literal('')),
   mobile: z.string().max(50).optional().or(z.literal('')),
   jobTitle: z.string().max(100).optional().or(z.literal('')),
   department: z.string().max(100).optional().or(z.literal('')),
   accountId: z.string().optional(),
-  lifecycle: z.enum(['LEAD', 'MQL', 'SQL', 'OPPORTUNITY', 'CUSTOMER', 'EVANGELIST', 'CHURNED']),
-  leadSource: z.enum(['WEBSITE', 'REFERRAL', 'LINKEDIN', 'COLD_CALL', 'EMAIL', 'EVENT', 'PARTNER', 'OTHER']).optional().or(z.literal('')),
+  lifecycle: z.enum([
+    'LEAD',
+    'MQL',
+    'SQL',
+    'OPPORTUNITY',
+    'CUSTOMER',
+    'EVANGELIST',
+    'CHURNED',
+  ]),
+  leadSource: z
+    .enum([
+      'WEBSITE',
+      'REFERRAL',
+      'LINKEDIN',
+      'COLD_CALL',
+      'EMAIL',
+      'EVENT',
+      'PARTNER',
+      'OTHER',
+    ])
+    .optional()
+    .or(z.literal('')),
   isPrimary: z.boolean().optional(),
   doNotContact: z.boolean().optional(),
-  linkedinUrl: z.string().url('Invalid URL').max(500).optional().or(z.literal('')),
+  linkedinUrl: z
+    .string()
+    .url('Invalid URL')
+    .max(500)
+    .optional()
+    .or(z.literal('')),
   twitterUrl: z.string().max(100).optional().or(z.literal('')),
 });
 

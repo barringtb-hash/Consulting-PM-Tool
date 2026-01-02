@@ -155,7 +155,8 @@ export async function fetchContacts(
   if (filters?.lifecycle) params.append('lifecycle', filters.lifecycle);
   if (filters?.leadSource) params.append('leadSource', filters.leadSource);
   if (filters?.ownerId) params.append('ownerId', String(filters.ownerId));
-  if (filters?.archived !== undefined) params.append('archived', String(filters.archived));
+  if (filters?.archived !== undefined)
+    params.append('archived', String(filters.archived));
   if (filters?.search) params.append('search', filters.search);
   if (filters?.tags) params.append('tags', filters.tags);
   if (filters?.page) params.append('page', String(filters.page));
@@ -174,7 +175,9 @@ export async function fetchContacts(
 /**
  * List contacts for a specific account.
  */
-export async function fetchContactsByAccount(accountId: number): Promise<Contact[]> {
+export async function fetchContactsByAccount(
+  accountId: number,
+): Promise<Contact[]> {
   const response = await fetch(
     `${CONTACTS_BASE_PATH}/by-account/${accountId}`,
     buildOptions({ method: 'GET' }),
