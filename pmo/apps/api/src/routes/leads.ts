@@ -117,6 +117,11 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
 // Create new lead
 router.post('/', async (req: AuthenticatedRequest, res) => {
   try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const parsed = leadCreateSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -126,7 +131,13 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const lead = await createLead(parsed.data);
+    // Automatically assign the current user as owner if not specified
+    const leadData = {
+      ...parsed.data,
+      ownerUserId: parsed.data.ownerUserId ?? req.userId,
+    };
+
+    const lead = await createLead(leadData);
     res.status(201).json({ lead });
   } catch (error) {
     log.error('Create lead error', error);

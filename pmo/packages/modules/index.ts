@@ -29,6 +29,7 @@ export type ModuleId =
   | 'crm'
   | 'crmAccounts'
   | 'crmOpportunities'
+  | 'crmContacts'
   // Customer Success Platform
   | 'customerSuccess'
   // MCP Integration module
@@ -282,13 +283,26 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     label: 'Opportunities',
     navGroup: 'crm',
     path: '/crm/opportunities',
-    additionalPaths: ['/crm/opportunities/:id'],
+    additionalPaths: ['/crm/opportunities/:id', '/crm/opportunities/new'],
     icon: 'Target',
     isCore: true, // Core module - always enabled
     dependencies: ['crm', 'crmAccounts'],
     apiPrefixes: ['/api/crm/opportunities'],
     description:
       'Sales pipeline management with customizable stages and forecasting',
+  },
+  crmContacts: {
+    id: 'crmContacts',
+    label: 'Contacts',
+    navGroup: 'crm',
+    path: '/crm/contacts',
+    additionalPaths: ['/crm/contacts/:id', '/crm/contacts/new'],
+    icon: 'Users',
+    isCore: true, // Core module - always enabled
+    dependencies: ['crm', 'crmAccounts'],
+    apiPrefixes: ['/api/crm/contacts'],
+    description:
+      'Contact management with lifecycle stages, lead scoring, and account linking',
   },
 
   // ============ CUSTOMER SUCCESS PLATFORM ============
@@ -801,6 +815,7 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'crm',
   'crmAccounts',
   'crmOpportunities',
+  'crmContacts',
   // Customer Success Platform
   'customerSuccess',
   // MCP Integration

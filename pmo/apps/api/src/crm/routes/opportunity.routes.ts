@@ -156,6 +156,24 @@ router.get(
 );
 
 /**
+ * GET /api/crm/opportunities/stages
+ * Get all pipeline stages for dropdown population
+ */
+router.get(
+  '/stages',
+  requireAuth,
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
+    const pipelineId = req.query.pipelineId
+      ? parseInt(req.query.pipelineId as string, 10)
+      : undefined;
+
+    const result = await opportunityService.getPipelineStages(pipelineId);
+    res.json({ data: result });
+  },
+);
+
+/**
  * GET /api/crm/opportunities/closing-soon
  * Get opportunities closing soon
  */

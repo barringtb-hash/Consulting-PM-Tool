@@ -65,6 +65,13 @@ const users: SeedUser[] = [
     role: UserRole.SUPER_ADMIN,
   },
   {
+    name: 'Admin User',
+    email: 'Admin@pmo.test',
+    password: 'Seattleu21*',
+    timezone: 'America/Chicago',
+    role: UserRole.ADMIN,
+  },
+  {
     name: 'Avery Chen',
     email: 'avery.chen@pmo.test',
     password: 'PmoDemo123!',

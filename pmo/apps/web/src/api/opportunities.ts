@@ -207,6 +207,41 @@ export async function fetchPipelineStats(
 }
 
 /**
+ * Pipeline stage for dropdown population
+ */
+export interface PipelineStage {
+  stageId: number;
+  stageName: string;
+  stageType: StageType;
+  stageColor: string | null;
+  stageOrder: number;
+  probability: number;
+  description: string | null;
+  rottenDays: number | null;
+}
+
+export interface PipelineStagesResponse {
+  pipelineId: number;
+  pipelineName: string;
+  stages: PipelineStage[];
+}
+
+/**
+ * Fetch all pipeline stages for dropdown population
+ */
+export async function fetchPipelineStages(
+  pipelineId?: number,
+): Promise<PipelineStagesResponse> {
+  const params = pipelineId ? `?pipelineId=${pipelineId}` : '';
+  const response = await fetch(
+    `${OPPORTUNITIES_BASE_PATH}/stages${params}`,
+    buildOptions({ method: 'GET' }),
+  );
+  const data = await handleResponse<{ data: PipelineStagesResponse }>(response);
+  return data.data;
+}
+
+/**
  * Fetch opportunities closing soon
  */
 export async function fetchClosingSoon(

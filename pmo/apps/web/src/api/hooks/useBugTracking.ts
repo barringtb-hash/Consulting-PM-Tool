@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from '../bug-tracking';
+import { fetchTenantUsers, type TenantUser } from '../projects';
 
 // ============================================================================
 // QUERY KEYS
@@ -28,6 +29,7 @@ export const bugTrackingKeys = {
   issueErrors: (issueId: number) =>
     [...bugTrackingKeys.errors(), 'issue', issueId] as const,
   apiKeys: () => [...bugTrackingKeys.all, 'api-keys'] as const,
+  assignableUsers: () => [...bugTrackingKeys.all, 'assignable-users'] as const,
 };
 
 // ============================================================================
@@ -55,6 +57,19 @@ export function useIssueStats() {
     queryFn: () => api.getIssueStats(),
   });
 }
+
+/**
+ * Fetch users that can be assigned to issues
+ */
+export function useAssignableUsers() {
+  return useQuery({
+    queryKey: bugTrackingKeys.assignableUsers(),
+    queryFn: () => fetchTenantUsers(),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+}
+
+export { type TenantUser };
 
 export function useCreateIssue() {
   const queryClient = useQueryClient();

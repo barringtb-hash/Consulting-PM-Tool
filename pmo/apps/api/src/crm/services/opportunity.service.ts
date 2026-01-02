@@ -630,30 +630,121 @@ export async function getPipelineStats(pipelineId?: number) {
     }),
   ]);
 
-  // Get stage names
+  // Get stage names and types
   const stageIds = byStage.map((s) => s.stageId);
   const stages = await prisma.salesPipelineStage.findMany({
     where: { id: { in: stageIds } },
-    select: { id: true, name: true, color: true, order: true },
+    select: { id: true, name: true, color: true, order: true, type: true },
   });
 
   const stageMap = new Map(stages.map((s) => [s.id, s]));
+
+  // Calculate win rate
+  const wonOpps = await prisma.opportunity.count({
+    where: { ...where, status: 'WON' },
+  });
+  const closedOpps = await prisma.opportunity.count({
+    where: { ...where, status: { in: ['WON', 'LOST'] } },
+  });
+  const winRate = closedOpps > 0 ? wonOpps / closedOpps : 0;
+
+  // Calculate average cycle time (days from creation to close)
+  const closedWithDates = await prisma.opportunity.findMany({
+    where: {
+      ...where,
+      status: { in: ['WON', 'LOST'] },
+      actualCloseDate: { not: null },
+    },
+    select: { createdAt: true, actualCloseDate: true },
+  });
+  const avgCycleTime =
+    closedWithDates.length > 0
+      ? closedWithDates.reduce((sum, opp) => {
+          const days = Math.floor(
+            (opp.actualCloseDate!.getTime() - opp.createdAt.getTime()) /
+              (1000 * 60 * 60 * 24),
+          );
+          return sum + days;
+        }, 0) / closedWithDates.length
+      : 0;
 
   return {
     byStage: byStage
       .map((s) => {
         const stage = stageMap.get(s.stageId);
         return {
-          stage,
+          stageId: s.stageId,
+          stageName: stage?.name ?? 'Unknown',
+          stageType: stage?.type ?? 'OPEN',
+          stageColor: stage?.color,
+          stageOrder: stage?.order ?? 0,
           count: s._count,
-          totalAmount: s._sum.amount,
-          weightedAmount: s._sum.weightedAmount,
+          value: s._sum.amount ?? 0,
+          weightedValue: s._sum.weightedAmount ?? 0,
         };
       })
-      .sort((a, b) => (a.stage?.order ?? 0) - (b.stage?.order ?? 0)),
-    totalValue: totalValue._sum.amount,
-    weightedValue: weightedValue._sum.weightedAmount,
-    avgDealSize: avgDealSize._avg.amount,
+      .sort((a, b) => a.stageOrder - b.stageOrder),
+    totalValue: totalValue._sum.amount ?? 0,
+    weightedValue: weightedValue._sum.weightedAmount ?? 0,
+    winRate,
+    averageDealSize: avgDealSize._avg.amount ?? 0,
+    averageCycleTime: Math.round(avgCycleTime),
+  };
+}
+
+/**
+ * Get all pipeline stages for a pipeline (or default pipeline).
+ * Used for dropdown population in forms.
+ */
+export async function getPipelineStages(pipelineId?: number) {
+  const tenantId = getTenantId();
+
+  // Find the pipeline
+  let pipeline;
+  if (pipelineId) {
+    pipeline = await prisma.pipeline.findFirst({
+      where: { id: pipelineId, tenantId },
+    });
+  } else {
+    // Get default pipeline
+    pipeline = await prisma.pipeline.findFirst({
+      where: { tenantId, isDefault: true },
+    });
+  }
+
+  if (!pipeline) {
+    return [];
+  }
+
+  // Get all stages for this pipeline
+  const stages = await prisma.salesPipelineStage.findMany({
+    where: { pipelineId: pipeline.id },
+    orderBy: { order: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      order: true,
+      probability: true,
+      type: true,
+      color: true,
+      rottenDays: true,
+    },
+  });
+
+  return {
+    pipelineId: pipeline.id,
+    pipelineName: pipeline.name,
+    stages: stages.map((s) => ({
+      stageId: s.id,
+      stageName: s.name,
+      stageType: s.type,
+      stageColor: s.color,
+      stageOrder: s.order,
+      probability: s.probability,
+      description: s.description,
+      rottenDays: s.rottenDays,
+    })),
   };
 }
 

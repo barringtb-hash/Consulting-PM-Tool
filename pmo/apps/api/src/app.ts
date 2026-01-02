@@ -87,6 +87,7 @@ import mcpRouter from './modules/mcp/mcp.router';
 import customerSuccessRouter from './modules/customer-success/customer-success.router';
 // CRM Routes
 import accountRouter from './crm/routes/account.routes';
+import contactRouter from './crm/routes/contact.routes';
 import opportunityRouter from './crm/routes/opportunity.routes';
 import activityRouter from './crm/routes/activity.routes';
 import playbookRouter from './crm/routes/playbook.routes';
@@ -329,7 +330,7 @@ export function createApp(): express.Express {
   app.use('/api', meetingRouter);
   app.use('/api', featureFlagsRouter); // Module discovery & feature flags API
   app.use('/api/user', userPreferencesRouter); // User preferences API
-  app.use(healthRouter);
+  app.use('/api', healthRouter); // Health check endpoint at /api/healthz
 
   // ============ TENANT ROUTES ============
   // Multi-tenant management routes
@@ -359,8 +360,9 @@ export function createApp(): express.Express {
   app.use('/api/monitoring', monitoringRouter);
 
   // ============ CRM ROUTES ============
-  // CRM module routes for accounts, opportunities, activities, and playbooks
+  // CRM module routes for accounts, contacts, opportunities, activities, and playbooks
   app.use('/api/crm/accounts', accountRouter);
+  app.use('/api/crm/contacts', contactRouter);
   app.use('/api/crm/opportunities', opportunityRouter);
   app.use('/api/crm/activities', activityRouter);
   app.use('/api/crm/playbooks', playbookRouter);

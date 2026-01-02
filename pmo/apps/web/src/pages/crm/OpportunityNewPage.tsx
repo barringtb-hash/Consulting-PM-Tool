@@ -17,7 +17,7 @@ import {
 import {
   useAccounts,
   useCreateOpportunity,
-  usePipelineStats,
+  usePipelineStages,
   type OpportunityPayload,
 } from '../../api/hooks/crm';
 import { Button } from '../../ui/Button';
@@ -47,9 +47,9 @@ function OpportunityNewPage(): JSX.Element {
   const accountsQuery = useAccounts({ limit: 100 });
   const accounts = accountsQuery.data?.data ?? [];
 
-  // Fetch pipeline stats to get stages
-  const statsQuery = usePipelineStats();
-  const stages = statsQuery.data?.byStage ?? [];
+  // Fetch pipeline stages for dropdown
+  const stagesQuery = usePipelineStages();
+  const stages = stagesQuery.data?.stages ?? [];
 
   // Form state
   const [formData, setFormData] = useState<{

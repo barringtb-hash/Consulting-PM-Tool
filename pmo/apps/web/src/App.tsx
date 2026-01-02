@@ -232,6 +232,8 @@ const OpportunityDetailPage = lazy(
   () => import('./pages/crm/OpportunityDetailPage'),
 );
 const OpportunityNewPage = lazy(() => import('./pages/crm/OpportunityNewPage'));
+const ContactsPage = lazy(() => import('./pages/crm/ContactsPage'));
+const ContactNewPage = lazy(() => import('./pages/crm/ContactNewPage'));
 
 // Finance Tracking pages
 const FinanceDashboardPage = lazy(
@@ -1127,6 +1129,26 @@ function App(): JSX.Element {
                     <ErrorBoundary>
                       <LazyPage>
                         <OpportunityDetailPage />
+                      </LazyPage>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/crm/contacts"
+                  element={
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <ContactsPage />
+                      </LazyPage>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/crm/contacts/new"
+                  element={
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <ContactNewPage />
                       </LazyPage>
                     </ErrorBoundary>
                   }
