@@ -135,12 +135,10 @@ router.get('/', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = listContactsSchema.safeParse(req.query);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid query parameters',
-          details: parsed.error.format(),
-        });
+      res.status(400).json({
+        error: 'Invalid query parameters',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -213,12 +211,10 @@ router.post('/', async (req: TenantRequest, res: Response) => {
   try {
     const parsed = createContactSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid contact data',
-          details: parsed.error.format(),
-        });
+      res.status(400).json({
+        error: 'Invalid contact data',
+        details: parsed.error.format(),
+      });
       return;
     }
 
@@ -258,12 +254,10 @@ router.put('/:id', async (req: TenantRequest, res: Response) => {
 
     const parsed = updateContactSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid contact data',
-          details: parsed.error.format(),
-        });
+      res.status(400).json({
+        error: 'Invalid contact data',
+        details: parsed.error.format(),
+      });
       return;
     }
 

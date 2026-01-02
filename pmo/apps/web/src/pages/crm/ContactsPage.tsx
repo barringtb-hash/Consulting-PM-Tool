@@ -5,14 +5,13 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { Plus, User, Search, Mail, Phone, Building2 } from 'lucide-react';
 
 import {
   useCRMContacts,
   useCRMContactStats,
   useDeleteCRMContact,
-  type Contact,
   type ContactLifecycle,
 } from '../../api/hooks/crm';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';

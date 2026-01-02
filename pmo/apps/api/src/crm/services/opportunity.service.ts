@@ -650,14 +650,19 @@ export async function getPipelineStats(pipelineId?: number) {
 
   // Calculate average cycle time (days from creation to close)
   const closedWithDates = await prisma.opportunity.findMany({
-    where: { ...where, status: { in: ['WON', 'LOST'] }, actualCloseDate: { not: null } },
+    where: {
+      ...where,
+      status: { in: ['WON', 'LOST'] },
+      actualCloseDate: { not: null },
+    },
     select: { createdAt: true, actualCloseDate: true },
   });
   const avgCycleTime =
     closedWithDates.length > 0
       ? closedWithDates.reduce((sum, opp) => {
           const days = Math.floor(
-            (opp.actualCloseDate!.getTime() - opp.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+            (opp.actualCloseDate!.getTime() - opp.createdAt.getTime()) /
+              (1000 * 60 * 60 * 24),
           );
           return sum + days;
         }, 0) / closedWithDates.length
