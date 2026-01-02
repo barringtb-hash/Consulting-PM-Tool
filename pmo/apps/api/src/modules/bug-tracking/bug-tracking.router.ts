@@ -306,9 +306,9 @@ function verifyWebhookSecret(secretEnvVar: string) {
 // ISSUE ROUTES (Authenticated)
 // ============================================================================
 
-// GET /bug-tracking/issues - List issues
+// GET /issues - List issues
 router.get(
-  '/bug-tracking/issues',
+  '/issues',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -369,7 +369,7 @@ router.get(
 
 // POST /bug-tracking/issues - Create issue
 router.post(
-  '/bug-tracking/issues',
+  '/issues',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -390,7 +390,7 @@ router.post(
 
 // GET /bug-tracking/issues/stats - Get statistics
 router.get(
-  '/bug-tracking/issues/stats',
+  '/issues/stats',
   requireAuth,
   tenantMiddleware,
   async (_req: AuthenticatedRequest, res: Response) => {
@@ -406,7 +406,7 @@ router.get(
 
 // GET /bug-tracking/issues/:id - Get issue by ID
 router.get(
-  '/bug-tracking/issues/:id',
+  '/issues/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -428,7 +428,7 @@ router.get(
 
 // PUT /bug-tracking/issues/:id - Update issue
 router.put(
-  '/bug-tracking/issues/:id',
+  '/issues/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -453,7 +453,7 @@ router.put(
 
 // DELETE /bug-tracking/issues/:id - Delete issue
 router.delete(
-  '/bug-tracking/issues/:id',
+  '/issues/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -473,7 +473,7 @@ router.delete(
 
 // POST /bug-tracking/issues/:id/assign - Assign issue
 router.post(
-  '/bug-tracking/issues/:id/assign',
+  '/issues/:id/assign',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -496,7 +496,7 @@ router.post(
 
 // POST /bug-tracking/issues/:id/status - Change status
 router.post(
-  '/bug-tracking/issues/:id/status',
+  '/issues/:id/status',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -527,7 +527,7 @@ router.post(
 
 // POST /bug-tracking/issues/bulk/status - Bulk update status
 router.post(
-  '/bug-tracking/issues/bulk/status',
+  '/issues/bulk/status',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -551,7 +551,7 @@ router.post(
 
 // POST /bug-tracking/issues/bulk/assign - Bulk assign
 router.post(
-  '/bug-tracking/issues/bulk/assign',
+  '/issues/bulk/assign',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -575,7 +575,7 @@ router.post(
 
 // POST /bug-tracking/issues/bulk/labels - Bulk add labels
 router.post(
-  '/bug-tracking/issues/bulk/labels',
+  '/issues/bulk/labels',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -603,7 +603,7 @@ router.post(
 
 // GET /bug-tracking/issues/:id/comments - List comments
 router.get(
-  '/bug-tracking/issues/:id/comments',
+  '/issues/:id/comments',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -620,7 +620,7 @@ router.get(
 
 // POST /bug-tracking/issues/:id/comments - Add comment
 router.post(
-  '/bug-tracking/issues/:id/comments',
+  '/issues/:id/comments',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -649,7 +649,7 @@ router.post(
 
 // DELETE /bug-tracking/comments/:id - Delete comment
 router.delete(
-  '/bug-tracking/comments/:id',
+  '/comments/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -677,7 +677,7 @@ router.delete(
 
 // GET /bug-tracking/issues/:id/attachments - List attachments for an issue
 router.get(
-  '/bug-tracking/issues/:id/attachments',
+  '/issues/:id/attachments',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -697,7 +697,7 @@ router.get(
 
 // POST /bug-tracking/issues/:id/attachments - Upload attachment(s)
 router.post(
-  '/bug-tracking/issues/:id/attachments',
+  '/issues/:id/attachments',
   requireAuth,
   tenantMiddleware,
   upload.array('files', 5),
@@ -742,7 +742,7 @@ router.post(
 
 // GET /bug-tracking/attachments/:id - Get a single attachment
 router.get(
-  '/bug-tracking/attachments/:id',
+  '/attachments/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -762,7 +762,7 @@ router.get(
 
 // DELETE /bug-tracking/attachments/:id - Delete an attachment
 router.delete(
-  '/bug-tracking/attachments/:id',
+  '/attachments/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -782,7 +782,7 @@ router.delete(
 
 // GET /bug-tracking/issues/:id/attachments/ai - Get attachment info for AI prompts
 router.get(
-  '/bug-tracking/issues/:id/attachments/ai',
+  '/issues/:id/attachments/ai',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -816,7 +816,7 @@ router.get(
 
 // GET /bug-tracking/labels - List labels
 router.get(
-  '/bug-tracking/labels',
+  '/labels',
   requireAuth,
   tenantMiddleware,
   async (_req: AuthenticatedRequest, res: Response) => {
@@ -832,7 +832,7 @@ router.get(
 
 // POST /bug-tracking/labels - Create label
 router.post(
-  '/bug-tracking/labels',
+  '/labels',
   requireAuth,
   tenantMiddleware,
   async (_req: AuthenticatedRequest, res: Response) => {
@@ -853,7 +853,7 @@ router.post(
 
 // PUT /bug-tracking/labels/:id - Update label
 router.put(
-  '/bug-tracking/labels/:id',
+  '/labels/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -878,7 +878,7 @@ router.put(
 
 // DELETE /bug-tracking/labels/:id - Delete label
 router.delete(
-  '/bug-tracking/labels/:id',
+  '/labels/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -902,7 +902,7 @@ router.delete(
 
 // GET /bug-tracking/api-keys - List API keys
 router.get(
-  '/bug-tracking/api-keys',
+  '/api-keys',
   requireAuth,
   tenantMiddleware,
   async (_req: AuthenticatedRequest, res: Response) => {
@@ -918,7 +918,7 @@ router.get(
 
 // POST /bug-tracking/api-keys - Create API key
 router.post(
-  '/bug-tracking/api-keys',
+  '/api-keys',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -939,7 +939,7 @@ router.post(
 
 // POST /bug-tracking/api-keys/:id/revoke - Revoke API key
 router.post(
-  '/bug-tracking/api-keys/:id/revoke',
+  '/api-keys/:id/revoke',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -963,7 +963,7 @@ router.post(
 
 // DELETE /bug-tracking/api-keys/:id - Delete API key
 router.delete(
-  '/bug-tracking/api-keys/:id',
+  '/api-keys/:id',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -987,7 +987,7 @@ router.delete(
 
 // POST /bug-tracking/ai/submit - AI submits issue
 router.post(
-  '/bug-tracking/ai/submit',
+  '/ai/submit',
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_WRITE),
   async (req: ApiKeyRequest, res: Response) => {
@@ -1041,7 +1041,7 @@ router.post(
 // POST /bug-tracking/errors/client - Client error ingestion
 // Note: Uses optional tenant middleware to support both authenticated and anonymous errors
 router.post(
-  '/bug-tracking/errors/client',
+  '/errors/client',
   optionalTenantMiddleware,
   async (req: Request, res: Response) => {
     try {
@@ -1074,7 +1074,7 @@ router.post(
 
 // GET /bug-tracking/errors - Get recent error logs
 router.get(
-  '/bug-tracking/errors',
+  '/errors',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -1099,7 +1099,7 @@ router.get(
 
 // GET /bug-tracking/errors/stats - Get error statistics
 router.get(
-  '/bug-tracking/errors/stats',
+  '/errors/stats',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -1118,7 +1118,7 @@ router.get(
 
 // GET /bug-tracking/issues/:id/errors - Get error logs for an issue
 router.get(
-  '/bug-tracking/issues/:id/errors',
+  '/issues/:id/errors',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -1141,7 +1141,7 @@ router.get(
 
 // POST /bug-tracking/webhooks/vercel - Vercel log drain
 router.post(
-  '/bug-tracking/webhooks/vercel',
+  '/webhooks/vercel',
   verifyWebhookSecret('VERCEL_WEBHOOK_SECRET'),
   async (req: Request, res: Response) => {
     try {
@@ -1157,7 +1157,7 @@ router.post(
 
 // POST /bug-tracking/webhooks/render - Render log stream
 router.post(
-  '/bug-tracking/webhooks/render',
+  '/webhooks/render',
   verifyWebhookSecret('RENDER_WEBHOOK_SECRET'),
   async (req: Request, res: Response) => {
     try {
@@ -1177,7 +1177,7 @@ router.post(
 
 // GET /bug-tracking/issues/:id/ai-prompt - Generate AI prompt for single issue
 router.get(
-  '/bug-tracking/issues/:id/ai-prompt',
+  '/issues/:id/ai-prompt',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -1211,7 +1211,7 @@ router.get(
 
 // POST /bug-tracking/issues/:id/ai-prompt - Generate AI prompt with options in body
 router.post(
-  '/bug-tracking/issues/:id/ai-prompt',
+  '/issues/:id/ai-prompt',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -1240,7 +1240,7 @@ router.post(
 
 // POST /bug-tracking/ai-prompts/batch - Generate AI prompts for multiple issues
 router.post(
-  '/bug-tracking/ai-prompts/batch',
+  '/ai-prompts/batch',
   requireAuth,
   tenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -1277,7 +1277,7 @@ router.post(
 
 // GET /bug-tracking/ai-prompt/formats - Get available prompt formats and options
 router.get(
-  '/bug-tracking/ai-prompt/formats',
+  '/ai-prompt/formats',
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     res.json({
@@ -1387,7 +1387,7 @@ function buildApiKeyTenantContext(apiKey: { tenantId: string }) {
 
 // GET /bug-tracking/external/issues/:id/prompt - Get AI prompt via API key
 router.get(
-  '/bug-tracking/external/issues/:id/prompt',
+  '/external/issues/:id/prompt',
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
   async (req: ApiKeyRequest, res: Response) => {
@@ -1430,7 +1430,7 @@ router.get(
 
 // GET /bug-tracking/external/issues - List issues via API key
 router.get(
-  '/bug-tracking/external/issues',
+  '/external/issues',
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
   async (req: ApiKeyRequest, res: Response) => {
@@ -1475,7 +1475,7 @@ router.get(
 
 // GET /bug-tracking/external/issues/:id - Get single issue via API key
 router.get(
-  '/bug-tracking/external/issues/:id',
+  '/external/issues/:id',
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
   async (req: ApiKeyRequest, res: Response) => {
@@ -1506,7 +1506,7 @@ router.get(
 
 // POST /bug-tracking/external/issues/:id/status - Update issue status via API key
 router.post(
-  '/bug-tracking/external/issues/:id/status',
+  '/external/issues/:id/status',
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_WRITE),
   async (req: ApiKeyRequest, res: Response) => {

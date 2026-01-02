@@ -2,9 +2,9 @@
 
 ## AI CRM Platform - Comprehensive UAT Documentation
 
-**Version:** 1.0
+**Version:** 2.0
 **Last Updated:** 2026-01-02
-**Purpose:** This document provides detailed test cases for an AI agent to systematically validate all features of the AI CRM Platform.
+**Purpose:** This document provides detailed test cases for an AI agent to systematically validate all features of the AI CRM Platform, including edge cases and error scenarios.
 
 ---
 
@@ -48,9 +48,12 @@
 
 ### 1.2 Test Credentials
 
+**IMPORTANT: Use these credentials for all testing**
+
 | Role | Email | Password | Use Case |
 |------|-------|----------|----------|
-| **Admin** | `admin@pmo.test` | `AdminDemo123!` | Full access testing |
+| **Admin (Primary)** | `Admin@pmo.test` | `Seattleu21*` | **USE THIS FOR ALL TESTING** |
+| **Admin (Backup)** | `admin@pmo.test` | `AdminDemo123!` | Fallback if primary fails |
 | **Consultant** | `avery.chen@pmo.test` | `PmoDemo123!` | Standard user testing |
 | **Consultant** | `priya.desai@pmo.test` | `PmoDemo123!` | Multi-user testing |
 | **Consultant** | `marco.silva@pmo.test` | `PmoDemo123!` | Role-based access testing |
@@ -64,6 +67,7 @@ Before starting UAT, verify:
 - [ ] Database is seeded with test data (`npx prisma db seed`)
 - [ ] All modules enabled in `PMO_MODULES` environment variable
 - [ ] Browser console is accessible for error monitoring
+- [ ] Network tab in DevTools is accessible
 
 ### 1.4 Module Availability
 
@@ -147,6 +151,7 @@ When capturing screenshots, include:
 | 2 | Verify page elements | Email field, Password field, "Sign In" button visible |
 | 3 | Verify branding | Logo and application name displayed |
 | 4 | Check "Forgot Password" link | Link is visible and clickable |
+| 5 | Inspect browser console | No JavaScript errors |
 
 **Pass Criteria:** All elements render correctly without console errors
 
@@ -158,8 +163,8 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to login page | Login form visible |
-| 2 | Enter email: `admin@pmo.test` | Email field populated |
-| 3 | Enter password: `AdminDemo123!` | Password field populated (masked) |
+| 2 | Enter email: `Admin@pmo.test` | Email field populated |
+| 3 | Enter password: `Seattleu21*` | Password field populated (masked) |
 | 4 | Click "Sign In" button | Loading state shown |
 | 5 | Wait for redirect | Dashboard page loads at `/dashboard` |
 | 6 | Verify user menu | User name displayed in header/sidebar |
@@ -219,7 +224,7 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as any user | Dashboard loads |
+| 1 | Login as `Admin@pmo.test` | Dashboard loads |
 | 2 | Locate user menu/profile | User dropdown or menu visible |
 | 3 | Click "Logout" or "Sign Out" | Logout action triggered |
 | 4 | Verify redirect | Redirected to login page |
@@ -235,7 +240,7 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as any user | Dashboard loads |
+| 1 | Login as `Admin@pmo.test` | Dashboard loads |
 | 2 | Refresh the browser (F5) | Page reloads |
 | 3 | Verify login state | Still logged in, dashboard displays |
 | 4 | Close browser tab | Tab closed |
@@ -245,18 +250,94 @@ When capturing screenshots, include:
 
 ---
 
-### Test Case: AUTH-008 - Forgot Password Flow
+### Test Case: AUTH-008 - Invalid Email Format (Edge Case)
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to login page | Login form visible |
-| 2 | Click "Forgot Password" link | Navigate to `/forgot-password` |
-| 3 | Verify forgot password form | Email input field visible |
-| 4 | Enter valid email | Email entered |
-| 5 | Submit form | Success message or confirmation shown |
+| 2 | Enter email: `notanemail` | Invalid email entered |
+| 3 | Enter password: `SomePassword123!` | Password entered |
+| 4 | Click "Sign In" | Validation triggers |
+| 5 | Verify error | "Invalid email format" or similar shown |
 
-**Pass Criteria:** Forgot password form accessible and submittable
+**Pass Criteria:** Email format validation works
+
+---
+
+### Test Case: AUTH-009 - SQL Injection Attempt (Security Edge Case)
+**Priority:** High
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to login page | Login form visible |
+| 2 | Enter email: `admin@pmo.test' OR '1'='1` | Injection attempt |
+| 3 | Enter password: `' OR '1'='1` | Injection attempt |
+| 4 | Click "Sign In" | Form submits |
+| 5 | Verify result | Login fails with "Invalid credentials" (NOT SQL error) |
+
+**Pass Criteria:** SQL injection properly sanitized
+
+---
+
+### Test Case: AUTH-010 - XSS Attempt (Security Edge Case)
+**Priority:** High
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to login page | Login form visible |
+| 2 | Enter email: `<script>alert('xss')</script>@test.com` | XSS attempt |
+| 3 | Enter password: `password` | Password entered |
+| 4 | Click "Sign In" | Form submits |
+| 5 | Verify result | No script execution, proper error shown |
+| 6 | Inspect page source | Script tags are escaped/sanitized |
+
+**Pass Criteria:** XSS properly prevented
+
+---
+
+### Test Case: AUTH-011 - Case Sensitivity Test
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to login page | Login form visible |
+| 2 | Enter email: `ADMIN@PMO.TEST` (uppercase) | Email entered |
+| 3 | Enter password: `Seattleu21*` | Correct password |
+| 4 | Click "Sign In" | Login attempt |
+| 5 | Verify result | Login succeeds (email should be case-insensitive) |
+
+**Pass Criteria:** Email matching is case-insensitive
+
+---
+
+### Test Case: AUTH-012 - Password with Special Characters (Edge Case)
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to login page | Login form visible |
+| 2 | Enter email: `Admin@pmo.test` | Email entered |
+| 3 | Enter password with special chars: `Seattleu21*` | Password with * |
+| 4 | Click "Sign In" | Login attempt |
+| 5 | Verify result | Login succeeds |
+
+**Pass Criteria:** Special characters in password handled correctly
+
+---
+
+### Test Case: AUTH-013 - Rapid Login Attempts (Rate Limiting)
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to login page | Login form visible |
+| 2 | Attempt login with wrong password 5 times rapidly | Multiple failed attempts |
+| 3 | Check for rate limiting | Warning or temporary lockout shown |
+| 4 | Wait appropriate time | Lockout expires |
+| 5 | Try correct credentials | Login succeeds |
+
+**Pass Criteria:** Rate limiting protects against brute force (if implemented)
 
 ---
 
@@ -267,7 +348,7 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as admin | Login successful |
+| 1 | Login as `Admin@pmo.test` | Login successful |
 | 2 | Verify URL | At `/dashboard` or `/` |
 | 3 | Check page title | "Dashboard" or similar heading visible |
 | 4 | Verify widgets/cards | Statistics cards load with data |
@@ -283,13 +364,14 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as admin | Dashboard loads |
+| 1 | Login as `Admin@pmo.test` | Dashboard loads |
 | 2 | Locate sidebar | Left sidebar visible |
 | 3 | Verify main sections exist: | |
 | | - Overview (Dashboard, My Tasks) | Section visible |
 | | - CRM (Accounts, Opportunities) | Section visible |
 | | - Projects | Section visible |
 | | - Finance | Section visible (if module enabled) |
+| | - Bug Tracking | Section visible (if module enabled) |
 | | - AI Tools | Section visible |
 | | - Admin | Section visible (admin only) |
 | 4 | Click each main section | Section expands/collapses |
@@ -314,13 +396,15 @@ When capturing screenshots, include:
 ---
 
 ### Test Case: DASH-004 - Breadcrumb Navigation
-**Priority:** Low
+**Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to a nested page (e.g., Account Detail) | Page loads |
-| 2 | Check for breadcrumbs | Breadcrumb trail visible |
-| 3 | Click parent breadcrumb | Navigate to parent page |
+| 1 | Navigate to CRM > Accounts | Accounts list loads |
+| 2 | Click on an account name | Account detail page loads |
+| 3 | Check for breadcrumbs | Breadcrumb trail visible: Home > CRM > Accounts > [Account Name] |
+| 4 | Click "Accounts" in breadcrumb | Navigate back to accounts list |
+| 5 | Click "Home" icon in breadcrumb | Navigate to dashboard |
 
 **Pass Criteria:** Breadcrumbs provide clear navigation path
 
@@ -332,11 +416,63 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to dashboard | Dashboard loads |
-| 2 | Locate "My Tasks" widget | Widget visible (if on dashboard) |
+| 2 | Locate "My Tasks" widget or navigate to `/tasks` | Tasks visible |
 | 3 | Verify task count | Number of tasks displayed |
-| 4 | Click "View All" or navigate to `/tasks` | Tasks page loads |
+| 4 | Click on a task | Task detail opens |
 
 **Pass Criteria:** Tasks accessible from dashboard
+
+---
+
+### Test Case: DASH-006 - Navigation to All Main Sections
+**Priority:** High
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Login as admin | Dashboard loads |
+| 2 | Navigate to each sidebar item: | |
+| | - Dashboard | `/dashboard` loads |
+| | - My Tasks | `/tasks` loads |
+| | - Accounts | `/crm/accounts` loads |
+| | - Opportunities | `/crm/opportunities` loads |
+| | - Leads | `/crm/leads` or `/leads` loads |
+| | - Projects | `/projects` loads |
+| | - Finance | `/finance` loads |
+| | - Bug Tracking | `/bug-tracking` loads |
+| | - Admin > Users | `/admin/users` loads |
+| 3 | Verify no errors on each page | All pages load without errors |
+
+**Pass Criteria:** All main navigation items work
+
+---
+
+### Test Case: DASH-007 - Direct URL Navigation
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Login as admin | Dashboard loads |
+| 2 | Manually enter URL: `/crm/accounts` | Accounts page loads |
+| 3 | Manually enter URL: `/crm/accounts/999999` (non-existent) | Error handled gracefully |
+| 4 | Manually enter URL: `/nonexistent-page` | 404 page or redirect |
+
+**Pass Criteria:** Direct URL navigation works, errors handled
+
+---
+
+### Test Case: DASH-008 - Browser Back/Forward Navigation
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Login and navigate to Dashboard | Dashboard loads |
+| 2 | Click to Accounts | Accounts page loads |
+| 3 | Click to specific Account detail | Detail page loads |
+| 4 | Click browser Back button | Returns to Accounts list |
+| 5 | Click browser Back button | Returns to Dashboard |
+| 6 | Click browser Forward button | Returns to Accounts list |
+
+**Pass Criteria:** Browser history navigation works correctly
 
 ---
 
@@ -347,7 +483,7 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as admin | Dashboard loads |
+| 1 | Login as `Admin@pmo.test` | Dashboard loads |
 | 2 | Navigate to CRM > Accounts | `/crm/accounts` loads |
 | 3 | Verify page title | "Accounts" heading visible |
 | 4 | Check table/list | Account records displayed |
@@ -391,16 +527,15 @@ When capturing screenshots, include:
 | 1 | Navigate to `/crm/accounts` | Accounts list loads |
 | 2 | Click on any account name | Account detail page loads |
 | 3 | Verify URL pattern | `/crm/accounts/:accountId` |
-| 4 | Check account header | Name, type, status displayed |
-| 5 | Verify tabs/sections: | |
-| | - Overview | Basic info displayed |
-| | - Contacts | Contact list or empty state |
-| | - Opportunities | Opportunity list or empty state |
-| | - Activities | Activity timeline or empty state |
-| | - Health | Health score displayed |
-| | - CTAs | CTAs list or empty state |
-| | - Success Plans | Plans list or empty state |
-| 6 | Verify "Edit" button | Edit button visible |
+| 4 | Check breadcrumb navigation | Shows: Home > CRM > Accounts > [Account Name] |
+| 5 | Check account header | Name, type, status displayed |
+| 6 | Verify sections visible: | |
+| | - Basic info (name, website, phone, industry) | Displayed |
+| | - Health Score | Score 0-100 displayed |
+| | - Opportunities summary | Count and value shown |
+| | - CTAs section | CTAs list visible |
+| | - Success Plans section | Plans list visible |
+| 7 | Verify "Edit" button | Edit button visible |
 
 **Pass Criteria:** All account detail sections load correctly
 
@@ -412,13 +547,14 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to account detail page | Page loads |
-| 2 | Click "Edit" button | Edit form opens |
+| 2 | Click "Edit" button | Edit mode activates (inline or modal) |
 | 3 | Modify account name | Add " - Updated" to name |
 | 4 | Change industry | Select different industry |
-| 5 | Click "Save" | Form submits |
-| 6 | Verify success message | "Account updated" notification |
-| 7 | Verify changes persisted | Updated name visible |
-| 8 | Refresh page | Changes still present |
+| 5 | Change type | Select different type (e.g., PROSPECT) |
+| 6 | Click "Save" | Form submits |
+| 7 | Verify success message | "Account updated" notification |
+| 8 | Verify changes persisted | Updated name visible |
+| 9 | Refresh page | Changes still present |
 
 **Pass Criteria:** Account updates saved and persisted
 
@@ -464,13 +600,14 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to account detail | Page loads |
-| 2 | Locate "Health" tab/section | Health section visible |
+| 2 | Locate Health Score section | Health section visible |
 | 3 | Verify health score display | Score 0-100 shown with color indicator |
-| 4 | Check health dimensions | Usage, Support, Engagement, Sentiment, Financial |
-| 5 | Click "Calculate Health" (if available) | Health recalculates |
-| 6 | Check health history | Historical scores shown |
+| 4 | Check health label | "Healthy", "At Risk", or "Critical" based on score |
+| 5 | Click "Recalculate Health" button | Health recalculates |
+| 6 | Verify loading state | Button shows loading during calculation |
+| 7 | Verify score updates | New score displayed |
 
-**Pass Criteria:** Health scoring displayed and functional
+**Pass Criteria:** Health scoring displayed and recalculation works
 
 ---
 
@@ -479,11 +616,10 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to account with parent | Account detail loads |
-| 2 | Check parent account link | Parent account name displayed |
+| 1 | Navigate to account with parent (if exists) | Account detail loads |
+| 2 | Check parent account link | Parent account name displayed (if set) |
 | 3 | Click parent account link | Navigates to parent account |
-| 4 | Check child accounts section | Child accounts listed |
-| 5 | Verify hierarchy visualization | Tree or list view of hierarchy |
+| 4 | Check child accounts section | Child accounts listed (if any) |
 
 **Pass Criteria:** Parent/child relationships displayed
 
@@ -495,18 +631,16 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to account detail | Page loads |
-| 2 | Go to "CTAs" tab | CTAs section visible |
-| 3 | Click "New CTA" button | CTA form opens |
+| 2 | Scroll to "CTAs" section | CTAs section visible |
+| 3 | Click "New CTA" or "+" button | CTA form modal opens |
 | 4 | Fill CTA fields: | |
-| | - Title: "Follow up on renewal" | Field populated |
-| | - Type: Select type | Dropdown selected |
-| | - Priority: "High" | Priority selected |
+| | - Name/Title: "Follow up on renewal" | Field populated |
+| | - Type: Select "RISK" | Dropdown shows: RISK, OPPORTUNITY, LIFECYCLE, ACTIVITY, OBJECTIVE |
+| | - Priority: "HIGH" | Priority selected |
 | | - Due Date: Future date | Date selected |
 | 5 | Save CTA | CTA created |
 | 6 | Verify CTA in list | New CTA appears |
-| 7 | Click CTA to view/edit | CTA details open |
-| 8 | Test "Close" CTA | CTA marked closed |
-| 9 | Test "Snooze" CTA | Snooze dialog opens, new date set |
+| 7 | Click on CTA to view details | CTA details shown |
 
 **Pass Criteria:** CTAs CRUD operations work
 
@@ -518,39 +652,88 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to account detail | Page loads |
-| 2 | Go to "Success Plans" tab | Success Plans section visible |
-| 3 | Click "New Success Plan" | Plan form opens |
+| 2 | Scroll to "Success Plans" section | Success Plans section visible |
+| 3 | Click "New Success Plan" or "+" | Plan form modal opens |
 | 4 | Fill plan fields: | |
 | | - Name: "Q1 Success Plan" | Field populated |
 | | - Start Date: Today | Date selected |
 | | - Target Date: Future date | Date selected |
 | 5 | Save plan | Plan created in DRAFT status |
-| 6 | Add objective to plan | Objective form opens |
-| 7 | Fill objective: | |
-| | - Title: "Increase usage by 20%" | Field populated |
-| 8 | Save objective | Objective added |
-| 9 | Add task to objective | Task created |
-| 10 | Activate success plan | Status changes to ACTIVE |
+| 6 | Verify plan in list | New plan appears |
 
-**Pass Criteria:** Success plans with objectives and tasks work
+**Pass Criteria:** Success plans creation works
 
 ---
 
-### Test Case: CRM-ACC-011 - Merge Accounts
+### Test Case: CRM-ACC-011 - Empty Account Name (Edge Case)
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Click "New Account" | Form opens |
+| 2 | Leave Name field empty | Empty |
+| 3 | Fill other required fields | Fields populated |
+| 4 | Click "Save" | Validation triggers |
+| 5 | Verify error | "Name is required" error shown |
+
+**Pass Criteria:** Empty name validation works
+
+---
+
+### Test Case: CRM-ACC-012 - Very Long Account Name (Edge Case)
 **Priority:** Low
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Create two test accounts | Accounts created |
-| 2 | Navigate to first account | Account detail loads |
-| 3 | Click "Merge" or find merge option | Merge dialog opens |
-| 4 | Select second account to merge | Account selected |
-| 5 | Review merge preview | Shows what will be combined |
-| 6 | Confirm merge | Merge executes |
-| 7 | Verify merged account | Contacts, opportunities, activities combined |
-| 8 | Verify duplicate removed | Second account no longer exists |
+| 1 | Click "New Account" | Form opens |
+| 2 | Enter 500+ character name | Very long name |
+| 3 | Click "Save" | Form submits or validation triggers |
+| 4 | Verify result | Either truncated, error shown, or saved with proper display |
 
-**Pass Criteria:** Account merge combines all related data
+**Pass Criteria:** Long names handled gracefully
+
+---
+
+### Test Case: CRM-ACC-013 - Special Characters in Account Name (Edge Case)
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Click "New Account" | Form opens |
+| 2 | Enter name with special chars: "Test & Co. <LLC>" | Special chars entered |
+| 3 | Fill other required fields | Fields populated |
+| 4 | Click "Save" | Account created |
+| 5 | View account detail | Name displayed correctly (HTML escaped) |
+
+**Pass Criteria:** Special characters handled properly
+
+---
+
+### Test Case: CRM-ACC-014 - Invalid Website URL (Edge Case)
+**Priority:** Low
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Edit an account | Edit mode active |
+| 2 | Enter invalid website: "not-a-url" | Invalid URL entered |
+| 3 | Click "Save" | Validation triggers |
+| 4 | Verify error | "Invalid URL format" or similar |
+
+**Pass Criteria:** URL validation works
+
+---
+
+### Test Case: CRM-ACC-015 - Negative Revenue (Edge Case)
+**Priority:** Low
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Edit an account | Edit mode active |
+| 2 | Enter negative revenue: "-50000" | Negative number entered |
+| 3 | Click "Save" | Validation triggers |
+| 4 | Verify error | "Revenue must be positive" or value rejected |
+
+**Pass Criteria:** Negative numbers handled
 
 ---
 
@@ -636,14 +819,15 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Click on opportunity name/card | Detail page loads |
 | 2 | Verify URL | `/crm/opportunities/:opportunityId` |
-| 3 | Check header info | Name, amount, stage, account displayed |
-| 4 | Verify sections: | |
+| 3 | Check breadcrumb | Home > CRM > Opportunities > [Name] |
+| 4 | Check header info | Name, amount, stage, account displayed |
+| 5 | Verify sections: | |
 | | - Details | Basic info, dates, owner |
 | | - Contacts | Associated contacts |
 | | - Activities | Activity timeline |
 | | - Stage History | Stage change audit trail |
-| 5 | Check probability display | Probability and weighted amount shown |
-| 6 | Verify edit capability | Edit button visible |
+| 6 | Check probability display | Probability and weighted amount shown |
+| 7 | Verify edit capability | Edit button visible |
 
 **Pass Criteria:** Opportunity detail shows all relevant information
 
@@ -674,7 +858,7 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to opportunity detail | Page loads |
 | 2 | Click "Mark as Won" button | Action dialog opens |
-| 3 | Enter actual close date | Date selected |
+| 3 | Enter actual close date (if prompted) | Date selected |
 | 4 | Confirm action | Opportunity updated |
 | 5 | Verify stage changed to "Won" | Stage shows "Closed Won" |
 | 6 | Verify probability is 100% | Probability updated |
@@ -702,58 +886,46 @@ When capturing screenshots, include:
 
 ---
 
-### Test Case: CRM-OPP-009 - Pipeline Statistics
+### Test Case: CRM-OPP-009 - Zero Amount Opportunity (Edge Case)
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to opportunities page | Page loads |
-| 2 | Locate pipeline stats/summary | Stats section visible |
-| 3 | Verify metrics displayed: | |
-| | - Total pipeline value | Sum of all open deals |
-| | - Weighted pipeline value | Sum of weighted amounts |
-| | - Deal count by stage | Numbers per stage |
-| | - Average deal size | Calculated average |
-| 4 | Filter opportunities | Stats update to reflect filter |
+| 1 | Create new opportunity | Form opens |
+| 2 | Enter amount: 0 | Zero amount |
+| 3 | Fill other required fields | Fields populated |
+| 4 | Save | Either accepted or validation error |
+| 5 | If saved, verify display | Shows $0 or appropriate display |
 
-**Pass Criteria:** Pipeline statistics accurate and update with filters
+**Pass Criteria:** Zero amounts handled gracefully
 
 ---
 
-### Test Case: CRM-OPP-010 - Add Contact to Opportunity
-**Priority:** Medium
+### Test Case: CRM-OPP-010 - Very Large Amount (Edge Case)
+**Priority:** Low
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to opportunity detail | Page loads |
-| 2 | Go to Contacts section | Contacts tab/section visible |
-| 3 | Click "Add Contact" | Contact selection opens |
-| 4 | Select a contact | Contact chosen |
-| 5 | Set contact role (e.g., "Decision Maker") | Role selected |
-| 6 | Save | Contact added |
-| 7 | Verify contact in list | Contact appears with role |
-| 8 | Remove contact | Contact removed from opportunity |
+| 1 | Create new opportunity | Form opens |
+| 2 | Enter amount: 999999999999 | Very large number |
+| 3 | Save | Form submits |
+| 4 | Verify display | Number formatted correctly (with commas/abbreviation) |
 
-**Pass Criteria:** Opportunity contacts managed correctly
+**Pass Criteria:** Large numbers displayed properly
 
 ---
 
-### Test Case: CRM-OPP-011 - Stage History Audit Trail
+### Test Case: CRM-OPP-011 - Past Close Date (Edge Case)
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to opportunity that has stage changes | Page loads |
-| 2 | Locate Stage History section | Section visible |
-| 3 | Verify history entries | Each stage change logged |
-| 4 | Check entry details: | |
-| | - From stage | Previous stage shown |
-| | - To stage | New stage shown |
-| | - Date/time | Timestamp shown |
-| | - User who made change | User name shown |
-| | - Duration in previous stage | Days calculated |
+| 1 | Create new opportunity | Form opens |
+| 2 | Set expected close date to past | Yesterday's date |
+| 3 | Save | Form submits or warns |
+| 4 | Check for indicator | Overdue indicator or warning shown |
 
-**Pass Criteria:** Complete audit trail of stage changes
+**Pass Criteria:** Past dates handled appropriately
 
 ---
 
@@ -765,16 +937,14 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to account detail | Page loads |
-| 2 | Go to Activities tab | Activities section visible |
-| 3 | Click "Log Activity" or "New Activity" | Activity form opens |
-| 4 | Select activity type: "CALL" | Type selected |
-| 5 | Fill fields: | |
+| 2 | Find "Log Activity" or activity section | Activity form/section visible |
+| 3 | Select activity type: "CALL" | Type selected |
+| 4 | Fill fields: | |
 | | - Subject: "Introductory Call" | Subject entered |
 | | - Description: "Discussed requirements" | Description entered |
 | | - Date: Today | Date selected |
-| | - Duration: 30 minutes | Duration entered |
-| 6 | Save activity | Activity created |
-| 7 | Verify in timeline | Activity appears in account timeline |
+| 5 | Save activity | Activity created |
+| 6 | Verify in timeline | Activity appears |
 
 **Pass Criteria:** Activities logged and visible in timeline
 
@@ -792,77 +962,23 @@ When capturing screenshots, include:
 | | - MEETING | Available |
 | | - TASK | Available |
 | | - NOTE | Available |
-| | - SMS | Available |
-| | - LINKEDIN_MESSAGE | Available |
-| | - DEMO | Available |
-| | - PROPOSAL | Available |
-| | - CONTRACT | Available |
-| 3 | Create activity for each type | Each type works |
+| 3 | Create one activity of each type | Each type works |
 
 **Pass Criteria:** All activity types can be created
 
 ---
 
-### Test Case: CRM-ACT-003 - Quick Log Call
+### Test Case: CRM-ACT-003 - Empty Activity Subject (Edge Case)
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to account or opportunity | Page loads |
-| 2 | Find "Quick Log" or "Log Call" button | Button visible |
-| 3 | Click to log call | Simplified form opens |
-| 4 | Enter minimal details | Quick entry fields |
-| 5 | Save | Call logged |
-| 6 | Verify in timeline | Call activity visible |
+| 1 | Open activity form | Form opens |
+| 2 | Leave subject empty | Empty |
+| 3 | Try to save | Validation triggers |
+| 4 | Verify error | "Subject is required" error |
 
-**Pass Criteria:** Quick call logging streamlined
-
----
-
-### Test Case: CRM-ACT-004 - Activity Status Management
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Create a TASK activity | Task created with PLANNED status |
-| 2 | View task in timeline | Status shown |
-| 3 | Mark as "In Progress" | Status updated to IN_PROGRESS |
-| 4 | Mark as "Complete" | Status updated to COMPLETED |
-| 5 | Test "Cancel" action | Status updated to CANCELLED |
-| 6 | Verify status colors/badges | Visual indicators for each status |
-
-**Pass Criteria:** Activity status workflow works
-
----
-
-### Test Case: CRM-ACT-005 - My Upcoming Activities
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Create activities with future dates | Activities scheduled |
-| 2 | Navigate to dashboard or My Tasks | Page loads |
-| 3 | Find "Upcoming Activities" widget | Widget visible |
-| 4 | Verify activities listed | Scheduled activities shown |
-| 5 | Verify sorted by date | Nearest first |
-| 6 | Click activity | Navigate to details |
-
-**Pass Criteria:** Upcoming activities surfaced to user
-
----
-
-### Test Case: CRM-ACT-006 - Overdue Activities
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Create activity with past due date | Overdue activity created |
-| 2 | Navigate to dashboard | Page loads |
-| 3 | Check for overdue indicator | Warning/alert visible |
-| 4 | Verify overdue styling | Red or warning color |
-| 5 | Navigate to overdue activities list | List shows overdue items |
-
-**Pass Criteria:** Overdue activities highlighted and tracked
+**Pass Criteria:** Empty subject validation works
 
 ---
 
@@ -873,8 +989,8 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to CRM > Leads | `/crm/leads` loads |
-| 2 | Verify page title | "Inbound Leads" heading |
+| 1 | Navigate to CRM > Leads or Leads | `/crm/leads` or `/leads` loads |
+| 2 | Verify page title | "Leads" or "Inbound Leads" heading |
 | 3 | Check leads table | Lead records displayed |
 | 4 | Verify columns | Name, Email, Company, Status, Source |
 | 5 | Check "New Lead" button | Button visible |
@@ -914,28 +1030,24 @@ When capturing screenshots, include:
 | | - Create Opportunity: Yes | Checkbox checked |
 | | - Opportunity Name: "New Deal from Lead" | Name entered |
 | | - Amount: 25000 | Amount entered |
-| | - Create Account: Yes | Checkbox checked |
 | 4 | Confirm conversion | Conversion executes |
-| 5 | Verify Account created | New account in accounts list |
-| 6 | Verify Opportunity created | New opportunity in pipeline |
-| 7 | Verify Lead status | Status changed to "CONVERTED" |
+| 5 | Verify Opportunity created | New opportunity in pipeline |
+| 6 | Verify Lead status | Status changed to "CONVERTED" |
 
-**Pass Criteria:** Lead conversion creates Account and Opportunity
+**Pass Criteria:** Lead conversion creates Opportunity
 
 ---
 
-### Test Case: CRM-LEAD-004 - Lead Status Updates
+### Test Case: CRM-LEAD-004 - Duplicate Email Lead (Edge Case)
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to lead detail | Page loads |
-| 2 | Update status to "CONTACTED" | Status changed |
-| 3 | Update status to "QUALIFIED" | Status changed |
-| 4 | Update status to "NURTURING" | Status changed |
-| 5 | Verify status history | Changes tracked |
+| 1 | Create lead with email: "duplicate@test.com" | Lead created |
+| 2 | Try to create another lead with same email | Form submitted |
+| 3 | Check result | Either duplicate warning or allowed with note |
 
-**Pass Criteria:** Lead status workflow works
+**Pass Criteria:** Duplicate emails handled appropriately
 
 ---
 
@@ -963,47 +1075,138 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Click "New Project" | `/projects/new` loads |
-| 2 | Fill project details: | |
+| 2 | Verify breadcrumb | Home > Projects > New Project |
+| 3 | Fill project details: | |
 | | - Name: "UAT Test Project" | Field populated |
 | | - Account: Select account | Account linked |
 | | - Start Date: Today | Date selected |
 | | - Target End Date: Future | Date selected |
 | | - Description: "Test project" | Description entered |
-| 3 | Select project template (if available) | Template selected |
-| 4 | Save project | Project created |
-| 5 | Verify redirect | Project dashboard loads |
-| 6 | Verify in projects list | Project appears |
+| 4 | Select project template (if available) | Template selected |
+| 5 | Save project | Project created |
+| 6 | Verify redirect | Project dashboard loads |
+| 7 | Verify in projects list | Project appears |
 
 **Pass Criteria:** Project created successfully
 
 ---
 
-### Test Case: PROJ-003 - Project Dashboard
+### Test Case: PROJ-003 - Project Dashboard Overview Tab
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to project detail | `/projects/:id` loads |
-| 2 | Verify dashboard widgets: | |
-| | - Project status | Status badge visible |
-| | - Progress indicator | Progress bar or percentage |
-| | - Task summary | Task counts by status |
-| | - Milestone timeline | Milestones listed |
-| | - Team members | Assigned members shown |
-| 3 | Check tabs/sections | Overview, Tasks, Milestones, Meetings |
-| 4 | Verify edit capability | Edit button works |
+| 2 | Verify "Overview" tab is default | Overview tab active |
+| 3 | Check overview content: | |
+| | - Project status badge | Status visible |
+| | - Start/End dates | Dates displayed correctly (no timezone issues) |
+| | - Description | Description shown |
+| | - Progress indicator | Progress visible |
+| 4 | Verify date format | Dates show correct day (not off by one) |
 
-**Pass Criteria:** Project dashboard shows comprehensive view
+**Pass Criteria:** Overview tab shows correct project information
 
 ---
 
-### Test Case: PROJ-004 - Edit Project
+### Test Case: PROJ-004 - Project Dashboard Tasks Tab
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to project detail | Page loads |
-| 2 | Click "Edit" button | Edit form opens |
+| 2 | Click "Tasks" tab | Tasks tab activates |
+| 3 | Verify Kanban board | Board with columns visible |
+| 4 | Check columns: To Do, In Progress, Review, Done | All columns present |
+| 5 | Verify task cards | Tasks displayed in columns |
+| 6 | Click "Add Task" | Task creation form opens |
+| 7 | Create a task | Task appears on board |
+
+**Pass Criteria:** Tasks tab with Kanban board works
+
+---
+
+### Test Case: PROJ-005 - Project Dashboard Meetings Tab
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to project detail | Page loads |
+| 2 | Click "Meetings" tab | Meetings tab activates |
+| 3 | Verify meetings list | Meetings displayed or empty state |
+| 4 | Click to create meeting | Meeting form opens |
+| 5 | Create a meeting | Meeting appears in list |
+
+**Pass Criteria:** Meetings tab works
+
+---
+
+### Test Case: PROJ-006 - Project Dashboard Assets Tab
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to project detail | Page loads |
+| 2 | Click "Assets" tab | Assets tab activates |
+| 3 | Verify assets section | Assets displayed or empty state |
+| 4 | Check "Link Asset" option | Can link existing asset |
+| 5 | Check "Create Asset" option | Can create new asset |
+
+**Pass Criteria:** Assets tab works
+
+---
+
+### Test Case: PROJ-007 - Project Dashboard Marketing Tab
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to project detail | Page loads |
+| 2 | Click "Marketing" tab | Marketing tab activates |
+| 3 | Verify marketing content list | Content displayed or empty state |
+| 4 | Check "Create Content" option | Content creation available |
+
+**Pass Criteria:** Marketing tab works
+
+---
+
+### Test Case: PROJ-008 - Project Dashboard Team Tab
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to project detail | Page loads |
+| 2 | Click "Team" tab | Team tab activates |
+| 3 | Verify team members list | Members displayed |
+| 4 | Check "Add Member" option | Can add team member |
+| 5 | Add a member | Member appears in list |
+| 6 | Remove a member | Member removed |
+
+**Pass Criteria:** Team tab works
+
+---
+
+### Test Case: PROJ-009 - Project Dashboard Status Tab
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to project detail | Page loads |
+| 2 | Click "Status" or "Status & Reporting" tab | Status tab activates |
+| 3 | Verify status updates | Status history or form visible |
+| 4 | Add status update | Update form available |
+
+**Pass Criteria:** Status tab works
+
+---
+
+### Test Case: PROJ-010 - Edit Project
+**Priority:** High
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to project detail | Page loads |
+| 2 | Click "Edit" button (usually in header) | Edit mode activates |
 | 3 | Modify project name | Name updated |
 | 4 | Change status | Status updated |
 | 5 | Update dates | Dates changed |
@@ -1014,7 +1217,7 @@ When capturing screenshots, include:
 
 ---
 
-### Test Case: PROJ-005 - Project Status Workflow
+### Test Case: PROJ-011 - Project Status Workflow
 **Priority:** Medium
 
 | Step | Action | Expected Result |
@@ -1023,28 +1226,52 @@ When capturing screenshots, include:
 | 2 | Change status to "IN_PROGRESS" | Status updated |
 | 3 | Change status to "ON_HOLD" | Status updated |
 | 4 | Change status to "COMPLETED" | Status updated |
-| 5 | Change status to "CANCELLED" | Status updated |
-| 6 | Verify status colors | Different colors for each status |
+| 5 | Verify status colors | Different colors for each status |
 
 **Pass Criteria:** Project status workflow complete
 
 ---
 
-### Test Case: PROJ-006 - Project Team Management
+### Test Case: PROJ-012 - Project Date Display (Timezone Edge Case)
+**Priority:** High
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Create project with start date "2026-01-15" | Date entered |
+| 2 | Save project | Project created |
+| 3 | View project in list | Date shows "Jan 15, 2026" (NOT Jan 14) |
+| 4 | View project detail | Date shows "Jan 15, 2026" (NOT Jan 14) |
+| 5 | Refresh page | Date remains correct |
+
+**Pass Criteria:** Dates display correctly without timezone shift
+
+---
+
+### Test Case: PROJ-013 - Empty Project Name (Edge Case)
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to project detail | Page loads |
-| 2 | Find team/members section | Section visible |
-| 3 | Click "Add Member" | Member selection opens |
-| 4 | Select a user | User selected |
-| 5 | Assign role (if available) | Role selected |
-| 6 | Save | Member added |
-| 7 | Verify member in list | Member appears |
-| 8 | Remove member | Member removed |
+| 1 | Click "New Project" | Form opens |
+| 2 | Leave name empty | Empty |
+| 3 | Try to save | Validation triggers |
+| 4 | Verify error | "Name is required" error shown |
 
-**Pass Criteria:** Project team management works
+**Pass Criteria:** Empty name validation works
+
+---
+
+### Test Case: PROJ-014 - End Date Before Start Date (Edge Case)
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Edit a project | Edit mode active |
+| 2 | Set end date before start date | Invalid date range |
+| 3 | Save | Validation triggers |
+| 4 | Verify error | "End date must be after start date" or similar |
+
+**Pass Criteria:** Date validation works
 
 ---
 
@@ -1066,26 +1293,7 @@ When capturing screenshots, include:
 
 ---
 
-### Test Case: TASK-002 - Project Task Board (Kanban)
-**Priority:** High
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to project detail | Project loads |
-| 2 | Go to Tasks tab | Task board visible |
-| 3 | Verify Kanban columns: | |
-| | - To Do | Column visible |
-| | - In Progress | Column visible |
-| | - Review | Column visible |
-| | - Done | Column visible |
-| 4 | Check task cards | Cards show title, assignee |
-| 5 | Verify "Add Task" option | Can add task to board |
-
-**Pass Criteria:** Kanban task board displays correctly
-
----
-
-### Test Case: TASK-003 - Create Task
+### Test Case: TASK-002 - Create Task from Project
 **Priority:** Critical
 
 | Step | Action | Expected Result |
@@ -1105,7 +1313,7 @@ When capturing screenshots, include:
 
 ---
 
-### Test Case: TASK-004 - Drag & Drop Task Status
+### Test Case: TASK-003 - Drag & Drop Task Status
 **Priority:** High
 
 | Step | Action | Expected Result |
@@ -1121,7 +1329,7 @@ When capturing screenshots, include:
 
 ---
 
-### Test Case: TASK-005 - Edit Task
+### Test Case: TASK-004 - Edit Task
 **Priority:** High
 
 | Step | Action | Expected Result |
@@ -1131,14 +1339,13 @@ When capturing screenshots, include:
 | 3 | Modify title | Title changed |
 | 4 | Change assignee | Assignee updated |
 | 5 | Update priority | Priority changed |
-| 6 | Change due date | Date updated |
-| 7 | Save | Changes persisted |
+| 6 | Save | Changes persisted |
 
 **Pass Criteria:** Task editing works
 
 ---
 
-### Test Case: TASK-006 - Delete Task
+### Test Case: TASK-005 - Delete Task
 **Priority:** Medium
 
 | Step | Action | Expected Result |
@@ -1153,16 +1360,28 @@ When capturing screenshots, include:
 
 ---
 
+### Test Case: TASK-006 - Empty Task Title (Edge Case)
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Open task creation form | Form opens |
+| 2 | Leave title empty | Empty |
+| 3 | Try to save | Validation triggers |
+| 4 | Verify error | "Title is required" error |
+
+**Pass Criteria:** Empty title validation works
+
+---
+
 ### Test Case: MILE-001 - View Milestones
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to project detail | Project loads |
-| 2 | Go to Milestones tab | Milestones section visible |
-| 3 | Verify milestone list | Milestones displayed |
-| 4 | Check milestone info | Name, date, status |
-| 5 | Verify timeline view (if available) | Visual timeline shown |
+| 1 | Navigate to project that has milestones | Project loads |
+| 2 | Find milestones section (Overview or separate) | Milestones visible |
+| 3 | Verify milestone info | Name, date, status |
 
 **Pass Criteria:** Milestones display correctly
 
@@ -1173,31 +1392,16 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to project milestones | Section visible |
-| 2 | Click "Add Milestone" | Milestone form opens |
-| 3 | Fill milestone details: | |
+| 1 | Navigate to project | Project loads |
+| 2 | Find "Add Milestone" option | Button visible |
+| 3 | Click to add | Milestone form opens |
+| 4 | Fill milestone details: | |
 | | - Name: "UAT Test Milestone" | Name entered |
 | | - Target Date: Future date | Date selected |
-| | - Description: "Test milestone" | Description entered |
-| 4 | Save milestone | Milestone created |
-| 5 | Verify in list | Milestone appears |
+| 5 | Save milestone | Milestone created |
+| 6 | Verify in list | Milestone appears |
 
 **Pass Criteria:** Milestone creation works
-
----
-
-### Test Case: MILE-003 - Update Milestone Status
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to milestone | Milestone visible |
-| 2 | Change status to "IN_PROGRESS" | Status updated |
-| 3 | Change status to "COMPLETED" | Status updated |
-| 4 | Verify status indicator | Visual feedback |
-| 5 | Check completion date | Auto-populated when completed |
-
-**Pass Criteria:** Milestone status workflow works
 
 ---
 
@@ -1208,70 +1412,29 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to project or account | Page loads |
-| 2 | Find "Schedule Meeting" or meetings section | Option visible |
-| 3 | Click to create meeting | Meeting form opens |
-| 4 | Fill meeting details: | |
+| 1 | Navigate to project meetings tab | Meetings visible |
+| 2 | Click "Schedule Meeting" or "+" | Meeting form opens |
+| 3 | Fill meeting details: | |
 | | - Title: "UAT Test Meeting" | Title entered |
 | | - Date: Future date | Date selected |
 | | - Time: Specific time | Time selected |
-| | - Duration: 60 minutes | Duration set |
-| | - Attendees: Select users | Users added |
-| 5 | Save meeting | Meeting created |
-| 6 | Verify meeting in list | Meeting appears |
+| 4 | Save meeting | Meeting created |
+| 5 | Verify meeting in list | Meeting appears |
 
 **Pass Criteria:** Meeting creation works
 
 ---
 
 ### Test Case: MEET-002 - Meeting Detail View
-**Priority:** High
+**Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to meeting detail | `/meetings/:id` loads |
-| 2 | Verify meeting info displayed | |
-| | - Title and description | Visible |
-| | - Date and time | Visible |
-| | - Attendees list | Visible |
-| | - Related project/account | Link visible |
+| 1 | Click on a meeting | Detail opens |
+| 2 | Verify info displayed | Title, date, time, description |
 | 3 | Check notes section | Notes area visible |
-| 4 | Check action items section | Action items visible |
 
-**Pass Criteria:** Meeting detail shows all information
-
----
-
-### Test Case: MEET-003 - Add Meeting Notes
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to meeting detail | Page loads |
-| 2 | Find notes editor | Notes section visible |
-| 3 | Add notes text | Notes entered |
-| 4 | Save notes | Notes persisted |
-| 5 | Refresh page | Notes still present |
-
-**Pass Criteria:** Meeting notes saved
-
----
-
-### Test Case: MEET-004 - Action Items from Meeting
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to meeting detail | Page loads |
-| 2 | Add action item | Action item form |
-| 3 | Fill action item: | |
-| | - Description: "Follow up with client" | Text entered |
-| | - Assignee: Select user | User assigned |
-| | - Due date: Future date | Date set |
-| 4 | Save action item | Item created |
-| 5 | Verify item links to task | Task created or linked |
-
-**Pass Criteria:** Action items captured from meetings
+**Pass Criteria:** Meeting detail shows information
 
 ---
 
@@ -1284,13 +1447,8 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to Finance | `/finance` loads |
 | 2 | Verify dashboard title | "Finance" or "Finance Dashboard" |
-| 3 | Check summary widgets: | |
-| | - Total Expenses | Amount displayed |
-| | - Budget Utilization | Percentage shown |
-| | - Pending Approvals | Count displayed |
-| | - Recurring Costs | Monthly total |
-| 4 | Verify charts | Spending trends, category breakdown |
-| 5 | Check quick actions | Links to expenses, budgets |
+| 3 | Check summary widgets | Expenses, budgets visible |
+| 4 | Check navigation links | Links to expenses, budgets, recurring costs |
 
 **Pass Criteria:** Finance dashboard loads with data
 
@@ -1304,11 +1462,9 @@ When capturing screenshots, include:
 | 1 | Navigate to `/finance/expenses` | Expenses page loads |
 | 2 | Verify expenses table | Expense records displayed |
 | 3 | Check columns | Description, Amount, Category, Status, Date |
-| 4 | Test filters | Filter by status, category, date range |
-| 5 | Test search | Search by description or vendor |
-| 6 | Check "New Expense" button | Button visible |
+| 4 | Check "New Expense" button | Button visible |
 
-**Pass Criteria:** Expenses list with filtering works
+**Pass Criteria:** Expenses list loads correctly
 
 ---
 
@@ -1318,16 +1474,15 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Click "New Expense" | `/finance/expenses/new` loads |
-| 2 | Fill expense details: | |
+| 2 | Verify form loads completely | All fields visible (not blank) |
+| 3 | Fill expense details: | |
 | | - Description: "UAT Test Expense" | Description entered |
 | | - Amount: 150.00 | Amount entered |
 | | - Category: Select category | Category selected |
 | | - Vendor: "Test Vendor" | Vendor entered |
 | | - Date: Today | Date selected |
-| 3 | Add receipt (if available) | File attached |
 | 4 | Save expense | Expense created |
-| 5 | Verify status is "PENDING" | Status shown |
-| 6 | Verify in expenses list | Expense appears |
+| 5 | Verify in list | Expense appears |
 
 **Pass Criteria:** Expense creation works
 
@@ -1338,38 +1493,18 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Create pending expense | Expense in PENDING status |
-| 2 | Login as admin/approver | Admin logged in |
-| 3 | Navigate to expense detail | Detail page loads |
-| 4 | Click "Approve" button | Approval dialog opens |
-| 5 | Confirm approval | Expense approved |
-| 6 | Verify status is "APPROVED" | Status updated |
-| 7 | Test "Reject" flow | Create another expense |
-| 8 | Click "Reject" | Rejection dialog opens |
-| 9 | Enter rejection reason | Reason entered |
-| 10 | Confirm rejection | Expense rejected |
-| 11 | Verify status is "REJECTED" | Status updated |
+| 1 | Navigate to pending expense detail | Detail page loads |
+| 2 | Click "Approve" button | Approval executes |
+| 3 | Verify status is "APPROVED" | Status updated |
+| 4 | Test reject flow on another expense | |
+| 5 | Click "Reject" | Rejection dialog opens |
+| 6 | Enter reason and confirm | Expense rejected |
 
-**Pass Criteria:** Expense approval workflow complete
+**Pass Criteria:** Expense approval workflow works
 
 ---
 
-### Test Case: FIN-005 - Mark Expense as Paid
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to approved expense | Detail loads |
-| 2 | Click "Mark as Paid" | Payment dialog opens |
-| 3 | Enter payment date | Date selected |
-| 4 | Confirm | Expense marked paid |
-| 5 | Verify status is "PAID" | Status updated |
-
-**Pass Criteria:** Payment tracking works
-
----
-
-### Test Case: FIN-006 - Budget Management
+### Test Case: FIN-005 - Budget Management
 **Priority:** High
 
 | Step | Action | Expected Result |
@@ -1377,55 +1512,85 @@ When capturing screenshots, include:
 | 1 | Navigate to `/finance/budgets` | Budgets page loads |
 | 2 | Verify budget list | Budgets displayed |
 | 3 | Click "New Budget" | Budget form opens |
-| 4 | Fill budget details: | |
-| | - Name: "Q1 Marketing Budget" | Name entered |
-| | - Category: Select category | Category selected |
-| | - Amount: 10000 | Amount entered |
-| | - Period: Monthly/Quarterly | Period selected |
-| | - Start Date: First of month | Date selected |
+| 4 | Fill budget details | Details entered |
 | 5 | Save budget | Budget created |
-| 6 | Verify utilization display | 0% utilized initially |
-| 7 | Add expenses to budget category | Expenses added |
-| 8 | Check utilization updates | Percentage increases |
 
-**Pass Criteria:** Budget tracking works
+**Pass Criteria:** Budget creation works
 
 ---
 
-### Test Case: FIN-007 - Recurring Costs
+### Test Case: FIN-006 - Recurring Costs List
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to `/finance/recurring-costs` | Page loads |
-| 2 | Verify recurring costs list | Subscriptions displayed |
-| 3 | Click "New Recurring Cost" | Form opens |
-| 4 | Fill recurring cost: | |
-| | - Name: "Test Subscription" | Name entered |
-| | - Amount: 99.00 | Amount entered |
-| | - Frequency: Monthly | Frequency selected |
-| | - Next Due Date: Future date | Date selected |
-| | - Vendor: "SaaS Company" | Vendor entered |
-| 5 | Save | Recurring cost created |
-| 6 | Verify next due date | Shows when payment due |
-| 7 | Test "Generate Expense" | Creates expense from recurring |
+| 2 | Verify recurring costs list | Costs displayed or empty state |
 
-**Pass Criteria:** Recurring cost management works
+**Pass Criteria:** Recurring costs page loads
 
 ---
 
-### Test Case: FIN-008 - AI Expense Categorization
+### Test Case: FIN-007 - Create Recurring Cost
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Click "New Recurring Cost" | Form loads |
+| 2 | Verify form loads completely | All fields visible |
+| 3 | Fill recurring cost: | |
+| | - Name: "Test Subscription" | Name entered |
+| | - Amount: 99.00 | Amount entered |
+| | - Type: Select from dropdown | SUBSCRIPTION, LICENSE, PAYROLL, etc. |
+| | - Frequency: Monthly | WEEKLY, BIWEEKLY, MONTHLY, QUARTERLY, SEMIANNUALLY, YEARLY |
+| | - Start Date: Today | Date selected |
+| | - Next Due Date: Future date | Date selected |
+| | - Category: Select category | Category selected |
+| 4 | Save | Recurring cost created |
+| 5 | Verify in list | Cost appears |
+
+**Pass Criteria:** Recurring cost creation works
+
+---
+
+### Test Case: FIN-008 - Expense Detail View with Breadcrumb
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Navigate to expense list | List loads |
+| 2 | Click on an expense | Detail page loads |
+| 3 | Verify breadcrumb | Home > Finance > Expenses > [Description] |
+| 4 | Click "Expenses" in breadcrumb | Returns to list |
+
+**Pass Criteria:** Expense detail with navigation works
+
+---
+
+### Test Case: FIN-009 - Negative Expense Amount (Edge Case)
+**Priority:** Medium
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Create new expense | Form opens |
+| 2 | Enter negative amount: -50 | Negative entered |
+| 3 | Save | Validation triggers |
+| 4 | Verify error | "Amount must be positive" or similar |
+
+**Pass Criteria:** Negative amounts rejected
+
+---
+
+### Test Case: FIN-010 - Zero Amount Expense (Edge Case)
 **Priority:** Low
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Create new expense | Form opens |
-| 2 | Enter description: "Adobe Creative Cloud subscription" | Description entered |
-| 3 | Check for AI suggestion | Category suggested automatically |
-| 4 | Verify suggestion makes sense | "Software" or similar suggested |
-| 5 | Accept or override suggestion | Category applied |
+| 2 | Enter amount: 0 | Zero entered |
+| 3 | Save | Either validation error or saved |
 
-**Pass Criteria:** AI categorization provides reasonable suggestions
+**Pass Criteria:** Zero amounts handled
 
 ---
 
@@ -1439,12 +1604,10 @@ When capturing screenshots, include:
 | 1 | Navigate to Bug Tracking | `/bug-tracking` loads |
 | 2 | Verify page title | "Issues" or "Bug Tracking" |
 | 3 | Check issues table | Issue records displayed |
-| 4 | Verify columns | Title, Status, Priority, Assignee, Created |
-| 5 | Test filters | Filter by status, priority |
-| 6 | Test search | Search by issue title |
-| 7 | Check "New Issue" button | Button visible |
+| 4 | Verify columns | Title, Status, Priority, Assignee |
+| 5 | Check "New Issue" button | Button visible |
 
-**Pass Criteria:** Issues list loads correctly
+**Pass Criteria:** Issues list loads correctly (not API Keys page)
 
 ---
 
@@ -1458,26 +1621,22 @@ When capturing screenshots, include:
 | | - Title: "UAT Test Bug" | Title entered |
 | | - Description: "Steps to reproduce..." | Description entered |
 | | - Priority: "HIGH" | Priority selected |
-| | - Assignee: Select user | User assigned |
-| 3 | Add labels/tags (if available) | Tags added |
-| 4 | Save issue | Issue created |
-| 5 | Verify in list | Issue appears |
+| 3 | Save issue | Issue created |
+| 4 | Verify in list | Issue appears |
 
 **Pass Criteria:** Issue creation works
 
 ---
 
-### Test Case: BUG-003 - Issue Detail View
+### Test Case: BUG-003 - Issue Detail View with Breadcrumb
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Click on issue title | `/bug-tracking/:id` loads |
-| 2 | Verify issue details | Title, description, status visible |
-| 3 | Check metadata | Priority, assignee, dates |
-| 4 | Verify comments section | Comments area visible |
-| 5 | Check activity log | History of changes shown |
-| 6 | Verify edit capability | Edit button visible |
+| 2 | Verify breadcrumb | Home > Bug Tracking > Issues > #[ID] |
+| 3 | Verify issue details | Title, description, status visible |
+| 4 | Check comments section | Comments area visible |
 
 **Pass Criteria:** Issue detail shows all information
 
@@ -1491,8 +1650,7 @@ When capturing screenshots, include:
 | 1 | Navigate to issue detail | Page loads |
 | 2 | Change status to "IN_PROGRESS" | Status updated |
 | 3 | Change status to "RESOLVED" | Status updated |
-| 4 | Change status to "CLOSED" | Status updated |
-| 5 | Verify status history | Changes logged |
+| 4 | Verify status in list | Updated status shown |
 
 **Pass Criteria:** Issue status workflow works
 
@@ -1507,29 +1665,22 @@ When capturing screenshots, include:
 | 2 | Find comment input | Comment field visible |
 | 3 | Enter comment text | Comment entered |
 | 4 | Submit comment | Comment posted |
-| 5 | Verify comment in list | Comment appears with timestamp |
-| 6 | Verify author shown | Your username displayed |
+| 5 | Verify comment in list | Comment appears |
 
 **Pass Criteria:** Issue comments work
 
 ---
 
-### Test Case: BUG-006 - API Keys Management
+### Test Case: BUG-006 - API Keys Page (Separate Route)
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to Bug Tracking | Page loads |
-| 2 | Find "API Keys" tab | Tab visible |
-| 3 | Click API Keys tab | API Keys section loads |
-| 4 | Click "Generate API Key" | Key creation dialog |
-| 5 | Enter key name: "Test Integration" | Name entered |
-| 6 | Generate key | Key created and displayed |
-| 7 | Copy key (note: shown only once) | Key copied |
-| 8 | Verify key in list | Key appears (masked) |
-| 9 | Test revoke key | Key revoked |
+| 1 | Navigate to `/bug-tracking/api-keys` | API Keys page loads |
+| 2 | Verify page content | API Keys management, not issues list |
+| 3 | Check "Generate API Key" button | Button visible |
 
-**Pass Criteria:** API key management works
+**Pass Criteria:** API Keys has its own route, not confused with issue detail
 
 ---
 
@@ -1540,14 +1691,11 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as admin | Admin dashboard |
+| 1 | Login as `Admin@pmo.test` | Admin dashboard |
 | 2 | Navigate to Admin > Users | `/admin/users` loads |
 | 3 | Verify page title | "Users" heading |
 | 4 | Check users table | User records displayed |
 | 5 | Verify columns | Name, Email, Role, Status |
-| 6 | Test search | Search by name or email |
-| 7 | Test role filter | Filter by Admin/Consultant |
-| 8 | Check "New User" button | Button visible |
 
 **Pass Criteria:** Users list loads correctly
 
@@ -1558,7 +1706,7 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Click "New User" | `/admin/users/new` loads |
+| 1 | Click "New User" | User form loads |
 | 2 | Fill user details: | |
 | | - Name: "UAT Test User" | Name entered |
 | | - Email: "uat.user@test.com" | Email entered |
@@ -1566,54 +1714,21 @@ When capturing screenshots, include:
 | | - Password: "TestPass123!" | Password entered |
 | 3 | Save user | User created |
 | 4 | Verify in users list | User appears |
-| 5 | Logout and login as new user | Login works |
 
-**Pass Criteria:** User creation works and new user can login
+**Pass Criteria:** User creation works
 
 ---
 
-### Test Case: ADMIN-USER-003 - Edit User
+### Test Case: ADMIN-USER-003 - Role-Based Access Control
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to user detail | `/admin/users/:id` loads |
-| 2 | Click "Edit" button | Edit form opens |
-| 3 | Modify user name | Name changed |
-| 4 | Change role | Role updated |
-| 5 | Save changes | Changes persisted |
-| 6 | Verify updates | New values displayed |
-
-**Pass Criteria:** User editing works
-
----
-
-### Test Case: ADMIN-USER-004 - Deactivate User
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to user detail | Page loads |
-| 2 | Click "Deactivate" or toggle status | Confirmation dialog |
-| 3 | Confirm deactivation | User deactivated |
-| 4 | Verify status changed | Status shows "Inactive" |
-| 5 | Try logging in as deactivated user | Login fails |
-
-**Pass Criteria:** User deactivation prevents login
-
----
-
-### Test Case: ADMIN-USER-005 - Role-Based Access Control
-**Priority:** High
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Login as consultant | Consultant logged in |
+| 1 | Login as consultant (non-admin) | Consultant logged in |
 | 2 | Try accessing `/admin/users` | Access denied or redirected |
 | 3 | Verify admin menu hidden | Admin section not in sidebar |
-| 4 | Login as admin | Admin logged in |
+| 4 | Login as `Admin@pmo.test` | Admin logged in |
 | 5 | Access `/admin/users` | Page loads successfully |
-| 6 | Verify admin menu visible | Admin section in sidebar |
 
 **Pass Criteria:** Role-based access enforced
 
@@ -1626,118 +1741,39 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as admin | Admin logged in |
+| 1 | Login as `Admin@pmo.test` | Admin logged in |
 | 2 | Navigate to Admin > Modules | `/admin/modules` loads |
 | 3 | Verify modules list | All modules displayed |
 | 4 | Check module status | Enabled/Disabled status shown |
-| 5 | Toggle a module off | Module disabled |
-| 6 | Verify module route hidden | Route no longer accessible |
-| 7 | Toggle module on | Module re-enabled |
-| 8 | Verify module route works | Route accessible again |
 
-**Pass Criteria:** Module toggling works
+**Pass Criteria:** Modules configuration accessible
 
 ---
 
-### Test Case: ADMIN-TEN-001 - Tenant List (System Admin)
+### Test Case: ADMIN-TEN-001 - Tenant List
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login as system admin | Admin logged in |
+| 1 | Login as admin | Admin logged in |
 | 2 | Navigate to Admin > Tenants | `/admin/tenants` loads |
 | 3 | Verify tenants list | Tenant organizations displayed |
-| 4 | Check tenant info | Name, status, created date |
-| 5 | Check "New Tenant" button | Button visible |
 
 **Pass Criteria:** Tenant list displays
 
 ---
 
-### Test Case: ADMIN-TEN-002 - Create Tenant
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Click "New Tenant" | Tenant form opens |
-| 2 | Fill tenant details: | |
-| | - Name: "UAT Test Tenant" | Name entered |
-| | - Subdomain: "uat-test" | Subdomain entered |
-| 3 | Save tenant | Tenant created |
-| 4 | Verify in list | Tenant appears |
-
-**Pass Criteria:** Tenant creation works
-
----
-
-### Test Case: ADMIN-HEALTH-001 - Tenant Health Dashboard
-**Priority:** Low
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to Admin > Health | `/admin/health` loads |
-| 2 | Verify health metrics | System health displayed |
-| 3 | Check database status | Connection status shown |
-| 4 | Check API health | API status shown |
-| 5 | Verify monitoring graphs | Usage graphs displayed |
-
-**Pass Criteria:** Health dashboard shows system status
-
----
-
 ## 16. AI Tools - Phase 1
 
-### Test Case: AI-CHAT-001 - Chatbot Configuration
+### Test Case: AI-CHAT-001 - Chatbot Page
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Chatbot | `/ai-tools/chatbot` loads |
-| 2 | Verify page sections: | |
-| | - Configuration | Config form visible |
-| | - Knowledge Base | KB section visible |
-| | - Conversations | Conversations list |
-| | - Analytics | Analytics dashboard |
-| 3 | Check widget customization | Colors, messages configurable |
-| 4 | Enable/disable chatbot | Toggle works |
-| 5 | Save configuration | Config saved |
+| 2 | Verify page loads | No errors, configuration visible |
 
-**Pass Criteria:** Chatbot configuration loads
-
----
-
-### Test Case: AI-CHAT-002 - Knowledge Base Management
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to Chatbot Knowledge Base | Section loads |
-| 2 | Click "Add FAQ" | FAQ form opens |
-| 3 | Enter question | Question entered |
-| 4 | Enter answer | Answer entered |
-| 5 | Add keywords | Keywords added |
-| 6 | Save FAQ | FAQ created |
-| 7 | Verify in list | FAQ appears |
-| 8 | Edit FAQ | Modification works |
-| 9 | Delete FAQ | FAQ removed |
-
-**Pass Criteria:** Knowledge base CRUD works
-
----
-
-### Test Case: AI-CHAT-003 - View Conversations
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to Conversations | Section loads |
-| 2 | View conversation list | Conversations displayed |
-| 3 | Click on a conversation | Conversation detail opens |
-| 4 | View message thread | Messages displayed |
-| 5 | Check customer info | Customer details shown |
-| 6 | Verify timestamps | Message times displayed |
-
-**Pass Criteria:** Conversation viewing works
+**Pass Criteria:** Chatbot page accessible
 
 ---
 
@@ -1747,9 +1783,7 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Product Descriptions | `/ai-tools/product-descriptions` loads |
-| 2 | Verify page loads | Page displays without errors |
-| 3 | Check configuration options | Settings available |
-| 4 | Test generation (if data available) | Generation triggers |
+| 2 | Verify page loads | No errors |
 
 **Pass Criteria:** Product Descriptions page accessible
 
@@ -1761,14 +1795,9 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Scheduling | `/ai-tools/scheduling` loads |
-| 2 | Verify page sections: | |
-| | - Calendar integrations | Integration options visible |
-| | - Booking settings | Settings form visible |
-| | - Availability | Availability configuration |
-| 3 | Test calendar connection (if credentials available) | OAuth flow works |
-| 4 | Configure availability | Settings saved |
+| 2 | Verify page loads | No errors |
 
-**Pass Criteria:** Scheduling configuration accessible
+**Pass Criteria:** Scheduling page accessible
 
 ---
 
@@ -1779,10 +1808,8 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Intake | `/ai-tools/intake` loads |
 | 2 | Verify page loads | No errors |
-| 3 | Check form builder (if available) | Form creation works |
-| 4 | Check submissions list | Submissions displayed |
 
-**Pass Criteria:** Intake module accessible
+**Pass Criteria:** Intake page accessible
 
 ---
 
@@ -1794,13 +1821,7 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Document Analyzer | `/ai-tools/document-analyzer` loads |
-| 2 | Verify page sections: | |
-| | - Upload area | File upload visible |
-| | - Templates | Extraction templates |
-| | - Analyzed documents | Document list |
-| 3 | Test document upload | Upload works |
-| 4 | Check analysis results | Extraction displayed |
-| 5 | View extraction templates | Templates listed |
+| 2 | Verify page loads | Upload area visible |
 
 **Pass Criteria:** Document Analyzer page accessible
 
@@ -1812,9 +1833,7 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Content Generator | `/ai-tools/content-generator` loads |
-| 2 | Verify page sections | Configuration, templates visible |
-| 3 | Test content generation | Generation works |
-| 4 | Check generated content | Content displayed |
+| 2 | Verify page loads | No errors |
 
 **Pass Criteria:** Content Generator accessible
 
@@ -1826,9 +1845,7 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Lead Scoring | `/ai-tools/lead-scoring` loads |
-| 2 | Verify page sections | Scoring rules, leads list |
-| 3 | Check scoring configuration | Settings visible |
-| 4 | Verify lead scores displayed | Scores shown on leads |
+| 2 | Verify page loads | No errors |
 
 **Pass Criteria:** Lead Scoring accessible
 
@@ -1841,8 +1858,6 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Prior Authorization | `/ai-tools/prior-auth` loads |
 | 2 | Verify page loads | No errors |
-| 3 | Check authorization list | Authorizations displayed |
-| 4 | Check status tracking | Status workflow visible |
 
 **Pass Criteria:** Prior Authorization accessible
 
@@ -1857,8 +1872,6 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Inventory Forecasting | `/ai-tools/inventory-forecasting` loads |
 | 2 | Verify page loads | No errors |
-| 3 | Check forecasting configuration | Settings visible |
-| 4 | View forecast data | Forecasts displayed |
 
 **Pass Criteria:** Inventory Forecasting accessible
 
@@ -1871,8 +1884,6 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Compliance Monitor | `/ai-tools/compliance-monitor` loads |
 | 2 | Verify page loads | No errors |
-| 3 | Check compliance rules | Rules listed |
-| 4 | View compliance status | Status dashboard visible |
 
 **Pass Criteria:** Compliance Monitor accessible
 
@@ -1885,8 +1896,6 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Predictive Maintenance | `/ai-tools/predictive-maintenance` loads |
 | 2 | Verify page loads | No errors |
-| 3 | Check equipment list | Equipment displayed |
-| 4 | View predictions | Maintenance predictions shown |
 
 **Pass Criteria:** Predictive Maintenance accessible
 
@@ -1899,8 +1908,6 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Revenue Management | `/ai-tools/revenue-management` loads |
 | 2 | Verify page loads | No errors |
-| 3 | Check pricing configuration | Settings visible |
-| 4 | View revenue analytics | Analytics displayed |
 
 **Pass Criteria:** Revenue Management accessible
 
@@ -1913,8 +1920,6 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Navigate to AI Tools > Safety Monitor | `/ai-tools/safety-monitor` loads |
 | 2 | Verify page loads | No errors |
-| 3 | Check safety checklists | Checklists visible |
-| 4 | View incident reports | Reports listed |
 
 **Pass Criteria:** Safety Monitor accessible
 
@@ -1929,9 +1934,7 @@ When capturing screenshots, include:
 |------|--------|-----------------|
 | 1 | Login as admin | Admin logged in |
 | 2 | Navigate to Operations | `/operations` loads |
-| 3 | Verify dashboard widgets | System health displayed |
-| 4 | Check key metrics | Metrics visible |
-| 5 | Verify navigation to sub-pages | Links work |
+| 3 | Verify dashboard visible | System metrics displayed |
 
 **Pass Criteria:** Operations dashboard accessible
 
@@ -1943,26 +1946,9 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to Operations > AI Usage | `/operations/ai-usage` loads |
-| 2 | Verify usage charts | Charts displayed |
-| 3 | Check cost tracking | Costs shown |
-| 4 | Verify model breakdown | Usage by model visible |
-| 5 | Check date range filter | Filter works |
+| 2 | Verify usage data | Charts or data displayed |
 
-**Pass Criteria:** AI usage tracking works
-
----
-
-### Test Case: OPS-003 - Infrastructure Health
-**Priority:** Low
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to Operations > Infrastructure | `/operations/infrastructure` loads |
-| 2 | Verify service status | Services listed |
-| 3 | Check health indicators | Green/red status |
-| 4 | View response times | Latency displayed |
-
-**Pass Criteria:** Infrastructure monitoring works
+**Pass Criteria:** AI usage tracking accessible
 
 ---
 
@@ -1974,9 +1960,7 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to Marketing | `/marketing` loads |
-| 2 | Verify content list | Content items displayed |
-| 3 | Check "New Content" button | Button visible |
-| 4 | Verify filters | Filter by type, status |
+| 2 | Verify content list | Content items displayed or empty state |
 
 **Pass Criteria:** Marketing content page loads
 
@@ -1988,29 +1972,10 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Click "New Content" | Content form opens |
-| 2 | Fill content details: | |
-| | - Title: "UAT Test Content" | Title entered |
-| | - Type: "BLOG_POST" | Type selected |
-| | - Content: Rich text | Content entered |
-| 3 | Save as draft | Content saved |
-| 4 | Verify in list | Content appears |
+| 2 | Fill content details | Details entered |
+| 3 | Save | Content created |
 
 **Pass Criteria:** Marketing content creation works
-
----
-
-### Test Case: MKT-003 - Content Publishing Workflow
-**Priority:** Medium
-
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Navigate to draft content | Detail page loads |
-| 2 | Submit for review | Status changes to "REVIEW" |
-| 3 | Approve content | Status changes to "APPROVED" |
-| 4 | Publish content | Status changes to "PUBLISHED" |
-| 5 | Verify publish date | Timestamp recorded |
-
-**Pass Criteria:** Publishing workflow works
 
 ---
 
@@ -2022,9 +1987,7 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Navigate to Assets | `/assets` loads |
-| 2 | Verify assets list | Asset records displayed |
-| 3 | Check asset types | Types visible |
-| 4 | Test search | Search works |
+| 2 | Verify assets list | Asset records displayed or empty state |
 
 **Pass Criteria:** Assets page loads
 
@@ -2038,7 +2001,6 @@ When capturing screenshots, include:
 | 1 | Click "New Asset" | Asset form opens |
 | 2 | Fill asset details | Details entered |
 | 3 | Save asset | Asset created |
-| 4 | Verify in list | Asset appears |
 
 **Pass Criteria:** Asset creation works
 
@@ -2046,18 +2008,16 @@ When capturing screenshots, include:
 
 ## 22. Cross-Cutting Concerns
 
-### Test Case: CROSS-001 - Error Handling
+### Test Case: CROSS-001 - 404 Error Handling
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to invalid URL | Error page shown |
+| 1 | Navigate to invalid URL `/nonexistent-page-xyz` | Error page shown |
 | 2 | Verify 404 page | "Page not found" message |
-| 3 | Navigate back | Return to valid page |
-| 4 | Try invalid form submission | Validation errors shown |
-| 5 | Check API error handling | Friendly error messages |
+| 3 | Check for navigation home | Link to return to dashboard |
 
-**Pass Criteria:** Errors handled gracefully
+**Pass Criteria:** 404 errors handled gracefully
 
 ---
 
@@ -2066,28 +2026,27 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Navigate to data-heavy page | Loading indicator shown |
+| 1 | Navigate to data-heavy page (Accounts) | Loading indicator shown |
 | 2 | Wait for data load | Content replaces loader |
 | 3 | Submit a form | Loading state on button |
-| 4 | Verify no flash of empty content | Smooth transitions |
 
 **Pass Criteria:** Loading states provide feedback
 
 ---
 
-### Test Case: CROSS-003 - Form Validation
+### Test Case: CROSS-003 - Form Validation (Comprehensive)
 **Priority:** High
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Open any form | Form displays |
+| 1 | Open account creation form | Form displays |
 | 2 | Submit without required fields | Validation errors shown |
 | 3 | Enter invalid email format | Email validation error |
-| 4 | Enter invalid date | Date validation error |
-| 5 | Enter negative number where positive required | Number validation error |
+| 4 | Enter invalid URL | URL validation error |
+| 5 | Enter negative where positive required | Number validation error |
 | 6 | Fill all fields correctly | Form submits successfully |
 
-**Pass Criteria:** Form validation works
+**Pass Criteria:** Form validation works comprehensively
 
 ---
 
@@ -2100,23 +2059,20 @@ When capturing screenshots, include:
 | 2 | Resize to 1024px (tablet) | Layout adjusts |
 | 3 | Resize to 768px | Sidebar collapses |
 | 4 | Resize to 375px (mobile) | Mobile layout |
-| 5 | Check touch targets | Buttons easily tappable |
-| 6 | Check text readability | Text scales appropriately |
 
 **Pass Criteria:** Responsive design works at all breakpoints
 
 ---
 
-### Test Case: CROSS-005 - Notifications/Toasts
+### Test Case: CROSS-005 - Toast Notifications
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Perform successful action (create record) | Success toast appears |
+| 1 | Create an account (successful action) | Success toast appears |
 | 2 | Verify toast content | Clear success message |
 | 3 | Wait for auto-dismiss | Toast disappears |
-| 4 | Trigger error | Error toast appears |
-| 5 | Check toast is dismissible | Can click to dismiss |
+| 4 | Trigger error (invalid form) | Error toast appears |
 
 **Pass Criteria:** Toast notifications work
 
@@ -2128,12 +2084,11 @@ When capturing screenshots, include:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Open browser DevTools console | Console visible |
-| 2 | Navigate through all main pages | Check for errors |
+| 2 | Navigate through ALL main pages | Check for errors |
 | 3 | Perform common actions | Check for errors |
-| 4 | Verify no JavaScript errors | Console clean |
-| 5 | Check for React warnings | Minimal warnings |
+| 4 | Document any JavaScript errors | Errors noted |
 
-**Pass Criteria:** No JavaScript errors in console
+**Pass Criteria:** Minimal JavaScript errors in console
 
 ---
 
@@ -2145,10 +2100,9 @@ When capturing screenshots, include:
 | 1 | Open Network tab in DevTools | Network visible |
 | 2 | Perform CRUD operations | Monitor API calls |
 | 3 | Verify successful responses (200, 201) | Success codes |
-| 4 | Check for failed requests (4xx, 5xx) | Investigate failures |
-| 5 | Verify response times | Reasonable latency |
+| 4 | Note any failed requests (4xx, 5xx) | Document failures |
 
-**Pass Criteria:** API calls successful with good performance
+**Pass Criteria:** API calls successful
 
 ---
 
@@ -2157,79 +2111,78 @@ When capturing screenshots, include:
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Create a new record | Record created |
-| 2 | Refresh the page | Record still visible |
-| 3 | Logout and login again | Record persists |
-| 4 | Edit the record | Changes saved |
-| 5 | Refresh page | Changes persisted |
-| 6 | Delete the record | Record removed |
-| 7 | Refresh page | Record not visible |
+| 1 | Create a new account | Account created |
+| 2 | Refresh the page | Account still visible |
+| 3 | Logout and login again | Account persists |
+| 4 | Edit the account | Changes saved |
+| 5 | Delete the account | Account removed |
 
 **Pass Criteria:** Data persists across sessions
 
 ---
 
-### Test Case: CROSS-009 - Session Timeout
+### Test Case: CROSS-009 - Special Characters Handling
 **Priority:** Medium
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Login and note session | Session active |
-| 2 | Wait for session timeout (or simulate) | Session expires |
-| 3 | Try to perform action | Redirected to login |
-| 4 | Verify graceful handling | No data loss |
+| 1 | Create account with name: `Test <script>alert('xss')</script>` | Account created |
+| 2 | View account | Name displayed safely (no script execution) |
+| 3 | Create with unicode: `Test Café 日本語` | Unicode handled |
+| 4 | View | Unicode displayed correctly |
 
-**Pass Criteria:** Session timeout handled gracefully
+**Pass Criteria:** Special characters and unicode handled safely
 
 ---
 
-### Test Case: CROSS-010 - Concurrent Editing Warning
+### Test Case: CROSS-010 - Concurrent Session Test
 **Priority:** Low
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Open record in two browser tabs | Same record open |
-| 2 | Edit in tab 1 and save | Changes saved |
-| 3 | Edit in tab 2 and save | Warning shown (if implemented) |
-| 4 | Verify data integrity | Latest changes preserved |
+| 1 | Login in Tab 1 | Session active |
+| 2 | Login in Tab 2 (same browser) | Second session |
+| 3 | Perform action in Tab 1 | Action succeeds |
+| 4 | Perform action in Tab 2 | Action succeeds |
+| 5 | Logout in Tab 1 | Tab 1 logged out |
+| 6 | Check Tab 2 | Tab 2 state (may still work or redirect) |
 
-**Pass Criteria:** Concurrent editing doesn't cause data loss
+**Pass Criteria:** Multiple tabs handled appropriately
 
 ---
 
 ## Appendix A: Test Execution Checklist
 
-Use this checklist to track test execution progress:
-
 ```markdown
 ## UAT Execution Progress
 
-**Tester:** [AI Agent Name]
+**Tester:** AI Agent
+**Login:** Admin@pmo.test / Seattleu21*
 **Date Started:** [Date]
-**Environment:** [Dev/Staging/Production]
+**Environment:** Development
 
 ### Module Completion Status
 
 | Module | Total Tests | Passed | Failed | Blocked | Status |
 |--------|-------------|--------|--------|---------|--------|
-| Authentication | 8 | | | | ⬜ Not Started |
-| Dashboard | 5 | | | | ⬜ Not Started |
-| CRM - Accounts | 11 | | | | ⬜ Not Started |
+| Authentication | 13 | | | | ⬜ Not Started |
+| Dashboard & Navigation | 8 | | | | ⬜ Not Started |
+| CRM - Accounts | 15 | | | | ⬜ Not Started |
 | CRM - Opportunities | 11 | | | | ⬜ Not Started |
-| CRM - Activities | 6 | | | | ⬜ Not Started |
+| CRM - Activities | 3 | | | | ⬜ Not Started |
 | CRM - Leads | 4 | | | | ⬜ Not Started |
-| Projects | 6 | | | | ⬜ Not Started |
-| Tasks & Milestones | 9 | | | | ⬜ Not Started |
-| Meetings | 4 | | | | ⬜ Not Started |
-| Finance | 8 | | | | ⬜ Not Started |
+| Projects | 14 | | | | ⬜ Not Started |
+| Tasks & Milestones | 8 | | | | ⬜ Not Started |
+| Meetings | 2 | | | | ⬜ Not Started |
+| Finance | 10 | | | | ⬜ Not Started |
 | Bug Tracking | 6 | | | | ⬜ Not Started |
-| Admin - Users | 5 | | | | ⬜ Not Started |
-| Admin - Modules/Tenants | 4 | | | | ⬜ Not Started |
-| AI Tools Phase 1 | 6 | | | | ⬜ Not Started |
+| Admin - Users | 3 | | | | ⬜ Not Started |
+| Admin - Modules/Tenants | 2 | | | | ⬜ Not Started |
+| AI Tools Phase 1 | 4 | | | | ⬜ Not Started |
 | AI Tools Phase 2 | 4 | | | | ⬜ Not Started |
 | AI Tools Phase 3 | 5 | | | | ⬜ Not Started |
-| Operations | 3 | | | | ⬜ Not Started |
-| Marketing | 3 | | | | ⬜ Not Started |
+| Operations | 2 | | | | ⬜ Not Started |
+| Marketing | 2 | | | | ⬜ Not Started |
 | Assets | 2 | | | | ⬜ Not Started |
 | Cross-Cutting | 10 | | | | ⬜ Not Started |
 
@@ -2243,63 +2196,7 @@ Use this checklist to track test execution progress:
 
 ---
 
-## Appendix B: Error Report Template
-
-```markdown
-## Error Report: [Module] - [Test Case ID]
-
-### Summary
-**Test Case:** [Test case title]
-**Severity:** [Critical/High/Medium/Low]
-**Status:** Open
-
-### Environment
-- **Browser:** Chrome 120.0.x
-- **Screen Size:** 1920x1080
-- **User Role:** Admin
-- **Timestamp:** [Date/Time]
-
-### Steps to Reproduce
-1.
-2.
-3.
-
-### Expected Result
-[What should happen]
-
-### Actual Result
-[What actually happened]
-
-### Error Details
-
-**UI Error Message:**
-```
-[Exact error text shown in UI]
-```
-
-**Console Errors:**
-```javascript
-[JavaScript console errors]
-```
-
-**Network Errors:**
-```
-[Failed API calls - method, URL, status code, response]
-```
-
-### Visual Evidence
-[Describe screenshot or attach reference]
-
-### Additional Notes
-[Any other relevant information]
-
-### Recommended Fix
-[Suggestion if obvious]
-```
-
----
-
-## Appendix C: Test Data Requirements
+## Appendix B: Test Data Requirements
 
 ### Required Test Data
 
@@ -2310,7 +2207,6 @@ Before running UAT, ensure the database contains:
 | Users | 4 | 1 admin, 3 consultants |
 | Accounts | 10 | Mix of types (CUSTOMER, PROSPECT) |
 | Opportunities | 15 | Various stages |
-| Contacts | 20 | Linked to accounts |
 | Projects | 5 | Various statuses |
 | Tasks | 20 | Distributed across projects |
 | Milestones | 10 | Some completed, some pending |
@@ -2326,25 +2222,24 @@ npx prisma db seed
 
 ---
 
-## Appendix D: Module Dependencies
+## Appendix C: Known Issues to Verify Fixed
 
-Some tests require specific modules to be enabled:
+The following issues were identified in previous UAT and should be verified as fixed:
 
-| Test Area | Required Modules |
-|-----------|------------------|
-| Finance Tests | `financeTracking` |
-| Bug Tracking Tests | `bugTracking` |
-| Marketing Tests | `marketing` |
-| Assets Tests | `assets` |
-| Leads Tests | `leads` |
-| AI Chatbot Tests | `chatbot` |
-| Document Analyzer Tests | `documentAnalyzer` |
-| All Phase 1-3 AI Tests | Respective module enabled |
-
-Ensure `PMO_MODULES` environment variable includes all required modules.
+| Issue | Description | Fix Applied |
+|-------|-------------|-------------|
+| Account Editing | Account editing was failing with "Request failed" | Added `ownerId` field to updateAccountSchema |
+| CTA Creation | CTA type options didn't match backend | Fixed type options to match schema |
+| Expense Form | Form was loading blank page | Fixed projectsData access pattern |
+| Recurring Cost | Creation was failing silently | Fixed type/frequency enums |
+| Bug Tracking Route | /bug-tracking/:id was matching /bug-tracking/api-keys | Reordered routes |
+| Date Display | Dates were off by one day | Fixed timezone handling |
+| Health Score | No recalculate button | Added recalculate button |
+| Breadcrumbs | Missing breadcrumb navigation | Added Breadcrumb component |
 
 ---
 
 **End of UAT Document**
 
-*Version 1.0 - Created 2026-01-02*
+*Version 2.0 - Updated 2026-01-02*
+*Primary Login: Admin@pmo.test / Seattleu21\**

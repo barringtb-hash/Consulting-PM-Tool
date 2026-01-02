@@ -5,7 +5,15 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { TrendingUp, DollarSign, Target, Clock, Search } from 'lucide-react';
+import { Link } from 'react-router';
+import {
+  TrendingUp,
+  DollarSign,
+  Target,
+  Clock,
+  Search,
+  Plus,
+} from 'lucide-react';
 
 import {
   useOpportunities,
@@ -15,6 +23,7 @@ import {
 } from '../../api/hooks/crm';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { Badge } from '../../ui/Badge';
+import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { Input } from '../../ui/Input';
 import { PageHeader } from '../../ui/PageHeader';
@@ -93,6 +102,14 @@ function OpportunitiesPage(): JSX.Element {
       <PageHeader
         title="Opportunities"
         description="Manage your sales pipeline and deals"
+        action={
+          <Link to="/crm/opportunities/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Opportunity
+            </Button>
+          </Link>
+        }
       />
 
       <div className="container-padding py-6 space-y-6">
@@ -259,7 +276,10 @@ interface OpportunityRowProps {
 
 function OpportunityRow({ opportunity }: OpportunityRowProps): JSX.Element {
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-gray-50">
+    <Link
+      to={`/crm/opportunities/${opportunity.id}`}
+      className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+    >
       <div className="flex-1">
         <div className="font-medium">{opportunity.name}</div>
         <div className="text-sm text-gray-500">
@@ -287,7 +307,7 @@ function OpportunityRow({ opportunity }: OpportunityRowProps): JSX.Element {
             : 'No close date'}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

@@ -350,6 +350,23 @@ export async function calculateAccountHealthScore(
 }
 
 /**
+ * Auto-calculate account health score from CRM data
+ * Uses activities, opportunities, and other account data to calculate scores
+ */
+export async function autoCalculateAccountHealthScore(
+  accountId: number,
+): Promise<AccountHealthScore> {
+  const response = await fetch(
+    `${ACCOUNTS_BASE_PATH}/${accountId}/health/auto-calculate`,
+    buildOptions({
+      method: 'POST',
+    }),
+  );
+  const data = await handleResponse<{ data: AccountHealthScore }>(response);
+  return data.data;
+}
+
+/**
  * Get account health score history
  */
 export async function fetchAccountHealthHistory(
