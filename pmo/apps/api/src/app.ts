@@ -557,7 +557,8 @@ export function createApp(): express.Express {
   // ============ BUG TRACKING MODULE ============
   // Bug tracking, issue management, and error monitoring
   // Note: Some routes (like error collection and webhooks) don't require full auth
-  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
+  // Routes are mounted at /api/bug-tracking/* to avoid intercepting other /api routes
+  app.use('/api/bug-tracking', requireModule('bugTracking'), bugTrackingRouter);
 
   // ============ FINANCE TRACKING MODULE ============
   // Admin-only module for expense tracking, budgets, and recurring costs
