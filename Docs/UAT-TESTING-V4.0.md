@@ -5,7 +5,7 @@
 **Version:** 4.0
 **Last Updated:** January 2, 2026
 **Purpose:** Comprehensive User Acceptance Testing script with UI/UX evaluation
-**Application URL:** https://pmo.elipseconsulting.ai
+**Application URL:** https://elipseconsulting.ai
 
 ---
 
