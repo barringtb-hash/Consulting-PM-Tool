@@ -12,7 +12,7 @@ import { ArrowLeft, Save, Loader2, Bug, AlertCircle } from 'lucide-react';
 import { Card, Button, Input, PageHeader } from '../../ui';
 import { useCreateIssue, useLabels } from '../../api/hooks/useBugTracking';
 import type { IssueType, IssuePriority } from '../../api/bug-tracking';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../../ui/Toast';
 
 const issueFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500),
