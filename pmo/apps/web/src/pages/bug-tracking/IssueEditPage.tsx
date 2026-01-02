@@ -16,6 +16,7 @@ import {
   useIssue,
   useUpdateIssue,
   useLabels,
+  useAssignableUsers,
 } from '../../api/hooks/useBugTracking';
 import type {
   IssueType,
@@ -37,6 +38,7 @@ const issueFormSchema = z.object({
     'CLOSED',
     'WONT_FIX',
   ]),
+  assignedToId: z.number().nullable().optional(),
   labelIds: z.array(z.number()).optional(),
 });
 
@@ -74,6 +76,7 @@ export default function IssueEditPage() {
 
   const { data: issue, isLoading: issueLoading } = useIssue(issueId);
   const { data: labels } = useLabels();
+  const { data: users } = useAssignableUsers();
   const updateIssue = useUpdateIssue();
 
   const {
@@ -91,6 +94,7 @@ export default function IssueEditPage() {
       type: 'BUG',
       priority: 'MEDIUM',
       status: 'OPEN',
+      assignedToId: null,
       labelIds: [],
     },
   });
@@ -106,6 +110,7 @@ export default function IssueEditPage() {
         type: issue.type,
         priority: issue.priority,
         status: issue.status,
+        assignedToId: issue.assignedTo?.id ?? null,
         labelIds: issue.labels?.map((l) => l.id) || [],
       });
     }
@@ -121,6 +126,7 @@ export default function IssueEditPage() {
           type: data.type as IssueType,
           priority: data.priority as IssuePriority,
           status: data.status as IssueStatus,
+          assignedToId: data.assignedToId,
           labelIds: data.labelIds,
         },
       });
@@ -296,6 +302,35 @@ export default function IssueEditPage() {
                   ))}
                 </select>
               </div>
+            </div>
+          </Card>
+
+          {/* Assignee */}
+          <Card className="p-6">
+            <h2 className="text-lg font-medium mb-4 dark:text-white">
+              Assignment
+            </h2>
+            <div>
+              <label
+                htmlFor="assignedToId"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Assigned To
+              </label>
+              <select
+                id="assignedToId"
+                {...register('assignedToId', {
+                  setValueAs: (v) => (v === '' ? null : Number(v)),
+                })}
+                className="w-full max-w-md px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
+              >
+                <option value="">Unassigned</option>
+                {users?.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
             </div>
           </Card>
 
