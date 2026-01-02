@@ -310,10 +310,10 @@ export function createApp(): express.Express {
 
   // ============ BUG TRACKING MODULE ============
   // Bug tracking, issue management, and error monitoring
-  // CRITICAL: Must be registered BEFORE tasksRouter, milestonesRouter, and
-  // projectDocumentsRouter because those routers have router.use(requireAuth)
-  // and are mounted at /api, intercepting ALL /api/* requests (even ones not
-  // matching their routes), which blocks unauthenticated /api/bug-tracking/external/*.
+  // CRITICAL: Must be registered BEFORE tasksRouter, milestonesRouter, meetingRouter,
+  // and projectDocumentsRouter because those routers have router.use(requireAuth) and
+  // are mounted under /api, intercepting ALL /api/* requests (even ones not matching
+  // their routes), which would block unauthenticated access to /api/bug-tracking/external/*.
   app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
 
   // ============ CORE ROUTES (always enabled) ============
