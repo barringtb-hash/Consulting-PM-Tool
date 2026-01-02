@@ -312,7 +312,7 @@ export function createApp(): express.Express {
   app.use('/api', meetingRouter);
   app.use('/api', featureFlagsRouter); // Module discovery & feature flags API
   app.use('/api/user', userPreferencesRouter); // User preferences API
-  app.use(healthRouter);
+  app.use('/api', healthRouter); // Health check endpoint at /api/healthz
 
   // ============ TENANT ROUTES ============
   // Multi-tenant management routes
