@@ -8,6 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Core pages (always loaded)
 import DashboardPage from './pages/DashboardPage';
+import NotFoundPage from './pages/NotFoundPage';
 // ClientsPage, ClientDetailsPage, ClientIntakePage removed - see CRM Accounts
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectSetupPage from './pages/ProjectSetupPage';
@@ -230,6 +231,9 @@ const CRMOpportunitiesPage = lazy(
 const OpportunityDetailPage = lazy(
   () => import('./pages/crm/OpportunityDetailPage'),
 );
+const OpportunityNewPage = lazy(
+  () => import('./pages/crm/OpportunityNewPage'),
+);
 
 // Finance Tracking pages
 const FinanceDashboardPage = lazy(
@@ -252,6 +256,9 @@ const RecurringCostFormPage = lazy(
 // Bug Tracking pages
 const BugTrackingIssuesPage = lazy(
   () => import('./pages/bug-tracking/IssuesPage'),
+);
+const BugTrackingIssueNewPage = lazy(
+  () => import('./pages/bug-tracking/IssueNewPage'),
 );
 const BugTrackingIssueDetailPage = lazy(
   () => import('./pages/bug-tracking/IssueDetailPage'),
@@ -1046,6 +1053,14 @@ function App(): JSX.Element {
                   }
                 />
                 <Route
+                  path="/bug-tracking/new"
+                  element={
+                    <LazyPage>
+                      <BugTrackingIssueNewPage />
+                    </LazyPage>
+                  }
+                />
+                <Route
                   path="/bug-tracking/:id"
                   element={
                     <LazyPage>
@@ -1097,6 +1112,17 @@ function App(): JSX.Element {
                     </ErrorBoundary>
                   }
                 />
+                {/* Static routes must come before dynamic :opportunityId route */}
+                <Route
+                  path="/crm/opportunities/new"
+                  element={
+                    <ErrorBoundary>
+                      <LazyPage>
+                        <OpportunityNewPage />
+                      </LazyPage>
+                    </ErrorBoundary>
+                  }
+                />
                 <Route
                   path="/crm/opportunities/:opportunityId"
                   element={
@@ -1112,8 +1138,8 @@ function App(): JSX.Element {
           </Route>
         </Route>
 
-        {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* 404 Not Found - catch-all route */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </ClientProjectProvider>
   );
