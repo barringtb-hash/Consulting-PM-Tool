@@ -36,7 +36,7 @@ import {
   useAccountSuccessPlans,
   useCreateAccountCTA,
   useCreateAccountSuccessPlan,
-  useCalculateAccountHealthScore,
+  useAutoCalculateAccountHealthScore,
   type AccountType,
   type AccountUpdatePayload,
   type CreateCTAPayload,
@@ -189,8 +189,8 @@ function AccountDetailPage(): JSX.Element {
   const createCTA = useCreateAccountCTA(accountId ?? 0);
   const createSuccessPlan = useCreateAccountSuccessPlan(accountId ?? 0);
 
-  // Health score calculation mutation
-  const calculateHealthScore = useCalculateAccountHealthScore(accountId ?? 0);
+  // Health score auto-calculation mutation
+  const calculateHealthScore = useAutoCalculateAccountHealthScore(accountId ?? 0);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<AccountUpdatePayload>>({});
@@ -955,7 +955,7 @@ function AccountDetailPage(): JSX.Element {
                           showToast({
                             title: 'Health Score Recalculated',
                             description:
-                              'The health score has been updated based on current data.',
+                              'The health score has been auto-calculated from CRM data.',
                             type: 'success',
                           });
                           accountQuery.refetch();

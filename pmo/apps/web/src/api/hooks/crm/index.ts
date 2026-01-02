@@ -51,6 +51,7 @@ import {
   // Account Health
   fetchAccountHealthScore,
   calculateAccountHealthScore,
+  autoCalculateAccountHealthScore,
   fetchAccountHealthHistory,
   fetchPortfolioHealthSummary,
   fetchAccountsByHealth,
@@ -541,6 +542,35 @@ export function useCalculateAccountHealthScore(
         queryKeys.accounts.health(accountId),
         healthScore,
       );
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.accounts.healthHistory(accountId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.accounts.portfolioHealth(),
+      });
+    },
+  });
+}
+
+/**
+ * Auto-calculate account health score from CRM data
+ * This is the recommended method for recalculating health scores
+ */
+export function useAutoCalculateAccountHealthScore(
+  accountId: number,
+): UseMutationResult<AccountHealthScore, Error, void> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => autoCalculateAccountHealthScore(accountId),
+    onSuccess: (healthScore) => {
+      queryClient.setQueryData(
+        queryKeys.accounts.health(accountId),
+        healthScore,
+      );
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.accounts.detail(accountId),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.accounts.healthHistory(accountId),
       });
