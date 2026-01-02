@@ -426,6 +426,13 @@ export function createApp(): express.Express {
     );
   }
 
+  // ============ BUG TRACKING MODULE ============
+  // Bug tracking, issue management, and error monitoring
+  // IMPORTANT: Must be registered BEFORE AI Tool routers because those routers
+  // have router.use(requireAuth) which would intercept unauthenticated requests
+  // to /api/bug-tracking/external/* endpoints before they reach this router.
+  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
+
   // ============ AI TOOL MODULES ============
   // AI Tool routes are ALWAYS registered to ensure proper error messages.
   // The requireModule middleware handles runtime access control and returns
@@ -559,11 +566,6 @@ export function createApp(): express.Express {
     requireModule('safetyMonitor'),
     safetyMonitorRouter,
   );
-
-  // ============ BUG TRACKING MODULE ============
-  // Bug tracking, issue management, and error monitoring
-  // Note: Some routes (like error collection and webhooks) don't require full auth
-  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
 
   // ============ FINANCE TRACKING MODULE ============
   // Admin-only module for expense tracking, budgets, and recurring costs
