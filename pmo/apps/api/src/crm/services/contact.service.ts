@@ -20,11 +20,11 @@ export interface CreateContactInput {
   accountId?: number;
   firstName: string;
   lastName: string;
-  email?: string;
-  phone?: string;
-  mobile?: string;
-  jobTitle?: string;
-  department?: string;
+  email?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  jobTitle?: string | null;
+  department?: string | null;
   lifecycle?:
     | 'LEAD'
     | 'MQL'
@@ -38,21 +38,24 @@ export interface CreateContactInput {
     | 'REFERRAL'
     | 'LINKEDIN'
     | 'COLD_CALL'
-    | 'EMAIL'
+    | 'COLD_EMAIL'
     | 'EVENT'
     | 'PARTNER'
-    | 'OTHER';
+    | 'INBOUND'
+    | 'OUTBOUND'
+    | 'OTHER'
+    | null;
   isPrimary?: boolean;
   doNotContact?: boolean;
-  linkedinUrl?: string;
-  twitterUrl?: string;
+  linkedinUrl?: string | null;
+  twitterUrl?: string | null;
   address?: {
     street?: string;
     city?: string;
     state?: string;
     postalCode?: string;
     country?: string;
-  };
+  } | null;
   ownerId?: number;
   tags?: string[];
   customFields?: Record<string, unknown>;
@@ -62,11 +65,11 @@ export interface UpdateContactInput {
   accountId?: number | null;
   firstName?: string;
   lastName?: string;
-  email?: string;
-  phone?: string;
-  mobile?: string;
-  jobTitle?: string;
-  department?: string;
+  email?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  jobTitle?: string | null;
+  department?: string | null;
   lifecycle?:
     | 'LEAD'
     | 'MQL'
@@ -80,22 +83,25 @@ export interface UpdateContactInput {
     | 'REFERRAL'
     | 'LINKEDIN'
     | 'COLD_CALL'
-    | 'EMAIL'
+    | 'COLD_EMAIL'
     | 'EVENT'
     | 'PARTNER'
-    | 'OTHER';
+    | 'INBOUND'
+    | 'OUTBOUND'
+    | 'OTHER'
+    | null;
   leadScore?: number;
   isPrimary?: boolean;
   doNotContact?: boolean;
-  linkedinUrl?: string;
-  twitterUrl?: string;
+  linkedinUrl?: string | null;
+  twitterUrl?: string | null;
   address?: {
     street?: string;
     city?: string;
     state?: string;
     postalCode?: string;
     country?: string;
-  };
+  } | null;
   ownerId?: number | null;
   tags?: string[];
   customFields?: Record<string, unknown>;
@@ -161,7 +167,7 @@ export async function createContact(input: CreateContactInput) {
     },
   });
 
-  log.info({ contactId: contact.id }, 'Contact created');
+  log.info('Contact created', { contactId: contact.id });
   return contact;
 }
 
@@ -385,7 +391,7 @@ export async function updateContact(id: number, input: UpdateContactInput) {
     },
   });
 
-  log.info({ contactId: id }, 'Contact updated');
+  log.info('Contact updated', { contactId: id });
   return contact;
 }
 
@@ -409,7 +415,7 @@ export async function deleteContact(id: number) {
     data: { archived: true },
   });
 
-  log.info({ contactId: id }, 'Contact archived');
+  log.info('Contact archived', { contactId: id });
   return { success: true };
 }
 
@@ -440,7 +446,7 @@ export async function restoreContact(id: number) {
     },
   });
 
-  log.info({ contactId: id }, 'Contact restored');
+  log.info('Contact restored', { contactId: id });
   return restored;
 }
 

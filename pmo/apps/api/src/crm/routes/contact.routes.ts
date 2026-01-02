@@ -63,9 +63,11 @@ const createContactSchema = z.object({
       'REFERRAL',
       'LINKEDIN',
       'COLD_CALL',
-      'EMAIL',
+      'COLD_EMAIL',
       'EVENT',
       'PARTNER',
+      'INBOUND',
+      'OUTBOUND',
       'OTHER',
     ])
     .optional()

@@ -678,7 +678,7 @@ export async function getPipelineStats(pipelineId?: number) {
           stageType: stage?.type ?? 'OPEN',
           stageColor: stage?.color,
           stageOrder: stage?.order ?? 0,
-          count: s._count._all,
+          count: s._count,
           value: s._sum.amount ?? 0,
           weightedValue: s._sum.weightedAmount ?? 0,
         };
