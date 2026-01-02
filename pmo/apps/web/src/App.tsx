@@ -231,9 +231,7 @@ const CRMOpportunitiesPage = lazy(
 const OpportunityDetailPage = lazy(
   () => import('./pages/crm/OpportunityDetailPage'),
 );
-const OpportunityNewPage = lazy(
-  () => import('./pages/crm/OpportunityNewPage'),
-);
+const OpportunityNewPage = lazy(() => import('./pages/crm/OpportunityNewPage'));
 
 // Finance Tracking pages
 const FinanceDashboardPage = lazy(

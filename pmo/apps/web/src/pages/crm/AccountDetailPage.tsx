@@ -190,7 +190,9 @@ function AccountDetailPage(): JSX.Element {
   const createSuccessPlan = useCreateAccountSuccessPlan(accountId ?? 0);
 
   // Health score auto-calculation mutation
-  const calculateHealthScore = useAutoCalculateAccountHealthScore(accountId ?? 0);
+  const calculateHealthScore = useAutoCalculateAccountHealthScore(
+    accountId ?? 0,
+  );
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<AccountUpdatePayload>>({});

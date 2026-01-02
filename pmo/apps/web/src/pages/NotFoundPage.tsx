@@ -27,10 +27,7 @@ export function NotFoundPage(): JSX.Element {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button
-            variant="secondary"
-            onClick={() => window.history.back()}
-          >
+          <Button variant="secondary" onClick={() => window.history.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Go Back
           </Button>

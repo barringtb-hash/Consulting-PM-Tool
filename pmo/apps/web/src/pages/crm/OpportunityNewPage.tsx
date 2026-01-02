@@ -6,7 +6,13 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Save, Loader2, TrendingUp, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  TrendingUp,
+  AlertCircle,
+} from 'lucide-react';
 
 import {
   useAccounts,
@@ -112,7 +118,9 @@ function OpportunityNewPage(): JSX.Element {
       accountId: Number(formData.accountId),
       stageId: Number(formData.stageId),
       amount: formData.amount ? Number(formData.amount) : undefined,
-      probability: formData.probability ? Number(formData.probability) : undefined,
+      probability: formData.probability
+        ? Number(formData.probability)
+        : undefined,
       expectedCloseDate: formData.expectedCloseDate || undefined,
       description: formData.description.trim() || undefined,
       nextStep: formData.nextStep.trim() || undefined,
@@ -151,7 +159,10 @@ function OpportunityNewPage(): JSX.Element {
           { label: 'New Opportunity' },
         ]}
         action={
-          <Button variant="secondary" onClick={() => navigate('/crm/opportunities')}>
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/crm/opportunities')}
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Cancel
           </Button>
