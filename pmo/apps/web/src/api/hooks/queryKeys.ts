@@ -278,6 +278,8 @@ export const queryKeys = {
     detail: (id: number) => [...queryKeys.opportunities.details(), id] as const,
     pipelineStats: (pipelineId?: number) =>
       [...queryKeys.opportunities.all, 'pipeline-stats', pipelineId] as const,
+    pipelineStages: (pipelineId?: number) =>
+      [...queryKeys.opportunities.all, 'stages', pipelineId] as const,
     closingSoon: (days?: number) =>
       [...queryKeys.opportunities.all, 'closing-soon', days] as const,
     byAccount: (accountId: number) =>

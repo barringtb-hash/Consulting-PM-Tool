@@ -136,6 +136,7 @@ import {
   fetchClosingSoon,
   fetchOpportunities,
   fetchOpportunityById,
+  fetchPipelineStages,
   fetchPipelineStats,
   markOpportunityLost,
   markOpportunityWon,
@@ -147,6 +148,7 @@ import {
   type OpportunityPayload,
   type OpportunityUpdatePayload,
   type PaginatedOpportunities,
+  type PipelineStagesResponse,
   type PipelineStats,
 } from '../../opportunities';
 
@@ -320,6 +322,19 @@ export function usePipelineStats(
     queryKey: queryKeys.opportunities.pipelineStats(pipelineId),
     queryFn: () => fetchPipelineStats(pipelineId),
     ...STATS_CACHE_CONFIG,
+  });
+}
+
+/**
+ * Fetch all pipeline stages for dropdown population
+ */
+export function usePipelineStages(
+  pipelineId?: number,
+): UseQueryResult<PipelineStagesResponse, Error> {
+  return useQuery({
+    queryKey: queryKeys.opportunities.pipelineStages(pipelineId),
+    queryFn: () => fetchPipelineStages(pipelineId),
+    ...CRM_CACHE_CONFIG,
   });
 }
 
