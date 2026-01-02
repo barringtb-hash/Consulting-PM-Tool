@@ -1298,6 +1298,27 @@ router.get(
 );
 
 // ============================================================================
+// EXTERNAL API DIAGNOSTIC ROUTE
+// This endpoint helps verify the external routes are deployed and accessible
+// ============================================================================
+
+// GET /bug-tracking/external/status - Public status check for external API
+router.get('/bug-tracking/external/status', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    message: 'Bug tracking external API is available',
+    version: '1.0.0',
+    endpoints: [
+      'GET /api/bug-tracking/external/issues',
+      'GET /api/bug-tracking/external/issues/:id',
+      'GET /api/bug-tracking/external/issues/:id/prompt',
+      'POST /api/bug-tracking/external/issues/:id/status',
+    ],
+    authRequired: 'X-API-Key header',
+  });
+});
+
+// ============================================================================
 // EXTERNAL AI ACCESS ROUTES (API Key Auth)
 // These routes allow external AI tools (like Claude Code) to access issue data
 // using API keys instead of session-based authentication.
