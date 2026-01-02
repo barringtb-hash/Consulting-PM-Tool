@@ -46,9 +46,15 @@ export function requireModule(moduleId: ModuleId) {
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
+    console.log(
+      `[MODULE-GUARD] Checking module '${moduleId}' for path: ${req.path}`,
+    );
     try {
       const tenantId = getTenantId(req);
       const enabled = await isModuleEnabledForTenant(moduleId, tenantId);
+      console.log(
+        `[MODULE-GUARD] Module '${moduleId}' enabled=${enabled} for tenant '${tenantId}'`,
+      );
 
       if (!enabled) {
         res.status(404).json({
