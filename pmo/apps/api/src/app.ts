@@ -281,7 +281,13 @@ export function createApp(): express.Express {
         // Safari's ITP may block cookies, so we use Authorization header as fallback
         // Content-Type is needed for JSON requests
         // X-Tenant-ID is needed for multi-tenant context
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+        // X-API-Key is needed for external API access (bug tracking, etc.)
+        allowedHeaders: [
+          'Content-Type',
+          'Authorization',
+          'X-Tenant-ID',
+          'X-API-Key',
+        ],
         // Allow browser to read these headers from responses
         exposedHeaders: ['Content-Type'],
         // Cache preflight response for 24 hours to reduce OPTIONS requests
