@@ -44,6 +44,16 @@ const upload = multer({
 const router = Router();
 
 // ============================================================================
+// DEBUG: Log ALL requests entering this router
+// ============================================================================
+router.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(
+    `[BUG-TRACKING ROUTER] Received: ${req.method} ${req.path} | Original URL: ${req.originalUrl}`,
+  );
+  next();
+});
+
+// ============================================================================
 // DEBUG: Public diagnostic endpoint - MUST be first to avoid any interference
 // ============================================================================
 router.get('/bug-tracking/debug/ping', (_req: Request, res: Response) => {
