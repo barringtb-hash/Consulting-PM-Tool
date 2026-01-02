@@ -34,6 +34,7 @@ import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Modal } from '../../ui/Modal';
 import { Input } from '../../ui/Input';
+import { useToast } from '../../ui/Toast';
 
 interface ProjectDocumentsTabProps {
   projectId: number;
@@ -247,6 +248,7 @@ function DocumentCard({
   onDelete,
 }: DocumentCardProps) {
   const [showActions, setShowActions] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleClone = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -254,71 +256,101 @@ function DocumentCard({
     onClone(document.id, newName);
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this document?')) {
-      onDelete(document.id);
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(document.id);
+    setShowDeleteConfirm(false);
   };
 
   return (
-    <div
-      className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer dark:border-neutral-700 dark:hover:bg-neutral-800"
-      onClick={() => onView(document.id)}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary-500" />
-            <h3 className="font-medium text-neutral-900 dark:text-neutral-100">
-              {document.name}
-            </h3>
+    <>
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Document"
+      >
+        <div className="space-y-4">
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Are you sure you want to delete &quot;{document.name}&quot;? This
+            action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
           </div>
-          {document.description && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-              {document.description}
-            </p>
+        </div>
+      </Modal>
+      <div
+        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer dark:border-neutral-700 dark:hover:bg-neutral-800"
+        onClick={() => onView(document.id)}
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
+      >
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary-500" />
+              <h3 className="font-medium text-neutral-900 dark:text-neutral-100">
+                {document.name}
+              </h3>
+            </div>
+            {document.description && (
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                {document.description}
+              </p>
+            )}
+          </div>
+          <Badge variant={statusColors[document.status]}>
+            <StatusIcon status={document.status} />
+            <span className="ml-1">{document.status.replace('_', ' ')}</span>
+          </Badge>
+        </div>
+
+        <div className="flex justify-between items-center mt-3 pt-3 border-t dark:border-neutral-700">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">
+            Updated {new Date(document.updatedAt).toLocaleDateString()}
+            {document.editor && ` by ${document.editor.name}`}
+          </div>
+          {showActions && (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={handleClone}
+                className="p-1 hover:bg-neutral-100 rounded dark:hover:bg-neutral-700"
+                title="Clone document"
+              >
+                <Copy className="w-4 h-4 text-neutral-500" />
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                className="p-1 hover:bg-neutral-100 rounded dark:hover:bg-neutral-700"
+                title="Delete document"
+              >
+                <Trash2 className="w-4 h-4 text-danger-500" />
+              </button>
+            </div>
           )}
         </div>
-        <Badge variant={statusColors[document.status]}>
-          <StatusIcon status={document.status} />
-          <span className="ml-1">{document.status.replace('_', ' ')}</span>
-        </Badge>
       </div>
-
-      <div className="flex justify-between items-center mt-3 pt-3 border-t dark:border-neutral-700">
-        <div className="text-xs text-neutral-500 dark:text-neutral-400">
-          Updated {new Date(document.updatedAt).toLocaleDateString()}
-          {document.editor && ` by ${document.editor.name}`}
-        </div>
-        {showActions && (
-          <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={handleClone}
-              className="p-1 hover:bg-neutral-100 rounded dark:hover:bg-neutral-700"
-              title="Clone document"
-            >
-              <Copy className="w-4 h-4 text-neutral-500" />
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="p-1 hover:bg-neutral-100 rounded dark:hover:bg-neutral-700"
-              title="Delete document"
-            >
-              <Trash2 className="w-4 h-4 text-danger-500" />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 
 export function ProjectDocumentsTab({ projectId }: ProjectDocumentsTabProps) {
+  const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<
@@ -345,30 +377,38 @@ export function ProjectDocumentsTab({ projectId }: ProjectDocumentsTabProps) {
         name,
       });
       setIsModalOpen(false);
+      showToast('Document created successfully', 'success');
     } catch (error) {
-      console.error('Failed to create document:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to create document';
+      showToast(message, 'error');
     }
   };
 
   const handleViewDocument = (id: number) => {
     // TODO: Navigate to document editor or open modal
-    console.log('View document:', id);
-    alert('Document editor coming soon! Document ID: ' + id);
+    showToast(`Document editor coming soon! Document ID: ${id}`, 'info');
   };
 
   const handleCloneDocument = async (id: number, newName: string) => {
     try {
       await cloneMutation.mutateAsync({ id, newName });
+      showToast('Document cloned successfully', 'success');
     } catch (error) {
-      console.error('Failed to clone document:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to clone document';
+      showToast(message, 'error');
     }
   };
 
   const handleDeleteDocument = async (id: number) => {
     try {
       await deleteMutation.mutateAsync({ id, projectId });
+      showToast('Document deleted successfully', 'success');
     } catch (error) {
-      console.error('Failed to delete document:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete document';
+      showToast(message, 'error');
     }
   };
 

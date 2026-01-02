@@ -125,7 +125,7 @@ export function useProjectDocument(
       const cachedQueries = queryClient.getQueriesData<ProjectDocument[]>({
         predicate: (query) =>
           Array.isArray(query.queryKey) &&
-          query.queryKey[0] === 'projectDocuments' &&
+          query.queryKey[0] === queryKeys.projectDocuments.all[0] &&
           query.queryKey[1] === 'project',
         type: 'active',
       });
