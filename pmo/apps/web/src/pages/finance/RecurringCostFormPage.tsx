@@ -53,7 +53,9 @@ const recurringCostFormSchema = z.object({
     .or(z.literal('').transform(() => undefined)),
   accountId: z.coerce.number().positive().optional().or(z.literal('')),
   vendorName: z.string().max(255).optional(),
-  status: z.enum(['DRAFT', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED']).optional(),
+  status: z
+    .enum(['DRAFT', 'ACTIVE', 'PAUSED', 'CANCELLED', 'EXPIRED'])
+    .optional(),
 });
 
 type RecurringCostFormData = z.infer<typeof recurringCostFormSchema>;
