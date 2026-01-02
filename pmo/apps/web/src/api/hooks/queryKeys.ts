@@ -38,13 +38,28 @@ export const queryKeys = {
   },
 
   // ---------------------------------------------------------------------------
-  // Contacts Module
+  // Legacy Contacts Module (linked to Clients)
   // ---------------------------------------------------------------------------
   contacts: {
     all: ['contacts'] as const,
     lists: () => [...queryKeys.contacts.all, 'list'] as const,
     byClient: (clientId?: number) =>
       [...queryKeys.contacts.all, 'client', clientId] as const,
+  },
+
+  // ---------------------------------------------------------------------------
+  // CRM Contacts Module (linked to Accounts)
+  // ---------------------------------------------------------------------------
+  crmContacts: {
+    all: ['crmContacts'] as const,
+    lists: () => [...queryKeys.crmContacts.all, 'list'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.crmContacts.lists(), filters] as const,
+    details: () => [...queryKeys.crmContacts.all, 'detail'] as const,
+    detail: (id: number) => [...queryKeys.crmContacts.details(), id] as const,
+    byAccount: (accountId: number) =>
+      [...queryKeys.crmContacts.all, 'account', accountId] as const,
+    stats: () => [...queryKeys.crmContacts.all, 'stats'] as const,
   },
 
   // ---------------------------------------------------------------------------

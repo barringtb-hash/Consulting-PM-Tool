@@ -151,6 +151,22 @@ import {
   type PipelineStagesResponse,
   type PipelineStats,
 } from '../../opportunities';
+import {
+  createContact,
+  deleteContact,
+  fetchContactById,
+  fetchContacts,
+  fetchContactsByAccount,
+  fetchContactStats,
+  restoreContact,
+  updateContact,
+  type Contact,
+  type ContactFilters,
+  type ContactPayload,
+  type ContactStats,
+  type ContactUpdatePayload,
+  type PaginatedContacts,
+} from '../../contacts';
 
 // ============================================================================
 // Account Queries
@@ -1401,6 +1417,160 @@ export type {
   PlaybookCategory,
 } from '../../accounts';
 
+// ============================================================================
+// CRM Contact Queries
+// ============================================================================
+
+/**
+ * Fetch all CRM contacts with optional filters
+ */
+export function useCRMContacts(
+  filters?: ContactFilters,
+): UseQueryResult<PaginatedContacts, Error> {
+  return useQuery({
+    queryKey: queryKeys.crmContacts.list(filters),
+    queryFn: () => fetchContacts(filters),
+    ...CRM_CACHE_CONFIG,
+  });
+}
+
+/**
+ * Fetch a single CRM contact by ID
+ */
+export function useCRMContact(id?: number): UseQueryResult<Contact, Error> {
+  return useQuery({
+    queryKey: id ? queryKeys.crmContacts.detail(id) : queryKeys.crmContacts.all,
+    enabled: Boolean(id),
+    queryFn: () => fetchContactById(id as number),
+    ...CRM_CACHE_CONFIG,
+  });
+}
+
+/**
+ * Fetch CRM contacts for a specific account
+ */
+export function useCRMContactsByAccount(
+  accountId?: number,
+): UseQueryResult<Contact[], Error> {
+  return useQuery({
+    queryKey: accountId
+      ? queryKeys.crmContacts.byAccount(accountId)
+      : queryKeys.crmContacts.all,
+    enabled: Boolean(accountId),
+    queryFn: () => fetchContactsByAccount(accountId as number),
+    ...CRM_CACHE_CONFIG,
+  });
+}
+
+/**
+ * Fetch CRM contact statistics
+ */
+export function useCRMContactStats(): UseQueryResult<ContactStats, Error> {
+  return useQuery({
+    queryKey: queryKeys.crmContacts.stats(),
+    queryFn: fetchContactStats,
+    ...STATS_CACHE_CONFIG,
+  });
+}
+
+// ============================================================================
+// CRM Contact Mutations
+// ============================================================================
+
+/**
+ * Create a new CRM contact
+ */
+export function useCreateCRMContact(): UseMutationResult<
+  Contact,
+  Error,
+  ContactPayload
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ContactPayload) => createContact(payload),
+    onSuccess: (contact) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crmContacts.all });
+      queryClient.setQueryData(queryKeys.crmContacts.detail(contact.id), contact);
+      // Also invalidate account contacts if linked
+      if (contact.accountId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.crmContacts.byAccount(contact.accountId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.accounts.detail(contact.accountId),
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Update an existing CRM contact
+ */
+export function useUpdateCRMContact(
+  id: number,
+): UseMutationResult<Contact, Error, ContactUpdatePayload> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ContactUpdatePayload) => updateContact(id, payload),
+    onSuccess: (contact) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crmContacts.all });
+      queryClient.setQueryData(queryKeys.crmContacts.detail(id), contact);
+      // Also invalidate account contacts if linked
+      if (contact.accountId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.crmContacts.byAccount(contact.accountId),
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Delete (archive) a CRM contact
+ */
+export function useDeleteCRMContact(): UseMutationResult<void, Error, number> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => deleteContact(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crmContacts.all });
+      queryClient.removeQueries({ queryKey: queryKeys.crmContacts.detail(id) });
+    },
+  });
+}
+
+/**
+ * Restore an archived CRM contact
+ */
+export function useRestoreCRMContact(): UseMutationResult<
+  Contact,
+  Error,
+  number
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => restoreContact(id),
+    onSuccess: (contact, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crmContacts.all });
+      queryClient.setQueryData(queryKeys.crmContacts.detail(id), contact);
+      if (contact.accountId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.crmContacts.byAccount(contact.accountId),
+        });
+      }
+    },
+  });
+}
+
+// ============================================================================
+// Type Re-exports
+// ============================================================================
+
 export type {
   Opportunity,
   OpportunityClosingSoon,
@@ -1410,3 +1580,14 @@ export type {
   PaginatedOpportunities,
   PipelineStats,
 } from '../../opportunities';
+
+export type {
+  Contact,
+  ContactFilters,
+  ContactLifecycle,
+  ContactPayload,
+  ContactStats,
+  ContactUpdatePayload,
+  CRMLeadSource,
+  PaginatedContacts,
+} from '../../contacts';
