@@ -412,10 +412,17 @@ router.get(
 );
 
 /**
- * Generate a temporary password for new users
+ * Generate a temporary password for new users.
+ * Generates enough random bytes to ensure 16 characters after removing special chars.
  */
 function generateTempPassword(): string {
-  return randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
+  const desiredLength = 16;
+  let password = '';
+  while (password.length < desiredLength) {
+    const chunk = randomBytes(12).toString('base64').replace(/[+/=]/g, '');
+    password += chunk;
+  }
+  return password.slice(0, desiredLength);
 }
 
 /**
@@ -469,7 +476,9 @@ router.post(
         });
 
         if (existingUser) {
-          // User exists, just add them to tenant
+          // Existing user found by email; reuse user and add to tenant only.
+          // This path is distinct from the explicit userId flow.
+          // isNewUser remains false so no temp password is generated.
           userId = existingUser.id;
         } else {
           // Create new user with temporary password
@@ -480,22 +489,66 @@ router.post(
           );
           const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
 
-          const newUser = await prisma.user.create({
-            data: {
-              email: email.toLowerCase(),
-              name,
-              passwordHash,
-              role: 'USER', // New users get USER role (not admin)
-              timezone: 'America/New_York',
+          // Use transaction to ensure user creation and tenant addition are atomic
+          const result = await prisma.$transaction(async (tx) => {
+            const newUser = await tx.user.create({
+              data: {
+                email: email.toLowerCase(),
+                name,
+                passwordHash,
+                role: 'USER', // New users get USER role (not admin)
+                timezone: process.env.DEFAULT_TIMEZONE || 'UTC',
+              },
+            });
+
+            const tenantUser = await tx.tenantUser.create({
+              data: {
+                tenantId,
+                userId: newUser.id,
+                role: data.role || 'MEMBER',
+              },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            });
+
+            return { newUser, tenantUser };
+          });
+
+          userId = result.newUser.id;
+          isNewUser = true;
+
+          // Log the action (tenantId is derived from tenant context)
+          await logAudit({
+            userId: req.userId,
+            action: AuditAction.CREATE,
+            entityType: 'TenantUser',
+            entityId: result.tenantUser.id.toString(),
+            after: { userId, role: data.role, isNewUser, tenantId },
+            metadata: {
+              ip: req.ip,
+              userAgent: req.headers['user-agent'],
             },
           });
 
-          userId = newUser.id;
-          isNewUser = true;
+          // Return response with user info and temp password
+          return res.status(201).json({
+            data: {
+              tenantUser: result.tenantUser,
+              isNewUser: true,
+              tempPassword,
+            },
+          });
         }
       }
 
-      // Add user to tenant
+      // Add existing user to tenant (non-transactional path)
       const tenantUser = await tenantService.addUserToTenant(
         tenantId,
         userId,
@@ -603,43 +656,48 @@ router.delete(
   requireAuth,
   requireTenantRole(['OWNER', 'ADMIN']),
   async (req: AuthenticatedRequest, res: Response) => {
-    const { tenantId } = getTenantContext();
-    const userId = parseInt(req.params.userId, 10);
+    try {
+      const { tenantId } = getTenantContext();
+      const userId = parseInt(req.params.userId, 10);
 
-    // Prevent self-removal
-    if (userId === req.userId) {
-      return res
-        .status(400)
-        .json({ error: 'Cannot remove yourself from tenant' });
-    }
+      // Prevent self-removal
+      if (userId === req.userId) {
+        return res
+          .status(400)
+          .json({ error: 'Cannot remove yourself from tenant' });
+      }
 
-    // Check if this is the last owner
-    const tenantUsers = await tenantService.getTenantUsers(tenantId);
-    const targetUser = tenantUsers.find((tu) => tu.userId === userId);
-    const ownerCount = tenantUsers.filter((tu) => tu.role === 'OWNER').length;
+      // Check if this is the last owner
+      const tenantUsers = await tenantService.getTenantUsers(tenantId);
+      const targetUser = tenantUsers.find((tu) => tu.userId === userId);
+      const ownerCount = tenantUsers.filter((tu) => tu.role === 'OWNER').length;
 
-    if (targetUser?.role === 'OWNER' && ownerCount <= 1) {
-      return res.status(400).json({
-        error: 'Cannot remove the last owner. Transfer ownership first.',
+      if (targetUser?.role === 'OWNER' && ownerCount <= 1) {
+        return res.status(400).json({
+          error: 'Cannot remove the last owner. Transfer ownership first.',
+        });
+      }
+
+      await tenantService.removeUserFromTenant(tenantId, userId);
+
+      // Log the action (tenantId is derived from tenant context)
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.DELETE,
+        entityType: 'TenantUser',
+        entityId: `${tenantId}-${userId}`,
+        before: { targetUserId: userId, role: targetUser?.role, tenantId },
+        metadata: {
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
       });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Failed to remove user from tenant:', error);
+      res.status(500).json({ error: 'Failed to remove user from tenant' });
     }
-
-    await tenantService.removeUserFromTenant(tenantId, userId);
-
-    // Log the action (tenantId is derived from tenant context)
-    await logAudit({
-      userId: req.userId,
-      action: AuditAction.DELETE,
-      entityType: 'TenantUser',
-      entityId: `${tenantId}-${userId}`,
-      before: { targetUserId: userId, role: targetUser?.role, tenantId },
-      metadata: {
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
-      },
-    });
-
-    res.status(204).send();
   },
 );
 
