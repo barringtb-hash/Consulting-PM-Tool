@@ -152,7 +152,7 @@ router.post(
         return;
       }
 
-      const userId = req.user!.id;
+      const userId = req.userId!;
       const document = await projectDocumentService.createProjectDocument(
         userId,
         {
@@ -224,7 +224,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const userId = req.user!.id;
+    const userId = req.userId!;
     const document = await projectDocumentService.updateProjectDocument(
       id,
       userId,
@@ -266,7 +266,7 @@ router.patch('/:id/status', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const userId = req.user!.id;
+    const userId = req.userId!;
     const document = await projectDocumentService.updateDocumentStatus(
       id,
       userId,
@@ -308,7 +308,7 @@ router.post('/:id/clone', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const userId = req.user!.id;
+    const userId = req.userId!;
     const document = await projectDocumentService.cloneProjectDocument(
       id,
       userId,
@@ -344,7 +344,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const userId = req.user!.id;
+    const userId = req.userId!;
     await projectDocumentService.deleteProjectDocument(id, userId);
 
     res.status(204).send();
@@ -452,7 +452,7 @@ router.post('/:id/versions/restore', async (req: AuthenticatedRequest, res) => {
       return;
     }
 
-    const userId = req.user!.id;
+    const userId = req.userId!;
     const document = await projectDocumentService.restoreDocumentVersion(
       id,
       bodyResult.data.version,

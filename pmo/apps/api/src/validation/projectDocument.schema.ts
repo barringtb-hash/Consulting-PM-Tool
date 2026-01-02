@@ -28,7 +28,7 @@ export const createProjectDocumentSchema = z.object({
   templateType: projectDocumentTypeSchema,
   name: z.string().min(1, 'Name is required').max(255, 'Name too long'),
   description: z.string().max(1000, 'Description too long').optional(),
-  content: z.record(z.unknown()).optional(), // Optional: use template default if not provided
+  content: z.record(z.string(), z.unknown()).optional(), // Optional: use template default if not provided
 });
 
 export type CreateProjectDocumentInput = z.infer<
@@ -48,9 +48,9 @@ export const updateProjectDocumentSchema = z.object({
   description: z
     .string()
     .max(1000, 'Description too long')
-    .nullable()
-    .optional(),
-  content: z.record(z.unknown()).optional(),
+    .nullish()
+    .transform((val) => val ?? undefined),
+  content: z.record(z.string(), z.unknown()).optional(),
   status: projectDocumentStatusSchema.optional(),
 });
 
