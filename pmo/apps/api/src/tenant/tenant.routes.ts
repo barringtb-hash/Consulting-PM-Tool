@@ -14,14 +14,17 @@ import { z } from 'zod';
 import * as tenantService from './tenant.service';
 import {
   requireAuth,
+  requireAdmin,
   type AuthenticatedRequest,
 } from '../auth/auth.middleware';
-import { requireRole } from '../auth/role.middleware';
+import { requireRole, requireTenantRole } from '../auth/role.middleware';
 import { getTenantContext, hasTenantContext } from './tenant.context';
 import type { TenantRequest } from './tenant.middleware';
 import { logAudit } from '../services/audit.service';
 import { AuditAction } from '@prisma/client';
 import { prisma } from '../prisma/client';
+import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 const router = Router();
 
@@ -74,10 +77,21 @@ const addDomainSchema = z.object({
   isPrimary: z.boolean().optional(),
 });
 
-const addUserSchema = z.object({
+// Schema for adding an existing user by ID
+const addUserByIdSchema = z.object({
   userId: z.number().int().positive(),
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).optional(),
 });
+
+// Schema for creating a new user by email (for tenant admins)
+const addUserByEmailSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+  role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).optional(),
+});
+
+// Combined schema - either userId OR email+name
+const addUserSchema = z.union([addUserByIdSchema, addUserByEmailSchema]);
 
 const updateUserRoleSchema = z.object({
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']),
@@ -197,11 +211,13 @@ router.post(
 
 /**
  * POST /api/tenants
- * Create a new tenant (owner only - platform admin)
+ * Create a new tenant (platform admins only)
+ * Regular users should NOT be able to create tenants.
+ * Use /api/admin/tenants for tenant creation with owner assignment.
  */
 router.post(
   '/tenants',
-  requireAuth,
+  requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const parsed = createTenantSchema.safeParse(req.body);
@@ -377,11 +393,13 @@ router.delete(
 
 // ============================================================================
 // USER MANAGEMENT ROUTES
+// Only OWNER and ADMIN tenant roles can manage users
 // ============================================================================
 
 /**
  * GET /api/tenants/current/users
  * List tenant users
+ * Any authenticated tenant member can view the user list
  */
 router.get(
   '/tenants/current/users',
@@ -394,13 +412,28 @@ router.get(
 );
 
 /**
+ * Generate a temporary password for new users
+ */
+function generateTempPassword(): string {
+  return randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
+}
+
+/**
  * POST /api/tenants/current/users
- * Add user to tenant
+ * Add user to tenant (OWNER or ADMIN only)
+ *
+ * Supports two modes:
+ * 1. Add existing user by ID: { userId: 123, role: "MEMBER" }
+ * 2. Create new user by email: { email: "user@example.com", name: "John Doe", role: "MEMBER" }
+ *
+ * When creating a new user, a temporary password is generated and returned.
+ * The user should be prompted to change their password on first login.
  */
 router.post(
   '/tenants/current/users',
   requireAuth,
-  async (req: TenantRequest, res: Response) => {
+  requireTenantRole(['OWNER', 'ADMIN']),
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { tenantId } = getTenantContext();
       const parsed = addUserSchema.safeParse(req.body);
@@ -409,12 +442,95 @@ router.post(
         return res.status(400).json({ errors: parsed.error.flatten() });
       }
 
+      const data = parsed.data;
+      let userId: number;
+      let isNewUser = false;
+      let tempPassword: string | undefined;
+
+      // Check if adding by userId or creating by email
+      if ('userId' in data) {
+        // Adding existing user by ID
+        userId = data.userId;
+
+        // Verify user exists
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+        });
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+      } else {
+        // Creating new user by email
+        const { email, name } = data;
+
+        // Check if user with this email already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email: email.toLowerCase() },
+        });
+
+        if (existingUser) {
+          // User exists, just add them to tenant
+          userId = existingUser.id;
+        } else {
+          // Create new user with temporary password
+          tempPassword = generateTempPassword();
+          const saltRounds = parseInt(
+            process.env.BCRYPT_SALT_ROUNDS || '10',
+            10,
+          );
+          const passwordHash = await bcrypt.hash(tempPassword, saltRounds);
+
+          const newUser = await prisma.user.create({
+            data: {
+              email: email.toLowerCase(),
+              name,
+              passwordHash,
+              role: 'USER', // New users get USER role (not admin)
+              timezone: 'America/New_York',
+            },
+          });
+
+          userId = newUser.id;
+          isNewUser = true;
+        }
+      }
+
+      // Add user to tenant
       const tenantUser = await tenantService.addUserToTenant(
         tenantId,
-        parsed.data.userId,
-        parsed.data.role,
+        userId,
+        data.role,
       );
-      res.status(201).json({ data: tenantUser });
+
+      // Log the action (tenantId is derived from tenant context)
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.CREATE,
+        entityType: 'TenantUser',
+        entityId: tenantUser.id.toString(),
+        after: { userId, role: data.role, isNewUser, tenantId },
+        metadata: {
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      // Return response with user info
+      const response: {
+        tenantUser: typeof tenantUser;
+        isNewUser: boolean;
+        tempPassword?: string;
+      } = {
+        tenantUser,
+        isNewUser,
+      };
+
+      // Only include temp password if new user was created
+      if (isNewUser && tempPassword) {
+        response.tempPassword = tempPassword;
+      }
+
+      res.status(201).json({ data: response });
     } catch (error) {
       if (
         error instanceof Error &&
@@ -431,12 +547,13 @@ router.post(
 
 /**
  * PUT /api/tenants/current/users/:userId/role
- * Update user role
+ * Update user role (OWNER or ADMIN only)
  */
 router.put(
   '/tenants/current/users/:userId/role',
   requireAuth,
-  async (req: TenantRequest, res: Response) => {
+  requireTenantRole(['OWNER', 'ADMIN']),
+  async (req: AuthenticatedRequest, res: Response) => {
     const { tenantId } = getTenantContext();
     const userId = parseInt(req.params.userId, 10);
     const parsed = updateUserRoleSchema.safeParse(req.body);
@@ -445,27 +562,83 @@ router.put(
       return res.status(400).json({ errors: parsed.error.flatten() });
     }
 
+    // Prevent self-demotion for safety
+    if (
+      userId === req.userId &&
+      parsed.data.role !== 'OWNER' &&
+      parsed.data.role !== 'ADMIN'
+    ) {
+      return res.status(400).json({ error: 'Cannot demote your own role' });
+    }
+
     const tenantUser = await tenantService.updateUserRole(
       tenantId,
       userId,
       parsed.data.role,
     );
+
+    // Log the action (tenantId is derived from tenant context)
+    await logAudit({
+      userId: req.userId,
+      action: AuditAction.UPDATE,
+      entityType: 'TenantUser',
+      entityId: tenantUser.id.toString(),
+      after: { targetUserId: userId, role: parsed.data.role, tenantId },
+      metadata: {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    });
+
     res.json({ data: tenantUser });
   },
 );
 
 /**
  * DELETE /api/tenants/current/users/:userId
- * Remove user from tenant
+ * Remove user from tenant (OWNER or ADMIN only)
  */
 router.delete(
   '/tenants/current/users/:userId',
   requireAuth,
-  async (req: TenantRequest, res: Response) => {
+  requireTenantRole(['OWNER', 'ADMIN']),
+  async (req: AuthenticatedRequest, res: Response) => {
     const { tenantId } = getTenantContext();
     const userId = parseInt(req.params.userId, 10);
 
+    // Prevent self-removal
+    if (userId === req.userId) {
+      return res
+        .status(400)
+        .json({ error: 'Cannot remove yourself from tenant' });
+    }
+
+    // Check if this is the last owner
+    const tenantUsers = await tenantService.getTenantUsers(tenantId);
+    const targetUser = tenantUsers.find((tu) => tu.userId === userId);
+    const ownerCount = tenantUsers.filter((tu) => tu.role === 'OWNER').length;
+
+    if (targetUser?.role === 'OWNER' && ownerCount <= 1) {
+      return res.status(400).json({
+        error: 'Cannot remove the last owner. Transfer ownership first.',
+      });
+    }
+
     await tenantService.removeUserFromTenant(tenantId, userId);
+
+    // Log the action (tenantId is derived from tenant context)
+    await logAudit({
+      userId: req.userId,
+      action: AuditAction.DELETE,
+      entityType: 'TenantUser',
+      entityId: `${tenantId}-${userId}`,
+      before: { targetUserId: userId, role: targetUser?.role, tenantId },
+      metadata: {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    });
+
     res.status(204).send();
   },
 );

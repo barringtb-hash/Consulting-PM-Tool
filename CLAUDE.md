@@ -276,12 +276,32 @@ Consulting-PM-Tool/
    - `GET /api/auth/me`: Returns current user
    - `requireAuth` middleware protects routes
 
-4. **Module System**:
+4. **Authorization System** (Two-Level Role Model):
+   - **Global Roles** (`User.role`): Platform-level access
+     - `USER`: Regular user
+     - `ADMIN`: Can manage all tenants and users
+     - `SUPER_ADMIN`: Platform operator, can force-delete tenants
+   - **Tenant Roles** (`TenantUser.role`): Per-tenant access
+     - `OWNER`: Tenant owner, full access
+     - `ADMIN`: Can manage tenant users and settings
+     - `MEMBER`: Regular tenant member
+     - `VIEWER`: Read-only access
+   - **Middleware**:
+     - `requireAuth`: Verify JWT token
+     - `requireAdmin`: Check global ADMIN or SUPER_ADMIN role
+     - `requireSuperAdmin`: Check global SUPER_ADMIN role
+     - `requireRole(role)`: Check specific global role
+     - `requireTenantRole(['OWNER', 'ADMIN'])`: Check tenant-scoped role
+   - **Route Protection**:
+     - `/api/admin/*`: Requires global ADMIN (platform operators)
+     - `/api/tenants/current/users/*`: Requires tenant OWNER or ADMIN
+
+5. **Module System**:
    - Modules can be enabled/disabled via environment variables
    - `requireModule()` middleware guards module routes
    - Frontend discovers enabled modules via `/api/feature-flags`
 
-5. **Validation Pattern**:
+6. **Validation Pattern**:
    ```typescript
    // In route handler
    const parsed = schema.safeParse(req.body);
@@ -290,14 +310,14 @@ Consulting-PM-Tool/
    }
    ```
 
-6. **Infrastructure Components**:
+7. **Infrastructure Components**:
    - `cache/redis.client.ts`: Redis caching for sessions and data
    - `queue/queue.config.ts`: BullMQ job queue configuration
    - `websocket/websocket.server.ts`: Real-time WebSocket server
    - `notifications/`: Email and in-app notification service
    - `integrations/`: OAuth providers and data sync
 
-7. **Core Services** (`apps/api/src/services/`):
+8. **Core Services** (`apps/api/src/services/`):
    - `project.service.ts`: Project CRUD and templates
    - `task.service.ts`: Task management and Kanban
    - `milestone.service.ts`: Milestone tracking
@@ -486,6 +506,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | API app factory | `pmo/apps/api/src/app.ts` |
 | Auth routes | `pmo/apps/api/src/auth/auth.routes.ts` |
 | Auth middleware | `pmo/apps/api/src/auth/auth.middleware.ts` |
+| Role middleware | `pmo/apps/api/src/auth/role.middleware.ts` |
 | Database schema | `pmo/prisma/schema.prisma` |
 | Module config | `pmo/apps/api/src/modules/module-config.ts` |
 | UI components | `pmo/apps/web/src/ui/index.ts` |
