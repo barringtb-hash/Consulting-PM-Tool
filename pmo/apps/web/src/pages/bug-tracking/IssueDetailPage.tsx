@@ -906,8 +906,8 @@ export default function IssueDetailPage() {
             </div>
             <div className="p-4 flex-1 overflow-hidden flex flex-col">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Click "Copy" below or select all text (⌘A) and copy manually
-                (⌘C):
+                Click the Copy button below or select all text (⌘A) and copy
+                manually (⌘C):
               </p>
               <textarea
                 ref={promptTextareaRef}
