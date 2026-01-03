@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import {
   Bug,
@@ -18,7 +18,8 @@ import {
   FileText,
   X,
 } from 'lucide-react';
-import { Button, Badge, Card, Input } from '../../ui';
+import { Button, Badge, Card, Input, Modal } from '../../ui';
+import { useToast } from '../../ui/Toast';
 import { PageHeader } from '../../ui/PageHeader';
 import {
   useIssue,
@@ -111,11 +112,35 @@ export default function IssueDetailPage() {
   const uploadAttachments = useUploadAttachments();
   const deleteAttachment = useDeleteAttachment();
 
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const promptCopiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [newComment, setNewComment] = useState('');
   const [showAIPromptOptions, setShowAIPromptOptions] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+
+  // Clear any existing timeout before setting a new one
+  const setPromptCopiedWithTimeout = useCallback(
+    (duration: number, closeModal = false) => {
+      if (promptCopiedTimeoutRef.current) {
+        clearTimeout(promptCopiedTimeoutRef.current);
+      }
+      setPromptCopied(true);
+      promptCopiedTimeoutRef.current = setTimeout(() => {
+        setPromptCopied(false);
+        if (closeModal) {
+          setShowPromptModal(false);
+        }
+      }, duration);
+    },
+    [],
+  );
 
   const handleCopyAIPrompt = async (
     mode: 'basic' | 'full' | 'comprehensive',
@@ -139,17 +164,43 @@ export default function IssueDetailPage() {
 
       const copied = await copyToClipboard(result.prompt);
       if (copied) {
-        setPromptCopied(true);
-        setTimeout(() => setPromptCopied(false), 2000);
+        setPromptCopiedWithTimeout(2000);
         setShowAIPromptOptions(false);
       } else {
-        // If copy failed, inform the user
-        alert(
-          'Unable to copy to clipboard automatically. Please try again or use the /implement-issue command in Claude Code.',
-        );
+        // If copy failed, show the prompt in a modal for manual copying
+        setGeneratedPrompt(result.prompt);
+        setShowPromptModal(true);
+        setShowAIPromptOptions(false);
       }
     } catch (error) {
       console.error('Failed to generate AI prompt:', error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to generate AI prompt. Please try again.',
+        'error',
+      );
+    }
+  };
+
+  const handleManualCopy = async () => {
+    // Try clipboard API one more time (user gesture is fresh now)
+    const copied = await copyToClipboard(generatedPrompt);
+    if (copied) {
+      setPromptCopiedWithTimeout(1500, true);
+    } else {
+      // Select the text for manual copying
+      if (promptTextareaRef.current) {
+        promptTextareaRef.current.select();
+        promptTextareaRef.current.setSelectionRange(
+          0,
+          promptTextareaRef.current.value.length,
+        );
+      }
+      showToast(
+        'Text selected. Press Ctrl+C (or Cmd+C on Mac) to copy.',
+        'info',
+      );
     }
   };
 
@@ -864,6 +915,43 @@ export default function IssueDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Prompt Copy Modal - shown when automatic clipboard fails (Safari) */}
+      <Modal
+        isOpen={showPromptModal}
+        onClose={() => setShowPromptModal(false)}
+        title="AI Prompt Generated"
+        size="medium"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Click the Copy button below or select all text and copy manually:
+          </p>
+          <textarea
+            ref={promptTextareaRef}
+            value={generatedPrompt}
+            readOnly
+            aria-label="AI generated prompt text"
+            className="w-full p-3 text-sm font-mono bg-gray-50 dark:bg-neutral-900 border dark:border-neutral-700 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[300px]"
+            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+          />
+          <div className="flex justify-end gap-2 pt-2 border-t dark:border-neutral-700">
+            <Button variant="outline" onClick={() => setShowPromptModal(false)}>
+              Close
+            </Button>
+            <Button onClick={handleManualCopy}>
+              {promptCopied ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                'Copy to Clipboard'
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
