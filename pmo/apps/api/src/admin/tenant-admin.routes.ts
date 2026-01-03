@@ -467,6 +467,12 @@ router.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { tenantId, userId } = req.params;
+      const parsedUserId = parseInt(userId, 10);
+
+      if (isNaN(parsedUserId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+      }
+
       const body = req.body as { role?: string };
       const { role } = body;
 
@@ -476,12 +482,18 @@ router.put(
 
       const result = await tenantAdminService.updateTenantUserRoleByAdmin(
         tenantId,
-        parseInt(userId, 10),
+        parsedUserId,
         role as 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER',
       );
       return res.json(result);
     } catch (error) {
       console.error('Error updating user role:', error);
+      if (
+        error instanceof Error &&
+        error.message.includes('Member not found')
+      ) {
+        return res.status(404).json({ error: error.message });
+      }
       return res.status(500).json({
         error:
           error instanceof Error ? error.message : 'Failed to update user role',
