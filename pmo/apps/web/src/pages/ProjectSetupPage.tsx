@@ -33,6 +33,19 @@ function formatLocalDate(dateStr: string): string {
   });
 }
 
+/**
+ * Convert a date string (YYYY-MM-DD) to UTC ISO string.
+ * This avoids timezone and DST-related date shifts when sending dates to the API.
+ * For example, "2026-01-03" in PST would otherwise become "2026-01-02" when
+ * interpreted as midnight UTC.
+ */
+function toUTCISOString(dateStr: string): string {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.toISOString();
+}
+
 // Project templates based on AI Consulting PMO model
 interface ProjectTemplate {
   id: string;
@@ -359,8 +372,12 @@ function ProjectSetupPage(): JSX.Element {
         name: formData.name,
         status: formData.status,
         visibility: formData.visibility,
-        startDate: formData.startDate || undefined,
-        endDate: formData.endDate || undefined,
+        startDate: formData.startDate
+          ? toUTCISOString(formData.startDate)
+          : undefined,
+        endDate: formData.endDate
+          ? toUTCISOString(formData.endDate)
+          : undefined,
       });
 
       setSelectedProject(project);

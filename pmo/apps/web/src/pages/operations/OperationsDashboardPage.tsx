@@ -434,21 +434,21 @@ export function OperationsDashboardPage(): JSX.Element {
                         Memory
                       </span>
                       <span className="text-neutral-800 dark:text-neutral-200">
-                        {Math.round(systemHealth.data.memoryUsedMB)}MB /{' '}
-                        {Math.round(systemHealth.data.memoryTotalMB)}MB
+                        {Math.round(systemHealth.data.memoryUsedMB ?? 0)}MB /{' '}
+                        {Math.round(systemHealth.data.memoryTotalMB ?? 0)}MB
                       </span>
                     </div>
                     <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all ${
-                          systemHealth.data.memoryUsagePercent > 90
+                          (systemHealth.data.memoryUsagePercent ?? 0) > 90
                             ? 'bg-red-500'
-                            : systemHealth.data.memoryUsagePercent > 75
+                            : (systemHealth.data.memoryUsagePercent ?? 0) > 75
                               ? 'bg-yellow-500'
                               : 'bg-green-500'
                         }`}
                         style={{
-                          width: `${systemHealth.data.memoryUsagePercent}%`,
+                          width: `${systemHealth.data.memoryUsagePercent ?? 0}%`,
                         }}
                       />
                     </div>
@@ -459,20 +459,20 @@ export function OperationsDashboardPage(): JSX.Element {
                         CPU
                       </span>
                       <span className="text-neutral-800 dark:text-neutral-200">
-                        {Math.round(systemHealth.data.cpuUsagePercent)}%
+                        {Math.round(systemHealth.data.cpuUsagePercent ?? 0)}%
                       </span>
                     </div>
                     <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all ${
-                          systemHealth.data.cpuUsagePercent > 90
+                          (systemHealth.data.cpuUsagePercent ?? 0) > 90
                             ? 'bg-red-500'
-                            : systemHealth.data.cpuUsagePercent > 75
+                            : (systemHealth.data.cpuUsagePercent ?? 0) > 75
                               ? 'bg-yellow-500'
                               : 'bg-green-500'
                         }`}
                         style={{
-                          width: `${systemHealth.data.cpuUsagePercent}%`,
+                          width: `${systemHealth.data.cpuUsagePercent ?? 0}%`,
                         }}
                       />
                     </div>
@@ -481,7 +481,7 @@ export function OperationsDashboardPage(): JSX.Element {
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div className="text-center p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
                     <div className="text-lg font-semibold text-neutral-700 dark:text-neutral-300">
-                      {systemHealth.data.eventLoopLagMs.toFixed(1)}ms
+                      {(systemHealth.data.eventLoopLagMs ?? 0).toFixed(1)}ms
                     </div>
                     <div className="text-xs text-neutral-500">
                       Event Loop Lag
@@ -489,7 +489,10 @@ export function OperationsDashboardPage(): JSX.Element {
                   </div>
                   <div className="text-center p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
                     <div className="text-lg font-semibold text-neutral-700 dark:text-neutral-300">
-                      {Math.round(systemHealth.data.uptimeSeconds / 3600)}h
+                      {Math.round(
+                        (systemHealth.data.uptimeSeconds ?? 0) / 3600,
+                      )}
+                      h
                     </div>
                     <div className="text-xs text-neutral-500">Uptime</div>
                   </div>
