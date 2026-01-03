@@ -12,6 +12,10 @@ import { Request, Response, NextFunction } from 'express';
 import { redis, isRedisConnected } from '../cache/redis.client';
 import { RATE_LIMITS, type TenantPlan } from '../tenant/tenant.types';
 import type { TenantRequest } from '../tenant/tenant.middleware';
+import {
+  formatRetryDuration,
+  formatRateLimitMessage,
+} from './rate-limit.middleware';
 
 // In-memory fallback store
 const inMemoryStore = new Map<string, { count: number; resetTime: number }>();
@@ -167,10 +171,14 @@ export function tenantRateLimit(options: RateLimitOptions = {}) {
         const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
         res.setHeader('Retry-After', retryAfter);
 
+        const formattedMessage = formatRateLimitMessage(retryAfter, message);
+
         return res.status(429).json({
-          error: 'Rate limit exceeded',
-          message,
+          error: 'RATE_LIMIT_EXCEEDED',
+          message: formattedMessage,
           retryAfter,
+          retryAfterFormatted: formatRetryDuration(retryAfter),
+          resetAt: new Date(result.resetTime).toISOString(),
         });
       }
 

@@ -26,6 +26,47 @@
 
 import { Request, Response, NextFunction } from 'express';
 
+/**
+ * Format retry duration in human-readable format.
+ * @param seconds - Number of seconds until rate limit resets
+ * @returns Human-readable duration string
+ */
+export function formatRetryDuration(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+  }
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  }
+  const hours = Math.ceil(minutes / 60);
+  return `${hours} hour${hours !== 1 ? 's' : ''}`;
+}
+
+/**
+ * Generate a clear, user-friendly rate limit error message.
+ * @param retryAfterSeconds - Number of seconds until rate limit resets
+ * @param customMessage - Optional custom message prefix
+ * @returns Formatted error message with retry information
+ */
+export function formatRateLimitMessage(
+  retryAfterSeconds: number,
+  customMessage?: string,
+): string {
+  const duration = formatRetryDuration(retryAfterSeconds);
+  const resetTime = new Date(Date.now() + retryAfterSeconds * 1000);
+  const timeString = resetTime.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  if (customMessage) {
+    return `${customMessage} You can retry in ${duration} (at ${timeString}).`;
+  }
+  return `Rate limit exceeded. Please wait ${duration} before retrying (resets at ${timeString}).`;
+}
+
 /** Internal tracking entry for a single client's request count */
 interface RateLimitEntry {
   count: number;
@@ -106,10 +147,15 @@ export class RateLimiter {
     if (entry.count > this.options.maxRequests) {
       const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
       res.setHeader('Retry-After', retryAfter.toString());
+
+      const message = formatRateLimitMessage(retryAfter, this.options.message);
+
       res.status(429).json({
-        error:
-          this.options.message || 'Too many requests, please try again later.',
+        error: 'RATE_LIMIT_EXCEEDED',
+        message,
         retryAfter,
+        retryAfterFormatted: formatRetryDuration(retryAfter),
+        resetAt: new Date(entry.resetAt).toISOString(),
       });
       return;
     }

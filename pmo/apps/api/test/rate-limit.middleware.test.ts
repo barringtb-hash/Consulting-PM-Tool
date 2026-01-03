@@ -6,6 +6,8 @@ import express from 'express';
 import {
   createRateLimiter,
   RateLimiter,
+  formatRetryDuration,
+  formatRateLimitMessage,
 } from '../src/middleware/rate-limit.middleware';
 
 describe('rate-limit middleware', () => {
@@ -51,7 +53,9 @@ describe('rate-limit middleware', () => {
       // Third request should be blocked
       const response = await request(app).get('/test');
       expect(response.status).toBe(429);
-      expect(response.body.error).toContain('Too many requests');
+      expect(response.body.error).toBe('RATE_LIMIT_EXCEEDED');
+      expect(response.body.message).toContain('Rate limit exceeded');
+      expect(response.body.message).toContain('before retrying');
     });
 
     it('returns custom message when rate limited', async () => {
@@ -70,7 +74,36 @@ describe('rate-limit middleware', () => {
       const response = await request(app).get('/test');
 
       expect(response.status).toBe(429);
-      expect(response.body.error).toBe(customMessage);
+      expect(response.body.error).toBe('RATE_LIMIT_EXCEEDED');
+      expect(response.body.message).toContain(customMessage);
+      expect(response.body.message).toContain('You can retry in');
+    });
+
+    it('includes detailed retry information in response', async () => {
+      const rateLimiter = createRateLimiter({
+        windowMs: 60000,
+        maxRequests: 1,
+      });
+
+      app.get('/test', rateLimiter, (_req, res) => {
+        res.json({ success: true });
+      });
+
+      await request(app).get('/test');
+      const response = await request(app).get('/test');
+
+      expect(response.status).toBe(429);
+      expect(response.body).toHaveProperty('error', 'RATE_LIMIT_EXCEEDED');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body).toHaveProperty('retryAfter');
+      expect(response.body).toHaveProperty('retryAfterFormatted');
+      expect(response.body).toHaveProperty('resetAt');
+
+      // Verify message contains retry information
+      expect(response.body.message).toMatch(
+        /Please wait \d+ (second|minute|hour)/,
+      );
+      expect(response.body.message).toMatch(/resets at \d{2}:\d{2}/);
     });
 
     it('sets rate limit headers', async () => {
@@ -147,6 +180,56 @@ describe('rate-limit middleware', () => {
 
       // Should not throw
       expect(() => limiter.destroy()).not.toThrow();
+    });
+  });
+
+  describe('formatRetryDuration', () => {
+    it('formats seconds correctly', () => {
+      expect(formatRetryDuration(1)).toBe('1 second');
+      expect(formatRetryDuration(30)).toBe('30 seconds');
+      expect(formatRetryDuration(59)).toBe('59 seconds');
+    });
+
+    it('formats minutes correctly', () => {
+      expect(formatRetryDuration(60)).toBe('1 minute');
+      expect(formatRetryDuration(90)).toBe('2 minutes');
+      expect(formatRetryDuration(120)).toBe('2 minutes');
+      expect(formatRetryDuration(1800)).toBe('30 minutes'); // 30 min
+      expect(formatRetryDuration(3540)).toBe('59 minutes'); // 59 min
+    });
+
+    it('formats hours correctly', () => {
+      expect(formatRetryDuration(3600)).toBe('1 hour');
+      expect(formatRetryDuration(7200)).toBe('2 hours');
+      expect(formatRetryDuration(86400)).toBe('24 hours');
+    });
+  });
+
+  describe('formatRateLimitMessage', () => {
+    it('formats default message with retry duration', () => {
+      const message = formatRateLimitMessage(30);
+      expect(message).toContain('Rate limit exceeded');
+      expect(message).toContain('Please wait 30 seconds');
+      expect(message).toContain('before retrying');
+      expect(message).toMatch(/resets at \d{2}:\d{2}/);
+    });
+
+    it('includes custom message prefix', () => {
+      const customMessage = 'API quota reached.';
+      const message = formatRateLimitMessage(120, customMessage);
+      expect(message).toContain(customMessage);
+      expect(message).toContain('You can retry in 2 minutes');
+      expect(message).toMatch(/at \d{2}:\d{2}/);
+    });
+
+    it('formats message for minutes duration', () => {
+      const message = formatRateLimitMessage(300);
+      expect(message).toContain('5 minutes');
+    });
+
+    it('formats message for hours duration', () => {
+      const message = formatRateLimitMessage(7200);
+      expect(message).toContain('2 hours');
     });
   });
 });
