@@ -19,6 +19,17 @@ import {
 } from '../../api/hooks/useFinance';
 import { useAccounts } from '../../api/hooks/crm';
 
+/**
+ * Convert a date string (YYYY-MM-DD) to UTC ISO string.
+ * This avoids timezone and DST-related date shifts when sending dates to the API.
+ */
+function toUTCISOString(dateStr: string): string {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.toISOString();
+}
+
 const recurringCostFormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
   description: z.string().max(1000).optional(),
@@ -209,11 +220,9 @@ export default function RecurringCostFormPage() {
         accountId: data.accountId ? Number(data.accountId) : undefined,
         vendorName: data.vendorName,
         status: data.status,
-        startDate: new Date(data.startDate).toISOString(),
-        endDate: data.endDate
-          ? new Date(data.endDate).toISOString()
-          : undefined,
-        nextDueDate: new Date(data.nextDueDate).toISOString(),
+        startDate: toUTCISOString(data.startDate),
+        endDate: data.endDate ? toUTCISOString(data.endDate) : undefined,
+        nextDueDate: toUTCISOString(data.nextDueDate),
       };
 
       if (isEditing) {

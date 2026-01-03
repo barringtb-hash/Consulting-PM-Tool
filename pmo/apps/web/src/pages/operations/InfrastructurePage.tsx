@@ -66,8 +66,8 @@ function HealthGauge({
         </span>
         <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
           {max
-            ? `${Math.round(value)} / ${Math.round(max)} ${unit}`
-            : `${value.toFixed(1)}${unit}`}
+            ? `${Math.round(value ?? 0)} / ${Math.round(max)} ${unit}`
+            : `${(value ?? 0).toFixed(1)}${unit}`}
         </span>
       </div>
       <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
@@ -148,14 +148,14 @@ export function InfrastructurePage(): JSX.Element {
                   </span>
                   <span
                     className={`text-sm font-medium ${
-                      health.data.eventLoopLagMs > 100
+                      (health.data.eventLoopLagMs ?? 0) > 100
                         ? 'text-red-600'
-                        : health.data.eventLoopLagMs > 50
+                        : (health.data.eventLoopLagMs ?? 0) > 50
                           ? 'text-yellow-600'
                           : 'text-green-600'
                     }`}
                   >
-                    {health.data.eventLoopLagMs.toFixed(2)}ms
+                    {(health.data.eventLoopLagMs ?? 0).toFixed(2)}ms
                   </span>
                 </div>
                 <div className="flex items-center gap-4 mt-4">

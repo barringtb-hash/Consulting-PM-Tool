@@ -30,6 +30,17 @@ import {
 import { useAccounts } from '../../api/hooks/crm';
 import { useProjects } from '../../api/hooks/projects';
 
+/**
+ * Convert a date string (YYYY-MM-DD) to UTC ISO string.
+ * This avoids timezone and DST-related date shifts when sending dates to the API.
+ */
+function toUTCISOString(dateStr: string): string {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.toISOString();
+}
+
 // Debounce hook for AI suggestions
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -187,7 +198,7 @@ export default function ExpenseFormPage() {
               .map((t) => t.trim())
               .filter(Boolean)
           : [],
-        date: new Date(data.date).toISOString(),
+        date: toUTCISOString(data.date),
       };
 
       if (isEditing) {

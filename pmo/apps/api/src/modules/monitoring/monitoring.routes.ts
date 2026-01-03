@@ -377,7 +377,17 @@ router.get('/alerts/rules', async (_req, res, next) => {
 router.post('/alerts/rules', async (req, res, next) => {
   try {
     // Transform frontend field names to backend field names
-    const { severity, channel, throttleMinutes, category, ...rest } = req.body;
+    // Filter out fields that shouldn't be passed to Prisma
+    const {
+      severity,
+      channel,
+      throttleMinutes,
+      category,
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      ...rest
+    } = req.body;
 
     const transformedData = {
       ...rest,
@@ -408,7 +418,17 @@ router.post('/alerts/rules', async (req, res, next) => {
 router.put('/alerts/rules/:id', async (req, res, next) => {
   try {
     // Transform frontend field names to backend field names
-    const { severity, channel, throttleMinutes, category, ...rest } = req.body;
+    // Filter out fields that shouldn't be passed to Prisma
+    const {
+      severity,
+      channel,
+      throttleMinutes,
+      category,
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      ...rest
+    } = req.body;
 
     const transformedData: Record<string, unknown> = { ...rest };
 
