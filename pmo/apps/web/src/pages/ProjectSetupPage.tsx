@@ -13,38 +13,7 @@ import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { PageHeader } from '../ui/PageHeader';
 import { useToast } from '../ui/Toast';
-
-/**
- * Format a date string (YYYY-MM-DD) to local display format.
- * Handles both HTML date input values and ISO date strings.
- */
-function formatLocalDate(dateStr: string): string {
-  if (!dateStr) return '';
-  // Extract YYYY-MM-DD from ISO string if needed
-  const datePart = dateStr.split('T')[0];
-  if (!datePart || !/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return '';
-  const [year, month, day] = datePart.split('-').map(Number);
-  // Create date in local timezone
-  const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-/**
- * Convert a date string (YYYY-MM-DD) to UTC ISO string.
- * This avoids timezone and DST-related date shifts when sending dates to the API.
- * For example, "2026-01-03" in PST would otherwise become "2026-01-02" when
- * interpreted as midnight UTC.
- */
-function toUTCISOString(dateStr: string): string {
-  if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return date.toISOString();
-}
+import { formatLocalDate, toUTCISOString } from '../utils/dateUtils';
 
 // Project templates based on AI Consulting PMO model
 interface ProjectTemplate {
