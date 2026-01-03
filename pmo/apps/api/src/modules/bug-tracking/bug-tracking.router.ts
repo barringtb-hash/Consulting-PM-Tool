@@ -206,10 +206,14 @@ const bulkLabelSchema = bulkActionSchema.extend({
 
 const aiPromptOptionsSchema = z.object({
   format: z.enum(['markdown', 'plain', 'json']).optional(),
-  includeComments: z.boolean().optional(),
+  includeStackTrace: z.boolean().optional(),
+  includeEnvironmentInfo: z.boolean().optional(),
   includeErrorLogs: z.boolean().optional(),
-  includeRelatedIssues: z.boolean().optional(),
   maxErrorLogs: z.number().int().positive().max(50).optional(),
+  includeComments: z.boolean().optional(),
+  includeSuggestedFiles: z.boolean().optional(),
+  includeRelatedIssues: z.boolean().optional(),
+  includeAttachments: z.boolean().optional(),
   customInstructions: z.string().max(2000).optional(),
 });
 
@@ -1185,17 +1189,41 @@ router.get(
       const issueId = Number(req.params.id);
 
       // Parse query params as options
+      // Only set options that are explicitly provided, letting service defaults handle the rest
       const options: aiPromptService.AIPromptOptions = {
         format:
           (req.query.format as 'markdown' | 'plain' | 'json') || 'markdown',
-        includeComments: req.query.includeComments === 'true',
-        includeErrorLogs: req.query.includeErrorLogs !== 'false', // default true
-        includeRelatedIssues: req.query.includeRelatedIssues === 'true',
-        maxErrorLogs: req.query.maxErrorLogs
-          ? Number(req.query.maxErrorLogs)
-          : 10,
         customInstructions: req.query.customInstructions as string | undefined,
       };
+
+      // Parse boolean options - only set if explicitly provided
+      if (req.query.includeStackTrace !== undefined) {
+        options.includeStackTrace = req.query.includeStackTrace === 'true';
+      }
+      if (req.query.includeEnvironmentInfo !== undefined) {
+        options.includeEnvironmentInfo =
+          req.query.includeEnvironmentInfo === 'true';
+      }
+      if (req.query.includeErrorLogs !== undefined) {
+        options.includeErrorLogs = req.query.includeErrorLogs === 'true';
+      }
+      if (req.query.includeComments !== undefined) {
+        options.includeComments = req.query.includeComments === 'true';
+      }
+      if (req.query.includeSuggestedFiles !== undefined) {
+        options.includeSuggestedFiles =
+          req.query.includeSuggestedFiles === 'true';
+      }
+      if (req.query.includeRelatedIssues !== undefined) {
+        options.includeRelatedIssues =
+          req.query.includeRelatedIssues === 'true';
+      }
+      if (req.query.includeAttachments !== undefined) {
+        options.includeAttachments = req.query.includeAttachments === 'true';
+      }
+      if (req.query.maxErrorLogs !== undefined) {
+        options.maxErrorLogs = Number(req.query.maxErrorLogs);
+      }
 
       const prompt = await aiPromptService.generateAIPrompt(issueId, options);
       res.json(prompt);

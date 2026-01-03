@@ -408,10 +408,23 @@ export async function deleteApiKey(id: number): Promise<void> {
 
 export interface AIPromptOptions {
   format?: 'markdown' | 'plain' | 'json';
-  includeComments?: boolean;
+  /** Include stack trace in prompt */
+  includeStackTrace?: boolean;
+  /** Include browser/request info */
+  includeEnvironmentInfo?: boolean;
+  /** Include recent error logs */
   includeErrorLogs?: boolean;
-  includeRelatedIssues?: boolean;
+  /** Maximum number of error logs to include */
   maxErrorLogs?: number;
+  /** Include comments/discussion */
+  includeComments?: boolean;
+  /** Include suggested files to investigate */
+  includeSuggestedFiles?: boolean;
+  /** Include related issues */
+  includeRelatedIssues?: boolean;
+  /** Include attachments (screenshots, files) */
+  includeAttachments?: boolean;
+  /** Custom instructions to append */
   customInstructions?: string;
 }
 
@@ -445,14 +458,22 @@ export async function getIssueAIPrompt(
 ): Promise<AIPromptResponse> {
   const params = new URLSearchParams();
   if (options.format) params.set('format', options.format);
-  if (options.includeComments !== undefined)
-    params.set('includeComments', String(options.includeComments));
+  if (options.includeStackTrace !== undefined)
+    params.set('includeStackTrace', String(options.includeStackTrace));
+  if (options.includeEnvironmentInfo !== undefined)
+    params.set('includeEnvironmentInfo', String(options.includeEnvironmentInfo));
   if (options.includeErrorLogs !== undefined)
     params.set('includeErrorLogs', String(options.includeErrorLogs));
-  if (options.includeRelatedIssues !== undefined)
-    params.set('includeRelatedIssues', String(options.includeRelatedIssues));
   if (options.maxErrorLogs !== undefined)
     params.set('maxErrorLogs', String(options.maxErrorLogs));
+  if (options.includeComments !== undefined)
+    params.set('includeComments', String(options.includeComments));
+  if (options.includeSuggestedFiles !== undefined)
+    params.set('includeSuggestedFiles', String(options.includeSuggestedFiles));
+  if (options.includeRelatedIssues !== undefined)
+    params.set('includeRelatedIssues', String(options.includeRelatedIssues));
+  if (options.includeAttachments !== undefined)
+    params.set('includeAttachments', String(options.includeAttachments));
   if (options.customInstructions)
     params.set('customInstructions', options.customInstructions);
 
