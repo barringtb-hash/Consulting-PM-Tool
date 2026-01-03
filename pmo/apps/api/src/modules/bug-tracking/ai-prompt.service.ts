@@ -157,7 +157,12 @@ export async function generateAIPrompt(
   issueId: number,
   options: AIPromptOptions = {},
 ): Promise<AIPromptResult> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+  // Handle maxErrorLogs as alias for errorLogLimit
+  const normalizedOptions = {
+    ...options,
+    errorLogLimit: options.errorLogLimit ?? options.maxErrorLogs,
+  };
+  const opts = { ...DEFAULT_OPTIONS, ...normalizedOptions };
   const tenantId = hasTenantContext() ? getTenantId() : null;
 
   // Fetch the issue with all related data
