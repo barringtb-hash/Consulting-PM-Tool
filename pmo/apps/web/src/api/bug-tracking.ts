@@ -462,7 +462,10 @@ export async function getIssueAIPrompt(
   if (options.includeStackTrace !== undefined)
     params.set('includeStackTrace', String(options.includeStackTrace));
   if (options.includeEnvironmentInfo !== undefined)
-    params.set('includeEnvironmentInfo', String(options.includeEnvironmentInfo));
+    params.set(
+      'includeEnvironmentInfo',
+      String(options.includeEnvironmentInfo),
+    );
   if (options.includeErrorLogs !== undefined)
     params.set('includeErrorLogs', String(options.includeErrorLogs));
   if (options.maxErrorLogs !== undefined)
