@@ -5,13 +5,14 @@
  * Dependencies: Before any customer-facing launch
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { PageHeader } from '../../ui/PageHeader';
 import { Button } from '../../ui/Button';
 import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
+import { useToast } from '../../ui/Toast';
 import {
   Globe,
   UserX,
@@ -233,8 +234,20 @@ function GeneralCompliancePage(): JSX.Element {
   const [activeTab, setActiveTab] = useState<
     'overview' | 'requests' | 'consent' | 'data-mapping'
   >('overview');
+  const { showToast } = useToast();
 
   useRedirectOnUnauthorized();
+
+  // Helper for "coming soon" action buttons
+  const handleComingSoon = useCallback(
+    (feature: string) => {
+      showToast(
+        `${feature} is coming soon. Contact admin for assistance.`,
+        'info',
+      );
+    },
+    [showToast],
+  );
 
   // Queries
   const frameworksQuery = useQuery({
@@ -276,7 +289,10 @@ function GeneralCompliancePage(): JSX.Element {
         subtitle="COMP.3 - GDPR and CCPA Privacy Compliance"
         icon={Globe}
         actions={
-          <Button variant="secondary">
+          <Button
+            variant="secondary"
+            onClick={() => handleComingSoon('Report export')}
+          >
             <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>
@@ -476,7 +492,11 @@ function GeneralCompliancePage(): JSX.Element {
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Data Subject Requests
               </h3>
-              <Button variant="secondary" size="sm">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleComingSoon('New data subject request')}
+              >
                 <FileText className="h-4 w-4 mr-2" />
                 New Request
               </Button>
@@ -550,7 +570,13 @@ function GeneralCompliancePage(): JSX.Element {
                         {new Date(request.dueDate).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Button variant="secondary" size="sm">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            handleComingSoon('Request details view')
+                          }
+                        >
                           View
                         </Button>
                       </td>
@@ -571,7 +597,11 @@ function GeneralCompliancePage(): JSX.Element {
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Consent Records by Purpose
               </h3>
-              <Button variant="secondary" size="sm">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleComingSoon('Configure consent purposes')}
+              >
                 <Bell className="h-4 w-4 mr-2" />
                 Configure Purposes
               </Button>
@@ -648,7 +678,11 @@ function GeneralCompliancePage(): JSX.Element {
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Data Processing Inventory
               </h3>
-              <Button variant="secondary" size="sm">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleComingSoon('Add data category')}
+              >
                 <Database className="h-4 w-4 mr-2" />
                 Add Category
               </Button>

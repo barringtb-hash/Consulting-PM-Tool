@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import {
   Bug,
@@ -98,7 +98,7 @@ const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
 export default function IssueDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const issueId = Number(id);
+  const issueId = useMemo(() => (id ? Number(id) : 0), [id]);
 
   const { data: issue, isLoading } = useIssue(issueId);
   const { data: comments } = useComments(issueId);

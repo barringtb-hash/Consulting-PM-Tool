@@ -145,7 +145,7 @@ function OpportunityNewPage(): JSX.Element {
     }
   };
 
-  const isLoading = accountsQuery.isLoading || statsQuery.isLoading;
+  const isLoading = accountsQuery.isLoading || stagesQuery.isLoading;
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">

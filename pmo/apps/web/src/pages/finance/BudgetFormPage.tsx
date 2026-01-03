@@ -125,15 +125,21 @@ export default function BudgetFormPage() {
 
   const onSubmit = async (data: BudgetFormData) => {
     try {
+      // Convert date strings to ISO format using UTC
+      // This completely avoids timezone and DST-related date shifts
+      const toISODate = (dateStr: string) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        return date.toISOString();
+      };
+
       const payload = {
         ...data,
         accountId: data.accountId ? Number(data.accountId) : undefined,
         projectId: data.projectId ? Number(data.projectId) : undefined,
         categoryId: data.categoryId ? Number(data.categoryId) : undefined,
-        startDate: new Date(data.startDate).toISOString(),
-        endDate: data.endDate
-          ? new Date(data.endDate).toISOString()
-          : undefined,
+        startDate: toISODate(data.startDate),
+        endDate: data.endDate ? toISODate(data.endDate) : undefined,
         alertThresholds: data.alertThresholds
           ? data.alertThresholds
               .split(',')

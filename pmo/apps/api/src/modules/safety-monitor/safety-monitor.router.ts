@@ -259,7 +259,9 @@ router.get('/config/:clientId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid client ID' });
     }
 
-    if (!hasClientAccess((req as AuthenticatedRequest).userId!, clientId)) {
+    if (
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
+    ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -276,7 +278,10 @@ router.post('/config', async (req, res) => {
     const data = createConfigSchema.parse(req.body);
 
     if (
-      !hasClientAccess((req as AuthenticatedRequest).userId!, data.clientId)
+      !(await hasClientAccess(
+        (req as AuthenticatedRequest).userId!,
+        data.clientId,
+      ))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -305,7 +310,7 @@ router.patch('/config/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -336,7 +341,7 @@ router.get('/checklists/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -364,7 +369,7 @@ router.post('/checklists', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -393,7 +398,7 @@ router.patch('/checklists/:checklistId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromChecklist(checklistId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -421,7 +426,7 @@ router.delete('/checklists/:checklistId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromChecklist(checklistId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -447,7 +452,7 @@ router.get('/completions/:checklistId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromChecklist(checklistId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -476,7 +481,7 @@ router.post('/completions', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -511,7 +516,7 @@ router.get('/incidents/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -539,7 +544,7 @@ router.post('/incidents', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -571,7 +576,7 @@ router.patch('/incidents/:incidentId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromIncident(incidentId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -605,7 +610,7 @@ router.get('/hazards/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -632,7 +637,7 @@ router.post('/hazards', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -661,7 +666,7 @@ router.patch('/hazards/:hazardId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromHazard(hazardId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -695,7 +700,7 @@ router.get('/training-requirements/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -721,7 +726,7 @@ router.post('/training-requirements', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -751,7 +756,7 @@ router.patch('/training-requirements/:requirementId', async (req, res) => {
       await safetyService.getClientIdFromTrainingRequirement(requirementId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -785,7 +790,7 @@ router.get('/training-records/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -811,7 +816,7 @@ router.post('/training-records', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -873,7 +878,7 @@ router.get('/osha-logs/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -897,7 +902,7 @@ router.post('/osha-logs', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -931,7 +936,7 @@ router.get('/inspections/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -957,7 +962,7 @@ router.post('/inspections', async (req, res) => {
     );
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -990,7 +995,7 @@ router.patch('/inspections/:inspectionId', async (req, res) => {
       await safetyService.getClientIdFromInspection(inspectionId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -1031,7 +1036,7 @@ router.get('/analytics/:configId', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -1057,7 +1062,7 @@ router.post('/analytics/:configId/record', async (req, res) => {
     const clientId = await safetyService.getClientIdFromSafetyConfig(configId);
     if (
       !clientId ||
-      !hasClientAccess((req as AuthenticatedRequest).userId!, clientId)
+      !(await hasClientAccess((req as AuthenticatedRequest).userId!, clientId))
     ) {
       return res.status(403).json({ error: 'Forbidden' });
     }

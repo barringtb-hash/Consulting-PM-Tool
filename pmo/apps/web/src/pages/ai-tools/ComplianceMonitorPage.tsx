@@ -395,7 +395,14 @@ function ComplianceMonitorPage(): JSX.Element {
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                   Compliance Rules
                 </h3>
-                <Button>
+                <Button
+                  onClick={() =>
+                    showToast(
+                      'Rule creation coming soon. Contact admin to add rules.',
+                      'info',
+                    )
+                  }
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Rule
                 </Button>
@@ -553,7 +560,14 @@ function ComplianceMonitorPage(): JSX.Element {
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                   Compliance Audits
                 </h3>
-                <Button>
+                <Button
+                  onClick={() =>
+                    showToast(
+                      'Audit scheduling coming soon. Contact admin to initiate audits.',
+                      'info',
+                    )
+                  }
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Start Audit
                 </Button>

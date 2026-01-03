@@ -130,18 +130,31 @@ export function TenantDetailPage(): JSX.Element {
   const [brandingDirty, setBrandingDirty] = useState(false);
 
   // Initialize branding form when tenant loads
+  // Use tenantId as primary dependency, then check if tenant data is available
   React.useEffect(() => {
-    if (tenant?.branding) {
+    // Reset branding form when tenantId changes
+    if (!tenant) {
       setBrandingForm({
-        primaryColor: tenant.branding.primaryColor || '',
-        secondaryColor: tenant.branding.secondaryColor || '',
-        logoUrl: tenant.branding.logoUrl || '',
-        faviconUrl: tenant.branding.faviconUrl || '',
-        customCss: tenant.branding.customCss || '',
+        primaryColor: '',
+        secondaryColor: '',
+        logoUrl: '',
+        faviconUrl: '',
+        customCss: '',
       });
       setBrandingDirty(false);
+      return;
     }
-  }, [tenant?.branding]);
+
+    // Populate branding form when tenant data is available
+    setBrandingForm({
+      primaryColor: tenant.branding?.primaryColor || '',
+      secondaryColor: tenant.branding?.secondaryColor || '',
+      logoUrl: tenant.branding?.logoUrl || '',
+      faviconUrl: tenant.branding?.faviconUrl || '',
+      customCss: tenant.branding?.customCss || '',
+    });
+    setBrandingDirty(false);
+  }, [tenantId, tenant]);
 
   const handleBack = () => {
     navigate('/admin/tenants');

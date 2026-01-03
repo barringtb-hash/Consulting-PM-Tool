@@ -338,10 +338,27 @@ export const createTask = async (ownerId: number, data: TaskCreateData) => {
 
   const task = await prisma.task.create({
     data: {
-      ...taskData,
+      // Required fields - must be explicit for TypeScript
+      title: taskData.title,
+      projectId: taskData.projectId,
       ownerId,
       tenantId,
-      sourceMeetingId: data.sourceMeetingId ?? undefined,
+      // Optional fields - only include if defined
+      ...(taskData.description !== undefined && {
+        description: taskData.description,
+      }),
+      ...(taskData.status !== undefined && { status: taskData.status }),
+      ...(taskData.priority !== undefined && { priority: taskData.priority }),
+      ...(taskData.milestoneId !== undefined && {
+        milestoneId: taskData.milestoneId,
+      }),
+      ...(taskData.dueDate !== undefined && { dueDate: taskData.dueDate }),
+      ...(taskData.parentTaskId !== undefined && {
+        parentTaskId: taskData.parentTaskId,
+      }),
+      ...(taskData.sourceMeetingId !== undefined && {
+        sourceMeetingId: taskData.sourceMeetingId,
+      }),
       // Create assignee relationships if provided
       ...(assigneeIds && assigneeIds.length > 0
         ? {
@@ -604,11 +621,23 @@ export const createSubtask = async (
 
   const subtask = await prisma.task.create({
     data: {
-      ...subtaskData,
+      // Required fields - must be explicit for TypeScript
+      title: subtaskData.title,
       projectId: parentTask.projectId,
       ownerId,
       tenantId,
       parentTaskId,
+      // Optional fields - only include if defined
+      ...(subtaskData.description !== undefined && {
+        description: subtaskData.description,
+      }),
+      ...(subtaskData.status !== undefined && { status: subtaskData.status }),
+      ...(subtaskData.dueDate !== undefined && {
+        dueDate: subtaskData.dueDate,
+      }),
+      ...(subtaskData.milestoneId !== undefined && {
+        milestoneId: subtaskData.milestoneId,
+      }),
       // Create assignee relationships if provided
       ...(assigneeIds && assigneeIds.length > 0
         ? {

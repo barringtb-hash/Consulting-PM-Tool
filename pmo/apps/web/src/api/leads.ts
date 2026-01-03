@@ -97,9 +97,17 @@ export interface LeadConversionPayload {
   contactRole?: string;
   createProject?: boolean;
   projectName?: string;
+  /** @deprecated Use createOpportunity and opportunityAmount instead */
   pipelineStage?: string;
+  /** @deprecated Use createOpportunity and opportunityAmount instead */
   pipelineValue?: number;
   ownerId?: number;
+  // CRM fields
+  createOpportunity?: boolean;
+  opportunityName?: string;
+  opportunityAmount?: number;
+  opportunityProbability?: number;
+  expectedCloseDate?: string;
 }
 
 export interface LeadConversionResult {
@@ -107,6 +115,8 @@ export interface LeadConversionResult {
   clientId?: number;
   contactId?: number;
   projectId?: number;
+  accountId?: number;
+  opportunityId?: number;
 }
 
 const LEADS_BASE_PATH = buildApiUrl('/leads');

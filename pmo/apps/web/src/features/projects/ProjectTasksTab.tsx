@@ -17,6 +17,7 @@ import { TaskFormModal } from '../tasks/TaskFormModal';
 import { TaskDetailModal } from '../tasks/TaskDetailModal';
 import { Card, CardBody } from '../../ui/Card';
 import { Button } from '../../ui/Button';
+import { useToast } from '../../ui/Toast';
 import type { TaskPayload, TaskStatus } from '../../api/tasks';
 import type { MilestonePayload } from '../../api/milestones';
 
@@ -29,6 +30,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [subtaskError, setSubtaskError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const tasksQuery = useProjectTasks(projectId);
   const milestonesQuery = useProjectMilestones(projectId);
@@ -117,15 +119,24 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
         payload: { status: newStatus },
       });
     } catch (err) {
-      console.error('Failed to move task:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      showToast({
+        message: `Failed to move task: ${message}`,
+        variant: 'destructive',
+      });
     }
   };
 
   const handleTaskDelete = async (taskId: number) => {
     try {
       await deleteTaskMutation.mutateAsync(taskId);
+      showToast({ message: 'Task deleted successfully', variant: 'success' });
     } catch (err) {
-      console.error('Failed to delete task:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      showToast({
+        message: `Failed to delete task: ${message}`,
+        variant: 'destructive',
+      });
     }
   };
 
