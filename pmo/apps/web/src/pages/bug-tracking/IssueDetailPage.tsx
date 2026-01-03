@@ -18,7 +18,7 @@ import {
   FileText,
   X,
 } from 'lucide-react';
-import { Button, Badge, Card, Input } from '../../ui';
+import { Button, Badge, Card, Input, Modal } from '../../ui';
 import { PageHeader } from '../../ui/PageHeader';
 import {
   useIssue,
@@ -890,54 +890,41 @@ export default function IssueDetailPage() {
       </div>
 
       {/* Prompt Copy Modal - shown when automatic clipboard fails (Safari) */}
-      {showPromptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b dark:border-neutral-700">
-              <h3 className="text-lg font-medium dark:text-white">
-                AI Prompt Generated
-              </h3>
-              <button
-                onClick={() => setShowPromptModal(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-4 flex-1 overflow-hidden flex flex-col">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Click the Copy button below or select all text (⌘A) and copy
-                manually (⌘C):
-              </p>
-              <textarea
-                ref={promptTextareaRef}
-                value={generatedPrompt}
-                readOnly
-                className="flex-1 w-full p-3 text-sm font-mono bg-gray-50 dark:bg-neutral-900 border dark:border-neutral-700 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[300px]"
-                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-              />
-            </div>
-            <div className="flex justify-end gap-2 p-4 border-t dark:border-neutral-700">
-              <Button
-                variant="outline"
-                onClick={() => setShowPromptModal(false)}
-              >
-                Close
-              </Button>
-              <Button onClick={handleManualCopy}>
-                {promptCopied ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Copied!
-                  </>
-                ) : (
-                  'Copy to Clipboard'
-                )}
-              </Button>
-            </div>
+      <Modal
+        isOpen={showPromptModal}
+        onClose={() => setShowPromptModal(false)}
+        title="AI Prompt Generated"
+        size="medium"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Click the Copy button below or select all text and copy manually:
+          </p>
+          <textarea
+            ref={promptTextareaRef}
+            value={generatedPrompt}
+            readOnly
+            aria-label="AI generated prompt text"
+            className="w-full p-3 text-sm font-mono bg-gray-50 dark:bg-neutral-900 border dark:border-neutral-700 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[300px]"
+            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+          />
+          <div className="flex justify-end gap-2 pt-2 border-t dark:border-neutral-700">
+            <Button variant="outline" onClick={() => setShowPromptModal(false)}>
+              Close
+            </Button>
+            <Button onClick={handleManualCopy}>
+              {promptCopied ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                'Copy to Clipboard'
+              )}
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
