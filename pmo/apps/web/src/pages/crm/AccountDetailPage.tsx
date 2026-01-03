@@ -169,21 +169,36 @@ function AccountDetailPage(): JSX.Element {
     accountId ? { accountId, limit: 5 } : undefined,
   );
 
+  // Memoize CTA params to prevent unstable query keys causing cache misses
+  const ctaParams = useMemo(
+    () => ({
+      status: ['OPEN', 'IN_PROGRESS'] as const,
+      sortBy: 'dueDate' as const,
+      sortOrder: 'asc' as const,
+      limit: 5,
+    }),
+    [],
+  );
+
   // Fetch CTAs (Customer Success feature)
-  const ctasQuery = useAccountCTAs(accountId, {
-    status: ['OPEN', 'IN_PROGRESS'],
-    sortBy: 'dueDate',
-    sortOrder: 'asc',
-    limit: 5,
-  });
+  const ctasQuery = useAccountCTAs(accountId, ctaParams);
+
+  // Memoize Success Plans params to prevent unstable query keys
+  const successPlansParams = useMemo(
+    () => ({
+      status: ['ACTIVE', 'DRAFT'] as const,
+      sortBy: 'targetDate' as const,
+      sortOrder: 'asc' as const,
+      limit: 5,
+    }),
+    [],
+  );
 
   // Fetch Success Plans (Customer Success feature)
-  const successPlansQuery = useAccountSuccessPlans(accountId, {
-    status: ['ACTIVE', 'DRAFT'],
-    sortBy: 'targetDate',
-    sortOrder: 'asc',
-    limit: 5,
-  });
+  const successPlansQuery = useAccountSuccessPlans(
+    accountId,
+    successPlansParams,
+  );
 
   // Mutation hooks for creating CTAs and Success Plans
   const createCTA = useCreateAccountCTA(accountId ?? 0);
@@ -960,7 +975,8 @@ function AccountDetailPage(): JSX.Element {
                               'The health score has been auto-calculated from CRM data.',
                             type: 'success',
                           });
-                          accountQuery.refetch();
+                          // Cache is updated directly by the mutation hook
+                          // No manual refetch needed
                         },
                         onError: (error) => {
                           showToast({

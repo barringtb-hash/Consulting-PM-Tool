@@ -59,9 +59,25 @@ export function TenantFormPage(): JSX.Element {
     isNewUser: boolean;
   } | null>(null);
 
-  // Populate form when editing
+  // Reset form when tenantId changes (navigating between edit/create modes)
   useEffect(() => {
-    if (existingTenant) {
+    if (!isEditing) {
+      // Reset to default values when creating a new tenant
+      setName('');
+      setSlug('');
+      setSlugManuallyEdited(false);
+      setPlan('STARTER');
+      setOwnerEmail('');
+      setOwnerName('');
+      setBillingEmail('');
+      setTrialEndsAt('');
+      setStatus('ACTIVE');
+    }
+  }, [tenantId, isEditing]);
+
+  // Populate form when editing an existing tenant
+  useEffect(() => {
+    if (existingTenant && isEditing) {
       setName(existingTenant.name);
       setSlug(existingTenant.slug);
       setSlugManuallyEdited(true);
@@ -74,7 +90,7 @@ export function TenantFormPage(): JSX.Element {
       );
       setStatus(existingTenant.status);
     }
-  }, [existingTenant]);
+  }, [existingTenant, isEditing]);
 
   // Auto-generate slug from name (only when creating)
   useEffect(() => {

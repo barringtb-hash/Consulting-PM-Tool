@@ -103,6 +103,7 @@ export const listMarketingContents = async (
     archived: query.archived ?? false,
     tenantId,
     // CRITICAL: Authorization filter - only show content user has access to
+    // Updated to respect project visibility (PRIVATE, TEAM, TENANT)
     OR: [
       // Content linked to projects owned by this user
       {
@@ -110,10 +111,27 @@ export const listMarketingContents = async (
           ownerId: ownerId,
         },
       },
-      // Content linked to projects shared with the tenant
+      // Content linked to projects shared with the tenant (legacy flag)
       {
         project: {
           isSharedWithTenant: true,
+        },
+      },
+      // Content linked to projects with TENANT visibility
+      {
+        project: {
+          visibility: 'TENANT',
+        },
+      },
+      // Content linked to projects with TEAM visibility where user is a member
+      {
+        project: {
+          visibility: 'TEAM',
+          members: {
+            some: {
+              userId: ownerId,
+            },
+          },
         },
       },
       // Content created by this user (for content without a project)

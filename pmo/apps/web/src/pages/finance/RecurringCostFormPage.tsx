@@ -499,89 +499,28 @@ export default function RecurringCostFormPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account
-                </label>
-                <Controller
-                  name="accountId"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">No account</option>
-                      {accountsData?.data.map((acc) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project
-                </label>
-                <Controller
-                  name="projectId"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">No project</option>
-                      {filteredProjects?.map((proj) => (
-                        <option key={proj.id} value={proj.id}>
-                          {proj.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes
+                Account
               </label>
-              <textarea
-                {...register('notes')}
-                rows={2}
-                placeholder="Additional notes about this recurring cost..."
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              <Controller
+                name="accountId"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">No account</option>
+                    {accountsData?.data.map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               />
             </div>
-          </div>
-
-          {/* Automation */}
-          <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">Automation</h2>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('autoCreateExpense')}
-                id="autoCreateExpense"
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label
-                htmlFor="autoCreateExpense"
-                className="text-sm text-gray-700"
-              >
-                Automatically create expense when due date arrives
-              </label>
-            </div>
-            <p className="text-xs text-gray-500 ml-6">
-              When enabled, an expense will be automatically created on the due
-              date and the next due date will be updated based on the frequency.
-            </p>
           </div>
 
           {/* Actions */}

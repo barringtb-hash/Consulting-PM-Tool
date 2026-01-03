@@ -19,21 +19,38 @@ export function AdminUsersListPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getAllUsers();
-      setUsers(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getAllUsers();
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setUsers(data);
+        }
+      } catch (err) {
+        // Only update error state if component is still mounted and not aborted
+        if (isMounted && !controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : 'Failed to load users');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadUsers();
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   const handleDelete = async (id: number, name: string) => {

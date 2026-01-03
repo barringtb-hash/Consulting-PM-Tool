@@ -595,13 +595,27 @@ export function useAutoCalculateAccountHealthScore(
   return useMutation({
     mutationFn: () => autoCalculateAccountHealthScore(accountId),
     onSuccess: (healthScore) => {
+      // Update health query cache
       queryClient.setQueryData(
         queryKeys.accounts.health(accountId),
         healthScore,
       );
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.accounts.detail(accountId),
-      });
+
+      // Update account detail cache with new healthScore to prevent stale UI
+      queryClient.setQueryData(
+        queryKeys.accounts.detail(accountId),
+        (oldAccount: Account | undefined) => {
+          if (!oldAccount) return oldAccount;
+          return {
+            ...oldAccount,
+            healthScore: healthScore.overallScore,
+            engagementScore: healthScore.engagementScore,
+            churnRisk: healthScore.churnRisk,
+          };
+        },
+      );
+
+      // Invalidate related queries for background refresh
       queryClient.invalidateQueries({
         queryKey: queryKeys.accounts.healthHistory(accountId),
       });

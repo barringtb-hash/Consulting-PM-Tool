@@ -104,7 +104,21 @@ router.get('/infrastructure/errors', async (_req, res, next) => {
 router.get('/infrastructure/system', async (_req, res, next) => {
   try {
     const health = getSystemHealth();
-    res.json({ data: health });
+    // Transform backend structure to match frontend expectations
+    const transformedHealth = {
+      memoryUsedMB: health.memory.rssMB, // Use RSS as "used" memory
+      memoryTotalMB: Math.round(health.memory.rssMB * 1.5), // Estimate total (RSS * 1.5)
+      memoryUsagePercent: Math.min(
+        100,
+        Math.round((health.memory.rssMB / (health.memory.rssMB * 1.5)) * 100),
+      ),
+      heapUsedMB: health.memory.heapUsedMB,
+      heapTotalMB: health.memory.heapTotalMB,
+      cpuUsagePercent: 0, // CPU usage not available in Node.js without external libs
+      eventLoopLagMs: health.eventLoopLagMs,
+      uptimeSeconds: health.uptime,
+    };
+    res.json({ data: transformedHealth });
   } catch (error) {
     next(error);
   }
@@ -334,7 +348,23 @@ router.post('/anomalies/detect', async (_req, res, next) => {
 router.get('/alerts/rules', async (_req, res, next) => {
   try {
     const rules = await getAlertRules();
-    res.json({ data: rules });
+    // Transform backend field names to frontend field names
+    const transformedRules = rules.map((rule) => ({
+      id: rule.id,
+      name: rule.name,
+      description: rule.description,
+      enabled: rule.enabled,
+      // Map severities -> severity
+      severity: rule.severities,
+      // Map category (single) -> category (wrap in array for UI)
+      category: rule.category ? [rule.category] : [],
+      // Map channels (array) -> channel (use first)
+      channel: rule.channels[0] || 'EMAIL',
+      recipients: rule.recipients,
+      // Map cooldownMinutes -> throttleMinutes
+      throttleMinutes: rule.cooldownMinutes,
+    }));
+    res.json({ data: transformedRules });
   } catch (error) {
     next(error);
   }
@@ -346,7 +376,25 @@ router.get('/alerts/rules', async (_req, res, next) => {
  */
 router.post('/alerts/rules', async (req, res, next) => {
   try {
-    const rule = await createAlertRule(req.body);
+    // Transform frontend field names to backend field names
+    const { severity, channel, throttleMinutes, category, ...rest } = req.body;
+
+    const transformedData = {
+      ...rest,
+      // Map severity (array) -> severities (array)
+      severities: severity || [],
+      // Map channel (single string) -> channels (array)
+      channels: channel ? [channel] : [],
+      // Map throttleMinutes -> cooldownMinutes
+      cooldownMinutes: throttleMinutes || 60,
+      // Map category (array) -> category (single, use first element)
+      category:
+        Array.isArray(category) && category.length > 0
+          ? category[0]
+          : undefined,
+    };
+
+    const rule = await createAlertRule(transformedData);
     res.status(201).json({ data: rule });
   } catch (error) {
     next(error);
@@ -359,7 +407,27 @@ router.post('/alerts/rules', async (req, res, next) => {
  */
 router.put('/alerts/rules/:id', async (req, res, next) => {
   try {
-    await updateAlertRule(req.params.id, req.body);
+    // Transform frontend field names to backend field names
+    const { severity, channel, throttleMinutes, category, ...rest } = req.body;
+
+    const transformedData: Record<string, unknown> = { ...rest };
+
+    // Only include fields that were actually provided
+    if (severity !== undefined) {
+      transformedData.severities = severity;
+    }
+    if (channel !== undefined) {
+      transformedData.channels = channel ? [channel] : [];
+    }
+    if (throttleMinutes !== undefined) {
+      transformedData.cooldownMinutes = throttleMinutes;
+    }
+    if (category !== undefined) {
+      transformedData.category =
+        Array.isArray(category) && category.length > 0 ? category[0] : null;
+    }
+
+    await updateAlertRule(req.params.id, transformedData);
     res.json({ message: 'Alert rule updated' });
   } catch (error) {
     next(error);

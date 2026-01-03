@@ -4,7 +4,7 @@
  * View expense details with approval workflow actions.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import {
   Edit,
@@ -23,6 +23,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { Card, Button, Modal, Breadcrumb } from '../../ui';
+import { useToast } from '../../ui/Toast';
 import {
   useExpense,
   useApproveExpense,
@@ -94,40 +95,88 @@ function formatDateTime(dateString: string): string {
 export default function ExpenseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const expenseId = useMemo(() => (id ? parseInt(id, 10) : 0), [id]);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
-  const { data: expense, isLoading, error } = useExpense(parseInt(id || '0'));
+  const { data: expense, isLoading, error } = useExpense(expenseId);
   const approveExpense = useApproveExpense();
   const rejectExpense = useRejectExpense();
   const markAsPaid = useMarkExpenseAsPaid();
   const deleteExpense = useDeleteExpense();
+  const { showToast } = useToast();
 
   const handleApprove = () => {
     if (id) {
-      approveExpense.mutate({ id: parseInt(id) });
+      approveExpense.mutate(
+        { id: parseInt(id) },
+        {
+          onSuccess: () => {
+            showToast({
+              message: 'Expense approved successfully',
+              variant: 'success',
+            });
+          },
+          onError: (err) => {
+            const message =
+              err instanceof Error ? err.message : 'Failed to approve expense';
+            showToast({ message, variant: 'destructive' });
+          },
+        },
+      );
     }
   };
 
   const handleReject = () => {
     if (id && rejectReason.trim()) {
-      rejectExpense.mutate({ id: parseInt(id), reason: rejectReason });
-      setShowRejectModal(false);
-      setRejectReason('');
+      rejectExpense.mutate(
+        { id: parseInt(id), reason: rejectReason },
+        {
+          onSuccess: () => {
+            showToast({ message: 'Expense rejected', variant: 'success' });
+            setShowRejectModal(false);
+            setRejectReason('');
+          },
+          onError: (err) => {
+            const message =
+              err instanceof Error ? err.message : 'Failed to reject expense';
+            showToast({ message, variant: 'destructive' });
+          },
+        },
+      );
     }
   };
 
   const handleMarkAsPaid = () => {
     if (id) {
-      markAsPaid.mutate(parseInt(id));
+      markAsPaid.mutate(parseInt(id), {
+        onSuccess: () => {
+          showToast({ message: 'Expense marked as paid', variant: 'success' });
+        },
+        onError: (err) => {
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Failed to mark expense as paid';
+          showToast({ message, variant: 'destructive' });
+        },
+      });
     }
   };
 
   const handleDelete = () => {
     if (id) {
       deleteExpense.mutate(parseInt(id), {
-        onSuccess: () => navigate('/finance/expenses'),
+        onSuccess: () => {
+          showToast({ message: 'Expense deleted', variant: 'success' });
+          navigate('/finance/expenses');
+        },
+        onError: (err) => {
+          const message =
+            err instanceof Error ? err.message : 'Failed to delete expense';
+          showToast({ message, variant: 'destructive' });
+        },
       });
     }
   };

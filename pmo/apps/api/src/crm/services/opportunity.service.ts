@@ -425,7 +425,7 @@ export async function moveOpportunityStage(
     }
 
     return tx.opportunity.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
       include: {
         stage: true,
@@ -505,17 +505,66 @@ export async function markOpportunityLost(
     throw new Error('No LOST stage found in pipeline');
   }
 
-  // Update with lost details first
-  await prisma.opportunity.update({
-    where: { id, tenantId },
-    data: {
-      lostReason,
-      lostReasonDetail,
-      competitorId,
-    },
-  });
+  // Use a transaction to ensure both lost details and stage move happen atomically
+  return prisma.$transaction(async (tx) => {
+    // Update with lost details first
+    await tx.opportunity.update({
+      where: { id, tenantId },
+      data: {
+        lostReason,
+        lostReasonDetail,
+        competitorId,
+      },
+    });
 
-  return moveOpportunityStage(id, lostStage.id, changedById);
+    // Get current opportunity for stage history
+    const current = await tx.opportunity.findFirst({
+      where: { id, tenantId },
+      select: { stageId: true, createdAt: true, amount: true },
+    });
+
+    if (!current) {
+      throw new Error('Opportunity not found');
+    }
+
+    // Calculate duration in previous stage
+    const durationMinutes = Math.floor(
+      (Date.now() - current.createdAt.getTime()) / (1000 * 60),
+    );
+
+    // Create stage history
+    await tx.opportunityStageHistory.create({
+      data: {
+        opportunityId: id,
+        fromStageId: current.stageId,
+        toStageId: lostStage.id,
+        changedById,
+        duration: durationMinutes,
+      },
+    });
+
+    // Calculate weighted amount
+    const weightedAmount = current.amount
+      ? (Number(current.amount) * lostStage.probability) / 100
+      : null;
+
+    // Update opportunity with stage and status
+    return tx.opportunity.update({
+      where: { id, tenantId },
+      data: {
+        stage: { connect: { id: lostStage.id } },
+        probability: lostStage.probability,
+        status: 'LOST',
+        actualCloseDate: new Date(),
+        weightedAmount,
+      },
+      include: {
+        stage: true,
+        account: { select: { id: true, name: true } },
+        owner: { select: { id: true, name: true } },
+      },
+    });
+  });
 }
 
 /**

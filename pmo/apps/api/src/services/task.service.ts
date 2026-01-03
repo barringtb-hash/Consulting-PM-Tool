@@ -336,9 +336,14 @@ export const createTask = async (ownerId: number, data: TaskCreateData) => {
   // Extract assigneeIds from data before creating task
   const { assigneeIds, ...taskData } = data;
 
+  // Filter out undefined values to allow Prisma defaults for status/priority
+  const cleanTaskData = Object.fromEntries(
+    Object.entries(taskData).filter(([_, value]) => value !== undefined),
+  );
+
   const task = await prisma.task.create({
     data: {
-      ...taskData,
+      ...cleanTaskData,
       ownerId,
       tenantId,
       sourceMeetingId: data.sourceMeetingId ?? undefined,
@@ -602,9 +607,14 @@ export const createSubtask = async (
   // Extract assigneeIds from data before creating subtask
   const { assigneeIds, ...subtaskData } = data;
 
+  // Filter out undefined values to allow Prisma defaults for status/priority
+  const cleanSubtaskData = Object.fromEntries(
+    Object.entries(subtaskData).filter(([_, value]) => value !== undefined),
+  );
+
   const subtask = await prisma.task.create({
     data: {
-      ...subtaskData,
+      ...cleanSubtaskData,
       projectId: parentTask.projectId,
       ownerId,
       tenantId,

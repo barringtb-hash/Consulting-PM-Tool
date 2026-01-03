@@ -227,8 +227,9 @@ export const updateLead = async (id: number, data: LeadUpdateInput) => {
     return null;
   }
 
+  // Use the tenantId in the where clause for proper multi-tenant isolation
   return prisma.inboundLead.update({
-    where: { id },
+    where: { id, tenantId },
     data,
     include: {
       owner: {
