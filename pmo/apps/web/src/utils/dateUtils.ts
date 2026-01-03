@@ -28,7 +28,11 @@ export function toUTCISOString(dateStr: string): string {
   const day = Number(match[3]); // 1-31
 
   // Check for NaN values
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day)
+  ) {
     return '';
   }
 
@@ -81,7 +85,11 @@ export function formatLocalDate(dateStr: string): string {
   const day = Number(match[3]);
 
   // Check for NaN values
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day)
+  ) {
     return '';
   }
 
