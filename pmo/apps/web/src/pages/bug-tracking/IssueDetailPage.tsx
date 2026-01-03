@@ -112,10 +112,13 @@ export default function IssueDetailPage() {
   const deleteAttachment = useDeleteAttachment();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [newComment, setNewComment] = useState('');
   const [showAIPromptOptions, setShowAIPromptOptions] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
 
   const handleCopyAIPrompt = async (
     mode: 'basic' | 'full' | 'comprehensive',
@@ -143,13 +146,34 @@ export default function IssueDetailPage() {
         setTimeout(() => setPromptCopied(false), 2000);
         setShowAIPromptOptions(false);
       } else {
-        // If copy failed, inform the user
-        alert(
-          'Unable to copy to clipboard automatically. Please try again or use the /implement-issue command in Claude Code.',
-        );
+        // If copy failed, show the prompt in a modal for manual copying
+        setGeneratedPrompt(result.prompt);
+        setShowPromptModal(true);
+        setShowAIPromptOptions(false);
       }
     } catch (error) {
       console.error('Failed to generate AI prompt:', error);
+    }
+  };
+
+  const handleManualCopy = async () => {
+    // Try clipboard API one more time (user gesture is fresh now)
+    const copied = await copyToClipboard(generatedPrompt);
+    if (copied) {
+      setPromptCopied(true);
+      setTimeout(() => {
+        setPromptCopied(false);
+        setShowPromptModal(false);
+      }, 1500);
+    } else {
+      // Select the text for manual copying
+      if (promptTextareaRef.current) {
+        promptTextareaRef.current.select();
+        promptTextareaRef.current.setSelectionRange(
+          0,
+          promptTextareaRef.current.value.length,
+        );
+      }
     }
   };
 
@@ -864,6 +888,56 @@ export default function IssueDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Prompt Copy Modal - shown when automatic clipboard fails (Safari) */}
+      {showPromptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b dark:border-neutral-700">
+              <h3 className="text-lg font-medium dark:text-white">
+                AI Prompt Generated
+              </h3>
+              <button
+                onClick={() => setShowPromptModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 flex-1 overflow-hidden flex flex-col">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Click "Copy" below or select all text (⌘A) and copy manually
+                (⌘C):
+              </p>
+              <textarea
+                ref={promptTextareaRef}
+                value={generatedPrompt}
+                readOnly
+                className="flex-1 w-full p-3 text-sm font-mono bg-gray-50 dark:bg-neutral-900 border dark:border-neutral-700 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[300px]"
+                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+              />
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t dark:border-neutral-700">
+              <Button
+                variant="outline"
+                onClick={() => setShowPromptModal(false)}
+              >
+                Close
+              </Button>
+              <Button onClick={handleManualCopy}>
+                {promptCopied ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Copied!
+                  </>
+                ) : (
+                  'Copy to Clipboard'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
