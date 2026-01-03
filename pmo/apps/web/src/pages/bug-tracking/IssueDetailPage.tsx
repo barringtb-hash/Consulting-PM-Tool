@@ -116,6 +116,36 @@ export default function IssueDetailPage() {
   const [promptCopied, setPromptCopied] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Fallback copy method for Safari and other browsers with strict clipboard permissions
+  const copyToClipboard = async (text: string): Promise<boolean> => {
+    // Try modern Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // Fall through to fallback method
+      }
+    }
+
+    // Fallback: Use execCommand with a temporary textarea
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return success;
+    } catch {
+      return false;
+    }
+  };
+
   const handleCopyAIPrompt = async (
     mode: 'basic' | 'full' | 'comprehensive',
   ) => {
@@ -136,10 +166,17 @@ export default function IssueDetailPage() {
         options,
       });
 
-      await navigator.clipboard.writeText(result.prompt);
-      setPromptCopied(true);
-      setTimeout(() => setPromptCopied(false), 2000);
-      setShowAIPromptOptions(false);
+      const copied = await copyToClipboard(result.prompt);
+      if (copied) {
+        setPromptCopied(true);
+        setTimeout(() => setPromptCopied(false), 2000);
+        setShowAIPromptOptions(false);
+      } else {
+        // If copy failed, show an alert with instructions
+        alert(
+          'Unable to copy to clipboard automatically. The prompt has been generated - please try using Ctrl+C / Cmd+C.',
+        );
+      }
     } catch (error) {
       console.error('Failed to generate AI prompt:', error);
     }
