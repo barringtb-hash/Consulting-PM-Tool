@@ -407,6 +407,7 @@ export async function deleteApiKey(id: number): Promise<void> {
 // ============================================================================
 
 export interface AIPromptOptions {
+  /** Output format for the prompt */
   format?: 'markdown' | 'plain' | 'json';
   /** Include stack trace in prompt */
   includeStackTrace?: boolean;

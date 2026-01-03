@@ -210,6 +210,7 @@ const aiPromptOptionsSchema = z.object({
   includeEnvironmentInfo: z.boolean().optional(),
   includeErrorLogs: z.boolean().optional(),
   maxErrorLogs: z.number().int().positive().max(50).optional(),
+  errorLogLimit: z.number().int().positive().max(50).optional(), // alias for maxErrorLogs
   includeComments: z.boolean().optional(),
   includeSuggestedFiles: z.boolean().optional(),
   includeRelatedIssues: z.boolean().optional(),
@@ -1190,11 +1191,14 @@ router.get(
 
       // Parse query params as options
       // Only set options that are explicitly provided, letting service defaults handle the rest
-      const options: aiPromptService.AIPromptOptions = {
-        format:
-          (req.query.format as 'markdown' | 'plain' | 'json') || 'markdown',
-        customInstructions: req.query.customInstructions as string | undefined,
-      };
+      const options: aiPromptService.AIPromptOptions = {};
+
+      if (req.query.format !== undefined) {
+        options.format = req.query.format as 'markdown' | 'plain' | 'json';
+      }
+      if (req.query.customInstructions !== undefined) {
+        options.customInstructions = req.query.customInstructions as string;
+      }
 
       // Parse boolean options - only set if explicitly provided
       if (req.query.includeStackTrace !== undefined) {
@@ -1222,7 +1226,10 @@ router.get(
         options.includeAttachments = req.query.includeAttachments === 'true';
       }
       if (req.query.maxErrorLogs !== undefined) {
-        options.maxErrorLogs = Number(req.query.maxErrorLogs);
+        const maxErrorLogs = Number(req.query.maxErrorLogs);
+        if (!Number.isNaN(maxErrorLogs)) {
+          options.maxErrorLogs = maxErrorLogs;
+        }
       }
 
       const prompt = await aiPromptService.generateAIPrompt(issueId, options);
