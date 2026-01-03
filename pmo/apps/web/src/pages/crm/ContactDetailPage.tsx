@@ -108,18 +108,12 @@ export function ContactDetailPage(): JSX.Element {
     try {
       await updateContact.mutateAsync(editForm);
       setIsEditing(false);
-      showToast({
-        title: 'Contact Updated',
-        description: 'Contact information has been saved.',
-        type: 'success',
-      });
+      showToast('Contact updated successfully', 'success');
     } catch (error) {
-      showToast({
-        title: 'Update Failed',
-        description:
-          error instanceof Error ? error.message : 'Please try again.',
-        type: 'error',
-      });
+      showToast(
+        error instanceof Error ? error.message : 'Failed to update contact',
+        'error',
+      );
     }
   };
 
@@ -127,18 +121,12 @@ export function ContactDetailPage(): JSX.Element {
     if (!contactId) return;
     try {
       await deleteContact.mutateAsync(contactId);
-      showToast({
-        title: 'Contact Archived',
-        description: 'The contact has been archived.',
-        type: 'success',
-      });
+      showToast('Contact archived successfully', 'success');
     } catch (error) {
-      showToast({
-        title: 'Archive Failed',
-        description:
-          error instanceof Error ? error.message : 'Please try again.',
-        type: 'error',
-      });
+      showToast(
+        error instanceof Error ? error.message : 'Failed to archive contact',
+        'error',
+      );
     }
   };
 
@@ -146,18 +134,12 @@ export function ContactDetailPage(): JSX.Element {
     if (!contactId) return;
     try {
       await restoreContact.mutateAsync(contactId);
-      showToast({
-        title: 'Contact Restored',
-        description: 'The contact has been restored.',
-        type: 'success',
-      });
+      showToast('Contact restored successfully', 'success');
     } catch (error) {
-      showToast({
-        title: 'Restore Failed',
-        description:
-          error instanceof Error ? error.message : 'Please try again.',
-        type: 'error',
-      });
+      showToast(
+        error instanceof Error ? error.message : 'Failed to restore contact',
+        'error',
+      );
     }
   };
 
