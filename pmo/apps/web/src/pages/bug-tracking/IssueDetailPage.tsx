@@ -36,6 +36,7 @@ import type {
   IssuePriority,
   IssueType,
 } from '../../api/bug-tracking';
+import { copyToClipboard } from '../../utils/clipboard';
 
 // Status badge colors
 const STATUS_CONFIG: Record<
@@ -136,10 +137,17 @@ export default function IssueDetailPage() {
         options,
       });
 
-      await navigator.clipboard.writeText(result.prompt);
-      setPromptCopied(true);
-      setTimeout(() => setPromptCopied(false), 2000);
-      setShowAIPromptOptions(false);
+      const copied = await copyToClipboard(result.prompt);
+      if (copied) {
+        setPromptCopied(true);
+        setTimeout(() => setPromptCopied(false), 2000);
+        setShowAIPromptOptions(false);
+      } else {
+        // If copy failed, inform the user
+        alert(
+          'Unable to copy to clipboard automatically. Please try again or use the /implement-issue command in Claude Code.',
+        );
+      }
     } catch (error) {
       console.error('Failed to generate AI prompt:', error);
     }

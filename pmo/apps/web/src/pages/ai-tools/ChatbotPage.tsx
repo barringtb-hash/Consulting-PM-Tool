@@ -53,8 +53,9 @@ import {
   Check,
   Palette,
 } from 'lucide-react';
+import { copyToClipboard } from '../../utils/clipboard';
 
-// Helpers for API URL and clipboard
+// Helper for API URL
 function getApiBaseUrl(): string {
   // Use environment variable in production, fallback for development
   const envUrl = import.meta.env.VITE_API_BASE_URL;
@@ -67,31 +68,6 @@ function getApiBaseUrl(): string {
     return window.location.origin.replace(':5173', ':3001');
   }
   return '';
-}
-
-async function copyToClipboard(text: string): Promise<boolean> {
-  if (typeof navigator === 'undefined' || !navigator.clipboard) {
-    // Fallback for older browsers or SSR
-    try {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-9999px';
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 // Types
