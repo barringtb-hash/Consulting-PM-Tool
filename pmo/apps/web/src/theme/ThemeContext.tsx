@@ -90,7 +90,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): JSX.Element {
       resolvedTheme,
       setTheme,
     }),
-    [theme, resolvedTheme, setTheme],
+    [theme, resolvedTheme],
   );
 
   return (

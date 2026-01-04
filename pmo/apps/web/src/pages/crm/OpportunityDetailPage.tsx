@@ -25,6 +25,8 @@ import {
   useMarkOpportunityWon,
   useMarkOpportunityLost,
   useDeleteOpportunity,
+  usePipelineStages,
+  useMoveOpportunityToStage,
   type OpportunityUpdatePayload,
 } from '../../api/hooks/crm';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
@@ -117,6 +119,8 @@ function OpportunityDetailPage(): JSX.Element {
   const markWon = useMarkOpportunityWon(opportunityId ?? 0);
   const markLost = useMarkOpportunityLost(opportunityId ?? 0);
   const deleteOpportunity = useDeleteOpportunity();
+  const moveToStage = useMoveOpportunityToStage(opportunityId ?? 0);
+  const pipelineStagesQuery = usePipelineStages();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<OpportunityUpdatePayload>>(
@@ -266,6 +270,26 @@ function OpportunityDetailPage(): JSX.Element {
       });
     }
   };
+
+  const handleMoveToStage = async (stageId: number) => {
+    try {
+      await moveToStage.mutateAsync(stageId);
+      showToast({
+        message: 'Stage updated successfully',
+        variant: 'success',
+      });
+    } catch (error) {
+      showToast({
+        message:
+          error instanceof Error ? error.message : 'Failed to update stage',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Get available stages (filter to only OPEN stages for stage selector)
+  const availableStages =
+    pipelineStagesQuery.data?.stages?.filter((s) => s.type === 'OPEN') ?? [];
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -629,9 +653,36 @@ function OpportunityDetailPage(): JSX.Element {
               <CardHeader>
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
-              <CardBody className="space-y-2">
+              <CardBody className="space-y-3">
                 {isOpen && (
                   <>
+                    {/* Stage Selector */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Move to Stage
+                      </label>
+                      <select
+                        value={opportunity.stage?.id ?? ''}
+                        onChange={(e) => {
+                          const stageId = Number(e.target.value);
+                          if (stageId && stageId !== opportunity.stage?.id) {
+                            handleMoveToStage(stageId);
+                          }
+                        }}
+                        disabled={moveToStage.isPending}
+                        className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                      >
+                        {availableStages.map((stage) => (
+                          <option key={stage.id} value={stage.id}>
+                            {stage.name} ({stage.probability}%)
+                          </option>
+                        ))}
+                      </select>
+                      {moveToStage.isPending && (
+                        <p className="text-xs text-gray-500 mt-1">Updating stage...</p>
+                      )}
+                    </div>
+                    <div className="border-t pt-3 mt-3" />
                     <Button
                       variant="primary"
                       className="w-full justify-start bg-green-600 hover:bg-green-700"
