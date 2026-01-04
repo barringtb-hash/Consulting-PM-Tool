@@ -91,7 +91,7 @@ function CTAFormPage(): JSX.Element {
         description="Create a new Call-to-Action to track customer success tasks"
       />
 
-      <div className="container-padding py-6">
+      <div className="page-content">
         <Card className="p-6 max-w-3xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Client Selection */}

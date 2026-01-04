@@ -411,7 +411,7 @@ function AccountDetailPage(): JSX.Element {
         </div>
       </PageHeader>
 
-      <div className="container-padding py-6 space-y-6">
+      <div className="page-content space-y-6">
         {/* Summary Stats */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="p-4">

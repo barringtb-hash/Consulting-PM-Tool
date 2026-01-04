@@ -95,7 +95,7 @@ export function InfrastructurePage(): JSX.Element {
   const isLoading = metricsLoading || healthLoading || queriesLoading;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="page-content space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

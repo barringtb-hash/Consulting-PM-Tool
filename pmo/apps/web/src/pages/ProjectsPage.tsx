@@ -170,7 +170,7 @@ function ProjectsPage(): JSX.Element {
         }
       />
 
-      <main className="container-padding py-6 space-y-6">
+      <main className="page-content space-y-6">
         {/* Filters Section */}
         <section className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">

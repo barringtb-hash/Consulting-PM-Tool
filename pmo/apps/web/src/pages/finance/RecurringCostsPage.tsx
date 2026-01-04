@@ -290,14 +290,14 @@ export default function RecurringCostsPage() {
   const totalPages = data ? Math.ceil(data.total / queryParams.limit!) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="page-content space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
             Recurring Costs
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500 dark:text-neutral-400">
             Manage subscriptions, licenses, and recurring expenses
           </p>
         </div>

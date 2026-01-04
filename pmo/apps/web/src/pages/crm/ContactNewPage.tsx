@@ -187,7 +187,7 @@ export default function ContactNewPage() {
         description="Add a new contact to your CRM"
       />
 
-      <div className="container-padding py-6">
+      <div className="page-content">
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-6">
           {/* Basic Information */}
           <Card className="p-6">

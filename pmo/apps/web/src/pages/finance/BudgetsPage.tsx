@@ -262,12 +262,12 @@ export default function BudgetsPage() {
   const totalPages = data ? Math.ceil(data.total / queryParams.limit!) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="page-content space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Budgets</h1>
-          <p className="text-gray-500">Create and manage spending budgets</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">Budgets</h1>
+          <p className="text-gray-500 dark:text-neutral-400">Create and manage spending budgets</p>
         </div>
         <Button as={Link} to="/finance/budgets/new">
           <Plus className="h-4 w-4 mr-2" />

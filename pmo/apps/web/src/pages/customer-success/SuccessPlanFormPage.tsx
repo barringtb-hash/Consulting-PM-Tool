@@ -108,7 +108,7 @@ function SuccessPlanFormPage(): JSX.Element {
         description="Create a success plan to track customer goals and objectives"
       />
 
-      <div className="container-padding py-6">
+      <div className="page-content">
         <Card className="p-6 max-w-3xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Client Selection */}

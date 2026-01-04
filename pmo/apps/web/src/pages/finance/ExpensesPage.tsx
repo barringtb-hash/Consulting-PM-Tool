@@ -303,12 +303,12 @@ export default function ExpensesPage() {
   const totalPages = data ? Math.ceil(data.total / queryParams.limit!) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="page-content space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
-          <p className="text-gray-500">Manage and track all expenses</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">Expenses</h1>
+          <p className="text-gray-500 dark:text-neutral-400">Manage and track all expenses</p>
         </div>
         <Button as={Link} to="/finance/expenses/new">
           <Plus className="h-4 w-4 mr-2" />

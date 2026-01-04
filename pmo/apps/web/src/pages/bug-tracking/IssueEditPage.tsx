@@ -191,7 +191,7 @@ export default function IssueEditPage() {
         description="Update issue details"
       />
 
-      <div className="container-padding py-6">
+      <div className="page-content">
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-6">
           {/* Title */}
           <Card className="p-6">

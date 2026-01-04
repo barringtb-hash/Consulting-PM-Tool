@@ -257,7 +257,7 @@ export function TenantHealthPage(): JSX.Element {
 
   if (healthLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="page-content space-y-6">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="w-8 h-8 animate-spin text-primary-500" />
         </div>
@@ -302,7 +302,7 @@ export function TenantHealthPage(): JSX.Element {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="page-content space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
