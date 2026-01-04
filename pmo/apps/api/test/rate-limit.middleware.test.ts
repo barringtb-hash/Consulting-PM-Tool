@@ -53,9 +53,9 @@ describe('rate-limit middleware', () => {
       // Third request should be blocked
       const response = await request(app).get('/test');
       expect(response.status).toBe(429);
-      expect(response.body.error).toBe('RATE_LIMIT_EXCEEDED');
-      expect(response.body.message).toContain('Rate limit exceeded');
-      expect(response.body.message).toContain('before retrying');
+      expect(response.body.code).toBe('RATE_LIMIT_EXCEEDED');
+      expect(response.body.error).toContain('Rate limit exceeded');
+      expect(response.body.error).toContain('before retrying');
     });
 
     it('returns custom message when rate limited', async () => {
@@ -74,9 +74,9 @@ describe('rate-limit middleware', () => {
       const response = await request(app).get('/test');
 
       expect(response.status).toBe(429);
-      expect(response.body.error).toBe('RATE_LIMIT_EXCEEDED');
-      expect(response.body.message).toContain(customMessage);
-      expect(response.body.message).toContain('You can retry in');
+      expect(response.body.code).toBe('RATE_LIMIT_EXCEEDED');
+      expect(response.body.error).toContain(customMessage);
+      expect(response.body.error).toContain('You can retry in');
     });
 
     it('includes detailed retry information in response', async () => {
@@ -93,17 +93,17 @@ describe('rate-limit middleware', () => {
       const response = await request(app).get('/test');
 
       expect(response.status).toBe(429);
-      expect(response.body).toHaveProperty('error', 'RATE_LIMIT_EXCEEDED');
-      expect(response.body).toHaveProperty('message');
+      expect(response.body).toHaveProperty('code', 'RATE_LIMIT_EXCEEDED');
+      expect(response.body).toHaveProperty('error');
       expect(response.body).toHaveProperty('retryAfter');
       expect(response.body).toHaveProperty('retryAfterFormatted');
       expect(response.body).toHaveProperty('resetAt');
 
-      // Verify message contains retry information
-      expect(response.body.message).toMatch(
+      // Verify error message contains retry information
+      expect(response.body.error).toMatch(
         /Please wait \d+ (second|minute|hour)/,
       );
-      expect(response.body.message).toMatch(/resets at \d{2}:\d{2}/);
+      expect(response.body.error).toMatch(/resets at \d{2}:\d{2}/);
     });
 
     it('sets rate limit headers', async () => {

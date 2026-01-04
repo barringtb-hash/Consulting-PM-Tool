@@ -174,8 +174,10 @@ export function tenantRateLimit(options: RateLimitOptions = {}) {
         const formattedMessage = formatRateLimitMessage(retryAfter, message);
 
         return res.status(429).json({
-          error: 'RATE_LIMIT_EXCEEDED',
-          message: formattedMessage,
+          // Keep 'error' as human-readable message for backward compatibility
+          error: formattedMessage,
+          // Machine-readable error code for programmatic handling
+          code: 'RATE_LIMIT_EXCEEDED',
           retryAfter,
           retryAfterFormatted: formatRetryDuration(retryAfter),
           resetAt: new Date(result.resetTime).toISOString(),

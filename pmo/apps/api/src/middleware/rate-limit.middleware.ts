@@ -55,16 +55,17 @@ export function formatRateLimitMessage(
 ): string {
   const duration = formatRetryDuration(retryAfterSeconds);
   const resetTime = new Date(Date.now() + retryAfterSeconds * 1000);
+  // Use 24-hour format for international clarity, with server time note
   const timeString = resetTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12: false,
   });
 
   if (customMessage) {
-    return `${customMessage} You can retry in ${duration} (at ${timeString}).`;
+    return `${customMessage} You can retry in ${duration} (at ${timeString} server time).`;
   }
-  return `Rate limit exceeded. Please wait ${duration} before retrying (resets at ${timeString}).`;
+  return `Rate limit exceeded. Please wait ${duration} before retrying (resets at ${timeString} server time).`;
 }
 
 /** Internal tracking entry for a single client's request count */
@@ -151,8 +152,10 @@ export class RateLimiter {
       const message = formatRateLimitMessage(retryAfter, this.options.message);
 
       res.status(429).json({
-        error: 'RATE_LIMIT_EXCEEDED',
-        message,
+        // Keep 'error' as human-readable message for backward compatibility
+        error: message,
+        // Machine-readable error code for programmatic handling
+        code: 'RATE_LIMIT_EXCEEDED',
         retryAfter,
         retryAfterFormatted: formatRetryDuration(retryAfter),
         resetAt: new Date(entry.resetAt).toISOString(),
