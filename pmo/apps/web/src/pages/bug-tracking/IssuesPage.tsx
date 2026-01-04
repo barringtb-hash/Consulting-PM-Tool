@@ -75,7 +75,10 @@ const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
       label: 'Improvement',
       icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
     },
-    TASK: { label: 'Task', icon: <Clock className="h-4 w-4 text-gray-500 dark:text-neutral-400" /> },
+    TASK: {
+      label: 'Task',
+      icon: <Clock className="h-4 w-4 text-gray-500 dark:text-neutral-400" />,
+    },
   };
 
 function IssueRow({ issue }: { issue: Issue }) {
@@ -140,7 +143,9 @@ function IssueRow({ issue }: { issue: Issue }) {
             </span>
           )}
           {!issue.tenant && !issue.module && (
-            <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-neutral-400">-</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-neutral-400">
+              -
+            </span>
           )}
         </div>
       </td>

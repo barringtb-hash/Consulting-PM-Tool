@@ -94,7 +94,10 @@ const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
       label: 'Improvement',
       icon: <CheckCircle2 className="h-5 w-5 text-blue-500" />,
     },
-    TASK: { label: 'Task', icon: <Clock className="h-5 w-5 text-gray-500 dark:text-neutral-400" /> },
+    TASK: {
+      label: 'Task',
+      icon: <Clock className="h-5 w-5 text-gray-500 dark:text-neutral-400" />,
+    },
   };
 
 export default function IssueDetailPage() {
@@ -689,7 +692,9 @@ export default function IssueDetailPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">Type</span>
+                  <span className="text-gray-500 dark:text-neutral-500">
+                    Type
+                  </span>
                   <div className="flex items-center gap-1 dark:text-gray-300">
                     {TYPE_CONFIG[issue.type]?.icon}
                     <span>{TYPE_CONFIG[issue.type]?.label}</span>

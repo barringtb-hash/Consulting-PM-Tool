@@ -497,7 +497,9 @@ export default function PublicBookingPage() {
             </div>
           </div>
           {bookingPage.description && (
-            <p className="mt-3 text-gray-600 dark:text-neutral-300">{bookingPage.description}</p>
+            <p className="mt-3 text-gray-600 dark:text-neutral-300">
+              {bookingPage.description}
+            </p>
           )}
         </div>
       </header>

@@ -137,24 +137,32 @@ function ContactsPage(): JSX.Element {
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="p-4">
-              <div className="text-sm text-gray-500 dark:text-neutral-400">Total Contacts</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                Total Contacts
+              </div>
               <div className="text-2xl font-semibold">{stats.total}</div>
             </Card>
             <Card className="p-4">
-              <div className="text-sm text-gray-500 dark:text-neutral-400">New This Month</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                New This Month
+              </div>
               <div className="text-2xl font-semibold">
                 {stats.recentContacts}
               </div>
             </Card>
             <Card className="p-4">
-              <div className="text-sm text-gray-500 dark:text-neutral-400">Customers</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                Customers
+              </div>
               <div className="text-2xl font-semibold">
                 {stats.byLifecycle.find((l) => l.lifecycle === 'CUSTOMER')
                   ?.count ?? 0}
               </div>
             </Card>
             <Card className="p-4">
-              <div className="text-sm text-gray-500 dark:text-neutral-400">Leads</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                Leads
+              </div>
               <div className="text-2xl font-semibold">
                 {stats.byLifecycle.find((l) => l.lifecycle === 'LEAD')?.count ??
                   0}

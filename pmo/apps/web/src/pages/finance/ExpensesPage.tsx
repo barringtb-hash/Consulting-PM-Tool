@@ -307,8 +307,12 @@ export default function ExpensesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">Expenses</h1>
-          <p className="text-gray-500 dark:text-neutral-400">Manage and track all expenses</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
+            Expenses
+          </h1>
+          <p className="text-gray-500 dark:text-neutral-400">
+            Manage and track all expenses
+          </p>
         </div>
         <Button as={Link} to="/finance/expenses/new">
           <Plus className="h-4 w-4 mr-2" />
@@ -435,16 +439,22 @@ export default function ExpensesPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-4">
             <p className="text-sm text-gray-500 dark:text-neutral-400">Total</p>
-            <p className="text-xl font-semibold text-gray-900 dark:text-neutral-100">{data.total}</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-neutral-100">
+              {data.total}
+            </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-neutral-400">Pending</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Pending
+            </p>
             <p className="text-xl font-semibold text-yellow-600">
               {data.expenses.filter((e) => e.status === 'PENDING').length}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-neutral-400">This Page Total</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              This Page Total
+            </p>
             <p className="text-xl font-semibold text-gray-900 dark:text-neutral-100">
               {formatCurrency(
                 data.expenses.reduce((sum, e) => sum + e.amount, 0),
@@ -452,7 +462,9 @@ export default function ExpensesPage() {
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-neutral-400">Showing</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Showing
+            </p>
             <p className="text-xl font-semibold text-gray-900 dark:text-neutral-100">
               {data.expenses.length} of {data.total}
             </p>
@@ -465,7 +477,9 @@ export default function ExpensesPage() {
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
-            <p className="mt-2 text-gray-500 dark:text-neutral-400">Loading expenses...</p>
+            <p className="mt-2 text-gray-500 dark:text-neutral-400">
+              Loading expenses...
+            </p>
           </div>
         ) : error ? (
           <div className="p-8 text-center text-red-600">
@@ -474,7 +488,9 @@ export default function ExpensesPage() {
         ) : data?.expenses.length === 0 ? (
           <div className="p-8 text-center">
             <Receipt className="h-12 w-12 text-gray-300 mx-auto" />
-            <p className="mt-2 text-gray-500 dark:text-neutral-400">No expenses found</p>
+            <p className="mt-2 text-gray-500 dark:text-neutral-400">
+              No expenses found
+            </p>
             <Button as={Link} to="/finance/expenses/new" className="mt-4">
               <Plus className="h-4 w-4 mr-2" />
               Add First Expense
@@ -510,7 +526,10 @@ export default function ExpensesPage() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
                 {data?.expenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700">
+                  <tr
+                    key={expense.id}
+                    className="hover:bg-gray-50 dark:hover:bg-neutral-700"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-2">
                         {expense.aiAnomalyFlag && (

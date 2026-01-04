@@ -1140,7 +1140,8 @@ const pipelineStageSeeds = [
 const opportunitySeeds = [
   {
     name: 'Acme Predictive Maintenance Phase 2',
-    description: 'Expansion of predictive maintenance system to additional plants',
+    description:
+      'Expansion of predictive maintenance system to additional plants',
     accountName: 'Acme Manufacturing',
     stageName: 'Proposal',
     amount: 250000,
@@ -1219,23 +1220,56 @@ const opportunitySeeds = [
 
 // Bug tracking labels
 const issueLabelSeeds = [
-  { name: 'bug', color: '#EF4444', description: 'Something isn\'t working correctly' },
+  {
+    name: 'bug',
+    color: '#EF4444',
+    description: "Something isn't working correctly",
+  },
   { name: 'feature', color: '#3B82F6', description: 'New feature request' },
-  { name: 'enhancement', color: '#8B5CF6', description: 'Improvement to existing functionality' },
-  { name: 'documentation', color: '#6366F1', description: 'Documentation improvements' },
-  { name: 'urgent', color: '#DC2626', description: 'Needs immediate attention' },
-  { name: 'ui/ux', color: '#EC4899', description: 'User interface or experience issue' },
+  {
+    name: 'enhancement',
+    color: '#8B5CF6',
+    description: 'Improvement to existing functionality',
+  },
+  {
+    name: 'documentation',
+    color: '#6366F1',
+    description: 'Documentation improvements',
+  },
+  {
+    name: 'urgent',
+    color: '#DC2626',
+    description: 'Needs immediate attention',
+  },
+  {
+    name: 'ui/ux',
+    color: '#EC4899',
+    description: 'User interface or experience issue',
+  },
   { name: 'api', color: '#14B8A6', description: 'API-related issue' },
-  { name: 'performance', color: '#F59E0B', description: 'Performance optimization needed' },
-  { name: 'security', color: '#7C3AED', description: 'Security-related concern' },
-  { name: 'good-first-issue', color: '#22C55E', description: 'Good for newcomers' },
+  {
+    name: 'performance',
+    color: '#F59E0B',
+    description: 'Performance optimization needed',
+  },
+  {
+    name: 'security',
+    color: '#7C3AED',
+    description: 'Security-related concern',
+  },
+  {
+    name: 'good-first-issue',
+    color: '#22C55E',
+    description: 'Good for newcomers',
+  },
 ];
 
 // Sample issues for testing
 const issueSeeds = [
   {
     title: 'Dashboard charts not loading on slow connections',
-    description: 'When loading the operations dashboard on a slow network connection, the charts fail to render and show a blank state instead of a loading indicator.',
+    description:
+      'When loading the operations dashboard on a slow network connection, the charts fail to render and show a blank state instead of a loading indicator.',
     type: IssueType.BUG,
     status: IssueStatus.OPEN,
     priority: IssuePriority.MEDIUM,
@@ -1247,7 +1281,8 @@ const issueSeeds = [
   },
   {
     title: 'Add bulk export for opportunities',
-    description: 'Users need the ability to export multiple opportunities to CSV/Excel format for reporting purposes.',
+    description:
+      'Users need the ability to export multiple opportunities to CSV/Excel format for reporting purposes.',
     type: IssueType.FEATURE_REQUEST,
     status: IssueStatus.TRIAGING,
     priority: IssuePriority.LOW,
@@ -1257,7 +1292,8 @@ const issueSeeds = [
   },
   {
     title: 'API rate limiting error messages are unclear',
-    description: 'When the API rate limit is hit, the error message doesn\'t clearly indicate how long to wait before retrying.',
+    description:
+      "When the API rate limit is hit, the error message doesn't clearly indicate how long to wait before retrying.",
     type: IssueType.IMPROVEMENT,
     status: IssueStatus.IN_PROGRESS,
     priority: IssuePriority.MEDIUM,
@@ -1269,7 +1305,8 @@ const issueSeeds = [
   },
   {
     title: 'Health score calculation includes archived accounts',
-    description: 'The portfolio health dashboard incorrectly includes archived accounts in the average health score calculation.',
+    description:
+      'The portfolio health dashboard incorrectly includes archived accounts in the average health score calculation.',
     type: IssueType.BUG,
     status: IssueStatus.RESOLVED,
     priority: IssuePriority.HIGH,
@@ -1281,7 +1318,8 @@ const issueSeeds = [
   },
   {
     title: 'Add dark mode support',
-    description: 'Implement system-wide dark mode theme option for better accessibility and user preference.',
+    description:
+      'Implement system-wide dark mode theme option for better accessibility and user preference.',
     type: IssueType.FEATURE_REQUEST,
     status: IssueStatus.OPEN,
     priority: IssuePriority.LOW,
@@ -1303,7 +1341,8 @@ const inboundLeadSeeds = [
     website: 'https://startup-inc.example.com',
     source: LeadSource.WEBSITE_CONTACT,
     serviceInterest: ServiceInterest.STRATEGY,
-    message: 'Looking for AI strategy consulting for our Series A startup. We have a budget of ~$50k for initial engagement.',
+    message:
+      'Looking for AI strategy consulting for our Series A startup. We have a budget of ~$50k for initial engagement.',
     status: LeadStatus.NEW,
     ownerEmail: 'avery.chen@pmo.test',
     page: '/contact',
@@ -1318,7 +1357,8 @@ const inboundLeadSeeds = [
     website: 'https://retailco.example.com',
     source: LeadSource.LINKEDIN,
     serviceInterest: ServiceInterest.IMPLEMENTATION,
-    message: 'Need help implementing AI-powered inventory management. Currently using spreadsheets for 50+ locations.',
+    message:
+      'Need help implementing AI-powered inventory management. Currently using spreadsheets for 50+ locations.',
     status: LeadStatus.CONTACTED,
     ownerEmail: 'priya.desai@pmo.test',
   },
@@ -1329,7 +1369,8 @@ const inboundLeadSeeds = [
     website: 'https://finserv-partners.example.com',
     source: LeadSource.REFERRAL,
     serviceInterest: ServiceInterest.POC,
-    message: 'Referred by Velocity Logistics. Interested in fraud detection AI proof of concept.',
+    message:
+      'Referred by Velocity Logistics. Interested in fraud detection AI proof of concept.',
     status: LeadStatus.QUALIFIED,
     ownerEmail: 'marco.silva@pmo.test',
   },
@@ -1339,7 +1380,8 @@ const inboundLeadSeeds = [
     company: 'EduTech Learning',
     source: LeadSource.EVENT,
     serviceInterest: ServiceInterest.TRAINING,
-    message: 'Met at AI Summit 2024. Looking for AI training for our engineering team.',
+    message:
+      'Met at AI Summit 2024. Looking for AI training for our engineering team.',
     status: LeadStatus.CONTACTED,
     ownerEmail: 'admin@pmo.test',
   },
@@ -1350,7 +1392,8 @@ const inboundLeadSeeds = [
     website: 'https://mfg-solutions.example.com',
     source: LeadSource.WEBSITE_DOWNLOAD,
     serviceInterest: ServiceInterest.PMO_ADVISORY,
-    message: 'Downloaded the predictive maintenance whitepaper. Interested in discussing implementation.',
+    message:
+      'Downloaded the predictive maintenance whitepaper. Interested in discussing implementation.',
     status: LeadStatus.NEW,
     ownerEmail: 'avery.chen@pmo.test',
     page: '/resources/predictive-maintenance-whitepaper',
@@ -1999,7 +2042,9 @@ async function main() {
   for (const accountSeed of accountSeeds) {
     const ownerId = userMap.get(accountSeed.ownerEmail);
     if (!ownerId) {
-      throw new Error(`Owner ${accountSeed.ownerEmail} not found for account seeding.`);
+      throw new Error(
+        `Owner ${accountSeed.ownerEmail} not found for account seeding.`,
+      );
     }
 
     const existingAccount = await prisma.account.findFirst({
@@ -2105,16 +2150,22 @@ async function main() {
 
     stageMap.set(stage.name, stage.id);
   }
-  console.log(`  ✓ Created/updated ${pipelineStageSeeds.length} pipeline stages`);
+  console.log(
+    `  ✓ Created/updated ${pipelineStageSeeds.length} pipeline stages`,
+  );
 
   // Create CRM Contacts
   for (const contactSeed of crmContactSeeds) {
     const accountId = accountMap.get(contactSeed.accountName);
     if (!accountId) {
-      throw new Error(`Account ${contactSeed.accountName} not found for CRM contact seeding.`);
+      throw new Error(
+        `Account ${contactSeed.accountName} not found for CRM contact seeding.`,
+      );
     }
 
-    const ownerId = contactSeed.ownerEmail ? userMap.get(contactSeed.ownerEmail) : undefined;
+    const ownerId = contactSeed.ownerEmail
+      ? userMap.get(contactSeed.ownerEmail)
+      : undefined;
 
     const existingContact = await prisma.cRMContact.findFirst({
       where: {
@@ -2167,24 +2218,31 @@ async function main() {
   for (const oppSeed of opportunitySeeds) {
     const accountId = accountMap.get(oppSeed.accountName);
     if (!accountId) {
-      throw new Error(`Account ${oppSeed.accountName} not found for opportunity seeding.`);
+      throw new Error(
+        `Account ${oppSeed.accountName} not found for opportunity seeding.`,
+      );
     }
 
     const stageId = stageMap.get(oppSeed.stageName);
     if (!stageId) {
-      throw new Error(`Stage ${oppSeed.stageName} not found for opportunity seeding.`);
+      throw new Error(
+        `Stage ${oppSeed.stageName} not found for opportunity seeding.`,
+      );
     }
 
     const ownerId = userMap.get(oppSeed.ownerEmail);
     if (!ownerId) {
-      throw new Error(`Owner ${oppSeed.ownerEmail} not found for opportunity seeding.`);
+      throw new Error(
+        `Owner ${oppSeed.ownerEmail} not found for opportunity seeding.`,
+      );
     }
 
-    const status = oppSeed.stageName === 'Closed Won'
-      ? OpportunityStatus.WON
-      : oppSeed.stageName === 'Closed Lost'
-        ? OpportunityStatus.LOST
-        : OpportunityStatus.OPEN;
+    const status =
+      oppSeed.stageName === 'Closed Won'
+        ? OpportunityStatus.WON
+        : oppSeed.stageName === 'Closed Lost'
+          ? OpportunityStatus.LOST
+          : OpportunityStatus.OPEN;
 
     const weightedAmount = oppSeed.amount * (oppSeed.probability / 100);
 

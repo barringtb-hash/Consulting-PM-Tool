@@ -319,7 +319,9 @@ export function BookingWidget(): JSX.Element {
   if (configError || !config) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] bg-white text-center p-4">
-        <p className="text-gray-600 dark:text-neutral-300">Unable to load booking widget</p>
+        <p className="text-gray-600 dark:text-neutral-300">
+          Unable to load booking widget
+        </p>
       </div>
     );
   }
@@ -402,7 +404,9 @@ export function BookingWidget(): JSX.Element {
 
         {/* Add to calendar buttons */}
         <div className="space-y-2">
-          <p className="text-xs text-gray-500 dark:text-neutral-400">Add to Calendar</p>
+          <p className="text-xs text-gray-500 dark:text-neutral-400">
+            Add to Calendar
+          </p>
           <div className="flex gap-2 justify-center flex-wrap">
             <a
               href={calendarLinks.google}
@@ -459,7 +463,9 @@ export function BookingWidget(): JSX.Element {
       {/* Header */}
       {!hideHeader && (
         <div className="p-4 border-b border-gray-200 dark:border-neutral-700">
-          <h2 className="font-semibold text-gray-900 dark:text-neutral-100">{config.title}</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-neutral-100">
+            {config.title}
+          </h2>
         </div>
       )}
 
@@ -477,7 +483,9 @@ export function BookingWidget(): JSX.Element {
         {/* Step 1: Select Service */}
         {step === 'service' && (
           <div className="space-y-3">
-            <h3 className="font-medium text-gray-900 dark:text-neutral-100">Select a Service</h3>
+            <h3 className="font-medium text-gray-900 dark:text-neutral-100">
+              Select a Service
+            </h3>
             <div className="space-y-2">
               {config.appointmentTypes.map((type) => (
                 <button
@@ -494,7 +502,9 @@ export function BookingWidget(): JSX.Element {
                       : undefined
                   }
                 >
-                  <div className="font-medium text-gray-900 dark:text-neutral-100">{type.name}</div>
+                  <div className="font-medium text-gray-900 dark:text-neutral-100">
+                    {type.name}
+                  </div>
                   <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 dark:text-neutral-400">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -524,7 +534,9 @@ export function BookingWidget(): JSX.Element {
                 <ChevronLeft className="w-4 h-4" />
                 Back
               </button>
-              <h3 className="font-medium text-gray-900 dark:text-neutral-100">Select Time</h3>
+              <h3 className="font-medium text-gray-900 dark:text-neutral-100">
+                Select Time
+              </h3>
               <div className="w-12" />
             </div>
 
@@ -618,7 +630,9 @@ export function BookingWidget(): JSX.Element {
                 <ChevronLeft className="w-4 h-4" />
                 Back
               </button>
-              <h3 className="font-medium text-gray-900 dark:text-neutral-100">Your Details</h3>
+              <h3 className="font-medium text-gray-900 dark:text-neutral-100">
+                Your Details
+              </h3>
               <div className="w-12" />
             </div>
 

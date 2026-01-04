@@ -22,7 +22,6 @@ import {
   usePipelineStats,
   useClosingSoon,
   usePipelineStages,
-  useMoveOpportunityToStage,
   type Opportunity,
 } from '../../api/hooks/crm';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
@@ -102,9 +101,9 @@ function OpportunitiesPage(): JSX.Element {
   const pipelineStagesQuery = usePipelineStages();
 
   // State for tracking which opportunity is being moved (for optimistic UI)
-  const [movingOpportunityId, setMovingOpportunityId] = useState<number | null>(
-    null,
-  );
+  const [_movingOpportunityId, setMovingOpportunityId] = useState<
+    number | null
+  >(null);
 
   useRedirectOnUnauthorized(opportunitiesQuery.error);
 
@@ -129,12 +128,15 @@ function OpportunitiesPage(): JSX.Element {
       setMovingOpportunityId(opportunityId);
       try {
         // We need to call the API directly here since we can't use hooks conditionally
-        const response = await fetch(`/api/crm/opportunities/${opportunityId}/stage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ stageId: newStageId }),
-        });
+        const response = await fetch(
+          `/api/crm/opportunities/${opportunityId}/stage`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ stageId: newStageId }),
+          },
+        );
 
         if (!response.ok) {
           throw new Error('Failed to move opportunity');

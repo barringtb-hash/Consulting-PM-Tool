@@ -151,7 +151,9 @@ function OpportunityDetailPage(): JSX.Element {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="container-padding py-8">
-          <p className="text-gray-500 dark:text-neutral-400">Loading opportunity...</p>
+          <p className="text-gray-500 dark:text-neutral-400">
+            Loading opportunity...
+          </p>
         </div>
       </div>
     );
@@ -330,7 +332,9 @@ function OpportunityDetailPage(): JSX.Element {
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Amount</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Amount
+                </div>
                 <div className="text-xl font-semibold">
                   {formatCurrency(opportunity.amount)}
                 </div>
@@ -343,7 +347,9 @@ function OpportunityDetailPage(): JSX.Element {
                 <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Weighted Value</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Weighted Value
+                </div>
                 <div className="text-xl font-semibold">
                   {formatCurrency(opportunity.weightedAmount)}
                 </div>
@@ -356,7 +362,9 @@ function OpportunityDetailPage(): JSX.Element {
                 <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Expected Close</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Expected Close
+                </div>
                 <div className="text-xl font-semibold">
                   {formatDate(opportunity.expectedCloseDate)}
                 </div>
@@ -369,7 +377,9 @@ function OpportunityDetailPage(): JSX.Element {
                 <Building2 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Activities</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Activities
+                </div>
                 <div className="text-xl font-semibold">
                   {opportunity._count?.activities ?? 0}
                 </div>
@@ -640,7 +650,9 @@ function OpportunityDetailPage(): JSX.Element {
                     opportunity.
                   </p>
                 ) : (
-                  <p className="text-gray-500 dark:text-neutral-400">{EMPTY_STATES.noContacts}</p>
+                  <p className="text-gray-500 dark:text-neutral-400">
+                    {EMPTY_STATES.noContacts}
+                  </p>
                 )}
               </CardBody>
             </Card>
@@ -679,7 +691,9 @@ function OpportunityDetailPage(): JSX.Element {
                         ))}
                       </select>
                       {moveToStage.isPending && (
-                        <p className="text-xs text-gray-500 mt-1">Updating stage...</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Updating stage...
+                        </p>
                       )}
                     </div>
                     <div className="border-t pt-3 mt-3" />

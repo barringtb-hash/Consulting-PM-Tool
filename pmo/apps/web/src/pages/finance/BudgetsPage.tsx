@@ -266,8 +266,12 @@ export default function BudgetsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">Budgets</h1>
-          <p className="text-gray-500 dark:text-neutral-400">Create and manage spending budgets</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
+            Budgets
+          </h1>
+          <p className="text-gray-500 dark:text-neutral-400">
+            Create and manage spending budgets
+          </p>
         </div>
         <Button as={Link} to="/finance/budgets/new">
           <Plus className="h-4 w-4 mr-2" />
@@ -279,19 +283,25 @@ export default function BudgetsPage() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-neutral-400">Active Budgets</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Active Budgets
+            </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-neutral-100">
               {stats.activeBudgets}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-neutral-400">Total Budgeted</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Total Budgeted
+            </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-neutral-100">
               {formatCurrency(stats.totalBudgeted)}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-neutral-400">Total Spent</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Total Spent
+            </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-neutral-100">
               {formatCurrency(stats.totalSpent)}
             </p>
@@ -299,7 +309,9 @@ export default function BudgetsPage() {
           <Card
             className={`p-4 ${stats.overBudgetCount > 0 ? 'border-red-200 bg-red-50' : ''}`}
           >
-            <p className="text-sm text-gray-500 dark:text-neutral-400">Over Budget</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
+              Over Budget
+            </p>
             <p
               className={`text-2xl font-semibold ${stats.overBudgetCount > 0 ? 'text-red-600' : 'text-gray-900'}`}
             >
@@ -435,7 +447,9 @@ export default function BudgetsPage() {
       ) : data?.budgets.length === 0 ? (
         <Card className="p-8 text-center">
           <Wallet className="h-12 w-12 text-gray-300 mx-auto" />
-          <p className="mt-2 text-gray-500 dark:text-neutral-400">No budgets found</p>
+          <p className="mt-2 text-gray-500 dark:text-neutral-400">
+            No budgets found
+          </p>
           <Button as={Link} to="/finance/budgets/new" className="mt-4">
             <Plus className="h-4 w-4 mr-2" />
             Create First Budget
@@ -489,7 +503,9 @@ export default function BudgetsPage() {
                 {budget.account && (
                   <div className="flex justify-between mt-1">
                     <span>Account</span>
-                    <span className="text-gray-700 dark:text-neutral-300">{budget.account.name}</span>
+                    <span className="text-gray-700 dark:text-neutral-300">
+                      {budget.account.name}
+                    </span>
                   </div>
                 )}
               </div>

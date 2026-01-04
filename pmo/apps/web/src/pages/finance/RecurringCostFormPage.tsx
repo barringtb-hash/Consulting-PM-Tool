@@ -386,7 +386,9 @@ export default function RecurringCostFormPage() {
 
           {/* Schedule */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">Schedule</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
+              Schedule
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>

@@ -726,7 +726,8 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     isCore: false,
     dependencies: ['financeTracking'],
     apiPrefixes: ['/api/finance/expenses'],
-    description: 'Expense tracking with approval workflows and AI categorization',
+    description:
+      'Expense tracking with approval workflows and AI categorization',
   },
   financeBudgets: {
     id: 'financeBudgets',
@@ -753,7 +754,8 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     isCore: false,
     dependencies: ['financeTracking'],
     apiPrefixes: ['/api/finance/recurring-costs'],
-    description: 'Track subscriptions and recurring expenses with auto-generation',
+    description:
+      'Track subscriptions and recurring expenses with auto-generation',
   },
 
   // ============ BUG TRACKING MODULE ============

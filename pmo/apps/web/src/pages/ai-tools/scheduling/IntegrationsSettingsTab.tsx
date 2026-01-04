@@ -599,7 +599,9 @@ export function IntegrationsSettingsTab({
                       }`}
                     >
                       <p className="font-medium">{option.label}</p>
-                      <p className="text-sm text-gray-500 dark:text-neutral-400">{option.desc}</p>
+                      <p className="text-sm text-gray-500 dark:text-neutral-400">
+                        {option.desc}
+                      </p>
                     </button>
                   ))}
                 </div>

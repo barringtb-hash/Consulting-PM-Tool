@@ -242,7 +242,9 @@ function AccountDetailPage(): JSX.Element {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="container-padding py-8">
-          <p className="text-gray-500 dark:text-neutral-400">Loading account...</p>
+          <p className="text-gray-500 dark:text-neutral-400">
+            Loading account...
+          </p>
         </div>
       </div>
     );
@@ -420,7 +422,9 @@ function AccountDetailPage(): JSX.Element {
                 <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Health Score</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Health Score
+                </div>
                 <div className="text-xl font-semibold">
                   {account.healthScore}%
                 </div>
@@ -433,7 +437,9 @@ function AccountDetailPage(): JSX.Element {
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Annual Revenue</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Annual Revenue
+                </div>
                 <div className="text-xl font-semibold">
                   {formatCurrency(account.annualRevenue)}
                 </div>
@@ -446,7 +452,9 @@ function AccountDetailPage(): JSX.Element {
                 <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Contacts</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Contacts
+                </div>
                 <div className="text-xl font-semibold">
                   {account._count?.contacts ?? 0}
                 </div>
@@ -459,7 +467,9 @@ function AccountDetailPage(): JSX.Element {
                 <Building2 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-neutral-400">Opportunities</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
+                  Opportunities
+                </div>
                 <div className="text-xl font-semibold">
                   {account._count?.opportunities ?? 0}
                 </div>
@@ -608,7 +618,9 @@ function AccountDetailPage(): JSX.Element {
                             {account.website}
                           </a>
                         ) : (
-                          <span className="text-gray-400 dark:text-neutral-500">-</span>
+                          <span className="text-gray-400 dark:text-neutral-500">
+                            -
+                          </span>
                         )}
                       </dd>
                     </div>
@@ -672,9 +684,13 @@ function AccountDetailPage(): JSX.Element {
               </CardHeader>
               <CardBody>
                 {opportunitiesQuery.isLoading ? (
-                  <p className="text-gray-500 dark:text-neutral-400">Loading opportunities...</p>
+                  <p className="text-gray-500 dark:text-neutral-400">
+                    Loading opportunities...
+                  </p>
                 ) : opportunities.length === 0 ? (
-                  <p className="text-gray-500 dark:text-neutral-400">{EMPTY_STATES.opportunities}</p>
+                  <p className="text-gray-500 dark:text-neutral-400">
+                    {EMPTY_STATES.opportunities}
+                  </p>
                 ) : (
                   <div className="divide-y">
                     {opportunities.map((opp) => (
@@ -893,7 +909,9 @@ function AccountDetailPage(): JSX.Element {
                         </div>
                         <div className="mt-4">
                           <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="text-gray-500 dark:text-neutral-400">Progress</span>
+                            <span className="text-gray-500 dark:text-neutral-400">
+                              Progress
+                            </span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100">
                               {plan.progressPercent}%
                             </span>

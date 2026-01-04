@@ -182,7 +182,9 @@ function KanbanColumn({
           <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
             {stage.name}
           </h3>
-          <Badge variant={getStageVariant(stage.stageType)}>{total.count}</Badge>
+          <Badge variant={getStageVariant(stage.stageType)}>
+            {total.count}
+          </Badge>
         </div>
         <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
           <DollarSign className="h-3 w-3" />
