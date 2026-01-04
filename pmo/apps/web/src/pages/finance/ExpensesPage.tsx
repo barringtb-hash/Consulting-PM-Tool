@@ -322,7 +322,7 @@ export default function ExpensesPage() {
           {/* Search */}
           <div className="flex-1 flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
               <Input
                 type="text"
                 placeholder="Search expenses..."
@@ -434,26 +434,26 @@ export default function ExpensesPage() {
       {data && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-4">
-            <p className="text-sm text-gray-500">Total</p>
-            <p className="text-xl font-semibold text-gray-900">{data.total}</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">Total</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-neutral-100">{data.total}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500">Pending</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">Pending</p>
             <p className="text-xl font-semibold text-yellow-600">
               {data.expenses.filter((e) => e.status === 'PENDING').length}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500">This Page Total</p>
-            <p className="text-xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">This Page Total</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-neutral-100">
               {formatCurrency(
                 data.expenses.reduce((sum, e) => sum + e.amount, 0),
               )}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500">Showing</p>
-            <p className="text-xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">Showing</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-neutral-100">
               {data.expenses.length} of {data.total}
             </p>
           </Card>
@@ -465,7 +465,7 @@ export default function ExpensesPage() {
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
-            <p className="mt-2 text-gray-500">Loading expenses...</p>
+            <p className="mt-2 text-gray-500 dark:text-neutral-400">Loading expenses...</p>
           </div>
         ) : error ? (
           <div className="p-8 text-center text-red-600">
@@ -474,7 +474,7 @@ export default function ExpensesPage() {
         ) : data?.expenses.length === 0 ? (
           <div className="p-8 text-center">
             <Receipt className="h-12 w-12 text-gray-300 mx-auto" />
-            <p className="mt-2 text-gray-500">No expenses found</p>
+            <p className="mt-2 text-gray-500 dark:text-neutral-400">No expenses found</p>
             <Button as={Link} to="/finance/expenses/new" className="mt-4">
               <Plus className="h-4 w-4 mr-2" />
               Add First Expense
@@ -508,9 +508,9 @@ export default function ExpensesPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
                 {data?.expenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-gray-50">
+                  <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-neutral-700">
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-2">
                         {expense.aiAnomalyFlag && (
@@ -529,7 +529,7 @@ export default function ExpensesPage() {
                             {expense.description}
                           </Link>
                           {expense.vendorName && (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-neutral-400">
                               {expense.vendorName}
                             </p>
                           )}
@@ -547,19 +547,19 @@ export default function ExpensesPage() {
                         {expense.category.name}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-neutral-400">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         {formatDate(expense.date)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-neutral-100">
                       {formatCurrency(expense.amount, expense.currency)}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={expense.status as ExpenseStatus} />
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-neutral-400">
                       {expense.owner.name}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -580,7 +580,7 @@ export default function ExpensesPage() {
         {/* Pagination */}
         {data && totalPages > 1 && (
           <div className="px-6 py-4 border-t flex items-center justify-between">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
               Showing {(queryParams.page! - 1) * queryParams.limit! + 1} to{' '}
               {Math.min(queryParams.page! * queryParams.limit!, data.total)} of{' '}
               {data.total} expenses
@@ -618,7 +618,7 @@ export default function ExpensesPage() {
         title="Delete Expense"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-neutral-300">
             Are you sure you want to delete this expense? This action cannot be
             undone.
           </p>

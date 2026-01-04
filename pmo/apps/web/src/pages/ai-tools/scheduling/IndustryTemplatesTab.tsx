@@ -121,7 +121,7 @@ export function IndustryTemplatesTab({
       {/* Header */}
       <div>
         <h2 className="text-lg font-semibold">Industry Templates</h2>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-neutral-300">
           Choose a pre-configured template for your industry to quickly set up
           scheduling with best practices.
         </p>
@@ -209,7 +209,7 @@ export function IndustryTemplatesTab({
 
                 <div>
                   <h3 className="font-medium">{template.name}</h3>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="mt-1 text-sm text-gray-600 dark:text-neutral-300">
                     {template.description}
                   </p>
                 </div>
@@ -231,7 +231,7 @@ export function IndustryTemplatesTab({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-neutral-400">
                   <span>{template.appointmentTypeCount} appointment types</span>
                   <ChevronRight className="h-4 w-4" />
                 </div>

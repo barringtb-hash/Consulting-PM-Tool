@@ -152,7 +152,7 @@ export default function IssueEditPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-gray-500 dark:text-neutral-400" />
         </div>
       </div>
     );
@@ -162,7 +162,7 @@ export default function IssueEditPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="text-gray-500">Issue not found</div>
+          <div className="text-gray-500 dark:text-neutral-400">Issue not found</div>
           <Button variant="outline" onClick={() => navigate('/bug-tracking')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Issues

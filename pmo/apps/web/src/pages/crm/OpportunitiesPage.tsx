@@ -177,7 +177,7 @@ function OpportunitiesPage(): JSX.Element {
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-3 sm:p-4">
-              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-neutral-400">
                 <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                 <span className="leading-tight">Pipeline Value</span>
               </div>
@@ -186,7 +186,7 @@ function OpportunitiesPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-neutral-400">
                 <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                 <span className="leading-tight">Weighted Value</span>
               </div>
@@ -195,7 +195,7 @@ function OpportunitiesPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-neutral-400">
                 <Target className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                 <span className="leading-tight">Win Rate</span>
               </div>
@@ -204,7 +204,7 @@ function OpportunitiesPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 dark:text-neutral-400">
                 <Clock className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                 <span className="leading-tight">Avg Deal Size</span>
               </div>
@@ -226,7 +226,7 @@ function OpportunitiesPage(): JSX.Element {
                   className="flex items-center gap-2 px-3 py-2 bg-yellow-50 rounded-lg border border-yellow-200"
                 >
                   <span className="font-medium">{opp.name}</span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-neutral-300">
                     {formatCurrency(opp.amount)}
                   </span>
                   <Badge variant="warning">
@@ -244,7 +244,7 @@ function OpportunitiesPage(): JSX.Element {
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
                 <Input
                   value={filters.search}
                   onChange={(e) =>
@@ -323,7 +323,7 @@ function OpportunitiesPage(): JSX.Element {
                   <div className="text-lg font-semibold">
                     {formatCurrency(stage.value)}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-neutral-400">
                     Weighted: {formatCurrency(stage.weightedValue)}
                   </div>
                 </div>
@@ -334,11 +334,11 @@ function OpportunitiesPage(): JSX.Element {
 
         {/* Opportunities - Kanban or List View */}
         {opportunitiesQuery.isLoading || pipelineStagesQuery.isLoading ? (
-          <Card className="p-8 text-center text-gray-500">
+          <Card className="p-8 text-center text-gray-500 dark:text-neutral-400">
             Loading opportunities...
           </Card>
         ) : opportunities.length === 0 ? (
-          <Card className="p-8 text-center text-gray-500">
+          <Card className="p-8 text-center text-gray-500 dark:text-neutral-400">
             {filters.search || filters.stageType
               ? 'No opportunities match your filters'
               : EMPTY_STATES.opportunities}
@@ -383,7 +383,7 @@ function OpportunityRow({ opportunity }: OpportunityRowProps): JSX.Element {
     >
       <div className="flex-1">
         <div className="font-medium">{opportunity.name}</div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 dark:text-neutral-400">
           {opportunity.account?.name ?? 'No account'} •{' '}
           {opportunity._count?.contacts ?? 0} contacts
         </div>
@@ -393,7 +393,7 @@ function OpportunityRow({ opportunity }: OpportunityRowProps): JSX.Element {
           <div className="font-semibold">
             {formatCurrency(opportunity.amount)}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 dark:text-neutral-400">
             {opportunity.probability}% probability
           </div>
         </div>

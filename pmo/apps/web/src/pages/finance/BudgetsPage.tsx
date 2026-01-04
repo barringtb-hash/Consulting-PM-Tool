@@ -279,27 +279,27 @@ export default function BudgetsPage() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-4">
-            <p className="text-sm text-gray-500">Active Budgets</p>
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">Active Budgets</p>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-neutral-100">
               {stats.activeBudgets}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500">Total Budgeted</p>
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">Total Budgeted</p>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-neutral-100">
               {formatCurrency(stats.totalBudgeted)}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500">Total Spent</p>
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">Total Spent</p>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-neutral-100">
               {formatCurrency(stats.totalSpent)}
             </p>
           </Card>
           <Card
             className={`p-4 ${stats.overBudgetCount > 0 ? 'border-red-200 bg-red-50' : ''}`}
           >
-            <p className="text-sm text-gray-500">Over Budget</p>
+            <p className="text-sm text-gray-500 dark:text-neutral-400">Over Budget</p>
             <p
               className={`text-2xl font-semibold ${stats.overBudgetCount > 0 ? 'text-red-600' : 'text-gray-900'}`}
             >
@@ -314,7 +314,7 @@ export default function BudgetsPage() {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
               <Input
                 type="text"
                 placeholder="Search budgets..."
@@ -435,7 +435,7 @@ export default function BudgetsPage() {
       ) : data?.budgets.length === 0 ? (
         <Card className="p-8 text-center">
           <Wallet className="h-12 w-12 text-gray-300 mx-auto" />
-          <p className="mt-2 text-gray-500">No budgets found</p>
+          <p className="mt-2 text-gray-500 dark:text-neutral-400">No budgets found</p>
           <Button as={Link} to="/finance/budgets/new" className="mt-4">
             <Plus className="h-4 w-4 mr-2" />
             Create First Budget
@@ -453,7 +453,7 @@ export default function BudgetsPage() {
                   >
                     {budget.name}
                   </Link>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-neutral-400">
                     {PERIOD_LABELS[budget.period as BudgetPeriod]}
                   </p>
                 </div>
@@ -465,17 +465,17 @@ export default function BudgetsPage() {
 
               <div className="mb-4">
                 <div className="flex justify-between items-baseline mb-1">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
                     {formatCurrency(budget.spent, budget.currency)}
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 dark:text-neutral-400">
                     of {formatCurrency(budget.amount, budget.currency)}
                   </span>
                 </div>
                 <UtilizationBar spent={budget.spent} amount={budget.amount} />
               </div>
 
-              <div className="pt-4 border-t text-sm text-gray-500">
+              <div className="pt-4 border-t text-sm text-gray-500 dark:text-neutral-400">
                 <div className="flex justify-between">
                   <span>Start Date</span>
                   <span>{formatDate(budget.startDate)}</span>
@@ -489,7 +489,7 @@ export default function BudgetsPage() {
                 {budget.account && (
                   <div className="flex justify-between mt-1">
                     <span>Account</span>
-                    <span className="text-gray-700">{budget.account.name}</span>
+                    <span className="text-gray-700 dark:text-neutral-300">{budget.account.name}</span>
                   </div>
                 )}
               </div>
@@ -501,7 +501,7 @@ export default function BudgetsPage() {
       {/* Pagination */}
       {data && totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-neutral-400">
             Showing {(queryParams.page! - 1) * queryParams.limit! + 1} to{' '}
             {Math.min(queryParams.page! * queryParams.limit!, data.total)} of{' '}
             {data.total} budgets
@@ -538,7 +538,7 @@ export default function BudgetsPage() {
         title="Delete Budget"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-neutral-300">
             Are you sure you want to delete this budget? This action cannot be
             undone.
           </p>

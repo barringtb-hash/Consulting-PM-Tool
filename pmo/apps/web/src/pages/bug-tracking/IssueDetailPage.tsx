@@ -94,7 +94,7 @@ const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
       label: 'Improvement',
       icon: <CheckCircle2 className="h-5 w-5 text-blue-500" />,
     },
-    TASK: { label: 'Task', icon: <Clock className="h-5 w-5 text-gray-500" /> },
+    TASK: { label: 'Task', icon: <Clock className="h-5 w-5 text-gray-500 dark:text-neutral-400" /> },
   };
 
 export default function IssueDetailPage() {
@@ -297,7 +297,7 @@ export default function IssueDetailPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500 dark:text-gray-400">
+          <div className="text-gray-500 dark:text-neutral-500">
             Loading issue...
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function IssueDetailPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="text-gray-500 dark:text-gray-400">
+          <div className="text-gray-500 dark:text-neutral-500">
             Issue not found
           </div>
           <Button variant="outline" onClick={() => navigate('/bug-tracking')}>
@@ -417,7 +417,7 @@ export default function IssueDetailPage() {
                       </div>
                     </button>
                     <div className="border-t dark:border-neutral-700 my-1" />
-                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-neutral-500">
                       <strong>Tip:</strong> Use{' '}
                       <code className="bg-gray-100 dark:bg-neutral-700 px-1 rounded">
                         /implement-issue {issue.id}
@@ -517,7 +517,7 @@ export default function IssueDetailPage() {
                     browse
                   </button>
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-neutral-400">
                   Supported: Images, PDF, TXT, CSV, JSON (max 5MB each)
                 </p>
                 {uploadAttachments.isPending && (
@@ -548,7 +548,7 @@ export default function IssueDetailPage() {
                           {attachment.mimeType.includes('pdf') ? (
                             <FileText className="h-8 w-8 text-red-500" />
                           ) : (
-                            <FileText className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                            <FileText className="h-8 w-8 text-gray-400 dark:text-gray-500 dark:text-neutral-400" />
                           )}
                         </div>
                       )}
@@ -559,7 +559,7 @@ export default function IssueDetailPage() {
                         >
                           {attachment.filename}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-neutral-500">
                           {formatFileSize(attachment.size)} •{' '}
                           {new Date(attachment.createdAt).toLocaleDateString()}
                         </p>
@@ -625,7 +625,7 @@ export default function IssueDetailPage() {
                           </Badge>
                         )}
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-sm text-gray-500 dark:text-neutral-500">
                         {new Date(comment.createdAt).toLocaleString()}
                       </span>
                     </div>
@@ -670,7 +670,7 @@ export default function IssueDetailPage() {
               <h3 className="font-medium mb-4 dark:text-white">Details</h3>
               <div className="space-y-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-500 dark:text-neutral-500">
                     Status
                   </span>
                   <select
@@ -689,7 +689,7 @@ export default function IssueDetailPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Type</span>
+                  <span className="text-gray-500 dark:text-neutral-500">Type</span>
                   <div className="flex items-center gap-1 dark:text-gray-300">
                     {TYPE_CONFIG[issue.type]?.icon}
                     <span>{TYPE_CONFIG[issue.type]?.label}</span>
@@ -697,7 +697,7 @@ export default function IssueDetailPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-500 dark:text-neutral-500">
                     Priority
                   </span>
                   <span
@@ -708,7 +708,7 @@ export default function IssueDetailPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-500 dark:text-neutral-500">
                     Source
                   </span>
                   <span className="text-gray-700 dark:text-gray-300">
@@ -718,7 +718,7 @@ export default function IssueDetailPage() {
 
                 {issue.errorCount > 1 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-gray-500 dark:text-neutral-500">
                       Error Count
                     </span>
                     <span className="text-gray-700 dark:text-gray-300">
@@ -734,7 +734,7 @@ export default function IssueDetailPage() {
               <h3 className="font-medium mb-4 dark:text-white">People</h3>
               <div className="space-y-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-500 dark:text-neutral-500">
                     Assignee
                   </span>
                   {issue.assignedTo ? (
@@ -747,14 +747,14 @@ export default function IssueDetailPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 dark:text-gray-500">
+                    <span className="text-gray-400 dark:text-gray-500 dark:text-neutral-400">
                       Unassigned
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-500 dark:text-neutral-500">
                     Reporter
                   </span>
                   {issue.reportedBy ? (
@@ -767,7 +767,7 @@ export default function IssueDetailPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 dark:text-gray-500">
+                    <span className="text-gray-400 dark:text-gray-500 dark:text-neutral-400">
                       System
                     </span>
                   )}
@@ -780,7 +780,7 @@ export default function IssueDetailPage() {
               <h3 className="font-medium mb-4 dark:text-white">Dates</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-500 dark:text-neutral-500">
                     Created
                   </span>
                   <span className="dark:text-gray-300">
@@ -788,7 +788,7 @@ export default function IssueDetailPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">
+                  <span className="text-gray-500 dark:text-neutral-500">
                     Updated
                   </span>
                   <span className="dark:text-gray-300">
@@ -797,7 +797,7 @@ export default function IssueDetailPage() {
                 </div>
                 {issue.resolvedAt && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-gray-500 dark:text-neutral-500">
                       Resolved
                     </span>
                     <span className="dark:text-gray-300">
@@ -815,7 +815,7 @@ export default function IssueDetailPage() {
                 <div className="space-y-3 text-sm">
                   {issue.project && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500 dark:text-neutral-500">
                         Project
                       </span>
                       <Link
@@ -829,7 +829,7 @@ export default function IssueDetailPage() {
                   )}
                   {issue.account && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500 dark:text-neutral-500">
                         Account
                       </span>
                       <Link
@@ -843,7 +843,7 @@ export default function IssueDetailPage() {
                   )}
                   {issue.url && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500 dark:text-neutral-500">
                         URL
                       </span>
                       <a
@@ -876,7 +876,7 @@ export default function IssueDetailPage() {
                 <div className="space-y-3 text-sm">
                   {issue.environment && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500 dark:text-neutral-500">
                         Environment
                       </span>
                       <span className="dark:text-gray-300">
@@ -886,7 +886,7 @@ export default function IssueDetailPage() {
                   )}
                   {issue.appVersion && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500 dark:text-neutral-500">
                         App Version
                       </span>
                       <span className="dark:text-gray-300">
@@ -896,7 +896,7 @@ export default function IssueDetailPage() {
                   )}
                   {issue.browserInfo && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">
+                      <span className="text-gray-500 dark:text-neutral-500">
                         Browser
                       </span>
                       <span className="truncate max-w-[150px] dark:text-gray-300">
@@ -924,7 +924,7 @@ export default function IssueDetailPage() {
         size="medium"
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-neutral-500">
             Click the Copy button below or select all text and copy manually:
           </p>
           <textarea

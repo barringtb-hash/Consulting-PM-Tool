@@ -157,7 +157,7 @@ function AccountsPage(): JSX.Element {
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 Total Accounts
               </div>
               <div className="text-xl sm:text-2xl font-semibold">
@@ -165,7 +165,7 @@ function AccountsPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 Customers
               </div>
               <div className="text-xl sm:text-2xl font-semibold text-green-600">
@@ -173,7 +173,7 @@ function AccountsPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 Prospects
               </div>
               <div className="text-xl sm:text-2xl font-semibold text-blue-600">
@@ -181,7 +181,7 @@ function AccountsPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 At Risk
               </div>
               <div className="text-xl sm:text-2xl font-semibold text-red-600">
@@ -216,7 +216,7 @@ function AccountsPage(): JSX.Element {
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
                 <Input
                   value={filters.search}
                   onChange={(e) =>
@@ -250,11 +250,11 @@ function AccountsPage(): JSX.Element {
         {/* Accounts List */}
         <Card>
           {accountsQuery.isLoading ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-500 dark:text-neutral-400">
               Loading accounts...
             </div>
           ) : accounts.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-500 dark:text-neutral-400">
               {filters.search || filters.type
                 ? 'No accounts match your filters'
                 : EMPTY_STATES.accounts}
@@ -283,19 +283,19 @@ interface AccountRowProps {
 
 function AccountRow({ account, onDelete }: AccountRowProps): JSX.Element {
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
+    <div className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-neutral-800">
       <Link
         to={`/crm/accounts/${account.id}`}
         className="flex items-center gap-4 flex-1"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-          <Building2 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-800">
+          <Building2 className="h-5 w-5 text-gray-600 dark:text-neutral-500" />
         </div>
         <div>
-          <div className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400">
+          <div className="font-medium text-gray-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400">
             {account.name}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-neutral-400">
             {account.industry ?? 'No industry'} •{' '}
             {account._count?.contacts ?? 0} contacts •{' '}
             {account._count?.opportunities ?? 0} opportunities
@@ -307,11 +307,11 @@ function AccountRow({ account, onDelete }: AccountRowProps): JSX.Element {
           {formatType(account.type)}
         </Badge>
         {account.annualRevenue && (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-gray-600 dark:text-neutral-500">
             {formatCurrency(account.annualRevenue)}
           </div>
         )}
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 dark:text-neutral-400">
           Created {formatDate(account.createdAt)}
         </div>
         <Button variant="ghost" size="sm" onClick={onDelete}>

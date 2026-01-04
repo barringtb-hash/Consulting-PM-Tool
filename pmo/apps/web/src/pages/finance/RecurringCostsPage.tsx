@@ -311,7 +311,7 @@ export default function RecurringCostsPage() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-neutral-500">
               Active Costs
             </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white">
@@ -319,7 +319,7 @@ export default function RecurringCostsPage() {
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-neutral-500">
               Monthly Total
             </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white">
@@ -327,7 +327,7 @@ export default function RecurringCostsPage() {
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-neutral-500">
               Annual Total
             </p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white">
@@ -337,7 +337,7 @@ export default function RecurringCostsPage() {
           <Card
             className={`p-4 ${stats.upcomingRenewalsCount > 0 ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-900/20' : ''}`}
           >
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-neutral-500">
               Due in 7 Days
             </p>
             <p
@@ -354,7 +354,7 @@ export default function RecurringCostsPage() {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
               <Input
                 type="text"
                 placeholder="Search recurring costs..."
@@ -461,7 +461,7 @@ export default function RecurringCostsPage() {
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-gray-500 dark:text-neutral-500">
               Loading recurring costs...
             </p>
           </div>
@@ -472,7 +472,7 @@ export default function RecurringCostsPage() {
         ) : data?.costs.length === 0 ? (
           <div className="p-8 text-center">
             <RefreshCw className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-gray-500 dark:text-neutral-500">
               No recurring costs found
             </p>
             <Button
@@ -516,7 +516,7 @@ export default function RecurringCostsPage() {
                 {data?.costs.map((cost) => (
                   <tr
                     key={cost.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    className="hover:bg-gray-50 dark:hover:bg-neutral-800"
                   >
                     <td className="px-6 py-4">
                       <Link
@@ -526,7 +526,7 @@ export default function RecurringCostsPage() {
                         {cost.name}
                       </Link>
                       {cost.vendorName && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-gray-500 dark:text-neutral-500">
                           {cost.vendorName}
                         </p>
                       )}
@@ -539,7 +539,7 @@ export default function RecurringCostsPage() {
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                       {formatCurrency(cost.amount, cost.currency)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-neutral-500">
                       {FREQUENCY_LABELS[cost.frequency as RecurringFrequency]}
                     </td>
                     <td className="px-6 py-4">
@@ -572,7 +572,7 @@ export default function RecurringCostsPage() {
         {/* Pagination */}
         {data && totalPages > 1 && (
           <div className="px-6 py-4 border-t dark:border-gray-700 flex items-center justify-between">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-neutral-500">
               Showing {(queryParams.page! - 1) * queryParams.limit! + 1} to{' '}
               {Math.min(queryParams.page! * queryParams.limit!, data.total)} of{' '}
               {data.total} recurring costs

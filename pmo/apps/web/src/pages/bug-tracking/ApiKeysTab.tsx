@@ -176,7 +176,7 @@ export BUG_TRACKER_API_URL="https://<your-api-domain>/api"`}
 
         {/* API Keys List */}
         {isLoading ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-8 text-gray-500 dark:text-neutral-500">
             Loading API keys...
           </div>
         ) : !apiKeys || apiKeys.length === 0 ? (
@@ -197,7 +197,7 @@ export BUG_TRACKER_API_URL="https://<your-api-domain>/api"`}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Key className="h-4 w-4 text-gray-400" />
+                      <Key className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                       <span className="font-medium dark:text-white">
                         {apiKey.name}
                       </span>
@@ -205,7 +205,7 @@ export BUG_TRACKER_API_URL="https://<your-api-domain>/api"`}
                         <Badge variant="destructive">Revoked</Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-neutral-500">
                       <span className="font-mono">{apiKey.keyPrefix}...</span>
                       <span>
                         Created{' '}
@@ -393,7 +393,7 @@ function CreateApiKeyModal({
                   <span className="font-medium dark:text-white">
                     {perm.label}
                   </span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-neutral-500">
                     {perm.description}
                   </p>
                 </div>

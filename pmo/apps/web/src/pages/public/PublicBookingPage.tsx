@@ -309,7 +309,7 @@ export default function PublicBookingPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Booking Page Not Found
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-neutral-300">
             The booking page you&apos;re looking for doesn&apos;t exist or has
             been disabled.
           </p>
@@ -362,7 +362,7 @@ export default function PublicBookingPage() {
 
             <div className="space-y-3 text-left mb-6">
               <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
+                <Calendar className="w-5 h-5 text-gray-400 dark:text-neutral-500" />
                 <span>
                   {new Date(
                     confirmation.appointment.scheduledAt,
@@ -375,7 +375,7 @@ export default function PublicBookingPage() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-gray-400" />
+                <Clock className="w-5 h-5 text-gray-400 dark:text-neutral-500" />
                 <span>
                   {formatTime(confirmation.appointment.scheduledAt)} (
                   {confirmation.appointment.durationMinutes} min)
@@ -383,7 +383,7 @@ export default function PublicBookingPage() {
               </div>
               {confirmation.appointment.provider && (
                 <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-gray-400" />
+                  <User className="w-5 h-5 text-gray-400 dark:text-neutral-500" />
                   <span>
                     {confirmation.appointment.provider.name}
                     {confirmation.appointment.provider.title &&
@@ -415,7 +415,7 @@ export default function PublicBookingPage() {
                   href={calendarLinks.google}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
                 >
                   Google
                 </a>
@@ -423,7 +423,7 @@ export default function PublicBookingPage() {
                   href={calendarLinks.outlook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
                 >
                   Outlook
                 </a>
@@ -439,7 +439,7 @@ export default function PublicBookingPage() {
                       location: confirmation.appointment.videoMeetingUrl || '',
                     })
                   }
-                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
                 >
                   Download .ics
                 </button>
@@ -451,7 +451,7 @@ export default function PublicBookingPage() {
             </p>
 
             {/* Manage Booking Link */}
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
               Need to reschedule or cancel?{' '}
               <a
                 href={`/booking/${slug}/manage?code=${confirmation.confirmationCode}`}
@@ -475,7 +475,7 @@ export default function PublicBookingPage() {
       }
     >
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white border-b border-gray-200 dark:border-neutral-700">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
             {bookingPage.logoUrl && (
@@ -486,18 +486,18 @@ export default function PublicBookingPage() {
               />
             )}
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-neutral-100">
                 {bookingPage.title}
               </h1>
               {bookingPage.config.practiceName && (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-neutral-400">
                   {bookingPage.config.practiceName}
                 </p>
               )}
             </div>
           </div>
           {bookingPage.description && (
-            <p className="mt-3 text-gray-600">{bookingPage.description}</p>
+            <p className="mt-3 text-gray-600 dark:text-neutral-300">{bookingPage.description}</p>
           )}
         </div>
       </header>
@@ -576,7 +576,7 @@ export default function PublicBookingPage() {
                             : undefined
                         }
                       >
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-gray-900 dark:text-neutral-100">
                           {type.name}
                         </div>
                         {type.description && (
@@ -584,7 +584,7 @@ export default function PublicBookingPage() {
                             {type.description}
                           </div>
                         )}
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600 dark:text-neutral-300">
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
                             {type.durationMinutes} min
@@ -638,16 +638,16 @@ export default function PublicBookingPage() {
                             {provider.name.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-gray-900 dark:text-neutral-100">
                               {provider.name}
                             </div>
                             {provider.title && (
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-gray-500 dark:text-neutral-400">
                                 {provider.title}
                               </div>
                             )}
                             {provider.specialty && (
-                              <div className="text-sm text-gray-400">
+                              <div className="text-sm text-gray-400 dark:text-neutral-500">
                                 {provider.specialty}
                               </div>
                             )}
@@ -673,14 +673,14 @@ export default function PublicBookingPage() {
                       }
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 dark:text-neutral-300">
                           <User className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-gray-900 dark:text-neutral-100">
                             Any Provider
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-neutral-400">
                             First available
                           </div>
                         </div>
@@ -714,19 +714,19 @@ export default function PublicBookingPage() {
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setStep('select')}
-                className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-1 text-gray-600 hover:text-gray-900 dark:text-neutral-100"
               >
                 <ChevronLeft className="w-5 h-5" />
                 Back
               </button>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
                 Select Date & Time
               </h2>
               <div className="w-16" />
             </div>
 
             {/* Week Navigation */}
-            <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+            <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200 dark:border-neutral-700">
               <button
                 onClick={() => {
                   const newStart = new Date(weekStart);
@@ -759,7 +759,7 @@ export default function PublicBookingPage() {
                     setWeekStart(newStart);
                   }
                 }}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:bg-neutral-800"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -785,7 +785,7 @@ export default function PublicBookingPage() {
                         {formatDate(date)}
                       </h3>
                       {slots.length === 0 ? (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-neutral-400">
                           No available times
                         </p>
                       ) : (
@@ -840,12 +840,12 @@ export default function PublicBookingPage() {
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setStep('datetime')}
-                className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-1 text-gray-600 hover:text-gray-900 dark:text-neutral-100"
               >
                 <ChevronLeft className="w-5 h-5" />
                 Back
               </button>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
                 Your Details
               </h2>
               <div className="w-16" />
@@ -854,7 +854,7 @@ export default function PublicBookingPage() {
             {/* Selected Appointment Summary */}
             {selectedSlot && (
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
+                <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-neutral-300">
                   <Calendar className="w-4 h-4" />
                   <span>
                     {new Date(selectedSlot.datetime).toLocaleDateString(

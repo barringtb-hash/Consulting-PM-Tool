@@ -193,10 +193,10 @@ export default function ExpenseDetailPage() {
     return (
       <div className="text-center py-12">
         <Receipt className="h-12 w-12 text-gray-300 mx-auto" />
-        <h2 className="mt-4 text-lg font-medium text-gray-900">
+        <h2 className="mt-4 text-lg font-medium text-gray-900 dark:text-neutral-100">
           Expense not found
         </h2>
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-gray-500 dark:text-neutral-400">
           The expense you&apos;re looking for doesn&apos;t exist.
         </p>
         <Button as={Link} to="/finance/expenses" className="mt-4">
@@ -223,7 +223,7 @@ export default function ExpenseDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
             {expense.description}
           </h1>
           <div className="flex items-center gap-3 mt-1">
@@ -232,7 +232,7 @@ export default function ExpenseDetailPage() {
             >
               {statusConfig.label}
             </span>
-            <span className="text-gray-500">
+            <span className="text-gray-500 dark:text-neutral-400">
               Created {formatDateTime(expense.createdAt)}
             </span>
           </div>
@@ -291,8 +291,8 @@ export default function ExpenseDetailPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Amount</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-neutral-400">Amount</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-neutral-100">
                   {formatCurrency(expense.amount, expense.currency)}
                 </p>
               </div>
@@ -311,8 +311,8 @@ export default function ExpenseDetailPage() {
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
-                  <dt className="text-sm text-gray-500">Date</dt>
-                  <dd className="font-medium text-gray-900">
+                  <dt className="text-sm text-gray-500 dark:text-neutral-400">Date</dt>
+                  <dd className="font-medium text-gray-900 dark:text-neutral-100">
                     {formatDate(expense.date)}
                   </dd>
                 </div>
@@ -321,7 +321,7 @@ export default function ExpenseDetailPage() {
               <div className="flex items-start gap-3">
                 <Tag className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
-                  <dt className="text-sm text-gray-500">Category</dt>
+                  <dt className="text-sm text-gray-500 dark:text-neutral-400">Category</dt>
                   <dd>
                     <span
                       className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium"
@@ -340,8 +340,8 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-start gap-3">
                   <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <dt className="text-sm text-gray-500">Vendor</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dt className="text-sm text-gray-500 dark:text-neutral-400">Vendor</dt>
+                    <dd className="font-medium text-gray-900 dark:text-neutral-100">
                       {expense.vendorName}
                     </dd>
                   </div>
@@ -352,8 +352,8 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-start gap-3">
                   <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <dt className="text-sm text-gray-500">Invoice Number</dt>
-                    <dd className="font-medium text-gray-900">
+                    <dt className="text-sm text-gray-500 dark:text-neutral-400">Invoice Number</dt>
+                    <dd className="font-medium text-gray-900 dark:text-neutral-100">
                       {expense.invoiceNumber}
                     </dd>
                   </div>
@@ -364,7 +364,7 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-start gap-3">
                   <Tag className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <dt className="text-sm text-gray-500">Tags</dt>
+                    <dt className="text-sm text-gray-500 dark:text-neutral-400">Tags</dt>
                     <dd className="flex flex-wrap gap-1 mt-1">
                       {expense.tags.map((tag: string, i: number) => (
                         <span
@@ -383,7 +383,7 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-start gap-3">
                   <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <dt className="text-sm text-gray-500">Notes</dt>
+                    <dt className="text-sm text-gray-500 dark:text-neutral-400">Notes</dt>
                     <dd className="text-gray-900 whitespace-pre-wrap">
                       {expense.notes}
                     </dd>
@@ -437,8 +437,8 @@ export default function ExpenseDetailPage() {
               <div className="flex items-start gap-3">
                 <User className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
-                  <dt className="text-sm text-gray-500">Owner</dt>
-                  <dd className="font-medium text-gray-900">
+                  <dt className="text-sm text-gray-500 dark:text-neutral-400">Owner</dt>
+                  <dd className="font-medium text-gray-900 dark:text-neutral-100">
                     {expense.owner.name}
                   </dd>
                 </div>
@@ -448,7 +448,7 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-start gap-3">
                   <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <dt className="text-sm text-gray-500">Account</dt>
+                    <dt className="text-sm text-gray-500 dark:text-neutral-400">Account</dt>
                     <dd>
                       <Link
                         to={`/crm/accounts/${expense.account.id}`}
@@ -465,7 +465,7 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-start gap-3">
                   <FolderKanban className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <dt className="text-sm text-gray-500">Project</dt>
+                    <dt className="text-sm text-gray-500 dark:text-neutral-400">Project</dt>
                     <dd>
                       <Link
                         to={`/projects/${expense.project.id}`}
@@ -482,7 +482,7 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-start gap-3">
                   <DollarSign className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <dt className="text-sm text-gray-500">Budget</dt>
+                    <dt className="text-sm text-gray-500 dark:text-neutral-400">Budget</dt>
                     <dd>
                       <Link
                         to={`/finance/budgets/${expense.budget.id}`}
@@ -505,11 +505,11 @@ export default function ExpenseDetailPage() {
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="rounded-full bg-gray-100 p-1.5">
-                  <Clock className="h-4 w-4 text-gray-500" />
+                  <Clock className="h-4 w-4 text-gray-500 dark:text-neutral-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Created</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm font-medium text-gray-900 dark:text-neutral-100">Created</p>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400">
                     {formatDateTime(expense.createdAt)}
                   </p>
                 </div>
@@ -518,13 +518,13 @@ export default function ExpenseDetailPage() {
               {expense.updatedAt !== expense.createdAt && (
                 <div className="flex items-start gap-3">
                   <div className="rounded-full bg-gray-100 p-1.5">
-                    <Edit className="h-4 w-4 text-gray-500" />
+                    <Edit className="h-4 w-4 text-gray-500 dark:text-neutral-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-neutral-100">
                       Last Updated
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-neutral-400">
                       {formatDateTime(expense.updatedAt)}
                     </p>
                   </div>
@@ -543,10 +543,10 @@ export default function ExpenseDetailPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-neutral-100">
                       {expense.status === 'REJECTED' ? 'Rejected' : 'Approved'}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-neutral-400">
                       {formatDateTime(expense.approvedAt)}
                     </p>
                   </div>
@@ -559,8 +559,8 @@ export default function ExpenseDetailPage() {
                     <CreditCard className="h-4 w-4 text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Paid</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-medium text-gray-900 dark:text-neutral-100">Paid</p>
+                    <p className="text-xs text-gray-500 dark:text-neutral-400">
                       {formatDateTime(expense.paidAt)}
                     </p>
                   </div>
@@ -578,7 +578,7 @@ export default function ExpenseDetailPage() {
         title="Reject Expense"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-neutral-300">
             Please provide a reason for rejecting this expense. This will be
             visible to the expense owner.
           </p>
@@ -614,7 +614,7 @@ export default function ExpenseDetailPage() {
         title="Delete Expense"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-neutral-300">
             Are you sure you want to delete this expense? This action cannot be
             undone.
           </p>

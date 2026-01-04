@@ -115,7 +115,7 @@ export function AdminUserEditPage() {
         <PageHeader title="Edit User" description="Update user information." />
         <Section>
           <Container maxWidth="md">
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-neutral-400">
               Loading user...
             </div>
           </Container>

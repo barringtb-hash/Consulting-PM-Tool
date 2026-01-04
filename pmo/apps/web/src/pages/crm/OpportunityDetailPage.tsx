@@ -151,7 +151,7 @@ function OpportunityDetailPage(): JSX.Element {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="container-padding py-8">
-          <p className="text-gray-500">Loading opportunity...</p>
+          <p className="text-gray-500 dark:text-neutral-400">Loading opportunity...</p>
         </div>
       </div>
     );
@@ -330,7 +330,7 @@ function OpportunityDetailPage(): JSX.Element {
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Amount</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Amount</div>
                 <div className="text-xl font-semibold">
                   {formatCurrency(opportunity.amount)}
                 </div>
@@ -343,7 +343,7 @@ function OpportunityDetailPage(): JSX.Element {
                 <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Weighted Value</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Weighted Value</div>
                 <div className="text-xl font-semibold">
                   {formatCurrency(opportunity.weightedAmount)}
                 </div>
@@ -356,7 +356,7 @@ function OpportunityDetailPage(): JSX.Element {
                 <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Expected Close</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Expected Close</div>
                 <div className="text-xl font-semibold">
                   {formatDate(opportunity.expectedCloseDate)}
                 </div>
@@ -369,7 +369,7 @@ function OpportunityDetailPage(): JSX.Element {
                 <Building2 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Activities</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Activities</div>
                 <div className="text-xl font-semibold">
                   {opportunity._count?.activities ?? 0}
                 </div>
@@ -508,7 +508,7 @@ function OpportunityDetailPage(): JSX.Element {
                 ) : (
                   <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Description
                       </dt>
                       <dd className="mt-1 text-gray-900 dark:text-gray-100">
@@ -516,19 +516,19 @@ function OpportunityDetailPage(): JSX.Element {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Amount
                       </dt>
                       <dd className="mt-1 flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-gray-400" />
+                        <DollarSign className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                         {formatCurrency(opportunity.amount)}
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-neutral-400">
                           ({opportunity.currency})
                         </span>
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Probability
                       </dt>
                       <dd className="mt-1">
@@ -538,33 +538,33 @@ function OpportunityDetailPage(): JSX.Element {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Expected Close
                       </dt>
                       <dd className="mt-1 flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <Calendar className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                         {formatDate(opportunity.expectedCloseDate)}
                       </dd>
                     </div>
                     {opportunity.actualCloseDate && (
                       <div>
-                        <dt className="text-sm font-medium text-gray-500">
+                        <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                           Actual Close
                         </dt>
                         <dd className="mt-1 flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <Calendar className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                           {formatDate(opportunity.actualCloseDate)}
                         </dd>
                       </div>
                     )}
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Lead Source
                       </dt>
                       <dd className="mt-1">{opportunity.leadSource || '-'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Created
                       </dt>
                       <dd className="mt-1">
@@ -573,18 +573,18 @@ function OpportunityDetailPage(): JSX.Element {
                     </div>
                     {opportunity.nextStep && (
                       <div className="md:col-span-2">
-                        <dt className="text-sm font-medium text-gray-500">
+                        <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                           Next Step
                         </dt>
                         <dd className="mt-1 flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4 text-gray-400" />
+                          <ArrowRight className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                           {opportunity.nextStep}
                         </dd>
                       </div>
                     )}
                     {isLost && opportunity.lostReason && (
                       <div className="md:col-span-2">
-                        <dt className="text-sm font-medium text-gray-500">
+                        <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                           Lost Reason
                         </dt>
                         <dd className="mt-1 text-red-600">
@@ -612,14 +612,14 @@ function OpportunityDetailPage(): JSX.Element {
                 </CardHeader>
                 <CardBody>
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                      <Building2 className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-800">
+                      <Building2 className="h-6 w-6 text-gray-600 dark:text-neutral-500" />
                     </div>
                     <div>
                       <div className="font-semibold text-lg">
                         {opportunity.account.name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 dark:text-neutral-400">
                         {opportunity.account.type}
                       </div>
                     </div>
@@ -635,12 +635,12 @@ function OpportunityDetailPage(): JSX.Element {
               </CardHeader>
               <CardBody>
                 {(opportunity._count?.contacts ?? 0) > 0 ? (
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 dark:text-neutral-400">
                     {opportunity._count?.contacts} contacts linked to this
                     opportunity.
                   </p>
                 ) : (
-                  <p className="text-gray-500">{EMPTY_STATES.noContacts}</p>
+                  <p className="text-gray-500 dark:text-neutral-400">{EMPTY_STATES.noContacts}</p>
                 )}
               </CardBody>
             </Card>
@@ -781,7 +781,7 @@ function OpportunityDetailPage(): JSX.Element {
               <CardTitle>Mark as Lost</CardTitle>
             </CardHeader>
             <CardBody className="space-y-4">
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-neutral-500">
                 Why was this opportunity lost?
               </p>
               <Textarea

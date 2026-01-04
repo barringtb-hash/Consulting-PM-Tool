@@ -242,7 +242,7 @@ function AccountDetailPage(): JSX.Element {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="container-padding py-8">
-          <p className="text-gray-500">Loading account...</p>
+          <p className="text-gray-500 dark:text-neutral-400">Loading account...</p>
         </div>
       </div>
     );
@@ -420,7 +420,7 @@ function AccountDetailPage(): JSX.Element {
                 <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Health Score</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Health Score</div>
                 <div className="text-xl font-semibold">
                   {account.healthScore}%
                 </div>
@@ -433,7 +433,7 @@ function AccountDetailPage(): JSX.Element {
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Annual Revenue</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Annual Revenue</div>
                 <div className="text-xl font-semibold">
                   {formatCurrency(account.annualRevenue)}
                 </div>
@@ -446,7 +446,7 @@ function AccountDetailPage(): JSX.Element {
                 <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Contacts</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Contacts</div>
                 <div className="text-xl font-semibold">
                   {account._count?.contacts ?? 0}
                 </div>
@@ -459,7 +459,7 @@ function AccountDetailPage(): JSX.Element {
                 <Building2 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <div className="text-sm text-gray-500">Opportunities</div>
+                <div className="text-sm text-gray-500 dark:text-neutral-400">Opportunities</div>
                 <div className="text-xl font-semibold">
                   {account._count?.opportunities ?? 0}
                 </div>
@@ -593,11 +593,11 @@ function AccountDetailPage(): JSX.Element {
                 ) : (
                   <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Website
                       </dt>
                       <dd className="mt-1 flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-gray-400" />
+                        <Globe className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                         {account.website ? (
                           <a
                             href={account.website}
@@ -608,27 +608,27 @@ function AccountDetailPage(): JSX.Element {
                             {account.website}
                           </a>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-400 dark:text-neutral-500">-</span>
                         )}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Phone
                       </dt>
                       <dd className="mt-1 flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-gray-400" />
+                        <Phone className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                         {account.phone ?? '-'}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Employee Count
                       </dt>
                       <dd className="mt-1">{account.employeeCount ?? '-'}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Annual Revenue
                       </dt>
                       <dd className="mt-1">
@@ -636,20 +636,20 @@ function AccountDetailPage(): JSX.Element {
                       </dd>
                     </div>
                     <div className="md:col-span-2">
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Billing Address
                       </dt>
                       <dd className="mt-1 flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <MapPin className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                         {formatAddress(account.billingAddress)}
                       </dd>
                     </div>
                     <div className="md:col-span-2">
-                      <dt className="text-sm font-medium text-gray-500">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-neutral-400">
                         Created
                       </dt>
                       <dd className="mt-1 flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <Calendar className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
                         {formatDate(account.createdAt)}
                       </dd>
                     </div>
@@ -672,21 +672,21 @@ function AccountDetailPage(): JSX.Element {
               </CardHeader>
               <CardBody>
                 {opportunitiesQuery.isLoading ? (
-                  <p className="text-gray-500">Loading opportunities...</p>
+                  <p className="text-gray-500 dark:text-neutral-400">Loading opportunities...</p>
                 ) : opportunities.length === 0 ? (
-                  <p className="text-gray-500">{EMPTY_STATES.opportunities}</p>
+                  <p className="text-gray-500 dark:text-neutral-400">{EMPTY_STATES.opportunities}</p>
                 ) : (
                   <div className="divide-y">
                     {opportunities.map((opp) => (
                       <Link
                         key={opp.id}
                         to={`/crm/opportunities/${opp.id}`}
-                        className="block py-3 hover:bg-gray-50 dark:hover:bg-gray-800 -mx-4 px-4 first:pt-0 last:pb-0"
+                        className="block py-3 hover:bg-gray-50 dark:hover:bg-neutral-800 -mx-4 px-4 first:pt-0 last:pb-0"
                       >
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="font-medium">{opp.name}</div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 dark:text-neutral-400">
                               {opp.stage?.name ?? 'No stage'} •{' '}
                               {opp.expectedCloseDate
                                 ? formatDate(opp.expectedCloseDate)
@@ -697,7 +697,7 @@ function AccountDetailPage(): JSX.Element {
                             <div className="font-semibold">
                               {formatCurrency(opp.amount)}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 dark:text-neutral-400">
                               {opp.probability}% probability
                             </div>
                           </div>
@@ -765,7 +765,7 @@ function AccountDetailPage(): JSX.Element {
                               {cta.title}
                             </div>
                             <div className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300">
                                 {cta.type.replace(/_/g, ' ')}
                               </span>
                               <span>•</span>
@@ -786,8 +786,8 @@ function AccountDetailPage(): JSX.Element {
                         </div>
                         {cta.dueDate && (
                           <div className="flex items-center gap-2 text-sm mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-600 dark:text-gray-400">
+                            <Clock className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
+                            <span className="text-gray-600 dark:text-neutral-500">
                               Due: {formatDate(cta.dueDate)}
                             </span>
                             {new Date(cta.dueDate) < new Date() && (
@@ -837,8 +837,8 @@ function AccountDetailPage(): JSX.Element {
                   </div>
                 ) : successPlans.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full mb-3">
-                      <Target className="h-6 w-6 text-gray-400" />
+                    <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-full mb-3">
+                      <Target className="h-6 w-6 text-gray-400 dark:text-neutral-500" />
                     </div>
                     <p className="font-medium text-gray-900 dark:text-gray-100">
                       No success plans yet
@@ -893,12 +893,12 @@ function AccountDetailPage(): JSX.Element {
                         </div>
                         <div className="mt-4">
                           <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="text-gray-500">Progress</span>
+                            <span className="text-gray-500 dark:text-neutral-400">Progress</span>
                             <span className="font-semibold text-gray-900 dark:text-gray-100">
                               {plan.progressPercent}%
                             </span>
                           </div>
-                          <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-2.5 bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all ${
                                 plan.progressPercent >= 75
@@ -1083,7 +1083,7 @@ function AccountDetailPage(): JSX.Element {
                 <CardTitle>Activity</CardTitle>
               </CardHeader>
               <CardBody>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 dark:text-neutral-400">
                   <div className="flex justify-between py-1">
                     <span>Total Activities</span>
                     <span className="font-medium">
