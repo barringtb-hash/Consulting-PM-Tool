@@ -6,7 +6,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Plus, Building2, Search, MoreHorizontal } from 'lucide-react';
+import { Plus, Building2, Search, MoreHorizontal, Archive } from 'lucide-react';
 
 import {
   useAccounts,
@@ -30,6 +30,7 @@ interface Filters {
   search: string;
   type: AccountType | '';
   industry: string;
+  includeArchived: boolean;
 }
 
 function getTypeVariant(
@@ -80,6 +81,7 @@ function AccountsPage(): JSX.Element {
     search: '',
     type: '',
     industry: '',
+    includeArchived: false,
   });
 
   const createAccount = useCreateAccount();
@@ -90,8 +92,9 @@ function AccountsPage(): JSX.Element {
       search: filters.search || undefined,
       type: filters.type || undefined,
       industry: filters.industry || undefined,
+      archived: filters.includeArchived ? undefined : false, // Only show non-archived by default
     }),
-    [filters.search, filters.type, filters.industry],
+    [filters.search, filters.type, filters.industry, filters.includeArchived],
   );
 
   const accountsQuery = useAccounts(filterParams);
@@ -244,6 +247,21 @@ function AccountsPage(): JSX.Element {
               <option value="CHURNED">Churned</option>
               <option value="OTHER">Other</option>
             </Select>
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-neutral-300 cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={filters.includeArchived}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    includeArchived: e.target.checked,
+                  }))
+                }
+                className="w-4 h-4 rounded border-gray-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500"
+              />
+              <Archive className="h-4 w-4" />
+              Include Archived
+            </label>
           </div>
         </Card>
 
@@ -255,7 +273,7 @@ function AccountsPage(): JSX.Element {
             </div>
           ) : accounts.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-neutral-400">
-              {filters.search || filters.type
+              {filters.search || filters.type || filters.includeArchived
                 ? 'No accounts match your filters'
                 : EMPTY_STATES.accounts}
             </div>
@@ -306,6 +324,12 @@ function AccountRow({ account, onDelete }: AccountRowProps): JSX.Element {
         <Badge variant={getTypeVariant(account.type)}>
           {formatType(account.type)}
         </Badge>
+        {account.archivedAt && (
+          <Badge variant="warning" className="flex items-center gap-1">
+            <Archive className="h-3 w-3" />
+            Archived
+          </Badge>
+        )}
         {account.annualRevenue && (
           <div className="text-sm text-gray-600 dark:text-neutral-500">
             {formatCurrency(account.annualRevenue)}
