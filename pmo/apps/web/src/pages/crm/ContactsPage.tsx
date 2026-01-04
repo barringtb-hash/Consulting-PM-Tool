@@ -132,29 +132,37 @@ function ContactsPage(): JSX.Element {
         }
       />
 
-      <div className="container-padding py-6 space-y-6">
+      <div className="page-content space-y-6">
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="p-4">
-              <div className="text-sm text-gray-500">Total Contacts</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                Total Contacts
+              </div>
               <div className="text-2xl font-semibold">{stats.total}</div>
             </Card>
             <Card className="p-4">
-              <div className="text-sm text-gray-500">New This Month</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                New This Month
+              </div>
               <div className="text-2xl font-semibold">
                 {stats.recentContacts}
               </div>
             </Card>
             <Card className="p-4">
-              <div className="text-sm text-gray-500">Customers</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                Customers
+              </div>
               <div className="text-2xl font-semibold">
                 {stats.byLifecycle.find((l) => l.lifecycle === 'CUSTOMER')
                   ?.count ?? 0}
               </div>
             </Card>
             <Card className="p-4">
-              <div className="text-sm text-gray-500">Leads</div>
+              <div className="text-sm text-gray-500 dark:text-neutral-400">
+                Leads
+              </div>
               <div className="text-2xl font-semibold">
                 {stats.byLifecycle.find((l) => l.lifecycle === 'LEAD')?.count ??
                   0}
@@ -167,7 +175,7 @@ function ContactsPage(): JSX.Element {
         <Card className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
               <Input
                 type="text"
                 placeholder="Search contacts..."
@@ -202,7 +210,7 @@ function ContactsPage(): JSX.Element {
 
         {/* Contacts List */}
         {contactsQuery.isLoading ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-neutral-400">
             Loading contacts...
           </div>
         ) : contacts.length === 0 ? (
@@ -227,8 +235,8 @@ function ContactsPage(): JSX.Element {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                      <User className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-800">
+                      <User className="h-5 w-5 text-gray-600 dark:text-neutral-500" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -253,7 +261,7 @@ function ContactsPage(): JSX.Element {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-neutral-400">
                     {contact.email && (
                       <span className="flex items-center gap-1">
                         <Mail className="h-4 w-4" />

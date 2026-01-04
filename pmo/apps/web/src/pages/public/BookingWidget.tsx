@@ -309,7 +309,7 @@ export function BookingWidget(): JSX.Element {
   // Loading state
   if (loadingConfig) {
     return (
-      <div className="flex items-center justify-center min-h-[300px] bg-white">
+      <div className="flex items-center justify-center min-h-[300px] bg-white dark:bg-neutral-800">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     );
@@ -319,7 +319,9 @@ export function BookingWidget(): JSX.Element {
   if (configError || !config) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] bg-white text-center p-4">
-        <p className="text-gray-600">Unable to load booking widget</p>
+        <p className="text-gray-600 dark:text-neutral-300">
+          Unable to load booking widget
+        </p>
       </div>
     );
   }
@@ -359,7 +361,7 @@ export function BookingWidget(): JSX.Element {
         </div>
 
         <div className="text-left space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-neutral-300">
             <Calendar className="w-4 h-4" />
             <span>
               {new Date(
@@ -371,7 +373,7 @@ export function BookingWidget(): JSX.Element {
               })}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-neutral-300">
             <Clock className="w-4 h-4" />
             <span>
               {formatTime(confirmation.appointment.scheduledAt)} (
@@ -379,7 +381,7 @@ export function BookingWidget(): JSX.Element {
             </span>
           </div>
           {confirmation.appointment.provider && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-neutral-300">
               <User className="w-4 h-4" />
               <span>{confirmation.appointment.provider.name}</span>
             </div>
@@ -402,13 +404,15 @@ export function BookingWidget(): JSX.Element {
 
         {/* Add to calendar buttons */}
         <div className="space-y-2">
-          <p className="text-xs text-gray-500">Add to Calendar</p>
+          <p className="text-xs text-gray-500 dark:text-neutral-400">
+            Add to Calendar
+          </p>
           <div className="flex gap-2 justify-center flex-wrap">
             <a
               href={calendarLinks.google}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 text-xs rounded border border-gray-300 hover:bg-gray-50"
+              className="px-3 py-1.5 text-xs rounded border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
             >
               Google
             </a>
@@ -416,7 +420,7 @@ export function BookingWidget(): JSX.Element {
               href={calendarLinks.outlook}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 text-xs rounded border border-gray-300 hover:bg-gray-50"
+              className="px-3 py-1.5 text-xs rounded border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
             >
               Outlook
             </a>
@@ -432,7 +436,7 @@ export function BookingWidget(): JSX.Element {
                   location: confirmation.appointment.videoMeetingUrl || '',
                 })
               }
-              className="px-3 py-1.5 text-xs rounded border border-gray-300 hover:bg-gray-50"
+              className="px-3 py-1.5 text-xs rounded border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
             >
               Download .ics
             </button>
@@ -440,7 +444,7 @@ export function BookingWidget(): JSX.Element {
         </div>
 
         {/* Manage booking link */}
-        <p className="mt-4 text-xs text-gray-500">
+        <p className="mt-4 text-xs text-gray-500 dark:text-neutral-400">
           Need to reschedule or cancel?{' '}
           <a
             href={`/booking/${slug}/manage?code=${confirmation.confirmationCode}`}
@@ -455,11 +459,13 @@ export function BookingWidget(): JSX.Element {
   }
 
   return (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-neutral-800">
       {/* Header */}
       {!hideHeader && (
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="font-semibold text-gray-900">{config.title}</h2>
+        <div className="p-4 border-b border-gray-200 dark:border-neutral-700">
+          <h2 className="font-semibold text-gray-900 dark:text-neutral-100">
+            {config.title}
+          </h2>
         </div>
       )}
 
@@ -477,7 +483,9 @@ export function BookingWidget(): JSX.Element {
         {/* Step 1: Select Service */}
         {step === 'service' && (
           <div className="space-y-3">
-            <h3 className="font-medium text-gray-900">Select a Service</h3>
+            <h3 className="font-medium text-gray-900 dark:text-neutral-100">
+              Select a Service
+            </h3>
             <div className="space-y-2">
               {config.appointmentTypes.map((type) => (
                 <button
@@ -494,8 +502,10 @@ export function BookingWidget(): JSX.Element {
                       : undefined
                   }
                 >
-                  <div className="font-medium text-gray-900">{type.name}</div>
-                  <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                  <div className="font-medium text-gray-900 dark:text-neutral-100">
+                    {type.name}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 dark:text-neutral-400">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {type.durationMinutes} min
@@ -519,12 +529,14 @@ export function BookingWidget(): JSX.Element {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setStep('service')}
-                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 dark:text-neutral-100"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Back
               </button>
-              <h3 className="font-medium text-gray-900">Select Time</h3>
+              <h3 className="font-medium text-gray-900 dark:text-neutral-100">
+                Select Time
+              </h3>
               <div className="w-12" />
             </div>
 
@@ -543,7 +555,7 @@ export function BookingWidget(): JSX.Element {
               </span>
               <button
                 onClick={() => setWeekOffset((w) => w + 1)}
-                className="p-1 rounded hover:bg-gray-200"
+                className="p-1 rounded hover:bg-gray-200 dark:bg-neutral-700"
                 disabled={
                   weekOffset >=
                   Math.floor((config.config.maxAdvanceBookingDays || 90) / 7)
@@ -613,18 +625,20 @@ export function BookingWidget(): JSX.Element {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setStep('time')}
-                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 dark:text-neutral-100"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Back
               </button>
-              <h3 className="font-medium text-gray-900">Your Details</h3>
+              <h3 className="font-medium text-gray-900 dark:text-neutral-100">
+                Your Details
+              </h3>
               <div className="w-12" />
             </div>
 
             {/* Summary */}
             <div className="bg-gray-50 rounded-lg p-3 text-sm">
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-neutral-300">
                 {new Date(selectedSlot.datetime).toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',
@@ -633,7 +647,7 @@ export function BookingWidget(): JSX.Element {
                 at {formatTime(selectedSlot.datetime)}
               </p>
               {selectedSlot.providerName && (
-                <p className="text-gray-500">
+                <p className="text-gray-500 dark:text-neutral-400">
                   with {selectedSlot.providerName}
                 </p>
               )}

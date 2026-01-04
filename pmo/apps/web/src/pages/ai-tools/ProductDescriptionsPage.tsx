@@ -449,7 +449,7 @@ function ProductDescriptionsPage(): JSX.Element {
         }
       />
 
-      <div className="container-padding py-6 space-y-6">
+      <div className="page-content space-y-6">
         {/* Configuration Selector */}
         <Card className="p-4">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">

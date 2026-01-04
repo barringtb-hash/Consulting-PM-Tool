@@ -148,6 +148,11 @@ router.post('/tasks', async (req: AuthenticatedRequest, res: Response) => {
     return;
   }
 
+  if (result.error === 'database_error') {
+    res.status(500).json({ error: 'Failed to create task. Please try again.' });
+    return;
+  }
+
   res.status(201).json({ task: result.task });
 });
 

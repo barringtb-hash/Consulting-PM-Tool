@@ -391,7 +391,7 @@ export function LeadsPage(): JSX.Element {
         }
       />
 
-      <main className="container-padding py-6 space-y-6">
+      <main className="page-content space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm p-4">

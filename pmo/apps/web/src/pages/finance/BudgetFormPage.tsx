@@ -175,10 +175,10 @@ export default function BudgetFormPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
             {isEditing ? 'Edit Budget' : 'New Budget'}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-neutral-400">
             {isEditing
               ? 'Update budget details'
               : 'Create a new spending budget'}
@@ -306,7 +306,7 @@ export default function BudgetFormPage() {
                   )}
                 </label>
                 <Input {...register('endDate')} type="date" />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
                   {selectedPeriod !== 'CUSTOM'
                     ? 'Optional - budget will repeat based on period'
                     : 'Required for custom period budgets'}
@@ -341,10 +341,10 @@ export default function BudgetFormPage() {
 
           {/* Associations */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
               Scope (Optional)
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
               Associate this budget with an account, project, or category to
               track spending automatically.
             </p>
@@ -423,7 +423,7 @@ export default function BudgetFormPage() {
 
           {/* Alert Settings */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
               Alert Settings
             </h2>
 
@@ -435,7 +435,7 @@ export default function BudgetFormPage() {
                 {...register('alertThresholds')}
                 placeholder="50, 75, 90, 100"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
                 Comma-separated percentages at which to trigger budget alerts
               </p>
             </div>
@@ -447,7 +447,10 @@ export default function BudgetFormPage() {
                 id="allowRollover"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <label htmlFor="allowRollover" className="text-sm text-gray-700">
+              <label
+                htmlFor="allowRollover"
+                className="text-sm text-gray-700 dark:text-neutral-300"
+              >
                 Allow rollover of unused budget to the next period
               </label>
             </div>

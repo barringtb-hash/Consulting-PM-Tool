@@ -179,6 +179,17 @@
     @apply px-4 md:px-6 lg:px-8;
   }
 
+  /* Page content container - max-width + padding + centering */
+  .page-content {
+    @apply px-4 md:px-6 lg:px-8 py-6 mx-auto;
+    max-width: 1600px;
+  }
+
+  /* Consistent card spacing for grids */
+  .card-grid {
+    @apply grid gap-4 md:gap-6;
+  }
+
   /* Text overflow utilities */
   .text-truncate {
     @apply overflow-hidden text-ellipsis whitespace-nowrap;

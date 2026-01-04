@@ -114,7 +114,7 @@ export default function IssueNewPage() {
         }
       />
 
-      <div className="container-padding py-6">
+      <div className="page-content">
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl">
           <Card className="p-6">
             <div className="space-y-6">

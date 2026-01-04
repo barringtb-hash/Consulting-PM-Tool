@@ -148,7 +148,7 @@ function MarketingContentPage(): JSX.Element {
         }
       />
 
-      <div className="container-padding py-6 space-y-6">
+      <div className="page-content space-y-6">
         {/* Filters */}
         <Card>
           <CardBody>

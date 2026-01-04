@@ -577,6 +577,6 @@ export const deleteLead = async (id: number) => {
   }
 
   return prisma.inboundLead.delete({
-    where: { id },
+    where: { id, tenantId },
   });
 };

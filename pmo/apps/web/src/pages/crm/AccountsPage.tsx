@@ -6,7 +6,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Plus, Building2, Search, MoreHorizontal } from 'lucide-react';
+import { Plus, Building2, Search, MoreHorizontal, Archive } from 'lucide-react';
 
 import {
   useAccounts,
@@ -30,6 +30,7 @@ interface Filters {
   search: string;
   type: AccountType | '';
   industry: string;
+  includeArchived: boolean;
 }
 
 function getTypeVariant(
@@ -80,6 +81,7 @@ function AccountsPage(): JSX.Element {
     search: '',
     type: '',
     industry: '',
+    includeArchived: false,
   });
 
   const createAccount = useCreateAccount();
@@ -90,8 +92,9 @@ function AccountsPage(): JSX.Element {
       search: filters.search || undefined,
       type: filters.type || undefined,
       industry: filters.industry || undefined,
+      archived: filters.includeArchived ? undefined : false, // Only show non-archived by default
     }),
-    [filters.search, filters.type, filters.industry],
+    [filters.search, filters.type, filters.industry, filters.includeArchived],
   );
 
   const accountsQuery = useAccounts(filterParams);
@@ -152,12 +155,12 @@ function AccountsPage(): JSX.Element {
         description="Manage your CRM accounts and companies"
       />
 
-      <div className="container-padding py-6 space-y-6">
+      <div className="page-content space-y-6">
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 Total Accounts
               </div>
               <div className="text-xl sm:text-2xl font-semibold">
@@ -165,7 +168,7 @@ function AccountsPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 Customers
               </div>
               <div className="text-xl sm:text-2xl font-semibold text-green-600">
@@ -173,7 +176,7 @@ function AccountsPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 Prospects
               </div>
               <div className="text-xl sm:text-2xl font-semibold text-blue-600">
@@ -181,7 +184,7 @@ function AccountsPage(): JSX.Element {
               </div>
             </Card>
             <Card className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-500 leading-tight">
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 leading-tight">
                 At Risk
               </div>
               <div className="text-xl sm:text-2xl font-semibold text-red-600">
@@ -216,7 +219,7 @@ function AccountsPage(): JSX.Element {
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
                 <Input
                   value={filters.search}
                   onChange={(e) =>
@@ -244,18 +247,33 @@ function AccountsPage(): JSX.Element {
               <option value="CHURNED">Churned</option>
               <option value="OTHER">Other</option>
             </Select>
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-neutral-300 cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={filters.includeArchived}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    includeArchived: e.target.checked,
+                  }))
+                }
+                className="w-4 h-4 rounded border-gray-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500"
+              />
+              <Archive className="h-4 w-4" />
+              Include Archived
+            </label>
           </div>
         </Card>
 
         {/* Accounts List */}
         <Card>
           {accountsQuery.isLoading ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-500 dark:text-neutral-400">
               Loading accounts...
             </div>
           ) : accounts.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              {filters.search || filters.type
+            <div className="p-8 text-center text-gray-500 dark:text-neutral-400">
+              {filters.search || filters.type || filters.includeArchived
                 ? 'No accounts match your filters'
                 : EMPTY_STATES.accounts}
             </div>
@@ -283,19 +301,19 @@ interface AccountRowProps {
 
 function AccountRow({ account, onDelete }: AccountRowProps): JSX.Element {
   return (
-    <div className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800">
+    <div className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-neutral-800">
       <Link
         to={`/crm/accounts/${account.id}`}
         className="flex items-center gap-4 flex-1"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-          <Building2 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-800">
+          <Building2 className="h-5 w-5 text-gray-600 dark:text-neutral-500" />
         </div>
         <div>
-          <div className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400">
+          <div className="font-medium text-gray-900 dark:text-neutral-100 hover:text-blue-600 dark:hover:text-blue-400">
             {account.name}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-neutral-400">
             {account.industry ?? 'No industry'} •{' '}
             {account._count?.contacts ?? 0} contacts •{' '}
             {account._count?.opportunities ?? 0} opportunities
@@ -306,12 +324,18 @@ function AccountRow({ account, onDelete }: AccountRowProps): JSX.Element {
         <Badge variant={getTypeVariant(account.type)}>
           {formatType(account.type)}
         </Badge>
+        {account.archivedAt && (
+          <Badge variant="warning" className="flex items-center gap-1">
+            <Archive className="h-3 w-3" />
+            Archived
+          </Badge>
+        )}
         {account.annualRevenue && (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-gray-600 dark:text-neutral-500">
             {formatCurrency(account.annualRevenue)}
           </div>
         )}
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 dark:text-neutral-400">
           Created {formatDate(account.createdAt)}
         </div>
         <Button variant="ghost" size="sm" onClick={onDelete}>

@@ -92,7 +92,7 @@ function DashboardPage(): JSX.Element {
         description="Welcome to your AI Consulting PMO workspace. Track your clients, projects, tasks, and AI assets."
       />
 
-      <div className="container-padding py-6">
+      <div className="page-content">
         <DashboardPluginProvider>
           <DashboardContent />
         </DashboardPluginProvider>

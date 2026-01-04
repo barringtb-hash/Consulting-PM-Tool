@@ -218,10 +218,10 @@ export default function ExpenseFormPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
             {isEditing ? 'Edit Expense' : 'New Expense'}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-neutral-400">
             {isEditing
               ? 'Update expense details'
               : 'Create a new expense record'}
@@ -349,7 +349,7 @@ export default function ExpenseFormPage() {
               {!isEditing && showSuggestions && (
                 <div className="mt-2">
                   {suggestionsLoading && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-neutral-400">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Getting AI suggestions...</span>
                     </div>
@@ -357,7 +357,7 @@ export default function ExpenseFormPage() {
                   {suggestionsData?.suggestions &&
                     suggestionsData.suggestions.length > 0 && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-neutral-300">
                           <Sparkles className="h-4 w-4 text-purple-500" />
                           <span>
                             AI Suggestions
@@ -396,7 +396,7 @@ export default function ExpenseFormPage() {
                                     <Check className="h-3 w-3" />
                                   )}
                                   <span>{suggestion.categoryName}</span>
-                                  <span className="text-xs text-gray-400">
+                                  <span className="text-xs text-gray-400 dark:text-neutral-500">
                                     {Math.round(suggestion.confidence * 100)}%
                                   </span>
                                 </button>
@@ -418,7 +418,7 @@ export default function ExpenseFormPage() {
 
           {/* Associations */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
               Associations (Optional)
             </h2>
 
@@ -500,7 +500,7 @@ export default function ExpenseFormPage() {
 
           {/* Vendor Info */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
               Vendor Information (Optional)
             </h2>
 
@@ -529,7 +529,7 @@ export default function ExpenseFormPage() {
 
           {/* Additional Info */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
               Additional Information
             </h2>
 

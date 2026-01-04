@@ -169,10 +169,10 @@ function OpportunityNewPage(): JSX.Element {
         }
       />
 
-      <div className="container-padding py-6">
+      <div className="page-content">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400 dark:text-neutral-500" />
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="max-w-3xl">

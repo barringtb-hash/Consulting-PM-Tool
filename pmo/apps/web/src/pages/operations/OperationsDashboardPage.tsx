@@ -175,14 +175,14 @@ export function OperationsDashboardPage(): JSX.Element {
     alertLoading;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="page-content space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
             Operations Dashboard
           </h1>
-          <p className="text-neutral-500 mt-1">
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
             AI usage, infrastructure health, and system monitoring
           </p>
         </div>

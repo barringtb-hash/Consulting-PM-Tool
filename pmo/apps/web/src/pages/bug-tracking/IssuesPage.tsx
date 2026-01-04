@@ -75,7 +75,10 @@ const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
       label: 'Improvement',
       icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
     },
-    TASK: { label: 'Task', icon: <Clock className="h-4 w-4 text-gray-500" /> },
+    TASK: {
+      label: 'Task',
+      icon: <Clock className="h-4 w-4 text-gray-500 dark:text-neutral-400" />,
+    },
   };
 
 function IssueRow({ issue }: { issue: Issue }) {
@@ -89,7 +92,7 @@ function IssueRow({ issue }: { issue: Issue }) {
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {TYPE_CONFIG[issue.type]?.icon}
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-sm text-gray-500 dark:text-neutral-500">
             #{issue.id}
           </span>
         </div>
@@ -140,7 +143,9 @@ function IssueRow({ issue }: { issue: Issue }) {
             </span>
           )}
           {!issue.tenant && !issue.module && (
-            <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+            <span className="text-xs text-gray-400 dark:text-neutral-400">
+              -
+            </span>
           )}
         </div>
       </td>
@@ -155,16 +160,16 @@ function IssueRow({ issue }: { issue: Issue }) {
             </span>
           </div>
         ) : (
-          <span className="text-sm text-gray-400 dark:text-gray-500">
+          <span className="text-sm text-gray-400 dark:text-neutral-400">
             Unassigned
           </span>
         )}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+      <td className="px-4 py-3 text-sm text-gray-500 dark:text-neutral-500">
         {new Date(issue.createdAt).toLocaleDateString()}
       </td>
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-neutral-500">
           {issue._count.comments > 0 && (
             <span className="flex items-center gap-1">
               <span>💬</span>
@@ -236,14 +241,14 @@ export default function IssuesPage() {
         }
       />
 
-      <div className="container-padding py-6 space-y-6">
+      <div className="page-content space-y-6">
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-neutral-500">
                     Open Issues
                   </p>
                   <p className="text-2xl font-semibold dark:text-white">
@@ -256,7 +261,7 @@ export default function IssuesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-neutral-500">
                     Created Today
                   </p>
                   <p className="text-2xl font-semibold dark:text-white">
@@ -269,7 +274,7 @@ export default function IssuesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-neutral-500">
                     Resolved Today
                   </p>
                   <p className="text-2xl font-semibold dark:text-white">
@@ -282,7 +287,7 @@ export default function IssuesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-neutral-500">
                     Avg Resolution
                   </p>
                   <p className="text-2xl font-semibold dark:text-white">
@@ -302,7 +307,7 @@ export default function IssuesPage() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-400" />
                 <Input
                   placeholder="Search issues..."
                   value={search}
@@ -313,7 +318,7 @@ export default function IssuesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <Filter className="h-4 w-4 text-gray-500 dark:text-neutral-500" />
 
               {/* Status filter */}
               <select
@@ -402,7 +407,7 @@ export default function IssuesPage() {
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                      className="px-4 py-8 text-center text-gray-500 dark:text-neutral-500"
                     >
                       Loading issues...
                     </td>
@@ -411,7 +416,7 @@ export default function IssuesPage() {
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                      className="px-4 py-8 text-center text-gray-500 dark:text-neutral-500"
                     >
                       No issues found.{' '}
                       <Link
@@ -434,7 +439,7 @@ export default function IssuesPage() {
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t dark:border-neutral-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500 dark:text-neutral-500">
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
                 {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
                 of {pagination.total} issues
@@ -448,7 +453,7 @@ export default function IssuesPage() {
                 >
                   Previous
                 </Button>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-gray-500 dark:text-neutral-500">
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <Button

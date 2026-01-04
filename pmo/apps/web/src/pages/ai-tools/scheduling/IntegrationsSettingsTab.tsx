@@ -285,7 +285,7 @@ export function IntegrationsSettingsTab({
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Calendar Integrations</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-neutral-300">
               Sync appointments with your calendar to keep everything organized.
             </p>
           </div>
@@ -301,7 +301,7 @@ export function IntegrationsSettingsTab({
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-neutral-800 flex-shrink-0">
                         {integration.platform === 'GOOGLE' ? (
                           <span className="text-lg font-bold text-red-500">
                             G
@@ -322,7 +322,7 @@ export function IntegrationsSettingsTab({
                           {integration.calendarId}
                         </p>
                         {integration.lastSyncAt && (
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-400 dark:text-neutral-500">
                             Last synced:{' '}
                             {new Date(integration.lastSyncAt).toLocaleString()}
                           </p>
@@ -362,34 +362,34 @@ export function IntegrationsSettingsTab({
               <button
                 onClick={() => connectCalendarMutation.mutate('GOOGLE')}
                 disabled={connectCalendarMutation.isPending}
-                className="flex items-center gap-3 rounded-lg border p-4 hover:bg-gray-50"
+                className="flex items-center gap-3 rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-neutral-700"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
                   <span className="text-lg font-bold text-red-500">G</span>
                 </div>
                 <div className="text-left">
                   <p className="font-medium">Google Calendar</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-neutral-400">
                     Sync with Google Calendar
                   </p>
                 </div>
-                <ExternalLink className="ml-auto h-4 w-4 text-gray-400" />
+                <ExternalLink className="ml-auto h-4 w-4 text-gray-400 dark:text-neutral-500" />
               </button>
               <button
                 onClick={() => connectCalendarMutation.mutate('OUTLOOK')}
                 disabled={connectCalendarMutation.isPending}
-                className="flex items-center gap-3 rounded-lg border p-4 hover:bg-gray-50"
+                className="flex items-center gap-3 rounded-lg border p-4 hover:bg-gray-50 dark:hover:bg-neutral-700"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
                   <span className="text-lg font-bold text-blue-500">O</span>
                 </div>
                 <div className="text-left">
                   <p className="font-medium">Outlook Calendar</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-neutral-400">
                     Sync with Microsoft Outlook
                   </p>
                 </div>
-                <ExternalLink className="ml-auto h-4 w-4 text-gray-400" />
+                <ExternalLink className="ml-auto h-4 w-4 text-gray-400 dark:text-neutral-500" />
               </button>
             </div>
           </Card>
@@ -401,7 +401,7 @@ export function IntegrationsSettingsTab({
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Video Conferencing</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-neutral-300">
               Automatically create video meetings for appointments.
             </p>
           </div>
@@ -428,7 +428,7 @@ export function IntegrationsSettingsTab({
                               ? 'Google Meet'
                               : 'Microsoft Teams'}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-neutral-400">
                           Connected{' '}
                           {new Date(config.createdAt).toLocaleDateString()}
                         </p>
@@ -449,7 +449,7 @@ export function IntegrationsSettingsTab({
                         onClick={() => setSelectedVideoConfig(config)}
                         title="Configure settings"
                       >
-                        <Settings className="h-4 w-4 text-gray-500" />
+                        <Settings className="h-4 w-4 text-gray-500 dark:text-neutral-400" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -524,7 +524,7 @@ export function IntegrationsSettingsTab({
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Payment Settings</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-neutral-300">
               Configure payment collection for appointments.
             </p>
           </div>
@@ -539,7 +539,7 @@ export function IntegrationsSettingsTab({
                   </div>
                   <div>
                     <p className="font-medium">Stripe</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-neutral-400">
                       {paymentConfig?.stripeOnboarded
                         ? 'Connected and ready to accept payments'
                         : 'Not connected'}
@@ -599,7 +599,9 @@ export function IntegrationsSettingsTab({
                       }`}
                     >
                       <p className="font-medium">{option.label}</p>
-                      <p className="text-sm text-gray-500">{option.desc}</p>
+                      <p className="text-sm text-gray-500 dark:text-neutral-400">
+                        {option.desc}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -634,7 +636,7 @@ export function IntegrationsSettingsTab({
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold">Notification Settings</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-neutral-300">
               Configure how and when notifications are sent.
             </p>
           </div>
@@ -649,7 +651,7 @@ export function IntegrationsSettingsTab({
                   </div>
                   <div>
                     <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-neutral-400">
                       Booking confirmations and reminders
                     </p>
                   </div>
@@ -668,7 +670,7 @@ export function IntegrationsSettingsTab({
                   </div>
                   <div>
                     <p className="font-medium">SMS Notifications</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-neutral-400">
                       Text message reminders (requires Twilio)
                     </p>
                   </div>
@@ -684,7 +686,7 @@ export function IntegrationsSettingsTab({
                 <label className="mb-2 block text-sm font-medium">
                   Reminder Timing
                 </label>
-                <p className="mb-3 text-sm text-gray-500">
+                <p className="mb-3 text-sm text-gray-500 dark:text-neutral-400">
                   Send reminders before appointments
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -705,7 +707,7 @@ export function IntegrationsSettingsTab({
         videoQuery.isLoading ||
         paymentQuery.isLoading) && (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400 dark:text-neutral-500" />
         </div>
       )}
     </div>

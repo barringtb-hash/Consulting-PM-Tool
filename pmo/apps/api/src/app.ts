@@ -37,6 +37,7 @@ import clientsRouter from './routes/clients';
 // contactsRouter removed - legacy PMO contacts replaced by CRMContact
 import documentsRouter from './routes/documents';
 import projectDocumentsRouter from './routes/projectDocuments';
+import projectDocumentsNestedRouter from './routes/projectDocumentsNested';
 import healthRouter from './routes/health';
 import leadsRouter from './routes/leads';
 import publicLeadsRouter from './routes/public-leads';
@@ -309,28 +310,29 @@ export function createApp(): express.Express {
   // Captures 5xx errors and 404s on config endpoints (indicates misconfiguration)
   app.use(apiErrorCaptureMiddleware);
 
-  // ============ BUG TRACKING MODULE ============
-  // Bug tracking, issue management, and error monitoring
-  // CRITICAL: Must be registered BEFORE tasksRouter, milestonesRouter, meetingRouter,
-  // and projectDocumentsRouter because those routers have router.use(requireAuth) and
-  // are mounted under /api, intercepting ALL /api/* requests (even ones not matching
-  // their routes), which would block unauthenticated access to /api/bug-tracking/external/*.
-  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
-
   // ============ CORE ROUTES (always enabled) ============
+  // IMPORTANT: Public routes must be registered BEFORE protected routes
+  // that use router.use(requireAuth), otherwise the auth middleware
+  // will intercept requests before they reach public endpoints.
+
+  // Public routes (no auth required)
   app.use('/api', authRouter);
+  app.use('/api', healthRouter); // Health check endpoint at /api/healthz
+  app.use('/api', featureFlagsRouter); // Module discovery & feature flags API (public endpoints)
+
+  // Protected routes (require authentication)
   app.use('/api/clients', clientsRouter);
   // /api/contacts removed - legacy PMO contacts replaced by CRMContact
   app.use('/api/documents', documentsRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api/project-documents', projectDocumentsRouter); // Project document templates
-  app.use('/api', projectDocumentsRouter); // Also registers /api/projects/:projectId/documents
+  // Note: projectDocumentsRouter also defines /projects/:projectId/documents routes internally
+  // These are mounted at /api via a separate import below to avoid the /:id route conflict
+  app.use('/api', projectDocumentsNestedRouter); // Only /projects/:projectId/documents routes
   app.use('/api', tasksRouter);
   app.use('/api', milestonesRouter);
   app.use('/api', meetingRouter);
-  app.use('/api', featureFlagsRouter); // Module discovery & feature flags API
   app.use('/api/user', userPreferencesRouter); // User preferences API
-  app.use('/api', healthRouter); // Health check endpoint at /api/healthz
 
   // ============ TENANT ROUTES ============
   // Multi-tenant management routes

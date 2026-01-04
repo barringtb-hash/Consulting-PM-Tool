@@ -83,7 +83,7 @@ const SCORE_LEVEL_ICONS: Record<string, JSX.Element> = {
   HOT: <Flame className="h-4 w-4 text-red-500" />,
   WARM: <Thermometer className="h-4 w-4 text-orange-500" />,
   COLD: <Snowflake className="h-4 w-4 text-blue-500" />,
-  DEAD: <Snowflake className="h-4 w-4 text-gray-400" />,
+  DEAD: <Snowflake className="h-4 w-4 text-gray-400 dark:text-neutral-500" />,
 };
 
 // API functions
@@ -346,7 +346,7 @@ function LeadScoringPage(): JSX.Element {
         }
       />
 
-      <div className="container-padding py-6 space-y-6">
+      <div className="page-content space-y-6">
         {/* Configuration Selector */}
         <Card>
           <CardBody>

@@ -246,10 +246,10 @@ export default function RecurringCostFormPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
             {isEditing ? 'Edit Recurring Cost' : 'New Recurring Cost'}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-neutral-400">
             {isEditing
               ? 'Update recurring cost details'
               : 'Add a new subscription or recurring expense'}
@@ -386,7 +386,9 @@ export default function RecurringCostFormPage() {
 
           {/* Schedule */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">Schedule</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
+              Schedule
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -410,7 +412,7 @@ export default function RecurringCostFormPage() {
                   End Date
                 </label>
                 <Input {...register('endDate')} type="date" />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
                   Leave empty for ongoing costs
                 </p>
               </div>
@@ -459,7 +461,7 @@ export default function RecurringCostFormPage() {
 
           {/* Associations */}
           <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
               Associations (Optional)
             </h2>
 

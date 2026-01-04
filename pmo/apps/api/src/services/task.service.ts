@@ -83,9 +83,12 @@ const validateAssignees = async (
 ): Promise<number[]> => {
   if (assigneeIds.length === 0) return [];
 
-  // Get the project with owner and members
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  // Get the project with owner and members (with tenant isolation)
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, tenantId },
     select: {
       ownerId: true,
       members: { select: { userId: true } },
@@ -336,51 +339,56 @@ export const createTask = async (ownerId: number, data: TaskCreateData) => {
   // Extract assigneeIds from data before creating task
   const { assigneeIds, ...taskData } = data;
 
-  const task = await prisma.task.create({
-    data: {
-      // Required fields - must be explicit for TypeScript
-      title: taskData.title,
-      projectId: taskData.projectId,
-      ownerId,
-      tenantId,
-      // Optional fields - only include if defined
-      ...(taskData.description !== undefined && {
-        description: taskData.description,
-      }),
-      ...(taskData.status !== undefined && { status: taskData.status }),
-      ...(taskData.priority !== undefined && { priority: taskData.priority }),
-      ...(taskData.milestoneId !== undefined && {
-        milestoneId: taskData.milestoneId,
-      }),
-      ...(taskData.dueDate !== undefined && { dueDate: taskData.dueDate }),
-      ...(taskData.parentTaskId !== undefined && {
-        parentTaskId: taskData.parentTaskId,
-      }),
-      ...(taskData.sourceMeetingId !== undefined && {
-        sourceMeetingId: taskData.sourceMeetingId,
-      }),
-      // Create assignee relationships if provided
-      ...(assigneeIds && assigneeIds.length > 0
-        ? {
-            assignees: {
-              create: assigneeIds.map((userId) => ({
-                userId,
-                assignedById: ownerId,
-              })),
-            },
-          }
-        : {}),
-    },
-    include: {
-      assignees: {
-        include: {
-          user: { select: { id: true, name: true, email: true } },
+  try {
+    const task = await prisma.task.create({
+      data: {
+        // Required fields - must be explicit for TypeScript
+        title: taskData.title,
+        projectId: taskData.projectId,
+        ownerId,
+        tenantId,
+        // Optional fields - only include if defined
+        ...(taskData.description !== undefined && {
+          description: taskData.description,
+        }),
+        ...(taskData.status !== undefined && { status: taskData.status }),
+        ...(taskData.priority !== undefined && { priority: taskData.priority }),
+        ...(taskData.milestoneId !== undefined && {
+          milestoneId: taskData.milestoneId,
+        }),
+        ...(taskData.dueDate !== undefined && { dueDate: taskData.dueDate }),
+        ...(taskData.parentTaskId !== undefined && {
+          parentTaskId: taskData.parentTaskId,
+        }),
+        ...(taskData.sourceMeetingId !== undefined && {
+          sourceMeetingId: taskData.sourceMeetingId,
+        }),
+        // Create assignee relationships if provided
+        ...(assigneeIds && assigneeIds.length > 0
+          ? {
+              assignees: {
+                create: assigneeIds.map((userId) => ({
+                  userId,
+                  assignedById: ownerId,
+                })),
+              },
+            }
+          : {}),
+      },
+      include: {
+        assignees: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
         },
       },
-    },
-  });
+    });
 
-  return { task } as const;
+    return { task } as const;
+  } catch (error) {
+    console.error('Task creation error:', error);
+    return { error: 'database_error' as const };
+  }
 };
 
 /**

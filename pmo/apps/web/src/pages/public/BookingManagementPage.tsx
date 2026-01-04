@@ -294,7 +294,7 @@ export function BookingManagementPage(): JSX.Element {
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
           <div className="text-center mb-6">
             <Calendar className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
               Manage Your Appointment
             </h1>
             <p className="text-gray-600 mt-2">
@@ -365,13 +365,13 @@ export function BookingManagementPage(): JSX.Element {
           </h1>
           {appointment && (
             <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-gray-900 dark:text-neutral-100">
                 {appointment.appointmentType?.name || 'Appointment'}
               </p>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-neutral-300">
                 {formatEventDate(appointment.scheduledAt)}
               </p>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-neutral-300">
                 {formatEventTime(appointment.scheduledAt)} (
                 {appointment.durationMinutes} min)
               </p>
@@ -432,7 +432,7 @@ export function BookingManagementPage(): JSX.Element {
               </div>
             )}
             {isPast && !isCancelled && (
-              <div className="bg-gray-100 px-6 py-3 flex items-center gap-2 text-gray-700">
+              <div className="bg-gray-100 px-6 py-3 flex items-center gap-2 text-gray-700 dark:text-neutral-300">
                 <Clock className="w-5 h-5" />
                 <span className="font-medium">This appointment has passed</span>
               </div>
@@ -462,12 +462,12 @@ export function BookingManagementPage(): JSX.Element {
 
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <Calendar className="w-5 h-5 text-gray-400 dark:text-neutral-500" />
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-900 dark:text-neutral-100">
                       {formatEventDate(appointment.scheduledAt)}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-neutral-400">
                       {formatEventTime(appointment.scheduledAt)} (
                       {appointment.durationMinutes} min)
                     </p>
@@ -476,13 +476,13 @@ export function BookingManagementPage(): JSX.Element {
 
                 {appointment.provider && (
                   <div className="flex items-center gap-4">
-                    <User className="w-5 h-5 text-gray-400" />
+                    <User className="w-5 h-5 text-gray-400 dark:text-neutral-500" />
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 dark:text-neutral-100">
                         {appointment.provider.name}
                       </p>
                       {appointment.provider.title && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-neutral-400">
                           {appointment.provider.title}
                         </p>
                       )}
@@ -524,7 +524,7 @@ export function BookingManagementPage(): JSX.Element {
                       href={calendarLinks.google}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                      className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
                     >
                       Google
                     </a>
@@ -532,7 +532,7 @@ export function BookingManagementPage(): JSX.Element {
                       href={calendarLinks.outlook}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                      className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
                     >
                       Outlook
                     </a>
@@ -547,7 +547,7 @@ export function BookingManagementPage(): JSX.Element {
                           location: appointment.videoMeetingUrl || '',
                         })
                       }
-                      className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+                      className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
                     >
                       Download .ics
                     </button>
@@ -591,11 +591,11 @@ export function BookingManagementPage(): JSX.Element {
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={() => setView('details')}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:bg-neutral-800"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-neutral-100">
                 Reschedule Appointment
               </h1>
             </div>
@@ -603,7 +603,7 @@ export function BookingManagementPage(): JSX.Element {
             {/* Current appointment */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-gray-500 mb-1">Currently scheduled</p>
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-gray-900 dark:text-neutral-100">
                 {formatEventDate(appointment.scheduledAt)} at{' '}
                 {formatEventTime(appointment.scheduledAt)}
               </p>
@@ -624,7 +624,7 @@ export function BookingManagementPage(): JSX.Element {
               </span>
               <button
                 onClick={() => setWeekOffset((w) => w + 1)}
-                className="p-2 rounded-lg hover:bg-gray-200"
+                className="p-2 rounded-lg hover:bg-gray-200 dark:bg-neutral-700"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -721,11 +721,11 @@ export function BookingManagementPage(): JSX.Element {
           <div className="flex items-center gap-3 mb-6">
             <button
               onClick={() => setView('details')}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:bg-neutral-800"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-neutral-100">
               Cancel Appointment
             </h1>
           </div>
@@ -744,15 +744,15 @@ export function BookingManagementPage(): JSX.Element {
           </div>
 
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="font-medium text-gray-900">
+            <p className="font-medium text-gray-900 dark:text-neutral-100">
               {appointment.appointmentType?.name}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-neutral-400">
               {formatEventDate(appointment.scheduledAt)} at{' '}
               {formatEventTime(appointment.scheduledAt)}
             </p>
             {appointment.provider && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-neutral-400">
                 with {appointment.provider.name}
               </p>
             )}
@@ -792,7 +792,7 @@ export function BookingManagementPage(): JSX.Element {
             </button>
             <button
               onClick={() => setView('details')}
-              className="w-full px-4 py-3 rounded-lg font-medium border border-gray-300 hover:bg-gray-50"
+              className="w-full px-4 py-3 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700"
             >
               Keep My Appointment
             </button>

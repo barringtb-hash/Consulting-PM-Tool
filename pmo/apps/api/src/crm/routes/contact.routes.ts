@@ -40,15 +40,25 @@ router.use(requireAuth, tenantMiddleware);
 // VALIDATION SCHEMAS
 // ============================================================================
 
+// Helper to transform empty strings to null for optional fields
+const emptyToNull = (val: string | null | undefined) =>
+  val === '' ? null : val;
+
 const createContactSchema = z.object({
   accountId: z.number().int().positive().optional(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
-  email: z.string().email().max(255).optional().nullable(),
-  phone: z.string().max(50).optional().nullable(),
-  mobile: z.string().max(50).optional().nullable(),
-  jobTitle: z.string().max(100).optional().nullable(),
-  department: z.string().max(100).optional().nullable(),
+  email: z
+    .string()
+    .max(255)
+    .optional()
+    .nullable()
+    .transform(emptyToNull)
+    .pipe(z.string().email().optional().nullable()),
+  phone: z.string().max(50).optional().nullable().transform(emptyToNull),
+  mobile: z.string().max(50).optional().nullable().transform(emptyToNull),
+  jobTitle: z.string().max(100).optional().nullable().transform(emptyToNull),
+  department: z.string().max(100).optional().nullable().transform(emptyToNull),
   lifecycle: z
     .enum([
       'LEAD',
@@ -77,8 +87,20 @@ const createContactSchema = z.object({
     .nullable(),
   isPrimary: z.boolean().optional(),
   doNotContact: z.boolean().optional(),
-  linkedinUrl: z.string().url().max(500).optional().nullable(),
-  twitterUrl: z.string().url().max(500).optional().nullable(),
+  linkedinUrl: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .transform(emptyToNull)
+    .pipe(z.string().url().optional().nullable()),
+  twitterUrl: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .transform(emptyToNull)
+    .pipe(z.string().url().optional().nullable()),
   address: z
     .object({
       street: z.string().optional(),
