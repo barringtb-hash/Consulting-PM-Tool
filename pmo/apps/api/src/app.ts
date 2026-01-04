@@ -309,14 +309,6 @@ export function createApp(): express.Express {
   // Captures 5xx errors and 404s on config endpoints (indicates misconfiguration)
   app.use(apiErrorCaptureMiddleware);
 
-  // ============ BUG TRACKING MODULE ============
-  // Bug tracking, issue management, and error monitoring
-  // CRITICAL: Must be registered BEFORE tasksRouter, milestonesRouter, meetingRouter,
-  // and projectDocumentsRouter because those routers have router.use(requireAuth) and
-  // are mounted under /api, intercepting ALL /api/* requests (even ones not matching
-  // their routes), which would block unauthenticated access to /api/bug-tracking/external/*.
-  app.use('/api', requireModule('bugTracking'), bugTrackingRouter);
-
   // ============ CORE ROUTES (always enabled) ============
   app.use('/api', authRouter);
   app.use('/api/clients', clientsRouter);

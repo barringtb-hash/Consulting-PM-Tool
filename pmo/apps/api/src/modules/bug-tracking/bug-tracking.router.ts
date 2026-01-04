@@ -56,7 +56,7 @@ router.use((req: Request, _res: Response, next: NextFunction) => {
 // ============================================================================
 // DEBUG: Public diagnostic endpoint - MUST be first to avoid any interference
 // ============================================================================
-router.get('/bug-tracking/debug/ping', (_req: Request, res: Response) => {
+router.get('/debug/ping', (_req: Request, res: Response) => {
   console.log('[BUG-TRACKING] Debug ping endpoint hit');
   res.json({ pong: true, timestamp: new Date().toISOString() });
 });
@@ -1355,8 +1355,8 @@ router.get(
 // This endpoint helps verify the external routes are deployed and accessible
 // ============================================================================
 
-// GET /bug-tracking/external/status - Public status check for external API
-router.get('/bug-tracking/external/status', (_req: Request, res: Response) => {
+// GET /external/status - Public status check for external API
+router.get('/external/status', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     message: 'Bug tracking external API is available',
