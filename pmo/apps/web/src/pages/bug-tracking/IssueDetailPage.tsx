@@ -520,7 +520,7 @@ export default function IssueDetailPage() {
                     browse
                   </button>
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-neutral-400">
+                <p className="text-xs text-gray-400 dark:text-neutral-400">
                   Supported: Images, PDF, TXT, CSV, JSON (max 5MB each)
                 </p>
                 {uploadAttachments.isPending && (
@@ -551,7 +551,7 @@ export default function IssueDetailPage() {
                           {attachment.mimeType.includes('pdf') ? (
                             <FileText className="h-8 w-8 text-red-500" />
                           ) : (
-                            <FileText className="h-8 w-8 text-gray-400 dark:text-gray-500 dark:text-neutral-400" />
+                            <FileText className="h-8 w-8 text-gray-400 dark:text-neutral-400" />
                           )}
                         </div>
                       )}
@@ -752,7 +752,7 @@ export default function IssueDetailPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 dark:text-gray-500 dark:text-neutral-400">
+                    <span className="text-gray-400 dark:text-neutral-400">
                       Unassigned
                     </span>
                   )}
@@ -772,7 +772,7 @@ export default function IssueDetailPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 dark:text-gray-500 dark:text-neutral-400">
+                    <span className="text-gray-400 dark:text-neutral-400">
                       System
                     </span>
                   )}
