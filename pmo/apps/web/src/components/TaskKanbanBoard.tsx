@@ -145,7 +145,7 @@ export function TaskKanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-6">
+      <div className="flex gap-4 p-4 overflow-x-auto min-h-[500px]">
         {TASK_STATUSES.map((status) => (
           <KanbanColumn
             key={status}
@@ -182,7 +182,7 @@ function KanbanColumn({
   onTaskClick,
 }: KanbanColumnProps): JSX.Element {
   return (
-    <div className="flex flex-col bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 min-h-[500px]">
+    <div className="flex flex-col bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 min-w-[280px] max-w-[280px]">
       <div className="px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-lg">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
@@ -197,7 +197,7 @@ function KanbanColumn({
         items={tasks.map((t) => t.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+        <div className="flex-1 p-3 space-y-3 overflow-y-auto max-h-[calc(100vh-300px)]">
           {tasks.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-neutral-400 dark:text-neutral-500 text-sm">
               No tasks
