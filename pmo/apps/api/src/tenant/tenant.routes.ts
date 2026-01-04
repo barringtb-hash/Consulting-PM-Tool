@@ -607,43 +607,59 @@ router.put(
   requireAuth,
   requireTenantRole(['OWNER', 'ADMIN']),
   async (req: AuthenticatedRequest, res: Response) => {
-    const { tenantId } = getTenantContext();
-    const userId = parseInt(req.params.userId, 10);
-    const parsed = updateUserRoleSchema.safeParse(req.body);
+    try {
+      const { tenantId } = getTenantContext();
+      const userId = parseInt(req.params.userId, 10);
 
-    if (!parsed.success) {
-      return res.status(400).json({ errors: parsed.error.flatten() });
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+      }
+
+      const parsed = updateUserRoleSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        return res.status(400).json({ errors: parsed.error.flatten() });
+      }
+
+      // Prevent self-demotion for safety
+      if (
+        userId === req.userId &&
+        parsed.data.role !== 'OWNER' &&
+        parsed.data.role !== 'ADMIN'
+      ) {
+        return res.status(400).json({ error: 'Cannot demote your own role' });
+      }
+
+      const tenantUser = await tenantService.updateUserRole(
+        tenantId,
+        userId,
+        parsed.data.role,
+      );
+
+      // Log the action (tenantId is derived from tenant context)
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.UPDATE,
+        entityType: 'TenantUser',
+        entityId: tenantUser.id.toString(),
+        after: { targetUserId: userId, role: parsed.data.role, tenantId },
+        metadata: {
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+
+      res.json({ data: tenantUser });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Member not found')
+      ) {
+        return res.status(404).json({ error: error.message });
+      }
+      console.error('Failed to update user role:', error);
+      res.status(500).json({ error: 'Failed to update user role' });
     }
-
-    // Prevent self-demotion for safety
-    if (
-      userId === req.userId &&
-      parsed.data.role !== 'OWNER' &&
-      parsed.data.role !== 'ADMIN'
-    ) {
-      return res.status(400).json({ error: 'Cannot demote your own role' });
-    }
-
-    const tenantUser = await tenantService.updateUserRole(
-      tenantId,
-      userId,
-      parsed.data.role,
-    );
-
-    // Log the action (tenantId is derived from tenant context)
-    await logAudit({
-      userId: req.userId,
-      action: AuditAction.UPDATE,
-      entityType: 'TenantUser',
-      entityId: tenantUser.id.toString(),
-      after: { targetUserId: userId, role: parsed.data.role, tenantId },
-      metadata: {
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
-      },
-    });
-
-    res.json({ data: tenantUser });
   },
 );
 

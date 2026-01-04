@@ -398,12 +398,27 @@ export async function removeUserFromTenant(tenantId: string, userId: number) {
 
 /**
  * Update user role in tenant.
+ * @throws {Error} If the user is not a member of the tenant
  */
 export async function updateUserRole(
   tenantId: string,
   userId: number,
   role: TenantRole,
 ) {
+  // First check if the user exists in the tenant
+  const existingMembership = await prisma.tenantUser.findUnique({
+    where: {
+      tenantId_userId: {
+        tenantId,
+        userId,
+      },
+    },
+  });
+
+  if (!existingMembership) {
+    throw new Error('Member not found in this tenant');
+  }
+
   return prisma.tenantUser.update({
     where: {
       tenantId_userId: {

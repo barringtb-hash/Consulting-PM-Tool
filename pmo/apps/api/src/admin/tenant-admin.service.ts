@@ -668,13 +668,14 @@ export async function removeUserFromTenantByAdmin(
 
 /**
  * Update user role in a tenant (System Admin only)
+ * @throws {Error} If the user is not a member of the tenant
  */
 export async function updateTenantUserRoleByAdmin(
   tenantId: string,
   userId: number,
   role: TenantRole,
 ) {
-  // If demoting from OWNER, ensure there's another owner
+  // First check if the user exists in the tenant
   const currentMembership = await prisma.tenantUser.findUnique({
     where: {
       tenantId_userId: {
@@ -684,7 +685,12 @@ export async function updateTenantUserRoleByAdmin(
     },
   });
 
-  if (currentMembership?.role === 'OWNER' && role !== 'OWNER') {
+  if (!currentMembership) {
+    throw new Error('Member not found in this tenant');
+  }
+
+  // If demoting from OWNER, ensure there's another owner
+  if (currentMembership.role === 'OWNER' && role !== 'OWNER') {
     const ownerCount = await prisma.tenantUser.count({
       where: {
         tenantId,
