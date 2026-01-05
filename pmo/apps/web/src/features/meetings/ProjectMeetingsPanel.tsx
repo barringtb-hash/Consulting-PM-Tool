@@ -109,9 +109,10 @@ function ProjectMeetingsPanel({
       date: new Date(values.date),
       time: values.time,
       attendees: normalizeAttendees(values.attendees),
-      notes: values.notes ?? undefined,
-      decisions: values.decisions ?? undefined,
-      risks: values.risks ?? undefined,
+      // Use || to convert empty strings to undefined (not sent in request)
+      notes: values.notes || undefined,
+      decisions: values.decisions || undefined,
+      risks: values.risks || undefined,
     };
 
     try {

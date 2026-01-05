@@ -83,6 +83,10 @@ describe('meeting routes', () => {
       });
 
     expect(createResponse.status).toBe(201);
+    expect(createResponse.body.meeting).toMatchObject({
+      title: 'Review',
+      notes: 'Discuss roadmap',
+    });
     const meetingId = createResponse.body.meeting.id;
 
     const listResponse = await agent.get(
@@ -90,10 +94,17 @@ describe('meeting routes', () => {
     );
     expect(listResponse.status).toBe(200);
     expect(listResponse.body.meetings).toHaveLength(1);
+    expect(listResponse.body.meetings[0]).toMatchObject({
+      title: 'Review',
+      notes: 'Discuss roadmap',
+    });
 
     const getResponse = await agent.get(`/api/meetings/${meetingId}`);
     expect(getResponse.status).toBe(200);
-    expect(getResponse.body.meeting.title).toBe('Review');
+    expect(getResponse.body.meeting).toMatchObject({
+      title: 'Review',
+      notes: 'Discuss roadmap',
+    });
 
     const updateResponse = await agent.put(`/api/meetings/${meetingId}`).send({
       title: 'Updated Review',

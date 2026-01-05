@@ -69,6 +69,9 @@ describe('meeting service', () => {
       projectId: project.id,
       title: 'Kickoff',
       attendees: ['A', 'B'],
+      notes: 'Initial notes',
+      decisions: 'Initial decisions',
+      risks: 'Initial risks',
     });
 
     const listResult = await withTenant(testEnv.tenant, () =>
