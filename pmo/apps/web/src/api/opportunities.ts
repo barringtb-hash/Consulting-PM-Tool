@@ -23,6 +23,7 @@ export interface PipelineStage {
   stageType: StageType;
   color?: string | null;
   rottenDays?: number | null;
+  description?: string | null;
 }
 
 export interface Opportunity {
@@ -207,19 +208,9 @@ export async function fetchPipelineStats(
 }
 
 /**
- * Pipeline stage for dropdown population
+ * Pipeline stages response from API
+ * Uses the same PipelineStage interface as opportunities
  */
-export interface PipelineStage {
-  stageId: number;
-  stageName: string;
-  stageType: StageType;
-  stageColor: string | null;
-  stageOrder: number;
-  probability: number;
-  description: string | null;
-  rottenDays: number | null;
-}
-
 export interface PipelineStagesResponse {
   pipelineId: number;
   pipelineName: string;

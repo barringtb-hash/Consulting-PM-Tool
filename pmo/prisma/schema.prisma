@@ -2513,9 +2513,10 @@ enum WorkflowStepStatus {
  * IntakeConfig - Configuration for client intake automation
  */
 model IntakeConfig {
-  id       Int     @id @default(autoincrement())
-  tenantId String? // Multi-tenant support
-  clientId Int     @unique
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
+  clientId  Int?    @unique // @deprecated - use accountId
+  accountId Int?    @unique // Preferred: link to CRM Account
 
   // Portal branding
   portalName   String?
@@ -2547,7 +2548,8 @@ model IntakeConfig {
   updatedAt DateTime @updatedAt
 
   tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client              Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client              Client?              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account             Account?             @relation(fields: [accountId], references: [id], onDelete: Cascade)
   forms               IntakeForm[]
   submissions         IntakeSubmission[]
   workflows           IntakeWorkflow[]
@@ -2555,6 +2557,7 @@ model IntakeConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
+  @@index([accountId])
 }
 
 /**
@@ -4399,9 +4402,10 @@ enum AlertStatus {
 }
 
 model InventoryForecastConfig {
-  id       Int     @id @default(autoincrement())
-  tenantId String? // Multi-tenant support
-  clientId Int     @unique
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
+  clientId  Int?    @unique // @deprecated - use accountId
+  accountId Int?    @unique // Preferred: link to CRM Account
 
   businessName String?
   timezone     String  @default("America/New_York")
@@ -4429,7 +4433,8 @@ model InventoryForecastConfig {
   updatedAt DateTime @updatedAt
 
   tenant    Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client    Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client    Client?             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account   Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   locations InventoryLocation[]
   products  InventoryProduct[]
   forecasts InventoryForecast[]
@@ -4438,6 +4443,7 @@ model InventoryForecastConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
+  @@index([accountId])
 }
 
 model InventoryLocation {
@@ -4695,9 +4701,10 @@ enum AuditStatus {
 }
 
 model ComplianceMonitorConfig {
-  id       Int     @id @default(autoincrement())
-  tenantId String? // Multi-tenant support
-  clientId Int     @unique
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
+  clientId  Int?    @unique // @deprecated - use accountId
+  accountId Int?    @unique // Preferred: link to CRM Account
 
   organizationName String?
   industry         String?
@@ -4725,7 +4732,8 @@ model ComplianceMonitorConfig {
   updatedAt DateTime @updatedAt
 
   tenant          Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client          Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client          Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account         Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   complianceRules ComplianceRule[]
   violations      ComplianceViolation[]
   audits          ComplianceAudit[]
@@ -4735,6 +4743,7 @@ model ComplianceMonitorConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
+  @@index([accountId])
 }
 
 model ComplianceRule {
@@ -5003,9 +5012,10 @@ enum WorkOrderPriority {
 }
 
 model PredictiveMaintenanceConfig {
-  id       Int     @id @default(autoincrement())
-  tenantId String? // Multi-tenant support
-  clientId Int     @unique
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
+  clientId  Int?    @unique // @deprecated - use accountId
+  accountId Int?    @unique // Preferred: link to CRM Account
 
   facilityName String?
   timezone     String  @default("America/New_York")
@@ -5030,7 +5040,8 @@ model PredictiveMaintenanceConfig {
   updatedAt DateTime @updatedAt
 
   tenant              Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client              Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client              Client?                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account             Account?               @relation(fields: [accountId], references: [id], onDelete: Cascade)
   equipment           Equipment[]
   sensors             Sensor[]
   workOrders          MaintenanceWorkOrder[]
@@ -5039,6 +5050,7 @@ model PredictiveMaintenanceConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
+  @@index([accountId])
 }
 
 model Equipment {
@@ -5367,9 +5379,10 @@ enum RateType {
 }
 
 model RevenueManagementConfig {
-  id       Int     @id @default(autoincrement())
-  tenantId String? // Multi-tenant support
-  clientId Int     @unique
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
+  clientId  Int?    @unique // @deprecated - use accountId
+  accountId Int?    @unique // Preferred: link to CRM Account
 
   businessName String?
   businessType String?
@@ -5401,7 +5414,8 @@ model RevenueManagementConfig {
   updatedAt DateTime @updatedAt
 
   tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client               Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account              Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   rateCategories       RateCategory[]
   competitors          Competitor[]
   demandForecasts      DemandForecast[]
@@ -5411,6 +5425,7 @@ model RevenueManagementConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
+  @@index([accountId])
 }
 
 model RateCategory {
@@ -5698,9 +5713,10 @@ enum TrainingStatus {
 }
 
 model SafetyMonitorConfig {
-  id       Int     @id @default(autoincrement())
-  tenantId String? // Multi-tenant support
-  clientId Int     @unique
+  id        Int     @id @default(autoincrement())
+  tenantId  String? // Multi-tenant support
+  clientId  Int?    @unique // @deprecated - use accountId
+  accountId Int?    @unique // Preferred: link to CRM Account
 
   organizationName String?
   industry         String?
@@ -5727,7 +5743,8 @@ model SafetyMonitorConfig {
   updatedAt DateTime @updatedAt
 
   tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client               Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client               Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  account              Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   checklists           SafetyChecklist[]
   checklistCompletions ChecklistCompletion[]
   incidents            SafetyIncident[]
@@ -5739,6 +5756,7 @@ model SafetyMonitorConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
+  @@index([accountId])
 }
 
 model SafetyChecklist {
@@ -7186,9 +7204,15 @@ model Account {
   meetings          Meeting[]
 
   // AI Tool configurations (replaces legacy Client relations)
-  chatbotConfig            ChatbotConfig?
-  documentAnalyzerConfig   DocumentAnalyzerConfig?
-  productDescriptionConfig ProductDescriptionConfig?
+  chatbotConfig              ChatbotConfig?
+  documentAnalyzerConfig     DocumentAnalyzerConfig?
+  productDescriptionConfig   ProductDescriptionConfig?
+  intakeConfig               IntakeConfig?
+  inventoryForecastConfig    InventoryForecastConfig?
+  complianceMonitorConfig    ComplianceMonitorConfig?
+  predictiveMaintenanceConfig PredictiveMaintenanceConfig?
+  revenueManagementConfig    RevenueManagementConfig?
+  safetyMonitorConfig        SafetyMonitorConfig?
 
   // Finance Tracking relations
   budgets         Budget[]
