@@ -260,7 +260,7 @@ function AiMlInfrastructurePage(): JSX.Element {
     integrationsQuery.data?.filter((i) => i.status === 'connected').length || 0;
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 space-y-6">
+    <div className="page-content space-y-6">
       <PageHeader
         title="AI/ML Infrastructure"
         subtitle="INF.2 - NLP Services, Machine Learning Models, and Integration Framework"

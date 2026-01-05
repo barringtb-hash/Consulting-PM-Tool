@@ -311,7 +311,7 @@ function IotInfrastructurePage(): JSX.Element {
     gatewaysQuery.data?.reduce((sum, g) => sum + g.connectedDevices, 0) || 0;
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 space-y-6">
+    <div className="page-content space-y-6">
       <PageHeader
         title="IoT Infrastructure"
         subtitle="INF.3 - Sensor Pipeline, Real-Time Processing, and Device Management"

@@ -147,7 +147,7 @@ function CoreInfrastructurePage(): JSX.Element {
     }).format(amount);
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 space-y-6">
+    <div className="page-content space-y-6">
       <PageHeader
         title="Core Infrastructure"
         subtitle="INF.1 - Authentication, API Gateway, Audit Logging, and Billing"
