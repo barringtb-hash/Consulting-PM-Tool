@@ -243,15 +243,20 @@ export default function ExpenseDetailPage() {
           {expense.status === 'PENDING' && (
             <>
               <Button
+                onClick={handleApprove}
+                disabled={approveExpense.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                {approveExpense.isPending ? 'Approving...' : 'Approve'}
+              </Button>
+              <Button
                 variant="secondary"
                 onClick={() => setShowRejectModal(true)}
+                className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
               >
                 <X className="h-4 w-4 mr-2" />
                 Reject
-              </Button>
-              <Button onClick={handleApprove}>
-                <Check className="h-4 w-4 mr-2" />
-                Approve
               </Button>
             </>
           )}

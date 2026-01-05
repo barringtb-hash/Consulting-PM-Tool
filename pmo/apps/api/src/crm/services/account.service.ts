@@ -285,9 +285,12 @@ export async function listAccounts(
   const sortOrder = pagination.sortOrder || 'desc';
 
   // Build where clause
+  // When archived filter is undefined, show all accounts (including archived)
+  // When archived is false, show only non-archived
+  // When archived is true, show only archived
   const where: Prisma.AccountWhereInput = {
     tenantId,
-    archived: filters.archived ?? false,
+    ...(filters.archived !== undefined ? { archived: filters.archived } : {}),
   };
 
   if (filters.type) {

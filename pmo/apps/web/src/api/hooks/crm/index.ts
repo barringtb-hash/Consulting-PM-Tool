@@ -928,8 +928,20 @@ export function useCreateAccountSuccessPlan(
     mutationFn: (payload: CreateSuccessPlanPayload) =>
       createAccountSuccessPlan(accountId, payload),
     onSuccess: () => {
+      // Invalidate all success plan queries for this account using predicate matching
+      // This ensures the list is refetched regardless of filter params
       queryClient.invalidateQueries({
-        queryKey: queryKeys.accounts.successPlans(accountId),
+        predicate: (query) => {
+          const key = query.queryKey;
+          // Match all queries that start with ['accounts', 'detail', accountId, 'success-plans']
+          return (
+            Array.isArray(key) &&
+            key[0] === 'accounts' &&
+            key[1] === 'detail' &&
+            key[2] === accountId &&
+            key[3] === 'success-plans'
+          );
+        },
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.accounts.portfolioSuccessPlans(),
