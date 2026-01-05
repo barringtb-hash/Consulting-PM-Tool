@@ -93,7 +93,7 @@ export async function getInventoryForecastConfig(clientId: number) {
   return prisma.inventoryForecastConfig.findUnique({
     where: { clientId },
     include: {
-      // client relation commented out until table is created via migration
+      client: { select: { id: true, name: true, industry: true } },
       _count: {
         select: {
           locations: true,
@@ -126,7 +126,7 @@ export async function listInventoryForecastConfigs(filters?: {
   return prisma.inventoryForecastConfig.findMany({
     where: whereClause,
     include: {
-      // client relation commented out until table is created via migration
+      client: { select: { id: true, name: true, industry: true } },
       _count: {
         select: {
           locations: true,
