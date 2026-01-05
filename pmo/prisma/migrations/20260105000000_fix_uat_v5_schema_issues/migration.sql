@@ -66,6 +66,9 @@ BEGIN
     END IF;
 END $$;
 
+-- Add composite index for accountId + isActive (consistent with other config tables)
+CREATE INDEX IF NOT EXISTS "IntakeConfig_accountId_isActive_idx" ON "IntakeConfig"("accountId", "isActive");
+
 -- ============================================================================
 -- FIX 4: DocumentAnalyzerConfig - ensure accountId FK exists
 -- ============================================================================
