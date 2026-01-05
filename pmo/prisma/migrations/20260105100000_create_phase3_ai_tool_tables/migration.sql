@@ -4,41 +4,116 @@
 -- Total: 46 tables, 16 enums
 
 -- ============================================================================
--- PART 1: ENUMS
+-- PART 1: ENUMS (using DO blocks to handle existing types gracefully)
 -- ============================================================================
 
 -- Inventory Forecasting Enums
-CREATE TYPE "ForecastStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'NEEDS_REVIEW');
-CREATE TYPE "AlertSeverity" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
-CREATE TYPE "AlertStatus" AS ENUM ('ACTIVE', 'ACKNOWLEDGED', 'RESOLVED');
+DO $$ BEGIN
+    CREATE TYPE "ForecastStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'NEEDS_REVIEW');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "AlertSeverity" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "AlertStatus" AS ENUM ('ACTIVE', 'ACKNOWLEDGED', 'RESOLVED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Compliance Monitor Enums
-CREATE TYPE "RiskLevel" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
-CREATE TYPE "ViolationStatus" AS ENUM ('OPEN', 'INVESTIGATING', 'REMEDIATED', 'RESOLVED', 'ESCALATED', 'CLOSED', 'FALSE_POSITIVE');
-CREATE TYPE "AuditStatus" AS ENUM ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE');
+DO $$ BEGIN
+    CREATE TYPE "RiskLevel" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "ViolationStatus" AS ENUM ('OPEN', 'INVESTIGATING', 'REMEDIATED', 'RESOLVED', 'ESCALATED', 'CLOSED', 'FALSE_POSITIVE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "AuditStatus" AS ENUM ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Predictive Maintenance Enums
-CREATE TYPE "EquipmentStatus" AS ENUM ('OPERATIONAL', 'DEGRADED', 'WARNING', 'CRITICAL', 'OFFLINE', 'MAINTENANCE');
-CREATE TYPE "MaintenanceType" AS ENUM ('PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY');
-CREATE TYPE "WorkOrderStatus" AS ENUM ('DRAFT', 'SCHEDULED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED');
-CREATE TYPE "WorkOrderPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
+DO $$ BEGIN
+    CREATE TYPE "EquipmentStatus" AS ENUM ('OPERATIONAL', 'DEGRADED', 'WARNING', 'CRITICAL', 'OFFLINE', 'MAINTENANCE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "MaintenanceType" AS ENUM ('PREVENTIVE', 'PREDICTIVE', 'CORRECTIVE', 'EMERGENCY');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "WorkOrderStatus" AS ENUM ('DRAFT', 'SCHEDULED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "WorkOrderPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Revenue Management Enums
-CREATE TYPE "PricingStrategy" AS ENUM ('STATIC', 'DYNAMIC', 'COMPETITIVE', 'DEMAND_BASED', 'TIME_BASED');
-CREATE TYPE "RateType" AS ENUM ('STANDARD', 'PROMOTIONAL', 'LAST_MINUTE', 'EARLY_BIRD', 'PACKAGE');
+DO $$ BEGIN
+    CREATE TYPE "PricingStrategy" AS ENUM ('STATIC', 'DYNAMIC', 'COMPETITIVE', 'DEMAND_BASED', 'TIME_BASED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "RateType" AS ENUM ('STANDARD', 'PROMOTIONAL', 'LAST_MINUTE', 'EARLY_BIRD', 'PACKAGE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Safety Monitor Enums
-CREATE TYPE "IncidentSeverity" AS ENUM ('NEAR_MISS', 'MINOR', 'MODERATE', 'SERIOUS', 'SEVERE', 'FATAL');
-CREATE TYPE "IncidentStatus" AS ENUM ('REPORTED', 'UNDER_INVESTIGATION', 'ROOT_CAUSE_IDENTIFIED', 'CORRECTIVE_ACTION_PENDING', 'CORRECTIVE_ACTION_COMPLETE', 'CLOSED');
-CREATE TYPE "ChecklistStatus" AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE', 'SKIPPED');
-CREATE TYPE "TrainingStatus" AS ENUM ('NOT_ASSIGNED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'EXPIRED', 'FAILED');
+DO $$ BEGIN
+    CREATE TYPE "IncidentSeverity" AS ENUM ('NEAR_MISS', 'MINOR', 'MODERATE', 'SERIOUS', 'SEVERE', 'FATAL');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "IncidentStatus" AS ENUM ('REPORTED', 'UNDER_INVESTIGATION', 'ROOT_CAUSE_IDENTIFIED', 'CORRECTIVE_ACTION_PENDING', 'CORRECTIVE_ACTION_COMPLETE', 'CLOSED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "ChecklistStatus" AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE', 'SKIPPED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "TrainingStatus" AS ENUM ('NOT_ASSIGNED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'EXPIRED', 'FAILED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- ============================================================================
 -- PART 2: TOOL 3.1 - INVENTORY FORECASTING (9 tables)
 -- ============================================================================
 
 -- InventoryForecastConfig
-CREATE TABLE "InventoryForecastConfig" (
+CREATE TABLE IF NOT EXISTS "InventoryForecastConfig" (
     "id" SERIAL PRIMARY KEY,
     "tenantId" TEXT,
     "clientId" INTEGER UNIQUE,
@@ -64,12 +139,12 @@ CREATE TABLE "InventoryForecastConfig" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE INDEX "InventoryForecastConfig_tenantId_isActive_idx" ON "InventoryForecastConfig"("tenantId", "isActive");
-CREATE INDEX "InventoryForecastConfig_clientId_isActive_idx" ON "InventoryForecastConfig"("clientId", "isActive");
-CREATE INDEX "InventoryForecastConfig_accountId_isActive_idx" ON "InventoryForecastConfig"("accountId", "isActive");
+CREATE INDEX IF NOT EXISTS "InventoryForecastConfig_tenantId_isActive_idx" ON "InventoryForecastConfig"("tenantId", "isActive");
+CREATE INDEX IF NOT EXISTS "InventoryForecastConfig_clientId_isActive_idx" ON "InventoryForecastConfig"("clientId", "isActive");
+CREATE INDEX IF NOT EXISTS "InventoryForecastConfig_accountId_isActive_idx" ON "InventoryForecastConfig"("accountId", "isActive");
 
 -- InventoryLocation
-CREATE TABLE "InventoryLocation" (
+CREATE TABLE IF NOT EXISTS "InventoryLocation" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -84,11 +159,11 @@ CREATE TABLE "InventoryLocation" (
     CONSTRAINT "InventoryLocation_configId_fkey" FOREIGN KEY ("configId") REFERENCES "InventoryForecastConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "InventoryLocation_configId_code_key" ON "InventoryLocation"("configId", "code");
-CREATE INDEX "InventoryLocation_configId_isActive_idx" ON "InventoryLocation"("configId", "isActive");
+CREATE UNIQUE INDEX IF NOT EXISTS "InventoryLocation_configId_code_key" ON "InventoryLocation"("configId", "code");
+CREATE INDEX IF NOT EXISTS "InventoryLocation_configId_isActive_idx" ON "InventoryLocation"("configId", "isActive");
 
 -- InventoryProduct
-CREATE TABLE "InventoryProduct" (
+CREATE TABLE IF NOT EXISTS "InventoryProduct" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "sku" TEXT NOT NULL,
@@ -110,12 +185,12 @@ CREATE TABLE "InventoryProduct" (
     CONSTRAINT "InventoryProduct_configId_fkey" FOREIGN KEY ("configId") REFERENCES "InventoryForecastConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "InventoryProduct_configId_sku_key" ON "InventoryProduct"("configId", "sku");
-CREATE INDEX "InventoryProduct_configId_category_idx" ON "InventoryProduct"("configId", "category");
-CREATE INDEX "InventoryProduct_configId_isActive_idx" ON "InventoryProduct"("configId", "isActive");
+CREATE UNIQUE INDEX IF NOT EXISTS "InventoryProduct_configId_sku_key" ON "InventoryProduct"("configId", "sku");
+CREATE INDEX IF NOT EXISTS "InventoryProduct_configId_category_idx" ON "InventoryProduct"("configId", "category");
+CREATE INDEX IF NOT EXISTS "InventoryProduct_configId_isActive_idx" ON "InventoryProduct"("configId", "isActive");
 
 -- StockLevel
-CREATE TABLE "StockLevel" (
+CREATE TABLE IF NOT EXISTS "StockLevel" (
     "id" SERIAL PRIMARY KEY,
     "productId" INTEGER NOT NULL,
     "locationId" INTEGER NOT NULL,
@@ -129,12 +204,12 @@ CREATE TABLE "StockLevel" (
     CONSTRAINT "StockLevel_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "InventoryLocation"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "StockLevel_productId_locationId_key" ON "StockLevel"("productId", "locationId");
-CREATE INDEX "StockLevel_productId_idx" ON "StockLevel"("productId");
-CREATE INDEX "StockLevel_locationId_idx" ON "StockLevel"("locationId");
+CREATE UNIQUE INDEX IF NOT EXISTS "StockLevel_productId_locationId_key" ON "StockLevel"("productId", "locationId");
+CREATE INDEX IF NOT EXISTS "StockLevel_productId_idx" ON "StockLevel"("productId");
+CREATE INDEX IF NOT EXISTS "StockLevel_locationId_idx" ON "StockLevel"("locationId");
 
 -- SalesHistory
-CREATE TABLE "SalesHistory" (
+CREATE TABLE IF NOT EXISTS "SalesHistory" (
     "id" SERIAL PRIMARY KEY,
     "productId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
@@ -148,11 +223,11 @@ CREATE TABLE "SalesHistory" (
     CONSTRAINT "SalesHistory_productId_fkey" FOREIGN KEY ("productId") REFERENCES "InventoryProduct"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "SalesHistory_productId_date_locationId_key" ON "SalesHistory"("productId", "date", "locationId");
-CREATE INDEX "SalesHistory_productId_date_idx" ON "SalesHistory"("productId", "date" DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS "SalesHistory_productId_date_locationId_key" ON "SalesHistory"("productId", "date", "locationId");
+CREATE INDEX IF NOT EXISTS "SalesHistory_productId_date_idx" ON "SalesHistory"("productId", "date" DESC);
 
 -- InventoryForecast
-CREATE TABLE "InventoryForecast" (
+CREATE TABLE IF NOT EXISTS "InventoryForecast" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "productId" INTEGER NOT NULL,
@@ -179,12 +254,12 @@ CREATE TABLE "InventoryForecast" (
     CONSTRAINT "InventoryForecast_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "InventoryLocation"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE INDEX "InventoryForecast_configId_status_idx" ON "InventoryForecast"("configId", "status");
-CREATE INDEX "InventoryForecast_productId_startDate_idx" ON "InventoryForecast"("productId", "startDate");
-CREATE INDEX "InventoryForecast_generatedAt_idx" ON "InventoryForecast"("generatedAt" DESC);
+CREATE INDEX IF NOT EXISTS "InventoryForecast_configId_status_idx" ON "InventoryForecast"("configId", "status");
+CREATE INDEX IF NOT EXISTS "InventoryForecast_productId_startDate_idx" ON "InventoryForecast"("productId", "startDate");
+CREATE INDEX IF NOT EXISTS "InventoryForecast_generatedAt_idx" ON "InventoryForecast"("generatedAt" DESC);
 
 -- InventoryAlert
-CREATE TABLE "InventoryAlert" (
+CREATE TABLE IF NOT EXISTS "InventoryAlert" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "alertType" TEXT NOT NULL,
@@ -205,12 +280,12 @@ CREATE TABLE "InventoryAlert" (
     CONSTRAINT "InventoryAlert_configId_fkey" FOREIGN KEY ("configId") REFERENCES "InventoryForecastConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "InventoryAlert_configId_status_idx" ON "InventoryAlert"("configId", "status");
-CREATE INDEX "InventoryAlert_configId_severity_idx" ON "InventoryAlert"("configId", "severity");
-CREATE INDEX "InventoryAlert_createdAt_idx" ON "InventoryAlert"("createdAt" DESC);
+CREATE INDEX IF NOT EXISTS "InventoryAlert_configId_status_idx" ON "InventoryAlert"("configId", "status");
+CREATE INDEX IF NOT EXISTS "InventoryAlert_configId_severity_idx" ON "InventoryAlert"("configId", "severity");
+CREATE INDEX IF NOT EXISTS "InventoryAlert_createdAt_idx" ON "InventoryAlert"("createdAt" DESC);
 
 -- ForecastScenario
-CREATE TABLE "ForecastScenario" (
+CREATE TABLE IF NOT EXISTS "ForecastScenario" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -228,10 +303,10 @@ CREATE TABLE "ForecastScenario" (
     CONSTRAINT "ForecastScenario_configId_fkey" FOREIGN KEY ("configId") REFERENCES "InventoryForecastConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ForecastScenario_configId_idx" ON "ForecastScenario"("configId");
+CREATE INDEX IF NOT EXISTS "ForecastScenario_configId_idx" ON "ForecastScenario"("configId");
 
 -- InventoryForecastAnalytics
-CREATE TABLE "InventoryForecastAnalytics" (
+CREATE TABLE IF NOT EXISTS "InventoryForecastAnalytics" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
@@ -250,15 +325,15 @@ CREATE TABLE "InventoryForecastAnalytics" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE UNIQUE INDEX "InventoryForecastAnalytics_configId_date_key" ON "InventoryForecastAnalytics"("configId", "date");
-CREATE INDEX "InventoryForecastAnalytics_configId_date_idx" ON "InventoryForecastAnalytics"("configId", "date" DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS "InventoryForecastAnalytics_configId_date_key" ON "InventoryForecastAnalytics"("configId", "date");
+CREATE INDEX IF NOT EXISTS "InventoryForecastAnalytics_configId_date_idx" ON "InventoryForecastAnalytics"("configId", "date" DESC);
 
 -- ============================================================================
 -- PART 3: TOOL 3.2 - COMPLIANCE MONITOR (8 tables)
 -- ============================================================================
 
 -- ComplianceMonitorConfig
-CREATE TABLE "ComplianceMonitorConfig" (
+CREATE TABLE IF NOT EXISTS "ComplianceMonitorConfig" (
     "id" SERIAL PRIMARY KEY,
     "tenantId" TEXT,
     "clientId" INTEGER UNIQUE,
@@ -284,12 +359,12 @@ CREATE TABLE "ComplianceMonitorConfig" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE INDEX "ComplianceMonitorConfig_tenantId_isActive_idx" ON "ComplianceMonitorConfig"("tenantId", "isActive");
-CREATE INDEX "ComplianceMonitorConfig_clientId_isActive_idx" ON "ComplianceMonitorConfig"("clientId", "isActive");
-CREATE INDEX "ComplianceMonitorConfig_accountId_isActive_idx" ON "ComplianceMonitorConfig"("accountId", "isActive");
+CREATE INDEX IF NOT EXISTS "ComplianceMonitorConfig_tenantId_isActive_idx" ON "ComplianceMonitorConfig"("tenantId", "isActive");
+CREATE INDEX IF NOT EXISTS "ComplianceMonitorConfig_clientId_isActive_idx" ON "ComplianceMonitorConfig"("clientId", "isActive");
+CREATE INDEX IF NOT EXISTS "ComplianceMonitorConfig_accountId_isActive_idx" ON "ComplianceMonitorConfig"("accountId", "isActive");
 
 -- ComplianceRule
-CREATE TABLE "ComplianceRule" (
+CREATE TABLE IF NOT EXISTS "ComplianceRule" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -309,11 +384,11 @@ CREATE TABLE "ComplianceRule" (
     CONSTRAINT "ComplianceRule_configId_fkey" FOREIGN KEY ("configId") REFERENCES "ComplianceMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ComplianceRule_configId_framework_idx" ON "ComplianceRule"("configId", "framework");
-CREATE INDEX "ComplianceRule_configId_isActive_idx" ON "ComplianceRule"("configId", "isActive");
+CREATE INDEX IF NOT EXISTS "ComplianceRule_configId_framework_idx" ON "ComplianceRule"("configId", "framework");
+CREATE INDEX IF NOT EXISTS "ComplianceRule_configId_isActive_idx" ON "ComplianceRule"("configId", "isActive");
 
 -- ComplianceViolation
-CREATE TABLE "ComplianceViolation" (
+CREATE TABLE IF NOT EXISTS "ComplianceViolation" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "ruleId" INTEGER NOT NULL,
@@ -340,13 +415,13 @@ CREATE TABLE "ComplianceViolation" (
     CONSTRAINT "ComplianceViolation_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "ComplianceRule"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ComplianceViolation_configId_status_idx" ON "ComplianceViolation"("configId", "status");
-CREATE INDEX "ComplianceViolation_configId_severity_idx" ON "ComplianceViolation"("configId", "severity");
-CREATE INDEX "ComplianceViolation_ruleId_idx" ON "ComplianceViolation"("ruleId");
-CREATE INDEX "ComplianceViolation_detectedAt_idx" ON "ComplianceViolation"("detectedAt" DESC);
+CREATE INDEX IF NOT EXISTS "ComplianceViolation_configId_status_idx" ON "ComplianceViolation"("configId", "status");
+CREATE INDEX IF NOT EXISTS "ComplianceViolation_configId_severity_idx" ON "ComplianceViolation"("configId", "severity");
+CREATE INDEX IF NOT EXISTS "ComplianceViolation_ruleId_idx" ON "ComplianceViolation"("ruleId");
+CREATE INDEX IF NOT EXISTS "ComplianceViolation_detectedAt_idx" ON "ComplianceViolation"("detectedAt" DESC);
 
 -- ComplianceAudit
-CREATE TABLE "ComplianceAudit" (
+CREATE TABLE IF NOT EXISTS "ComplianceAudit" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -373,11 +448,11 @@ CREATE TABLE "ComplianceAudit" (
     CONSTRAINT "ComplianceAudit_configId_fkey" FOREIGN KEY ("configId") REFERENCES "ComplianceMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ComplianceAudit_configId_status_idx" ON "ComplianceAudit"("configId", "status");
-CREATE INDEX "ComplianceAudit_scheduledDate_idx" ON "ComplianceAudit"("scheduledDate");
+CREATE INDEX IF NOT EXISTS "ComplianceAudit_configId_status_idx" ON "ComplianceAudit"("configId", "status");
+CREATE INDEX IF NOT EXISTS "ComplianceAudit_scheduledDate_idx" ON "ComplianceAudit"("scheduledDate");
 
 -- ComplianceEvidence
-CREATE TABLE "ComplianceEvidence" (
+CREATE TABLE IF NOT EXISTS "ComplianceEvidence" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "title" TEXT NOT NULL,
@@ -400,11 +475,11 @@ CREATE TABLE "ComplianceEvidence" (
     CONSTRAINT "ComplianceEvidence_configId_fkey" FOREIGN KEY ("configId") REFERENCES "ComplianceMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ComplianceEvidence_configId_framework_idx" ON "ComplianceEvidence"("configId", "framework");
-CREATE INDEX "ComplianceEvidence_configId_evidenceType_idx" ON "ComplianceEvidence"("configId", "evidenceType");
+CREATE INDEX IF NOT EXISTS "ComplianceEvidence_configId_framework_idx" ON "ComplianceEvidence"("configId", "framework");
+CREATE INDEX IF NOT EXISTS "ComplianceEvidence_configId_evidenceType_idx" ON "ComplianceEvidence"("configId", "evidenceType");
 
 -- RiskAssessment
-CREATE TABLE "RiskAssessment" (
+CREATE TABLE IF NOT EXISTS "RiskAssessment" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "entityType" TEXT NOT NULL,
@@ -423,12 +498,12 @@ CREATE TABLE "RiskAssessment" (
     CONSTRAINT "RiskAssessment_configId_fkey" FOREIGN KEY ("configId") REFERENCES "ComplianceMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "RiskAssessment_configId_entityType_idx" ON "RiskAssessment"("configId", "entityType");
-CREATE INDEX "RiskAssessment_configId_riskLevel_idx" ON "RiskAssessment"("configId", "riskLevel");
-CREATE INDEX "RiskAssessment_assessedAt_idx" ON "RiskAssessment"("assessedAt" DESC);
+CREATE INDEX IF NOT EXISTS "RiskAssessment_configId_entityType_idx" ON "RiskAssessment"("configId", "entityType");
+CREATE INDEX IF NOT EXISTS "RiskAssessment_configId_riskLevel_idx" ON "RiskAssessment"("configId", "riskLevel");
+CREATE INDEX IF NOT EXISTS "RiskAssessment_assessedAt_idx" ON "RiskAssessment"("assessedAt" DESC);
 
 -- ComplianceReport
-CREATE TABLE "ComplianceReport" (
+CREATE TABLE IF NOT EXISTS "ComplianceReport" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -449,11 +524,11 @@ CREATE TABLE "ComplianceReport" (
     CONSTRAINT "ComplianceReport_configId_fkey" FOREIGN KEY ("configId") REFERENCES "ComplianceMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ComplianceReport_configId_reportType_idx" ON "ComplianceReport"("configId", "reportType");
-CREATE INDEX "ComplianceReport_generatedAt_idx" ON "ComplianceReport"("generatedAt" DESC);
+CREATE INDEX IF NOT EXISTS "ComplianceReport_configId_reportType_idx" ON "ComplianceReport"("configId", "reportType");
+CREATE INDEX IF NOT EXISTS "ComplianceReport_generatedAt_idx" ON "ComplianceReport"("generatedAt" DESC);
 
 -- ComplianceMonitorAnalytics
-CREATE TABLE "ComplianceMonitorAnalytics" (
+CREATE TABLE IF NOT EXISTS "ComplianceMonitorAnalytics" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
@@ -471,15 +546,15 @@ CREATE TABLE "ComplianceMonitorAnalytics" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE UNIQUE INDEX "ComplianceMonitorAnalytics_configId_date_key" ON "ComplianceMonitorAnalytics"("configId", "date");
-CREATE INDEX "ComplianceMonitorAnalytics_configId_date_idx" ON "ComplianceMonitorAnalytics"("configId", "date" DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS "ComplianceMonitorAnalytics_configId_date_key" ON "ComplianceMonitorAnalytics"("configId", "date");
+CREATE INDEX IF NOT EXISTS "ComplianceMonitorAnalytics_configId_date_idx" ON "ComplianceMonitorAnalytics"("configId", "date" DESC);
 
 -- ============================================================================
 -- PART 4: TOOL 3.3 - PREDICTIVE MAINTENANCE (10 tables)
 -- ============================================================================
 
 -- PredictiveMaintenanceConfig
-CREATE TABLE "PredictiveMaintenanceConfig" (
+CREATE TABLE IF NOT EXISTS "PredictiveMaintenanceConfig" (
     "id" SERIAL PRIMARY KEY,
     "tenantId" TEXT,
     "clientId" INTEGER UNIQUE,
@@ -503,12 +578,12 @@ CREATE TABLE "PredictiveMaintenanceConfig" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE INDEX "PredictiveMaintenanceConfig_tenantId_isActive_idx" ON "PredictiveMaintenanceConfig"("tenantId", "isActive");
-CREATE INDEX "PredictiveMaintenanceConfig_clientId_isActive_idx" ON "PredictiveMaintenanceConfig"("clientId", "isActive");
-CREATE INDEX "PredictiveMaintenanceConfig_accountId_isActive_idx" ON "PredictiveMaintenanceConfig"("accountId", "isActive");
+CREATE INDEX IF NOT EXISTS "PredictiveMaintenanceConfig_tenantId_isActive_idx" ON "PredictiveMaintenanceConfig"("tenantId", "isActive");
+CREATE INDEX IF NOT EXISTS "PredictiveMaintenanceConfig_clientId_isActive_idx" ON "PredictiveMaintenanceConfig"("clientId", "isActive");
+CREATE INDEX IF NOT EXISTS "PredictiveMaintenanceConfig_accountId_isActive_idx" ON "PredictiveMaintenanceConfig"("accountId", "isActive");
 
 -- Equipment
-CREATE TABLE "Equipment" (
+CREATE TABLE IF NOT EXISTS "Equipment" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "assetTag" TEXT NOT NULL,
@@ -541,12 +616,12 @@ CREATE TABLE "Equipment" (
     CONSTRAINT "Equipment_configId_fkey" FOREIGN KEY ("configId") REFERENCES "PredictiveMaintenanceConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "Equipment_configId_assetTag_key" ON "Equipment"("configId", "assetTag");
-CREATE INDEX "Equipment_configId_status_idx" ON "Equipment"("configId", "status");
-CREATE INDEX "Equipment_configId_category_idx" ON "Equipment"("configId", "category");
+CREATE UNIQUE INDEX IF NOT EXISTS "Equipment_configId_assetTag_key" ON "Equipment"("configId", "assetTag");
+CREATE INDEX IF NOT EXISTS "Equipment_configId_status_idx" ON "Equipment"("configId", "status");
+CREATE INDEX IF NOT EXISTS "Equipment_configId_category_idx" ON "Equipment"("configId", "category");
 
 -- Sensor
-CREATE TABLE "Sensor" (
+CREATE TABLE IF NOT EXISTS "Sensor" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "equipmentId" INTEGER NOT NULL,
@@ -570,12 +645,12 @@ CREATE TABLE "Sensor" (
     CONSTRAINT "Sensor_equipmentId_fkey" FOREIGN KEY ("equipmentId") REFERENCES "Equipment"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "Sensor_configId_sensorId_key" ON "Sensor"("configId", "sensorId");
-CREATE INDEX "Sensor_equipmentId_idx" ON "Sensor"("equipmentId");
-CREATE INDEX "Sensor_sensorType_idx" ON "Sensor"("sensorType");
+CREATE UNIQUE INDEX IF NOT EXISTS "Sensor_configId_sensorId_key" ON "Sensor"("configId", "sensorId");
+CREATE INDEX IF NOT EXISTS "Sensor_equipmentId_idx" ON "Sensor"("equipmentId");
+CREATE INDEX IF NOT EXISTS "Sensor_sensorType_idx" ON "Sensor"("sensorType");
 
 -- SensorReading
-CREATE TABLE "SensorReading" (
+CREATE TABLE IF NOT EXISTS "SensorReading" (
     "id" SERIAL PRIMARY KEY,
     "sensorId" INTEGER NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL,
@@ -586,10 +661,10 @@ CREATE TABLE "SensorReading" (
     CONSTRAINT "SensorReading_sensorId_fkey" FOREIGN KEY ("sensorId") REFERENCES "Sensor"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "SensorReading_sensorId_timestamp_idx" ON "SensorReading"("sensorId", "timestamp" DESC);
+CREATE INDEX IF NOT EXISTS "SensorReading_sensorId_timestamp_idx" ON "SensorReading"("sensorId", "timestamp" DESC);
 
 -- SensorAnomaly
-CREATE TABLE "SensorAnomaly" (
+CREATE TABLE IF NOT EXISTS "SensorAnomaly" (
     "id" SERIAL PRIMARY KEY,
     "sensorId" INTEGER NOT NULL,
     "detectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -606,11 +681,11 @@ CREATE TABLE "SensorAnomaly" (
     CONSTRAINT "SensorAnomaly_sensorId_fkey" FOREIGN KEY ("sensorId") REFERENCES "Sensor"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "SensorAnomaly_sensorId_detectedAt_idx" ON "SensorAnomaly"("sensorId", "detectedAt" DESC);
-CREATE INDEX "SensorAnomaly_severity_isResolved_idx" ON "SensorAnomaly"("severity", "isResolved");
+CREATE INDEX IF NOT EXISTS "SensorAnomaly_sensorId_detectedAt_idx" ON "SensorAnomaly"("sensorId", "detectedAt" DESC);
+CREATE INDEX IF NOT EXISTS "SensorAnomaly_severity_isResolved_idx" ON "SensorAnomaly"("severity", "isResolved");
 
 -- FailurePrediction
-CREATE TABLE "FailurePrediction" (
+CREATE TABLE IF NOT EXISTS "FailurePrediction" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "equipmentId" INTEGER NOT NULL,
@@ -635,12 +710,12 @@ CREATE TABLE "FailurePrediction" (
     CONSTRAINT "FailurePrediction_equipmentId_fkey" FOREIGN KEY ("equipmentId") REFERENCES "Equipment"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "FailurePrediction_configId_isActive_idx" ON "FailurePrediction"("configId", "isActive");
-CREATE INDEX "FailurePrediction_equipmentId_predictedDate_idx" ON "FailurePrediction"("equipmentId", "predictedDate");
-CREATE INDEX "FailurePrediction_probability_idx" ON "FailurePrediction"("probability" DESC);
+CREATE INDEX IF NOT EXISTS "FailurePrediction_configId_isActive_idx" ON "FailurePrediction"("configId", "isActive");
+CREATE INDEX IF NOT EXISTS "FailurePrediction_equipmentId_predictedDate_idx" ON "FailurePrediction"("equipmentId", "predictedDate");
+CREATE INDEX IF NOT EXISTS "FailurePrediction_probability_idx" ON "FailurePrediction"("probability" DESC);
 
 -- MaintenanceWorkOrder
-CREATE TABLE "MaintenanceWorkOrder" (
+CREATE TABLE IF NOT EXISTS "MaintenanceWorkOrder" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "equipmentId" INTEGER NOT NULL,
@@ -671,13 +746,13 @@ CREATE TABLE "MaintenanceWorkOrder" (
     CONSTRAINT "MaintenanceWorkOrder_equipmentId_fkey" FOREIGN KEY ("equipmentId") REFERENCES "Equipment"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "MaintenanceWorkOrder_configId_workOrderNumber_key" ON "MaintenanceWorkOrder"("configId", "workOrderNumber");
-CREATE INDEX "MaintenanceWorkOrder_configId_status_idx" ON "MaintenanceWorkOrder"("configId", "status");
-CREATE INDEX "MaintenanceWorkOrder_equipmentId_idx" ON "MaintenanceWorkOrder"("equipmentId");
-CREATE INDEX "MaintenanceWorkOrder_scheduledDate_idx" ON "MaintenanceWorkOrder"("scheduledDate");
+CREATE UNIQUE INDEX IF NOT EXISTS "MaintenanceWorkOrder_configId_workOrderNumber_key" ON "MaintenanceWorkOrder"("configId", "workOrderNumber");
+CREATE INDEX IF NOT EXISTS "MaintenanceWorkOrder_configId_status_idx" ON "MaintenanceWorkOrder"("configId", "status");
+CREATE INDEX IF NOT EXISTS "MaintenanceWorkOrder_equipmentId_idx" ON "MaintenanceWorkOrder"("equipmentId");
+CREATE INDEX IF NOT EXISTS "MaintenanceWorkOrder_scheduledDate_idx" ON "MaintenanceWorkOrder"("scheduledDate");
 
 -- SparePart
-CREATE TABLE "SparePart" (
+CREATE TABLE IF NOT EXISTS "SparePart" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "partNumber" TEXT NOT NULL,
@@ -700,11 +775,11 @@ CREATE TABLE "SparePart" (
     CONSTRAINT "SparePart_configId_fkey" FOREIGN KEY ("configId") REFERENCES "PredictiveMaintenanceConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "SparePart_configId_partNumber_key" ON "SparePart"("configId", "partNumber");
-CREATE INDEX "SparePart_configId_category_idx" ON "SparePart"("configId", "category");
+CREATE UNIQUE INDEX IF NOT EXISTS "SparePart_configId_partNumber_key" ON "SparePart"("configId", "partNumber");
+CREATE INDEX IF NOT EXISTS "SparePart_configId_category_idx" ON "SparePart"("configId", "category");
 
 -- DowntimeEvent
-CREATE TABLE "DowntimeEvent" (
+CREATE TABLE IF NOT EXISTS "DowntimeEvent" (
     "id" SERIAL PRIMARY KEY,
     "equipmentId" INTEGER NOT NULL,
     "startTime" TIMESTAMP(3) NOT NULL,
@@ -724,10 +799,10 @@ CREATE TABLE "DowntimeEvent" (
     CONSTRAINT "DowntimeEvent_equipmentId_fkey" FOREIGN KEY ("equipmentId") REFERENCES "Equipment"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "DowntimeEvent_equipmentId_startTime_idx" ON "DowntimeEvent"("equipmentId", "startTime" DESC);
+CREATE INDEX IF NOT EXISTS "DowntimeEvent_equipmentId_startTime_idx" ON "DowntimeEvent"("equipmentId", "startTime" DESC);
 
 -- PredictiveMaintenanceAnalytics
-CREATE TABLE "PredictiveMaintenanceAnalytics" (
+CREATE TABLE IF NOT EXISTS "PredictiveMaintenanceAnalytics" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
@@ -753,15 +828,15 @@ CREATE TABLE "PredictiveMaintenanceAnalytics" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE UNIQUE INDEX "PredictiveMaintenanceAnalytics_configId_date_key" ON "PredictiveMaintenanceAnalytics"("configId", "date");
-CREATE INDEX "PredictiveMaintenanceAnalytics_configId_date_idx" ON "PredictiveMaintenanceAnalytics"("configId", "date" DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS "PredictiveMaintenanceAnalytics_configId_date_key" ON "PredictiveMaintenanceAnalytics"("configId", "date");
+CREATE INDEX IF NOT EXISTS "PredictiveMaintenanceAnalytics_configId_date_idx" ON "PredictiveMaintenanceAnalytics"("configId", "date" DESC);
 
 -- ============================================================================
 -- PART 5: TOOL 3.4 - REVENUE MANAGEMENT (9 tables)
 -- ============================================================================
 
 -- RevenueManagementConfig
-CREATE TABLE "RevenueManagementConfig" (
+CREATE TABLE IF NOT EXISTS "RevenueManagementConfig" (
     "id" SERIAL PRIMARY KEY,
     "tenantId" TEXT,
     "clientId" INTEGER UNIQUE,
@@ -790,12 +865,12 @@ CREATE TABLE "RevenueManagementConfig" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE INDEX "RevenueManagementConfig_tenantId_isActive_idx" ON "RevenueManagementConfig"("tenantId", "isActive");
-CREATE INDEX "RevenueManagementConfig_clientId_isActive_idx" ON "RevenueManagementConfig"("clientId", "isActive");
-CREATE INDEX "RevenueManagementConfig_accountId_isActive_idx" ON "RevenueManagementConfig"("accountId", "isActive");
+CREATE INDEX IF NOT EXISTS "RevenueManagementConfig_tenantId_isActive_idx" ON "RevenueManagementConfig"("tenantId", "isActive");
+CREATE INDEX IF NOT EXISTS "RevenueManagementConfig_clientId_isActive_idx" ON "RevenueManagementConfig"("clientId", "isActive");
+CREATE INDEX IF NOT EXISTS "RevenueManagementConfig_accountId_isActive_idx" ON "RevenueManagementConfig"("accountId", "isActive");
 
 -- RateCategory
-CREATE TABLE "RateCategory" (
+CREATE TABLE IF NOT EXISTS "RateCategory" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "code" TEXT NOT NULL,
@@ -815,11 +890,11 @@ CREATE TABLE "RateCategory" (
     CONSTRAINT "RateCategory_configId_fkey" FOREIGN KEY ("configId") REFERENCES "RevenueManagementConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "RateCategory_configId_code_key" ON "RateCategory"("configId", "code");
-CREATE INDEX "RateCategory_configId_isActive_idx" ON "RateCategory"("configId", "isActive");
+CREATE UNIQUE INDEX IF NOT EXISTS "RateCategory_configId_code_key" ON "RateCategory"("configId", "code");
+CREATE INDEX IF NOT EXISTS "RateCategory_configId_isActive_idx" ON "RateCategory"("configId", "isActive");
 
 -- Competitor
-CREATE TABLE "Competitor" (
+CREATE TABLE IF NOT EXISTS "Competitor" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -837,10 +912,10 @@ CREATE TABLE "Competitor" (
     CONSTRAINT "Competitor_configId_fkey" FOREIGN KEY ("configId") REFERENCES "RevenueManagementConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "Competitor_configId_isActive_idx" ON "Competitor"("configId", "isActive");
+CREATE INDEX IF NOT EXISTS "Competitor_configId_isActive_idx" ON "Competitor"("configId", "isActive");
 
 -- CompetitorRate
-CREATE TABLE "CompetitorRate" (
+CREATE TABLE IF NOT EXISTS "CompetitorRate" (
     "id" SERIAL PRIMARY KEY,
     "competitorId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
@@ -852,10 +927,10 @@ CREATE TABLE "CompetitorRate" (
     CONSTRAINT "CompetitorRate_competitorId_fkey" FOREIGN KEY ("competitorId") REFERENCES "Competitor"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "CompetitorRate_competitorId_date_idx" ON "CompetitorRate"("competitorId", "date");
+CREATE INDEX IF NOT EXISTS "CompetitorRate_competitorId_date_idx" ON "CompetitorRate"("competitorId", "date");
 
 -- DemandForecast
-CREATE TABLE "DemandForecast" (
+CREATE TABLE IF NOT EXISTS "DemandForecast" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "categoryId" INTEGER,
@@ -874,11 +949,11 @@ CREATE TABLE "DemandForecast" (
     CONSTRAINT "DemandForecast_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "RateCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "DemandForecast_configId_categoryId_forecastDate_key" ON "DemandForecast"("configId", "categoryId", "forecastDate");
-CREATE INDEX "DemandForecast_configId_forecastDate_idx" ON "DemandForecast"("configId", "forecastDate");
+CREATE UNIQUE INDEX IF NOT EXISTS "DemandForecast_configId_categoryId_forecastDate_key" ON "DemandForecast"("configId", "categoryId", "forecastDate");
+CREATE INDEX IF NOT EXISTS "DemandForecast_configId_forecastDate_idx" ON "DemandForecast"("configId", "forecastDate");
 
 -- PriceRecommendation
-CREATE TABLE "PriceRecommendation" (
+CREATE TABLE IF NOT EXISTS "PriceRecommendation" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "categoryId" INTEGER NOT NULL,
@@ -904,12 +979,12 @@ CREATE TABLE "PriceRecommendation" (
     CONSTRAINT "PriceRecommendation_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "RateCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "PriceRecommendation_configId_status_idx" ON "PriceRecommendation"("configId", "status");
-CREATE INDEX "PriceRecommendation_categoryId_date_idx" ON "PriceRecommendation"("categoryId", "date");
-CREATE INDEX "PriceRecommendation_date_idx" ON "PriceRecommendation"("date");
+CREATE INDEX IF NOT EXISTS "PriceRecommendation_configId_status_idx" ON "PriceRecommendation"("configId", "status");
+CREATE INDEX IF NOT EXISTS "PriceRecommendation_categoryId_date_idx" ON "PriceRecommendation"("categoryId", "date");
+CREATE INDEX IF NOT EXISTS "PriceRecommendation_date_idx" ON "PriceRecommendation"("date");
 
 -- RevenuePromotion
-CREATE TABLE "RevenuePromotion" (
+CREATE TABLE IF NOT EXISTS "RevenuePromotion" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -936,12 +1011,12 @@ CREATE TABLE "RevenuePromotion" (
     CONSTRAINT "RevenuePromotion_configId_fkey" FOREIGN KEY ("configId") REFERENCES "RevenueManagementConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "RevenuePromotion_configId_code_key" ON "RevenuePromotion"("configId", "code");
-CREATE INDEX "RevenuePromotion_configId_isActive_idx" ON "RevenuePromotion"("configId", "isActive");
-CREATE INDEX "RevenuePromotion_startDate_endDate_idx" ON "RevenuePromotion"("startDate", "endDate");
+CREATE UNIQUE INDEX IF NOT EXISTS "RevenuePromotion_configId_code_key" ON "RevenuePromotion"("configId", "code");
+CREATE INDEX IF NOT EXISTS "RevenuePromotion_configId_isActive_idx" ON "RevenuePromotion"("configId", "isActive");
+CREATE INDEX IF NOT EXISTS "RevenuePromotion_startDate_endDate_idx" ON "RevenuePromotion"("startDate", "endDate");
 
 -- BookingData
-CREATE TABLE "BookingData" (
+CREATE TABLE IF NOT EXISTS "BookingData" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "categoryId" INTEGER,
@@ -962,12 +1037,12 @@ CREATE TABLE "BookingData" (
     CONSTRAINT "BookingData_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "RateCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE INDEX "BookingData_configId_stayDate_idx" ON "BookingData"("configId", "stayDate");
-CREATE INDEX "BookingData_categoryId_stayDate_idx" ON "BookingData"("categoryId", "stayDate");
-CREATE INDEX "BookingData_bookingDate_idx" ON "BookingData"("bookingDate");
+CREATE INDEX IF NOT EXISTS "BookingData_configId_stayDate_idx" ON "BookingData"("configId", "stayDate");
+CREATE INDEX IF NOT EXISTS "BookingData_categoryId_stayDate_idx" ON "BookingData"("categoryId", "stayDate");
+CREATE INDEX IF NOT EXISTS "BookingData_bookingDate_idx" ON "BookingData"("bookingDate");
 
 -- RevenueManagementAnalytics
-CREATE TABLE "RevenueManagementAnalytics" (
+CREATE TABLE IF NOT EXISTS "RevenueManagementAnalytics" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
@@ -991,15 +1066,15 @@ CREATE TABLE "RevenueManagementAnalytics" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE UNIQUE INDEX "RevenueManagementAnalytics_configId_date_key" ON "RevenueManagementAnalytics"("configId", "date");
-CREATE INDEX "RevenueManagementAnalytics_configId_date_idx" ON "RevenueManagementAnalytics"("configId", "date" DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS "RevenueManagementAnalytics_configId_date_key" ON "RevenueManagementAnalytics"("configId", "date");
+CREATE INDEX IF NOT EXISTS "RevenueManagementAnalytics_configId_date_idx" ON "RevenueManagementAnalytics"("configId", "date" DESC);
 
 -- ============================================================================
 -- PART 6: TOOL 3.5 - SAFETY MONITOR (10 tables)
 -- ============================================================================
 
 -- SafetyMonitorConfig
-CREATE TABLE "SafetyMonitorConfig" (
+CREATE TABLE IF NOT EXISTS "SafetyMonitorConfig" (
     "id" SERIAL PRIMARY KEY,
     "tenantId" TEXT,
     "clientId" INTEGER UNIQUE,
@@ -1024,12 +1099,12 @@ CREATE TABLE "SafetyMonitorConfig" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE INDEX "SafetyMonitorConfig_tenantId_isActive_idx" ON "SafetyMonitorConfig"("tenantId", "isActive");
-CREATE INDEX "SafetyMonitorConfig_clientId_isActive_idx" ON "SafetyMonitorConfig"("clientId", "isActive");
-CREATE INDEX "SafetyMonitorConfig_accountId_isActive_idx" ON "SafetyMonitorConfig"("accountId", "isActive");
+CREATE INDEX IF NOT EXISTS "SafetyMonitorConfig_tenantId_isActive_idx" ON "SafetyMonitorConfig"("tenantId", "isActive");
+CREATE INDEX IF NOT EXISTS "SafetyMonitorConfig_clientId_isActive_idx" ON "SafetyMonitorConfig"("clientId", "isActive");
+CREATE INDEX IF NOT EXISTS "SafetyMonitorConfig_accountId_isActive_idx" ON "SafetyMonitorConfig"("accountId", "isActive");
 
 -- SafetyChecklist
-CREATE TABLE "SafetyChecklist" (
+CREATE TABLE IF NOT EXISTS "SafetyChecklist" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -1049,11 +1124,11 @@ CREATE TABLE "SafetyChecklist" (
     CONSTRAINT "SafetyChecklist_configId_fkey" FOREIGN KEY ("configId") REFERENCES "SafetyMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "SafetyChecklist_configId_category_idx" ON "SafetyChecklist"("configId", "category");
-CREATE INDEX "SafetyChecklist_configId_isActive_idx" ON "SafetyChecklist"("configId", "isActive");
+CREATE INDEX IF NOT EXISTS "SafetyChecklist_configId_category_idx" ON "SafetyChecklist"("configId", "category");
+CREATE INDEX IF NOT EXISTS "SafetyChecklist_configId_isActive_idx" ON "SafetyChecklist"("configId", "isActive");
 
 -- ChecklistCompletion
-CREATE TABLE "ChecklistCompletion" (
+CREATE TABLE IF NOT EXISTS "ChecklistCompletion" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "checklistId" INTEGER NOT NULL,
@@ -1079,12 +1154,12 @@ CREATE TABLE "ChecklistCompletion" (
     CONSTRAINT "ChecklistCompletion_checklistId_fkey" FOREIGN KEY ("checklistId") REFERENCES "SafetyChecklist"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "ChecklistCompletion_configId_status_idx" ON "ChecklistCompletion"("configId", "status");
-CREATE INDEX "ChecklistCompletion_checklistId_dueDate_idx" ON "ChecklistCompletion"("checklistId", "dueDate");
-CREATE INDEX "ChecklistCompletion_assignedTo_status_idx" ON "ChecklistCompletion"("assignedTo", "status");
+CREATE INDEX IF NOT EXISTS "ChecklistCompletion_configId_status_idx" ON "ChecklistCompletion"("configId", "status");
+CREATE INDEX IF NOT EXISTS "ChecklistCompletion_checklistId_dueDate_idx" ON "ChecklistCompletion"("checklistId", "dueDate");
+CREATE INDEX IF NOT EXISTS "ChecklistCompletion_assignedTo_status_idx" ON "ChecklistCompletion"("assignedTo", "status");
 
 -- SafetyIncident
-CREATE TABLE "SafetyIncident" (
+CREATE TABLE IF NOT EXISTS "SafetyIncident" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "incidentNumber" TEXT NOT NULL,
@@ -1123,13 +1198,13 @@ CREATE TABLE "SafetyIncident" (
     CONSTRAINT "SafetyIncident_configId_fkey" FOREIGN KEY ("configId") REFERENCES "SafetyMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "SafetyIncident_configId_incidentNumber_key" ON "SafetyIncident"("configId", "incidentNumber");
-CREATE INDEX "SafetyIncident_configId_status_idx" ON "SafetyIncident"("configId", "status");
-CREATE INDEX "SafetyIncident_configId_severity_idx" ON "SafetyIncident"("configId", "severity");
-CREATE INDEX "SafetyIncident_occurredAt_idx" ON "SafetyIncident"("occurredAt" DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS "SafetyIncident_configId_incidentNumber_key" ON "SafetyIncident"("configId", "incidentNumber");
+CREATE INDEX IF NOT EXISTS "SafetyIncident_configId_status_idx" ON "SafetyIncident"("configId", "status");
+CREATE INDEX IF NOT EXISTS "SafetyIncident_configId_severity_idx" ON "SafetyIncident"("configId", "severity");
+CREATE INDEX IF NOT EXISTS "SafetyIncident_occurredAt_idx" ON "SafetyIncident"("occurredAt" DESC);
 
 -- HazardReport
-CREATE TABLE "HazardReport" (
+CREATE TABLE IF NOT EXISTS "HazardReport" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "title" TEXT NOT NULL,
@@ -1155,11 +1230,11 @@ CREATE TABLE "HazardReport" (
     CONSTRAINT "HazardReport_configId_fkey" FOREIGN KEY ("configId") REFERENCES "SafetyMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "HazardReport_configId_riskLevel_idx" ON "HazardReport"("configId", "riskLevel");
-CREATE INDEX "HazardReport_configId_mitigationStatus_idx" ON "HazardReport"("configId", "mitigationStatus");
+CREATE INDEX IF NOT EXISTS "HazardReport_configId_riskLevel_idx" ON "HazardReport"("configId", "riskLevel");
+CREATE INDEX IF NOT EXISTS "HazardReport_configId_mitigationStatus_idx" ON "HazardReport"("configId", "mitigationStatus");
 
 -- TrainingRequirement
-CREATE TABLE "TrainingRequirement" (
+CREATE TABLE IF NOT EXISTS "TrainingRequirement" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -1181,11 +1256,11 @@ CREATE TABLE "TrainingRequirement" (
     CONSTRAINT "TrainingRequirement_configId_fkey" FOREIGN KEY ("configId") REFERENCES "SafetyMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "TrainingRequirement_configId_category_idx" ON "TrainingRequirement"("configId", "category");
-CREATE INDEX "TrainingRequirement_configId_isActive_idx" ON "TrainingRequirement"("configId", "isActive");
+CREATE INDEX IF NOT EXISTS "TrainingRequirement_configId_category_idx" ON "TrainingRequirement"("configId", "category");
+CREATE INDEX IF NOT EXISTS "TrainingRequirement_configId_isActive_idx" ON "TrainingRequirement"("configId", "isActive");
 
 -- TrainingRecord
-CREATE TABLE "TrainingRecord" (
+CREATE TABLE IF NOT EXISTS "TrainingRecord" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "requirementId" INTEGER NOT NULL,
@@ -1211,13 +1286,13 @@ CREATE TABLE "TrainingRecord" (
     CONSTRAINT "TrainingRecord_requirementId_fkey" FOREIGN KEY ("requirementId") REFERENCES "TrainingRequirement"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "TrainingRecord_configId_requirementId_employeeId_key" ON "TrainingRecord"("configId", "requirementId", "employeeId");
-CREATE INDEX "TrainingRecord_configId_status_idx" ON "TrainingRecord"("configId", "status");
-CREATE INDEX "TrainingRecord_employeeId_idx" ON "TrainingRecord"("employeeId");
-CREATE INDEX "TrainingRecord_expiresAt_idx" ON "TrainingRecord"("expiresAt");
+CREATE UNIQUE INDEX IF NOT EXISTS "TrainingRecord_configId_requirementId_employeeId_key" ON "TrainingRecord"("configId", "requirementId", "employeeId");
+CREATE INDEX IF NOT EXISTS "TrainingRecord_configId_status_idx" ON "TrainingRecord"("configId", "status");
+CREATE INDEX IF NOT EXISTS "TrainingRecord_employeeId_idx" ON "TrainingRecord"("employeeId");
+CREATE INDEX IF NOT EXISTS "TrainingRecord_expiresAt_idx" ON "TrainingRecord"("expiresAt");
 
 -- OshaLog
-CREATE TABLE "OshaLog" (
+CREATE TABLE IF NOT EXISTS "OshaLog" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "year" INTEGER NOT NULL,
@@ -1241,11 +1316,11 @@ CREATE TABLE "OshaLog" (
     CONSTRAINT "OshaLog_configId_fkey" FOREIGN KEY ("configId") REFERENCES "SafetyMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX "OshaLog_configId_year_caseNumber_key" ON "OshaLog"("configId", "year", "caseNumber");
-CREATE INDEX "OshaLog_configId_year_idx" ON "OshaLog"("configId", "year");
+CREATE UNIQUE INDEX IF NOT EXISTS "OshaLog_configId_year_caseNumber_key" ON "OshaLog"("configId", "year", "caseNumber");
+CREATE INDEX IF NOT EXISTS "OshaLog_configId_year_idx" ON "OshaLog"("configId", "year");
 
 -- SafetyInspection
-CREATE TABLE "SafetyInspection" (
+CREATE TABLE IF NOT EXISTS "SafetyInspection" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
@@ -1271,11 +1346,11 @@ CREATE TABLE "SafetyInspection" (
     CONSTRAINT "SafetyInspection_configId_fkey" FOREIGN KEY ("configId") REFERENCES "SafetyMonitorConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX "SafetyInspection_configId_status_idx" ON "SafetyInspection"("configId", "status");
-CREATE INDEX "SafetyInspection_scheduledDate_idx" ON "SafetyInspection"("scheduledDate");
+CREATE INDEX IF NOT EXISTS "SafetyInspection_configId_status_idx" ON "SafetyInspection"("configId", "status");
+CREATE INDEX IF NOT EXISTS "SafetyInspection_scheduledDate_idx" ON "SafetyInspection"("scheduledDate");
 
 -- SafetyMonitorAnalytics
-CREATE TABLE "SafetyMonitorAnalytics" (
+CREATE TABLE IF NOT EXISTS "SafetyMonitorAnalytics" (
     "id" SERIAL PRIMARY KEY,
     "configId" INTEGER NOT NULL,
     "date" DATE NOT NULL,
@@ -1302,49 +1377,90 @@ CREATE TABLE "SafetyMonitorAnalytics" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
-CREATE UNIQUE INDEX "SafetyMonitorAnalytics_configId_date_key" ON "SafetyMonitorAnalytics"("configId", "date");
-CREATE INDEX "SafetyMonitorAnalytics_configId_date_idx" ON "SafetyMonitorAnalytics"("configId", "date" DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS "SafetyMonitorAnalytics_configId_date_key" ON "SafetyMonitorAnalytics"("configId", "date");
+CREATE INDEX IF NOT EXISTS "SafetyMonitorAnalytics_configId_date_idx" ON "SafetyMonitorAnalytics"("configId", "date" DESC);
 
 -- ============================================================================
 -- PART 7: FOREIGN KEYS - Config tables to Tenant, Client, Account
+-- (Using DO blocks to handle existing constraints gracefully)
 -- ============================================================================
 
 -- InventoryForecastConfig FKs
-ALTER TABLE "InventoryForecastConfig" ADD CONSTRAINT "InventoryForecastConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "InventoryForecastConfig" ADD CONSTRAINT "InventoryForecastConfig_clientId_fkey"
-    FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "InventoryForecastConfig" ADD CONSTRAINT "InventoryForecastConfig_accountId_fkey"
-    FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "InventoryForecastConfig" ADD CONSTRAINT "InventoryForecastConfig_tenantId_fkey"
+        FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "InventoryForecastConfig" ADD CONSTRAINT "InventoryForecastConfig_clientId_fkey"
+        FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "InventoryForecastConfig" ADD CONSTRAINT "InventoryForecastConfig_accountId_fkey"
+        FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ComplianceMonitorConfig FKs
-ALTER TABLE "ComplianceMonitorConfig" ADD CONSTRAINT "ComplianceMonitorConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ComplianceMonitorConfig" ADD CONSTRAINT "ComplianceMonitorConfig_clientId_fkey"
-    FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ComplianceMonitorConfig" ADD CONSTRAINT "ComplianceMonitorConfig_accountId_fkey"
-    FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "ComplianceMonitorConfig" ADD CONSTRAINT "ComplianceMonitorConfig_tenantId_fkey"
+        FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "ComplianceMonitorConfig" ADD CONSTRAINT "ComplianceMonitorConfig_clientId_fkey"
+        FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "ComplianceMonitorConfig" ADD CONSTRAINT "ComplianceMonitorConfig_accountId_fkey"
+        FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- PredictiveMaintenanceConfig FKs
-ALTER TABLE "PredictiveMaintenanceConfig" ADD CONSTRAINT "PredictiveMaintenanceConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "PredictiveMaintenanceConfig" ADD CONSTRAINT "PredictiveMaintenanceConfig_clientId_fkey"
-    FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "PredictiveMaintenanceConfig" ADD CONSTRAINT "PredictiveMaintenanceConfig_accountId_fkey"
-    FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "PredictiveMaintenanceConfig" ADD CONSTRAINT "PredictiveMaintenanceConfig_tenantId_fkey"
+        FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "PredictiveMaintenanceConfig" ADD CONSTRAINT "PredictiveMaintenanceConfig_clientId_fkey"
+        FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "PredictiveMaintenanceConfig" ADD CONSTRAINT "PredictiveMaintenanceConfig_accountId_fkey"
+        FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- RevenueManagementConfig FKs
-ALTER TABLE "RevenueManagementConfig" ADD CONSTRAINT "RevenueManagementConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "RevenueManagementConfig" ADD CONSTRAINT "RevenueManagementConfig_clientId_fkey"
-    FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "RevenueManagementConfig" ADD CONSTRAINT "RevenueManagementConfig_accountId_fkey"
-    FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "RevenueManagementConfig" ADD CONSTRAINT "RevenueManagementConfig_tenantId_fkey"
+        FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "RevenueManagementConfig" ADD CONSTRAINT "RevenueManagementConfig_clientId_fkey"
+        FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "RevenueManagementConfig" ADD CONSTRAINT "RevenueManagementConfig_accountId_fkey"
+        FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- SafetyMonitorConfig FKs
-ALTER TABLE "SafetyMonitorConfig" ADD CONSTRAINT "SafetyMonitorConfig_tenantId_fkey"
-    FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "SafetyMonitorConfig" ADD CONSTRAINT "SafetyMonitorConfig_clientId_fkey"
-    FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "SafetyMonitorConfig" ADD CONSTRAINT "SafetyMonitorConfig_accountId_fkey"
-    FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "SafetyMonitorConfig" ADD CONSTRAINT "SafetyMonitorConfig_tenantId_fkey"
+        FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "SafetyMonitorConfig" ADD CONSTRAINT "SafetyMonitorConfig_clientId_fkey"
+        FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "SafetyMonitorConfig" ADD CONSTRAINT "SafetyMonitorConfig_accountId_fkey"
+        FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
