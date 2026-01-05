@@ -13,6 +13,7 @@ import {
   IntegrationType,
 } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as documentAnalyzerService from './document-analyzer.service';
 import {
   hasClientAccess,
@@ -64,6 +65,9 @@ import {
 } from './services/analytics.service';
 
 const router = Router();
+
+// Apply tenant middleware to all routes
+router.use(requireAuth, tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS

@@ -13,6 +13,7 @@ import {
   AlertStatus,
 } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as inventoryService from './inventory-forecasting.service';
 import {
   hasClientAccess,
@@ -21,6 +22,9 @@ import {
 } from '../../auth/client-auth.helper';
 
 const router = Router();
+
+// Apply tenant middleware to all routes
+router.use(requireAuth, tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS

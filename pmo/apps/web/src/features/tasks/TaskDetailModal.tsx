@@ -23,6 +23,7 @@ import {
   useCreateSubtask,
   useUpdateSubtaskStatus,
 } from '../../api/hooks/tasks';
+import { toUTCISOString } from '../../utils/dateUtils';
 
 interface TaskDetailModalProps {
   isOpen: boolean;
@@ -166,7 +167,7 @@ export function TaskDetailModal({
       description: formValues.description.trim() || undefined,
       status: formValues.status as TaskUpdatePayload['status'],
       priority: formValues.priority as TaskUpdatePayload['priority'],
-      dueDate: formValues.dueDate || null,
+      dueDate: formValues.dueDate ? toUTCISOString(formValues.dueDate) : null,
       milestoneId: formValues.milestoneId
         ? parseInt(formValues.milestoneId, 10)
         : null,

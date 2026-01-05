@@ -64,7 +64,7 @@ const findContentWithAccess = async (id: number, ownerId: number) => {
   const content = await prisma.marketingContent.findFirst({
     where: { id, tenantId },
     include: {
-      client: true,
+      account: true,
       project: true,
     },
   });
@@ -177,7 +177,7 @@ export const listMarketingContents = async (
   const contents = await prisma.marketingContent.findMany({
     where,
     include: {
-      client: { select: { id: true, name: true } },
+      account: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true, email: true } },
     },
@@ -200,7 +200,7 @@ export const getMarketingContentById = async (id: number, ownerId: number) => {
   const content = await prisma.marketingContent.findUnique({
     where: { id },
     include: {
-      client: { select: { id: true, name: true } },
+      account: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
       sourceMeeting: { select: { id: true, title: true, date: true } },
       createdBy: { select: { id: true, name: true, email: true } },
@@ -246,16 +246,21 @@ export const createMarketingContent = async (
   }
 
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+  // Extract clientId and use it as accountId (the clientId field is deprecated)
+  const { clientId, ...restData } = data;
+
   const content = await prisma.marketingContent.create({
     data: {
-      ...data,
+      ...restData,
+      accountId: clientId, // Use the passed clientId as accountId (Account is the new model)
       createdById: ownerId,
       tenantId,
       tags: data.tags ?? [],
       content: data.content as Prisma.InputJsonValue,
     },
     include: {
-      client: { select: { id: true, name: true } },
+      account: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true, email: true } },
     },
@@ -316,7 +321,7 @@ export const updateMarketingContent = async (
           : undefined,
     },
     include: {
-      client: { select: { id: true, name: true } },
+      account: { select: { id: true, name: true } },
       project: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true, email: true } },
     },
@@ -375,7 +380,7 @@ export const getMarketingContentsByProject = async (
   const contents = await prisma.marketingContent.findMany({
     where: { projectId, tenantId, archived: false },
     include: {
-      client: { select: { id: true, name: true } },
+      account: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },
     },
     orderBy: [{ createdAt: 'desc' }],
@@ -399,7 +404,7 @@ export const generateContent = async (
     const project = await prisma.project.findFirst({
       where: { id: sourceId, tenantId },
       include: {
-        client: true,
+        account: true,
         meetings: {
           orderBy: { date: 'desc' },
           take: 5,
@@ -447,7 +452,7 @@ export const generateContent = async (
       include: {
         project: {
           include: {
-            client: true,
+            account: true,
           },
         },
       },
@@ -509,7 +514,7 @@ export const repurposeContent = async (
   const sourceContent = await prisma.marketingContent.findFirst({
     where: { id: contentId, tenantId },
     include: {
-      client: true,
+      account: true,
       project: true,
       sourceMeeting: true,
     },

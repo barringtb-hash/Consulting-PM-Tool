@@ -762,7 +762,11 @@ export async function getPipelineStages(pipelineId?: number) {
   }
 
   if (!pipeline) {
-    return [];
+    return {
+      pipelineId: 0,
+      pipelineName: '',
+      stages: [],
+    };
   }
 
   // Get all stages for this pipeline

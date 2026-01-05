@@ -24,6 +24,7 @@ import {
   usePipelineStages,
   type Opportunity,
 } from '../../api/hooks/crm';
+import { moveOpportunityToStage } from '../../api/opportunities';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
@@ -127,21 +128,7 @@ function OpportunitiesPage(): JSX.Element {
     async (opportunityId: number, newStageId: number) => {
       setMovingOpportunityId(opportunityId);
       try {
-        // We need to call the API directly here since we can't use hooks conditionally
-        const response = await fetch(
-          `/api/crm/opportunities/${opportunityId}/stage`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ stageId: newStageId }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to move opportunity');
-        }
-
+        await moveOpportunityToStage(opportunityId, newStageId);
         showToast({ message: 'Stage updated', variant: 'success' });
         // Refetch to update the UI
         opportunitiesQuery.refetch();

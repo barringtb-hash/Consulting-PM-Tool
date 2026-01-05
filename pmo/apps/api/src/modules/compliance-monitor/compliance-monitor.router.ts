@@ -8,6 +8,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { ViolationStatus, AuditStatus, RiskLevel } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as complianceService from './compliance-monitor.service';
 import {
   hasClientAccess,
@@ -15,6 +16,9 @@ import {
 } from '../../auth/client-auth.helper';
 
 const router = Router();
+
+// Apply tenant middleware to all routes
+router.use(requireAuth, tenantMiddleware);
 
 // ============ Validation Schemas ============
 

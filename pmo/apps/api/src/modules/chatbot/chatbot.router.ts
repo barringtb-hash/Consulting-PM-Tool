@@ -8,9 +8,18 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Prisma, ConversationStatus } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import {
+  tenantMiddleware,
+  requireTenant,
+  type TenantRequest,
+} from '../../tenant/tenant.middleware';
 import * as chatbotService from './chatbot.service';
 
 const router = Router();
+
+// Apply tenant middleware to all routes that require authentication
+// This ensures tenant context is available for multi-tenant isolation
+router.use(requireAuth, tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -82,8 +91,8 @@ const feedbackSchema = z.object({
  */
 router.get(
   '/chatbot/configs',
-  requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -111,8 +120,11 @@ router.get(
  */
 router.get(
   '/clients/:clientId/chatbot',
-  requireAuth,
-  async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
+  requireTenant,
+  async (
+    req: TenantRequest & { params: { clientId: string } },
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -136,8 +148,11 @@ router.get(
  */
 router.post(
   '/clients/:clientId/chatbot',
-  requireAuth,
-  async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
+  requireTenant,
+  async (
+    req: TenantRequest & { params: { clientId: string } },
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -184,8 +199,11 @@ router.post(
  */
 router.patch(
   '/clients/:clientId/chatbot',
-  requireAuth,
-  async (req: AuthenticatedRequest<{ clientId: string }>, res: Response) => {
+  requireTenant,
+  async (
+    req: TenantRequest & { params: { clientId: string } },
+    res: Response,
+  ) => {
     if (!req.userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
