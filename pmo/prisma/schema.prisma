@@ -2557,7 +2557,7 @@ model IntakeConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
-  @@index([accountId])
+  @@index([accountId, isActive])
 }
 
 /**
