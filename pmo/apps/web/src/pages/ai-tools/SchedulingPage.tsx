@@ -373,7 +373,7 @@ function SchedulingPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="space-y-6">
       <PageHeader
         title="AI Scheduling"
         description="Smart appointment scheduling with no-show prediction and automated reminders"

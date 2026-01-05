@@ -436,7 +436,7 @@ function ProductDescriptionsPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="space-y-6">
       <PageHeader
         title="Product Descriptions"
         description="Generate AI-powered product descriptions for multiple marketplaces"

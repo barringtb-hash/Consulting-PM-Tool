@@ -362,7 +362,7 @@ function IntakePage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="space-y-6">
       <PageHeader
         title="Client Intake"
         description="Automated client intake with smart forms and compliance management"
