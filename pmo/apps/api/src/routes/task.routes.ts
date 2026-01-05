@@ -37,8 +37,13 @@ router.get('/tasks/my', async (req: AuthenticatedRequest, res: Response) => {
     return;
   }
 
-  const result = await listTasksForUser(req.userId);
-  res.json({ tasks: result.tasks });
+  try {
+    const result = await listTasksForUser(req.userId);
+    res.json({ tasks: result.tasks });
+  } catch (error) {
+    console.error('Error fetching user tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
 });
 
 router.get(

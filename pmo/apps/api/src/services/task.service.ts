@@ -849,24 +849,25 @@ export const listTasksForUser = async (userId: number) => {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Filter out tasks from projects the user doesn't have access to
-  const accessibleTasks = tasks.filter((task) =>
-    hasProjectAccess(task.project, userId),
+  // Filter out tasks with missing projects (orphaned data) and tasks the user doesn't have access to
+  const accessibleTasks = tasks.filter(
+    (task) => task.project && hasProjectAccess(task.project, userId),
   );
 
   // Transform to include completed subtask count and project name
   const tasksWithCounts = accessibleTasks.map((task) => {
     const { subTasks, _count, project, parentTask, ...taskData } = task;
-    const completedSubtasks = subTasks.filter(
+    // Null checks for safety (project is guaranteed non-null from filter above)
+    const completedSubtasks = (subTasks ?? []).filter(
       (st) => st.status === 'DONE',
     ).length;
     return {
       ...taskData,
-      project: { id: project.id, name: project.name },
+      project: { id: project!.id, name: project!.name },
       parentTask: parentTask
         ? { id: parentTask.id, title: parentTask.title }
         : null,
-      subTaskCount: _count.subTasks,
+      subTaskCount: _count?.subTasks ?? 0,
       subTaskCompletedCount: completedSubtasks,
     };
   });
