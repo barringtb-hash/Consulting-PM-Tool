@@ -322,7 +322,7 @@ function LeadScoringPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="space-y-6">
       <PageHeader
         title="Lead Scoring & CRM Assistant"
         subtitle="ML-powered lead scoring with predictive analytics and nurture sequences"

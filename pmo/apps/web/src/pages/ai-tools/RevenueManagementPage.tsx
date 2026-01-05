@@ -242,7 +242,7 @@ function RevenueManagementPage(): JSX.Element {
     }).format(value);
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="space-y-6">
       <PageHeader
         title="Revenue Management"
         subtitle="AI-powered dynamic pricing with demand forecasting and competitor monitoring"

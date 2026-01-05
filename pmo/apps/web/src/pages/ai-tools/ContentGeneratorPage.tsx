@@ -280,7 +280,7 @@ function ContentGeneratorPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="space-y-6">
       <PageHeader
         title="Content Generation Suite"
         subtitle="AI-powered content creation with brand voice consistency and approval workflows"

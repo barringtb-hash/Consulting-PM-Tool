@@ -234,7 +234,7 @@ function InventoryForecastingPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+    <div className="space-y-6">
       <PageHeader
         title="Inventory Forecasting"
         subtitle="ML-powered inventory forecasting with seasonal trends and automated alerts"
