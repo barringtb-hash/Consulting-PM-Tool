@@ -348,12 +348,12 @@ model Client {
   leadScoringConfig      LeadScoringConfig?
   priorAuthConfig        PriorAuthConfig?
 
-  // Phase 3 AI Tools
-  inventoryForecastConfig     InventoryForecastConfig?
-  complianceMonitorConfig     ComplianceMonitorConfig?
-  predictiveMaintenanceConfig PredictiveMaintenanceConfig?
-  revenueManagementConfig     RevenueManagementConfig?
-  safetyMonitorConfig         SafetyMonitorConfig?
+  // Phase 3 AI Tools - relations commented out until tables are created via migration
+  // inventoryForecastConfig     InventoryForecastConfig?
+  // complianceMonitorConfig     ComplianceMonitorConfig?
+  // predictiveMaintenanceConfig PredictiveMaintenanceConfig?
+  // revenueManagementConfig     RevenueManagementConfig?
+  // safetyMonitorConfig         SafetyMonitorConfig?
 
   // Customer Success Platform relations
   healthScores      CustomerHealthScore[]
@@ -4432,9 +4432,10 @@ model InventoryForecastConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant    Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client    Client?             @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  account   Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Tenant and Client relations commented out until table is created via migration
+  // tenant    Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // client    Client?             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  // account   Account?            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   locations InventoryLocation[]
   products  InventoryProduct[]
   forecasts InventoryForecast[]
@@ -4443,7 +4444,7 @@ model InventoryForecastConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
-  @@index([accountId])
+  // @@index([accountId])
 }
 
 model InventoryLocation {
@@ -4731,9 +4732,10 @@ model ComplianceMonitorConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant          Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client          Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  account         Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Tenant and Client relations commented out until table is created via migration
+  // tenant          Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // client          Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  // account         Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   complianceRules ComplianceRule[]
   violations      ComplianceViolation[]
   audits          ComplianceAudit[]
@@ -4743,7 +4745,7 @@ model ComplianceMonitorConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
-  @@index([accountId])
+  // @@index([accountId])
 }
 
 model ComplianceRule {
@@ -5039,9 +5041,10 @@ model PredictiveMaintenanceConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant              Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client              Client?                @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  account             Account?               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Tenant, Client, and Account relations commented out until table is created via migration
+  // tenant              Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // client              Client?                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  // account             Account?               @relation(fields: [accountId], references: [id], onDelete: Cascade)
   equipment           Equipment[]
   sensors             Sensor[]
   workOrders          MaintenanceWorkOrder[]
@@ -5050,7 +5053,7 @@ model PredictiveMaintenanceConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
-  @@index([accountId])
+  // @@index([accountId])
 }
 
 model Equipment {
@@ -5413,9 +5416,10 @@ model RevenueManagementConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client               Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  account              Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Tenant, Client, and Account relations commented out until table is created via migration
+  // tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // client               Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  // account              Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   rateCategories       RateCategory[]
   competitors          Competitor[]
   demandForecasts      DemandForecast[]
@@ -5425,7 +5429,7 @@ model RevenueManagementConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
-  @@index([accountId])
+  // @@index([accountId])
 }
 
 model RateCategory {
@@ -5742,9 +5746,10 @@ model SafetyMonitorConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client               Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  account              Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Tenant, Client, and Account relations commented out until table is created via migration
+  // tenant               Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // client               Client?               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  // account              Account?              @relation(fields: [accountId], references: [id], onDelete: Cascade)
   checklists           SafetyChecklist[]
   checklistCompletions ChecklistCompletion[]
   incidents            SafetyIncident[]
@@ -5756,7 +5761,7 @@ model SafetyMonitorConfig {
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
-  @@index([accountId])
+  // @@index([accountId])
 }
 
 model SafetyChecklist {
@@ -7016,11 +7021,12 @@ model Tenant {
   contentGeneratorConfigs      ContentGeneratorConfig[]
   leadScoringConfigs           LeadScoringConfig[]
   priorAuthConfigs             PriorAuthConfig[]
-  inventoryForecastConfigs     InventoryForecastConfig[]
-  complianceMonitorConfigs     ComplianceMonitorConfig[]
-  predictiveMaintenanceConfigs PredictiveMaintenanceConfig[]
-  revenueManagementConfigs     RevenueManagementConfig[]
-  safetyMonitorConfigs         SafetyMonitorConfig[]
+  // Phase 3 AI Tools - relations commented out until tables are created via migration
+  // inventoryForecastConfigs     InventoryForecastConfig[]
+  // complianceMonitorConfigs     ComplianceMonitorConfig[]
+  // predictiveMaintenanceConfigs PredictiveMaintenanceConfig[]
+  // revenueManagementConfigs     RevenueManagementConfig[]
+  // safetyMonitorConfigs         SafetyMonitorConfig[]
   // Audit and health metrics
   auditLogs                    AuditLog[]
   healthMetrics                TenantHealthMetrics[]
@@ -7208,11 +7214,12 @@ model Account {
   documentAnalyzerConfig     DocumentAnalyzerConfig?
   productDescriptionConfig   ProductDescriptionConfig?
   intakeConfig               IntakeConfig?
-  inventoryForecastConfig    InventoryForecastConfig?
-  complianceMonitorConfig    ComplianceMonitorConfig?
-  predictiveMaintenanceConfig PredictiveMaintenanceConfig?
-  revenueManagementConfig    RevenueManagementConfig?
-  safetyMonitorConfig        SafetyMonitorConfig?
+  // Phase 3 AI Tools - relations commented out until tables are created via migration
+  // inventoryForecastConfig    InventoryForecastConfig?
+  // complianceMonitorConfig    ComplianceMonitorConfig?
+  // predictiveMaintenanceConfig PredictiveMaintenanceConfig?
+  // revenueManagementConfig    RevenueManagementConfig?
+  // safetyMonitorConfig        SafetyMonitorConfig?
 
   // Finance Tracking relations
   budgets         Budget[]
