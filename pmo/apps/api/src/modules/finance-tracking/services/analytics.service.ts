@@ -113,12 +113,13 @@ export async function getDashboardOverview(params: {
     }),
   ]);
 
-  // Calculate budget utilization
-  const totalBudgeted = activeBudgets.reduce(
-    (sum, b) => sum + Number(b.amount) + Number(b.rolloverAmount),
-    0,
-  );
-  const totalSpent = activeBudgets.reduce((sum, b) => sum + Number(b.spent), 0);
+  // PERF FIX: Single-pass calculation for budget utilization
+  let totalBudgeted = 0;
+  let totalSpent = 0;
+  for (const b of activeBudgets) {
+    totalBudgeted += Number(b.amount) + Number(b.rolloverAmount);
+    totalSpent += Number(b.spent);
+  }
   const budgetUtilization =
     totalBudgeted > 0 ? Math.round((totalSpent / totalBudgeted) * 100) : 0;
 
@@ -172,21 +173,22 @@ export async function getSpendingByCategory(params: {
     ...(accountId && { accountId }),
   };
 
-  const grouped = await prisma.expense.groupBy({
-    by: ['categoryId'],
-    where,
-    _sum: { amount: true },
-    _count: true,
-    orderBy: { _sum: { amount: 'desc' } },
-  });
+  // PERF FIX: Fetch all categories upfront to avoid N+1 query pattern
+  const [grouped, allCategories] = await Promise.all([
+    prisma.expense.groupBy({
+      by: ['categoryId'],
+      where,
+      _sum: { amount: true },
+      _count: true,
+      orderBy: { _sum: { amount: 'desc' } },
+    }),
+    prisma.expenseCategory.findMany({
+      where: { tenantId },
+      select: { id: true, name: true, color: true },
+    }),
+  ]);
 
-  // Get category details
-  const categoryIds = grouped.map((g) => g.categoryId);
-  const categories = await prisma.expenseCategory.findMany({
-    where: { id: { in: categoryIds } },
-    select: { id: true, name: true, color: true },
-  });
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
+  const categoryMap = new Map(allCategories.map((c) => [c.id, c]));
 
   // Calculate total for percentages
   const total = grouped.reduce((sum, g) => sum + Number(g._sum.amount || 0), 0);

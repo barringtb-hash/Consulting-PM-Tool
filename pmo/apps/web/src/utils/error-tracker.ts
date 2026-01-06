@@ -65,8 +65,16 @@ class ErrorTracker {
   private queue: ClientError[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private sessionId: string;
-  private recentErrorHashes: Set<string> = new Set();
+  // PERF FIX: Use Map with timestamps for bounded LRU-style eviction
+  private recentErrorHashes: Map<string, number> = new Map();
+  private static readonly MAX_HASH_ENTRIES = 100;
   private initialized: boolean = false;
+  // Store listener references for proper cleanup
+  private boundUnhandledRejection:
+    | ((event: PromiseRejectionEvent) => void)
+    | null = null;
+  private boundBeforeUnload: (() => void) | null = null;
+  private boundVisibilityChange: (() => void) | null = null;
 
   constructor(config: Partial<ErrorTrackerConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -94,32 +102,35 @@ class ErrorTracker {
       return false; // Don't suppress the error
     };
 
-    // Unhandled promise rejection handler
-    window.addEventListener('unhandledrejection', (event) => {
+    // Unhandled promise rejection handler - PERF FIX: Store reference for cleanup
+    this.boundUnhandledRejection = (event: PromiseRejectionEvent) => {
       const error = event.reason;
       this.captureError({
         message: error?.message || 'Unhandled Promise Rejection',
         stack: error?.stack,
         source: 'unhandledrejection',
       });
-    });
+    };
+    window.addEventListener('unhandledrejection', this.boundUnhandledRejection);
 
     // Start periodic flush
     this.flushTimer = setInterval(() => {
       this.flush();
     }, this.config.flushIntervalMs);
 
-    // Flush on page unload
-    window.addEventListener('beforeunload', () => {
+    // Flush on page unload - PERF FIX: Store reference for cleanup
+    this.boundBeforeUnload = () => {
       this.flush(true);
-    });
+    };
+    window.addEventListener('beforeunload', this.boundBeforeUnload);
 
-    // Flush on visibility change (tab hidden)
-    document.addEventListener('visibilitychange', () => {
+    // Flush on visibility change (tab hidden) - PERF FIX: Store reference for cleanup
+    this.boundVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         this.flush(true);
       }
-    });
+    };
+    document.addEventListener('visibilitychange', this.boundVisibilityChange);
 
     this.initialized = true;
     console.debug('[ErrorTracker] Initialized');
@@ -135,17 +146,33 @@ class ErrorTracker {
 
     // Generate hash for deduplication
     const hash = this.generateErrorHash(error.message || '', error.stack);
+    const now = Date.now();
 
-    // Skip if we've seen this error recently
-    if (this.recentErrorHashes.has(hash)) {
+    // Skip if we've seen this error recently (within 1 minute)
+    const existingTimestamp = this.recentErrorHashes.get(hash);
+    if (existingTimestamp && now - existingTimestamp < 60000) {
       return;
     }
-    this.recentErrorHashes.add(hash);
 
-    // Clear old hashes periodically
-    setTimeout(() => {
+    // PERF FIX: Use Map insertion order for O(1) LRU eviction
+    // Re-insert existing keys to mark them as most recently used
+    if (this.recentErrorHashes.has(hash)) {
       this.recentErrorHashes.delete(hash);
-    }, 60000); // Keep for 1 minute
+    }
+    this.recentErrorHashes.set(hash, now);
+
+    // Evict oldest entries if over limit (Map maintains insertion order)
+    if (this.recentErrorHashes.size > ErrorTracker.MAX_HASH_ENTRIES) {
+      const excess =
+        this.recentErrorHashes.size - ErrorTracker.MAX_HASH_ENTRIES;
+      const iterator = this.recentErrorHashes.keys();
+      for (let i = 0; i < excess; i++) {
+        const oldestKey = iterator.next().value;
+        if (oldestKey !== undefined) {
+          this.recentErrorHashes.delete(oldestKey);
+        }
+      }
+    }
 
     const fullError: ClientError = {
       message: error.message || 'Unknown error',
@@ -263,6 +290,28 @@ class ErrorTracker {
       clearInterval(this.flushTimer);
       this.flushTimer = null;
     }
+    // PERF FIX: Remove event listeners to prevent memory leaks
+    if (this.boundUnhandledRejection) {
+      window.removeEventListener(
+        'unhandledrejection',
+        this.boundUnhandledRejection,
+      );
+      this.boundUnhandledRejection = null;
+    }
+    if (this.boundBeforeUnload) {
+      window.removeEventListener('beforeunload', this.boundBeforeUnload);
+      this.boundBeforeUnload = null;
+    }
+    if (this.boundVisibilityChange) {
+      document.removeEventListener(
+        'visibilitychange',
+        this.boundVisibilityChange,
+      );
+      this.boundVisibilityChange = null;
+    }
+    // Clear the hash map
+    this.recentErrorHashes.clear();
+    this.initialized = false;
   }
 
   /**

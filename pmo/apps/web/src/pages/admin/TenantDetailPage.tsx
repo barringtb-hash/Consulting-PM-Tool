@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
   ArrowLeft,
@@ -71,6 +71,81 @@ const STATUS_COLORS: Record<TenantStatus, string> = {
   CANCELLED:
     'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300',
 };
+
+// Available modules that can be configured per tenant (defined outside component for stable reference)
+const AVAILABLE_MODULES = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    description: 'Main dashboard with overview metrics',
+  },
+  {
+    id: 'tasks',
+    label: 'Tasks',
+    description: 'Personal task management and tracking',
+  },
+  {
+    id: 'clients',
+    label: 'Clients',
+    description: 'Client management, contacts, and documents',
+  },
+  {
+    id: 'projects',
+    label: 'Projects',
+    description: 'Project management, milestones, and meetings',
+  },
+  {
+    id: 'assets',
+    label: 'Assets',
+    description: 'AI-generated assets and content library',
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    description: 'Marketing content creation and campaigns',
+  },
+  { id: 'leads', label: 'Leads', description: 'Lead capture and management' },
+  {
+    id: 'pipeline',
+    label: 'Pipeline',
+    description: 'Sales pipeline visualization and tracking',
+  },
+  {
+    id: 'crmAccounts',
+    label: 'CRM Accounts',
+    description: 'CRM account management with hierarchy support',
+  },
+  {
+    id: 'crmOpportunities',
+    label: 'CRM Opportunities',
+    description: 'Sales pipeline with customizable stages',
+  },
+  {
+    id: 'customerSuccess',
+    label: 'Customer Success',
+    description: 'Customer Success Platform with health scoring',
+  },
+  {
+    id: 'chatbot',
+    label: 'AI Chatbot',
+    description: 'AI-powered customer service chatbot',
+  },
+  {
+    id: 'documentAnalyzer',
+    label: 'Document Analyzer',
+    description: 'Smart document analysis with OCR',
+  },
+  {
+    id: 'contentGenerator',
+    label: 'Content Generator',
+    description: 'AI-powered content generation',
+  },
+  {
+    id: 'leadScoring',
+    label: 'Lead Scoring',
+    description: 'ML-based lead scoring with predictive analytics',
+  },
+];
 
 export function TenantDetailPage(): JSX.Element {
   const { tenantId } = useParams<{ tenantId: string }>();
@@ -156,15 +231,16 @@ export function TenantDetailPage(): JSX.Element {
     setBrandingDirty(false);
   }, [tenantId, tenant]);
 
-  const handleBack = () => {
+  // PERF FIX: Memoized navigation handlers
+  const handleBack = useCallback(() => {
     navigate('/admin/tenants');
-  };
+  }, [navigate]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     navigate(`/admin/tenants/${tenantId}/edit`);
-  };
+  }, [navigate, tenantId]);
 
-  const handleStatusAction = async () => {
+  const handleStatusAction = useCallback(async () => {
     if (!tenantId || !showConfirmModal) return;
 
     try {
@@ -191,204 +267,161 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Action failed');
     }
-  };
+  }, [
+    tenantId,
+    showConfirmModal,
+    suspendMutation,
+    activateMutation,
+    cancelMutation,
+    removeUserMutation,
+  ]);
 
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tenantId || !newUserEmail) return;
+  const handleAddUser = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!tenantId || !newUserEmail) return;
 
-    try {
-      const result = await addUserMutation.mutateAsync({
-        tenantId,
-        input: {
-          email: newUserEmail,
-          name: newUserName || undefined,
-          role: newUserRole,
-          userRole: newUserGlobalRole,
-        },
-      });
-
-      if (result.isNewUser && result.tempPassword) {
-        setTempPasswordResult({
-          email: newUserEmail,
-          password: result.tempPassword,
+      try {
+        const result = await addUserMutation.mutateAsync({
+          tenantId,
+          input: {
+            email: newUserEmail,
+            name: newUserName || undefined,
+            role: newUserRole,
+            userRole: newUserGlobalRole,
+          },
         });
+
+        if (result.isNewUser && result.tempPassword) {
+          setTempPasswordResult({
+            email: newUserEmail,
+            password: result.tempPassword,
+          });
+        }
+
+        setShowAddUserModal(false);
+        setNewUserEmail('');
+        setNewUserName('');
+        setNewUserRole('MEMBER');
+        setNewUserGlobalRole('USER');
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to add user');
+      }
+    },
+    [
+      tenantId,
+      newUserEmail,
+      newUserName,
+      newUserRole,
+      newUserGlobalRole,
+      addUserMutation,
+    ],
+  );
+
+  const handleRoleChange = useCallback(
+    async (userId: number, newRole: TenantRole) => {
+      if (!tenantId) return;
+      try {
+        await updateRoleMutation.mutateAsync({
+          tenantId,
+          userId,
+          role: newRole,
+        });
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to update role');
+      }
+    },
+    [tenantId, updateRoleMutation],
+  );
+
+  const handleOpenModuleConfig = useCallback(
+    (
+      moduleId: string,
+      existingModule?: {
+        enabled: boolean;
+        tier: ModuleTier;
+        trialEndsAt?: string | null;
+      },
+    ) => {
+      setSelectedModuleConfig({
+        moduleId,
+        enabled: existingModule?.enabled ?? true,
+        tier: existingModule?.tier ?? 'BASIC',
+        trialEndsAt: existingModule?.trialEndsAt
+          ? new Date(existingModule.trialEndsAt).toISOString().split('T')[0]
+          : '',
+      });
+      setShowModuleConfigModal(true);
+    },
+    [],
+  );
+
+  const handleToggleModule = useCallback(
+    async (moduleId: string, currentlyEnabled: boolean) => {
+      if (!tenantId) return;
+      try {
+        await configureModuleMutation.mutateAsync({
+          tenantId,
+          input: {
+            moduleId,
+            enabled: !currentlyEnabled,
+          },
+        });
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to toggle module');
+      }
+    },
+    [tenantId, configureModuleMutation],
+  );
+
+  const handleSaveModuleConfig = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!tenantId || !selectedModuleConfig.moduleId) return;
+
+      // Convert trialEndsAt date string to trialDays (number of days from today)
+      let trialDays: number | undefined;
+      if (selectedModuleConfig.trialEndsAt) {
+        const trialEndDate = new Date(selectedModuleConfig.trialEndsAt);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        trialEndDate.setHours(0, 0, 0, 0);
+        const diffTime = trialEndDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          trialDays = diffDays;
+        }
       }
 
-      setShowAddUserModal(false);
-      setNewUserEmail('');
-      setNewUserName('');
-      setNewUserRole('MEMBER');
-      setNewUserGlobalRole('USER');
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add user');
-    }
-  };
-
-  const handleRoleChange = async (userId: number, newRole: TenantRole) => {
-    if (!tenantId) return;
-    try {
-      await updateRoleMutation.mutateAsync({
-        tenantId,
-        userId,
-        role: newRole,
-      });
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update role');
-    }
-  };
-
-  // Available modules that can be configured per tenant
-  const AVAILABLE_MODULES = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      description: 'Main dashboard with overview metrics',
-    },
-    {
-      id: 'tasks',
-      label: 'Tasks',
-      description: 'Personal task management and tracking',
-    },
-    {
-      id: 'clients',
-      label: 'Clients',
-      description: 'Client management, contacts, and documents',
-    },
-    {
-      id: 'projects',
-      label: 'Projects',
-      description: 'Project management, milestones, and meetings',
-    },
-    {
-      id: 'assets',
-      label: 'Assets',
-      description: 'AI-generated assets and content library',
-    },
-    {
-      id: 'marketing',
-      label: 'Marketing',
-      description: 'Marketing content creation and campaigns',
-    },
-    { id: 'leads', label: 'Leads', description: 'Lead capture and management' },
-    {
-      id: 'pipeline',
-      label: 'Pipeline',
-      description: 'Sales pipeline visualization and tracking',
-    },
-    {
-      id: 'crmAccounts',
-      label: 'CRM Accounts',
-      description: 'CRM account management with hierarchy support',
-    },
-    {
-      id: 'crmOpportunities',
-      label: 'CRM Opportunities',
-      description: 'Sales pipeline with customizable stages',
-    },
-    {
-      id: 'customerSuccess',
-      label: 'Customer Success',
-      description: 'Customer Success Platform with health scoring',
-    },
-    {
-      id: 'chatbot',
-      label: 'AI Chatbot',
-      description: 'AI-powered customer service chatbot',
-    },
-    {
-      id: 'documentAnalyzer',
-      label: 'Document Analyzer',
-      description: 'Smart document analysis with OCR',
-    },
-    {
-      id: 'contentGenerator',
-      label: 'Content Generator',
-      description: 'AI-powered content generation',
-    },
-    {
-      id: 'leadScoring',
-      label: 'Lead Scoring',
-      description: 'ML-based lead scoring with predictive analytics',
-    },
-  ];
-
-  const handleOpenModuleConfig = (
-    moduleId: string,
-    existingModule?: (typeof tenant.modules)[0],
-  ) => {
-    setSelectedModuleConfig({
-      moduleId,
-      enabled: existingModule?.enabled ?? true,
-      tier: existingModule?.tier ?? 'BASIC',
-      trialEndsAt: existingModule?.trialEndsAt
-        ? new Date(existingModule.trialEndsAt).toISOString().split('T')[0]
-        : '',
-    });
-    setShowModuleConfigModal(true);
-  };
-
-  const handleToggleModule = async (
-    moduleId: string,
-    currentlyEnabled: boolean,
-  ) => {
-    if (!tenantId) return;
-    try {
-      await configureModuleMutation.mutateAsync({
-        tenantId,
-        input: {
-          moduleId,
-          enabled: !currentlyEnabled,
-        },
-      });
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to toggle module');
-    }
-  };
-
-  const handleSaveModuleConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tenantId || !selectedModuleConfig.moduleId) return;
-
-    // Convert trialEndsAt date string to trialDays (number of days from today)
-    let trialDays: number | undefined;
-    if (selectedModuleConfig.trialEndsAt) {
-      const trialEndDate = new Date(selectedModuleConfig.trialEndsAt);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      trialEndDate.setHours(0, 0, 0, 0);
-      const diffTime = trialEndDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        trialDays = diffDays;
+      try {
+        await configureModuleMutation.mutateAsync({
+          tenantId,
+          input: {
+            moduleId: selectedModuleConfig.moduleId,
+            enabled: selectedModuleConfig.enabled,
+            tier: selectedModuleConfig.tier,
+            trialDays,
+          },
+        });
+        setShowModuleConfigModal(false);
+      } catch (err) {
+        alert(
+          err instanceof Error ? err.message : 'Failed to configure module',
+        );
       }
-    }
+    },
+    [tenantId, selectedModuleConfig, configureModuleMutation],
+  );
 
-    try {
-      await configureModuleMutation.mutateAsync({
-        tenantId,
-        input: {
-          moduleId: selectedModuleConfig.moduleId,
-          enabled: selectedModuleConfig.enabled,
-          tier: selectedModuleConfig.tier,
-          trialDays,
-        },
-      });
-      setShowModuleConfigModal(false);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to configure module');
-    }
-  };
+  const handleBrandingChange = useCallback(
+    (field: keyof typeof brandingForm, value: string) => {
+      setBrandingForm((prev) => ({ ...prev, [field]: value }));
+      setBrandingDirty(true);
+    },
+    [],
+  );
 
-  const handleBrandingChange = (
-    field: keyof typeof brandingForm,
-    value: string,
-  ) => {
-    setBrandingForm((prev) => ({ ...prev, [field]: value }));
-    setBrandingDirty(true);
-  };
-
-  const handleSaveBranding = async () => {
+  const handleSaveBranding = useCallback(async () => {
     if (!tenantId) return;
 
     try {
@@ -406,7 +439,18 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to save branding');
     }
-  };
+  }, [tenantId, brandingForm, updateBrandingMutation]);
+
+  // PERF FIX: Memoize filtered module lists to avoid recalculation on every render
+  const enabledModuleCount = useMemo(() => {
+    return tenant?.modules.filter((m) => m.enabled).length ?? 0;
+  }, [tenant?.modules]);
+
+  const availableModulesToAdd = useMemo(() => {
+    if (!tenant) return AVAILABLE_MODULES;
+    const configuredIds = new Set(tenant.modules.map((tm) => tm.moduleId));
+    return AVAILABLE_MODULES.filter((m) => !configuredIds.has(m.id));
+  }, [tenant]);
 
   if (isLoading) {
     return (
@@ -735,10 +779,7 @@ export function TenantDetailPage(): JSX.Element {
           {/* Modules */}
           <Card>
             <CardHeader className="flex items-center justify-between">
-              <CardTitle>
-                Modules ({tenant.modules.filter((m) => m.enabled).length}{' '}
-                enabled)
-              </CardTitle>
+              <CardTitle>Modules ({enabledModuleCount} enabled)</CardTitle>
               <Button size="sm" onClick={() => handleOpenModuleConfig('')}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Module
@@ -844,9 +885,7 @@ export function TenantDetailPage(): JSX.Element {
                   Available Modules
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {AVAILABLE_MODULES.filter(
-                    (m) => !tenant.modules.find((tm) => tm.moduleId === m.id),
-                  ).map((mod) => (
+                  {availableModulesToAdd.map((mod) => (
                     <div
                       key={mod.id}
                       className="p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-800/50"
@@ -872,9 +911,7 @@ export function TenantDetailPage(): JSX.Element {
                     </div>
                   ))}
                 </div>
-                {AVAILABLE_MODULES.filter(
-                  (m) => !tenant.modules.find((tm) => tm.moduleId === m.id),
-                ).length === 0 && (
+                {availableModulesToAdd.length === 0 && (
                   <p className="text-neutral-500 dark:text-neutral-400 text-center py-4 text-sm">
                     All available modules have been configured.
                   </p>

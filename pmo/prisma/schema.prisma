@@ -600,6 +600,10 @@ model Task {
   @@index([projectId, status, priority])
   @@index([ownerId, status])
   @@index([parentTaskId])
+  // PERF: Added indexes for tenant-scoped queries with date filtering
+  @@index([tenantId, status, priority, dueDate])
+  @@index([projectId, status, dueDate])
+  @@index([ownerId, status, dueDate])
 }
 
 // Join table for Task-User many-to-many relationship (multiple assignees per task)
@@ -7238,6 +7242,9 @@ model Account {
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
   @@index([tenantId, archived])
+  // PERF: Added indexes for health and engagement dashboard queries
+  @@index([tenantId, healthScore])
+  @@index([tenantId, engagementScore])
 }
 
 /**
@@ -7399,6 +7406,9 @@ model Opportunity {
   @@index([tenantId, ownerId])
   @@index([tenantId, expectedCloseDate])
   @@index([accountId])
+  // PERF: Added indexes for pipeline and account queries
+  @@index([tenantId, stageId, status])
+  @@index([tenantId, accountId, status])
 }
 
 /**
@@ -7504,6 +7514,10 @@ model CRMActivity {
   @@index([accountId])
   @@index([opportunityId])
   @@index([dueAt])
+  // PERF: Added indexes for timeline and status queries
+  @@index([tenantId, status, createdAt])
+  @@index([contactId, createdAt])
+  @@index([tenantId, dueAt, status])
 }
 
 // ============================================================================
@@ -8121,6 +8135,8 @@ model RecurringCost {
   @@index([tenantId, status])
   @@index([tenantId, type])
   @@index([tenantId, nextDueDate])
+  // PERF: Added index for account recurring costs
+  @@index([tenantId, accountId, status])
 }
 
 /**

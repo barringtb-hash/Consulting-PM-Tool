@@ -361,10 +361,10 @@ export async function moveOpportunityStage(
   const tenantId = getTenantId();
 
   return prisma.$transaction(async (tx) => {
-    // Get current opportunity
+    // PERF FIX: Get current opportunity with all needed fields in single query
     const current = await tx.opportunity.findFirst({
       where: { id, tenantId },
-      select: { stageId: true, createdAt: true },
+      select: { stageId: true, createdAt: true, amount: true },
     });
 
     if (!current) {
@@ -413,15 +413,10 @@ export async function moveOpportunityStage(
       updateData.status = 'OPEN';
     }
 
-    // Recalculate weighted amount
-    const opportunity = await tx.opportunity.findFirst({
-      where: { id, tenantId },
-      select: { amount: true },
-    });
-
-    if (opportunity?.amount) {
+    // PERF FIX: Use amount from initial query instead of fetching again
+    if (current.amount) {
       updateData.weightedAmount =
-        (Number(opportunity.amount) * newStage.probability) / 100;
+        (Number(current.amount) * newStage.probability) / 100;
     }
 
     return tx.opportunity.update({
@@ -648,6 +643,13 @@ export async function getPipelineStats(pipelineId?: number) {
     where.pipelineId = pipelineId;
   }
 
+  // PERF FIX: Get all stage IDs upfront to avoid separate query after groupBy
+  const allStages = await prisma.salesPipelineStage.findMany({
+    where: pipelineId ? { pipelineId } : { pipeline: { tenantId } },
+    select: { id: true, name: true, color: true, order: true, type: true },
+  });
+  const stageMap = new Map(allStages.map((s) => [s.id, s]));
+
   const [byStage, totalValue, weightedValue, avgDealSize] = await Promise.all([
     // By stage
     prisma.opportunity.groupBy({
@@ -678,15 +680,6 @@ export async function getPipelineStats(pipelineId?: number) {
       _avg: { amount: true },
     }),
   ]);
-
-  // Get stage names and types
-  const stageIds = byStage.map((s) => s.stageId);
-  const stages = await prisma.salesPipelineStage.findMany({
-    where: { id: { in: stageIds } },
-    select: { id: true, name: true, color: true, order: true, type: true },
-  });
-
-  const stageMap = new Map(stages.map((s) => [s.id, s]));
 
   // Calculate win rate
   const wonOpps = await prisma.opportunity.count({

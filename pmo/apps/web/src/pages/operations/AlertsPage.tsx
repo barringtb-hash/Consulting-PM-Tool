@@ -4,7 +4,7 @@
  * Configure alert rules and view alert history.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Bell,
   Plus,
@@ -55,17 +55,20 @@ function AlertRuleModal({
   onClose: () => void;
   onSave: (data: Partial<AlertRule>) => void;
 }) {
+  // PERF FIX: Default form state extracted to avoid recreation
+  const defaultFormState: Partial<AlertRule> = {
+    name: '',
+    description: '',
+    enabled: true,
+    severity: ['CRITICAL', 'HIGH'],
+    category: ['COST', 'USAGE', 'PERFORMANCE', 'HEALTH'],
+    channel: 'EMAIL',
+    recipients: [],
+    throttleMinutes: 60,
+  };
+
   const [formData, setFormData] = useState<Partial<AlertRule>>(
-    rule || {
-      name: '',
-      description: '',
-      enabled: true,
-      severity: ['CRITICAL', 'HIGH'],
-      category: ['COST', 'USAGE', 'PERFORMANCE', 'HEALTH'],
-      channel: 'EMAIL',
-      recipients: [],
-      throttleMinutes: 60,
-    },
+    rule || defaultFormState,
   );
   const [recipientInput, setRecipientInput] = useState('');
 
@@ -73,58 +76,58 @@ function AlertRuleModal({
     if (rule) {
       setFormData(rule);
     } else {
-      setFormData({
-        name: '',
-        description: '',
-        enabled: true,
-        severity: ['CRITICAL', 'HIGH'],
-        category: ['COST', 'USAGE', 'PERFORMANCE', 'HEALTH'],
-        channel: 'EMAIL',
-        recipients: [],
-        throttleMinutes: 60,
-      });
+      setFormData(defaultFormState);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rule, isOpen]);
 
-  const handleAddRecipient = () => {
+  // PERF FIX: Memoized form field handler to prevent re-renders
+  const handleFieldChange = useCallback(
+    (field: keyof AlertRule, value: unknown) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
+
+  const handleAddRecipient = useCallback(() => {
     if (recipientInput.trim()) {
-      setFormData({
-        ...formData,
-        recipients: [...(formData.recipients || []), recipientInput.trim()],
-      });
+      setFormData((prev) => ({
+        ...prev,
+        recipients: [...(prev.recipients || []), recipientInput.trim()],
+      }));
       setRecipientInput('');
     }
-  };
+  }, [recipientInput]);
 
-  const handleRemoveRecipient = (index: number) => {
-    const newRecipients = [...(formData.recipients || [])];
-    newRecipients.splice(index, 1);
-    setFormData({ ...formData, recipients: newRecipients });
-  };
+  const handleRemoveRecipient = useCallback((index: number) => {
+    setFormData((prev) => {
+      const newRecipients = [...(prev.recipients || [])];
+      newRecipients.splice(index, 1);
+      return { ...prev, recipients: newRecipients };
+    });
+  }, []);
 
-  const handleToggleSeverity = (severity: string) => {
-    const current = formData.severity || [];
-    if (current.includes(severity)) {
-      setFormData({
-        ...formData,
-        severity: current.filter((s) => s !== severity),
-      });
-    } else {
-      setFormData({ ...formData, severity: [...current, severity] });
-    }
-  };
+  const handleToggleSeverity = useCallback((severity: string) => {
+    setFormData((prev) => {
+      const current = prev.severity || [];
+      if (current.includes(severity)) {
+        return { ...prev, severity: current.filter((s) => s !== severity) };
+      } else {
+        return { ...prev, severity: [...current, severity] };
+      }
+    });
+  }, []);
 
-  const handleToggleCategory = (category: string) => {
-    const current = formData.category || [];
-    if (current.includes(category)) {
-      setFormData({
-        ...formData,
-        category: current.filter((c) => c !== category),
-      });
-    } else {
-      setFormData({ ...formData, category: [...current, category] });
-    }
-  };
+  const handleToggleCategory = useCallback((category: string) => {
+    setFormData((prev) => {
+      const current = prev.category || [];
+      if (current.includes(category)) {
+        return { ...prev, category: current.filter((c) => c !== category) };
+      } else {
+        return { ...prev, category: [...current, category] };
+      }
+    });
+  }, []);
 
   return (
     <Modal
@@ -139,7 +142,7 @@ function AlertRuleModal({
           </label>
           <Input
             value={formData.name || ''}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => handleFieldChange('name', e.target.value)}
             placeholder="Alert rule name"
           />
         </div>
@@ -150,9 +153,7 @@ function AlertRuleModal({
           </label>
           <Input
             value={formData.description || ''}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
+            onChange={(e) => handleFieldChange('description', e.target.value)}
             placeholder="Optional description"
           />
         </div>
@@ -205,9 +206,7 @@ function AlertRuleModal({
           </label>
           <select
             value={formData.channel || 'EMAIL'}
-            onChange={(e) =>
-              setFormData({ ...formData, channel: e.target.value })
-            }
+            onChange={(e) => handleFieldChange('channel', e.target.value)}
             className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
           >
             <option value="EMAIL">Email</option>
@@ -257,10 +256,7 @@ function AlertRuleModal({
             type="number"
             value={formData.throttleMinutes || 60}
             onChange={(e) =>
-              setFormData({
-                ...formData,
-                throttleMinutes: parseInt(e.target.value),
-              })
+              handleFieldChange('throttleMinutes', parseInt(e.target.value))
             }
             min={1}
           />
@@ -271,9 +267,7 @@ function AlertRuleModal({
             type="checkbox"
             id="enabled"
             checked={formData.enabled !== false}
-            onChange={(e) =>
-              setFormData({ ...formData, enabled: e.target.checked })
-            }
+            onChange={(e) => handleFieldChange('enabled', e.target.checked)}
             className="w-4 h-4 rounded border-neutral-300"
           />
           <label

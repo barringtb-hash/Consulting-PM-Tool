@@ -21,7 +21,15 @@ interface AuthenticatedSocket extends Socket {
   userId?: number;
   tenantId?: string;
   tenantPlan?: TenantPlan;
+  // PERF: Track entity subscriptions to enforce limit
+  entitySubscriptions?: Set<string>;
 }
+
+// PERF: Limit entity subscriptions per socket to prevent resource abuse.
+// Value of 100 balances typical usage patterns (most clients need <20 subscriptions),
+// per-socket memory overhead for room tracking, and Socket.IO bookkeeping costs.
+// Adjust cautiously based on deployment patterns and load testing results.
+const MAX_ENTITY_SUBSCRIPTIONS = 100;
 
 interface JwtPayload {
   userId: number;
@@ -113,12 +121,26 @@ export function initWebSocketServer(httpServer: HttpServer): Server {
     // Handle subscription to entity updates
     socket.on('subscribe', (data: { entityType: string; entityId: number }) => {
       if (socket.tenantId) {
+        // PERF: Initialize subscription tracking if needed
+        if (!socket.entitySubscriptions) {
+          socket.entitySubscriptions = new Set();
+        }
+
+        // PERF: Enforce subscription limit to prevent resource abuse
+        if (socket.entitySubscriptions.size >= MAX_ENTITY_SUBSCRIPTIONS) {
+          socket.emit('error', {
+            message: `Maximum subscriptions (${MAX_ENTITY_SUBSCRIPTIONS}) reached`,
+          });
+          return;
+        }
+
         const room = ROOM.entity(
           socket.tenantId,
           data.entityType,
           data.entityId,
         );
         socket.join(room);
+        socket.entitySubscriptions.add(room);
         console.log(`WebSocket: User ${socket.userId} subscribed to ${room}`);
       }
     });
@@ -134,6 +156,8 @@ export function initWebSocketServer(httpServer: HttpServer): Server {
             data.entityId,
           );
           socket.leave(room);
+          // PERF: Remove from tracking set
+          socket.entitySubscriptions?.delete(room);
           console.log(
             `WebSocket: User ${socket.userId} unsubscribed from ${room}`,
           );
