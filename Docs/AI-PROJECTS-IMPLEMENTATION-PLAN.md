@@ -403,7 +403,107 @@ Add "✨ Generate Summary" button to Status & Reporting tab:
 )}
 ```
 
-### 1.4 Auto-Apply Templates
+### 1.4 Smart Task Descriptions
+
+**Goal:** Auto-expand task titles into detailed descriptions with acceptance criteria.
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/task-enrichment.service.ts
+
+export class TaskEnrichmentService {
+  async enrichTaskDescription(
+    task: { title: string; projectContext?: string },
+    tenantId: string
+  ): Promise<EnrichedTask> {
+    const prompt = `Given this task title, generate a detailed description with acceptance criteria.
+
+TASK TITLE: ${task.title}
+PROJECT CONTEXT: ${task.projectContext || 'General project task'}
+
+Generate JSON:
+{
+  "description": "2-3 sentence description of what this task involves",
+  "acceptanceCriteria": [
+    "Criterion 1",
+    "Criterion 2",
+    "Criterion 3"
+  ],
+  "suggestedSubtasks": [
+    "Subtask 1",
+    "Subtask 2"
+  ],
+  "estimatedComplexity": "low|medium|high",
+  "suggestedSkills": ["skill1", "skill2"]
+}`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 400,
+      temperature: 0.3,
+    });
+
+    return JSON.parse(response.content);
+  }
+}
+```
+
+#### API Endpoint
+
+```typescript
+// Add to task.routes.ts
+router.post('/ai/enrich', requireAuth, async (req, res) => {
+  const { title, projectId } = req.body;
+  const tenantId = getTenantId(req);
+
+  const project = projectId
+    ? await projectService.getById(projectId, tenantId)
+    : null;
+
+  const enriched = await taskEnrichmentService.enrichTaskDescription(
+    { title, projectContext: project?.name },
+    tenantId
+  );
+
+  res.json({ data: enriched });
+});
+```
+
+#### UI Integration
+
+```typescript
+// In TaskForm.tsx - add "Expand with AI" button
+<div className="flex items-center gap-2">
+  <Input label="Title" value={title} onChange={setTitle} />
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={async () => {
+      const enriched = await enrichTask({ title, projectId });
+      setDescription(enriched.description);
+      setAcceptanceCriteria(enriched.acceptanceCriteria);
+    }}
+    disabled={title.length < 5}
+  >
+    ✨ Expand
+  </Button>
+</div>
+
+{enrichedData && (
+  <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm">
+    <p className="font-medium">AI Suggestions:</p>
+    <p>{enrichedData.description}</p>
+    <ul className="mt-2 list-disc list-inside">
+      {enrichedData.acceptanceCriteria.map((ac, i) => (
+        <li key={i}>{ac}</li>
+      ))}
+    </ul>
+    <Button size="sm" onClick={applyEnrichment}>Apply All</Button>
+  </div>
+)}
+```
+
+### 1.5 Auto-Apply Templates
 
 **Goal:** Complete the deferred feature to auto-create milestones/tasks from templates.
 
@@ -809,7 +909,386 @@ function TaskForm({ onSubmit, projectId }) {
 }
 ```
 
-### 2.3 Risk Detection from Meetings
+### 2.3 Budget Forecasting Integration
+
+**Goal:** Integrate with Finance module to predict cost overruns and recommend budget adjustments.
+
+#### Database Changes
+
+```prisma
+model ProjectBudgetForecast {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  projectId       Int
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Forecast data
+  forecastDate    DateTime  // Date forecast was generated
+  forecastPeriod  String    // "monthly" | "quarterly" | "project_end"
+
+  // Amounts
+  currentSpend    Decimal   @db.Decimal(12, 2)
+  forecastedSpend Decimal   @db.Decimal(12, 2)
+  budgetAmount    Decimal   @db.Decimal(12, 2)
+  variance        Decimal   @db.Decimal(12, 2)  // forecastedSpend - budgetAmount
+  variancePercent Float
+
+  // AI Analysis
+  riskLevel       BudgetRiskLevel  // LOW, MEDIUM, HIGH, CRITICAL
+  recommendations Json      // Array of suggested actions
+  factors         Json      // Contributing factors to forecast
+
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId, forecastDate])
+  @@index([tenantId])
+}
+
+enum BudgetRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+```
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/budget-forecast.service.ts
+
+export class BudgetForecastService {
+  async forecastProjectBudget(
+    projectId: number,
+    tenantId: string
+  ): Promise<BudgetForecast> {
+    // 1. Get project and budget data
+    const [project, budget, expenses, recurringCosts] = await Promise.all([
+      projectService.getById(projectId, tenantId),
+      financeService.getBudgetByProject(projectId, tenantId),
+      financeService.getExpensesByProject(projectId, tenantId),
+      financeService.getRecurringCostsByProject(projectId, tenantId),
+    ]);
+
+    // 2. Calculate current spend and run rate
+    const currentSpend = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const projectDuration = daysBetween(project.startDate, project.endDate);
+    const daysElapsed = daysBetween(project.startDate, new Date());
+    const percentComplete = daysElapsed / projectDuration;
+
+    // 3. Calculate burn rate and forecast
+    const dailyBurnRate = currentSpend / Math.max(daysElapsed, 1);
+    const remainingDays = projectDuration - daysElapsed;
+    const projectedRemaining = dailyBurnRate * remainingDays;
+
+    // Add recurring costs
+    const remainingRecurring = this.calculateRemainingRecurring(
+      recurringCosts,
+      project.endDate
+    );
+
+    const forecastedSpend = currentSpend + projectedRemaining + remainingRecurring;
+    const variance = forecastedSpend - budget.amount;
+    const variancePercent = (variance / budget.amount) * 100;
+
+    // 4. Determine risk level
+    let riskLevel: BudgetRiskLevel;
+    if (variancePercent <= 0) riskLevel = 'LOW';
+    else if (variancePercent <= 10) riskLevel = 'MEDIUM';
+    else if (variancePercent <= 25) riskLevel = 'HIGH';
+    else riskLevel = 'CRITICAL';
+
+    // 5. Generate AI recommendations
+    const recommendations = await this.generateRecommendations(
+      project,
+      { currentSpend, forecastedSpend, budget: budget.amount, variance },
+      expenses
+    );
+
+    // 6. Store forecast
+    const forecast = await prisma.projectBudgetForecast.create({
+      data: {
+        tenantId,
+        projectId,
+        forecastDate: new Date(),
+        forecastPeriod: 'project_end',
+        currentSpend,
+        forecastedSpend,
+        budgetAmount: budget.amount,
+        variance,
+        variancePercent,
+        riskLevel,
+        recommendations,
+        factors: {
+          dailyBurnRate,
+          percentComplete,
+          remainingDays,
+          recurringCosts: remainingRecurring,
+        },
+      },
+    });
+
+    return forecast;
+  }
+
+  private async generateRecommendations(
+    project: Project,
+    financials: BudgetFinancials,
+    expenses: Expense[]
+  ): Promise<Recommendation[]> {
+    const prompt = `Analyze this project budget situation and provide recommendations.
+
+PROJECT: ${project.name}
+BUDGET: $${financials.budget.toLocaleString()}
+CURRENT SPEND: $${financials.currentSpend.toLocaleString()}
+FORECASTED TOTAL: $${financials.forecastedSpend.toLocaleString()}
+VARIANCE: $${financials.variance.toLocaleString()} (${((financials.variance / financials.budget) * 100).toFixed(1)}%)
+
+TOP EXPENSE CATEGORIES:
+${this.summarizeExpensesByCategory(expenses)}
+
+Generate 3-5 specific, actionable recommendations to address the budget situation.
+Return JSON array: [{"title": "...", "description": "...", "impact": "low|medium|high", "effort": "low|medium|high"}]`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 500,
+      temperature: 0.3,
+    });
+
+    return JSON.parse(response.content);
+  }
+}
+```
+
+#### UI Component
+
+```typescript
+// BudgetForecastCard.tsx
+export function BudgetForecastCard({ projectId }: Props) {
+  const { data: forecast } = useBudgetForecast(projectId);
+
+  const riskColors = {
+    LOW: 'text-green-600 bg-green-100',
+    MEDIUM: 'text-yellow-600 bg-yellow-100',
+    HIGH: 'text-orange-600 bg-orange-100',
+    CRITICAL: 'text-red-600 bg-red-100',
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <span>💰 Budget Forecast</span>
+          <Badge className={riskColors[forecast.riskLevel]}>
+            {forecast.riskLevel} Risk
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between">
+            <span>Budget</span>
+            <span className="font-semibold">${forecast.budgetAmount.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Current Spend</span>
+            <span>${forecast.currentSpend.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Forecasted Total</span>
+            <span className={forecast.variance > 0 ? 'text-red-600' : 'text-green-600'}>
+              ${forecast.forecastedSpend.toLocaleString()}
+            </span>
+          </div>
+          <Progress
+            value={(forecast.currentSpend / forecast.budgetAmount) * 100}
+            className="h-3"
+          />
+
+          {forecast.recommendations?.length > 0 && (
+            <div className="mt-4">
+              <p className="font-medium mb-2">Recommendations:</p>
+              {forecast.recommendations.map((rec, i) => (
+                <div key={i} className="p-2 bg-gray-50 rounded mb-2">
+                  <p className="font-medium text-sm">{rec.title}</p>
+                  <p className="text-xs text-muted-foreground">{rec.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### 2.4 Scope Change Detection
+
+**Goal:** Flag when tasks/milestones drift from original project scope.
+
+#### Database Changes
+
+```prisma
+model ProjectScopeBaseline {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  projectId       Int
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Baseline snapshot
+  baselineDate    DateTime
+  originalTaskCount Int
+  originalMilestoneCount Int
+  originalScope   Json      // { goals, deliverables, exclusions }
+
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId])
+}
+
+model ScopeChangeAlert {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  projectId       Int
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  changeType      ScopeChangeType
+  severity        ScopeSeverity
+  description     String
+  affectedItems   Json      // { tasks: [], milestones: [] }
+
+  // AI Analysis
+  impactAnalysis  String?
+  recommendation  String?
+
+  status          AlertStatus @default(ACTIVE)
+  acknowledgedAt  DateTime?
+  acknowledgedBy  Int?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([projectId, status])
+}
+
+enum ScopeChangeType {
+  TASK_ADDITION
+  TASK_REMOVAL
+  MILESTONE_ADDITION
+  MILESTONE_CHANGE
+  TIMELINE_EXTENSION
+  REQUIREMENT_CHANGE
+}
+
+enum ScopeSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+```
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/scope-detector.service.ts
+
+export class ScopeDetectorService {
+  async detectScopeChanges(projectId: number, tenantId: string): Promise<ScopeChange[]> {
+    const [baseline, currentTasks, currentMilestones] = await Promise.all([
+      prisma.projectScopeBaseline.findFirst({
+        where: { projectId, tenantId, isActive: true },
+      }),
+      taskService.getByProject(projectId, tenantId),
+      milestoneService.getByProject(projectId, tenantId),
+    ]);
+
+    if (!baseline) return [];
+
+    const changes: ScopeChange[] = [];
+
+    // Detect task additions
+    const taskDelta = currentTasks.length - baseline.originalTaskCount;
+    if (taskDelta > 0) {
+      const percentIncrease = (taskDelta / baseline.originalTaskCount) * 100;
+      changes.push({
+        type: 'TASK_ADDITION',
+        severity: percentIncrease > 50 ? 'CRITICAL' : percentIncrease > 20 ? 'WARNING' : 'INFO',
+        description: `${taskDelta} tasks added since baseline (${percentIncrease.toFixed(0)}% increase)`,
+        metrics: { added: taskDelta, percentIncrease },
+      });
+    }
+
+    // Detect milestone changes
+    const milestoneDelta = currentMilestones.length - baseline.originalMilestoneCount;
+    if (milestoneDelta !== 0) {
+      changes.push({
+        type: 'MILESTONE_CHANGE',
+        severity: Math.abs(milestoneDelta) > 2 ? 'WARNING' : 'INFO',
+        description: `Milestone count changed from ${baseline.originalMilestoneCount} to ${currentMilestones.length}`,
+        metrics: { delta: milestoneDelta },
+      });
+    }
+
+    // AI analysis of scope creep impact
+    if (changes.length > 0) {
+      const analysis = await this.analyzeImpact(baseline, changes, currentTasks);
+      for (const change of changes) {
+        change.impactAnalysis = analysis.impacts[change.type];
+        change.recommendation = analysis.recommendations[change.type];
+      }
+    }
+
+    // Store alerts
+    for (const change of changes) {
+      await prisma.scopeChangeAlert.create({
+        data: {
+          tenantId,
+          projectId,
+          changeType: change.type,
+          severity: change.severity,
+          description: change.description,
+          affectedItems: change.metrics,
+          impactAnalysis: change.impactAnalysis,
+          recommendation: change.recommendation,
+        },
+      });
+    }
+
+    return changes;
+  }
+
+  async createBaseline(projectId: number, tenantId: string): Promise<ProjectScopeBaseline> {
+    const [project, tasks, milestones] = await Promise.all([
+      projectService.getById(projectId, tenantId),
+      taskService.getByProject(projectId, tenantId),
+      milestoneService.getByProject(projectId, tenantId),
+    ]);
+
+    // Deactivate previous baseline
+    await prisma.projectScopeBaseline.updateMany({
+      where: { projectId, tenantId, isActive: true },
+      data: { isActive: false },
+    });
+
+    return prisma.projectScopeBaseline.create({
+      data: {
+        tenantId,
+        projectId,
+        baselineDate: new Date(),
+        originalTaskCount: tasks.length,
+        originalMilestoneCount: milestones.length,
+        originalScope: {
+          taskTitles: tasks.map(t => t.title),
+          milestoneNames: milestones.map(m => m.name),
+        },
+      },
+    });
+  }
+}
+```
+
+### 2.5 Risk Detection from Meetings
 
 **Goal:** Automatically extract and surface risks from meeting notes.
 
@@ -1137,7 +1616,448 @@ Return JSON:
 }
 ```
 
-### 3.3 Webhook Events for Project Updates
+### 3.3 Auto-Scheduling
+
+**Goal:** Intelligent task scheduling considering dependencies, team availability, and priority.
+
+#### Database Changes
+
+```prisma
+model Task {
+  // ... existing fields
+
+  // NEW: Scheduling fields
+  scheduledStartDate  DateTime?
+  scheduledEndDate    DateTime?
+  aiScheduled         Boolean   @default(false)  // Was this scheduled by AI?
+
+  // Dependencies
+  dependsOn           TaskDependency[] @relation("DependentTask")
+  dependedBy          TaskDependency[] @relation("BlockingTask")
+}
+
+model TaskDependency {
+  id              Int       @id @default(autoincrement())
+  dependentTaskId Int       // Task that depends on another
+  blockingTaskId  Int       // Task that blocks another
+  dependencyType  DependencyType @default(FINISH_TO_START)
+
+  dependentTask   Task      @relation("DependentTask", fields: [dependentTaskId], references: [id], onDelete: Cascade)
+  blockingTask    Task      @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+
+  @@unique([dependentTaskId, blockingTaskId])
+}
+
+enum DependencyType {
+  FINISH_TO_START   // B can't start until A finishes
+  START_TO_START    // B can't start until A starts
+  FINISH_TO_FINISH  // B can't finish until A finishes
+}
+
+model TeamAvailability {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date            DateTime  @db.Date
+  availableHours  Float     // Hours available this day
+  allocatedHours  Float     @default(0)  // Hours already allocated
+
+  @@unique([userId, date])
+  @@index([tenantId, date])
+}
+```
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/auto-scheduler.service.ts
+
+export class AutoSchedulerService {
+  async scheduleProjectTasks(
+    projectId: number,
+    tenantId: string,
+    options: { respectExisting?: boolean; startDate?: Date } = {}
+  ): Promise<ScheduleResult> {
+    const [project, tasks, teamMembers] = await Promise.all([
+      projectService.getById(projectId, tenantId),
+      taskService.getByProject(projectId, tenantId, { includeDependencies: true }),
+      projectMemberService.getByProject(projectId, tenantId),
+    ]);
+
+    // Build dependency graph
+    const graph = this.buildDependencyGraph(tasks);
+
+    // Topological sort for scheduling order
+    const sortedTasks = this.topologicalSort(graph);
+
+    // Get team availability
+    const availability = await this.getTeamAvailability(
+      teamMembers.map(m => m.userId),
+      tenantId,
+      options.startDate || project.startDate || new Date(),
+      project.endDate
+    );
+
+    // Schedule tasks
+    const schedule: ScheduledTask[] = [];
+    const conflicts: ScheduleConflict[] = [];
+
+    for (const task of sortedTasks) {
+      if (options.respectExisting && task.scheduledStartDate) {
+        schedule.push({ taskId: task.id, unchanged: true });
+        continue;
+      }
+
+      const result = await this.scheduleTask(task, graph, availability, schedule);
+
+      if (result.success) {
+        schedule.push(result.scheduled);
+        // Update availability
+        this.allocateHours(availability, result.scheduled);
+      } else {
+        conflicts.push(result.conflict);
+      }
+    }
+
+    // Persist schedule
+    await this.persistSchedule(schedule, tenantId);
+
+    return {
+      scheduledTasks: schedule.length,
+      conflicts,
+      criticalPath: this.calculateCriticalPath(graph, schedule),
+      estimatedEndDate: this.getLatestEndDate(schedule),
+    };
+  }
+
+  private async scheduleTask(
+    task: Task,
+    graph: DependencyGraph,
+    availability: Map<number, DayAvailability[]>,
+    existingSchedule: ScheduledTask[]
+  ): Promise<ScheduleAttempt> {
+    // Find earliest start based on dependencies
+    const earliestStart = this.getEarliestStart(task, graph, existingSchedule);
+
+    // Find assignee with availability
+    const assignees = task.assignees?.length
+      ? task.assignees
+      : [task.ownerId];
+
+    for (const userId of assignees) {
+      const userAvailability = availability.get(userId) || [];
+      const slot = this.findAvailableSlot(
+        userAvailability,
+        earliestStart,
+        task.estimatedHours || 4  // Default 4 hours
+      );
+
+      if (slot) {
+        return {
+          success: true,
+          scheduled: {
+            taskId: task.id,
+            userId,
+            startDate: slot.startDate,
+            endDate: slot.endDate,
+          },
+        };
+      }
+    }
+
+    return {
+      success: false,
+      conflict: {
+        taskId: task.id,
+        reason: 'No available time slot found',
+        suggestions: await this.generateSchedulingSuggestions(task, availability),
+      },
+    };
+  }
+
+  async suggestOptimalSchedule(projectId: number, tenantId: string): Promise<ScheduleSuggestion> {
+    const prompt = `Based on the project data, suggest optimal task scheduling.
+
+Consider:
+1. Task dependencies and critical path
+2. Team member skills and availability
+3. Priority levels (P1 should be scheduled first)
+4. Buffer time for reviews and unexpected delays
+5. Milestone deadlines
+
+Return JSON with scheduling recommendations and reasoning.`;
+
+    // ... AI-powered scheduling suggestions
+  }
+}
+```
+
+#### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/projects/:id/ai/schedule` | POST | Auto-schedule all unscheduled tasks |
+| `/api/projects/:id/ai/schedule/preview` | GET | Preview schedule without applying |
+| `/api/projects/:id/ai/schedule/optimize` | POST | Optimize existing schedule |
+| `/api/tasks/:id/dependencies` | GET/POST/DELETE | Manage task dependencies |
+
+### 3.4 Smart Reminders
+
+**Goal:** Contextual nudges based on project activity patterns.
+
+#### Database Changes
+
+```prisma
+model SmartReminder {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Context
+  reminderType    ReminderType
+  entityType      String    // "project" | "task" | "milestone"
+  entityId        Int
+
+  // Content
+  title           String
+  message         String
+  suggestedAction String?
+  actionUrl       String?
+
+  // Scheduling
+  scheduledFor    DateTime
+  priority        ReminderPriority @default(NORMAL)
+
+  // Status
+  status          ReminderStatus @default(PENDING)
+  sentAt          DateTime?
+  dismissedAt     DateTime?
+  actionTakenAt   DateTime?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, status, scheduledFor])
+  @@index([tenantId])
+}
+
+enum ReminderType {
+  TASK_OVERDUE
+  TASK_DUE_SOON
+  MILESTONE_APPROACHING
+  STALE_PROJECT
+  NO_RECENT_ACTIVITY
+  HEALTH_DECLINING
+  MEETING_FOLLOWUP
+  STATUS_UPDATE_DUE
+  BUDGET_ALERT
+  SCOPE_CREEP
+}
+
+enum ReminderPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  DISMISSED
+  ACTION_TAKEN
+}
+```
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/smart-reminder.service.ts
+
+export class SmartReminderService {
+  private readonly REMINDER_RULES: ReminderRule[] = [
+    {
+      type: 'TASK_DUE_SOON',
+      condition: (task) => {
+        const daysUntilDue = daysBetween(new Date(), task.dueDate);
+        return daysUntilDue <= 2 && daysUntilDue > 0 && task.status !== 'DONE';
+      },
+      getMessage: (task) => ({
+        title: `Task due soon: ${task.title}`,
+        message: `This task is due in ${daysBetween(new Date(), task.dueDate)} day(s)`,
+        suggestedAction: 'Review and complete the task',
+        priority: 'HIGH',
+      }),
+    },
+    {
+      type: 'STALE_PROJECT',
+      condition: (project) => {
+        const daysSinceUpdate = daysBetween(project.updatedAt, new Date());
+        return daysSinceUpdate > 7 && project.status === 'IN_PROGRESS';
+      },
+      getMessage: (project) => ({
+        title: `No recent activity on ${project.name}`,
+        message: `This project hasn't been updated in ${daysBetween(project.updatedAt, new Date())} days. Consider scheduling a sync.`,
+        suggestedAction: 'Schedule team sync',
+        priority: 'NORMAL',
+      }),
+    },
+    {
+      type: 'HEALTH_DECLINING',
+      condition: async (project, context) => {
+        const prediction = await healthPredictorService.predictHealth(project.id, context.tenantId);
+        return prediction.predictedHealth === 'AT_RISK' && project.healthStatus === 'ON_TRACK';
+      },
+      getMessage: (project, prediction) => ({
+        title: `Health warning for ${project.name}`,
+        message: `AI predicts this project may become at-risk. Top factor: ${prediction.topFactor}`,
+        suggestedAction: 'Review project health and take preventive action',
+        priority: 'HIGH',
+      }),
+    },
+    {
+      type: 'MEETING_FOLLOWUP',
+      condition: (meeting) => {
+        const daysSinceMeeting = daysBetween(meeting.date, new Date());
+        return daysSinceMeeting === 1 && meeting.actionItems?.length > 0;
+      },
+      getMessage: (meeting) => ({
+        title: `Follow up on ${meeting.title}`,
+        message: `${meeting.actionItems.length} action items from yesterday's meeting need attention`,
+        suggestedAction: 'Review and assign action items',
+        priority: 'NORMAL',
+      }),
+    },
+  ];
+
+  async generateReminders(tenantId: string): Promise<void> {
+    const [projects, tasks, meetings] = await Promise.all([
+      this.getActiveProjects(tenantId),
+      this.getPendingTasks(tenantId),
+      this.getRecentMeetings(tenantId),
+    ]);
+
+    const reminders: CreateReminderInput[] = [];
+
+    // Check task rules
+    for (const task of tasks) {
+      for (const rule of this.REMINDER_RULES.filter(r => r.type.startsWith('TASK_'))) {
+        if (await rule.condition(task, { tenantId })) {
+          const message = rule.getMessage(task);
+          reminders.push({
+            tenantId,
+            userId: task.ownerId,
+            reminderType: rule.type,
+            entityType: 'task',
+            entityId: task.id,
+            ...message,
+            scheduledFor: new Date(),
+          });
+        }
+      }
+    }
+
+    // Check project rules
+    for (const project of projects) {
+      for (const rule of this.REMINDER_RULES.filter(r =>
+        ['STALE_PROJECT', 'HEALTH_DECLINING'].includes(r.type)
+      )) {
+        if (await rule.condition(project, { tenantId })) {
+          const message = rule.getMessage(project);
+          reminders.push({
+            tenantId,
+            userId: project.ownerId,
+            reminderType: rule.type,
+            entityType: 'project',
+            entityId: project.id,
+            ...message,
+            scheduledFor: new Date(),
+          });
+        }
+      }
+    }
+
+    // Deduplicate and store
+    await this.storeReminders(reminders);
+  }
+
+  async getUserReminders(userId: number, tenantId: string): Promise<SmartReminder[]> {
+    return prisma.smartReminder.findMany({
+      where: {
+        tenantId,
+        userId,
+        status: 'PENDING',
+        scheduledFor: { lte: new Date() },
+      },
+      orderBy: [{ priority: 'desc' }, { scheduledFor: 'asc' }],
+      take: 10,
+    });
+  }
+}
+```
+
+#### UI Component
+
+```typescript
+// SmartRemindersPanel.tsx
+export function SmartRemindersPanel() {
+  const { data: reminders } = useSmartReminders();
+
+  if (!reminders?.length) return null;
+
+  const priorityIcons = {
+    URGENT: '🔴',
+    HIGH: '🟠',
+    NORMAL: '🟡',
+    LOW: '⚪',
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <span>🔔 Smart Reminders</span>
+        <Badge>{reminders.length}</Badge>
+      </CardHeader>
+      <CardContent>
+        {reminders.map(reminder => (
+          <div key={reminder.id} className="p-3 border-b last:border-0">
+            <div className="flex items-start gap-2">
+              <span>{priorityIcons[reminder.priority]}</span>
+              <div className="flex-1">
+                <p className="font-medium text-sm">{reminder.title}</p>
+                <p className="text-xs text-muted-foreground">{reminder.message}</p>
+                {reminder.suggestedAction && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 h-auto text-xs"
+                    onClick={() => handleAction(reminder)}
+                  >
+                    {reminder.suggestedAction} →
+                  </Button>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => dismissReminder(reminder.id)}
+              >
+                ✕
+              </Button>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### 3.5 Webhook Events for Project Updates
 
 **Goal:** Extend webhook system to dispatch project-related events.
 
@@ -1397,16 +2317,607 @@ export function PortfolioHealthPage() {
 }
 ```
 
+### 4.3 Team Performance Insights
+
+**Goal:** Analyze task completion patterns to optimize team assignments.
+
+#### Database Changes
+
+```prisma
+model TeamPerformanceMetrics {
+  id              Int       @id @default(autoincrement())
+  tenantId        String
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Time period
+  periodStart     DateTime
+  periodEnd       DateTime
+  periodType      String    // "weekly" | "monthly" | "quarterly"
+
+  // Metrics
+  tasksCompleted  Int
+  tasksOnTime     Int
+  tasksOverdue    Int
+  avgCompletionTime Float   // Hours
+  estimateAccuracy Float    // Actual / Estimated ratio
+
+  // By task type
+  metricsByType   Json      // { development: {...}, design: {...} }
+
+  // Collaboration
+  collaborationScore Float  // Based on cross-team task completion
+
+  createdAt       DateTime  @default(now())
+
+  @@unique([userId, periodStart, periodType])
+  @@index([tenantId, periodType])
+}
+```
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/team-performance.service.ts
+
+export class TeamPerformanceService {
+  async analyzeTeamPerformance(
+    tenantId: string,
+    period: { start: Date; end: Date }
+  ): Promise<TeamPerformanceReport> {
+    const teamMembers = await userService.getByTenant(tenantId);
+
+    const metrics = await Promise.all(
+      teamMembers.map(user => this.calculateUserMetrics(user.id, tenantId, period))
+    );
+
+    // AI-powered insights
+    const insights = await this.generateInsights(metrics);
+
+    return {
+      period,
+      teamMetrics: metrics,
+      insights,
+      recommendations: insights.recommendations,
+    };
+  }
+
+  private async calculateUserMetrics(
+    userId: number,
+    tenantId: string,
+    period: { start: Date; end: Date }
+  ): Promise<UserPerformanceMetrics> {
+    const tasks = await prisma.task.findMany({
+      where: {
+        tenantId,
+        OR: [{ ownerId: userId }, { assignees: { some: { userId } } }],
+        updatedAt: { gte: period.start, lte: period.end },
+        status: 'DONE',
+      },
+    });
+
+    const onTime = tasks.filter(t => !t.dueDate || t.updatedAt <= t.dueDate).length;
+
+    const avgCompletion = tasks.length > 0
+      ? tasks.reduce((sum, t) => {
+          const start = t.createdAt;
+          const end = t.updatedAt;
+          return sum + daysBetween(start, end);
+        }, 0) / tasks.length
+      : 0;
+
+    const estimateAccuracy = tasks
+      .filter(t => t.estimatedHours && t.actualHours)
+      .reduce((sum, t) => sum + (t.actualHours / t.estimatedHours), 0) /
+      Math.max(tasks.filter(t => t.estimatedHours && t.actualHours).length, 1);
+
+    return {
+      userId,
+      tasksCompleted: tasks.length,
+      tasksOnTime: onTime,
+      onTimeRate: tasks.length > 0 ? onTime / tasks.length : 1,
+      avgCompletionDays: avgCompletion,
+      estimateAccuracy,
+      strongAreas: await this.identifyStrengths(tasks),
+    };
+  }
+
+  private async generateInsights(metrics: UserPerformanceMetrics[]): Promise<PerformanceInsights> {
+    const prompt = `Analyze team performance data and provide actionable insights.
+
+TEAM METRICS:
+${metrics.map(m => `- ${m.userName}: ${m.tasksCompleted} tasks, ${(m.onTimeRate * 100).toFixed(0)}% on-time, estimate accuracy ${(m.estimateAccuracy * 100).toFixed(0)}%`).join('\n')}
+
+Provide:
+1. Top performers and their strengths
+2. Areas needing improvement
+3. Task assignment recommendations (who should handle what types of tasks)
+4. Workload balancing suggestions
+
+Return JSON: {
+  "topPerformers": [...],
+  "improvementAreas": [...],
+  "assignmentRecommendations": [...],
+  "workloadSuggestions": [...]
+}`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 600,
+      temperature: 0.3,
+    });
+
+    return JSON.parse(response.content);
+  }
+
+  async suggestTaskAssignment(
+    task: { title: string; type?: string; complexity?: string },
+    projectId: number,
+    tenantId: string
+  ): Promise<AssignmentSuggestion[]> {
+    const teamMembers = await projectMemberService.getByProject(projectId, tenantId);
+    const metrics = await this.getRecentMetrics(teamMembers.map(m => m.userId), tenantId);
+
+    // Score each team member for this task
+    const scores = teamMembers.map(member => {
+      const userMetrics = metrics.find(m => m.userId === member.userId);
+      return {
+        userId: member.userId,
+        userName: member.user.name,
+        score: this.calculateAssignmentScore(task, userMetrics),
+        reasoning: this.explainScore(task, userMetrics),
+      };
+    });
+
+    return scores.sort((a, b) => b.score - a.score).slice(0, 3);
+  }
+}
+```
+
+### 4.4 Client Engagement Scoring
+
+**Goal:** Track client responsiveness as a leading indicator of project health.
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/client-engagement.service.ts
+
+export class ClientEngagementService {
+  async calculateEngagementScore(
+    accountId: number,
+    tenantId: string
+  ): Promise<EngagementScore> {
+    const [meetings, activities, communications] = await Promise.all([
+      this.getRecentMeetings(accountId, tenantId),
+      activityService.getByAccount(accountId, tenantId, { days: 30 }),
+      this.getCommunications(accountId, tenantId),
+    ]);
+
+    const scores = {
+      meetingAttendance: this.scoreMeetingAttendance(meetings),
+      responseTime: this.scoreResponseTime(communications),
+      feedbackFrequency: this.scoreFeedbackFrequency(activities),
+      documentReviews: this.scoreDocumentReviews(activities),
+      stakeholderAvailability: this.scoreStakeholderAvailability(meetings),
+    };
+
+    const overallScore = Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length;
+
+    // Trend analysis
+    const previousScore = await this.getPreviousScore(accountId, tenantId);
+    const trend = previousScore ? overallScore - previousScore : 0;
+
+    // AI interpretation
+    const interpretation = await this.interpretScore(scores, overallScore, trend);
+
+    // Store score
+    await prisma.clientEngagementScore.create({
+      data: {
+        tenantId,
+        accountId,
+        overallScore,
+        componentScores: scores,
+        trend,
+        interpretation,
+        calculatedAt: new Date(),
+      },
+    });
+
+    return {
+      overallScore,
+      componentScores: scores,
+      trend,
+      riskLevel: overallScore < 40 ? 'HIGH' : overallScore < 70 ? 'MEDIUM' : 'LOW',
+      interpretation,
+      recommendations: interpretation.recommendations,
+    };
+  }
+
+  private scoreMeetingAttendance(meetings: Meeting[]): number {
+    if (meetings.length === 0) return 50;
+
+    const attended = meetings.filter(m =>
+      m.attendees?.some(a => a.attended && a.isClient)
+    ).length;
+
+    return Math.min(100, (attended / meetings.length) * 100);
+  }
+
+  private scoreResponseTime(communications: Communication[]): number {
+    const responseTimes = communications
+      .filter(c => c.responseTime)
+      .map(c => c.responseTime);
+
+    if (responseTimes.length === 0) return 50;
+
+    const avgHours = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+
+    // < 4 hours = 100, 4-24 hours = 75, 1-3 days = 50, > 3 days = 25
+    if (avgHours < 4) return 100;
+    if (avgHours < 24) return 75;
+    if (avgHours < 72) return 50;
+    return 25;
+  }
+
+  private async interpretScore(
+    scores: ComponentScores,
+    overall: number,
+    trend: number
+  ): Promise<ScoreInterpretation> {
+    const prompt = `Interpret this client engagement score:
+
+OVERALL: ${overall}/100 (${trend > 0 ? '+' : ''}${trend.toFixed(1)} trend)
+
+COMPONENTS:
+- Meeting Attendance: ${scores.meetingAttendance}/100
+- Response Time: ${scores.responseTime}/100
+- Feedback Frequency: ${scores.feedbackFrequency}/100
+- Document Reviews: ${scores.documentReviews}/100
+- Stakeholder Availability: ${scores.stakeholderAvailability}/100
+
+Provide:
+1. A 2-3 sentence summary of the engagement level
+2. Top concern areas (if any)
+3. 2-3 specific recommendations to improve engagement
+
+Return JSON: { "summary": "...", "concerns": [...], "recommendations": [...] }`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 300,
+      temperature: 0.3,
+    });
+
+    return JSON.parse(response.content);
+  }
+}
+```
+
+### 4.5 Project Charter Generator
+
+**Goal:** Auto-generate charter documents from project setup wizard data.
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/charter-generator.service.ts
+
+export class CharterGeneratorService {
+  async generateCharter(
+    projectId: number,
+    tenantId: string
+  ): Promise<ProjectCharter> {
+    const [project, account, milestones, team] = await Promise.all([
+      projectService.getById(projectId, tenantId),
+      accountService.getByProject(projectId, tenantId),
+      milestoneService.getByProject(projectId, tenantId),
+      projectMemberService.getByProject(projectId, tenantId),
+    ]);
+
+    const prompt = `Generate a professional project charter document.
+
+PROJECT DETAILS:
+- Name: ${project.name}
+- Client: ${account?.name || 'N/A'}
+- Start Date: ${project.startDate}
+- End Date: ${project.endDate}
+- Status: ${project.status}
+
+GOALS:
+${project.goals || 'Not specified'}
+
+DESCRIPTION:
+${project.description || 'Not specified'}
+
+MILESTONES:
+${milestones.map(m => `- ${m.name} (Due: ${m.dueDate})`).join('\n')}
+
+TEAM:
+${team.map(t => `- ${t.user.name} (${t.role})`).join('\n')}
+
+Generate a comprehensive project charter with these sections:
+1. Executive Summary (2-3 paragraphs)
+2. Project Objectives (3-5 bullet points)
+3. Scope (In scope / Out of scope)
+4. Key Deliverables
+5. Success Criteria
+6. Stakeholders and Roles
+7. Timeline Overview
+8. Risks and Assumptions
+9. Communication Plan
+10. Approval Signatures (placeholder)
+
+Format as Markdown.`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 2000,
+      temperature: 0.4,
+    });
+
+    // Store charter
+    const charter = await prisma.projectDocument.create({
+      data: {
+        tenantId,
+        projectId,
+        title: `${project.name} - Project Charter`,
+        type: 'CHARTER',
+        content: response.content,
+        generatedByAI: true,
+        version: 1,
+      },
+    });
+
+    return {
+      id: charter.id,
+      content: response.content,
+      generatedAt: new Date(),
+    };
+  }
+
+  async regenerateSection(
+    charterId: number,
+    section: string,
+    feedback: string,
+    tenantId: string
+  ): Promise<string> {
+    const charter = await prisma.projectDocument.findUnique({
+      where: { id: charterId },
+    });
+
+    const prompt = `Regenerate the "${section}" section of this project charter based on feedback.
+
+CURRENT SECTION:
+${this.extractSection(charter.content, section)}
+
+FEEDBACK:
+${feedback}
+
+Generate an improved version of just this section, maintaining the same Markdown format.`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 500,
+      temperature: 0.4,
+    });
+
+    // Update charter
+    const updatedContent = this.replaceSection(charter.content, section, response.content);
+
+    await prisma.projectDocument.update({
+      where: { id: charterId },
+      data: {
+        content: updatedContent,
+        version: { increment: 1 },
+      },
+    });
+
+    return response.content;
+  }
+}
+```
+
+#### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/projects/:id/charter` | GET | Get existing charter |
+| `/api/projects/:id/charter/generate` | POST | Generate new charter |
+| `/api/projects/:id/charter/section` | PATCH | Regenerate specific section |
+| `/api/projects/:id/charter/export` | GET | Export as PDF/DOCX |
+
+### 4.6 RFP/SOW Document Generation
+
+**Goal:** Generate proposal documents from project templates and historical data.
+
+#### Service Implementation
+
+```typescript
+// pmo/apps/api/src/services/proposal-generator.service.ts
+
+export class ProposalGeneratorService {
+  async generateRFPResponse(
+    rfpContent: string,
+    templateId: string,
+    tenantId: string
+  ): Promise<ProposalDocument> {
+    // Find similar past projects for reference
+    const similarProjects = await projectSimilarityService.findByDescription(
+      rfpContent,
+      tenantId,
+      { limit: 3 }
+    );
+
+    const template = getProjectTemplate(templateId);
+
+    const prompt = `Generate a professional RFP response/proposal.
+
+RFP CONTENT:
+${rfpContent}
+
+SIMILAR PAST PROJECTS (for reference):
+${similarProjects.map(p => `
+- ${p.name}: ${p.description}
+  Duration: ${p.duration} days
+  Outcome: ${p.outcome}
+`).join('\n')}
+
+PROPOSED APPROACH (based on template "${template.name}"):
+${template.description}
+Typical Duration: ${template.duration}
+
+Generate a comprehensive proposal with:
+1. Executive Summary
+2. Understanding of Requirements
+3. Proposed Solution
+4. Methodology and Approach
+5. Team Composition (generic roles)
+6. Timeline and Milestones
+7. Deliverables
+8. Pricing Structure (placeholder)
+9. Why Choose Us
+10. Terms and Conditions (placeholder)
+
+Format as Markdown. Be professional and persuasive.`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 3000,
+      temperature: 0.5,
+    });
+
+    return {
+      content: response.content,
+      basedOn: similarProjects.map(p => p.id),
+      template: templateId,
+      generatedAt: new Date(),
+    };
+  }
+
+  async generateSOW(
+    projectId: number,
+    tenantId: string
+  ): Promise<SOWDocument> {
+    const [project, milestones, tasks] = await Promise.all([
+      projectService.getById(projectId, tenantId),
+      milestoneService.getByProject(projectId, tenantId),
+      taskService.getByProject(projectId, tenantId),
+    ]);
+
+    const prompt = `Generate a detailed Statement of Work (SOW) document.
+
+PROJECT: ${project.name}
+CLIENT: ${project.account?.name || 'TBD'}
+DURATION: ${project.startDate} to ${project.endDate}
+
+MILESTONES:
+${milestones.map(m => `- ${m.name}: ${m.description || 'No description'} (Due: ${m.dueDate})`).join('\n')}
+
+TASKS (sample):
+${tasks.slice(0, 20).map(t => `- ${t.title}`).join('\n')}
+
+Generate a formal SOW with:
+1. Introduction and Background
+2. Scope of Work
+   - In Scope
+   - Out of Scope
+   - Assumptions
+3. Deliverables (detailed)
+4. Milestones and Timeline
+5. Acceptance Criteria
+6. Project Team and Responsibilities
+7. Communication Plan
+8. Change Management Process
+9. Risk Management
+10. Payment Terms (placeholder)
+11. Legal Terms (placeholder)
+
+Format as Markdown. Use formal business language.`;
+
+    const response = await llmService.complete(prompt, {
+      maxTokens: 2500,
+      temperature: 0.3,
+    });
+
+    // Store SOW
+    const sow = await prisma.projectDocument.create({
+      data: {
+        tenantId,
+        projectId,
+        title: `${project.name} - Statement of Work`,
+        type: 'SOW',
+        content: response.content,
+        generatedByAI: true,
+        version: 1,
+      },
+    });
+
+    return {
+      id: sow.id,
+      content: response.content,
+      generatedAt: new Date(),
+    };
+  }
+}
+```
+
+#### UI Integration
+
+```typescript
+// DocumentGeneratorPanel.tsx
+export function DocumentGeneratorPanel({ projectId }: Props) {
+  const generateCharter = useGenerateCharter();
+  const generateSOW = useGenerateSOW();
+
+  return (
+    <Card>
+      <CardHeader>AI Document Generation</CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between p-3 border rounded">
+          <div>
+            <p className="font-medium">Project Charter</p>
+            <p className="text-sm text-muted-foreground">
+              Executive summary, objectives, scope, and governance
+            </p>
+          </div>
+          <Button onClick={() => generateCharter.mutate({ projectId })}>
+            ✨ Generate
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between p-3 border rounded">
+          <div>
+            <p className="font-medium">Statement of Work (SOW)</p>
+            <p className="text-sm text-muted-foreground">
+              Formal scope, deliverables, and acceptance criteria
+            </p>
+          </div>
+          <Button onClick={() => generateSOW.mutate({ projectId })}>
+            ✨ Generate
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between p-3 border rounded">
+          <div>
+            <p className="font-medium">Status Report Template</p>
+            <p className="text-sm text-muted-foreground">
+              Weekly/monthly progress report structure
+            </p>
+          </div>
+          <Button variant="outline">Coming Soon</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
 ---
 
 ## Summary: Deliverables by Phase
 
 | Phase | Sprint | Deliverables |
 |-------|--------|--------------|
-| **1: Foundation** | 1-2 | Project intents, Assistant UI, Status summaries, Template auto-apply |
-| **2: Predictive** | 3-4 | Health predictor, Duration estimation, Risk extraction |
-| **3: Automation** | 5-6 | Digest emails, Chat task creation, Webhook events |
-| **4: Advanced** | 7-8 | Similarity matching, Lessons learned, Portfolio dashboard |
+| **1: Foundation** | 1-2 | Project intents, Assistant UI, Status summaries, Smart task descriptions, Template auto-apply |
+| **2: Predictive** | 3-4 | Health predictor, Duration estimation, Budget forecasting, Scope change detection, Risk extraction |
+| **3: Automation** | 5-6 | Digest emails, Chat task creation, Auto-scheduling, Smart reminders, Webhook events |
+| **4: Advanced** | 7-8 | Similarity matching, Lessons learned, Portfolio dashboard, Team performance, Client engagement, Charter/SOW generation |
 
 ---
 
