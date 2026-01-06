@@ -72,6 +72,81 @@ const STATUS_COLORS: Record<TenantStatus, string> = {
     'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300',
 };
 
+// Available modules that can be configured per tenant (defined outside component for stable reference)
+const AVAILABLE_MODULES = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    description: 'Main dashboard with overview metrics',
+  },
+  {
+    id: 'tasks',
+    label: 'Tasks',
+    description: 'Personal task management and tracking',
+  },
+  {
+    id: 'clients',
+    label: 'Clients',
+    description: 'Client management, contacts, and documents',
+  },
+  {
+    id: 'projects',
+    label: 'Projects',
+    description: 'Project management, milestones, and meetings',
+  },
+  {
+    id: 'assets',
+    label: 'Assets',
+    description: 'AI-generated assets and content library',
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    description: 'Marketing content creation and campaigns',
+  },
+  { id: 'leads', label: 'Leads', description: 'Lead capture and management' },
+  {
+    id: 'pipeline',
+    label: 'Pipeline',
+    description: 'Sales pipeline visualization and tracking',
+  },
+  {
+    id: 'crmAccounts',
+    label: 'CRM Accounts',
+    description: 'CRM account management with hierarchy support',
+  },
+  {
+    id: 'crmOpportunities',
+    label: 'CRM Opportunities',
+    description: 'Sales pipeline with customizable stages',
+  },
+  {
+    id: 'customerSuccess',
+    label: 'Customer Success',
+    description: 'Customer Success Platform with health scoring',
+  },
+  {
+    id: 'chatbot',
+    label: 'AI Chatbot',
+    description: 'AI-powered customer service chatbot',
+  },
+  {
+    id: 'documentAnalyzer',
+    label: 'Document Analyzer',
+    description: 'Smart document analysis with OCR',
+  },
+  {
+    id: 'contentGenerator',
+    label: 'Content Generator',
+    description: 'AI-powered content generation',
+  },
+  {
+    id: 'leadScoring',
+    label: 'Lead Scoring',
+    description: 'ML-based lead scoring with predictive analytics',
+  },
+];
+
 export function TenantDetailPage(): JSX.Element {
   const { tenantId } = useParams<{ tenantId: string }>();
   const navigate = useNavigate();
@@ -259,81 +334,6 @@ export function TenantDetailPage(): JSX.Element {
     [tenantId, updateRoleMutation],
   );
 
-  // Available modules that can be configured per tenant
-  const AVAILABLE_MODULES = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      description: 'Main dashboard with overview metrics',
-    },
-    {
-      id: 'tasks',
-      label: 'Tasks',
-      description: 'Personal task management and tracking',
-    },
-    {
-      id: 'clients',
-      label: 'Clients',
-      description: 'Client management, contacts, and documents',
-    },
-    {
-      id: 'projects',
-      label: 'Projects',
-      description: 'Project management, milestones, and meetings',
-    },
-    {
-      id: 'assets',
-      label: 'Assets',
-      description: 'AI-generated assets and content library',
-    },
-    {
-      id: 'marketing',
-      label: 'Marketing',
-      description: 'Marketing content creation and campaigns',
-    },
-    { id: 'leads', label: 'Leads', description: 'Lead capture and management' },
-    {
-      id: 'pipeline',
-      label: 'Pipeline',
-      description: 'Sales pipeline visualization and tracking',
-    },
-    {
-      id: 'crmAccounts',
-      label: 'CRM Accounts',
-      description: 'CRM account management with hierarchy support',
-    },
-    {
-      id: 'crmOpportunities',
-      label: 'CRM Opportunities',
-      description: 'Sales pipeline with customizable stages',
-    },
-    {
-      id: 'customerSuccess',
-      label: 'Customer Success',
-      description: 'Customer Success Platform with health scoring',
-    },
-    {
-      id: 'chatbot',
-      label: 'AI Chatbot',
-      description: 'AI-powered customer service chatbot',
-    },
-    {
-      id: 'documentAnalyzer',
-      label: 'Document Analyzer',
-      description: 'Smart document analysis with OCR',
-    },
-    {
-      id: 'contentGenerator',
-      label: 'Content Generator',
-      description: 'AI-powered content generation',
-    },
-    {
-      id: 'leadScoring',
-      label: 'Lead Scoring',
-      description: 'ML-based lead scoring with predictive analytics',
-    },
-  ];
-
   const handleOpenModuleConfig = useCallback(
     (
       moduleId: string,
@@ -450,7 +450,7 @@ export function TenantDetailPage(): JSX.Element {
     if (!tenant) return AVAILABLE_MODULES;
     const configuredIds = new Set(tenant.modules.map((tm) => tm.moduleId));
     return AVAILABLE_MODULES.filter((m) => !configuredIds.has(m.id));
-  }, [tenant, AVAILABLE_MODULES]);
+  }, [tenant]);
 
   if (isLoading) {
     return (
