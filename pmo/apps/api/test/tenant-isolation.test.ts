@@ -440,6 +440,112 @@ describe('Tenant Isolation', () => {
   });
 
   // ============================================================================
+  // ACCOUNT HIERARCHY ISOLATION TESTS
+  // ============================================================================
+
+  describe('Account Hierarchy Isolation', () => {
+    let accountA: Awaited<ReturnType<typeof createTestAccount>>;
+    let accountB: Awaited<ReturnType<typeof createTestAccount>>;
+    let childAccountA: Awaited<ReturnType<typeof createTestAccount>>;
+
+    beforeEach(async () => {
+      // Create parent account in tenant A
+      accountA = await createTestAccount(
+        tenantA.id,
+        userA.id,
+        'Parent Account A',
+      );
+
+      // Create child account in tenant A with parent
+      const testPrisma = getTestPrisma();
+      childAccountA = await testPrisma.account.create({
+        data: {
+          tenantId: tenantA.id,
+          name: 'Child Account A',
+          type: 'PROSPECT',
+          ownerId: userA.id,
+          parentAccountId: accountA.id,
+        },
+      });
+
+      // Create account in tenant B
+      accountB = await createTestAccount(tenantB.id, userB.id, 'Account B');
+    });
+
+    afterEach(async () => {
+      const testPrisma = getTestPrisma();
+      await testPrisma.account.deleteMany({
+        where: {
+          OR: [
+            { name: { contains: 'Parent Account' } },
+            { name: { contains: 'Child Account' } },
+            { name: { contains: 'Account B' } },
+          ],
+        },
+      });
+    });
+
+    it('should not leak parent account from another tenant', async () => {
+      // Get account with hierarchy from tenant A
+      const account = await withTenant(tenantA, () =>
+        accountService.getAccountById(childAccountA.id),
+      );
+
+      expect(account).not.toBeNull();
+      expect(account?.parentAccount).not.toBeNull();
+      expect(account?.parentAccount?.id).toBe(accountA.id);
+    });
+
+    it('should not leak child accounts from another tenant', async () => {
+      // Get account with hierarchy from tenant A
+      const account = await withTenant(tenantA, () =>
+        accountService.getAccountById(accountA.id),
+      );
+
+      expect(account).not.toBeNull();
+      expect(account?.childAccounts).toBeDefined();
+      expect(account?.childAccounts?.length).toBe(1);
+      expect(account?.childAccounts?.[0]?.id).toBe(childAccountA.id);
+    });
+
+    it('should not allow creating account with cross-tenant parent', async () => {
+      // Try to create account in tenant A with parent from tenant B
+      await expect(
+        withTenant(tenantA, () =>
+          accountService.createAccount({
+            name: 'Cross-Tenant Child',
+            type: 'PROSPECT',
+            ownerId: userA.id,
+            parentAccountId: accountB.id, // Parent from tenant B
+          }),
+        ),
+      ).rejects.toThrow('Parent account not found or does not belong to this tenant');
+    });
+
+    it('should not allow updating account to use cross-tenant parent', async () => {
+      // Try to update tenant A account to have parent from tenant B
+      await expect(
+        withTenant(tenantA, () =>
+          accountService.updateAccount(accountA.id, {
+            parentAccountId: accountB.id, // Parent from tenant B
+          }),
+        ),
+      ).rejects.toThrow('Parent account not found or does not belong to this tenant');
+    });
+
+    it('should prevent circular parent reference', async () => {
+      // Try to set account as its own parent
+      await expect(
+        withTenant(tenantA, () =>
+          accountService.updateAccount(accountA.id, {
+            parentAccountId: accountA.id,
+          }),
+        ),
+      ).rejects.toThrow('An account cannot be its own parent');
+    });
+  });
+
+  // ============================================================================
   // CROSS-TENANT UPDATE/DELETE PREVENTION
   // ============================================================================
 

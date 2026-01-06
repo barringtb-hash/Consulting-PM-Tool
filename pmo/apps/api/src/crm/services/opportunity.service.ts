@@ -737,6 +737,9 @@ export async function getPipelineStats(pipelineId?: number) {
 /**
  * Get all pipeline stages for a pipeline (or default pipeline).
  * Used for dropdown population in forms.
+ *
+ * If no default pipeline exists for the tenant, one will be auto-created
+ * with standard stages to ensure opportunity creation always works.
  */
 export async function getPipelineStages(pipelineId?: number) {
   const tenantId = getTenantId();
@@ -751,6 +754,63 @@ export async function getPipelineStages(pipelineId?: number) {
     // Get default pipeline
     pipeline = await prisma.pipeline.findFirst({
       where: { tenantId, isDefault: true },
+    });
+  }
+
+  // Auto-create default pipeline if none exists (self-healing for legacy tenants)
+  if (!pipeline && !pipelineId) {
+    pipeline = await prisma.pipeline.create({
+      data: {
+        tenantId,
+        name: 'Sales Pipeline',
+        isDefault: true,
+        stages: {
+          create: [
+            {
+              name: 'Lead',
+              order: 1,
+              probability: 10,
+              type: 'OPEN',
+              color: '#6B7280',
+            },
+            {
+              name: 'Qualified',
+              order: 2,
+              probability: 25,
+              type: 'OPEN',
+              color: '#3B82F6',
+            },
+            {
+              name: 'Proposal',
+              order: 3,
+              probability: 50,
+              type: 'OPEN',
+              color: '#8B5CF6',
+            },
+            {
+              name: 'Negotiation',
+              order: 4,
+              probability: 75,
+              type: 'OPEN',
+              color: '#F59E0B',
+            },
+            {
+              name: 'Closed Won',
+              order: 5,
+              probability: 100,
+              type: 'WON',
+              color: '#10B981',
+            },
+            {
+              name: 'Closed Lost',
+              order: 6,
+              probability: 0,
+              type: 'LOST',
+              color: '#EF4444',
+            },
+          ],
+        },
+      },
     });
   }
 
