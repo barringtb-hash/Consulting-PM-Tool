@@ -682,20 +682,38 @@ function escapeJs(str: string): string {
 
 /**
  * Sanitize URL to prevent XSS via javascript: or other dangerous protocols.
- * Only allows http://, https://, and data: URLs for images.
+ * Only allows http://, https://, and data:image/ URLs for images.
  */
 function sanitizeImageUrl(url: string | null): string | null {
   if (!url) return null;
 
-  const trimmedUrl = url.trim().toLowerCase();
+  const trimmedUrl = url.trim();
 
-  // Allow only safe protocols for images
-  if (
-    trimmedUrl.startsWith('https://') ||
-    trimmedUrl.startsWith('http://') ||
-    trimmedUrl.startsWith('data:image/')
-  ) {
-    return url;
+  // Decode URL-encoded characters to prevent bypass via encoded protocols
+  // e.g., %6A%61%76%61%73%63%72%69%70%74%3A => javascript:
+  let decodedUrl = trimmedUrl;
+  try {
+    decodedUrl = decodeURIComponent(trimmedUrl);
+  } catch {
+    // If decoding fails, use the trimmed value
+  }
+
+  const normalizedUrl = decodedUrl.toLowerCase();
+
+  // Allow data:image/ URLs (for base64 encoded images)
+  if (normalizedUrl.startsWith('data:image/')) {
+    return trimmedUrl;
+  }
+
+  // Validate http(s) URLs using URL parsing to prevent encoded protocol bypasses
+  try {
+    const parsed = new URL(decodedUrl);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:') {
+      return trimmedUrl;
+    }
+  } catch {
+    // If URL parsing fails, treat as unsafe
   }
 
   // Block all other protocols (javascript:, vbscript:, data:text/html, etc.)
