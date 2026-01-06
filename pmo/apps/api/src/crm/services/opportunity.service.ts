@@ -758,60 +758,92 @@ export async function getPipelineStages(pipelineId?: number) {
   }
 
   // Auto-create default pipeline if none exists (self-healing for legacy tenants)
+  // Use try-catch to handle potential race condition where multiple concurrent
+  // requests might try to create the default pipeline simultaneously
   if (!pipeline && !pipelineId) {
-    pipeline = await prisma.pipeline.create({
-      data: {
-        tenantId,
-        name: 'Sales Pipeline',
-        isDefault: true,
-        stages: {
-          create: [
-            {
-              name: 'Lead',
-              order: 1,
-              probability: 10,
-              type: 'OPEN',
-              color: '#6B7280',
-            },
-            {
-              name: 'Qualified',
-              order: 2,
-              probability: 25,
-              type: 'OPEN',
-              color: '#3B82F6',
-            },
-            {
-              name: 'Proposal',
-              order: 3,
-              probability: 50,
-              type: 'OPEN',
-              color: '#8B5CF6',
-            },
-            {
-              name: 'Negotiation',
-              order: 4,
-              probability: 75,
-              type: 'OPEN',
-              color: '#F59E0B',
-            },
-            {
-              name: 'Closed Won',
-              order: 5,
-              probability: 100,
-              type: 'WON',
-              color: '#10B981',
-            },
-            {
-              name: 'Closed Lost',
-              order: 6,
-              probability: 0,
-              type: 'LOST',
-              color: '#EF4444',
-            },
-          ],
+    try {
+      pipeline = await prisma.pipeline.create({
+        data: {
+          tenantId,
+          name: 'Sales Pipeline',
+          isDefault: true,
+          stages: {
+            create: [
+              {
+                name: 'Lead',
+                order: 1,
+                probability: 10,
+                type: 'OPEN',
+                color: '#6B7280',
+              },
+              {
+                name: 'Qualified',
+                order: 2,
+                probability: 25,
+                type: 'OPEN',
+                color: '#3B82F6',
+              },
+              {
+                name: 'Proposal',
+                order: 3,
+                probability: 50,
+                type: 'OPEN',
+                color: '#8B5CF6',
+              },
+              {
+                name: 'Negotiation',
+                order: 4,
+                probability: 75,
+                type: 'OPEN',
+                color: '#F59E0B',
+              },
+              {
+                name: 'Closed Won',
+                order: 5,
+                probability: 100,
+                type: 'WON',
+                color: '#10B981',
+              },
+              {
+                name: 'Closed Lost',
+                order: 6,
+                probability: 0,
+                type: 'LOST',
+                color: '#EF4444',
+              },
+            ],
+          },
         },
-      },
-    });
+        include: {
+          stages: {
+            orderBy: { order: 'asc' },
+          },
+        },
+      });
+
+      // Return early with the stages we just created
+      return {
+        pipelineId: pipeline.id,
+        pipelineName: pipeline.name,
+        stages: pipeline.stages.map((s) => ({
+          id: s.id,
+          pipelineId: pipeline!.id,
+          name: s.name,
+          stageType: s.type,
+          color: s.color,
+          order: s.order,
+          probability: s.probability,
+          description: s.description,
+          rottenDays: s.rottenDays,
+        })),
+      };
+    } catch {
+      // Race condition: another request created the pipeline first
+      // Re-fetch the default pipeline that was created by the other request
+      pipeline = await prisma.pipeline.findFirst({
+        where: { tenantId, isDefault: true },
+      });
+    }
   }
 
   if (!pipeline) {
