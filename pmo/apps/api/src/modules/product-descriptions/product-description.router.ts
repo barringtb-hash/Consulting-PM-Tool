@@ -9,8 +9,8 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import {
-  requireTenant,
   optionalTenantMiddleware,
+  requireTenant,
 } from '../../tenant/tenant.middleware';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import * as productDescService from './product-description.service';
