@@ -253,6 +253,10 @@ export async function addPlaybookTask(
       },
     });
 
+    if (!playbook) {
+      throw new Error(`Playbook with id ${playbookId} not found`);
+    }
+
     return playbook as PlaybookWithTasks;
   });
 }

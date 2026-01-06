@@ -25,7 +25,10 @@ interface AuthenticatedSocket extends Socket {
   entitySubscriptions?: Set<string>;
 }
 
-// PERF: Limit entity subscriptions per socket to prevent resource abuse
+// PERF: Limit entity subscriptions per socket to prevent resource abuse.
+// Value of 100 balances typical usage patterns (most clients need <20 subscriptions),
+// per-socket memory overhead for room tracking, and Socket.IO bookkeeping costs.
+// Adjust cautiously based on deployment patterns and load testing results.
 const MAX_ENTITY_SUBSCRIPTIONS = 100;
 
 interface JwtPayload {

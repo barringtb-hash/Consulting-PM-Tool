@@ -317,6 +317,10 @@ export async function addObjective(
       include: includeRelations,
     });
 
+    if (!plan) {
+      throw new Error(`Success plan with id ${input.successPlanId} not found`);
+    }
+
     return plan as unknown as AccountSuccessPlanWithRelations;
   });
 }

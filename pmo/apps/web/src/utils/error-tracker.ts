@@ -154,20 +154,23 @@ class ErrorTracker {
       return;
     }
 
-    // PERF FIX: Bounded hash map with LRU-style eviction (no setTimeout leak)
+    // PERF FIX: Use Map insertion order for O(1) LRU eviction
+    // Re-insert existing keys to mark them as most recently used
+    if (this.recentErrorHashes.has(hash)) {
+      this.recentErrorHashes.delete(hash);
+    }
     this.recentErrorHashes.set(hash, now);
 
-    // Evict oldest entries if over limit
+    // Evict oldest entries if over limit (Map maintains insertion order)
     if (this.recentErrorHashes.size > ErrorTracker.MAX_HASH_ENTRIES) {
-      // Find and delete oldest entries
-      const entries = Array.from(this.recentErrorHashes.entries());
-      entries.sort((a, b) => a[1] - b[1]); // Sort by timestamp ascending
-      const toDelete = entries.slice(
-        0,
-        entries.length - ErrorTracker.MAX_HASH_ENTRIES,
-      );
-      for (const [key] of toDelete) {
-        this.recentErrorHashes.delete(key);
+      const excess =
+        this.recentErrorHashes.size - ErrorTracker.MAX_HASH_ENTRIES;
+      const iterator = this.recentErrorHashes.keys();
+      for (let i = 0; i < excess; i++) {
+        const oldestKey = iterator.next().value;
+        if (oldestKey !== undefined) {
+          this.recentErrorHashes.delete(oldestKey);
+        }
       }
     }
 
