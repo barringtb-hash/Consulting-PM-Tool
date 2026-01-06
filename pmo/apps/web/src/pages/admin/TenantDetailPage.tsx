@@ -192,52 +192,72 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Action failed');
     }
-  }, [tenantId, showConfirmModal, suspendMutation, activateMutation, cancelMutation, removeUserMutation]);
+  }, [
+    tenantId,
+    showConfirmModal,
+    suspendMutation,
+    activateMutation,
+    cancelMutation,
+    removeUserMutation,
+  ]);
 
-  const handleAddUser = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tenantId || !newUserEmail) return;
+  const handleAddUser = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!tenantId || !newUserEmail) return;
 
-    try {
-      const result = await addUserMutation.mutateAsync({
-        tenantId,
-        input: {
-          email: newUserEmail,
-          name: newUserName || undefined,
-          role: newUserRole,
-          userRole: newUserGlobalRole,
-        },
-      });
-
-      if (result.isNewUser && result.tempPassword) {
-        setTempPasswordResult({
-          email: newUserEmail,
-          password: result.tempPassword,
+      try {
+        const result = await addUserMutation.mutateAsync({
+          tenantId,
+          input: {
+            email: newUserEmail,
+            name: newUserName || undefined,
+            role: newUserRole,
+            userRole: newUserGlobalRole,
+          },
         });
+
+        if (result.isNewUser && result.tempPassword) {
+          setTempPasswordResult({
+            email: newUserEmail,
+            password: result.tempPassword,
+          });
+        }
+
+        setShowAddUserModal(false);
+        setNewUserEmail('');
+        setNewUserName('');
+        setNewUserRole('MEMBER');
+        setNewUserGlobalRole('USER');
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to add user');
       }
+    },
+    [
+      tenantId,
+      newUserEmail,
+      newUserName,
+      newUserRole,
+      newUserGlobalRole,
+      addUserMutation,
+    ],
+  );
 
-      setShowAddUserModal(false);
-      setNewUserEmail('');
-      setNewUserName('');
-      setNewUserRole('MEMBER');
-      setNewUserGlobalRole('USER');
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add user');
-    }
-  }, [tenantId, newUserEmail, newUserName, newUserRole, newUserGlobalRole, addUserMutation]);
-
-  const handleRoleChange = useCallback(async (userId: number, newRole: TenantRole) => {
-    if (!tenantId) return;
-    try {
-      await updateRoleMutation.mutateAsync({
-        tenantId,
-        userId,
-        role: newRole,
-      });
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update role');
-    }
-  }, [tenantId, updateRoleMutation]);
+  const handleRoleChange = useCallback(
+    async (userId: number, newRole: TenantRole) => {
+      if (!tenantId) return;
+      try {
+        await updateRoleMutation.mutateAsync({
+          tenantId,
+          userId,
+          role: newRole,
+        });
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to update role');
+      }
+    },
+    [tenantId, updateRoleMutation],
+  );
 
   // Available modules that can be configured per tenant
   const AVAILABLE_MODULES = [
@@ -314,80 +334,92 @@ export function TenantDetailPage(): JSX.Element {
     },
   ];
 
-  const handleOpenModuleConfig = useCallback((
-    moduleId: string,
-    existingModule?: { enabled: boolean; tier: ModuleTier; trialEndsAt?: string | null },
-  ) => {
-    setSelectedModuleConfig({
-      moduleId,
-      enabled: existingModule?.enabled ?? true,
-      tier: existingModule?.tier ?? 'BASIC',
-      trialEndsAt: existingModule?.trialEndsAt
-        ? new Date(existingModule.trialEndsAt).toISOString().split('T')[0]
-        : '',
-    });
-    setShowModuleConfigModal(true);
-  }, []);
-
-  const handleToggleModule = useCallback(async (
-    moduleId: string,
-    currentlyEnabled: boolean,
-  ) => {
-    if (!tenantId) return;
-    try {
-      await configureModuleMutation.mutateAsync({
-        tenantId,
-        input: {
-          moduleId,
-          enabled: !currentlyEnabled,
-        },
+  const handleOpenModuleConfig = useCallback(
+    (
+      moduleId: string,
+      existingModule?: {
+        enabled: boolean;
+        tier: ModuleTier;
+        trialEndsAt?: string | null;
+      },
+    ) => {
+      setSelectedModuleConfig({
+        moduleId,
+        enabled: existingModule?.enabled ?? true,
+        tier: existingModule?.tier ?? 'BASIC',
+        trialEndsAt: existingModule?.trialEndsAt
+          ? new Date(existingModule.trialEndsAt).toISOString().split('T')[0]
+          : '',
       });
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to toggle module');
-    }
-  }, [tenantId, configureModuleMutation]);
+      setShowModuleConfigModal(true);
+    },
+    [],
+  );
 
-  const handleSaveModuleConfig = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tenantId || !selectedModuleConfig.moduleId) return;
-
-    // Convert trialEndsAt date string to trialDays (number of days from today)
-    let trialDays: number | undefined;
-    if (selectedModuleConfig.trialEndsAt) {
-      const trialEndDate = new Date(selectedModuleConfig.trialEndsAt);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      trialEndDate.setHours(0, 0, 0, 0);
-      const diffTime = trialEndDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        trialDays = diffDays;
+  const handleToggleModule = useCallback(
+    async (moduleId: string, currentlyEnabled: boolean) => {
+      if (!tenantId) return;
+      try {
+        await configureModuleMutation.mutateAsync({
+          tenantId,
+          input: {
+            moduleId,
+            enabled: !currentlyEnabled,
+          },
+        });
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to toggle module');
       }
-    }
+    },
+    [tenantId, configureModuleMutation],
+  );
 
-    try {
-      await configureModuleMutation.mutateAsync({
-        tenantId,
-        input: {
-          moduleId: selectedModuleConfig.moduleId,
-          enabled: selectedModuleConfig.enabled,
-          tier: selectedModuleConfig.tier,
-          trialDays,
-        },
-      });
-      setShowModuleConfigModal(false);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to configure module');
-    }
-  }, [tenantId, selectedModuleConfig, configureModuleMutation]);
+  const handleSaveModuleConfig = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!tenantId || !selectedModuleConfig.moduleId) return;
 
-  const handleBrandingChange = useCallback((
-    field: keyof typeof brandingForm,
-    value: string,
-  ) => {
-    setBrandingForm((prev) => ({ ...prev, [field]: value }));
-    setBrandingDirty(true);
-  }, []);
+      // Convert trialEndsAt date string to trialDays (number of days from today)
+      let trialDays: number | undefined;
+      if (selectedModuleConfig.trialEndsAt) {
+        const trialEndDate = new Date(selectedModuleConfig.trialEndsAt);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        trialEndDate.setHours(0, 0, 0, 0);
+        const diffTime = trialEndDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          trialDays = diffDays;
+        }
+      }
+
+      try {
+        await configureModuleMutation.mutateAsync({
+          tenantId,
+          input: {
+            moduleId: selectedModuleConfig.moduleId,
+            enabled: selectedModuleConfig.enabled,
+            tier: selectedModuleConfig.tier,
+            trialDays,
+          },
+        });
+        setShowModuleConfigModal(false);
+      } catch (err) {
+        alert(
+          err instanceof Error ? err.message : 'Failed to configure module',
+        );
+      }
+    },
+    [tenantId, selectedModuleConfig, configureModuleMutation],
+  );
+
+  const handleBrandingChange = useCallback(
+    (field: keyof typeof brandingForm, value: string) => {
+      setBrandingForm((prev) => ({ ...prev, [field]: value }));
+      setBrandingDirty(true);
+    },
+    [],
+  );
 
   const handleSaveBranding = useCallback(async () => {
     if (!tenantId) return;
@@ -747,9 +779,7 @@ export function TenantDetailPage(): JSX.Element {
           {/* Modules */}
           <Card>
             <CardHeader className="flex items-center justify-between">
-              <CardTitle>
-                Modules ({enabledModuleCount} enabled)
-              </CardTitle>
+              <CardTitle>Modules ({enabledModuleCount} enabled)</CardTitle>
               <Button size="sm" onClick={() => handleOpenModuleConfig('')}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Module

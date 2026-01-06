@@ -70,7 +70,9 @@ class ErrorTracker {
   private static readonly MAX_HASH_ENTRIES = 100;
   private initialized: boolean = false;
   // Store listener references for proper cleanup
-  private boundUnhandledRejection: ((event: PromiseRejectionEvent) => void) | null = null;
+  private boundUnhandledRejection:
+    | ((event: PromiseRejectionEvent) => void)
+    | null = null;
   private boundBeforeUnload: (() => void) | null = null;
   private boundVisibilityChange: (() => void) | null = null;
 
@@ -160,7 +162,10 @@ class ErrorTracker {
       // Find and delete oldest entries
       const entries = Array.from(this.recentErrorHashes.entries());
       entries.sort((a, b) => a[1] - b[1]); // Sort by timestamp ascending
-      const toDelete = entries.slice(0, entries.length - ErrorTracker.MAX_HASH_ENTRIES);
+      const toDelete = entries.slice(
+        0,
+        entries.length - ErrorTracker.MAX_HASH_ENTRIES,
+      );
       for (const [key] of toDelete) {
         this.recentErrorHashes.delete(key);
       }
@@ -284,7 +289,10 @@ class ErrorTracker {
     }
     // PERF FIX: Remove event listeners to prevent memory leaks
     if (this.boundUnhandledRejection) {
-      window.removeEventListener('unhandledrejection', this.boundUnhandledRejection);
+      window.removeEventListener(
+        'unhandledrejection',
+        this.boundUnhandledRejection,
+      );
       this.boundUnhandledRejection = null;
     }
     if (this.boundBeforeUnload) {
@@ -292,7 +300,10 @@ class ErrorTracker {
       this.boundBeforeUnload = null;
     }
     if (this.boundVisibilityChange) {
-      document.removeEventListener('visibilitychange', this.boundVisibilityChange);
+      document.removeEventListener(
+        'visibilitychange',
+        this.boundVisibilityChange,
+      );
       this.boundVisibilityChange = null;
     }
     // Clear the hash map

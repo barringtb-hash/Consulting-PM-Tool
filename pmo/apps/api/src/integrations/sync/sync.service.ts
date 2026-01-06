@@ -158,7 +158,8 @@ async function executeInboundSync(
   // PERF FIX: Process records in batches with controlled concurrency instead of sequential
   const BATCH_SIZE = 10;
   const destinationEntity = entityMapping?.destinationEntity || entityType;
-  const fieldMappings = entityMapping?.fields || getDefaultFieldMappings(entityType);
+  const fieldMappings =
+    entityMapping?.fields || getDefaultFieldMappings(entityType);
 
   for (let i = 0; i < externalData.length; i += BATCH_SIZE) {
     const batch = externalData.slice(i, i + BATCH_SIZE);
