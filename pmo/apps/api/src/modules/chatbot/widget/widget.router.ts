@@ -118,7 +118,7 @@ router.get(
         bubbleIcon: config.widgetBubbleIcon || 'chat',
         title: config.widgetTitle,
         subtitle: config.widgetSubtitle,
-        avatarUrl: config.widgetAvatarUrl,
+        avatarUrl: sanitizeImageUrl(config.widgetAvatarUrl),
         customCss: config.widgetCustomCss,
       };
 
@@ -268,7 +268,7 @@ router.get(
           config.welcomeMessage || `Hi! How can I help you today?`,
         title: config.widgetTitle || config.name,
         subtitle: config.widgetSubtitle,
-        avatarUrl: config.widgetAvatarUrl,
+        avatarUrl: sanitizeImageUrl(config.widgetAvatarUrl),
         primaryColor,
         textColor,
         bgColor,
@@ -678,6 +678,46 @@ function escapeJs(str: string): string {
     .replace(/'/g, "\\'")
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r');
+}
+
+/**
+ * Sanitize URL to prevent XSS via javascript: or other dangerous protocols.
+ * Only allows http://, https://, and data:image/ URLs for images.
+ */
+function sanitizeImageUrl(url: string | null): string | null {
+  if (!url) return null;
+
+  const trimmedUrl = url.trim();
+
+  // Decode URL-encoded characters to prevent bypass via encoded protocols
+  // e.g., %6A%61%76%61%73%63%72%69%70%74%3A => javascript:
+  let decodedUrl = trimmedUrl;
+  try {
+    decodedUrl = decodeURIComponent(trimmedUrl);
+  } catch {
+    // If decoding fails, use the trimmed value
+  }
+
+  const normalizedUrl = decodedUrl.toLowerCase();
+
+  // Allow data:image/ URLs (for base64 encoded images)
+  if (normalizedUrl.startsWith('data:image/')) {
+    return trimmedUrl;
+  }
+
+  // Validate http(s) URLs using URL parsing to prevent encoded protocol bypasses
+  try {
+    const parsed = new URL(decodedUrl);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:') {
+      return trimmedUrl;
+    }
+  } catch {
+    // If URL parsing fails, treat as unsafe
+  }
+
+  // Block all other protocols (javascript:, vbscript:, data:text/html, etc.)
+  return null;
 }
 
 /**
