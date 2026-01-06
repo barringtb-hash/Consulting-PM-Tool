@@ -115,12 +115,36 @@ export function OpportunityKanbanBoard({
     if (!over) return;
 
     const opportunityId = active.id as number;
-    // Get the container ID (column stage) instead of the item ID
-    const newStageId = (over.data?.current?.sortable?.containerId ||
-      over.id) as number;
-
     const opportunity = opportunities.find((o) => o.id === opportunityId);
-    if (opportunity && opportunity.stageId !== newStageId) {
+    if (!opportunity) return;
+
+    // Determine the target stage ID
+    let newStageId: number | undefined;
+
+    // First, check if we dropped onto a stage column (droppable container)
+    const containerId = over.data?.current?.sortable?.containerId;
+    if (containerId !== undefined) {
+      // Dropped onto or near another card - use the container's stage ID
+      newStageId = Number(containerId);
+    } else {
+      // Check if over.id is a valid stage ID
+      const overId = Number(over.id);
+      const isStageId = stages.some((s) => s.id === overId);
+
+      if (isStageId) {
+        // Dropped directly onto a stage column
+        newStageId = overId;
+      } else {
+        // Dropped onto another opportunity card - find which stage that card belongs to
+        const targetOpportunity = opportunities.find((o) => o.id === overId);
+        if (targetOpportunity) {
+          newStageId = targetOpportunity.stageId;
+        }
+      }
+    }
+
+    // Only trigger move if we have a valid new stage and it's different
+    if (newStageId !== undefined && opportunity.stageId !== newStageId) {
       onOpportunityMove(opportunityId, newStageId);
     }
   };

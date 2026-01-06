@@ -249,8 +249,8 @@ function OpportunityNewPage(): JSX.Element {
                     >
                       <option value="">Select stage...</option>
                       {stages.map((stage) => (
-                        <option key={stage.stageId} value={stage.stageId}>
-                          {stage.stageName}
+                        <option key={stage.id} value={stage.id}>
+                          {stage.name}
                         </option>
                       ))}
                     </Select>

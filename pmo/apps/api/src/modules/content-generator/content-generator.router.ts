@@ -8,6 +8,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as contentGeneratorService from './content-generator.service';
 import * as intakeContentService from './services/intake-content.service';
 import * as sequenceService from './services/sequence.service';
@@ -21,6 +22,9 @@ import {
 } from '../../auth/client-auth.helper';
 
 const router = Router();
+
+// Apply tenant middleware to all routes
+router.use(requireAuth, tenantMiddleware);
 
 // ============================================================================
 // VALIDATION SCHEMAS

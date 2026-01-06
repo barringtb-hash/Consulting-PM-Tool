@@ -13,6 +13,7 @@ import {
   type TaskPayload,
   type TaskStatus,
 } from '../../api/tasks';
+import { toUTCISOString } from '../../utils/dateUtils';
 import type {
   Milestone,
   MilestonePayload,
@@ -223,7 +224,7 @@ export function TaskFormModal({
       description: values.description.trim() || undefined,
       status: values.status as TaskPayload['status'],
       priority: values.priority as TaskPayload['priority'],
-      dueDate: values.dueDate || undefined,
+      dueDate: values.dueDate ? toUTCISOString(values.dueDate) : undefined,
       milestoneId,
       assigneeIds: selectedAssignees.length > 0 ? selectedAssignees : undefined,
     };
