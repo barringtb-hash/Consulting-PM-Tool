@@ -222,26 +222,39 @@ export async function addPlaybookTask(
     assignToOwner?: boolean;
   },
 ): Promise<PlaybookWithTasks> {
-  // Get current max orderIndex
-  const lastTask = await prisma.playbookTask.findFirst({
-    where: { playbookId },
-    orderBy: { orderIndex: 'desc' },
+  // PERF FIX: Use transaction and return playbook directly to avoid extra query
+  return prisma.$transaction(async (tx) => {
+    // Get current max orderIndex using aggregate (more efficient)
+    const maxOrder = await tx.playbookTask.aggregate({
+      where: { playbookId },
+      _max: { orderIndex: true },
+    });
+
+    const orderIndex = (maxOrder._max.orderIndex ?? -1) + 1;
+
+    await tx.playbookTask.create({
+      data: {
+        playbookId,
+        title: task.title,
+        description: task.description,
+        daysFromStart: task.daysFromStart ?? 0,
+        assignToOwner: task.assignToOwner ?? true,
+        orderIndex,
+      },
+    });
+
+    // Fetch and return playbook with tasks in same transaction
+    const playbook = await tx.playbook.findUnique({
+      where: { id: playbookId },
+      include: {
+        tasks: {
+          orderBy: { orderIndex: 'asc' },
+        },
+      },
+    });
+
+    return playbook as PlaybookWithTasks;
   });
-
-  const orderIndex = (lastTask?.orderIndex ?? -1) + 1;
-
-  await prisma.playbookTask.create({
-    data: {
-      playbookId,
-      title: task.title,
-      description: task.description,
-      daysFromStart: task.daysFromStart ?? 0,
-      assignToOwner: task.assignToOwner ?? true,
-      orderIndex,
-    },
-  });
-
-  return getPlaybookById(playbookId) as Promise<PlaybookWithTasks>;
 }
 
 /**

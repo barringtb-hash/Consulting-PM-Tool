@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
   ArrowLeft,
@@ -156,15 +156,16 @@ export function TenantDetailPage(): JSX.Element {
     setBrandingDirty(false);
   }, [tenantId, tenant]);
 
-  const handleBack = () => {
+  // PERF FIX: Memoized navigation handlers
+  const handleBack = useCallback(() => {
     navigate('/admin/tenants');
-  };
+  }, [navigate]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     navigate(`/admin/tenants/${tenantId}/edit`);
-  };
+  }, [navigate, tenantId]);
 
-  const handleStatusAction = async () => {
+  const handleStatusAction = useCallback(async () => {
     if (!tenantId || !showConfirmModal) return;
 
     try {
@@ -191,9 +192,9 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Action failed');
     }
-  };
+  }, [tenantId, showConfirmModal, suspendMutation, activateMutation, cancelMutation, removeUserMutation]);
 
-  const handleAddUser = async (e: React.FormEvent) => {
+  const handleAddUser = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenantId || !newUserEmail) return;
 
@@ -223,9 +224,9 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to add user');
     }
-  };
+  }, [tenantId, newUserEmail, newUserName, newUserRole, newUserGlobalRole, addUserMutation]);
 
-  const handleRoleChange = async (userId: number, newRole: TenantRole) => {
+  const handleRoleChange = useCallback(async (userId: number, newRole: TenantRole) => {
     if (!tenantId) return;
     try {
       await updateRoleMutation.mutateAsync({
@@ -236,7 +237,7 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update role');
     }
-  };
+  }, [tenantId, updateRoleMutation]);
 
   // Available modules that can be configured per tenant
   const AVAILABLE_MODULES = [
@@ -313,9 +314,9 @@ export function TenantDetailPage(): JSX.Element {
     },
   ];
 
-  const handleOpenModuleConfig = (
+  const handleOpenModuleConfig = useCallback((
     moduleId: string,
-    existingModule?: (typeof tenant.modules)[0],
+    existingModule?: { enabled: boolean; tier: ModuleTier; trialEndsAt?: string | null },
   ) => {
     setSelectedModuleConfig({
       moduleId,
@@ -326,9 +327,9 @@ export function TenantDetailPage(): JSX.Element {
         : '',
     });
     setShowModuleConfigModal(true);
-  };
+  }, []);
 
-  const handleToggleModule = async (
+  const handleToggleModule = useCallback(async (
     moduleId: string,
     currentlyEnabled: boolean,
   ) => {
@@ -344,9 +345,9 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to toggle module');
     }
-  };
+  }, [tenantId, configureModuleMutation]);
 
-  const handleSaveModuleConfig = async (e: React.FormEvent) => {
+  const handleSaveModuleConfig = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenantId || !selectedModuleConfig.moduleId) return;
 
@@ -378,17 +379,17 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to configure module');
     }
-  };
+  }, [tenantId, selectedModuleConfig, configureModuleMutation]);
 
-  const handleBrandingChange = (
+  const handleBrandingChange = useCallback((
     field: keyof typeof brandingForm,
     value: string,
   ) => {
     setBrandingForm((prev) => ({ ...prev, [field]: value }));
     setBrandingDirty(true);
-  };
+  }, []);
 
-  const handleSaveBranding = async () => {
+  const handleSaveBranding = useCallback(async () => {
     if (!tenantId) return;
 
     try {
@@ -406,7 +407,18 @@ export function TenantDetailPage(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to save branding');
     }
-  };
+  }, [tenantId, brandingForm, updateBrandingMutation]);
+
+  // PERF FIX: Memoize filtered module lists to avoid recalculation on every render
+  const enabledModuleCount = useMemo(() => {
+    return tenant?.modules.filter((m) => m.enabled).length ?? 0;
+  }, [tenant?.modules]);
+
+  const availableModulesToAdd = useMemo(() => {
+    if (!tenant) return AVAILABLE_MODULES;
+    const configuredIds = new Set(tenant.modules.map((tm) => tm.moduleId));
+    return AVAILABLE_MODULES.filter((m) => !configuredIds.has(m.id));
+  }, [tenant]);
 
   if (isLoading) {
     return (
@@ -736,8 +748,7 @@ export function TenantDetailPage(): JSX.Element {
           <Card>
             <CardHeader className="flex items-center justify-between">
               <CardTitle>
-                Modules ({tenant.modules.filter((m) => m.enabled).length}{' '}
-                enabled)
+                Modules ({enabledModuleCount} enabled)
               </CardTitle>
               <Button size="sm" onClick={() => handleOpenModuleConfig('')}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -844,9 +855,7 @@ export function TenantDetailPage(): JSX.Element {
                   Available Modules
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {AVAILABLE_MODULES.filter(
-                    (m) => !tenant.modules.find((tm) => tm.moduleId === m.id),
-                  ).map((mod) => (
+                  {availableModulesToAdd.map((mod) => (
                     <div
                       key={mod.id}
                       className="p-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-800/50"
@@ -872,9 +881,7 @@ export function TenantDetailPage(): JSX.Element {
                     </div>
                   ))}
                 </div>
-                {AVAILABLE_MODULES.filter(
-                  (m) => !tenant.modules.find((tm) => tm.moduleId === m.id),
-                ).length === 0 && (
+                {availableModulesToAdd.length === 0 && (
                   <p className="text-neutral-500 dark:text-neutral-400 text-center py-4 text-sm">
                     All available modules have been configured.
                   </p>

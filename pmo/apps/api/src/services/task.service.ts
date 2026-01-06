@@ -190,14 +190,18 @@ export const listTasksForProject = async (
     orderBy: { createdAt: 'desc' },
   });
 
-  // Transform to include completed subtask count
+  // PERF FIX: Transform to include completed subtask count using a simple counter instead of filter
   const tasksWithCounts = tasks.map((task) => {
     const { subTasks, _count, ...taskData } = task;
+    // Count DONE status without creating intermediate array
+    let completedCount = 0;
+    for (const st of subTasks) {
+      if (st.status === 'DONE') completedCount++;
+    }
     return {
       ...taskData,
       subTaskCount: _count.subTasks,
-      subTaskCompletedCount: subTasks.filter((st) => st.status === 'DONE')
-        .length,
+      subTaskCompletedCount: completedCount,
     };
   });
 
@@ -854,13 +858,14 @@ export const listTasksForUser = async (userId: number) => {
     (task) => task.project && hasProjectAccess(task.project, userId),
   );
 
-  // Transform to include completed subtask count and project name
+  // PERF FIX: Transform to include completed subtask count using a simple counter instead of filter
   const tasksWithCounts = accessibleTasks.map((task) => {
     const { subTasks, _count, project, parentTask, ...taskData } = task;
-    // Null checks for safety (project is guaranteed non-null from filter above)
-    const completedSubtasks = (subTasks ?? []).filter(
-      (st) => st.status === 'DONE',
-    ).length;
+    // Count DONE status without creating intermediate array
+    let completedSubtasks = 0;
+    for (const st of subTasks ?? []) {
+      if (st.status === 'DONE') completedSubtasks++;
+    }
     return {
       ...taskData,
       project: { id: project!.id, name: project!.name },

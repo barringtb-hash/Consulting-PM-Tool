@@ -152,6 +152,7 @@ function calculateExpansionPotential(overallScore: number): number {
 export async function getAccountHealthScore(
   accountId: number,
 ): Promise<AccountHealthScoreResult | null> {
+  // PERF FIX: Combine account and history queries into single query with include
   const account = await prisma.account.findUnique({
     where: { id: accountId },
     select: {
@@ -160,16 +161,16 @@ export async function getAccountHealthScore(
       healthScore: true,
       engagementScore: true,
       churnRisk: true,
+      healthScoreHistory: {
+        orderBy: { calculatedAt: 'desc' },
+        take: 1,
+      },
     },
   });
 
   if (!account) return null;
 
-  // Get the most recent health score history for full dimension breakdown
-  const latestHistory = await prisma.accountHealthScoreHistory.findFirst({
-    where: { accountId },
-    orderBy: { calculatedAt: 'desc' },
-  });
+  const latestHistory = account.healthScoreHistory[0] ?? null;
 
   return {
     id: latestHistory?.id ?? 0,

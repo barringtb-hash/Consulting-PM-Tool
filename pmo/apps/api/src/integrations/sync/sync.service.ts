@@ -155,15 +155,24 @@ async function executeInboundSync(
     fullSync ? undefined : integration?.lastSyncAt,
   );
 
-  // Transform and upsert each record
-  for (const externalRecord of externalData) {
-    await upsertLocalRecord(
-      tenantId,
-      entityMapping?.destinationEntity || entityType,
-      externalRecord,
-      entityMapping?.fields || getDefaultFieldMappings(entityType),
-      provider,
-      integrationId,
+  // PERF FIX: Process records in batches with controlled concurrency instead of sequential
+  const BATCH_SIZE = 10;
+  const destinationEntity = entityMapping?.destinationEntity || entityType;
+  const fieldMappings = entityMapping?.fields || getDefaultFieldMappings(entityType);
+
+  for (let i = 0; i < externalData.length; i += BATCH_SIZE) {
+    const batch = externalData.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map((externalRecord) =>
+        upsertLocalRecord(
+          tenantId,
+          destinationEntity,
+          externalRecord,
+          fieldMappings,
+          provider,
+          integrationId,
+        ),
+      ),
     );
   }
 }

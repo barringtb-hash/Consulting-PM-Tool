@@ -241,28 +241,28 @@ async function deliverWebhook(
     const durationMs = Date.now() - startTime;
     const responseBody = await response.text().catch(() => '');
 
-    // Log the delivery
-    await prisma.webhookDeliveryLog.create({
-      data: {
-        webhookId: webhook.id,
-        event: payload.event,
-        payload: payload as unknown as Prisma.InputJsonValue,
-        statusCode: response.status,
-        responseBody: responseBody.slice(0, 1000), // Truncate
-        deliveredAt: new Date(),
-        durationMs,
-        attempt,
-      },
-    });
-
-    // Update webhook metadata
-    await prisma.webhookConfig.update({
-      where: { id: webhook.id },
-      data: {
-        lastTriggeredAt: new Date(),
-        failureCount: response.ok ? 0 : webhook.failureCount + 1,
-      },
-    });
+    // PERF FIX: Parallelize log creation and webhook update
+    await Promise.all([
+      prisma.webhookDeliveryLog.create({
+        data: {
+          webhookId: webhook.id,
+          event: payload.event,
+          payload: payload as unknown as Prisma.InputJsonValue,
+          statusCode: response.status,
+          responseBody: responseBody.slice(0, 1000), // Truncate
+          deliveredAt: new Date(),
+          durationMs,
+          attempt,
+        },
+      }),
+      prisma.webhookConfig.update({
+        where: { id: webhook.id },
+        data: {
+          lastTriggeredAt: new Date(),
+          failureCount: response.ok ? 0 : webhook.failureCount + 1,
+        },
+      }),
+    ]);
 
     // If not successful, retry
     if (!response.ok && attempt < webhook.maxRetries) {
@@ -275,26 +275,26 @@ async function deliverWebhook(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 
-    // Log the failed delivery
-    await prisma.webhookDeliveryLog.create({
-      data: {
-        webhookId: webhook.id,
-        event: payload.event,
-        payload: payload as unknown as Prisma.InputJsonValue,
-        errorMessage,
-        durationMs,
-        attempt,
-      },
-    });
-
-    // Update failure count
-    await prisma.webhookConfig.update({
-      where: { id: webhook.id },
-      data: {
-        lastTriggeredAt: new Date(),
-        failureCount: webhook.failureCount + 1,
-      },
-    });
+    // PERF FIX: Parallelize log creation and webhook update
+    await Promise.all([
+      prisma.webhookDeliveryLog.create({
+        data: {
+          webhookId: webhook.id,
+          event: payload.event,
+          payload: payload as unknown as Prisma.InputJsonValue,
+          errorMessage,
+          durationMs,
+          attempt,
+        },
+      }),
+      prisma.webhookConfig.update({
+        where: { id: webhook.id },
+        data: {
+          lastTriggeredAt: new Date(),
+          failureCount: webhook.failureCount + 1,
+        },
+      }),
+    ]);
 
     // Retry if we haven't exceeded max retries
     if (attempt < webhook.maxRetries) {

@@ -179,6 +179,12 @@ export async function createConversation(
 ) {
   const sessionId = uuidv4();
 
+  // PERF FIX: Fetch config first to avoid separate query after conversation creation
+  const config = await prisma.chatbotConfig.findUnique({
+    where: { id: chatbotConfigId },
+    select: { welcomeMessage: true },
+  });
+
   const conversation = await prisma.chatConversation.create({
     data: {
       chatbotConfigId,
@@ -191,11 +197,7 @@ export async function createConversation(
     },
   });
 
-  // Add welcome message from bot
-  const config = await prisma.chatbotConfig.findUnique({
-    where: { id: chatbotConfigId },
-  });
-
+  // Add welcome message from bot using pre-fetched config
   if (config?.welcomeMessage) {
     await prisma.chatMessage.create({
       data: {

@@ -273,28 +273,52 @@ export async function deleteAccountSuccessPlan(id: number): Promise<void> {
 export async function addObjective(
   input: CreateObjectiveInput,
 ): Promise<AccountSuccessPlanWithRelations> {
-  // Get current max order index
-  const maxOrder = await prisma.successObjective.aggregate({
-    where: { successPlanId: input.successPlanId },
-    _max: { orderIndex: true },
+  // PERF FIX: Use transaction to combine aggregate + create + fetch in fewer round trips
+  return prisma.$transaction(async (tx) => {
+    // Get current max order index
+    const maxOrder = await tx.successObjective.aggregate({
+      where: { successPlanId: input.successPlanId },
+      _max: { orderIndex: true },
+    });
+
+    await tx.successObjective.create({
+      data: {
+        successPlanId: input.successPlanId,
+        title: input.title,
+        description: input.description,
+        dueDate: input.dueDate,
+        successCriteria: input.successCriteria,
+        orderIndex: (maxOrder._max.orderIndex ?? -1) + 1,
+      },
+    });
+
+    // Recalculate progress inline to avoid extra queries
+    const objectives = await tx.successObjective.findMany({
+      where: { successPlanId: input.successPlanId },
+      select: { progressPercent: true },
+    });
+
+    const progressPercent =
+      objectives.length > 0
+        ? Math.round(
+            objectives.reduce((sum, o) => sum + o.progressPercent, 0) /
+              objectives.length,
+          )
+        : 0;
+
+    await tx.successPlan.update({
+      where: { id: input.successPlanId },
+      data: { progressPercent },
+    });
+
+    // Return the updated plan with all relations
+    const plan = await tx.successPlan.findUnique({
+      where: { id: input.successPlanId },
+      include: includeRelations,
+    });
+
+    return plan as unknown as AccountSuccessPlanWithRelations;
   });
-
-  await prisma.successObjective.create({
-    data: {
-      successPlanId: input.successPlanId,
-      title: input.title,
-      description: input.description,
-      dueDate: input.dueDate,
-      successCriteria: input.successCriteria,
-      orderIndex: (maxOrder._max.orderIndex ?? -1) + 1,
-    },
-  });
-
-  // Recalculate progress
-  await recalculatePlanProgress(input.successPlanId);
-
-  const plan = await getAccountSuccessPlanById(input.successPlanId);
-  return plan!;
 }
 
 /**

@@ -204,12 +204,15 @@ export async function getRealtimeUsageStats(
     },
   });
 
+  // PERF FIX: Single-pass aggregation instead of multiple iterations
   const byTool: Record<
     string,
     { calls: number; tokens: number; cost: number; errors: number }
   > = {};
   let totalLatency = 0;
   let errorCount = 0;
+  let totalTokens = 0;
+  let totalCost = 0;
 
   for (const event of events) {
     if (!byTool[event.toolId]) {
@@ -217,17 +220,19 @@ export async function getRealtimeUsageStats(
     }
     byTool[event.toolId].calls++;
     byTool[event.toolId].tokens += event.totalTokens;
-    byTool[event.toolId].cost += Number(event.estimatedCost);
+    const eventCost = Number(event.estimatedCost);
+    byTool[event.toolId].cost += eventCost;
     if (!event.success) {
       byTool[event.toolId].errors++;
       errorCount++;
     }
     totalLatency += event.latencyMs;
+    // Accumulate totals in same loop
+    totalTokens += event.totalTokens;
+    totalCost += eventCost;
   }
 
   const totalCalls = events.length;
-  const totalTokens = events.reduce((sum, e) => sum + e.totalTokens, 0);
-  const totalCost = events.reduce((sum, e) => sum + Number(e.estimatedCost), 0);
 
   return {
     totalCalls,

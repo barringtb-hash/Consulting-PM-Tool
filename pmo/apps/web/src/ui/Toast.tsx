@@ -3,7 +3,9 @@ import React, {
   memo,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { cn } from './utils';
@@ -50,6 +52,19 @@ interface ToastProviderProps {
 
 export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // PERF FIX: Track timeouts for cleanup on unmount
+  const timeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+
+  // Cleanup all timeouts on unmount
+  useEffect(() => {
+    const timeouts = timeoutsRef.current;
+    return () => {
+      timeouts.forEach((timeout) => clearTimeout(timeout));
+      timeouts.clear();
+    };
+  }, []);
 
   const showToast = useCallback(
     (
@@ -73,16 +88,25 @@ export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
       const id = Math.random().toString(36).substring(2, 9);
       setToasts((prev) => [...prev, { id, message, variant }]);
 
-      setTimeout(() => {
+      // PERF FIX: Track timeout for cleanup
+      const timeout = setTimeout(() => {
         setToasts((prev) => prev.filter((toast) => toast.id !== id));
+        timeoutsRef.current.delete(id);
       }, 5000);
+      timeoutsRef.current.set(id, timeout);
     },
     [],
   );
 
-  const removeToast = (id: string) => {
+  const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
+    // PERF FIX: Clear timeout when manually removing toast
+    const timeout = timeoutsRef.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutsRef.current.delete(id);
+    }
+  }, []);
 
   const contextValue = useMemo(() => ({ showToast }), [showToast]);
 
