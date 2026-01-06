@@ -118,7 +118,7 @@ router.get(
         bubbleIcon: config.widgetBubbleIcon || 'chat',
         title: config.widgetTitle,
         subtitle: config.widgetSubtitle,
-        avatarUrl: config.widgetAvatarUrl,
+        avatarUrl: sanitizeImageUrl(config.widgetAvatarUrl),
         customCss: config.widgetCustomCss,
       };
 
@@ -268,7 +268,7 @@ router.get(
           config.welcomeMessage || `Hi! How can I help you today?`,
         title: config.widgetTitle || config.name,
         subtitle: config.widgetSubtitle,
-        avatarUrl: config.widgetAvatarUrl,
+        avatarUrl: sanitizeImageUrl(config.widgetAvatarUrl),
         primaryColor,
         textColor,
         bgColor,
@@ -678,6 +678,28 @@ function escapeJs(str: string): string {
     .replace(/'/g, "\\'")
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r');
+}
+
+/**
+ * Sanitize URL to prevent XSS via javascript: or other dangerous protocols.
+ * Only allows http://, https://, and data: URLs for images.
+ */
+function sanitizeImageUrl(url: string | null): string | null {
+  if (!url) return null;
+
+  const trimmedUrl = url.trim().toLowerCase();
+
+  // Allow only safe protocols for images
+  if (
+    trimmedUrl.startsWith('https://') ||
+    trimmedUrl.startsWith('http://') ||
+    trimmedUrl.startsWith('data:image/')
+  ) {
+    return url;
+  }
+
+  // Block all other protocols (javascript:, vbscript:, data:text/html, etc.)
+  return null;
 }
 
 /**
