@@ -450,7 +450,7 @@ export function TenantDetailPage(): JSX.Element {
     if (!tenant) return AVAILABLE_MODULES;
     const configuredIds = new Set(tenant.modules.map((tm) => tm.moduleId));
     return AVAILABLE_MODULES.filter((m) => !configuredIds.has(m.id));
-  }, [tenant]);
+  }, [tenant, AVAILABLE_MODULES]);
 
   if (isLoading) {
     return (
