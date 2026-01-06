@@ -164,6 +164,19 @@ export interface PaginationOptions {
 export async function createAccount(input: CreateAccountInput) {
   const tenantId = getTenantId();
 
+  // Validate parentAccountId belongs to the same tenant if provided
+  if (input.parentAccountId) {
+    const parentAccount = await prisma.account.findFirst({
+      where: { id: input.parentAccountId, tenantId },
+      select: { id: true },
+    });
+    if (!parentAccount) {
+      throw new Error(
+        'Parent account not found or does not belong to this tenant',
+      );
+    }
+  }
+
   return prisma.$transaction(async (tx) => {
     // 1. Create the legacy Client record for backwards compatibility
     const client = await tx.client.create({
@@ -205,6 +218,7 @@ export async function createAccount(input: CreateAccountInput) {
           select: { id: true, name: true, email: true },
         },
         parentAccount: {
+          where: { tenantId },
           select: { id: true, name: true },
         },
         _count: {
@@ -233,9 +247,11 @@ export async function getAccountById(id: number) {
         select: { id: true, name: true, email: true },
       },
       parentAccount: {
+        where: { tenantId },
         select: { id: true, name: true },
       },
       childAccounts: {
+        where: { tenantId },
         select: { id: true, name: true, type: true },
       },
       crmContacts: {
@@ -366,6 +382,23 @@ export async function listAccounts(
  */
 export async function updateAccount(id: number, input: UpdateAccountInput) {
   const tenantId = getTenantId();
+
+  // Validate parentAccountId belongs to the same tenant if provided
+  if (input.parentAccountId !== undefined && input.parentAccountId !== null) {
+    // Prevent circular reference
+    if (input.parentAccountId === id) {
+      throw new Error('An account cannot be its own parent');
+    }
+    const parentAccount = await prisma.account.findFirst({
+      where: { id: input.parentAccountId, tenantId },
+      select: { id: true },
+    });
+    if (!parentAccount) {
+      throw new Error(
+        'Parent account not found or does not belong to this tenant',
+      );
+    }
+  }
 
   return prisma.$transaction(async (tx) => {
     // 1. Get current account to find linked Client and preserve customFields
@@ -607,15 +640,19 @@ export async function getAccountHierarchy(id: number) {
     where: { id, tenantId },
     include: {
       parentAccount: {
+        where: { tenantId },
         include: {
           parentAccount: {
+            where: { tenantId },
             select: { id: true, name: true },
           },
         },
       },
       childAccounts: {
+        where: { tenantId },
         include: {
           childAccounts: {
+            where: { tenantId },
             select: { id: true, name: true, type: true },
           },
           _count: {
