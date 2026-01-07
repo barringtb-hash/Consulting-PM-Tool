@@ -562,10 +562,10 @@ export {
   useApplySchedule,
   // Portfolio
   usePortfolioSummary,
-  // Documents
-  useDocumentTemplates,
-  useGenerateDocument,
-  useProjectDocuments,
+  // AI Documents (renamed to avoid conflict with projectDocuments module)
+  useAIDocumentTemplates,
+  useGenerateAIDocument,
+  useAIGeneratedDocuments,
 } from './ai-projects';
 
 export type {

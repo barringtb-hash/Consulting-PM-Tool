@@ -47,8 +47,8 @@ import {
   useDismissReminder,
   useGenerateSchedule,
   useApplySchedule,
-  useDocumentTemplates,
-  useGenerateDocument,
+  useAIDocumentTemplates,
+  useGenerateAIDocument,
   type AssistantMessage,
   type SuggestedAction,
   type SmartReminder,
@@ -256,14 +256,14 @@ function ProjectAssistantPage(): JSX.Element {
     selectedProjectId || undefined,
   );
   const remindersQuery = useSmartReminders(selectedProjectId || undefined);
-  const templatesQuery = useDocumentTemplates();
+  const templatesQuery = useAIDocumentTemplates();
 
   // Mutations
   const sendMessageMutation = useSendAssistantMessage();
   const dismissReminderMutation = useDismissReminder();
   const generateScheduleMutation = useGenerateSchedule();
   const applyScheduleMutation = useApplySchedule();
-  const generateDocumentMutation = useGenerateDocument();
+  const generateDocumentMutation = useGenerateAIDocument();
 
   // Auto-scroll to bottom
   useEffect(() => {

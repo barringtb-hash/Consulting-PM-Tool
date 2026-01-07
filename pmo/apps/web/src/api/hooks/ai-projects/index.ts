@@ -548,7 +548,7 @@ export function usePortfolioSummary(): UseQueryResult<PortfolioSummary, Error> {
 /**
  * Fetch document templates
  */
-export function useDocumentTemplates(): UseQueryResult<
+export function useAIDocumentTemplates(): UseQueryResult<
   DocumentTemplate[],
   Error
 > {
@@ -562,7 +562,7 @@ export function useDocumentTemplates(): UseQueryResult<
 /**
  * Generate a document from template
  */
-export function useGenerateDocument(): UseMutationResult<
+export function useGenerateAIDocument(): UseMutationResult<
   GeneratedDocument,
   Error,
   { projectId: number; templateId: string; options?: Record<string, unknown> }
@@ -583,7 +583,7 @@ export function useGenerateDocument(): UseMutationResult<
 /**
  * Fetch generated documents for a project
  */
-export function useProjectDocuments(
+export function useAIGeneratedDocuments(
   projectId?: number,
 ): UseQueryResult<GeneratedDocument[], Error> {
   return useQuery({
