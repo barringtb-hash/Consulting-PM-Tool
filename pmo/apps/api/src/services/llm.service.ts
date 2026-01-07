@@ -1,3 +1,10 @@
+/**
+ * LLM Service
+ *
+ * Provides a unified interface for AI/LLM operations across the platform.
+ * Wraps the tracked AI client for cost monitoring and usage tracking.
+ */
+
 import { env } from '../config/env';
 import { ContentType } from '../types/marketing';
 
@@ -15,7 +22,7 @@ interface GenerateContentOptions {
   };
   tone?: 'professional' | 'casual' | 'technical' | 'enthusiastic';
   length?: 'short' | 'medium' | 'long';
-  anonymize?: boolean; // Whether to anonymize client names (default: true)
+  anonymize?: boolean;
 }
 
 interface GeneratedContent {
@@ -23,6 +30,229 @@ interface GeneratedContent {
   body: string;
   summary?: string;
   metadata?: Record<string, unknown>;
+}
+
+interface LLMCompletionOptions {
+  maxTokens?: number;
+  temperature?: number;
+  model?: string;
+}
+
+interface LLMCompletionResult {
+  content: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+/**
+ * LLM Service class providing AI completions
+ */
+class LLMService {
+  private apiKey: string | undefined;
+  private defaultModel: string = 'gpt-4o-mini';
+
+  constructor() {
+    this.apiKey = env.openaiApiKey;
+  }
+
+  /**
+   * Check if the LLM service is available
+   */
+  isAvailable(): boolean {
+    return !!this.apiKey;
+  }
+
+  /**
+   * Complete a prompt using the LLM
+   */
+  async complete(
+    prompt: string,
+    options?: LLMCompletionOptions,
+  ): Promise<LLMCompletionResult> {
+    if (!this.apiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const model = options?.model || this.defaultModel;
+    const maxTokens = options?.maxTokens || 1000;
+    const temperature = options?.temperature ?? 0.7;
+
+    try {
+      const response = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: maxTokens,
+            temperature,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+      }
+
+      const data = await response.json();
+      const choice = data.choices?.[0];
+
+      if (!choice?.message?.content) {
+        throw new Error('Invalid response from OpenAI');
+      }
+
+      return {
+        content: choice.message.content,
+        usage: data.usage
+          ? {
+              promptTokens: data.usage.prompt_tokens,
+              completionTokens: data.usage.completion_tokens,
+              totalTokens: data.usage.total_tokens,
+            }
+          : undefined,
+      };
+    } catch (error) {
+      console.error('LLM completion failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Complete with system and user messages
+   */
+  async completeWithSystem(
+    systemPrompt: string,
+    userPrompt: string,
+    options?: LLMCompletionOptions,
+  ): Promise<LLMCompletionResult> {
+    if (!this.apiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const model = options?.model || this.defaultModel;
+    const maxTokens = options?.maxTokens || 1000;
+    const temperature = options?.temperature ?? 0.7;
+
+    try {
+      const response = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            max_tokens: maxTokens,
+            temperature,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+      }
+
+      const data = await response.json();
+      const choice = data.choices?.[0];
+
+      if (!choice?.message?.content) {
+        throw new Error('Invalid response from OpenAI');
+      }
+
+      return {
+        content: choice.message.content,
+        usage: data.usage
+          ? {
+              promptTokens: data.usage.prompt_tokens,
+              completionTokens: data.usage.completion_tokens,
+              totalTokens: data.usage.total_tokens,
+            }
+          : undefined,
+      };
+    } catch (error) {
+      console.error('LLM completion failed:', error);
+      throw error;
+    }
+  }
+}
+
+// Singleton instance
+export const llmService = new LLMService();
+
+// ============================================================================
+// LEGACY MARKETING CONTENT GENERATION
+// ============================================================================
+
+function anonymizeContext(
+  context: GenerateContentOptions['context'],
+): GenerateContentOptions['context'] {
+  return {
+    ...context,
+    clientName: context.clientName ? 'Client' : undefined,
+    projectName: context.projectName ? 'Project' : undefined,
+  };
+}
+
+function generatePlaceholderContent(
+  type: ContentType,
+  context: GenerateContentOptions['context'],
+): GeneratedContent {
+  const placeholders: Record<ContentType, GeneratedContent> = {
+    CASE_STUDY: {
+      title: `Success Story: ${context.projectName || 'Client Project'}`,
+      body: `This case study showcases the successful implementation of ${context.projectDescription || 'a transformative solution'}. The project demonstrated significant improvements in efficiency and outcomes.`,
+      summary: 'A comprehensive case study highlighting project success.',
+    },
+    BLOG_POST: {
+      title: `Insights from ${context.projectName || 'Our Recent Project'}`,
+      body: `Our team recently completed an exciting project that provided valuable insights into ${context.industry || 'industry'} best practices...`,
+      summary: 'Key learnings and best practices from our project work.',
+    },
+    SOCIAL_LINKEDIN: {
+      body: `🚀 Excited to share insights from our latest ${context.projectName || 'project'}! Key takeaways on delivering value in ${context.industry || 'consulting'}. #Consulting #Success`,
+    },
+    SOCIAL_TWITTER: {
+      body: `Just wrapped up an amazing ${context.projectName || 'project'}! 🎉 Key lesson: focus on what matters most to your clients. #ConsultingLife`,
+    },
+    WHITE_PAPER: {
+      title: `Best Practices in ${context.industry || 'Consulting'}`,
+      body: `This white paper explores key methodologies and frameworks for delivering successful consulting engagements...`,
+      summary: 'A comprehensive guide to consulting best practices.',
+    },
+    NEWSLETTER: {
+      title: 'Monthly Consulting Insights',
+      body: `This month, we explore trends and insights from our consulting practice...`,
+      summary: 'Monthly newsletter with consulting insights.',
+    },
+    INTERNAL_UPDATE: {
+      title: `Project Update: ${context.projectName || 'Current Engagement'}`,
+      body: `Here's the latest update on ${context.projectName || 'our current project'}...`,
+      summary: 'Internal project status update.',
+    },
+    EMAIL: {
+      title: `Follow-up: ${context.meetingTitle || 'Our Discussion'}`,
+      body: `Thank you for your time during our recent meeting. As discussed...`,
+      summary: 'Follow-up email from meeting.',
+    },
+  };
+
+  return placeholders[type] || { body: 'Content generation placeholder.' };
 }
 
 /**
@@ -39,339 +269,63 @@ export const generateMarketingContent = async (
     anonymize = true,
   } = options;
 
-  // Anonymize client data by default for privacy
   const anonymizedContext = anonymize
     ? anonymizeContext(context)
     : { ...context };
 
-  // If no API key, return placeholder content
   if (!env.openaiApiKey) {
     return generatePlaceholderContent(type, anonymizedContext);
   }
 
+  const lengthGuide = {
+    short: '100-200 words',
+    medium: '300-500 words',
+    long: '800-1200 words',
+  };
+
+  const typePrompts: Record<ContentType, string> = {
+    CASE_STUDY: 'a professional case study',
+    BLOG_POST: 'an engaging blog post',
+    SOCIAL_LINKEDIN: 'a LinkedIn post (under 300 characters)',
+    SOCIAL_TWITTER: 'a Twitter/X post (under 280 characters)',
+    WHITE_PAPER: 'a formal white paper section',
+    NEWSLETTER: 'a newsletter article',
+    INTERNAL_UPDATE: 'an internal project update',
+    EMAIL: 'a professional follow-up email',
+  };
+
+  const prompt = `Write ${typePrompts[type]} with a ${tone} tone.
+
+Context:
+- Project: ${anonymizedContext.projectName || 'Recent consulting engagement'}
+- Industry: ${anonymizedContext.industry || 'Professional services'}
+- Description: ${anonymizedContext.projectDescription || 'A successful project implementation'}
+${anonymizedContext.meetingTitle ? `- Meeting: ${anonymizedContext.meetingTitle}` : ''}
+${anonymizedContext.meetingNotes ? `- Notes: ${anonymizedContext.meetingNotes}` : ''}
+${anonymizedContext.decisions ? `- Decisions: ${anonymizedContext.decisions}` : ''}
+${anonymizedContext.additionalContext ? `- Additional context: ${anonymizedContext.additionalContext}` : ''}
+
+Requirements:
+- Length: ${lengthGuide[length]}
+- Focus on value delivered and key outcomes
+- Include a compelling title if applicable
+- Maintain professional standards
+
+Return in JSON format:
+{
+  "title": "Title if applicable",
+  "body": "Main content",
+  "summary": "Brief summary"
+}`;
+
   try {
-    // Build the system prompt based on content type
-    const systemPrompt = buildSystemPrompt(type, tone, length);
-
-    // Build the user prompt with context
-    const userPrompt = buildUserPrompt(type, anonymizedContext);
-
-    // Call OpenAI API using GPT-5.1 model
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.openaiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: getMaxTokens(length),
-        temperature: getToneTemperature(tone),
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt,
-          },
-          {
-            role: 'user',
-            content: userPrompt,
-          },
-        ],
-      }),
+    const result = await llmService.complete(prompt, {
+      maxTokens: length === 'long' ? 2000 : length === 'medium' ? 1000 : 500,
+      temperature: 0.7,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      return generatePlaceholderContent(type, anonymizedContext);
-    }
-
-    const data = await response.json();
-    const generatedText = data.choices[0].message.content;
-
-    // Parse the generated content based on type
-    return parseGeneratedContent(type, generatedText, anonymizedContext);
-  } catch (error) {
-    console.error('Error generating content:', error);
+    return JSON.parse(result.content);
+  } catch {
     return generatePlaceholderContent(type, anonymizedContext);
   }
 };
-
-/**
- * Anonymize sensitive client information
- */
-function anonymizeContext(
-  context: GenerateContentOptions['context'],
-): GenerateContentOptions['context'] {
-  const anonymized = { ...context };
-
-  // Replace client name with generic placeholder
-  if (anonymized.clientName) {
-    anonymized.clientName = `[Client Company]`;
-  }
-
-  // Keep industry and general project info but anonymize specifics
-  return anonymized;
-}
-
-/**
- * Build system prompt based on content type
- */
-function buildSystemPrompt(
-  type: ContentType,
-  tone: string,
-  length: string,
-): string {
-  // Core safety guidelines that apply to all content types
-  const safetyGuidelines = `
-
-CRITICAL SAFETY GUIDELINES:
-1. NEVER invent client names - use generic placeholders like "our client" or "[Client Company]"
-2. NEVER fabricate performance numbers or metrics - use placeholders like "[X%]", "[specific metric]", or "measurable improvements"
-3. NEVER make guarantees about results - avoid phrases like "guaranteed results", "100% success", "certain outcomes"
-4. NEVER use hyperbolic language - avoid "revolutionary", "game-changing", "unprecedented" unless directly quoted
-5. ALWAYS maintain a professional, honest, and balanced tone
-6. ALWAYS use placeholder text in brackets for specific data points that aren't provided
-7. ALWAYS focus on process, methodology, and approach rather than specific outcomes when data is limited
-
-These are NON-NEGOTIABLE requirements for ethical marketing content.`;
-
-  const basePrompt = `You are an expert marketing content writer for AI consulting services. Your task is to create ${tone} content that is ${length} in length.${safetyGuidelines}`;
-
-  const typeSpecificPrompts: Record<ContentType, string> = {
-    BLOG_POST: `${basePrompt}
-
-Create engaging blog posts that educate readers about AI consulting projects and methodologies. Focus on insights, learnings, and practical approaches.`,
-    CASE_STUDY: `${basePrompt}
-
-Write compelling case studies that highlight client challenges and solutions implemented. For results section, use placeholders like "[X% improvement in Y metric]" if specific numbers aren't provided. Focus on the approach and methodology used.`,
-    LINKEDIN_POST: `${basePrompt}
-
-Create concise, engaging LinkedIn posts that drive engagement and showcase expertise. Keep it authentic and avoid overselling. Share genuine insights and learnings.`,
-    TWITTER_POST: `${basePrompt}
-
-Write punchy, attention-grabbing tweets (max 280 characters) with relevant hashtags. Be genuine and insightful, not salesy.`,
-    EMAIL_TEMPLATE: `${basePrompt}
-
-Create persuasive email templates with clear subject lines and strong calls-to-action. Focus on value proposition without making unrealistic promises.`,
-    WHITEPAPER: `${basePrompt}
-
-Write authoritative whitepapers that demonstrate thought leadership and deep expertise. Focus on frameworks, methodologies, and industry insights rather than specific client data.`,
-    SOCIAL_STORY: `${basePrompt}
-
-Create brief, engaging social media stories that capture attention quickly. Keep it authentic and relatable.`,
-    VIDEO_SCRIPT: `${basePrompt}
-
-Write compelling video scripts with strong hooks and clear narratives. Focus on storytelling and value delivery without exaggeration.`,
-    NEWSLETTER: `${basePrompt}
-
-Create informative newsletter content that keeps readers engaged and informed. Share insights, trends, and valuable perspectives.`,
-    OTHER: basePrompt,
-  };
-
-  return typeSpecificPrompts[type] || basePrompt;
-}
-
-/**
- * Build user prompt with context
- */
-function buildUserPrompt(
-  type: ContentType,
-  context: GenerateContentOptions['context'],
-): string {
-  let prompt =
-    'Please create marketing content based on the following information:\n\n';
-
-  if (context.clientName) {
-    prompt += `Client: ${context.clientName}\n`;
-  }
-
-  if (context.industry) {
-    prompt += `Industry: ${context.industry}\n`;
-  }
-
-  if (context.projectName) {
-    prompt += `Project: ${context.projectName}\n`;
-  }
-
-  if (context.projectDescription) {
-    prompt += `Project Description: ${context.projectDescription}\n`;
-  }
-
-  if (context.meetingTitle) {
-    prompt += `Meeting: ${context.meetingTitle}\n`;
-  }
-
-  if (context.meetingNotes) {
-    prompt += `Meeting Notes:\n${context.meetingNotes}\n`;
-  }
-
-  if (context.decisions) {
-    prompt += `Key Decisions:\n${context.decisions}\n`;
-  }
-
-  if (context.additionalContext) {
-    prompt += `\nAdditional Context: ${context.additionalContext}\n`;
-  }
-
-  prompt += '\n';
-  prompt += getContentTypeInstructions(type);
-
-  return prompt;
-}
-
-/**
- * Get specific instructions for each content type
- */
-function getContentTypeInstructions(type: ContentType): string {
-  const instructions: Record<ContentType, string> = {
-    BLOG_POST:
-      'Format the blog post with: 1) A compelling title, 2) An engaging introduction, 3) Main body with clear sections, 4) A conclusion with key takeaways. Return as JSON with fields: title, body, summary.',
-    CASE_STUDY:
-      'Structure the case study with: 1) Title, 2) Challenge section, 3) Solution section, 4) Results section with metrics, 5) Optional testimonial. Return as JSON with fields: title, body (containing all sections), summary.',
-    LINKEDIN_POST:
-      'Create a LinkedIn post (max 1300 characters) with: 1) An attention-grabbing opening, 2) Key insights or story, 3) Call-to-action or question for engagement. Include 3-5 relevant hashtags. Return as JSON with fields: body (including hashtags), summary.',
-    TWITTER_POST:
-      'Create a tweet (max 280 characters) with: 1) Punchy opening, 2) Key message, 3) 2-3 relevant hashtags. Return as JSON with fields: body (the tweet with hashtags), summary.',
-    EMAIL_TEMPLATE:
-      'Create an email with: 1) Subject line, 2) Preheader text, 3) Body copy with clear structure, 4) Strong call-to-action. Return as JSON with fields: title (subject line), body, summary (preheader).',
-    WHITEPAPER:
-      'Create a whitepaper outline with: 1) Title, 2) Executive summary, 3) Key sections, 4) Conclusion and recommendations. Return as JSON with fields: title, body (full content), summary (executive summary).',
-    SOCIAL_STORY:
-      'Create a brief social story (max 500 characters) with: 1) Strong hook, 2) Core message, 3) Engaging visual suggestions. Return as JSON with fields: body, summary.',
-    VIDEO_SCRIPT:
-      'Create a video script with: 1) Title, 2) Hook (first 5 seconds), 3) Main content, 4) Call-to-action. Return as JSON with fields: title, body (full script), summary.',
-    NEWSLETTER:
-      'Create newsletter content with: 1) Headline, 2) Introduction, 3) Main sections with subheadings, 4) Closing. Return as JSON with fields: title, body, summary.',
-    OTHER:
-      'Create appropriate marketing content for this context. Return as JSON with fields: body, and optionally title and summary.',
-  };
-
-  return instructions[type] || instructions.OTHER;
-}
-
-/**
- * Parse generated content into structured format
- */
-function parseGeneratedContent(
-  _type: ContentType,
-  generatedText: string,
-
-  _context: GenerateContentOptions['context'],
-): GeneratedContent {
-  try {
-    // Try to parse as JSON first
-    const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        title: parsed.title,
-        body: parsed.body,
-        summary: parsed.summary,
-        metadata: parsed.metadata,
-      };
-    }
-  } catch {
-    // If JSON parsing fails, treat the whole text as body
-  }
-
-  // Fallback: use the whole text as body
-  return {
-    body: generatedText,
-    summary: generatedText.substring(0, 200) + '...',
-  };
-}
-
-/**
- * Generate placeholder content when API is not available
- */
-function generatePlaceholderContent(
-  type: ContentType,
-  context: GenerateContentOptions['context'],
-): GeneratedContent {
-  const placeholders: Record<ContentType, GeneratedContent> = {
-    BLOG_POST: {
-      title: `${context.projectName || 'AI Consulting Project'}: Key Insights and Learnings`,
-      body: `# ${context.projectName || 'AI Consulting Project'}\n\n## Introduction\n\nThis blog post explores our recent work with ${context.clientName || 'our client'} in the ${context.industry || 'technology'} industry.\n\n## Challenge\n\n${context.projectDescription || 'The client faced challenges in implementing AI solutions.'}\n\n## Our Approach\n\nOur team worked closely with the client to develop a tailored solution.\n\n## Results\n\nThe project delivered significant value and insights.\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
-      summary:
-        'Exploring our recent AI consulting project and the key insights gained.',
-    },
-    CASE_STUDY: {
-      title: `${context.clientName || 'Client'} Case Study: ${context.projectName || 'AI Implementation'}`,
-      body: `# ${context.clientName || 'Client'} Success Story\n\n## The Challenge\n\n${context.projectDescription || 'The client needed to implement AI capabilities.'}\n\n## The Solution\n\nWe designed and implemented a comprehensive AI solution.\n\n## The Results\n\nThe client achieved measurable improvements in efficiency and outcomes.\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
-      summary: `How we helped ${context.clientName || 'our client'} achieve success with AI.`,
-    },
-    LINKEDIN_POST: {
-      body: `Excited to share insights from our recent ${context.projectName || 'AI consulting project'} with ${context.clientName || 'our client'}! 🚀\n\nKey takeaways:\n✨ ${context.meetingNotes?.substring(0, 100) || 'Innovative approaches to AI implementation'}\n\nWhat's your experience with AI transformation?\n\n#AI #Consulting #Innovation #DigitalTransformation\n\n[Note: Configure OPENAI_API_KEY for custom content.]`,
-      summary: 'LinkedIn post about recent project success',
-    },
-    TWITTER_POST: {
-      body: `🚀 Just wrapped up an amazing ${context.projectName || 'AI project'} with ${context.clientName || 'our client'}! Seeing real impact is what drives us. #AI #Innovation #TechConsulting`,
-      summary: 'Tweet about project success',
-    },
-    EMAIL_TEMPLATE: {
-      title: `Success Story: ${context.projectName || 'AI Implementation'}`,
-      body: `Hi there,\n\nI wanted to share an exciting update about our recent work with ${context.clientName || 'our client'}.\n\n${context.projectDescription || 'We successfully implemented an AI solution that delivered significant value.'}\n\nInterested in learning more about how we can help your organization?\n\nLet's connect!\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
-      summary: 'Sharing recent project success and offering to connect',
-    },
-    WHITEPAPER: {
-      title: `AI Consulting Best Practices: Insights from ${context.projectName || 'Recent Projects'}`,
-      body: `# Executive Summary\n\nThis whitepaper explores best practices in AI consulting based on our work with ${context.clientName || 'leading organizations'}.\n\n## Introduction\n\nAI implementation requires careful planning and execution.\n\n## Key Findings\n\n${context.projectDescription || 'Our research reveals critical success factors.'}\n\n## Recommendations\n\nOrganizations should focus on strategic alignment and change management.\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
-      summary: 'Best practices and insights from AI consulting engagements',
-    },
-    SOCIAL_STORY: {
-      body: `🎯 ${context.projectName || 'Amazing project'} alert!\n\nWorking with ${context.clientName || 'an incredible client'} on ${context.industry || 'AI innovation'}\n\n✨ Results coming soon!\n\n[Swipe up to learn more]`,
-      summary: 'Social story teasing project results',
-    },
-    VIDEO_SCRIPT: {
-      title: `${context.projectName || 'AI Project'} Success Story`,
-      body: `[HOOK - 0:00-0:05]\n"What if AI could transform your business in just 90 days?"\n\n[INTRO - 0:05-0:15]\n"Hi, I'm sharing how we helped ${context.clientName || 'our client'} achieve breakthrough results."\n\n[MAIN CONTENT - 0:15-1:30]\n${context.projectDescription || 'We implemented a custom AI solution...'}\n\n[CTA - 1:30-1:45]\n"Ready to transform your business? Link in description."\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
-      summary: '90-second video script about project success',
-    },
-    NEWSLETTER: {
-      title: `Newsletter: ${context.projectName || 'Latest AI Insights'}`,
-      body: `# This Month in AI Consulting\n\n## Featured Project\n\n${context.projectName || 'Recent AI Implementation'} with ${context.clientName || 'our client'}\n\n${context.projectDescription || 'We delivered innovative AI solutions.'}\n\n## Industry Insights\n\nThe ${context.industry || 'technology'} sector continues to evolve rapidly.\n\n## What's Next\n\nStay tuned for more updates!\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
-      summary: 'Monthly newsletter with project updates and insights',
-    },
-    OTHER: {
-      body: `Marketing content for ${context.projectName || 'project'} with ${context.clientName || 'client'}.\n\n${context.projectDescription || 'Project details and context.'}\n\n[Note: This is placeholder content. Configure OPENAI_API_KEY to generate custom content.]`,
-      summary: 'General marketing content',
-    },
-  };
-
-  return placeholders[type] || placeholders.OTHER;
-}
-
-/**
- * Get max tokens based on length preference
- */
-function getMaxTokens(length: string): number {
-  switch (length) {
-    case 'short':
-      return 500;
-    case 'medium':
-      return 1500;
-    case 'long':
-      return 3000;
-    default:
-      return 1500;
-  }
-}
-
-/**
- * Get temperature based on tone
- */
-function getToneTemperature(tone: string): number {
-  switch (tone) {
-    case 'professional':
-      return 0.3;
-    case 'technical':
-      return 0.2;
-    case 'casual':
-      return 0.7;
-    case 'enthusiastic':
-      return 0.8;
-    default:
-      return 0.5;
-  }
-}

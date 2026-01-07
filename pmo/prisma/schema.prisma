@@ -291,6 +291,13 @@ model User {
   projectDocumentsEdited        ProjectDocument[]        @relation("ProjectDocumentEditor")
   projectDocumentVersionsEdited ProjectDocumentVersion[] @relation("ProjectDocumentVersionEditor")
 
+  // AI Projects Module relations
+  teamAvailability        TeamAvailability[]
+  scopeAlertsAcknowledged ScopeChangeAlert[]       @relation("ScopeAlertAcknowledger")
+  risksResolved           ProjectRisk[]            @relation("RiskResolver")
+  smartReminders          SmartReminder[]          @relation("UserReminders")
+  performanceMetrics      TeamPerformanceMetrics[] @relation("PerformanceMetrics")
+
   // Password reset tokens
   passwordResets PasswordReset[]
 }
@@ -506,6 +513,16 @@ model Project {
   // Project Document Templates
   projectDocuments ProjectDocument[]
 
+  // AI Projects Module
+  chatConversations     ChatConversation[]      // Project Assistant conversations
+  healthPredictions     ProjectHealthPrediction[]
+  scopeBaselines        ProjectScopeBaseline[]
+  scopeChangeAlerts     ScopeChangeAlert[]
+  budgetForecasts       ProjectBudgetForecast[]
+  digestConfigs         ProjectDigestConfig[]
+  smartReminders        SmartReminder[]         @relation("ProjectReminders")
+  projectRisks          ProjectRisk[]
+
   @@index([status])
   @@index([renewalDate])
   @@index([healthStatus, renewalDate])
@@ -588,14 +605,27 @@ model Task {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  owner         User           @relation(fields: [ownerId], references: [id])
-  milestone     Milestone?     @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
-  sourceMeeting Meeting?       @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
-  parentTask    Task?          @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
-  subTasks      Task[]         @relation("SubTasks")
+  // AI Projects Module - Time tracking for AI estimation
+  estimatedHours     Float?    // User-provided estimate
+  actualHours        Float?    // Tracked actual time
+  aiEstimatedHours   Float?    // AI-suggested estimate
+  aiEstimateAccepted Boolean?  // Did user accept AI estimate?
+
+  // AI Projects Module - Scheduling
+  scheduledStartDate DateTime?
+  scheduledEndDate   DateTime?
+  aiScheduled        Boolean   @default(false) // Was this scheduled by AI?
+
+  tenant        Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner         User             @relation(fields: [ownerId], references: [id])
+  milestone     Milestone?       @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  sourceMeeting Meeting?         @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  parentTask    Task?            @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks      Task[]           @relation("SubTasks")
   assignees     TaskAssignee[]
+  dependsOn     TaskDependency[] @relation("DependentTask")
+  dependedBy    TaskDependency[] @relation("BlockingTask")
 
   @@index([projectId, status, priority])
   @@index([ownerId, status])
@@ -604,6 +634,7 @@ model Task {
   @@index([tenantId, status, priority, dueDate])
   @@index([projectId, status, dueDate])
   @@index([ownerId, status, dueDate])
+  @@index([scheduledStartDate, scheduledEndDate])
 }
 
 // Join table for Task-User many-to-many relationship (multiple assignees per task)
@@ -935,6 +966,15 @@ enum IntentType {
   GENERAL
   ESCALATION
   UNKNOWN
+  // Project Management Intents (AI Projects Module)
+  PROJECT_STATUS    // "How's Project Alpha doing?"
+  PROJECT_CREATE    // "Create a new project"
+  TASK_STATUS       // "What tasks are overdue?"
+  TASK_CREATE       // "Add a task to..."
+  MILESTONE_STATUS  // "When is the next milestone?"
+  TEAM_QUERY        // "Who's working on...?"
+  SCHEDULE_QUERY    // "What's due this week?"
+  REPORT_REQUEST    // "Generate a status report"
 }
 
 /**
@@ -1112,16 +1152,21 @@ model ChatConversation {
   // Order context
   orderNumber String?
 
+  // Project context (AI Projects Module)
+  projectId Int? // Optional project context for project-related conversations
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  chatbotConfig ChatbotConfig @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
+  chatbotConfig ChatbotConfig    @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
   messages      ChatMessage[]
+  project       Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([chatbotConfigId, status])
   @@index([customerEmail])
   @@index([sessionId])
   @@index([createdAt(sort: Desc)])
+  @@index([projectId])
 }
 
 /**
@@ -7060,6 +7105,19 @@ model Tenant {
   // Project Document Templates
   projectDocuments ProjectDocument[]
 
+  // AI Projects Module relations
+  taskDurationLearning  TaskDurationLearning[]
+  teamAvailability      TeamAvailability[]
+  healthPredictions     ProjectHealthPrediction[]
+  scopeBaselines        ProjectScopeBaseline[]
+  scopeChangeAlerts     ScopeChangeAlert[]
+  budgetForecasts       ProjectBudgetForecast[]
+  projectRisks          ProjectRisk[]
+  digestConfigs         ProjectDigestConfig[]
+  smartReminders        SmartReminder[]
+  performanceMetrics    TeamPerformanceMetrics[]
+  engagementScores      ClientEngagementScore[]
+
   @@index([slug])
   @@index([status])
 }
@@ -7238,6 +7296,9 @@ model Account {
   ctas                     CTA[]
   successPlans             SuccessPlan[]
   healthScoreHistory       AccountHealthScoreHistory[]
+
+  // AI Projects Module relations
+  engagementScores         ClientEngagementScore[]
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
@@ -8899,4 +8960,474 @@ model ProjectDocumentVersion {
 
   @@unique([documentId, version])
   @@index([documentId])
+}
+
+// ============================================================================
+// AI PROJECTS MODULE
+// ============================================================================
+
+/**
+ * TaskDependency - Defines dependencies between tasks
+ * Used for auto-scheduling and critical path analysis
+ */
+model TaskDependency {
+  id              Int            @id @default(autoincrement())
+  dependentTaskId Int            // Task that depends on another
+  blockingTaskId  Int            // Task that blocks another
+  dependencyType  DependencyType @default(FINISH_TO_START)
+
+  dependentTask Task @relation("DependentTask", fields: [dependentTaskId], references: [id], onDelete: Cascade)
+  blockingTask  Task @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([dependentTaskId, blockingTaskId])
+  @@index([blockingTaskId])
+}
+
+enum DependencyType {
+  FINISH_TO_START  // B can't start until A finishes
+  START_TO_START   // B can't start until A starts
+  FINISH_TO_FINISH // B can't finish until A finishes
+}
+
+/**
+ * TaskDurationLearning - Historical data for AI duration estimation
+ * Stores task outcomes to improve future estimates
+ */
+model TaskDurationLearning {
+  id       Int     @id @default(autoincrement())
+  tenantId String
+
+  // Task characteristics
+  taskType   String? // Derived from title/description
+  complexity String? // low/medium/high
+  hasSubtasks Boolean
+  teamSize   Int
+
+  // Outcomes
+  estimatedHours Float
+  actualHours    Float
+  accuracy       Float // estimatedHours / actualHours
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, taskType])
+}
+
+/**
+ * TeamAvailability - Tracks team member capacity for scheduling
+ */
+model TeamAvailability {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+  userId   Int
+
+  date           DateTime @db.Date
+  availableHours Float    // Hours available this day
+  allocatedHours Float    @default(0) // Hours already allocated
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([tenantId, date])
+}
+
+/**
+ * ProjectHealthPrediction - AI-powered health predictions
+ * Predicts future project health status based on metrics
+ */
+model ProjectHealthPrediction {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  predictedHealth ProjectHealthStatus
+  confidence      Float
+  predictedDate   DateTime // Date this prediction is for
+
+  // Contributing factors
+  factors Json @db.JsonB // { taskVelocity: 0.3, milestoneRisk: 0.5, ... }
+
+  // Outcome tracking (for model improvement)
+  actualHealth ProjectHealthStatus?
+  wasAccurate  Boolean?
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, predictedDate])
+  @@index([tenantId])
+}
+
+/**
+ * ProjectScopeBaseline - Snapshot of original project scope
+ * Used to detect scope creep
+ */
+model ProjectScopeBaseline {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Baseline snapshot
+  baselineDate           DateTime
+  originalTaskCount      Int
+  originalMilestoneCount Int
+  originalScope          Json @db.JsonB // { goals, deliverables, exclusions }
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([tenantId])
+}
+
+/**
+ * ScopeChangeAlert - Alerts for detected scope changes
+ */
+model ScopeChangeAlert {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  changeType    ScopeChangeType
+  severity      ScopeSeverity
+  description   String
+  affectedItems Json @db.JsonB // { tasks: [], milestones: [] }
+
+  // AI Analysis
+  impactAnalysis String?
+  recommendation String?
+
+  status         AlertStatus @default(ACTIVE)
+  acknowledgedAt DateTime?
+  acknowledgedBy Int?
+
+  createdAt DateTime @default(now())
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  acknowledger User?  @relation("ScopeAlertAcknowledger", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([tenantId])
+}
+
+enum ScopeChangeType {
+  TASK_ADDITION
+  TASK_REMOVAL
+  MILESTONE_ADDITION
+  MILESTONE_CHANGE
+  TIMELINE_EXTENSION
+  REQUIREMENT_CHANGE
+}
+
+enum ScopeSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// AlertStatus enum already exists in the schema (line 4446)
+// Using existing AlertStatus for ScopeChangeAlert
+
+/**
+ * ProjectBudgetForecast - AI-powered budget predictions
+ * Integrates with Finance module for cost forecasting
+ */
+model ProjectBudgetForecast {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Forecast data
+  forecastDate   DateTime
+  forecastPeriod String // "monthly" | "quarterly" | "project_end"
+
+  // Amounts
+  currentSpend    Decimal @db.Decimal(12, 2)
+  forecastedSpend Decimal @db.Decimal(12, 2)
+  budgetAmount    Decimal @db.Decimal(12, 2)
+  variance        Decimal @db.Decimal(12, 2) // forecastedSpend - budgetAmount
+  variancePercent Float
+
+  // AI Analysis
+  riskLevel       BudgetRiskLevel
+  recommendations Json @db.JsonB // Array of suggested actions
+  factors         Json @db.JsonB // Contributing factors to forecast
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, forecastDate])
+  @@index([tenantId])
+}
+
+enum BudgetRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/**
+ * ProjectRisk - Risks extracted from meetings and project data
+ */
+model ProjectRisk {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Source of risk
+  sourceType RiskSourceType
+  sourceId   Int? // meetingId if from meeting
+
+  // Risk details
+  title               String
+  description         String
+  severity            RiskSeverity
+  category            RiskCategory
+  suggestedMitigation String?
+  relatedQuote        String? // Exact quote from source
+
+  status     RiskStatus @default(IDENTIFIED)
+  resolvedAt DateTime?
+  resolvedBy Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  resolver User?    @relation("RiskResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([tenantId])
+}
+
+enum RiskSourceType {
+  MEETING
+  TASK
+  MILESTONE
+  MANUAL
+  AI_DETECTED
+}
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskCategory {
+  TIMELINE
+  BUDGET
+  SCOPE
+  RESOURCE
+  TECHNICAL
+  EXTERNAL
+  QUALITY
+}
+
+enum RiskStatus {
+  IDENTIFIED
+  ANALYZING
+  MITIGATING
+  MONITORING
+  RESOLVED
+  ACCEPTED
+}
+
+/**
+ * ProjectDigestConfig - Configuration for automated status digest emails
+ */
+model ProjectDigestConfig {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Recipients
+  recipientType DigestRecipientType
+  customEmails  String[] // For CUSTOM recipient type
+
+  // Schedule
+  frequency  DigestFrequency
+  dayOfWeek  Int? // 0-6 for weekly
+  dayOfMonth Int? // 1-31 for monthly
+  timeOfDay  String // "09:00"
+  timezone   String // "America/New_York"
+
+  // Content
+  detailLevel     DigestDetailLevel
+  includeSections String[] // ["summary", "tasks", "milestones", "risks", "timeline"]
+
+  isActive   Boolean   @default(true)
+  lastSentAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, recipientType])
+  @@index([tenantId])
+}
+
+enum DigestRecipientType {
+  OWNER
+  TEAM
+  STAKEHOLDER
+  CUSTOM
+}
+
+enum DigestFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum DigestDetailLevel {
+  EXECUTIVE // 2-3 sentences + key metrics
+  STANDARD  // Full summary + metrics + highlights
+  DETAILED  // Everything including task lists
+}
+
+/**
+ * SmartReminder - Contextual reminders for project activities
+ */
+model SmartReminder {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+  userId   Int
+
+  // Context
+  reminderType SmartReminderType
+  entityType   String // "project" | "task" | "milestone"
+  entityId     Int
+  projectId    Int? // Optional direct project link
+
+  // Content
+  title           String
+  message         String
+  suggestedAction String?
+  actionUrl       String?
+
+  // Scheduling
+  scheduledFor DateTime
+  priority     SmartReminderPriority @default(NORMAL)
+
+  // Status
+  status        SmartReminderStatus @default(PENDING)
+  sentAt        DateTime?
+  dismissedAt   DateTime?
+  actionTakenAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user    User     @relation("UserReminders", fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation("ProjectReminders", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, scheduledFor])
+  @@index([tenantId])
+  @@index([projectId])
+}
+
+enum SmartReminderType {
+  TASK_OVERDUE
+  TASK_DUE_SOON
+  MILESTONE_APPROACHING
+  STALE_PROJECT
+  NO_RECENT_ACTIVITY
+  HEALTH_DECLINING
+  MEETING_FOLLOWUP
+  STATUS_UPDATE_DUE
+  BUDGET_ALERT
+  SCOPE_CREEP
+}
+
+enum SmartReminderPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SmartReminderStatus {
+  PENDING
+  SENT
+  DISMISSED
+  ACTION_TAKEN
+}
+
+/**
+ * TeamPerformanceMetrics - Aggregated team performance data
+ */
+model TeamPerformanceMetrics {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+  userId   Int
+
+  // Time period
+  periodStart DateTime
+  periodEnd   DateTime
+  periodType  String // "weekly" | "monthly" | "quarterly"
+
+  // Metrics
+  tasksCompleted    Int
+  tasksOnTime       Int
+  tasksOverdue      Int
+  avgCompletionTime Float // Hours
+  estimateAccuracy  Float // Actual / Estimated ratio
+
+  // By task type
+  metricsByType Json @db.JsonB // { development: {...}, design: {...} }
+
+  // Collaboration
+  collaborationScore Float // Based on cross-team task completion
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation("PerformanceMetrics", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodStart, periodType])
+  @@index([tenantId, periodType])
+}
+
+/**
+ * ClientEngagementScore - Tracks client responsiveness and engagement
+ */
+model ClientEngagementScore {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  accountId Int
+
+  // Scores (0-100)
+  overallScore    Float
+  componentScores Json @db.JsonB // { meetingAttendance, responseTime, feedbackFrequency, ... }
+  trend           Float // Change from previous score
+
+  // AI interpretation
+  interpretation Json @db.JsonB // { summary, concerns, recommendations }
+
+  calculatedAt DateTime
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, calculatedAt])
+  @@index([tenantId])
 }

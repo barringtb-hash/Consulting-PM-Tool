@@ -82,6 +82,8 @@ import safetyMonitorRouter from './modules/safety-monitor/safety-monitor.router'
 import { bugTrackingRouter } from './modules/bug-tracking';
 // Finance Tracking Module
 import { financeRouter } from './modules/finance-tracking';
+// AI Projects Module
+import { aiProjectsRouter } from './modules/ai-projects';
 // MCP Integration
 import mcpRouter from './modules/mcp/mcp.router';
 // Customer Success Platform
@@ -585,6 +587,12 @@ export function createApp(): express.Express {
   // Admin-only module for expense tracking, budgets, and recurring costs
   if (isModuleEnabled('financeTracking')) {
     app.use('/api/finance', requireModule('financeTracking'), financeRouter);
+  }
+
+  // ============ AI PROJECTS MODULE ============
+  // AI-powered project management features (assistant, status summaries, task enrichment)
+  if (isModuleEnabled('aiProjects')) {
+    app.use('/api/ai-projects', requireModule('aiProjects'), aiProjectsRouter);
   }
 
   // Error handling middleware must be last
