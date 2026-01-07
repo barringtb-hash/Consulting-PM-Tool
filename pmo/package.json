@@ -15,10 +15,13 @@
     "build": "echo \"No build configured\"",
     "format": "prettier \"**/*.{ts,tsx,js,jsx,json,md}\" --write",
     "prepare": "node ./scripts/install-husky.mjs || echo \"[husky] prepare failed, skipping\"",
-    "prisma:migrate:deploy": "bash ./scripts/deploy-migrations.sh ./prisma/schema.prisma"
+    "prisma:migrate:deploy": "bash ./scripts/deploy-migrations.sh ./prisma/schema.prisma",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:seed:multi-tenant": "npx tsx prisma/seed-multi-tenant.ts",
+    "db:seed:uat": "npx tsx prisma/seed.ts && npx tsx prisma/seed-multi-tenant.ts"
   },
   "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts && npx tsx prisma/seed-multi-tenant.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": [
