@@ -92,7 +92,7 @@ This version builds upon UAT v5.0 with comprehensive **multi-tenant isolation te
 ### 1.2 Pre-Test Checklist
 
 Before starting UAT testing, verify:
-- [ ] Database has been seeded with multi-tenant test data (`npx prisma db seed`)
+- [ ] Database has been seeded with multi-tenant test data (`npm run db:seed:uat`)
 - [ ] Application is running and accessible
 - [ ] Clear browser cache/use incognito mode
 - [ ] Note any existing issues before testing
@@ -174,7 +174,7 @@ Run the enhanced seed script to create multi-tenant test data:
 
 ```bash
 cd pmo
-npx prisma db seed
+npm run db:seed:uat
 ```
 
 Verify seed completion:

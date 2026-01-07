@@ -5,12 +5,19 @@
  * It creates 3 tenants with deliberately overlapping entity names to verify
  * proper data isolation.
  *
- * Run with: npx ts-node prisma/seed-multi-tenant.ts
+ * Run with: npm run db:seed:multi-tenant
  *
- * Test Credentials:
+ * Test Credentials created by this script:
  * - Tenant 1 (default): admin@pmo.test / AdminDemo123!
  * - Tenant 2 (acme-corp): acme.admin@pmo.test / AcmeDemo123!
  * - Tenant 3 (global-tech): global.admin@pmo.test / GlobalDemo123!
+ *
+ * NOTE: The original seed script (prisma/seed.ts) also creates users including:
+ *   - Admin@pmo.test / Seattleu21*
+ *
+ * When running `npm run db:seed:uat` (which runs both seeds), you will have
+ * multiple admin-capable users. Use the tenant-specific credentials listed
+ * above when testing multi-tenant UAT and tenant isolation behavior.
  */
 
 import bcrypt from 'bcryptjs';
@@ -54,7 +61,30 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
+const rawBcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
+if (Number.isNaN(rawBcryptSaltRounds)) {
+  throw new Error(
+    'Invalid BCRYPT_SALT_ROUNDS environment variable. Expected a numeric value.'
+  );
+}
+const BCRYPT_SALT_ROUNDS = rawBcryptSaltRounds;
+
+// Pipeline stage colors - aligned with design system
+const PIPELINE_STAGE_COLORS = {
+  LEAD: '#6366F1',
+  DISCOVERY: '#8B5CF6',
+  PROPOSAL: '#A855F7',
+  NEGOTIATION: '#D946EF',
+  CLOSED_WON: '#22C55E',
+  CLOSED_LOST: '#EF4444',
+} as const;
+
+// Category mappings for recurring costs
+const RECURRING_COST_CATEGORY_MAP: Record<string, string> = {
+  'Cloud Hosting': 'Infrastructure',
+  'CRM Subscription': 'Software',
+  'Security Software': 'Software',
+};
 
 // ============================================================================
 // TENANT CONFIGURATION
@@ -452,6 +482,7 @@ const OVERLAPPING_EXPENSES = [
     amount: 250.0,
     status: ExpenseStatus.APPROVED,
     vendor: 'Staples',
+    category: 'Office Supplies',
   },
   {
     description: 'Software Licenses', // Tenant 1 and 2
@@ -459,6 +490,7 @@ const OVERLAPPING_EXPENSES = [
     amount: 5000.0,
     status: ExpenseStatus.PENDING,
     vendor: 'Microsoft',
+    category: 'Software',
   },
   {
     description: 'Travel Expenses', // Tenant 1 only
@@ -466,6 +498,7 @@ const OVERLAPPING_EXPENSES = [
     amount: 1500.0,
     status: ExpenseStatus.APPROVED,
     vendor: 'United Airlines',
+    category: 'Travel',
   },
   {
     description: 'Marketing Materials', // Tenant 2 only
@@ -473,6 +506,7 @@ const OVERLAPPING_EXPENSES = [
     amount: 3200.0,
     status: ExpenseStatus.PENDING,
     vendor: 'PrintShop',
+    category: 'Marketing',
   },
   {
     description: 'Cloud Services', // Tenant 3 only
@@ -480,6 +514,7 @@ const OVERLAPPING_EXPENSES = [
     amount: 8500.0,
     status: ExpenseStatus.APPROVED,
     vendor: 'AWS',
+    category: 'Infrastructure',
   },
 ];
 
@@ -490,30 +525,35 @@ const OVERLAPPING_BUDGETS = [
     tenants: ['default', 'acme-corp'],
     amount: 50000.0,
     period: BudgetPeriod.QUARTERLY,
+    category: 'Marketing',
   },
   {
     name: 'IT Infrastructure', // All 3 tenants
     tenants: ['default', 'acme-corp', 'global-tech'],
     amount: 100000.0,
     period: BudgetPeriod.ANNUAL,
+    category: 'Infrastructure',
   },
   {
     name: 'Professional Development', // Tenant 1 only
     tenants: ['default'],
     amount: 25000.0,
     period: BudgetPeriod.ANNUAL,
+    category: 'Travel', // Using Travel as proxy for professional development
   },
   {
     name: 'Research & Development', // Tenant 2 only
     tenants: ['acme-corp'],
     amount: 200000.0,
     period: BudgetPeriod.ANNUAL,
+    category: 'Software',
   },
   {
     name: 'Operations', // Tenant 3 only
     tenants: ['global-tech'],
     amount: 75000.0,
     period: BudgetPeriod.QUARTERLY,
+    category: 'Office Supplies',
   },
 ];
 
@@ -677,12 +717,12 @@ async function main() {
   console.log('\nStep 2: Creating pipelines and stages...');
 
   const STAGES = [
-    { name: 'Lead', order: 1, probability: 10, type: PipelineStageType.OPEN, color: '#6366F1' },
-    { name: 'Discovery', order: 2, probability: 25, type: PipelineStageType.OPEN, color: '#8B5CF6' },
-    { name: 'Proposal', order: 3, probability: 50, type: PipelineStageType.OPEN, color: '#A855F7' },
-    { name: 'Negotiation', order: 4, probability: 75, type: PipelineStageType.OPEN, color: '#D946EF' },
-    { name: 'Closed Won', order: 5, probability: 100, type: PipelineStageType.WON, color: '#22C55E' },
-    { name: 'Closed Lost', order: 6, probability: 0, type: PipelineStageType.LOST, color: '#EF4444' },
+    { name: 'Lead', order: 1, probability: 10, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.LEAD },
+    { name: 'Discovery', order: 2, probability: 25, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.DISCOVERY },
+    { name: 'Proposal', order: 3, probability: 50, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.PROPOSAL },
+    { name: 'Negotiation', order: 4, probability: 75, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.NEGOTIATION },
+    { name: 'Closed Won', order: 5, probability: 100, type: PipelineStageType.WON, color: PIPELINE_STAGE_COLORS.CLOSED_WON },
+    { name: 'Closed Lost', order: 6, probability: 0, type: PipelineStageType.LOST, color: PIPELINE_STAGE_COLORS.CLOSED_LOST },
   ];
 
   for (const [slug, tenantData] of tenantMap) {
@@ -934,9 +974,14 @@ async function main() {
       const accountName = OVERLAPPING_ACCOUNTS.find((a) => a.tenants.includes(tenantSlug))?.name;
       const accountId = accountName ? tenantData.accountIds.get(accountName) : undefined;
 
-      // Get owner
+      // Get owner - first user of the tenant
       const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
       const ownerId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+
+      if (!ownerId) {
+        console.warn(`  Skipping project "${project.name}" - no owner available for tenant: ${tenantSlug}`);
+        continue;
+      }
 
       const created = await prisma.project.upsert({
         where: {
@@ -958,7 +1003,7 @@ async function main() {
           statusUpdatedAt: new Date(),
           startDate: new Date(),
           endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
-          ownerId: ownerId || 0,
+          ownerId,
           accountId,
         },
       });
@@ -984,9 +1029,14 @@ async function main() {
 
       if (!projectId) continue;
 
-      // Get owner
+      // Get owner - first user of the tenant
       const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
       const ownerId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+
+      if (!ownerId) {
+        console.warn(`  Skipping task "${task.title}" - no owner available for tenant: ${tenantSlug}`);
+        continue;
+      }
 
       const existing = await prisma.task.findFirst({
         where: { projectId, title: task.title },
@@ -1005,7 +1055,7 @@ async function main() {
             description: `UAT Test task: ${task.title}`,
             status: task.status,
             priority: task.priority,
-            ownerId: ownerId || 0,
+            ownerId,
           },
         });
       }
@@ -1108,8 +1158,8 @@ async function main() {
       const tenantData = tenantMap.get(tenantSlug);
       if (!tenantData) continue;
 
-      // Get category
-      const categoryId = tenantData.categoryIds.get('Office Supplies');
+      // Get category dynamically from expense data
+      const categoryId = tenantData.categoryIds.get(expense.category);
 
       // Get submitter
       const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
@@ -1150,8 +1200,8 @@ async function main() {
       const tenantData = tenantMap.get(tenantSlug);
       if (!tenantData) continue;
 
-      // Get category
-      const categoryId = tenantData.categoryIds.get('Marketing');
+      // Get category dynamically from budget data
+      const categoryId = tenantData.categoryIds.get(budget.category);
 
       // Get owner
       const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
@@ -1189,7 +1239,9 @@ async function main() {
       const tenantData = tenantMap.get(tenantSlug);
       if (!tenantData) continue;
 
-      const categoryId = tenantData.categoryIds.get('Software');
+      // Get category dynamically - use mapping or default to 'Software'
+      const categoryName = RECURRING_COST_CATEGORY_MAP[cost.name] ?? 'Software';
+      const categoryId = tenantData.categoryIds.get(categoryName);
 
       const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
       const createdById = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
