@@ -545,6 +545,12 @@ GitHub Actions workflow (`.github/workflows/ci.yml`):
 | Predictive Maintenance | `pmo/apps/api/src/modules/predictive-maintenance/` |
 | Revenue Management | `pmo/apps/api/src/modules/revenue-management/` |
 | Safety Monitor | `pmo/apps/api/src/modules/safety-monitor/` |
+| **AI Projects (PMO AI)** | |
+| AI Projects module | `pmo/apps/api/src/modules/ai-projects/` |
+| AI Projects router | `pmo/apps/api/src/modules/ai-projects/ai-projects.router.ts` |
+| AI Projects services | `pmo/apps/api/src/modules/ai-projects/services/` |
+| Project Assistant page | `pmo/apps/web/src/pages/ai-tools/ProjectAssistantPage.tsx` |
+| AI Projects hooks | `pmo/apps/web/src/api/hooks/ai-projects/index.ts` |
 | **AI Monitoring & Operations** | |
 | AI Monitoring module | `pmo/apps/api/src/modules/ai-monitoring/` |
 | AI Usage service | `pmo/apps/api/src/modules/ai-monitoring/ai-usage.service.ts` |
@@ -636,6 +642,7 @@ For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI
 - **Phase 1**: `chatbot`, `productDescriptions`, `scheduling`, `intake`
 - **Phase 2**: `documentAnalyzer`, `contentGenerator`, `leadScoring`, `priorAuth`
 - **Phase 3**: `inventoryForecasting`, `complianceMonitor`, `predictiveMaintenance`, `revenueManagement`, `safetyMonitor`
+- **PMO AI**: `aiProjects` (AI Project Assistant)
 
 **Quick start for AI Tools:**
 1. Enable modules: Add desired AI tool modules to `PMO_MODULES` env var
@@ -659,6 +666,7 @@ For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI
 | Predictive Maintenance | `/ai-tools/predictive-maintenance` |
 | Revenue Management | `/ai-tools/revenue-management` |
 | Safety Monitor | `/ai-tools/safety-monitor` |
+| AI Project Assistant | `/ai-tools/project-assistant` |
 
 ### Working with CRM Features
 For the comprehensive CRM transformation plan, see [Docs/CRM-TRANSFORMATION-PLAN.md](Docs/CRM-TRANSFORMATION-PLAN.md).
