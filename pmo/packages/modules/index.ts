@@ -783,8 +783,8 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
   aiProjects: {
     id: 'aiProjects',
     label: 'AI Project Assistant',
-    navGroup: 'projects',
-    path: '/projects',
+    navGroup: 'aiTools',
+    path: '/ai-tools/project-assistant',
     additionalPaths: ['/projects/:id/ai-assistant'],
     icon: 'Sparkles',
     isCore: false,
@@ -792,7 +792,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/ai-projects'],
     description:
       'AI-powered project management features including status summaries, task enrichment, template matching, health predictions, and smart scheduling',
-    showInNavigation: false, // Features integrated into project pages
+    showInNavigation: true,
   },
 };
 
