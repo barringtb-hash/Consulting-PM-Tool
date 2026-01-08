@@ -85,7 +85,7 @@ class ProjectSimilarityService {
 
       if (project) {
         sourceProfile = await this.buildProjectProfile(project);
-        searchText = `${project.name} ${project.description || ''} ${project.tasks.map((t) => t.title).join(' ')}`;
+        searchText = `${project.name} ${project.tasks.map((t) => t.title).join(' ')}`;
       }
     } else if (input.description) {
       searchText = input.description;
@@ -278,7 +278,7 @@ class ProjectSimilarityService {
             title: true,
             status: true,
             dueDate: true,
-            completedAt: true,
+            updatedAt: true, // Use updatedAt as proxy for completion time
           },
         },
         milestones: {
@@ -288,18 +288,12 @@ class ProjectSimilarityService {
             dueDate: true,
           },
         },
-        statusUpdates: {
-          select: { summary: true, createdAt: true },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-        risks: {
-          where: { tenantId },
+        projectRisks: {
           select: {
             title: true,
             severity: true,
             status: true,
-            mitigation: true,
+            suggestedMitigation: true,
           },
         },
       },
@@ -313,7 +307,6 @@ class ProjectSimilarityService {
       const prompt = `Analyze this project data and extract lessons learned:
 
 PROJECT: ${project.name}
-DESCRIPTION: ${project.description || 'N/A'}
 STATUS: ${project.status}
 HEALTH: ${project.healthStatus || 'UNKNOWN'}
 
@@ -325,10 +318,7 @@ MILESTONES:
 ${project.milestones.map((m) => `- ${m.name}: ${m.status}`).join('\n')}
 
 RISKS IDENTIFIED:
-${project.risks.map((r) => `- ${r.title} (${r.severity}): ${r.status}`).join('\n') || 'None'}
-
-STATUS UPDATES:
-${project.statusUpdates.map((s) => s.summary).join('\n\n') || 'None'}
+${project.projectRisks.map((r) => `- ${r.title} (${r.severity}): ${r.status}`).join('\n') || 'None'}
 
 Extract 3-5 lessons learned. Return JSON array:
 [
@@ -434,7 +424,6 @@ Focus on:
   private async buildProjectProfile(project: {
     id: number;
     name: string;
-    description?: string | null;
     tasks: { title: string }[];
     milestones: { name: string }[];
     members: unknown[];
@@ -465,7 +454,6 @@ Focus on:
     // Extract features from task/milestone names
     const allText = [
       project.name,
-      project.description || '',
       ...project.tasks.map((t) => t.title),
       ...project.milestones.map((m) => m.name),
     ].join(' ');
@@ -660,10 +648,10 @@ Focus on:
       tasks: {
         status: string;
         dueDate: Date | null;
-        completedAt: Date | null;
+        updatedAt: Date;
       }[];
       milestones: { status: string; dueDate: Date | null }[];
-      risks: { title: string; severity: string; status: string }[];
+      projectRisks: { title: string; severity: string; status: string }[];
     },
     tenantId: string,
   ): Promise<LessonLearned[]> {
@@ -698,7 +686,7 @@ Focus on:
     }
 
     // Analyze risks
-    const criticalRisks = project.risks.filter(
+    const criticalRisks = project.projectRisks.filter(
       (r) => r.severity === 'CRITICAL' || r.severity === 'HIGH',
     );
     if (criticalRisks.length > 3) {

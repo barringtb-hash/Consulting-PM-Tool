@@ -178,7 +178,7 @@ class PortfolioDashboardService {
     const uniqueMembers = new Set(
       projects.flatMap((p) => p.members.map((m) => m.userId)),
     );
-    const totalUsers = await prisma.user.count({ where: { tenantId } });
+    const totalUsers = await prisma.tenantUser.count({ where: { tenantId } });
     const resourceUtilization =
       totalUsers > 0 ? Math.round((uniqueMembers.size / totalUsers) * 100) : 0;
 
@@ -225,8 +225,12 @@ class PortfolioDashboardService {
         tasks: { select: { status: true } },
         milestones: { select: { status: true } },
         members: true,
-        risks: {
-          where: { tenantId, status: { in: ['OPEN', 'MONITORING'] } },
+        projectRisks: {
+          where: {
+            status: {
+              in: ['IDENTIFIED', 'ANALYZING', 'MITIGATING', 'MONITORING'],
+            },
+          },
           select: { severity: true },
         },
       },
@@ -240,8 +244,7 @@ class PortfolioDashboardService {
         };
 
         const milestoneProgress = {
-          completed: p.milestones.filter((m) => m.status === 'COMPLETED')
-            .length,
+          completed: p.milestones.filter((m) => m.status === 'DONE').length,
           total: p.milestones.length,
         };
 
@@ -253,7 +256,7 @@ class PortfolioDashboardService {
             : 0;
 
         // Calculate risk level
-        const criticalHighRisks = p.risks.filter(
+        const criticalHighRisks = p.projectRisks.filter(
           (r) => r.severity === 'CRITICAL' || r.severity === 'HIGH',
         ).length;
         const riskLevel: PortfolioProject['riskLevel'] =
@@ -261,7 +264,7 @@ class PortfolioDashboardService {
             ? 'CRITICAL'
             : criticalHighRisks >= 1
               ? 'HIGH'
-              : p.risks.length > 0
+              : p.projectRisks.length > 0
                 ? 'MEDIUM'
                 : 'LOW';
 
@@ -273,10 +276,29 @@ class PortfolioDashboardService {
             tenantId,
           );
           if (prediction) {
-            predictedHealth = {
-              score: prediction.predictedHealth,
-              trend: prediction.trend,
+            // Convert health status to score
+            const healthStatusScores: Record<string, number> = {
+              ON_TRACK: 100,
+              AT_RISK: 50,
+              OFF_TRACK: 20,
             };
+            const score = healthStatusScores[prediction.predictedHealth] || 50;
+
+            // Determine trend from risk factors (if any are worsening)
+            const worseningFactors = prediction.riskFactors.filter(
+              (f) => f.trend === 'worsening',
+            ).length;
+            const improvingFactors = prediction.riskFactors.filter(
+              (f) => f.trend === 'improving',
+            ).length;
+            const trend: 'IMPROVING' | 'STABLE' | 'DECLINING' =
+              worseningFactors > improvingFactors
+                ? 'DECLINING'
+                : improvingFactors > worseningFactors
+                  ? 'IMPROVING'
+                  : 'STABLE';
+
+            predictedHealth = { score, trend };
           }
         } catch {
           // Ignore prediction errors
@@ -352,7 +374,7 @@ class PortfolioDashboardService {
     const risks = await prisma.projectRisk.findMany({
       where: {
         tenantId,
-        status: { in: ['OPEN', 'MONITORING'] },
+        status: { in: ['IDENTIFIED', 'ANALYZING', 'MITIGATING', 'MONITORING'] },
       },
       include: {
         project: { select: { id: true, name: true } },
@@ -437,38 +459,48 @@ class PortfolioDashboardService {
    * Get resource utilization analysis
    */
   async getResourceAnalysis(tenantId: string): Promise<ResourceAnalysis> {
-    const users = await prisma.user.findMany({
+    // Get users who are members of the tenant
+    const tenantUsers = await prisma.tenantUser.findMany({
       where: { tenantId },
       include: {
-        projectMemberships: {
+        user: {
           include: {
-            project: { select: { id: true, name: true, status: true } },
+            projectMemberships: {
+              include: {
+                project: { select: { id: true, name: true, status: true } },
+              },
+            },
+            taskAssignments: {
+              where: { task: { status: { notIn: ['DONE'] } } },
+              select: { taskId: true },
+            },
           },
-        },
-        assignedTasks: {
-          where: { status: { notIn: ['DONE'] } },
-          select: { id: true },
         },
       },
     });
 
+    const users = tenantUsers.map((tu) => tu.user);
     const totalTeamMembers = users.length;
     const assignedToProjects = users.filter((u) =>
-      u.projectMemberships.some((pm) => pm.project.status === 'IN_PROGRESS'),
+      u.projectMemberships.some(
+        (pm: { project: { status: string } }) =>
+          pm.project.status === 'IN_PROGRESS',
+      ),
     ).length;
 
     // Find overallocated users (many active tasks or projects)
     const overallocated = users
       .filter(
-        (u) => u.projectMemberships.length > 3 || u.assignedTasks.length > 10,
+        (u) => u.projectMemberships.length > 3 || u.taskAssignments.length > 10,
       )
       .map((u) => ({
         userId: u.id,
         userName: u.name,
         projectCount: u.projectMemberships.filter(
-          (pm) => pm.project.status === 'IN_PROGRESS',
+          (pm: { project: { status: string } }) =>
+            pm.project.status === 'IN_PROGRESS',
         ).length,
-        taskCount: u.assignedTasks.length,
+        taskCount: u.taskAssignments.length,
       }))
       .sort((a, b) => b.taskCount - a.taskCount);
 
@@ -477,7 +509,8 @@ class PortfolioDashboardService {
       .filter(
         (u) =>
           u.projectMemberships.filter(
-            (pm) => pm.project.status === 'IN_PROGRESS',
+            (pm: { project: { status: string } }) =>
+              pm.project.status === 'IN_PROGRESS',
           ).length === 0,
       )
       .map((u) => ({

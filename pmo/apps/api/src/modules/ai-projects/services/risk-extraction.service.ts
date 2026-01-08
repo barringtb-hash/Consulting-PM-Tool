@@ -159,7 +159,7 @@ class RiskExtractionService {
 
     const risks = await prisma.projectRisk.findMany({
       where: whereClause,
-      orderBy: [{ severity: 'asc' }, { likelihood: 'asc' }],
+      orderBy: [{ severity: 'asc' }, { createdAt: 'desc' }],
       take: options?.limit || 50,
     });
 
@@ -167,12 +167,12 @@ class RiskExtractionService {
       title: r.title,
       description: r.description || '',
       severity: r.severity as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW',
-      likelihood: r.likelihood as 'HIGH' | 'MEDIUM' | 'LOW',
+      likelihood: 'MEDIUM' as const, // Default - field doesn't exist on schema
       category: r.category || 'General',
-      mitigation: r.mitigation || undefined,
-      owner: r.ownerId?.toString(),
-      sourceText: r.sourceText || '',
-      confidence: r.confidence || 0.8,
+      mitigation: r.suggestedMitigation || undefined,
+      owner: r.resolvedBy?.toString(),
+      sourceText: r.relatedQuote || '',
+      confidence: 0.8, // Default - field doesn't exist on schema
     }));
   }
 
@@ -223,9 +223,14 @@ class RiskExtractionService {
       byCategory[risk.category || 'General'] =
         (byCategory[risk.category || 'General'] || 0) + 1;
 
-      if (risk.status === 'OPEN' || risk.status === 'MONITORING') {
+      if (
+        risk.status === 'IDENTIFIED' ||
+        risk.status === 'ANALYZING' ||
+        risk.status === 'MITIGATING' ||
+        risk.status === 'MONITORING'
+      ) {
         openRisks++;
-      } else if (risk.status === 'MITIGATED') {
+      } else if (risk.status === 'RESOLVED') {
         mitigatedRisks++;
       }
     }
@@ -513,6 +518,44 @@ Only include items with confidence >= 0.6. Return empty arrays if nothing found.
     return undefined;
   }
 
+  private mapToRiskCategory(
+    category: string,
+  ):
+    | 'TIMELINE'
+    | 'BUDGET'
+    | 'SCOPE'
+    | 'RESOURCE'
+    | 'TECHNICAL'
+    | 'EXTERNAL'
+    | 'QUALITY' {
+    const categoryMap: Record<
+      string,
+      | 'TIMELINE'
+      | 'BUDGET'
+      | 'SCOPE'
+      | 'RESOURCE'
+      | 'TECHNICAL'
+      | 'EXTERNAL'
+      | 'QUALITY'
+    > = {
+      Technical: 'TECHNICAL',
+      Resource: 'RESOURCE',
+      Schedule: 'TIMELINE',
+      Budget: 'BUDGET',
+      External: 'EXTERNAL',
+      Communication: 'EXTERNAL',
+      General: 'SCOPE',
+      TIMELINE: 'TIMELINE',
+      BUDGET: 'BUDGET',
+      SCOPE: 'SCOPE',
+      RESOURCE: 'RESOURCE',
+      TECHNICAL: 'TECHNICAL',
+      EXTERNAL: 'EXTERNAL',
+      QUALITY: 'QUALITY',
+    };
+    return categoryMap[category] || 'SCOPE';
+  }
+
   private async createProjectRisk(
     projectId: number,
     tenantId: string,
@@ -526,7 +569,7 @@ Only include items with confidence >= 0.6. Return empty arrays if nothing found.
         title: risk.title,
         description: risk.description,
         severity: risk.severity,
-        category: risk.category,
+        category: this.mapToRiskCategory(risk.category),
         suggestedMitigation: risk.mitigation,
         relatedQuote: risk.sourceText,
         status: 'IDENTIFIED',
