@@ -36,15 +36,10 @@ export interface ScopeChange {
   };
   impactAnalysis?: string;
   recommendation?: string;
-  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED';
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED' | 'DISMISSED';
   acknowledgedBy?: number;
   acknowledgedAt?: Date;
   createdAt: Date;
-  // Legacy fields for backward compatibility
-  itemType?: 'TASK' | 'MILESTONE' | 'REQUIREMENT';
-  itemId?: number;
-  itemTitle?: string;
-  impact?: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 export interface ScopeAnalysis {
@@ -81,7 +76,7 @@ class ScopeDetectionService {
   async createBaseline(
     projectId: number,
     tenantId: string,
-    description?: string,
+    _description?: string,
   ): Promise<ScopeBaseline> {
     const project = await prisma.project.findFirst({
       where: { id: projectId, tenantId },
@@ -100,19 +95,23 @@ class ScopeDetectionService {
     }
 
     const totalEstimatedHours = project.tasks.reduce(
-      (sum, t) => sum + (t.estimatedHours || 0),
+      (sum: number, t: { estimatedHours: number | null }) =>
+        sum + (t.estimatedHours || 0),
       0,
     );
 
+    // Store baseline with schema-aligned fields
     const baseline = await prisma.projectScopeBaseline.create({
       data: {
         projectId,
         tenantId,
-        description,
-        taskCount: project.tasks.length,
-        milestoneCount: project.milestones.length,
-        estimatedHours: totalEstimatedHours,
-        snapshot: {
+        originalTaskCount: project.tasks.length,
+        originalMilestoneCount: project.milestones.length,
+        originalScope: {
+          goals: [],
+          deliverables: [],
+          exclusions: [],
+          // Store snapshot data for comparison
           tasks: project.tasks.map((t) => ({
             id: t.id,
             title: t.title,
@@ -122,6 +121,7 @@ class ScopeDetectionService {
             id: m.id,
             name: m.name,
           })),
+          totalEstimatedHours,
         },
         baselineDate: new Date(),
       },
@@ -130,9 +130,9 @@ class ScopeDetectionService {
     return {
       projectId,
       baselineDate: baseline.baselineDate,
-      taskCount: baseline.taskCount,
-      milestoneCount: baseline.milestoneCount,
-      estimatedHours: baseline.estimatedHours,
+      taskCount: baseline.originalTaskCount,
+      milestoneCount: baseline.originalMilestoneCount,
+      estimatedHours: totalEstimatedHours,
       taskTitles: project.tasks.map((t) => t.title),
       milestoneTitles: project.milestones.map((m) => m.name),
     };
@@ -146,25 +146,26 @@ class ScopeDetectionService {
     tenantId: string,
   ): Promise<ScopeBaseline | null> {
     const baseline = await prisma.projectScopeBaseline.findFirst({
-      where: { projectId, tenantId },
+      where: { projectId, tenantId, isActive: true },
       orderBy: { baselineDate: 'desc' },
     });
 
     if (!baseline) return null;
 
-    const snapshot = baseline.snapshot as {
-      tasks: { id: number; title: string; estimatedHours?: number }[];
-      milestones: { id: number; name: string }[];
+    const originalScope = baseline.originalScope as {
+      tasks?: { id: number; title: string; estimatedHours?: number }[];
+      milestones?: { id: number; name: string }[];
+      totalEstimatedHours?: number;
     };
 
     return {
       projectId,
       baselineDate: baseline.baselineDate,
-      taskCount: baseline.taskCount,
-      milestoneCount: baseline.milestoneCount,
-      estimatedHours: baseline.estimatedHours,
-      taskTitles: snapshot.tasks.map((t) => t.title),
-      milestoneTitles: snapshot.milestones.map((m) => m.name),
+      taskCount: baseline.originalTaskCount,
+      milestoneCount: baseline.originalMilestoneCount,
+      estimatedHours: originalScope.totalEstimatedHours || 0,
+      taskTitles: originalScope.tasks?.map((t) => t.title) || [],
+      milestoneTitles: originalScope.milestones?.map((m) => m.name) || [],
     };
   }
 
@@ -201,7 +202,8 @@ class ScopeDetectionService {
       taskCount: project.tasks.length,
       milestoneCount: project.milestones.length,
       estimatedHours: project.tasks.reduce(
-        (sum, t) => sum + (t.estimatedHours || 0),
+        (sum: number, t: { estimatedHours: number | null }) =>
+          sum + (t.estimatedHours || 0),
         0,
       ),
     };
@@ -262,7 +264,6 @@ class ScopeDetectionService {
 
     // Generate recommendations
     const recommendations = await this.generateRecommendations(
-      projectId,
       deviation,
       recentChanges,
       riskLevel,
@@ -328,12 +329,15 @@ class ScopeDetectionService {
       (t) => t.createdAt > baseline.baselineDate,
     );
 
-    for (const task of newTasks) {
+    if (newTasks.length > 0) {
+      // Check for existing alert for task additions
       const existingAlert = await prisma.scopeChangeAlert.findFirst({
         where: {
           projectId,
-          itemType: 'TASK',
-          itemId: task.id,
+          tenantId,
+          changeType: 'TASK_ADDITION',
+          status: 'ACTIVE',
+          createdAt: { gte: baseline.baselineDate },
         },
       });
 
@@ -341,15 +345,14 @@ class ScopeDetectionService {
         const change = await this.recordChange(
           {
             projectId,
-            changeType: 'ADDITION',
-            itemType: 'TASK',
-            itemId: task.id,
-            itemTitle: task.title,
-            description: `New task added: "${task.title}"`,
-            impact: this.assessTaskImpact(task.estimatedHours),
-            estimatedHoursImpact: task.estimatedHours,
-            detectedAt: new Date(),
-            acknowledged: false,
+            changeType: 'TASK_ADDITION',
+            severity: this.assessSeverity(newTasks.length, 'task'),
+            description: `${newTasks.length} new task(s) added since baseline`,
+            affectedItems: {
+              tasks: newTasks.map((t) => ({ id: t.id, title: t.title })),
+            },
+            status: 'ACTIVE',
+            createdAt: new Date(),
           },
           tenantId,
         );
@@ -362,12 +365,14 @@ class ScopeDetectionService {
       (m) => m.createdAt > baseline.baselineDate,
     );
 
-    for (const milestone of newMilestones) {
+    if (newMilestones.length > 0) {
       const existingAlert = await prisma.scopeChangeAlert.findFirst({
         where: {
           projectId,
-          itemType: 'MILESTONE',
-          itemId: milestone.id,
+          tenantId,
+          changeType: 'MILESTONE_ADDITION',
+          status: 'ACTIVE',
+          createdAt: { gte: baseline.baselineDate },
         },
       });
 
@@ -375,14 +380,17 @@ class ScopeDetectionService {
         const change = await this.recordChange(
           {
             projectId,
-            changeType: 'ADDITION',
-            itemType: 'MILESTONE',
-            itemId: milestone.id,
-            itemTitle: milestone.name,
-            description: `New milestone added: "${milestone.name}"`,
-            impact: 'HIGH', // Milestones are always high impact
-            detectedAt: new Date(),
-            acknowledged: false,
+            changeType: 'MILESTONE_ADDITION',
+            severity: 'WARNING', // Milestones are always significant
+            description: `${newMilestones.length} new milestone(s) added since baseline`,
+            affectedItems: {
+              milestones: newMilestones.map((m) => ({
+                id: m.id,
+                title: m.name,
+              })),
+            },
+            status: 'ACTIVE',
+            createdAt: new Date(),
           },
           tenantId,
         );
@@ -390,49 +398,51 @@ class ScopeDetectionService {
       }
     }
 
-    // Check for removed items (compare with baseline snapshot)
-    const baselineSnapshot = await prisma.projectScopeBaseline.findFirst({
-      where: { projectId, tenantId },
+    // Check for removed items using baseline data
+    const baselineData = await prisma.projectScopeBaseline.findFirst({
+      where: { projectId, tenantId, isActive: true },
       orderBy: { baselineDate: 'desc' },
-      select: { snapshot: true },
+      select: { originalScope: true },
     });
 
-    if (baselineSnapshot?.snapshot) {
-      const snapshot = baselineSnapshot.snapshot as {
-        tasks: { id: number; title: string }[];
-        milestones: { id: number; name: string }[];
+    if (baselineData?.originalScope) {
+      const originalScope = baselineData.originalScope as {
+        tasks?: { id: number; title: string }[];
+        milestones?: { id: number; name: string }[];
       };
 
       // Check for removed tasks
       const currentTaskIds = new Set(project.tasks.map((t) => t.id));
-      for (const baselineTask of snapshot.tasks) {
-        if (!currentTaskIds.has(baselineTask.id)) {
-          const existingAlert = await prisma.scopeChangeAlert.findFirst({
-            where: {
-              projectId,
-              changeType: 'REMOVAL',
-              itemType: 'TASK',
-              itemId: baselineTask.id,
-            },
-          });
+      const removedTasks = (originalScope.tasks || []).filter(
+        (t) => !currentTaskIds.has(t.id),
+      );
 
-          if (!existingAlert) {
-            const change = await this.recordChange(
-              {
-                projectId,
-                changeType: 'REMOVAL',
-                itemType: 'TASK',
-                itemId: baselineTask.id,
-                itemTitle: baselineTask.title,
-                description: `Task removed: "${baselineTask.title}"`,
-                impact: 'MEDIUM',
-                detectedAt: new Date(),
-                acknowledged: false,
+      if (removedTasks.length > 0) {
+        const existingAlert = await prisma.scopeChangeAlert.findFirst({
+          where: {
+            projectId,
+            tenantId,
+            changeType: 'TASK_REMOVAL',
+            status: 'ACTIVE',
+          },
+        });
+
+        if (!existingAlert) {
+          const change = await this.recordChange(
+            {
+              projectId,
+              changeType: 'TASK_REMOVAL',
+              severity: this.assessSeverity(removedTasks.length, 'task'),
+              description: `${removedTasks.length} task(s) removed since baseline`,
+              affectedItems: {
+                tasks: removedTasks.map((t) => ({ id: t.id, title: t.title })),
               },
-              tenantId,
-            );
-            changes.push(change);
-          }
+              status: 'ACTIVE',
+              createdAt: new Date(),
+            },
+            tenantId,
+          );
+          changes.push(change);
         }
       }
     }
@@ -451,7 +461,7 @@ class ScopeDetectionService {
     await prisma.scopeChangeAlert.update({
       where: { id: changeId },
       data: {
-        acknowledged: true,
+        status: 'ACKNOWLEDGED',
         acknowledgedBy: userId,
         acknowledgedAt: new Date(),
       },
@@ -468,24 +478,23 @@ class ScopeDetectionService {
   ): Promise<ScopeChange[]> {
     const alerts = await prisma.scopeChangeAlert.findMany({
       where: { projectId, tenantId },
-      orderBy: { detectedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: limit,
     });
 
     return alerts.map((a) => ({
       id: a.id,
       projectId: a.projectId,
-      changeType: a.changeType as 'ADDITION' | 'REMOVAL' | 'MODIFICATION',
-      itemType: a.itemType as 'TASK' | 'MILESTONE' | 'REQUIREMENT',
-      itemId: a.itemId || undefined,
-      itemTitle: a.itemTitle,
+      changeType: a.changeType as ScopeChange['changeType'],
+      severity: a.severity as ScopeChange['severity'],
       description: a.description,
-      impact: a.impact as 'HIGH' | 'MEDIUM' | 'LOW',
-      estimatedHoursImpact: a.estimatedHoursImpact || undefined,
-      detectedAt: a.detectedAt,
-      acknowledged: a.acknowledged,
+      affectedItems: a.affectedItems as ScopeChange['affectedItems'],
+      impactAnalysis: a.impactAnalysis || undefined,
+      recommendation: a.recommendation || undefined,
+      status: a.status as ScopeChange['status'],
       acknowledgedBy: a.acknowledgedBy || undefined,
       acknowledgedAt: a.acknowledgedAt || undefined,
+      createdAt: a.createdAt,
     }));
   }
 
@@ -544,13 +553,16 @@ class ScopeDetectionService {
     }));
   }
 
-  private assessTaskImpact(
-    estimatedHours?: number | null,
-  ): 'HIGH' | 'MEDIUM' | 'LOW' {
-    if (!estimatedHours) return 'LOW';
-    if (estimatedHours >= 16) return 'HIGH';
-    if (estimatedHours >= 4) return 'MEDIUM';
-    return 'LOW';
+  private assessSeverity(
+    count: number,
+    type: 'task' | 'milestone',
+  ): 'INFO' | 'WARNING' | 'CRITICAL' {
+    if (type === 'milestone') {
+      return count >= 2 ? 'CRITICAL' : 'WARNING';
+    }
+    if (count >= 5) return 'CRITICAL';
+    if (count >= 2) return 'WARNING';
+    return 'INFO';
   }
 
   private calculateScopeCreepScore(
@@ -570,7 +582,7 @@ class ScopeDetectionService {
     }
 
     // Recent unacknowledged changes contribute to score
-    const unacknowledged = recentChanges.filter((c) => !c.acknowledged);
+    const unacknowledged = recentChanges.filter((c) => c.status === 'ACTIVE');
     score += Math.min(30, unacknowledged.length * 5);
 
     return Math.min(100, Math.round(score));
@@ -586,7 +598,6 @@ class ScopeDetectionService {
   }
 
   private async generateRecommendations(
-    projectId: number,
     deviation: ScopeAnalysis['deviation'],
     recentChanges: ScopeChange[],
     riskLevel: string,
@@ -606,17 +617,19 @@ class ScopeDetectionService {
       );
     }
 
-    const unacknowledged = recentChanges.filter((c) => !c.acknowledged);
+    const unacknowledged = recentChanges.filter((c) => c.status === 'ACTIVE');
     if (unacknowledged.length > 5) {
       recommendations.push(
         `Review and acknowledge ${unacknowledged.length} pending scope changes.`,
       );
     }
 
-    const highImpactChanges = recentChanges.filter((c) => c.impact === 'HIGH');
-    if (highImpactChanges.length > 0) {
+    const criticalChanges = recentChanges.filter(
+      (c) => c.severity === 'CRITICAL',
+    );
+    if (criticalChanges.length > 0) {
       recommendations.push(
-        'Schedule a scope review meeting to discuss high-impact changes with stakeholders.',
+        'Schedule a scope review meeting to discuss critical changes with stakeholders.',
       );
     }
 
@@ -656,7 +669,7 @@ SCOPE STATUS:
 RECENT CHANGES (${recentChanges.length} total):
 ${recentChanges
   .slice(0, 5)
-  .map((c) => `- ${c.changeType}: ${c.itemTitle} (${c.impact} impact)`)
+  .map((c) => `- ${c.changeType}: ${c.description} (${c.severity})`)
   .join('\n')}
 
 Return JSON array of recommendation strings only:

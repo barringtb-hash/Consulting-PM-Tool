@@ -171,12 +171,12 @@ class SmartRemindersService {
    */
   async snoozeReminder(
     reminderId: number,
-    tenantId: string,
+    _tenantId: string,
     snoozeUntil: Date,
   ): Promise<void> {
     await prisma.smartReminder.update({
       where: { id: reminderId },
-      data: { scheduledFor: snoozeUntil, snoozedAt: new Date() },
+      data: { scheduledFor: snoozeUntil },
     });
   }
 
@@ -211,10 +211,10 @@ class SmartRemindersService {
     let responsesCount = 0;
 
     for (const r of reminders) {
-      byType[r.type] = (byType[r.type] || 0) + 1;
+      byType[r.reminderType] = (byType[r.reminderType] || 0) + 1;
 
-      if (r.dismissed) dismissed++;
-      if (r.actionTaken) {
+      if (r.status === 'DISMISSED') dismissed++;
+      if (r.status === 'ACTION_TAKEN') {
         actedUpon++;
         if (r.actionTakenAt) {
           totalResponseTime +=
@@ -293,7 +293,7 @@ class SmartRemindersService {
       where: {
         projectId,
         tenantId,
-        assigneeId: userId,
+        assignees: { some: { userId } },
         status: { notIn: ['DONE'] },
         dueDate: { lte: threshold, gte: now },
       },

@@ -59,11 +59,13 @@ class TaskEnrichmentService {
           select: {
             id: true,
             name: true,
-            description: true,
-            template: { select: { name: true } },
+            statusSummary: true, // Use statusSummary as project description proxy
           },
         },
-        assignee: { select: { name: true } },
+        assignees: {
+          include: { user: { select: { name: true } } },
+          take: 1,
+        },
       },
     });
 
@@ -359,7 +361,7 @@ Return JSON array:
     ) {
       const task = await prisma.task.findFirst({
         where: { id: taskId, tenantId },
-        select: { projectId: true },
+        select: { projectId: true, ownerId: true },
       });
 
       if (task) {
@@ -368,11 +370,12 @@ Return JSON array:
             data: {
               tenantId,
               projectId: task.projectId,
+              ownerId: task.ownerId,
               title: subtask.title,
               description: subtask.description || null,
               aiEstimatedHours: subtask.estimatedHours,
-              status: 'TODO',
-              priority: 'P3',
+              status: 'BACKLOG',
+              priority: 'P2',
               parentTaskId: taskId,
             },
           });
@@ -393,6 +396,7 @@ Return JSON array:
       where: { id: taskId, tenantId },
       select: {
         title: true,
+        description: true,
         projectId: true,
         aiEstimatedHours: true,
         estimatedHours: true,
@@ -455,8 +459,7 @@ Return JSON array:
       description: string | null;
       project: {
         name: string;
-        description: string | null;
-        template: { name: string } | null;
+        statusSummary: string | null;
       };
     },
     similarTasks: RelatedTask[],
@@ -471,8 +474,7 @@ Description: ${task.description || 'None provided'}
 
 PROJECT CONTEXT:
 Name: ${task.project.name}
-Description: ${task.project.description || 'None'}
-Template: ${task.project.template?.name || 'Custom'}
+Status: ${task.project.statusSummary || 'None'}
 
 SIMILAR COMPLETED TASKS:
 ${similarTasks.map((t) => `- ${t.title} (${t.similarity * 100}% similar)`).join('\n') || 'None found'}

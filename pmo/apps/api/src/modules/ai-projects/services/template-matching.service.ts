@@ -3,6 +3,10 @@
  *
  * Provides AI-powered template recommendations based on project descriptions
  * and automatic template application during project creation.
+ *
+ * Note: This service currently returns empty results as the template
+ * infrastructure needs to be implemented. Templates would be stored as
+ * special Projects or a dedicated ProjectTemplate model.
  */
 
 import { prisma } from '../../../prisma/client';
@@ -27,63 +31,18 @@ export interface TemplateApplication {
 class TemplateMatchingService {
   /**
    * Suggest templates based on project name and description
-   * Note: Templates are Projects with isTemplate=true
+   * Note: Currently returns empty as template infrastructure is not yet implemented
    */
   async suggestTemplates(
-    projectName: string,
-    projectDescription: string | null,
-    tenantId: string,
-    limit: number = 5,
+    _projectName: string,
+    _projectDescription: string | null,
+    _tenantId: string,
+    _limit: number = 5,
   ): Promise<TemplateMatch[]> {
-    // Get all available template projects
-    const templateProjects = await prisma.project.findMany({
-      where: {
-        tenantId,
-        isTemplate: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        _count: {
-          select: {
-            tasks: true,
-            milestones: true,
-          },
-        },
-      },
-    });
-
-    if (templateProjects.length === 0) {
-      return [];
-    }
-
-    // Map to template format expected by matching functions
-    const templates = templateProjects.map((p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      category: this.inferCategory(p.name),
-      _count: p._count,
-    }));
-
-    // Try AI-based matching
-    const aiMatches = await this.getAITemplateMatches(
-      projectName,
-      projectDescription,
-      templates,
-    );
-
-    if (aiMatches.length > 0) {
-      return aiMatches.slice(0, limit);
-    }
-
-    // Fallback to keyword-based matching
-    return this.getKeywordMatches(
-      projectName,
-      projectDescription,
-      templates,
-    ).slice(0, limit);
+    // Template functionality not yet implemented
+    // When implemented, this would query projects marked as templates
+    // or a dedicated ProjectTemplate model
+    return [];
   }
 
   /**
@@ -107,12 +66,11 @@ class TemplateMatchingService {
   }
 
   /**
-   * Apply a template to a project
-   * Note: Templates are Projects with isTemplate=true
+   * Apply a template to a project by copying tasks from a source project
    */
   async applyTemplate(
     projectId: number,
-    templateId: number,
+    sourceProjectId: number,
     tenantId: string,
     options: {
       adjustDates?: boolean;
@@ -120,9 +78,9 @@ class TemplateMatchingService {
       baselineStartDate?: Date;
     } = {},
   ): Promise<TemplateApplication> {
-    // Templates are projects with isTemplate=true
-    const template = await prisma.project.findFirst({
-      where: { id: templateId, tenantId, isTemplate: true },
+    // Get source project (used as template)
+    const sourceProject = await prisma.project.findFirst({
+      where: { id: sourceProjectId, tenantId },
       include: {
         tasks: {
           select: {
@@ -131,6 +89,7 @@ class TemplateMatchingService {
             priority: true,
             estimatedHours: true,
             dueDate: true,
+            ownerId: true,
           },
         },
         milestones: {
@@ -143,30 +102,30 @@ class TemplateMatchingService {
       },
     });
 
-    if (!template) {
-      throw new Error('Template not found');
+    if (!sourceProject) {
+      throw new Error('Source project not found');
     }
 
-    const project = await prisma.project.findFirst({
+    const targetProject = await prisma.project.findFirst({
       where: { id: projectId, tenantId },
       select: { ownerId: true, startDate: true },
     });
 
-    if (!project) {
-      throw new Error('Project not found');
+    if (!targetProject) {
+      throw new Error('Target project not found');
     }
 
     const baseDate =
-      options.baselineStartDate || project.startDate || new Date();
-    const templateBaseDate = template.startDate || template.createdAt;
+      options.baselineStartDate || targetProject.startDate || new Date();
+    const sourceBaseDate = sourceProject.startDate || sourceProject.createdAt;
 
-    // Create tasks from template
+    // Create tasks from source project
     let tasksCreated = 0;
-    for (const templateTask of template.tasks) {
-      // Calculate days from start based on template task's due date
-      const daysFromStart = templateTask.dueDate
+    for (const sourceTask of sourceProject.tasks) {
+      // Calculate days from start based on source task's due date
+      const daysFromStart = sourceTask.dueDate
         ? Math.round(
-            (templateTask.dueDate.getTime() - templateBaseDate.getTime()) /
+            (sourceTask.dueDate.getTime() - sourceBaseDate.getTime()) /
               (1000 * 60 * 60 * 24),
           )
         : null;
@@ -181,25 +140,24 @@ class TemplateMatchingService {
         data: {
           tenantId,
           projectId,
-          ownerId: project.ownerId,
-          title: templateTask.title,
-          description: templateTask.description,
-          priority: templateTask.priority || 'P3',
-          status: 'TODO',
-          estimatedHours: templateTask.estimatedHours,
+          ownerId: targetProject.ownerId,
+          title: sourceTask.title,
+          description: sourceTask.description,
+          priority: sourceTask.priority,
+          status: 'BACKLOG',
+          estimatedHours: sourceTask.estimatedHours,
           dueDate,
         },
       });
       tasksCreated++;
     }
 
-    // Create milestones from template
+    // Create milestones from source project
     let milestonesCreated = 0;
-    for (const templateMilestone of template.milestones) {
-      // Calculate days from start based on template milestone's due date
-      const daysFromStart = templateMilestone.dueDate
+    for (const sourceMilestone of sourceProject.milestones) {
+      const daysFromStart = sourceMilestone.dueDate
         ? Math.round(
-            (templateMilestone.dueDate.getTime() - templateBaseDate.getTime()) /
+            (sourceMilestone.dueDate.getTime() - sourceBaseDate.getTime()) /
               (1000 * 60 * 60 * 24),
           )
         : null;
@@ -214,8 +172,8 @@ class TemplateMatchingService {
         data: {
           tenantId,
           projectId,
-          name: templateMilestone.name,
-          description: templateMilestone.description,
+          name: sourceMilestone.name,
+          description: sourceMilestone.description,
           status: 'NOT_STARTED',
           dueDate,
         },
@@ -225,15 +183,15 @@ class TemplateMatchingService {
 
     return {
       projectId,
-      templateId,
+      templateId: sourceProjectId,
       tasksCreated,
       milestonesCreated,
     };
   }
 
   /**
-   * Create a template from an existing project
-   * Note: Templates are Projects with isTemplate=true
+   * Create a template project from an existing project
+   * Note: This creates a copy of the project that can be used as a template
    */
   async createTemplateFromProject(
     projectId: number,
@@ -271,49 +229,58 @@ class TemplateMatchingService {
     // Use project start date as baseline for calculating offsets
     const baseDate = project.startDate || project.createdAt;
 
-    // Create template as a new project with isTemplate=true
+    // Create template as a new project
     const template = await prisma.project.create({
       data: {
         tenantId,
         ownerId: project.ownerId,
         name: templateName,
-        description: templateDescription || project.description,
-        isTemplate: true,
+        statusSummary: templateDescription,
         status: 'PLANNING',
-        startDate: new Date(), // Template start date is creation date
-        tasks: {
-          create: project.tasks.map((task) => ({
-            tenantId,
-            ownerId: task.ownerId,
-            title: task.title,
-            description: task.description,
-            priority: task.priority,
-            status: 'TODO',
-            estimatedHours: task.estimatedHours,
-            dueDate: task.dueDate
-              ? new Date(
-                  new Date().getTime() +
-                    (task.dueDate.getTime() - baseDate.getTime()),
-                )
-              : null,
-          })),
-        },
-        milestones: {
-          create: project.milestones.map((milestone) => ({
-            tenantId,
-            name: milestone.name,
-            description: milestone.description,
-            status: 'NOT_STARTED',
-            dueDate: milestone.dueDate
-              ? new Date(
-                  new Date().getTime() +
-                    (milestone.dueDate.getTime() - baseDate.getTime()),
-                )
-              : null,
-          })),
-        },
+        startDate: new Date(),
       },
     });
+
+    // Copy tasks
+    for (const task of project.tasks) {
+      await prisma.task.create({
+        data: {
+          tenantId,
+          projectId: template.id,
+          ownerId: task.ownerId,
+          title: task.title,
+          description: task.description,
+          priority: task.priority,
+          status: 'BACKLOG',
+          estimatedHours: task.estimatedHours,
+          dueDate: task.dueDate
+            ? new Date(
+                new Date().getTime() +
+                  (task.dueDate.getTime() - baseDate.getTime()),
+              )
+            : null,
+        },
+      });
+    }
+
+    // Copy milestones
+    for (const milestone of project.milestones) {
+      await prisma.milestone.create({
+        data: {
+          tenantId,
+          projectId: template.id,
+          name: milestone.name,
+          description: milestone.description,
+          status: 'NOT_STARTED',
+          dueDate: milestone.dueDate
+            ? new Date(
+                new Date().getTime() +
+                  (milestone.dueDate.getTime() - baseDate.getTime()),
+              )
+            : null,
+        },
+      });
+    }
 
     return template.id;
   }
@@ -321,8 +288,8 @@ class TemplateMatchingService {
   // Private helper methods
 
   private async getAITemplateMatches(
-    projectName: string,
-    projectDescription: string | null,
+    _projectName: string,
+    _projectDescription: string | null,
     templates: {
       id: number;
       name: string;
@@ -331,6 +298,10 @@ class TemplateMatchingService {
       _count: { tasks: number; milestones: number };
     }[],
   ): Promise<TemplateMatch[]> {
+    if (templates.length === 0) {
+      return [];
+    }
+
     try {
       const templateList = templates
         .map(
@@ -343,8 +314,8 @@ class TemplateMatchingService {
         `Match this project to the best templates:
 
 PROJECT:
-Name: "${projectName}"
-Description: ${projectDescription || 'None provided'}
+Name: "${_projectName}"
+Description: ${_projectDescription || 'None provided'}
 
 AVAILABLE TEMPLATES:
 ${templateList}
