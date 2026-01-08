@@ -522,6 +522,7 @@ model Project {
   digestConfigs         ProjectDigestConfig[]
   smartReminders        SmartReminder[]         @relation("ProjectReminders")
   projectRisks          ProjectRisk[]
+  projectLessons        ProjectLesson[]
 
   @@index([status])
   @@index([renewalDate])
@@ -7117,6 +7118,7 @@ model Tenant {
   smartReminders        SmartReminder[]
   performanceMetrics    TeamPerformanceMetrics[]
   engagementScores      ClientEngagementScore[]
+  projectLessons        ProjectLesson[]
 
   @@index([slug])
   @@index([status])
@@ -9063,6 +9065,44 @@ model ProjectHealthPrediction {
 
   @@index([projectId, predictedDate])
   @@index([tenantId])
+}
+
+/**
+ * ProjectLesson - Lessons learned from projects
+ * Used for cross-project knowledge sharing
+ */
+model ProjectLesson {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  category    LessonCategory
+  title       String
+  description String
+  impact      LessonImpact
+  tags        String[]       @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([tenantId, category])
+}
+
+enum LessonCategory {
+  SUCCESS
+  CHALLENGE
+  IMPROVEMENT
+  WARNING
+}
+
+enum LessonImpact {
+  HIGH
+  MEDIUM
+  LOW
 }
 
 /**

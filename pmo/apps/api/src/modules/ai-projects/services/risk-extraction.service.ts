@@ -526,14 +526,12 @@ Only include items with confidence >= 0.6. Return empty arrays if nothing found.
         title: risk.title,
         description: risk.description,
         severity: risk.severity,
-        likelihood: risk.likelihood,
         category: risk.category,
-        mitigation: risk.mitigation,
-        status: 'OPEN',
+        suggestedMitigation: risk.mitigation,
+        relatedQuote: risk.sourceText,
+        status: 'IDENTIFIED',
         sourceType: sourceId ? 'MEETING' : 'MANUAL',
         sourceId,
-        sourceText: risk.sourceText,
-        confidence: risk.confidence,
       },
     });
 

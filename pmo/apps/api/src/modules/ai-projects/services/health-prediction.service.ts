@@ -719,10 +719,13 @@ Return JSON array (max 5 recommendations):
         tenantId,
         predictedHealth: prediction.predictedHealth,
         confidence: prediction.confidence,
-        riskFactors: prediction.riskFactors,
-        recommendations: prediction.recommendations.map((r) => r.action),
-        predictionDate: prediction.predictedAt,
-        validUntil: prediction.validUntil,
+        predictedDate: prediction.predictedAt,
+        factors: {
+          riskFactors: prediction.riskFactors,
+          recommendations: prediction.recommendations,
+          predictionWindow: prediction.predictionWindow,
+          validUntil: prediction.validUntil,
+        },
       },
     });
   }

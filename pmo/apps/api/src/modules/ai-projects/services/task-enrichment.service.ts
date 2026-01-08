@@ -407,14 +407,19 @@ Return JSON array:
       data: { actualHours },
     });
 
-    // Store duration learning data
+    // Store duration learning data - derive task characteristics
+    const keywords = this.extractKeywords(task.title);
+    const taskType = keywords[0] || null; // Use primary keyword as type
+    const complexity = this.deriveComplexity(task);
+
     await prisma.taskDurationLearning.create({
       data: {
         tenantId,
-        taskTitle: task.title,
-        taskKeywords: this.extractKeywords(task.title).join(','),
-        projectId: task.projectId,
-        estimatedHours: task.estimatedHours || task.aiEstimatedHours,
+        taskType,
+        complexity,
+        hasSubtasks: false, // TODO: Check for subtasks when implemented
+        teamSize: 1, // TODO: Get actual team size from assignees
+        estimatedHours: task.estimatedHours || task.aiEstimatedHours || 0,
         actualHours,
         accuracy:
           task.estimatedHours || task.aiEstimatedHours
@@ -426,9 +431,20 @@ Return JSON array:
                   ) /
                     actualHours,
               )
-            : null,
+            : 0,
       },
     });
+  }
+
+  private deriveComplexity(task: {
+    title: string;
+    description: string | null;
+  }): string {
+    // Simple heuristic based on description length
+    const descLength = task.description?.length || 0;
+    if (descLength > 500) return 'high';
+    if (descLength > 100) return 'medium';
+    return 'low';
   }
 
   // Private helper methods

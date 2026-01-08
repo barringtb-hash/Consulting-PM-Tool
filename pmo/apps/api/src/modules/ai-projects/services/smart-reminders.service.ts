@@ -14,17 +14,23 @@ export interface SmartReminder {
   taskId?: number;
   milestoneId?: number;
   type:
-    | 'DEADLINE'
-    | 'STALE_TASK'
-    | 'BLOCKED_CHAIN'
+    | 'TASK_OVERDUE'
+    | 'TASK_DUE_SOON'
     | 'MILESTONE_APPROACHING'
-    | 'SCOPE_CREEP'
-    | 'HEALTH_DECLINE';
-  priority: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+    | 'STALE_PROJECT'
+    | 'NO_RECENT_ACTIVITY'
+    | 'HEALTH_DECLINING'
+    | 'MEETING_FOLLOWUP'
+    | 'STATUS_UPDATE_DUE'
+    | 'BUDGET_ALERT'
+    | 'SCOPE_CREEP';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   title: string;
   message: string;
   actionUrl?: string;
   scheduledFor: Date;
+  status: 'PENDING' | 'SENT' | 'DISMISSED' | 'ACTION_TAKEN';
+  // Computed from status for backward compatibility
   delivered: boolean;
   dismissed: boolean;
   actionTaken: boolean;
@@ -587,22 +593,31 @@ class SmartRemindersService {
     reminder: SmartReminder,
     tenantId: string,
   ): Promise<number> {
+    // Determine entity type and ID
+    let entityType: 'project' | 'task' | 'milestone' = 'project';
+    let entityId = reminder.projectId;
+    if (reminder.taskId) {
+      entityType = 'task';
+      entityId = reminder.taskId;
+    } else if (reminder.milestoneId) {
+      entityType = 'milestone';
+      entityId = reminder.milestoneId;
+    }
+
     const created = await prisma.smartReminder.create({
       data: {
         tenantId,
         userId: reminder.userId,
+        reminderType: reminder.type,
+        entityType,
+        entityId,
         projectId: reminder.projectId,
-        taskId: reminder.taskId,
-        milestoneId: reminder.milestoneId,
-        type: reminder.type,
-        priority: reminder.priority,
         title: reminder.title,
         message: reminder.message,
         actionUrl: reminder.actionUrl,
         scheduledFor: reminder.scheduledFor,
-        delivered: false,
-        dismissed: false,
-        actionTaken: false,
+        priority: reminder.priority,
+        status: 'PENDING',
       },
     });
 
@@ -612,34 +627,42 @@ class SmartRemindersService {
   private mapReminderFromDb(r: {
     id: number;
     userId: number;
-    projectId: number;
-    taskId: number | null;
-    milestoneId: number | null;
-    type: string;
+    projectId: number | null;
+    entityType: string;
+    entityId: number;
+    reminderType: string;
     priority: string;
     title: string;
     message: string;
     actionUrl: string | null;
     scheduledFor: Date;
-    delivered: boolean;
-    dismissed: boolean;
-    actionTaken: boolean;
+    status: string;
   }): SmartReminder {
+    // Derive taskId/milestoneId from entityType/entityId for backward compatibility
+    const taskId = r.entityType === 'task' ? r.entityId : undefined;
+    const milestoneId = r.entityType === 'milestone' ? r.entityId : undefined;
+
+    // Map status to boolean flags for backward compatibility
+    const delivered = r.status !== 'PENDING';
+    const dismissed = r.status === 'DISMISSED';
+    const actionTaken = r.status === 'ACTION_TAKEN';
+
     return {
       id: r.id,
       userId: r.userId,
-      projectId: r.projectId,
-      taskId: r.taskId || undefined,
-      milestoneId: r.milestoneId || undefined,
-      type: r.type as SmartReminder['type'],
+      projectId: r.projectId || r.entityId,
+      taskId,
+      milestoneId,
+      type: r.reminderType as SmartReminder['type'],
       priority: r.priority as SmartReminder['priority'],
       title: r.title,
       message: r.message,
       actionUrl: r.actionUrl || undefined,
       scheduledFor: r.scheduledFor,
-      delivered: r.delivered,
-      dismissed: r.dismissed,
-      actionTaken: r.actionTaken,
+      status: r.status as SmartReminder['status'],
+      delivered,
+      dismissed,
+      actionTaken,
     };
   }
 }

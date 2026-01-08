@@ -636,9 +636,13 @@ Guidelines:
     tenantId: string,
     document: GeneratedDocument,
   ): Promise<{ id: number }> {
+    // Map document type to schema enum
+    const templateType = this.mapToTemplateType(document.type);
+    const category = this.mapToCategory(document.type);
+
     // Check for existing document of same type
     const existing = await prisma.projectDocument.findFirst({
-      where: { projectId, tenantId, type: document.type },
+      where: { projectId, tenantId, templateType },
       orderBy: { version: 'desc' },
     });
 
@@ -648,16 +652,61 @@ Guidelines:
       data: {
         projectId,
         tenantId,
-        type: document.type,
-        title: document.title,
-        content: document.content,
-        sections: document.sections,
-        generatedBy: document.metadata.generatedBy,
+        templateType,
+        category,
+        name: document.title,
+        status: 'DRAFT',
+        content: {
+          markdown: document.content,
+          sections: document.sections,
+          metadata: document.metadata,
+        },
         version,
       },
     });
 
     return { id: created.id };
+  }
+
+  private mapToTemplateType(
+    type: string,
+  ):
+    | 'PROJECT_PLAN'
+    | 'STATUS_REPORT'
+    | 'RISK_REGISTER'
+    | 'MEETING_NOTES'
+    | 'LESSONS_LEARNED' {
+    const typeMap: Record<string, string> = {
+      PROJECT_CHARTER: 'PROJECT_PLAN',
+      STATUS_REPORT: 'STATUS_REPORT',
+      RISK_ASSESSMENT: 'RISK_REGISTER',
+      MEETING_AGENDA: 'MEETING_NOTES',
+      LESSONS_LEARNED: 'LESSONS_LEARNED',
+    };
+    return (typeMap[type] || 'PROJECT_PLAN') as
+      | 'PROJECT_PLAN'
+      | 'STATUS_REPORT'
+      | 'RISK_REGISTER'
+      | 'MEETING_NOTES'
+      | 'LESSONS_LEARNED';
+  }
+
+  private mapToCategory(
+    type: string,
+  ): 'PLANNING' | 'EXECUTION' | 'MONITORING' | 'CLOSING' | 'AI_SPECIFIC' {
+    const categoryMap: Record<string, string> = {
+      PROJECT_CHARTER: 'PLANNING',
+      STATUS_REPORT: 'MONITORING',
+      RISK_ASSESSMENT: 'MONITORING',
+      MEETING_AGENDA: 'EXECUTION',
+      LESSONS_LEARNED: 'CLOSING',
+    };
+    return (categoryMap[type] || 'PLANNING') as
+      | 'PLANNING'
+      | 'EXECUTION'
+      | 'MONITORING'
+      | 'CLOSING'
+      | 'AI_SPECIFIC';
   }
 
   private toMarkdown(doc: GeneratedDocument): string {

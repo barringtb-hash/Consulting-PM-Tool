@@ -21,17 +21,30 @@ export interface ScopeBaseline {
 export interface ScopeChange {
   id?: number;
   projectId: number;
-  changeType: 'ADDITION' | 'REMOVAL' | 'MODIFICATION';
-  itemType: 'TASK' | 'MILESTONE' | 'REQUIREMENT';
-  itemId?: number;
-  itemTitle: string;
+  changeType:
+    | 'TASK_ADDITION'
+    | 'TASK_REMOVAL'
+    | 'MILESTONE_ADDITION'
+    | 'MILESTONE_CHANGE'
+    | 'TIMELINE_EXTENSION'
+    | 'REQUIREMENT_CHANGE';
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
   description: string;
-  impact: 'HIGH' | 'MEDIUM' | 'LOW';
-  estimatedHoursImpact?: number;
-  detectedAt: Date;
-  acknowledged: boolean;
+  affectedItems: {
+    tasks?: { id: number; title: string }[];
+    milestones?: { id: number; title: string }[];
+  };
+  impactAnalysis?: string;
+  recommendation?: string;
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED';
   acknowledgedBy?: number;
   acknowledgedAt?: Date;
+  createdAt: Date;
+  // Legacy fields for backward compatibility
+  itemType?: 'TASK' | 'MILESTONE' | 'REQUIREMENT';
+  itemId?: number;
+  itemTitle?: string;
+  impact?: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 export interface ScopeAnalysis {
@@ -487,18 +500,16 @@ class ScopeDetectionService {
         projectId: change.projectId,
         tenantId,
         changeType: change.changeType,
-        itemType: change.itemType,
-        itemId: change.itemId,
-        itemTitle: change.itemTitle,
+        severity: change.severity,
         description: change.description,
-        impact: change.impact,
-        estimatedHoursImpact: change.estimatedHoursImpact,
-        detectedAt: change.detectedAt,
-        acknowledged: false,
+        affectedItems: change.affectedItems,
+        impactAnalysis: change.impactAnalysis,
+        recommendation: change.recommendation,
+        status: 'ACTIVE',
       },
     });
 
-    return { ...change, id: alert.id };
+    return { ...change, id: alert.id, createdAt: alert.createdAt };
   }
 
   private async getRecentChanges(
@@ -512,25 +523,24 @@ class ScopeDetectionService {
       where: {
         projectId,
         tenantId,
-        detectedAt: { gte: sinceDate },
+        createdAt: { gte: sinceDate },
       },
-      orderBy: { detectedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     return alerts.map((a) => ({
       id: a.id,
       projectId: a.projectId,
-      changeType: a.changeType as 'ADDITION' | 'REMOVAL' | 'MODIFICATION',
-      itemType: a.itemType as 'TASK' | 'MILESTONE' | 'REQUIREMENT',
-      itemId: a.itemId || undefined,
-      itemTitle: a.itemTitle,
+      changeType: a.changeType as ScopeChange['changeType'],
+      severity: a.severity as ScopeChange['severity'],
       description: a.description,
-      impact: a.impact as 'HIGH' | 'MEDIUM' | 'LOW',
-      estimatedHoursImpact: a.estimatedHoursImpact || undefined,
-      detectedAt: a.detectedAt,
-      acknowledged: a.acknowledged,
+      affectedItems: a.affectedItems as ScopeChange['affectedItems'],
+      impactAnalysis: a.impactAnalysis || undefined,
+      recommendation: a.recommendation || undefined,
+      status: a.status as ScopeChange['status'],
       acknowledgedBy: a.acknowledgedBy || undefined,
       acknowledgedAt: a.acknowledgedAt || undefined,
+      createdAt: a.createdAt,
     }));
   }
 
