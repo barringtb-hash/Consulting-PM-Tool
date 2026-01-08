@@ -79,7 +79,7 @@ class HealthPredictionService {
         name: true,
         healthStatus: true,
         startDate: true,
-        targetEndDate: true,
+        endDate: true,
       },
     });
 
@@ -183,11 +183,13 @@ class HealthPredictionService {
     accuracy: number;
     byCategory: Record<string, { total: number; accurate: number }>;
   }> {
+    // Get predictions that haven't been validated yet (wasAccurate is null)
+    // We check if the predictedDate is in the past to consider them "expired"
     const expiredPredictions = await prisma.projectHealthPrediction.findMany({
       where: {
         tenantId,
-        validUntil: { lt: new Date() },
-        validated: false,
+        predictedDate: { lt: new Date() },
+        wasAccurate: null,
       },
       include: {
         project: {
@@ -207,22 +209,22 @@ class HealthPredictionService {
     for (const prediction of expiredPredictions) {
       totalPredictions++;
       const actualHealth = prediction.project.healthStatus;
-      const wasAccurate = prediction.predictedHealth === actualHealth;
+      const isAccurate = prediction.predictedHealth === actualHealth;
 
-      if (wasAccurate) {
+      if (isAccurate) {
         accuratePredictions++;
       }
 
       byCategory[prediction.predictedHealth].total++;
-      if (wasAccurate) {
+      if (isAccurate) {
         byCategory[prediction.predictedHealth].accurate++;
       }
 
-      // Mark as validated
+      // Mark as validated using wasAccurate field
       await prisma.projectHealthPrediction.update({
         where: { id: prediction.id },
         data: {
-          validated: true,
+          wasAccurate: isAccurate,
           actualHealth: actualHealth,
         },
       });
@@ -291,31 +293,40 @@ class HealthPredictionService {
       await Promise.all([
         prisma.milestone.count({ where: { projectId, tenantId } }),
         prisma.milestone.count({
-          where: { projectId, tenantId, status: 'COMPLETED' },
+          where: { projectId, tenantId, status: 'DONE' },
         }),
         prisma.milestone.count({
           where: {
             projectId,
             tenantId,
             dueDate: { lt: now },
-            status: { notIn: ['COMPLETED'] },
+            status: { notIn: ['DONE'] },
           },
         }),
       ]);
 
     // Team engagement (active members in past week)
-    const [totalMembers, activeMembers] = await Promise.all([
-      prisma.projectMember.count({ where: { projectId } }),
-      prisma.task.groupBy({
-        by: ['assigneeId'],
-        where: {
-          projectId,
-          tenantId,
-          updatedAt: { gte: oneWeekAgo },
-          assigneeId: { not: null },
+    // Get tasks with active assignees in the past week
+    const tasksWithAssignees = await prisma.task.findMany({
+      where: {
+        projectId,
+        tenantId,
+        updatedAt: { gte: oneWeekAgo },
+      },
+      select: {
+        assignees: {
+          select: { userId: true },
         },
-      }),
-    ]);
+      },
+    });
+
+    const totalMembers = await prisma.projectMember.count({
+      where: { projectId },
+    });
+    const activeUserIds = new Set(
+      tasksWithAssignees.flatMap((t) => t.assignees.map((a) => a.userId)),
+    );
+    const activeMembers = { length: activeUserIds.size };
 
     // Scope changes (new tasks added in past month)
     const recentTasksAdded = await prisma.task.count({
@@ -552,19 +563,20 @@ class HealthPredictionService {
   private async getHistoricalAccuracy(
     tenantId: string,
   ): Promise<number | undefined> {
+    // Get predictions that have been validated (wasAccurate is not null)
     const validatedPredictions = await prisma.projectHealthPrediction.findMany({
       where: {
         tenantId,
-        validated: true,
+        wasAccurate: { not: null },
       },
       take: 50,
-      orderBy: { predictionDate: 'desc' },
+      orderBy: { predictedDate: 'desc' },
     });
 
     if (validatedPredictions.length < 5) return undefined;
 
     const accurate = validatedPredictions.filter(
-      (p) => p.predictedHealth === p.actualHealth,
+      (p) => p.wasAccurate === true,
     ).length;
 
     return Math.round((accurate / validatedPredictions.length) * 100) / 100;

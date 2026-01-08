@@ -201,7 +201,7 @@ class DocumentGeneratorService {
             status: true,
             priority: true,
             dueDate: true,
-            completedAt: true,
+            updatedAt: true, // Use updatedAt as proxy for completion time
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -216,18 +216,12 @@ class DocumentGeneratorService {
         members: {
           include: { user: { select: { name: true, email: true } } },
         },
-        risks: {
-          where: { tenantId },
+        projectRisks: {
           select: {
             title: true,
             severity: true,
             status: true,
           },
-        },
-        statusUpdates: {
-          select: { summary: true, createdAt: true },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
         },
       },
     });
@@ -240,7 +234,7 @@ class DocumentGeneratorService {
     const input: DocumentInput = {
       projectName: project.name,
       clientName: project.account?.name,
-      projectDescription: project.description || undefined,
+      projectDescription: project.statusSummary || undefined,
       timeline: {
         startDate: project.startDate?.toISOString().split('T')[0],
         endDate: project.endDate?.toISOString().split('T')[0],
@@ -308,8 +302,8 @@ class DocumentGeneratorService {
       where: { projectId, tenantId },
       select: {
         id: true,
-        type: true,
-        title: true,
+        templateType: true,
+        name: true,
         version: true,
         createdAt: true,
       },
@@ -318,11 +312,22 @@ class DocumentGeneratorService {
 
     return docs.map((d) => ({
       id: d.id,
-      type: d.type as DocumentType,
-      title: d.title,
+      type: this.mapFromTemplateType(d.templateType) as DocumentType,
+      title: d.name,
       createdAt: d.createdAt,
       version: d.version,
     }));
+  }
+
+  private mapFromTemplateType(templateType: string): string {
+    const typeMap: Record<string, string> = {
+      PROJECT_PLAN: 'PROJECT_CHARTER',
+      STATUS_REPORT: 'STATUS_REPORT',
+      RISK_REGISTER: 'RISK_ASSESSMENT',
+      MEETING_NOTES: 'MEETING_AGENDA',
+      LESSONS_LEARNED: 'LESSONS_LEARNED',
+    };
+    return typeMap[templateType] || 'PROJECT_CHARTER';
   }
 
   /**
@@ -338,18 +343,29 @@ class DocumentGeneratorService {
 
     if (!doc) return null;
 
+    // Content is stored as JSON with markdown, sections, and metadata
+    const contentData = doc.content as {
+      markdown?: string;
+      sections?: GeneratedSection[];
+      metadata?: { generatedBy?: string };
+    } | null;
+
+    const markdown = contentData?.markdown || '';
+    const sections = contentData?.sections || [];
+    const generatedBy = contentData?.metadata?.generatedBy || 'TEMPLATE';
+
     return {
       id: doc.id,
       projectId: doc.projectId,
-      type: doc.type as DocumentType,
-      title: doc.title,
-      content: doc.content,
-      sections: doc.sections as GeneratedSection[],
+      type: this.mapFromTemplateType(doc.templateType) as DocumentType,
+      title: doc.name,
+      content: markdown,
+      sections,
       metadata: {
         generatedAt: doc.createdAt,
-        generatedBy: doc.generatedBy as 'AI' | 'TEMPLATE',
+        generatedBy: generatedBy as 'AI' | 'TEMPLATE',
         version: doc.version,
-        wordCount: doc.content.split(/\s+/).length,
+        wordCount: markdown.split(/\s+/).length,
       },
     };
   }
@@ -371,7 +387,14 @@ class DocumentGeneratorService {
       throw new Error('Document not found');
     }
 
-    const sections = doc.sections as GeneratedSection[];
+    // Content is stored as JSON
+    const contentData = doc.content as {
+      markdown?: string;
+      sections?: GeneratedSection[];
+      metadata?: { generatedBy?: string };
+    } | null;
+
+    const sections = contentData?.sections || [];
     const sectionIndex = sections.findIndex((s) => s.id === sectionId);
 
     if (sectionIndex === -1) {
@@ -381,30 +404,39 @@ class DocumentGeneratorService {
     sections[sectionIndex].content = content;
 
     // Reassemble full content
-    const template = this.templates[doc.type as DocumentType];
+    const docType = this.mapFromTemplateType(doc.templateType) as DocumentType;
+    const template = this.templates[docType];
     const fullContent = this.assembleSections(sections, template);
+
+    const updatedContent = {
+      markdown: fullContent,
+      sections,
+      metadata: contentData?.metadata || { generatedBy: 'TEMPLATE' },
+    };
 
     const updated = await prisma.projectDocument.update({
       where: { id: documentId },
       data: {
-        sections,
-        content: fullContent,
+        content: updatedContent,
         version: doc.version + 1,
       },
     });
 
+    const updatedContentData = updated.content as typeof updatedContent;
+
     return {
       id: updated.id,
       projectId: updated.projectId,
-      type: updated.type as DocumentType,
-      title: updated.title,
-      content: updated.content,
-      sections: updated.sections as GeneratedSection[],
+      type: docType,
+      title: updated.name,
+      content: updatedContentData.markdown,
+      sections: updatedContentData.sections,
       metadata: {
         generatedAt: updated.createdAt,
-        generatedBy: updated.generatedBy as 'AI' | 'TEMPLATE',
+        generatedBy: (updatedContentData.metadata?.generatedBy ||
+          'TEMPLATE') as 'AI' | 'TEMPLATE',
         version: updated.version,
-        wordCount: updated.content.split(/\s+/).length,
+        wordCount: updatedContentData.markdown.split(/\s+/).length,
       },
     };
   }
@@ -440,7 +472,7 @@ class DocumentGeneratorService {
   private async generateSections(
     project: {
       name: string;
-      description?: string | null;
+      statusSummary?: string | null;
       status: string;
       healthStatus: string | null;
       startDate: Date | null;
@@ -450,12 +482,11 @@ class DocumentGeneratorService {
         status: string;
         priority: string;
         dueDate: Date | null;
-        completedAt: Date | null;
+        updatedAt: Date;
       }[];
       milestones: { name: string; status: string; dueDate: Date | null }[];
       members: { user: { name: string } }[];
-      risks: { title: string; severity: string; status: string }[];
-      statusUpdates: { summary: string; createdAt: Date }[];
+      projectRisks: { title: string; severity: string; status: string }[];
       account?: { name: string } | null;
       owner?: { name: string } | null;
     },
@@ -503,7 +534,7 @@ class DocumentGeneratorService {
   private buildGenerationPrompt(
     project: {
       name: string;
-      description?: string | null;
+      statusSummary?: string | null;
       status: string;
       healthStatus: string | null;
       startDate: Date | null;
@@ -511,8 +542,7 @@ class DocumentGeneratorService {
       tasks: { title: string; status: string; dueDate: Date | null }[];
       milestones: { name: string; status: string; dueDate: Date | null }[];
       members: { user: { name: string } }[];
-      risks: { title: string; severity: string; status: string }[];
-      statusUpdates: { summary: string }[];
+      projectRisks: { title: string; severity: string; status: string }[];
     },
     template: DocumentTemplate,
     input: DocumentInput,
@@ -527,7 +557,7 @@ class DocumentGeneratorService {
 PROJECT DETAILS:
 - Name: ${project.name}
 - Client: ${input.clientName || 'N/A'}
-- Description: ${project.description || 'N/A'}
+- Description: ${project.statusSummary || 'N/A'}
 - Status: ${project.status}
 - Health: ${project.healthStatus || 'UNKNOWN'}
 - Start Date: ${project.startDate?.toLocaleDateString() || 'TBD'}
@@ -541,10 +571,7 @@ TEAM:
 ${project.members.map((m) => `- ${m.user.name}`).join('\n') || 'Not specified'}
 
 RISKS:
-${project.risks.map((r) => `- ${r.title} (${r.severity})`).join('\n') || 'None identified'}
-
-RECENT UPDATES:
-${project.statusUpdates.map((s) => s.summary).join('\n') || 'None'}
+${project.projectRisks.map((r) => `- ${r.title} (${r.severity})`).join('\n') || 'None identified'}
 
 ${input.objectives ? `OBJECTIVES:\n${input.objectives.map((o) => `- ${o}`).join('\n')}` : ''}
 ${input.scope?.inScope ? `IN SCOPE:\n${input.scope.inScope.map((s) => `- ${s}`).join('\n')}` : ''}
@@ -571,11 +598,11 @@ Guidelines:
   private getDefaultContent(
     section: DocumentSection,
     input: DocumentInput,
-    project: { name: string; description?: string | null },
+    project: { name: string; statusSummary?: string | null },
   ): string {
     // Provide default content based on section type
     const defaults: Record<string, string> = {
-      purpose: `This project charter establishes ${input.projectName || project.name} as an authorized project.\n\n${project.description || '[Project description to be added]'}`,
+      purpose: `This project charter establishes ${input.projectName || project.name} as an authorized project.\n\n${project.statusSummary || '[Project description to be added]'}`,
       objectives:
         input.objectives?.map((o) => `- ${o}`).join('\n') ||
         '- [Objectives to be defined]',
@@ -691,22 +718,15 @@ Guidelines:
       | 'LESSONS_LEARNED';
   }
 
-  private mapToCategory(
-    type: string,
-  ): 'PLANNING' | 'EXECUTION' | 'MONITORING' | 'CLOSING' | 'AI_SPECIFIC' {
-    const categoryMap: Record<string, string> = {
-      PROJECT_CHARTER: 'PLANNING',
-      STATUS_REPORT: 'MONITORING',
-      RISK_ASSESSMENT: 'MONITORING',
-      MEETING_AGENDA: 'EXECUTION',
-      LESSONS_LEARNED: 'CLOSING',
+  private mapToCategory(type: string): 'CORE' | 'LIFECYCLE' | 'AI_SPECIFIC' {
+    const categoryMap: Record<string, 'CORE' | 'LIFECYCLE' | 'AI_SPECIFIC'> = {
+      PROJECT_CHARTER: 'CORE',
+      STATEMENT_OF_WORK: 'CORE',
+      STATUS_REPORT: 'LIFECYCLE',
+      EXECUTIVE_SUMMARY: 'CORE',
+      CLOSURE_REPORT: 'LIFECYCLE',
     };
-    return (categoryMap[type] || 'PLANNING') as
-      | 'PLANNING'
-      | 'EXECUTION'
-      | 'MONITORING'
-      | 'CLOSING'
-      | 'AI_SPECIFIC';
+    return categoryMap[type] || 'CORE';
   }
 
   private toMarkdown(doc: GeneratedDocument): string {

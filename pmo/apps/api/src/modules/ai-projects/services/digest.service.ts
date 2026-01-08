@@ -271,7 +271,7 @@ class DigestService {
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
     const whereClause: Record<string, unknown> = {
-      enabled: true,
+      isActive: true,
     };
 
     if (tenantId) {
@@ -299,37 +299,56 @@ class DigestService {
         // Check frequency and timing
         switch (c.frequency) {
           case 'DAILY':
-            return this.isTimeMatch(c.preferredTime, currentTime);
+            return this.isTimeMatch(c.timeOfDay, currentTime);
           case 'WEEKLY':
             return (
-              (c.preferredDay === dayOfWeek || !c.preferredDay) &&
-              this.isTimeMatch(c.preferredTime, currentTime)
+              (c.dayOfWeek === dayOfWeek || c.dayOfWeek === null) &&
+              this.isTimeMatch(c.timeOfDay, currentTime)
             );
           case 'BIWEEKLY':
             // Check if it's been 2 weeks since last send
-            return this.isBiweeklyDue(c.lastSentAt, dayOfWeek, c.preferredDay);
+            return this.isBiweeklyDue(c.lastSentAt, dayOfWeek, c.dayOfWeek);
           case 'MONTHLY':
             // Check if it's the first occurrence of preferred day this month
-            return this.isMonthlyDue(c.lastSentAt, dayOfWeek, c.preferredDay);
+            return this.isMonthlyDue(c.lastSentAt, dayOfWeek, c.dayOfWeek);
           default:
             return false;
         }
       })
-      .map((c) => ({
-        id: c.id,
-        projectId: c.projectId,
-        recipientEmail: c.recipientEmail,
-        recipientName: c.recipientName,
-        recipientRole: c.recipientRole as DigestConfig['recipientRole'],
-        frequency: c.frequency as DigestConfig['frequency'],
-        preferredDay: c.preferredDay || undefined,
-        preferredTime: c.preferredTime || undefined,
-        includeMetrics: c.includeMetrics,
-        includeRisks: c.includeRisks,
-        includeActionItems: c.includeActionItems,
-        customSections: c.customSections as string[] | undefined,
-        enabled: c.enabled,
-      }));
+      .map((c) => {
+        // Map schema fields to DigestConfig interface
+        const includeSections = c.includeSections || [];
+        return {
+          id: c.id,
+          projectId: c.projectId,
+          recipientEmail: c.customEmails[0] || '', // Use first custom email
+          recipientName: 'Recipient', // Not stored in schema
+          recipientRole: this.mapRecipientType(c.recipientType),
+          frequency: c.frequency as DigestConfig['frequency'],
+          preferredDay: c.dayOfWeek || undefined,
+          preferredTime: c.timeOfDay || undefined,
+          includeMetrics: includeSections.includes('metrics'),
+          includeRisks: includeSections.includes('risks'),
+          includeActionItems: includeSections.includes('tasks'),
+          customSections: includeSections,
+          enabled: c.isActive,
+        };
+      });
+  }
+
+  private mapRecipientType(
+    type: string,
+  ): 'EXECUTIVE' | 'MANAGER' | 'TEAM_LEAD' | 'STAKEHOLDER' {
+    const typeMap: Record<
+      string,
+      'EXECUTIVE' | 'MANAGER' | 'TEAM_LEAD' | 'STAKEHOLDER'
+    > = {
+      OWNER: 'MANAGER',
+      TEAM: 'TEAM_LEAD',
+      STAKEHOLDER: 'STAKEHOLDER',
+      CUSTOM: 'STAKEHOLDER',
+    };
+    return typeMap[type] || 'STAKEHOLDER';
   }
 
   /**
@@ -405,7 +424,7 @@ class DigestService {
         where: {
           projectId,
           tenantId,
-          status: { notIn: ['COMPLETED'] },
+          status: { notIn: ['DONE'] },
           dueDate: { lt: now },
         },
         select: { name: true },
