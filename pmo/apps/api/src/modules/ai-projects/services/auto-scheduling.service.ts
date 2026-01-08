@@ -403,13 +403,14 @@ class AutoSchedulingService {
     // Group dependencies by dependent task
     const depsByTask = new Map<
       number,
-      { dependsOnTaskId: number; dependencyType: string }[]
+      { dependsOnTaskId: number; dependencyType: string; lagDays: number }[]
     >();
     for (const dep of dependencies) {
       const existing = depsByTask.get(dep.dependentTaskId) || [];
       existing.push({
         dependsOnTaskId: dep.blockingTaskId,
         dependencyType: dep.dependencyType,
+        lagDays: 0, // Default - field doesn't exist on schema
       });
       depsByTask.set(dep.dependentTaskId, existing);
     }
