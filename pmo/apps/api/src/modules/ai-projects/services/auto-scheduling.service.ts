@@ -84,7 +84,7 @@ class AutoSchedulingService {
       select: {
         id: true,
         startDate: true,
-        targetEndDate: true,
+        endDate: true,
       },
     });
 
@@ -118,7 +118,7 @@ class AutoSchedulingService {
         workingHoursPerDay: request.workingHoursPerDay,
         allowWeekends: request.allowWeekends,
         availability,
-        projectDeadline: request.endDate || project.targetEndDate,
+        projectDeadline: request.endDate || project.endDate,
       },
     );
 
@@ -181,8 +181,11 @@ class AutoSchedulingService {
     const task = await prisma.task.findFirst({
       where: { id: taskId, tenantId },
       include: {
-        project: { select: { startDate: true, targetEndDate: true } },
-        assignee: { select: { id: true, name: true } },
+        project: { select: { startDate: true, endDate: true } },
+        assignees: {
+          include: { user: { select: { id: true, name: true } } },
+          take: 1,
+        },
       },
     });
 
@@ -194,7 +197,7 @@ class AutoSchedulingService {
     const dependencies = await prisma.taskDependency.findMany({
       where: { dependentTaskId: taskId },
       include: {
-        dependsOnTask: {
+        blockingTask: {
           select: {
             id: true,
             title: true,
@@ -209,24 +212,23 @@ class AutoSchedulingService {
     let earliestStart = task.project.startDate || new Date();
 
     for (const dep of dependencies) {
-      if (dep.dependsOnTask.status !== 'DONE') {
-        const depEnd = dep.dependsOnTask.scheduledEndDate || new Date();
+      if (dep.blockingTask.status !== 'DONE') {
+        const depEnd = dep.blockingTask.scheduledEndDate || new Date();
         if (depEnd > earliestStart) {
           earliestStart = new Date(depEnd);
-          // Add lag if specified
-          earliestStart.setDate(earliestStart.getDate() + (dep.lagDays || 0));
         }
       }
     }
 
     // Check assignee's availability
     const conflicts: string[] = [];
+    const primaryAssignee = task.assignees[0];
 
-    if (task.assigneeId) {
+    if (primaryAssignee) {
       const overlappingTasks = await prisma.task.findMany({
         where: {
           tenantId,
-          assigneeId: task.assigneeId,
+          assignees: { some: { userId: primaryAssignee.userId } },
           id: { not: taskId },
           status: { notIn: ['DONE'] },
           scheduledStartDate: { not: null },
@@ -268,7 +270,7 @@ class AutoSchedulingService {
     if (task.dueDate) {
       reasons.push('due date constraint');
     }
-    if (task.assigneeId) {
+    if (primaryAssignee) {
       reasons.push('assignee availability');
     }
 
@@ -329,20 +331,18 @@ class AutoSchedulingService {
     // Create or update dependency
     await prisma.taskDependency.upsert({
       where: {
-        dependentTaskId_dependsOnTaskId: {
+        dependentTaskId_blockingTaskId: {
           dependentTaskId,
-          dependsOnTaskId,
+          blockingTaskId: dependsOnTaskId,
         },
       },
       create: {
         dependentTaskId,
-        dependsOnTaskId,
+        blockingTaskId: dependsOnTaskId,
         dependencyType: options?.dependencyType || 'FINISH_TO_START',
-        lagDays: options?.lagDays || 0,
       },
       update: {
         dependencyType: options?.dependencyType,
-        lagDays: options?.lagDays,
       },
     });
   }
@@ -379,15 +379,17 @@ class AutoSchedulingService {
         title: true,
         estimatedHours: true,
         aiEstimatedHours: true,
-        assigneeId: true,
+        assignees: {
+          select: { userId: true },
+          take: 1,
+        },
         priority: true,
         dueDate: true,
         status: true,
         taskDependencies: {
           select: {
-            dependsOnTaskId: true,
+            blockingTaskId: true,
             dependencyType: true,
-            lagDays: true,
           },
         },
       },
@@ -397,11 +399,14 @@ class AutoSchedulingService {
       id: t.id,
       title: t.title,
       estimatedHours: t.estimatedHours || t.aiEstimatedHours,
-      assigneeId: t.assigneeId,
+      assigneeId: t.assignees[0]?.userId || null,
       priority: t.priority,
       dueDate: t.dueDate,
       status: t.status,
-      dependencies: t.taskDependencies,
+      dependencies: t.taskDependencies.map((d) => ({
+        dependsOnTaskId: d.blockingTaskId,
+        dependencyType: d.dependencyType,
+      })),
     }));
   }
 
@@ -420,20 +425,40 @@ class AutoSchedulingService {
       select: { userId: true },
     });
 
-    // Get availability records
+    // Get availability records for today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const records = await prisma.teamAvailability.findMany({
       where: {
         tenantId,
         userId: { in: members.map((m) => m.userId) },
-        effectiveDate: { lte: new Date() },
-        OR: [{ endDate: null }, { endDate: { gte: new Date() } }],
+        date: { gte: today },
       },
     });
 
+    // Group availability by user and calculate average available hours
+    const userAvailability = new Map<
+      number,
+      { totalAvailable: number; count: number }
+    >();
+
     for (const record of records) {
-      availability.set(record.userId, {
-        hoursPerDay: record.hoursPerDay,
-        daysOff: (record.daysOff as Date[]) || [],
+      const existing = userAvailability.get(record.userId) || {
+        totalAvailable: 0,
+        count: 0,
+      };
+      existing.totalAvailable += record.availableHours - record.allocatedHours;
+      existing.count += 1;
+      userAvailability.set(record.userId, existing);
+    }
+
+    for (const [userId, data] of userAvailability) {
+      const avgHoursPerDay =
+        data.count > 0 ? data.totalAvailable / data.count : 8;
+      availability.set(userId, {
+        hoursPerDay: Math.max(0, avgHoursPerDay),
+        daysOff: [], // Would need separate logic to determine days off
       });
     }
 
@@ -725,11 +750,11 @@ class AutoSchedulingService {
       // Get dependencies of current task
       const deps = await prisma.taskDependency.findMany({
         where: { dependentTaskId: current },
-        select: { dependsOnTaskId: true },
+        select: { blockingTaskId: true },
       });
 
       for (const dep of deps) {
-        toCheck.push(dep.dependsOnTaskId);
+        toCheck.push(dep.blockingTaskId);
       }
     }
 

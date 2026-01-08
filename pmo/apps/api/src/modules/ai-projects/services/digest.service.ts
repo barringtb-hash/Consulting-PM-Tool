@@ -58,20 +58,30 @@ class DigestService {
     config: DigestConfig,
     tenantId: string,
   ): Promise<DigestConfig> {
+    // Map DigestConfig to Prisma schema fields
+    const includeSections: string[] = [];
+    if (config.includeMetrics) includeSections.push('metrics');
+    if (config.includeRisks) includeSections.push('risks');
+    if (config.includeActionItems) includeSections.push('tasks');
+    if (config.customSections) includeSections.push(...config.customSections);
+
+    const recipientTypeMap: Record<string, string> = {
+      EXECUTIVE: 'STAKEHOLDER',
+      MANAGER: 'OWNER',
+      TEAM_LEAD: 'TEAM',
+      STAKEHOLDER: 'STAKEHOLDER',
+    };
+
     const data = {
       projectId: config.projectId,
       tenantId,
-      recipientEmail: config.recipientEmail,
-      recipientName: config.recipientName,
-      recipientRole: config.recipientRole,
+      recipientType: recipientTypeMap[config.recipientRole] || 'STAKEHOLDER',
+      customEmails: config.recipientEmail ? [config.recipientEmail] : [],
       frequency: config.frequency,
-      preferredDay: config.preferredDay,
-      preferredTime: config.preferredTime,
-      includeMetrics: config.includeMetrics,
-      includeRisks: config.includeRisks,
-      includeActionItems: config.includeActionItems,
-      customSections: config.customSections,
-      enabled: config.enabled,
+      dayOfWeek: config.preferredDay ?? null,
+      timeOfDay: config.preferredTime ?? null,
+      includeSections,
+      isActive: config.enabled,
     };
 
     if (config.id) {
@@ -97,21 +107,24 @@ class DigestService {
       where: { projectId, tenantId },
     });
 
-    return configs.map((c) => ({
-      id: c.id,
-      projectId: c.projectId,
-      recipientEmail: c.recipientEmail,
-      recipientName: c.recipientName,
-      recipientRole: c.recipientRole as DigestConfig['recipientRole'],
-      frequency: c.frequency as DigestConfig['frequency'],
-      preferredDay: c.preferredDay || undefined,
-      preferredTime: c.preferredTime || undefined,
-      includeMetrics: c.includeMetrics,
-      includeRisks: c.includeRisks,
-      includeActionItems: c.includeActionItems,
-      customSections: c.customSections as string[] | undefined,
-      enabled: c.enabled,
-    }));
+    return configs.map((c) => {
+      const includeSections = c.includeSections || [];
+      return {
+        id: c.id,
+        projectId: c.projectId,
+        recipientEmail: c.customEmails[0] || '',
+        recipientName: 'Recipient',
+        recipientRole: this.mapRecipientType(c.recipientType),
+        frequency: c.frequency as DigestConfig['frequency'],
+        preferredDay: c.dayOfWeek ?? undefined,
+        preferredTime: c.timeOfDay ?? undefined,
+        includeMetrics: includeSections.includes('metrics'),
+        includeRisks: includeSections.includes('risks'),
+        includeActionItems: includeSections.includes('tasks'),
+        customSections: includeSections,
+        enabled: c.isActive,
+      };
+    });
   }
 
   /**

@@ -275,14 +275,14 @@ class AIStatusService {
       await Promise.all([
         prisma.milestone.count({ where: { projectId, tenantId } }),
         prisma.milestone.count({
-          where: { projectId, tenantId, status: 'COMPLETED' },
+          where: { projectId, tenantId, status: 'DONE' },
         }),
         prisma.milestone.count({
           where: {
             projectId,
             tenantId,
             dueDate: { lt: now },
-            status: { notIn: ['COMPLETED'] },
+            status: { notIn: ['DONE'] },
           },
         }),
       ]);
@@ -301,22 +301,34 @@ class AIStatusService {
   private async getTeamMetrics(projectId: number, tenantId: string) {
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const [totalMembers, activeMembers] = await Promise.all([
+    const [totalMembers, activeTasks] = await Promise.all([
       prisma.projectMember.count({ where: { projectId } }),
-      prisma.task.groupBy({
-        by: ['assigneeId'],
+      prisma.task.findMany({
         where: {
           projectId,
           tenantId,
           updatedAt: { gte: oneWeekAgo },
-          assigneeId: { not: null },
+          assignees: { some: {} },
+        },
+        select: {
+          assignees: {
+            select: { userId: true },
+          },
         },
       }),
     ]);
 
+    // Count unique active members
+    const activeUserIds = new Set<number>();
+    for (const task of activeTasks) {
+      for (const assignee of task.assignees) {
+        activeUserIds.add(assignee.userId);
+      }
+    }
+
     return {
       totalCount: totalMembers + 1, // +1 for owner
-      activeCount: activeMembers.length,
+      activeCount: activeUserIds.size,
     };
   }
 
@@ -670,16 +682,17 @@ Provide JSON response with:
         tenantId,
         predictedHealth: summary.healthAnalysis.overallHealth,
         confidence: summary.healthAnalysis.healthScore / 100,
-        riskFactors: summary.concerns.map((c) => ({
-          factor: c.title,
-          severity: c.severity,
-          description: c.description,
-        })),
-        recommendations: summary.recommendations.map((r) => r.description),
-        predictionDate: summary.generatedAt,
-        validUntil: new Date(
+        factors: {
+          riskFactors: summary.concerns.map((c) => ({
+            factor: c.title,
+            severity: c.severity,
+            description: c.description,
+          })),
+          recommendations: summary.recommendations.map((r) => r.description),
+        },
+        predictedDate: new Date(
           summary.generatedAt.getTime() + 7 * 24 * 60 * 60 * 1000,
-        ), // Valid for 1 week
+        ), // Prediction valid for 1 week
       },
     });
   }

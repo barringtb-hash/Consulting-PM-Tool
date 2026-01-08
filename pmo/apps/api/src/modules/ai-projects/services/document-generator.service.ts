@@ -422,7 +422,8 @@ class DocumentGeneratorService {
       },
     });
 
-    const updatedContentData = updated.content as typeof updatedContent;
+    const updatedContentData =
+      updated.content as unknown as typeof updatedContent;
 
     return {
       id: updated.id,
