@@ -132,7 +132,7 @@ class SmartRemindersService {
       where: {
         tenantId,
         userId,
-        dismissed: false,
+        status: 'PENDING',
         scheduledFor: { lte: new Date() },
       },
       orderBy: [{ priority: 'asc' }, { scheduledFor: 'asc' }],
@@ -152,7 +152,7 @@ class SmartRemindersService {
   ): Promise<void> {
     await prisma.smartReminder.update({
       where: { id: reminderId },
-      data: { dismissed: true, dismissedAt: new Date() },
+      data: { status: 'DISMISSED', dismissedAt: new Date() },
     });
   }
 
@@ -162,7 +162,7 @@ class SmartRemindersService {
   async markActionTaken(reminderId: number, _tenantId: string): Promise<void> {
     await prisma.smartReminder.update({
       where: { id: reminderId },
-      data: { actionTaken: true, actionTakenAt: new Date() },
+      data: { status: 'ACTION_TAKEN', actionTakenAt: new Date() },
     });
   }
 
@@ -310,9 +310,10 @@ class SmartRemindersService {
       const existing = await prisma.smartReminder.findFirst({
         where: {
           tenantId,
-          taskId: task.id,
-          type: 'DEADLINE',
-          dismissed: false,
+          entityType: 'task',
+          entityId: task.id,
+          reminderType: 'TASK_DUE_SOON',
+          status: 'PENDING',
         },
       });
 
@@ -325,17 +326,18 @@ class SmartRemindersService {
           userId,
           projectId,
           taskId: task.id,
-          type: 'DEADLINE',
+          type: 'TASK_DUE_SOON',
           priority:
             daysUntilDue <= 1
               ? 'URGENT'
               : task.priority === 'P1'
                 ? 'HIGH'
-                : 'MEDIUM',
+                : 'NORMAL',
           title: `Task deadline approaching`,
           message: `"${task.title}" is due ${daysUntilDue === 0 ? 'today' : daysUntilDue === 1 ? 'tomorrow' : `in ${daysUntilDue} days`}`,
           actionUrl: `/projects/${projectId}?task=${task.id}`,
           scheduledFor: now,
+          status: 'PENDING',
           delivered: false,
           dismissed: false,
           actionTaken: false,
@@ -362,7 +364,7 @@ class SmartRemindersService {
       where: {
         projectId,
         tenantId,
-        assigneeId: userId,
+        assignees: { some: { userId } },
         status: 'IN_PROGRESS',
         updatedAt: { lt: staleThreshold },
       },
@@ -377,9 +379,10 @@ class SmartRemindersService {
       const existing = await prisma.smartReminder.findFirst({
         where: {
           tenantId,
-          taskId: task.id,
-          type: 'STALE_TASK',
-          dismissed: false,
+          entityType: 'task',
+          entityId: task.id,
+          reminderType: 'NO_RECENT_ACTIVITY',
+          status: 'PENDING',
         },
       });
 
@@ -392,12 +395,13 @@ class SmartRemindersService {
           userId,
           projectId,
           taskId: task.id,
-          type: 'STALE_TASK',
-          priority: daysSinceUpdate > 10 ? 'HIGH' : 'MEDIUM',
+          type: 'NO_RECENT_ACTIVITY',
+          priority: daysSinceUpdate > 10 ? 'HIGH' : 'NORMAL',
           title: `Task needs attention`,
           message: `"${task.title}" hasn't been updated in ${daysSinceUpdate} days`,
           actionUrl: `/projects/${projectId}?task=${task.id}`,
           scheduledFor: new Date(),
+          status: 'PENDING',
           delivered: false,
           dismissed: false,
           actionTaken: false,
@@ -415,49 +419,51 @@ class SmartRemindersService {
   ): Promise<SmartReminder[]> {
     const reminders: SmartReminder[] = [];
 
-    // Find blocked tasks that block other tasks
+    // Find blocked tasks assigned to user
     const blockedTasks = await prisma.task.findMany({
       where: {
         projectId,
         tenantId,
-        assigneeId: userId,
+        assignees: { some: { userId } },
         status: 'BLOCKED',
       },
-      include: {
-        dependentTasks: {
-          include: {
-            dependentTask: {
-              select: { id: true, title: true },
-            },
-          },
-        },
+      select: {
+        id: true,
+        title: true,
       },
     });
 
+    // Check if blocked tasks have dependents via TaskDependency
     for (const task of blockedTasks) {
-      if (task.dependentTasks.length > 0) {
+      const dependentCount = await prisma.taskDependency.count({
+        where: {
+          blockingTaskId: task.id,
+        },
+      });
+
+      if (dependentCount > 0) {
         const existing = await prisma.smartReminder.findFirst({
           where: {
             tenantId,
-            taskId: task.id,
-            type: 'BLOCKED_CHAIN',
-            dismissed: false,
+            entityType: 'task',
+            entityId: task.id,
+            reminderType: 'TASK_OVERDUE',
+            status: 'PENDING',
           },
         });
 
         if (!existing) {
-          const blockedCount = task.dependentTasks.length;
-
           reminders.push({
             userId,
             projectId,
             taskId: task.id,
-            type: 'BLOCKED_CHAIN',
-            priority: blockedCount > 2 ? 'URGENT' : 'HIGH',
+            type: 'TASK_OVERDUE',
+            priority: dependentCount > 2 ? 'URGENT' : 'HIGH',
             title: `Blocked task affecting others`,
-            message: `"${task.title}" is blocking ${blockedCount} other task${blockedCount > 1 ? 's' : ''}`,
+            message: `"${task.title}" is blocking ${dependentCount} other task${dependentCount > 1 ? 's' : ''}`,
             actionUrl: `/projects/${projectId}?task=${task.id}`,
             scheduledFor: new Date(),
+            status: 'PENDING',
             delivered: false,
             dismissed: false,
             actionTaken: false,
@@ -483,7 +489,7 @@ class SmartRemindersService {
       where: {
         projectId,
         tenantId,
-        status: { notIn: ['COMPLETED'] },
+        status: { notIn: ['DONE'] },
         dueDate: { lte: threshold, gte: now },
       },
       select: {
@@ -497,9 +503,10 @@ class SmartRemindersService {
       const existing = await prisma.smartReminder.findFirst({
         where: {
           tenantId,
-          milestoneId: milestone.id,
-          type: 'MILESTONE_APPROACHING',
-          dismissed: false,
+          entityType: 'milestone',
+          entityId: milestone.id,
+          reminderType: 'MILESTONE_APPROACHING',
+          status: 'PENDING',
         },
       });
 
@@ -514,11 +521,12 @@ class SmartRemindersService {
           projectId,
           milestoneId: milestone.id,
           type: 'MILESTONE_APPROACHING',
-          priority: daysUntilDue <= 3 ? 'HIGH' : 'MEDIUM',
+          priority: daysUntilDue <= 3 ? 'HIGH' : 'NORMAL',
           title: `Milestone approaching`,
           message: `"${milestone.name}" is due in ${daysUntilDue} days`,
           actionUrl: `/projects/${projectId}?tab=milestones`,
           scheduledFor: now,
+          status: 'PENDING',
           delivered: false,
           dismissed: false,
           actionTaken: false,
@@ -539,7 +547,7 @@ class SmartRemindersService {
     // Get recent health predictions
     const predictions = await prisma.projectHealthPrediction.findMany({
       where: { projectId, tenantId },
-      orderBy: { predictionDate: 'desc' },
+      orderBy: { predictedDate: 'desc' },
       take: 2,
     });
 
@@ -559,8 +567,8 @@ class SmartRemindersService {
           where: {
             tenantId,
             projectId,
-            type: 'HEALTH_DECLINE',
-            dismissed: false,
+            reminderType: 'HEALTH_DECLINING',
+            status: 'PENDING',
             scheduledFor: {
               gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             },
@@ -571,13 +579,14 @@ class SmartRemindersService {
           reminders.push({
             userId,
             projectId,
-            type: 'HEALTH_DECLINE',
+            type: 'HEALTH_DECLINING',
             priority:
               current.predictedHealth === 'OFF_TRACK' ? 'URGENT' : 'HIGH',
             title: `Project health declining`,
             message: `Project health has declined from ${previous.predictedHealth} to ${current.predictedHealth}`,
             actionUrl: `/projects/${projectId}`,
             scheduledFor: new Date(),
+            status: 'PENDING',
             delivered: false,
             dismissed: false,
             actionTaken: false,

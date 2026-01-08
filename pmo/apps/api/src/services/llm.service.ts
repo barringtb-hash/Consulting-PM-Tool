@@ -224,13 +224,13 @@ function generatePlaceholderContent(
       body: `Our team recently completed an exciting project that provided valuable insights into ${context.industry || 'industry'} best practices...`,
       summary: 'Key learnings and best practices from our project work.',
     },
-    SOCIAL_LINKEDIN: {
+    LINKEDIN_POST: {
       body: `🚀 Excited to share insights from our latest ${context.projectName || 'project'}! Key takeaways on delivering value in ${context.industry || 'consulting'}. #Consulting #Success`,
     },
-    SOCIAL_TWITTER: {
+    TWITTER_POST: {
       body: `Just wrapped up an amazing ${context.projectName || 'project'}! 🎉 Key lesson: focus on what matters most to your clients. #ConsultingLife`,
     },
-    WHITE_PAPER: {
+    WHITEPAPER: {
       title: `Best Practices in ${context.industry || 'Consulting'}`,
       body: `This white paper explores key methodologies and frameworks for delivering successful consulting engagements...`,
       summary: 'A comprehensive guide to consulting best practices.',
@@ -240,15 +240,22 @@ function generatePlaceholderContent(
       body: `This month, we explore trends and insights from our consulting practice...`,
       summary: 'Monthly newsletter with consulting insights.',
     },
-    INTERNAL_UPDATE: {
-      title: `Project Update: ${context.projectName || 'Current Engagement'}`,
-      body: `Here's the latest update on ${context.projectName || 'our current project'}...`,
-      summary: 'Internal project status update.',
-    },
-    EMAIL: {
+    EMAIL_TEMPLATE: {
       title: `Follow-up: ${context.meetingTitle || 'Our Discussion'}`,
       body: `Thank you for your time during our recent meeting. As discussed...`,
       summary: 'Follow-up email from meeting.',
+    },
+    SOCIAL_STORY: {
+      body: `Latest updates from ${context.projectName || 'our project'}...`,
+      summary: 'Social story content.',
+    },
+    VIDEO_SCRIPT: {
+      title: `Video: ${context.projectName || 'Project Highlights'}`,
+      body: `Welcome to our video highlighting the key aspects of ${context.projectName || 'our recent project'}...`,
+      summary: 'Video script content.',
+    },
+    OTHER: {
+      body: 'Content generation placeholder.',
     },
   };
 
@@ -286,12 +293,14 @@ export const generateMarketingContent = async (
   const typePrompts: Record<ContentType, string> = {
     CASE_STUDY: 'a professional case study',
     BLOG_POST: 'an engaging blog post',
-    SOCIAL_LINKEDIN: 'a LinkedIn post (under 300 characters)',
-    SOCIAL_TWITTER: 'a Twitter/X post (under 280 characters)',
-    WHITE_PAPER: 'a formal white paper section',
+    LINKEDIN_POST: 'a LinkedIn post (under 300 characters)',
+    TWITTER_POST: 'a Twitter/X post (under 280 characters)',
+    WHITEPAPER: 'a formal white paper section',
     NEWSLETTER: 'a newsletter article',
-    INTERNAL_UPDATE: 'an internal project update',
-    EMAIL: 'a professional follow-up email',
+    EMAIL_TEMPLATE: 'a professional follow-up email',
+    SOCIAL_STORY: 'a social media story',
+    VIDEO_SCRIPT: 'a video script',
+    OTHER: 'professional content',
   };
 
   const prompt = `Write ${typePrompts[type]} with a ${tone} tone.

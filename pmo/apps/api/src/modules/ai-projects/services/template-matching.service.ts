@@ -27,6 +27,7 @@ export interface TemplateApplication {
 class TemplateMatchingService {
   /**
    * Suggest templates based on project name and description
+   * Note: Templates are Projects with isTemplate=true
    */
   async suggestTemplates(
     projectName: string,
@@ -34,14 +35,16 @@ class TemplateMatchingService {
     tenantId: string,
     limit: number = 5,
   ): Promise<TemplateMatch[]> {
-    // Get all available templates
-    const templates = await prisma.projectTemplate.findMany({
-      where: { tenantId },
+    // Get all available template projects
+    const templateProjects = await prisma.project.findMany({
+      where: {
+        tenantId,
+        isTemplate: true,
+      },
       select: {
         id: true,
         name: true,
         description: true,
-        category: true,
         _count: {
           select: {
             tasks: true,
@@ -51,9 +54,18 @@ class TemplateMatchingService {
       },
     });
 
-    if (templates.length === 0) {
+    if (templateProjects.length === 0) {
       return [];
     }
+
+    // Map to template format expected by matching functions
+    const templates = templateProjects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      category: this.inferCategory(p.name),
+      _count: p._count,
+    }));
 
     // Try AI-based matching
     const aiMatches = await this.getAITemplateMatches(
@@ -96,6 +108,7 @@ class TemplateMatchingService {
 
   /**
    * Apply a template to a project
+   * Note: Templates are Projects with isTemplate=true
    */
   async applyTemplate(
     projectId: number,
@@ -107,8 +120,9 @@ class TemplateMatchingService {
       baselineStartDate?: Date;
     } = {},
   ): Promise<TemplateApplication> {
-    const template = await prisma.projectTemplate.findFirst({
-      where: { id: templateId, tenantId },
+    // Templates are projects with isTemplate=true
+    const template = await prisma.project.findFirst({
+      where: { id: templateId, tenantId, isTemplate: true },
       include: {
         tasks: {
           select: {
@@ -116,15 +130,14 @@ class TemplateMatchingService {
             description: true,
             priority: true,
             estimatedHours: true,
-            daysFromStart: true,
-            durationDays: true,
+            dueDate: true,
           },
         },
         milestones: {
           select: {
             name: true,
             description: true,
-            daysFromStart: true,
+            dueDate: true,
           },
         },
       },
@@ -145,82 +158,70 @@ class TemplateMatchingService {
 
     const baseDate =
       options.baselineStartDate || project.startDate || new Date();
+    const templateBaseDate = template.startDate || template.createdAt;
 
     // Create tasks from template
     let tasksCreated = 0;
     for (const templateTask of template.tasks) {
-      const taskData: {
-        tenantId: string;
-        projectId: number;
-        title: string;
-        description: string | null;
-        priority: string;
-        status: string;
-        estimatedHours: number | null;
-        dueDate: Date | null;
-        assigneeId: number | null;
-      } = {
-        tenantId,
-        projectId,
-        title: templateTask.title,
-        description: templateTask.description,
-        priority: templateTask.priority || 'P3',
-        status: 'TODO',
-        estimatedHours: templateTask.estimatedHours,
-        dueDate: null,
-        assigneeId: options.assignOwnerToTasks ? project.ownerId : null,
-      };
+      // Calculate days from start based on template task's due date
+      const daysFromStart = templateTask.dueDate
+        ? Math.round(
+            (templateTask.dueDate.getTime() - templateBaseDate.getTime()) /
+              (1000 * 60 * 60 * 24),
+          )
+        : null;
 
-      // Calculate due date from template offset
-      if (options.adjustDates && templateTask.daysFromStart !== null) {
-        const dueDate = new Date(baseDate);
-        dueDate.setDate(
-          dueDate.getDate() +
-            templateTask.daysFromStart +
-            (templateTask.durationDays || 0),
-        );
-        taskData.dueDate = dueDate;
+      let dueDate: Date | null = null;
+      if (options.adjustDates && daysFromStart !== null) {
+        dueDate = new Date(baseDate);
+        dueDate.setDate(dueDate.getDate() + daysFromStart);
       }
 
-      await prisma.task.create({ data: taskData });
+      await prisma.task.create({
+        data: {
+          tenantId,
+          projectId,
+          ownerId: project.ownerId,
+          title: templateTask.title,
+          description: templateTask.description,
+          priority: templateTask.priority || 'P3',
+          status: 'TODO',
+          estimatedHours: templateTask.estimatedHours,
+          dueDate,
+        },
+      });
       tasksCreated++;
     }
 
     // Create milestones from template
     let milestonesCreated = 0;
     for (const templateMilestone of template.milestones) {
-      const milestoneData: {
-        tenantId: string;
-        projectId: number;
-        name: string;
-        description: string | null;
-        status: string;
-        dueDate: Date | null;
-      } = {
-        tenantId,
-        projectId,
-        name: templateMilestone.name,
-        description: templateMilestone.description,
-        status: 'NOT_STARTED',
-        dueDate: null,
-      };
+      // Calculate days from start based on template milestone's due date
+      const daysFromStart = templateMilestone.dueDate
+        ? Math.round(
+            (templateMilestone.dueDate.getTime() - templateBaseDate.getTime()) /
+              (1000 * 60 * 60 * 24),
+          )
+        : null;
 
-      // Calculate due date from template offset
-      if (options.adjustDates && templateMilestone.daysFromStart !== null) {
-        const dueDate = new Date(baseDate);
-        dueDate.setDate(dueDate.getDate() + templateMilestone.daysFromStart);
-        milestoneData.dueDate = dueDate;
+      let dueDate: Date | null = null;
+      if (options.adjustDates && daysFromStart !== null) {
+        dueDate = new Date(baseDate);
+        dueDate.setDate(dueDate.getDate() + daysFromStart);
       }
 
-      await prisma.milestone.create({ data: milestoneData });
+      await prisma.milestone.create({
+        data: {
+          tenantId,
+          projectId,
+          name: templateMilestone.name,
+          description: templateMilestone.description,
+          status: 'NOT_STARTED',
+          dueDate,
+        },
+      });
       milestonesCreated++;
     }
-
-    // Update project with template reference
-    await prisma.project.update({
-      where: { id: projectId },
-      data: { templateId },
-    });
 
     return {
       projectId,
@@ -232,6 +233,7 @@ class TemplateMatchingService {
 
   /**
    * Create a template from an existing project
+   * Note: Templates are Projects with isTemplate=true
    */
   async createTemplateFromProject(
     projectId: number,
@@ -249,6 +251,7 @@ class TemplateMatchingService {
             priority: true,
             estimatedHours: true,
             dueDate: true,
+            ownerId: true,
           },
         },
         milestones: {
@@ -268,39 +271,43 @@ class TemplateMatchingService {
     // Use project start date as baseline for calculating offsets
     const baseDate = project.startDate || project.createdAt;
 
-    // Determine category from project name
-    const category = this.inferCategory(project.name);
-
-    // Create template
-    const template = await prisma.projectTemplate.create({
+    // Create template as a new project with isTemplate=true
+    const template = await prisma.project.create({
       data: {
         tenantId,
+        ownerId: project.ownerId,
         name: templateName,
         description: templateDescription || project.description,
-        category,
+        isTemplate: true,
+        status: 'PLANNING',
+        startDate: new Date(), // Template start date is creation date
         tasks: {
           create: project.tasks.map((task) => ({
+            tenantId,
+            ownerId: task.ownerId,
             title: task.title,
             description: task.description,
             priority: task.priority,
+            status: 'TODO',
             estimatedHours: task.estimatedHours,
-            daysFromStart: task.dueDate
-              ? Math.round(
-                  (task.dueDate.getTime() - baseDate.getTime()) /
-                    (1000 * 60 * 60 * 24),
+            dueDate: task.dueDate
+              ? new Date(
+                  new Date().getTime() +
+                    (task.dueDate.getTime() - baseDate.getTime()),
                 )
               : null,
-            durationDays: 1,
           })),
         },
         milestones: {
           create: project.milestones.map((milestone) => ({
+            tenantId,
             name: milestone.name,
             description: milestone.description,
-            daysFromStart: milestone.dueDate
-              ? Math.round(
-                  (milestone.dueDate.getTime() - baseDate.getTime()) /
-                    (1000 * 60 * 60 * 24),
+            status: 'NOT_STARTED',
+            dueDate: milestone.dueDate
+              ? new Date(
+                  new Date().getTime() +
+                    (milestone.dueDate.getTime() - baseDate.getTime()),
                 )
               : null,
           })),

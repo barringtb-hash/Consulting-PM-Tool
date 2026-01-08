@@ -527,25 +527,25 @@ Provide JSON response:
 
   private async getHistoricalEstimate(
     title: string,
-    projectId: number,
+    _projectId: number,
     tenantId: string,
   ): Promise<{ hours: number; confidence: number; sampleSize: number } | null> {
     const keywords = this.extractKeywords(title);
 
     if (keywords.length === 0) return null;
 
-    // Find similar completed tasks with actual hours
+    // Find similar completed tasks by task type (derived from primary keyword)
+    const taskType = keywords[0];
     const learnings = await prisma.taskDurationLearning.findMany({
       where: {
         tenantId,
-        actualHours: { not: null },
-        taskKeywords: {
-          contains: keywords[0], // At least one keyword match
-        },
+        actualHours: { gt: 0 },
+        taskType: taskType, // Match by derived task type
       },
       select: {
         actualHours: true,
-        taskKeywords: true,
+        taskType: true,
+        complexity: true,
       },
       take: 50,
     });
@@ -553,7 +553,7 @@ Provide JSON response:
     if (learnings.length < 3) return null;
 
     // Calculate average duration for similar tasks
-    const hours = learnings.map((l) => l.actualHours!);
+    const hours = learnings.map((l) => l.actualHours);
     const avgHours = hours.reduce((a, b) => a + b, 0) / hours.length;
 
     // Calculate confidence based on sample size and variance
