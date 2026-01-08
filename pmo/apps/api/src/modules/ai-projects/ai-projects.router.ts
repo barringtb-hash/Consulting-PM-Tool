@@ -116,7 +116,7 @@ router.post(
   '/assistant/classify',
   async (req: TenantRequest, res: Response) => {
     try {
-      const { message } = req.body;
+      const { message } = req.body as { message?: string };
 
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: 'Message is required' });
@@ -638,7 +638,7 @@ router.post(
     try {
       const projectId = parseInt(req.params.projectId, 10);
       const tenantId = getTenantId(req);
-      const { description } = req.body;
+      const { description } = req.body as { description?: string };
 
       if (isNaN(projectId)) {
         return res.status(400).json({ error: 'Invalid project ID' });
@@ -1081,12 +1081,15 @@ router.post(
         return res.status(400).json({ error: 'Invalid project ID' });
       }
 
-      const { schedule } = req.body;
+      const { schedule } = req.body as { schedule?: unknown };
       if (!schedule) {
         return res.status(400).json({ error: 'Schedule data required' });
       }
 
-      await autoSchedulingService.applySchedule(schedule, tenantId);
+      await autoSchedulingService.applySchedule(
+        schedule as Parameters<typeof autoSchedulingService.applySchedule>[0],
+        tenantId,
+      );
 
       return res.json({ data: { success: true } });
     } catch (error) {
@@ -1572,7 +1575,7 @@ const generateDocumentSchema = z.object({
         })
         .optional(),
       budget: z.number().optional(),
-      customFields: z.record(z.string()).optional(),
+      customFields: z.record(z.string(), z.string()).optional(),
     })
     .optional(),
 });

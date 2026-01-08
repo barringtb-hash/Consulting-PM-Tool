@@ -192,7 +192,6 @@ class AIStatusService {
       include: {
         owner: { select: { id: true, name: true, email: true } },
         account: { select: { id: true, name: true } },
-        template: { select: { id: true, name: true } },
       },
     });
   }

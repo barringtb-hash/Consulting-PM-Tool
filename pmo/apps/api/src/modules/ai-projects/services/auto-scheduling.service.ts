@@ -386,14 +386,33 @@ class AutoSchedulingService {
         priority: true,
         dueDate: true,
         status: true,
-        taskDependencies: {
-          select: {
-            blockingTaskId: true,
-            dependencyType: true,
-          },
-        },
       },
     });
+
+    // Get dependencies for all tasks
+    const taskIds = tasks.map((t) => t.id);
+    const dependencies = await prisma.taskDependency.findMany({
+      where: { dependentTaskId: { in: taskIds } },
+      select: {
+        dependentTaskId: true,
+        blockingTaskId: true,
+        dependencyType: true,
+      },
+    });
+
+    // Group dependencies by dependent task
+    const depsByTask = new Map<
+      number,
+      { dependsOnTaskId: number; dependencyType: string }[]
+    >();
+    for (const dep of dependencies) {
+      const existing = depsByTask.get(dep.dependentTaskId) || [];
+      existing.push({
+        dependsOnTaskId: dep.blockingTaskId,
+        dependencyType: dep.dependencyType,
+      });
+      depsByTask.set(dep.dependentTaskId, existing);
+    }
 
     return tasks.map((t) => ({
       id: t.id,
@@ -403,10 +422,7 @@ class AutoSchedulingService {
       priority: t.priority,
       dueDate: t.dueDate,
       status: t.status,
-      dependencies: t.taskDependencies.map((d) => ({
-        dependsOnTaskId: d.blockingTaskId,
-        dependencyType: d.dependencyType,
-      })),
+      dependencies: depsByTask.get(t.id) || [],
     }));
   }
 

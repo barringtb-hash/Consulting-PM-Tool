@@ -65,34 +65,52 @@ class DigestService {
     if (config.includeActionItems) includeSections.push('tasks');
     if (config.customSections) includeSections.push(...config.customSections);
 
-    const recipientTypeMap: Record<string, string> = {
+    const recipientTypeMap: Record<
+      string,
+      'OWNER' | 'TEAM' | 'STAKEHOLDER' | 'CUSTOM'
+    > = {
       EXECUTIVE: 'STAKEHOLDER',
       MANAGER: 'OWNER',
       TEAM_LEAD: 'TEAM',
       STAKEHOLDER: 'STAKEHOLDER',
     };
 
-    const data = {
-      projectId: config.projectId,
-      tenantId,
-      recipientType: recipientTypeMap[config.recipientRole] || 'STAKEHOLDER',
-      customEmails: config.recipientEmail ? [config.recipientEmail] : [],
-      frequency: config.frequency,
-      dayOfWeek: config.preferredDay ?? null,
-      timeOfDay: config.preferredTime ?? null,
-      includeSections,
-      isActive: config.enabled,
-    };
+    const recipientType =
+      recipientTypeMap[config.recipientRole] || 'STAKEHOLDER';
 
     if (config.id) {
+      // Update - only send fields that can be updated
       const updated = await prisma.projectDigestConfig.update({
         where: { id: config.id },
-        data,
+        data: {
+          recipientType,
+          customEmails: config.recipientEmail ? [config.recipientEmail] : [],
+          frequency: config.frequency,
+          dayOfWeek: config.preferredDay ?? null,
+          timeOfDay: config.preferredTime ?? null,
+          includeSections,
+          isActive: config.enabled,
+        },
       });
       return { ...config, id: updated.id };
     }
 
-    const created = await prisma.projectDigestConfig.create({ data });
+    // Create - include all required fields
+    const created = await prisma.projectDigestConfig.create({
+      data: {
+        projectId: config.projectId,
+        tenantId,
+        recipientType,
+        customEmails: config.recipientEmail ? [config.recipientEmail] : [],
+        frequency: config.frequency,
+        dayOfWeek: config.preferredDay ?? null,
+        timeOfDay: config.preferredTime ?? null,
+        includeSections,
+        isActive: config.enabled,
+        timezone: 'UTC',
+        detailLevel: 'STANDARD',
+      },
+    });
     return { ...config, id: created.id };
   }
 
