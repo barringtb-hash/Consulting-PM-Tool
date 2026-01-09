@@ -801,13 +801,18 @@ function ProjectDashboardPage(): JSX.Element {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Marketing Content</CardTitle>
-                    {project && (
-                      <GenerateFromProjectButton
-                        projectId={project.id}
-                        projectName={project.name}
-                        clientId={project.clientId}
-                      />
-                    )}
+                    {(() => {
+                      // Prefer accountId (new CRM field) over clientId (deprecated)
+                      const effectiveAccountId =
+                        project?.accountId ?? project?.clientId;
+                      return effectiveAccountId ? (
+                        <GenerateFromProjectButton
+                          projectId={project.id}
+                          projectName={project.name}
+                          clientId={effectiveAccountId}
+                        />
+                      ) : null;
+                    })()}
                   </div>
                 </CardHeader>
                 <CardBody>

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, AlertCircle } from 'lucide-react';
 
 import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import { Select } from '../../ui/Select';
 import { Input } from '../../ui/Input';
+import { useToast } from '../../ui/Toast';
 import {
   useGenerateMarketingContentFromProject,
   useGenerateMarketingContentFromMeeting,
@@ -35,6 +36,7 @@ export function GenerateMarketingContentModal({
   clientId,
   projectId,
 }: GenerateMarketingContentModalProps): JSX.Element {
+  const { showToast } = useToast();
   const [contentType, setContentType] = useState<ContentType>(
     ContentType.BLOG_POST,
   );
@@ -48,6 +50,7 @@ export function GenerateMarketingContentModal({
     body: string;
     summary?: string;
   } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const generateFromProjectMutation = useGenerateMarketingContentFromProject();
   const generateFromMeetingMutation = useGenerateMarketingContentFromMeeting();
@@ -58,6 +61,7 @@ export function GenerateMarketingContentModal({
     generateFromMeetingMutation.isPending;
 
   const handleGenerate = async () => {
+    setError(null);
     try {
       const payload = {
         type: contentType,
@@ -78,14 +82,30 @@ export function GenerateMarketingContentModal({
             });
 
       setGeneratedContent(result);
-    } catch (error) {
-      console.error('Error generating content:', error);
+    } catch (err) {
+      console.error('Error generating content:', err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to generate content. Please try again.';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
     }
   };
 
   const handleSave = async () => {
     if (!generatedContent) return;
 
+    // Validate clientId before attempting to save
+    if (!clientId) {
+      const errorMessage =
+        'Cannot save content: Project is not linked to an account.';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+      return;
+    }
+
+    setError(null);
     try {
       await createMutation.mutateAsync({
         name: generatedContent.title || `Generated from ${sourceName}`,
@@ -99,10 +119,17 @@ export function GenerateMarketingContentModal({
         summary: generatedContent.summary,
       });
 
+      showToast('Marketing content saved as draft', 'success');
       onClose();
       setGeneratedContent(null);
-    } catch (error) {
-      console.error('Error saving generated content:', error);
+    } catch (err) {
+      console.error('Error saving generated content:', err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to save content. Please try again.';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -110,6 +137,7 @@ export function GenerateMarketingContentModal({
     onClose();
     setGeneratedContent(null);
     setAdditionalContext('');
+    setError(null);
   };
 
   return (
@@ -199,6 +227,15 @@ export function GenerateMarketingContentModal({
                 placeholder="Specific angles, key messages, or requirements..."
               />
             </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {error}
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="secondary" onClick={handleClose}>
