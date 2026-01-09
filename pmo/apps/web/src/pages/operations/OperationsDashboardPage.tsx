@@ -44,6 +44,21 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value);
 }
 
+function StatCardSkeleton() {
+  return (
+    <Card>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-9 h-9 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded-lg" />
+        </div>
+        <div className="h-8 w-20 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded mb-1" />
+        <div className="h-4 w-24 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+        <div className="h-3 w-16 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded mt-1" />
+      </div>
+    </Card>
+  );
+}
+
 function StatCard({
   title,
   value,
@@ -52,6 +67,8 @@ function StatCard({
   trend,
   trendDirection,
   to,
+  isLoading,
+  error,
 }: {
   title: string;
   value: string;
@@ -60,7 +77,13 @@ function StatCard({
   trend?: string;
   trendDirection?: 'up' | 'down' | 'neutral';
   to?: string;
+  isLoading?: boolean;
+  error?: boolean;
 }) {
+  if (isLoading) {
+    return <StatCardSkeleton />;
+  }
+
   const content = (
     <Card className="hover:shadow-md transition-shadow">
       <div className="p-6">
@@ -81,13 +104,16 @@ function StatCard({
               {trend}
             </Badge>
           )}
+          {error && <Badge variant="danger">Error</Badge>}
         </div>
         <div className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-1">
-          {value}
+          {error ? '--' : value}
         </div>
         <div className="text-sm text-neutral-500">{title}</div>
         {subtitle && (
-          <div className="text-xs text-neutral-400 mt-1">{subtitle}</div>
+          <div className="text-xs text-neutral-400 mt-1">
+            {error ? 'Failed to load' : subtitle}
+          </div>
         )}
       </div>
     </Card>
@@ -156,13 +182,29 @@ export function OperationsDashboardPage(): JSX.Element {
   const {
     data: realtimeStats,
     isLoading: statsLoading,
+    isError: statsError,
     refetch: refetchStats,
   } = useRealtimeUsageStats();
-  const { data: costBreakdown, isLoading: costLoading } =
-    useAICostBreakdown('month');
-  const { data: systemHealth, isLoading: healthLoading } = useSystemHealth();
-  const { data: anomalyStats, isLoading: anomalyLoading } = useAnomalyStats();
-  const { data: alertHistory, isLoading: alertLoading } = useAlertHistory({
+  const {
+    data: costBreakdown,
+    isLoading: costLoading,
+    isError: costError,
+  } = useAICostBreakdown('month');
+  const {
+    data: systemHealth,
+    isLoading: healthLoading,
+    isError: healthError,
+  } = useSystemHealth();
+  const {
+    data: anomalyStats,
+    isLoading: anomalyLoading,
+    isError: anomalyError,
+  } = useAnomalyStats();
+  const {
+    data: alertHistory,
+    isLoading: alertLoading,
+    isError: alertError,
+  } = useAlertHistory({
     limit: 5,
   });
   const { isSuccess: assistantAvailable } = useMonitoringAssistantHealth();
@@ -219,6 +261,8 @@ export function OperationsDashboardPage(): JSX.Element {
           subtitle={`${formatNumber(realtimeStats?.data?.today?.tokens || 0)} tokens`}
           icon={Brain}
           to="/operations/ai-usage"
+          isLoading={statsLoading}
+          error={statsError}
         />
         <StatCard
           title="Monthly AI Cost"
@@ -226,6 +270,8 @@ export function OperationsDashboardPage(): JSX.Element {
           subtitle="Current month"
           icon={DollarSign}
           to="/operations/costs"
+          isLoading={costLoading}
+          error={costError}
         />
         <StatCard
           title="Open Anomalies"
@@ -243,6 +289,8 @@ export function OperationsDashboardPage(): JSX.Element {
               : undefined
           }
           to="/operations/anomalies"
+          isLoading={anomalyLoading}
+          error={anomalyError}
         />
         <StatCard
           title="System Status"
@@ -254,6 +302,8 @@ export function OperationsDashboardPage(): JSX.Element {
           subtitle="Memory usage"
           icon={Server}
           to="/operations/infrastructure"
+          isLoading={healthLoading}
+          error={healthError}
         />
       </div>
 
@@ -274,8 +324,42 @@ export function OperationsDashboardPage(): JSX.Element {
               </Link>
             </div>
             {statsLoading ? (
-              <div className="h-32 flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
+              <div className="h-32 space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="text-center p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50"
+                    >
+                      <div className="h-8 w-12 mx-auto bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
+                      <div className="h-3 w-16 mx-auto mt-2 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="h-4 w-20 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded mb-2" />
+                  <div className="flex gap-2">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded-full"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : statsError ? (
+              <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
+                <XCircle className="w-8 h-8 text-red-400 mb-2" />
+                <span className="text-sm">Failed to load usage data</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchStats()}
+                  className="mt-2"
+                >
+                  Retry
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -344,8 +428,31 @@ export function OperationsDashboardPage(): JSX.Element {
               </Link>
             </div>
             {anomalyLoading ? (
-              <div className="h-32 flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
+              <div className="h-32 space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="text-center">
+                      <div className="h-8 w-8 mx-auto bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
+                      <div className="h-3 w-16 mx-auto mt-1 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="h-4 w-20 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded mb-2" />
+                  <div className="flex gap-2">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded-full"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : anomalyError ? (
+              <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
+                <XCircle className="w-8 h-8 text-red-400 mb-2" />
+                <span className="text-sm">Failed to load anomaly data</span>
               </div>
             ) : (
               <div className="space-y-4">
@@ -422,8 +529,34 @@ export function OperationsDashboardPage(): JSX.Element {
               </Link>
             </div>
             {healthLoading ? (
-              <div className="h-32 flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
+              <div className="h-32 space-y-4">
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i}>
+                      <div className="flex justify-between mb-1">
+                        <div className="h-4 w-16 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+                        <div className="h-4 w-24 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+                      </div>
+                      <div className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded-full" />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  {[1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="text-center p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50"
+                    >
+                      <div className="h-6 w-16 mx-auto bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
+                      <div className="h-3 w-20 mx-auto mt-1 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : healthError ? (
+              <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
+                <XCircle className="w-8 h-8 text-red-400 mb-2" />
+                <span className="text-sm">Failed to load system health</span>
               </div>
             ) : systemHealth?.data ? (
               <div className="space-y-4">
@@ -521,8 +654,25 @@ export function OperationsDashboardPage(): JSX.Element {
               </Link>
             </div>
             {alertLoading ? (
-              <div className="h-32 flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
+              <div className="h-32 space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50"
+                  >
+                    <div className="w-4 h-4 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded-full" />
+                    <div className="flex-1">
+                      <div className="h-4 w-32 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded mb-1" />
+                      <div className="h-3 w-24 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+                    </div>
+                    <div className="h-5 w-16 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : alertError ? (
+              <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
+                <XCircle className="w-8 h-8 text-red-400 mb-2" />
+                <span className="text-sm">Failed to load alerts</span>
               </div>
             ) : (alertHistory?.data?.length || 0) > 0 ? (
               <div className="space-y-3">
@@ -585,8 +735,31 @@ export function OperationsDashboardPage(): JSX.Element {
             </Link>
           </div>
           {costLoading ? (
-            <div className="h-32 flex items-center justify-center">
-              <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2].map((col) => (
+                <div key={col}>
+                  <div className="h-4 w-20 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded mb-3" />
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-16 bg-neutral-200 dark:bg-neutral-700 animate-pulse rounded" />
+                          <div className="h-3 w-10 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : costError ? (
+            <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
+              <XCircle className="w-8 h-8 text-red-400 mb-2" />
+              <span className="text-sm">Failed to load cost data</span>
             </div>
           ) : costBreakdown?.data ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

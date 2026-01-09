@@ -165,14 +165,17 @@ export function AIAssistantSidebar(): JSX.Element | null {
             : m,
         ),
       );
-    } catch {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Sorry, I encountered an error processing your request.';
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMessage.id
             ? {
                 ...m,
-                content:
-                  'Sorry, I encountered an error processing your request.',
+                content: `Sorry, I encountered an error: ${errorMessage}. Please try again or contact support if the issue persists.`,
                 isLoading: false,
                 isError: true,
               }
