@@ -189,21 +189,25 @@ export function OperationsDashboardPage(): JSX.Element {
     data: costBreakdown,
     isLoading: costLoading,
     isError: costError,
+    refetch: refetchCost,
   } = useAICostBreakdown('month');
   const {
     data: systemHealth,
     isLoading: healthLoading,
     isError: healthError,
+    refetch: refetchHealth,
   } = useSystemHealth();
   const {
     data: anomalyStats,
     isLoading: anomalyLoading,
     isError: anomalyError,
+    refetch: refetchAnomalies,
   } = useAnomalyStats();
   const {
     data: alertHistory,
     isLoading: alertLoading,
     isError: alertError,
+    refetch: refetchAlerts,
   } = useAlertHistory({
     limit: 5,
   });
@@ -453,6 +457,14 @@ export function OperationsDashboardPage(): JSX.Element {
               <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
                 <XCircle className="w-8 h-8 text-red-400 mb-2" />
                 <span className="text-sm">Failed to load anomaly data</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchAnomalies()}
+                  className="mt-2"
+                >
+                  Retry
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -557,6 +569,14 @@ export function OperationsDashboardPage(): JSX.Element {
               <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
                 <XCircle className="w-8 h-8 text-red-400 mb-2" />
                 <span className="text-sm">Failed to load system health</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchHealth()}
+                  className="mt-2"
+                >
+                  Retry
+                </Button>
               </div>
             ) : systemHealth?.data ? (
               <div className="space-y-4">
@@ -673,6 +693,14 @@ export function OperationsDashboardPage(): JSX.Element {
               <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
                 <XCircle className="w-8 h-8 text-red-400 mb-2" />
                 <span className="text-sm">Failed to load alerts</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchAlerts()}
+                  className="mt-2"
+                >
+                  Retry
+                </Button>
               </div>
             ) : (alertHistory?.data?.length || 0) > 0 ? (
               <div className="space-y-3">
@@ -760,6 +788,14 @@ export function OperationsDashboardPage(): JSX.Element {
             <div className="h-32 flex flex-col items-center justify-center text-neutral-500">
               <XCircle className="w-8 h-8 text-red-400 mb-2" />
               <span className="text-sm">Failed to load cost data</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => refetchCost()}
+                className="mt-2"
+              >
+                Retry
+              </Button>
             </div>
           ) : costBreakdown?.data ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

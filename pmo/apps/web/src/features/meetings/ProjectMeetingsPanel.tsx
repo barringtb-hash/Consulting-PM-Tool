@@ -141,7 +141,7 @@ function ProjectMeetingsPanel({
                 Track meeting notes, decisions, and risks.
               </p>
             </div>
-            <Button onClick={handleOpenCreate}>Import meeting notes</Button>
+            <Button onClick={handleOpenCreate}>New Meeting</Button>
           </div>
         </CardHeader>
         <CardBody>
@@ -249,7 +249,7 @@ function ProjectMeetingsPanel({
 
       <MeetingFormModal
         isOpen={showModal}
-        heading={editingMeeting ? 'Edit Meeting' : 'Import Meeting Notes'}
+        heading={editingMeeting ? 'Edit Meeting' : 'New Meeting'}
         initialValues={modalValues}
         onSubmit={handleSubmit}
         onCancel={() => {
