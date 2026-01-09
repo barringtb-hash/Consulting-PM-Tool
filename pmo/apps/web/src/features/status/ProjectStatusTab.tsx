@@ -6,6 +6,7 @@ import {
   useUpdateProjectHealthStatus,
 } from '../../api/queries';
 import type { ProjectHealthStatus } from '../../api/projects';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface ProjectStatusTabProps {
   projectId: number;
@@ -86,9 +87,15 @@ export function ProjectStatusTab({ projectId }: ProjectStatusTabProps) {
       a.click();
       URL.revokeObjectURL(url);
 
-      // Copy to clipboard
-      navigator.clipboard.writeText(result.markdown);
-      alert('Summary generated and copied to clipboard!');
+      // Copy to clipboard with Safari fallback support
+      const copied = await copyToClipboard(result.markdown);
+      if (copied) {
+        alert('Summary generated and copied to clipboard!');
+      } else {
+        alert(
+          'Summary generated and downloaded. Clipboard copy failed - please copy manually.',
+        );
+      }
     } catch (err) {
       console.error('Failed to generate summary:', err);
       alert('Failed to generate summary. Please try again.');

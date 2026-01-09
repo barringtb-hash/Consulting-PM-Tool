@@ -61,7 +61,8 @@ export interface TenantUser {
 
 export interface Project {
   id: number;
-  clientId: number;
+  clientId?: number | null; // @deprecated - use accountId
+  accountId?: number | null; // Preferred: link to CRM Account
   ownerId: number;
   name: string;
   status: ProjectStatus;

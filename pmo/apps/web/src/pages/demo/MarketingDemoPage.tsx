@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { copyToClipboard } from '../../utils/clipboard';
 import { PageHeader } from '../../ui/PageHeader';
 import {
   Card,
@@ -169,10 +170,16 @@ function ContentGeneratorDemo(): JSX.Element {
     setIsGenerating(false);
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const success = await copyToClipboard(generatedContent);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      window.alert(
+        'Failed to copy content to clipboard. Please copy it manually.',
+      );
+    }
   };
 
   const handleRegenerate = () => {

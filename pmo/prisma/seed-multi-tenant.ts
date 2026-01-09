@@ -64,7 +64,7 @@ const prisma = new PrismaClient({ adapter });
 const rawBcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
 if (Number.isNaN(rawBcryptSaltRounds)) {
   throw new Error(
-    'Invalid BCRYPT_SALT_ROUNDS environment variable. Expected a numeric value.'
+    'Invalid BCRYPT_SALT_ROUNDS environment variable. Expected a numeric value.',
   );
 }
 const BCRYPT_SALT_ROUNDS = rawBcryptSaltRounds;
@@ -645,12 +645,18 @@ async function main() {
   console.log('Step 1: Creating tenants and users...');
 
   for (const tenantConfig of TENANTS) {
-    console.log(`  Creating tenant: ${tenantConfig.name} (${tenantConfig.slug})`);
+    console.log(
+      `  Creating tenant: ${tenantConfig.name} (${tenantConfig.slug})`,
+    );
 
     // Create or update tenant
     const tenant = await prisma.tenant.upsert({
       where: { slug: tenantConfig.slug },
-      update: { name: tenantConfig.name, plan: tenantConfig.plan, status: 'ACTIVE' },
+      update: {
+        name: tenantConfig.name,
+        plan: tenantConfig.plan,
+        status: 'ACTIVE',
+      },
       create: {
         slug: tenantConfig.slug,
         name: tenantConfig.name,
@@ -663,7 +669,10 @@ async function main() {
 
     // Create users for this tenant
     for (const userConfig of tenantConfig.users) {
-      const passwordHash = await bcrypt.hash(userConfig.password, BCRYPT_SALT_ROUNDS);
+      const passwordHash = await bcrypt.hash(
+        userConfig.password,
+        BCRYPT_SALT_ROUNDS,
+      );
 
       const user = await prisma.user.upsert({
         where: { email: userConfig.email },
@@ -697,7 +706,9 @@ async function main() {
         },
       });
 
-      console.log(`    Created user: ${userConfig.email} (${userConfig.tenantRole})`);
+      console.log(
+        `    Created user: ${userConfig.email} (${userConfig.tenantRole})`,
+      );
     }
 
     tenantMap.set(tenantConfig.slug, {
@@ -717,18 +728,57 @@ async function main() {
   console.log('\nStep 2: Creating pipelines and stages...');
 
   const STAGES = [
-    { name: 'Lead', order: 1, probability: 10, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.LEAD },
-    { name: 'Discovery', order: 2, probability: 25, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.DISCOVERY },
-    { name: 'Proposal', order: 3, probability: 50, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.PROPOSAL },
-    { name: 'Negotiation', order: 4, probability: 75, type: PipelineStageType.OPEN, color: PIPELINE_STAGE_COLORS.NEGOTIATION },
-    { name: 'Closed Won', order: 5, probability: 100, type: PipelineStageType.WON, color: PIPELINE_STAGE_COLORS.CLOSED_WON },
-    { name: 'Closed Lost', order: 6, probability: 0, type: PipelineStageType.LOST, color: PIPELINE_STAGE_COLORS.CLOSED_LOST },
+    {
+      name: 'Lead',
+      order: 1,
+      probability: 10,
+      type: PipelineStageType.OPEN,
+      color: PIPELINE_STAGE_COLORS.LEAD,
+    },
+    {
+      name: 'Discovery',
+      order: 2,
+      probability: 25,
+      type: PipelineStageType.OPEN,
+      color: PIPELINE_STAGE_COLORS.DISCOVERY,
+    },
+    {
+      name: 'Proposal',
+      order: 3,
+      probability: 50,
+      type: PipelineStageType.OPEN,
+      color: PIPELINE_STAGE_COLORS.PROPOSAL,
+    },
+    {
+      name: 'Negotiation',
+      order: 4,
+      probability: 75,
+      type: PipelineStageType.OPEN,
+      color: PIPELINE_STAGE_COLORS.NEGOTIATION,
+    },
+    {
+      name: 'Closed Won',
+      order: 5,
+      probability: 100,
+      type: PipelineStageType.WON,
+      color: PIPELINE_STAGE_COLORS.CLOSED_WON,
+    },
+    {
+      name: 'Closed Lost',
+      order: 6,
+      probability: 0,
+      type: PipelineStageType.LOST,
+      color: PIPELINE_STAGE_COLORS.CLOSED_LOST,
+    },
   ];
 
   for (const [slug, tenantData] of tenantMap) {
     const pipeline = await prisma.pipeline.upsert({
       where: {
-        tenantId_name: { tenantId: tenantData.tenantId, name: 'Default Sales Pipeline' },
+        tenantId_name: {
+          tenantId: tenantData.tenantId,
+          name: 'Default Sales Pipeline',
+        },
       },
       update: { isDefault: true, isActive: true },
       create: {
@@ -747,7 +797,12 @@ async function main() {
         where: {
           pipelineId_name: { pipelineId: pipeline.id, name: stage.name },
         },
-        update: { order: stage.order, probability: stage.probability, type: stage.type, color: stage.color },
+        update: {
+          order: stage.order,
+          probability: stage.probability,
+          type: stage.type,
+          color: stage.color,
+        },
         create: {
           pipelineId: pipeline.id,
           name: stage.name,
@@ -770,7 +825,10 @@ async function main() {
   console.log('\nStep 3: Creating expense categories...');
 
   const CATEGORIES = [
-    { name: 'Office Supplies', description: 'General office supplies and equipment' },
+    {
+      name: 'Office Supplies',
+      description: 'General office supplies and equipment',
+    },
     { name: 'Software', description: 'Software licenses and subscriptions' },
     { name: 'Travel', description: 'Business travel expenses' },
     { name: 'Marketing', description: 'Marketing and advertising expenses' },
@@ -808,8 +866,11 @@ async function main() {
       if (!tenantData) continue;
 
       // Get first user as owner
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const ownerId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const ownerId = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       const created = await prisma.account.upsert({
         where: {
@@ -839,7 +900,9 @@ async function main() {
       });
 
       tenantData.accountIds.set(account.name, created.id);
-      console.log(`  Created account "${account.name}" in tenant: ${tenantSlug}`);
+      console.log(
+        `  Created account "${account.name}" in tenant: ${tenantSlug}`,
+      );
     }
   }
 
@@ -856,12 +919,19 @@ async function main() {
       const email = `${contact.email}@${tenantSlug}.example.com`;
 
       // Link to first available account
-      const accountName = OVERLAPPING_ACCOUNTS.find((a) => a.tenants.includes(tenantSlug))?.name;
-      const accountId = accountName ? tenantData.accountIds.get(accountName) : undefined;
+      const accountName = OVERLAPPING_ACCOUNTS.find((a) =>
+        a.tenants.includes(tenantSlug),
+      )?.name;
+      const accountId = accountName
+        ? tenantData.accountIds.get(accountName)
+        : undefined;
 
       // Get owner
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const ownerId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const ownerId = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       await prisma.cRMContact.upsert({
         where: {
@@ -893,7 +963,9 @@ async function main() {
         },
       });
 
-      console.log(`  Created contact "${contact.firstName} ${contact.lastName}" in tenant: ${tenantSlug}`);
+      console.log(
+        `  Created contact "${contact.firstName} ${contact.lastName}" in tenant: ${tenantSlug}`,
+      );
     }
   }
 
@@ -908,16 +980,23 @@ async function main() {
       if (!tenantData) continue;
 
       // Get account
-      const accountName = OVERLAPPING_ACCOUNTS.find((a) => a.tenants.includes(tenantSlug))?.name;
-      const accountId = accountName ? tenantData.accountIds.get(accountName) : undefined;
+      const accountName = OVERLAPPING_ACCOUNTS.find((a) =>
+        a.tenants.includes(tenantSlug),
+      )?.name;
+      const accountId = accountName
+        ? tenantData.accountIds.get(accountName)
+        : undefined;
 
       // Get stage
       const stageId = tenantData.stageIds.get(opp.stageName);
       if (!stageId) continue;
 
       // Get owner
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const ownerId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const ownerId = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       const status =
         opp.stageName === 'Closed Won'
@@ -956,7 +1035,9 @@ async function main() {
         },
       });
 
-      console.log(`  Created opportunity "${opp.name}" in tenant: ${tenantSlug}`);
+      console.log(
+        `  Created opportunity "${opp.name}" in tenant: ${tenantSlug}`,
+      );
     }
   }
 
@@ -971,15 +1052,24 @@ async function main() {
       if (!tenantData) continue;
 
       // Get account
-      const accountName = OVERLAPPING_ACCOUNTS.find((a) => a.tenants.includes(tenantSlug))?.name;
-      const accountId = accountName ? tenantData.accountIds.get(accountName) : undefined;
+      const accountName = OVERLAPPING_ACCOUNTS.find((a) =>
+        a.tenants.includes(tenantSlug),
+      )?.name;
+      const accountId = accountName
+        ? tenantData.accountIds.get(accountName)
+        : undefined;
 
       // Get owner - first user of the tenant
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const ownerId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const ownerId = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       if (!ownerId) {
-        console.warn(`  Skipping project "${project.name}" - no owner available for tenant: ${tenantSlug}`);
+        console.warn(
+          `  Skipping project "${project.name}" - no owner available for tenant: ${tenantSlug}`,
+        );
         continue;
       }
 
@@ -1009,7 +1099,9 @@ async function main() {
       });
 
       tenantData.projectIds.set(project.name, created.id);
-      console.log(`  Created project "${project.name}" in tenant: ${tenantSlug}`);
+      console.log(
+        `  Created project "${project.name}" in tenant: ${tenantSlug}`,
+      );
     }
   }
 
@@ -1024,17 +1116,26 @@ async function main() {
       if (!tenantData) continue;
 
       // Get project
-      const projectName = OVERLAPPING_PROJECTS.find((p) => p.tenants.includes(tenantSlug))?.name;
-      const projectId = projectName ? tenantData.projectIds.get(projectName) : undefined;
+      const projectName = OVERLAPPING_PROJECTS.find((p) =>
+        p.tenants.includes(tenantSlug),
+      )?.name;
+      const projectId = projectName
+        ? tenantData.projectIds.get(projectName)
+        : undefined;
 
       if (!projectId) continue;
 
       // Get owner - first user of the tenant
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const ownerId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const ownerId = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       if (!ownerId) {
-        console.warn(`  Skipping task "${task.title}" - no owner available for tenant: ${tenantSlug}`);
+        console.warn(
+          `  Skipping task "${task.title}" - no owner available for tenant: ${tenantSlug}`,
+        );
         continue;
       }
 
@@ -1094,7 +1195,9 @@ async function main() {
               name: milestone.name,
               description: `${milestone.name} for ${projectName}`,
               status: milestone.status,
-              dueDate: new Date(Date.now() + (30 + i * 30) * 24 * 60 * 60 * 1000),
+              dueDate: new Date(
+                Date.now() + (30 + i * 30) * 24 * 60 * 60 * 1000,
+              ),
             },
           });
         }
@@ -1116,8 +1219,11 @@ async function main() {
       const email = `${lead.email}@${tenantSlug}.example.com`;
 
       // Get owner
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const ownerUserId = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const ownerUserId = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       await prisma.inboundLead.upsert({
         where: {
@@ -1162,8 +1268,11 @@ async function main() {
       const categoryId = tenantData.categoryIds.get(expense.category);
 
       // Get submitter
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const submittedById = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const submittedById = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       const existing = await prisma.expense.findFirst({
         where: {
@@ -1185,7 +1294,9 @@ async function main() {
             expenseDate: new Date(),
           },
         });
-        console.log(`  Created expense "${expense.description}" in tenant: ${tenantSlug}`);
+        console.log(
+          `  Created expense "${expense.description}" in tenant: ${tenantSlug}`,
+        );
       }
     }
   }
@@ -1204,8 +1315,11 @@ async function main() {
       const categoryId = tenantData.categoryIds.get(budget.category);
 
       // Get owner
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const createdById = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const createdById = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       const existing = await prisma.budget.findFirst({
         where: { tenantId: tenantData.tenantId, name: budget.name },
@@ -1224,7 +1338,9 @@ async function main() {
             endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           },
         });
-        console.log(`  Created budget "${budget.name}" in tenant: ${tenantSlug}`);
+        console.log(
+          `  Created budget "${budget.name}" in tenant: ${tenantSlug}`,
+        );
       }
     }
   }
@@ -1243,8 +1359,11 @@ async function main() {
       const categoryName = RECURRING_COST_CATEGORY_MAP[cost.name] ?? 'Software';
       const categoryId = tenantData.categoryIds.get(categoryName);
 
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const createdById = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const createdById = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       const existing = await prisma.recurringCost.findFirst({
         where: { tenantId: tenantData.tenantId, name: cost.name },
@@ -1264,7 +1383,9 @@ async function main() {
             nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           },
         });
-        console.log(`  Created recurring cost "${cost.name}" in tenant: ${tenantSlug}`);
+        console.log(
+          `  Created recurring cost "${cost.name}" in tenant: ${tenantSlug}`,
+        );
       }
     }
   }
@@ -1279,8 +1400,11 @@ async function main() {
       const tenantData = tenantMap.get(tenantSlug);
       if (!tenantData) continue;
 
-      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]?.email;
-      const reportedById = ownerEmail ? tenantData.userIds.get(ownerEmail) : undefined;
+      const ownerEmail = TENANTS.find((t) => t.slug === tenantSlug)?.users[0]
+        ?.email;
+      const reportedById = ownerEmail
+        ? tenantData.userIds.get(ownerEmail)
+        : undefined;
 
       const existing = await prisma.issue.findFirst({
         where: { tenantId: tenantData.tenantId, title: issue.title },
@@ -1299,7 +1423,9 @@ async function main() {
             reportedById,
           },
         });
-        console.log(`  Created issue "${issue.title}" in tenant: ${tenantSlug}`);
+        console.log(
+          `  Created issue "${issue.title}" in tenant: ${tenantSlug}`,
+        );
       }
     }
   }
@@ -1321,7 +1447,9 @@ async function main() {
   }
 
   console.log('\nOverlapping Entities Created:');
-  console.log(`  - Accounts: ${OVERLAPPING_ACCOUNTS.length} (shared across tenants)`);
+  console.log(
+    `  - Accounts: ${OVERLAPPING_ACCOUNTS.length} (shared across tenants)`,
+  );
   console.log(`  - Contacts: ${OVERLAPPING_CONTACTS.length}`);
   console.log(`  - Opportunities: ${OVERLAPPING_OPPORTUNITIES.length}`);
   console.log(`  - Projects: ${OVERLAPPING_PROJECTS.length}`);

@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { copyToClipboard } from '../../utils/clipboard';
 import {
   Key,
   Plus,
@@ -76,12 +77,11 @@ export function ApiKeysTab() {
   const deleteApiKey = useDeleteApiKey();
 
   const handleCopyKey = async (key: string) => {
-    try {
-      await navigator.clipboard.writeText(key);
+    const success = await copyToClipboard(key);
+    if (success) {
       setCopiedKey(true);
       setTimeout(() => setCopiedKey(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy API key:', error);
+    } else {
       showToast('Failed to copy API key. Please copy it manually.', 'error');
     }
   };

@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { copyToClipboard } from '../../utils/clipboard';
 import { buildOptions, ApiError } from '../../api/http';
 import { buildApiUrl } from '../../api/config';
 import { PageHeader } from '../../ui/PageHeader';
@@ -356,9 +357,13 @@ function IntakePage(): JSX.Element {
   };
 
   const handleCopyUrl = async (url: string, formId: number) => {
-    await navigator.clipboard.writeText(url);
-    setCopiedUrl(formId);
-    setTimeout(() => setCopiedUrl(null), 2000);
+    const success = await copyToClipboard(url);
+    if (success) {
+      setCopiedUrl(formId);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } else {
+      showToast('Failed to copy URL to clipboard', 'error');
+    }
   };
 
   return (

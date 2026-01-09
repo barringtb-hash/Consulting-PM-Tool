@@ -7,6 +7,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { copyToClipboard } from '../../utils/clipboard';
 import { buildOptions, ApiError } from '../../api/http';
 import { buildApiUrl } from '../../api/config';
 import { Button } from '../../ui/Button';
@@ -371,9 +372,13 @@ function ProductDescriptionsPage(): JSX.Element {
   };
 
   const handleCopy = async (text: string, descId: number) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedId(descId);
-    setTimeout(() => setCopiedId(null), 2000);
+    const success = await copyToClipboard(text);
+    if (success) {
+      setCopiedId(descId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } else {
+      showToast('Failed to copy to clipboard', 'error');
+    }
   };
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
