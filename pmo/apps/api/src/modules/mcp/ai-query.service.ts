@@ -38,6 +38,14 @@ MEETING TOOLS:
 - get_recent_meetings: Get meetings from the last few days
 - prepare_meeting_brief: Generate a comprehensive brief for a client meeting
 
+BUG TRACKING TOOLS:
+- create_bug_report: Create a bug report or feature request with title, description, type, priority, steps to reproduce, expected/actual behavior
+- list_issues: List all issues with optional filters for status, priority, type
+- get_issue_details: Get detailed information about a specific issue
+- update_issue_status: Update the status of an issue (open, in_progress, resolved, closed)
+- add_issue_comment: Add a comment to an issue
+- assign_issue: Assign an issue to a user
+
 When answering questions:
 1. Use the appropriate tools to gather information
 2. Synthesize the data into a clear, helpful response
@@ -222,8 +230,10 @@ export async function processAIQuery(
     };
   } catch (error) {
     console.error('AI Query error:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred';
     return {
-      response: 'Sorry, I encountered an error processing your request.',
+      response: `Sorry, I encountered an error processing your request: ${errorMessage}. Please try again or report this issue if it persists.`,
       toolCalls: [],
       sources: [],
     };

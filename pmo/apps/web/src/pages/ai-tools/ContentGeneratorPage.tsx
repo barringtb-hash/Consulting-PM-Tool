@@ -517,7 +517,9 @@ function ContentGeneratorPage(): JSX.Element {
                         </div>
                       </div>
                       <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-3">
-                        {content.content}
+                        {typeof content.content === 'object'
+                          ? JSON.stringify(content.content)
+                          : content.content}
                       </p>
                     </div>
                   ))}
