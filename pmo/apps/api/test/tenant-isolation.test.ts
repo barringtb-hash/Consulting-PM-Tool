@@ -519,7 +519,9 @@ describe('Tenant Isolation', () => {
             parentAccountId: accountB.id, // Parent from tenant B
           }),
         ),
-      ).rejects.toThrow('Parent account not found or does not belong to this tenant');
+      ).rejects.toThrow(
+        'Parent account not found or does not belong to this tenant',
+      );
     });
 
     it('should not allow updating account to use cross-tenant parent', async () => {
@@ -530,7 +532,9 @@ describe('Tenant Isolation', () => {
             parentAccountId: accountB.id, // Parent from tenant B
           }),
         ),
-      ).rejects.toThrow('Parent account not found or does not belong to this tenant');
+      ).rejects.toThrow(
+        'Parent account not found or does not belong to this tenant',
+      );
     });
 
     it('should prevent circular parent reference', async () => {

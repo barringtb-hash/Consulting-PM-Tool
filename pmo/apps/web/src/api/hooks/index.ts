@@ -539,3 +539,45 @@ export type {
   ScheduleOptimization,
   NLBookingResponse,
 } from './scheduling';
+
+// ============================================================================
+// AI Projects Module
+// ============================================================================
+
+export {
+  // Query Keys
+  aiProjectsKeys,
+  // Assistant
+  useSendAssistantMessage,
+  // AI Status
+  useAIStatus,
+  useGenerateQuickStatus,
+  // Health Prediction
+  useHealthPrediction,
+  // Smart Reminders
+  useSmartReminders,
+  useDismissReminder,
+  // Auto-Scheduling
+  useGenerateSchedule,
+  useApplySchedule,
+  // Portfolio
+  usePortfolioSummary,
+  // AI Documents (renamed to avoid conflict with projectDocuments module)
+  useAIDocumentTemplates,
+  useGenerateAIDocument,
+  useAIGeneratedDocuments,
+} from './ai-projects';
+
+export type {
+  ProjectContext,
+  SuggestedAction,
+  AssistantMessage,
+  AssistantResponse,
+  AIStatusSummary,
+  HealthPrediction,
+  SmartReminder,
+  ScheduleResult,
+  PortfolioSummary,
+  DocumentTemplate,
+  GeneratedDocument,
+} from './ai-projects';

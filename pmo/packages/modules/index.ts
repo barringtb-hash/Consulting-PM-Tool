@@ -67,7 +67,9 @@ export type ModuleId =
   | 'financeBudgets'
   | 'financeRecurringCosts'
   // Bug Tracking module
-  | 'bugTracking';
+  | 'bugTracking'
+  // AI Projects module
+  | 'aiProjects';
 
 /**
  * Navigation group identifiers
@@ -776,6 +778,22 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     description:
       'Bug tracking, issue management, and error monitoring with AI assistant integration and external log collection',
   },
+
+  // ============ AI PROJECTS MODULE ============
+  aiProjects: {
+    id: 'aiProjects',
+    label: 'AI Project Assistant',
+    navGroup: 'aiTools',
+    path: '/ai-tools/project-assistant',
+    additionalPaths: ['/projects/:id/ai-assistant'],
+    icon: 'Sparkles',
+    isCore: false,
+    dependencies: ['projects'],
+    apiPrefixes: ['/api/ai-projects'],
+    description:
+      'AI-powered project management features including status summaries, task enrichment, template matching, health predictions, and smart scheduling',
+    showInNavigation: true,
+  },
 };
 
 /**
@@ -856,6 +874,8 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'financeRecurringCosts',
   // Bug Tracking
   'bugTracking',
+  // AI Projects
+  'aiProjects',
 ];
 
 /**

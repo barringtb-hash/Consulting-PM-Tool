@@ -125,6 +125,12 @@ The platform includes comprehensive AI-powered tools organized into implementati
 | `revenueManagement` | Revenue Management | accounts | Dynamic pricing and revenue optimization | `/ai-tools/revenue-management` |
 | `safetyMonitor` | Safety Monitor | accounts | Safety incident tracking and OSHA compliance | `/ai-tools/safety-monitor` |
 
+#### PMO AI Tools
+
+| Module ID | Label | Dependencies | Description | Routes |
+|-----------|-------|--------------|-------------|--------|
+| `aiProjects` | AI Project Assistant | projects | AI-powered project management with status summaries, health predictions, smart reminders, auto-scheduling, and document generation | `/ai-tools/project-assistant` |
+
 > **AI Tools Documentation**: For detailed information on configuring the AI Chatbot and Document Analyzer, see [AI-Tools.md](AI-Tools.md).
 
 ### Module Dependencies
@@ -156,6 +162,9 @@ complianceMonitor    → requires → accounts
 predictiveMaintenance→ requires → accounts
 revenueManagement    → requires → accounts
 safetyMonitor        → requires → accounts
+
+# PMO AI Tools
+aiProjects           → requires → projects
 
 # Operations & Support
 aiMonitoring         → requires → (none, standalone)

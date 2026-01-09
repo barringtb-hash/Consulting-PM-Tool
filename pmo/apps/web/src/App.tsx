@@ -179,6 +179,11 @@ const SafetyMonitorPage = lazy(
   () => import('./pages/ai-tools/SafetyMonitorPage'),
 );
 
+// AI Project Assistant page
+const ProjectAssistantPage = lazy(
+  () => import('./pages/ai-tools/ProjectAssistantPage'),
+);
+
 // Infrastructure pages (INF.1, INF.2, INF.3)
 const CoreInfrastructurePage = lazy(
   () => import('./pages/infrastructure/CoreInfrastructurePage'),
@@ -768,6 +773,18 @@ function App(): JSX.Element {
                 element={
                   <LazyPage>
                     <SafetyMonitorPage />
+                  </LazyPage>
+                }
+              />
+            )}
+
+            {/* AI Project Assistant module */}
+            {isModuleEnabled('aiProjects') && (
+              <Route
+                path="/ai-tools/project-assistant"
+                element={
+                  <LazyPage>
+                    <ProjectAssistantPage />
                   </LazyPage>
                 }
               />
