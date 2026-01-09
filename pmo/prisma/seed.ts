@@ -35,6 +35,18 @@ import {
   LeadStatus,
   LeadSource,
   ServiceInterest,
+  // AI Projects enums
+  DependencyType,
+  ProjectDocumentType,
+  ProjectDocumentCategory,
+  ProjectDocumentStatus,
+  RiskSourceType,
+  RiskSeverity,
+  RiskCategory,
+  RiskStatus,
+  DigestRecipientType,
+  DigestFrequency,
+  DigestDetailLevel,
 } from '@prisma/client';
 
 if (!process.env.DATABASE_URL) {
@@ -1402,6 +1414,565 @@ const inboundLeadSeeds = [
   },
 ];
 
+// ============================================================================
+// AI PROJECTS MODULE SEED DATA
+// ============================================================================
+
+// Task dependencies for auto-scheduling demonstration
+const taskDependencySeeds = [
+  {
+    projectName: 'Predictive Maintenance Rollout',
+    clientName: 'Acme Manufacturing',
+    dependencies: [
+      {
+        dependentTask: 'Model drift alerts',
+        blockingTask: 'Validate ETL transformations',
+        dependencyType: DependencyType.FINISH_TO_START,
+      },
+      {
+        dependentTask: 'Edge gateway sizing',
+        blockingTask: 'Validate ETL transformations',
+        dependencyType: DependencyType.FINISH_TO_START,
+      },
+    ],
+  },
+  {
+    projectName: 'AI Intake Modernization',
+    clientName: 'Brightside Health Group',
+    dependencies: [
+      {
+        dependentTask: 'Journey artifacts sign-off',
+        blockingTask: 'Interview care coordinators',
+        dependencyType: DependencyType.FINISH_TO_START,
+      },
+    ],
+  },
+];
+
+// AI-powered task enhancements (estimated hours, scheduling)
+const taskAIEnhancements = [
+  {
+    projectName: 'Predictive Maintenance Rollout',
+    clientName: 'Acme Manufacturing',
+    tasks: [
+      {
+        title: 'Validate ETL transformations',
+        aiEstimatedHours: 16,
+        estimatedHours: 20,
+        scheduledStartDate: new Date('2024-02-20'),
+        scheduledEndDate: new Date('2024-02-22'),
+      },
+      {
+        title: 'Finalize historian access policy',
+        aiEstimatedHours: 4,
+        estimatedHours: 8,
+        scheduledStartDate: new Date('2024-02-15'),
+        scheduledEndDate: new Date('2024-02-16'),
+      },
+      {
+        title: 'Model drift alerts',
+        aiEstimatedHours: 12,
+        scheduledStartDate: new Date('2024-02-25'),
+        scheduledEndDate: new Date('2024-02-28'),
+      },
+      {
+        title: 'Edge gateway sizing',
+        aiEstimatedHours: 8,
+        scheduledStartDate: new Date('2024-03-01'),
+        scheduledEndDate: new Date('2024-03-02'),
+      },
+    ],
+  },
+  {
+    projectName: 'AI Intake Modernization',
+    clientName: 'Brightside Health Group',
+    tasks: [
+      {
+        title: 'Interview care coordinators',
+        aiEstimatedHours: 12,
+        estimatedHours: 16,
+        scheduledStartDate: new Date('2024-02-12'),
+        scheduledEndDate: new Date('2024-02-14'),
+      },
+      {
+        title: 'Define success metrics',
+        aiEstimatedHours: 4,
+        scheduledStartDate: new Date('2024-02-08'),
+        scheduledEndDate: new Date('2024-02-08'),
+      },
+      {
+        title: 'Security questionnaire',
+        aiEstimatedHours: 6,
+        estimatedHours: 8,
+        scheduledStartDate: new Date('2024-02-19'),
+        scheduledEndDate: new Date('2024-02-20'),
+      },
+    ],
+  },
+  {
+    projectName: 'AI Strategy Roadmap',
+    clientName: 'Elipse Consulting',
+    tasks: [
+      {
+        title: 'Publish AI customer service blog post',
+        aiEstimatedHours: 4,
+        actualHours: 3.5,
+        scheduledStartDate: new Date('2024-01-12'),
+        scheduledEndDate: new Date('2024-01-12'),
+      },
+      {
+        title: 'Draft manufacturing case study',
+        aiEstimatedHours: 16,
+        estimatedHours: 20,
+        scheduledStartDate: new Date('2024-02-20'),
+        scheduledEndDate: new Date('2024-02-28'),
+      },
+    ],
+  },
+];
+
+// Project scope baselines for scope creep detection
+const projectScopeBaselineSeeds = [
+  {
+    projectName: 'Predictive Maintenance Rollout',
+    clientName: 'Acme Manufacturing',
+    baselineDate: new Date('2024-01-15'),
+    originalTaskCount: 6,
+    originalMilestoneCount: 3,
+    originalScope: {
+      goals: [
+        'Deploy predictive maintenance models to Plant 3',
+        'Reduce unplanned downtime by 35%',
+        'Achieve $2.1M annual maintenance cost savings',
+      ],
+      deliverables: [
+        'Data lake integration with historian and CMMS',
+        'ML models for extrusion and packing lines',
+        'Alert dashboard for operations team',
+        'Executive ROI report',
+      ],
+      exclusions: [
+        'Plants 1, 2, and 4 (future phases)',
+        'SCADA system upgrades',
+        'Hardware replacement',
+      ],
+    },
+    isActive: true,
+  },
+  {
+    projectName: 'AI Intake Modernization',
+    clientName: 'Brightside Health Group',
+    baselineDate: new Date('2024-02-01'),
+    originalTaskCount: 5,
+    originalMilestoneCount: 2,
+    originalScope: {
+      goals: [
+        'Reduce patient intake time by 70%',
+        'Achieve 85% patient satisfaction scores',
+        'Automate referral triage routing',
+      ],
+      deliverables: [
+        'Patient journey maps',
+        'AI intake prototype',
+        'Integration with EHR system',
+        'Training materials',
+      ],
+      exclusions: [
+        'Legacy system migration',
+        'Hardware procurement',
+        'HIPAA certification (handled separately)',
+      ],
+    },
+    isActive: true,
+  },
+];
+
+// Project health predictions
+const projectHealthPredictionSeeds = [
+  {
+    projectName: 'Predictive Maintenance Rollout',
+    clientName: 'Acme Manufacturing',
+    predictions: [
+      {
+        predictedHealth: ProjectHealthStatus.AT_RISK,
+        confidence: 0.78,
+        predictedDate: new Date('2024-03-15'),
+        factors: {
+          taskVelocity: 0.6,
+          milestoneRisk: 0.8,
+          blockerCount: 0.9,
+          resourceUtilization: 0.7,
+        },
+        actualHealth: ProjectHealthStatus.AT_RISK,
+        wasAccurate: true,
+      },
+      {
+        predictedHealth: ProjectHealthStatus.ON_TRACK,
+        confidence: 0.65,
+        predictedDate: new Date('2024-04-15'),
+        factors: {
+          taskVelocity: 0.5,
+          milestoneRisk: 0.4,
+          blockerCount: 0.3,
+          resourceUtilization: 0.6,
+        },
+      },
+    ],
+  },
+  {
+    projectName: 'AI Intake Modernization',
+    clientName: 'Brightside Health Group',
+    predictions: [
+      {
+        predictedHealth: ProjectHealthStatus.ON_TRACK,
+        confidence: 0.85,
+        predictedDate: new Date('2024-03-10'),
+        factors: {
+          taskVelocity: 0.3,
+          milestoneRisk: 0.2,
+          blockerCount: 0.1,
+          resourceUtilization: 0.5,
+        },
+        actualHealth: ProjectHealthStatus.ON_TRACK,
+        wasAccurate: true,
+      },
+    ],
+  },
+];
+
+// Project risks extracted from meetings
+const projectRiskSeeds = [
+  {
+    projectName: 'Predictive Maintenance Rollout',
+    clientName: 'Acme Manufacturing',
+    risks: [
+      {
+        sourceType: RiskSourceType.MEETING,
+        sourceMeetingTitle: 'Operations Pulse Check',
+        title: 'Historian Credentials Delay',
+        description:
+          'Data pipeline may be blocked if historian credentials are not provisioned on time.',
+        severity: RiskSeverity.HIGH,
+        category: RiskCategory.TIMELINE,
+        suggestedMitigation:
+          'Escalate to IT leadership and establish daily check-ins on provisioning status.',
+        relatedQuote:
+          'Data pipeline delay if historian credentials are not provisioned.',
+        status: RiskStatus.MITIGATING,
+      },
+      {
+        sourceType: RiskSourceType.MEETING,
+        sourceMeetingTitle: 'Pilot Kickoff Prep',
+        title: 'OT Change Window Sign-off',
+        description:
+          'Final sign-off on OT change window is pending, which could delay pilot deployment.',
+        severity: RiskSeverity.MEDIUM,
+        category: RiskCategory.SCOPE,
+        suggestedMitigation:
+          'Schedule dedicated meeting with plant operations to secure change window approval.',
+        relatedQuote: 'Need final sign-off on OT change window.',
+        status: RiskStatus.IDENTIFIED,
+      },
+      {
+        sourceType: RiskSourceType.AI_DETECTED,
+        title: 'Resource Contention Risk',
+        description:
+          'AI detected potential resource conflict - same team members assigned to multiple critical path tasks.',
+        severity: RiskSeverity.MEDIUM,
+        category: RiskCategory.RESOURCE,
+        suggestedMitigation:
+          'Review task assignments and consider bringing in additional support for data pipeline work.',
+        status: RiskStatus.ANALYZING,
+      },
+    ],
+  },
+  {
+    projectName: 'AI Intake Modernization',
+    clientName: 'Brightside Health Group',
+    risks: [
+      {
+        sourceType: RiskSourceType.MEETING,
+        sourceMeetingTitle: 'Care Team Interviews Readout',
+        title: 'Data Anonymization Requirement',
+        description:
+          'Need anonymization plan for sample transcripts before prototype development can proceed.',
+        severity: RiskSeverity.MEDIUM,
+        category: RiskCategory.SCOPE,
+        suggestedMitigation:
+          'Engage compliance team early to develop anonymization guidelines.',
+        relatedQuote: 'Need anonymization plan for sample transcripts.',
+        status: RiskStatus.IDENTIFIED,
+      },
+    ],
+  },
+];
+
+// Project documents
+const projectDocumentSeeds = [
+  {
+    projectName: 'Predictive Maintenance Rollout',
+    clientName: 'Acme Manufacturing',
+    documents: [
+      {
+        templateType: ProjectDocumentType.PROJECT_PLAN,
+        category: ProjectDocumentCategory.CORE,
+        name: 'Predictive Maintenance Implementation Plan',
+        description:
+          'Comprehensive project plan for Plant 3 predictive maintenance rollout',
+        status: ProjectDocumentStatus.APPROVED,
+        content: {
+          scope: {
+            description:
+              'Deploy predictive maintenance ML models to Plant 3 extrusion and packing lines',
+            objectives: [
+              'Reduce unplanned downtime by 35%',
+              'Achieve $2.1M annual savings',
+              'Establish data pipeline from historian to analytics platform',
+            ],
+          },
+          schedule: {
+            phases: [
+              {
+                name: 'Data Lake Readiness',
+                startDate: '2024-01-15',
+                endDate: '2024-03-15',
+              },
+              {
+                name: 'Pilot Deployment',
+                startDate: '2024-03-16',
+                endDate: '2024-05-31',
+              },
+              {
+                name: 'Executive Readout',
+                startDate: '2024-06-01',
+                endDate: '2024-07-15',
+              },
+            ],
+          },
+          stakeholders: [
+            { name: 'Dana Patel', role: 'Executive Sponsor' },
+            { name: 'Miguel Rodriguez', role: 'Technical Lead' },
+            { name: 'Avery Chen', role: 'Project Manager' },
+          ],
+        },
+        version: 2,
+        createdByEmail: 'avery.chen@pmo.test',
+      },
+      {
+        templateType: ProjectDocumentType.STATUS_REPORT,
+        category: ProjectDocumentCategory.CORE,
+        name: 'Week 4 Status Report',
+        description: 'Weekly status update for stakeholders',
+        status: ProjectDocumentStatus.APPROVED,
+        content: {
+          reportDate: '2024-02-12',
+          overallStatus: 'AT_RISK',
+          summary:
+            'Data pipeline progress blocked by pending historian credentials. Working on escalation.',
+          accomplishments: [
+            'Completed ETL transformation design',
+            'Finalized pilot scope to extrusion and packing lines',
+            'Established weekly ops sync cadence',
+          ],
+          plannedActivities: [
+            'Obtain historian credentials',
+            'Complete ETL validation',
+            'Begin edge gateway sizing',
+          ],
+          risks: [
+            {
+              description: 'Historian credentials not provisioned',
+              impact: 'HIGH',
+              mitigation: 'Escalating to IT leadership',
+            },
+          ],
+          metrics: {
+            tasksCompleted: 3,
+            tasksInProgress: 4,
+            tasksBlocked: 1,
+            milestoneProgress: 33,
+          },
+        },
+        version: 1,
+        createdByEmail: 'avery.chen@pmo.test',
+      },
+      {
+        templateType: ProjectDocumentType.RISK_REGISTER,
+        category: ProjectDocumentCategory.CORE,
+        name: 'Risk Register - Q1 2024',
+        description: 'Project risk tracking document',
+        status: ProjectDocumentStatus.DRAFT,
+        content: {
+          risks: [
+            {
+              id: 'R001',
+              title: 'Historian Credentials Delay',
+              likelihood: 4,
+              impact: 5,
+              riskScore: 20,
+              status: 'Mitigating',
+              owner: 'Priya Desai',
+              mitigation: 'Escalate to IT leadership',
+            },
+            {
+              id: 'R002',
+              title: 'OT Change Window Approval',
+              likelihood: 3,
+              impact: 4,
+              riskScore: 12,
+              status: 'Identified',
+              owner: 'Avery Chen',
+              mitigation: 'Schedule dedicated approval meeting',
+            },
+          ],
+          lastUpdated: '2024-02-10',
+        },
+        version: 1,
+        createdByEmail: 'avery.chen@pmo.test',
+      },
+    ],
+  },
+  {
+    projectName: 'AI Intake Modernization',
+    clientName: 'Brightside Health Group',
+    documents: [
+      {
+        templateType: ProjectDocumentType.KICKOFF_AGENDA,
+        category: ProjectDocumentCategory.LIFECYCLE,
+        name: 'Project Kickoff Meeting Agenda',
+        description: 'Kickoff meeting structure and talking points',
+        status: ProjectDocumentStatus.APPROVED,
+        content: {
+          meetingDate: '2024-02-01',
+          attendees: ['Sarah Kim', 'Omar Greene', 'Priya Desai', 'Marco Silva'],
+          agenda: [
+            {
+              topic: 'Project Overview & Goals',
+              duration: 15,
+              presenter: 'Priya Desai',
+            },
+            {
+              topic: 'Scope & Deliverables',
+              duration: 20,
+              presenter: 'Priya Desai',
+            },
+            {
+              topic: 'Timeline & Milestones',
+              duration: 15,
+              presenter: 'Marco Silva',
+            },
+            {
+              topic: 'Team Introductions & Roles',
+              duration: 10,
+              presenter: 'All',
+            },
+            {
+              topic: 'Q&A',
+              duration: 15,
+              presenter: 'All',
+            },
+          ],
+          decisions: [
+            'Prototype will cover referral intake and triage routing',
+            'Weekly sync meetings on Thursdays at 11:30 AM PT',
+          ],
+        },
+        version: 1,
+        createdByEmail: 'priya.desai@pmo.test',
+      },
+    ],
+  },
+];
+
+// Project digest configurations
+const projectDigestConfigSeeds = [
+  {
+    projectName: 'Predictive Maintenance Rollout',
+    clientName: 'Acme Manufacturing',
+    configs: [
+      {
+        recipientType: DigestRecipientType.STAKEHOLDER,
+        customEmails: ['dana.patel@acme.test'],
+        frequency: DigestFrequency.WEEKLY,
+        dayOfWeek: 1, // Monday
+        timeOfDay: '09:00',
+        timezone: 'America/Chicago',
+        detailLevel: DigestDetailLevel.EXECUTIVE,
+        includeSections: ['summary', 'milestones', 'risks'],
+        isActive: true,
+      },
+      {
+        recipientType: DigestRecipientType.TEAM,
+        customEmails: [],
+        frequency: DigestFrequency.DAILY,
+        dayOfWeek: null,
+        timeOfDay: '08:00',
+        timezone: 'America/Chicago',
+        detailLevel: DigestDetailLevel.DETAILED,
+        includeSections: [
+          'summary',
+          'tasks',
+          'milestones',
+          'risks',
+          'timeline',
+        ],
+        isActive: true,
+      },
+    ],
+  },
+  {
+    projectName: 'AI Intake Modernization',
+    clientName: 'Brightside Health Group',
+    configs: [
+      {
+        recipientType: DigestRecipientType.OWNER,
+        customEmails: [],
+        frequency: DigestFrequency.WEEKLY,
+        dayOfWeek: 5, // Friday
+        timeOfDay: '16:00',
+        timezone: 'America/Los_Angeles',
+        detailLevel: DigestDetailLevel.STANDARD,
+        includeSections: ['summary', 'tasks', 'milestones'],
+        isActive: true,
+      },
+    ],
+  },
+];
+
+// Team availability data
+const teamAvailabilitySeeds = [
+  {
+    userEmail: 'avery.chen@pmo.test',
+    availability: [
+      { date: new Date('2024-02-19'), availableHours: 8, allocatedHours: 6 },
+      { date: new Date('2024-02-20'), availableHours: 8, allocatedHours: 8 },
+      { date: new Date('2024-02-21'), availableHours: 6, allocatedHours: 4 },
+      { date: new Date('2024-02-22'), availableHours: 8, allocatedHours: 7 },
+      { date: new Date('2024-02-23'), availableHours: 4, allocatedHours: 2 },
+    ],
+  },
+  {
+    userEmail: 'priya.desai@pmo.test',
+    availability: [
+      { date: new Date('2024-02-19'), availableHours: 8, allocatedHours: 5 },
+      { date: new Date('2024-02-20'), availableHours: 8, allocatedHours: 6 },
+      { date: new Date('2024-02-21'), availableHours: 8, allocatedHours: 8 },
+      { date: new Date('2024-02-22'), availableHours: 4, allocatedHours: 3 },
+      { date: new Date('2024-02-23'), availableHours: 8, allocatedHours: 4 },
+    ],
+  },
+  {
+    userEmail: 'marco.silva@pmo.test',
+    availability: [
+      { date: new Date('2024-02-19'), availableHours: 6, allocatedHours: 6 },
+      { date: new Date('2024-02-20'), availableHours: 8, allocatedHours: 4 },
+      { date: new Date('2024-02-21'), availableHours: 8, allocatedHours: 5 },
+      { date: new Date('2024-02-22'), availableHours: 8, allocatedHours: 6 },
+      { date: new Date('2024-02-23'), availableHours: 8, allocatedHours: 3 },
+    ],
+  },
+];
+
 async function main() {
   const bcryptSaltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? '10');
 
@@ -2436,6 +3007,425 @@ async function main() {
     }
   }
   console.log(`  ✓ Created/updated ${inboundLeadSeeds.length} inbound leads`);
+
+  // ============================================================================
+  // SEED AI PROJECTS MODULE DATA
+  // ============================================================================
+  console.log('  ✓ Seeding AI Projects module data...');
+
+  // Create a task map for dependency creation
+  const taskMap = new Map<string, number>();
+  const allTasks = await prisma.task.findMany({
+    include: { project: true },
+  });
+  for (const task of allTasks) {
+    const project = await prisma.project.findUnique({
+      where: { id: task.projectId },
+      include: { client: true },
+    });
+    if (project?.client) {
+      const key = `${project.client.name}::${project.name}::${task.title}`;
+      taskMap.set(key, task.id);
+    }
+  }
+
+  // Create meeting map for risk source linking
+  const meetingMap = new Map<string, number>();
+  const allMeetings = await prisma.meeting.findMany({
+    include: { project: { include: { client: true } } },
+  });
+  for (const meeting of allMeetings) {
+    if (meeting.project?.client) {
+      const key = `${meeting.project.client.name}::${meeting.project.name}::${meeting.title}`;
+      meetingMap.set(key, meeting.id);
+    }
+  }
+
+  // Seed task dependencies
+  let dependencyCount = 0;
+  for (const depSeed of taskDependencySeeds) {
+    const projectKey = `${depSeed.clientName}::${depSeed.projectName}`;
+    const projectData = projectMap.get(projectKey);
+    if (!projectData) {
+      console.warn(`  ⚠ Project ${projectKey} not found for task dependencies`);
+      continue;
+    }
+
+    for (const dep of depSeed.dependencies) {
+      const dependentTaskKey = `${depSeed.clientName}::${depSeed.projectName}::${dep.dependentTask}`;
+      const blockingTaskKey = `${depSeed.clientName}::${depSeed.projectName}::${dep.blockingTask}`;
+
+      const dependentTaskId = taskMap.get(dependentTaskKey);
+      const blockingTaskId = taskMap.get(blockingTaskKey);
+
+      if (!dependentTaskId || !blockingTaskId) {
+        console.warn(
+          `  ⚠ Task not found for dependency: ${dep.dependentTask} <- ${dep.blockingTask}`,
+        );
+        continue;
+      }
+
+      await prisma.taskDependency.upsert({
+        where: {
+          dependentTaskId_blockingTaskId: {
+            dependentTaskId,
+            blockingTaskId,
+          },
+        },
+        update: {
+          dependencyType: dep.dependencyType,
+        },
+        create: {
+          dependentTaskId,
+          blockingTaskId,
+          dependencyType: dep.dependencyType,
+        },
+      });
+      dependencyCount++;
+    }
+  }
+  console.log(`  ✓ Created/updated ${dependencyCount} task dependencies`);
+
+  // Seed AI task enhancements
+  let taskEnhancementCount = 0;
+  for (const enhSeed of taskAIEnhancements) {
+    for (const taskEnh of enhSeed.tasks) {
+      const taskKey = `${enhSeed.clientName}::${enhSeed.projectName}::${taskEnh.title}`;
+      const taskId = taskMap.get(taskKey);
+
+      if (!taskId) {
+        console.warn(`  ⚠ Task not found for AI enhancement: ${taskEnh.title}`);
+        continue;
+      }
+
+      await prisma.task.update({
+        where: { id: taskId },
+        data: {
+          aiEstimatedHours: taskEnh.aiEstimatedHours,
+          estimatedHours: taskEnh.estimatedHours,
+          actualHours: taskEnh.actualHours,
+          scheduledStartDate: taskEnh.scheduledStartDate,
+          scheduledEndDate: taskEnh.scheduledEndDate,
+          aiScheduled: true,
+          aiEstimateAccepted: taskEnh.estimatedHours ? false : null,
+        },
+      });
+      taskEnhancementCount++;
+    }
+  }
+  console.log(`  ✓ Updated ${taskEnhancementCount} tasks with AI enhancements`);
+
+  // Seed project scope baselines
+  for (const baselineSeed of projectScopeBaselineSeeds) {
+    const projectKey = `${baselineSeed.clientName}::${baselineSeed.projectName}`;
+    const projectData = projectMap.get(projectKey);
+    if (!projectData) {
+      console.warn(`  ⚠ Project ${projectKey} not found for scope baseline`);
+      continue;
+    }
+
+    const existingBaseline = await prisma.projectScopeBaseline.findFirst({
+      where: {
+        projectId: projectData.id,
+        baselineDate: baselineSeed.baselineDate,
+      },
+    });
+
+    if (existingBaseline) {
+      await prisma.projectScopeBaseline.update({
+        where: { id: existingBaseline.id },
+        data: {
+          originalTaskCount: baselineSeed.originalTaskCount,
+          originalMilestoneCount: baselineSeed.originalMilestoneCount,
+          originalScope: baselineSeed.originalScope,
+          isActive: baselineSeed.isActive,
+        },
+      });
+    } else {
+      await prisma.projectScopeBaseline.create({
+        data: {
+          tenantId: defaultTenant.id,
+          projectId: projectData.id,
+          baselineDate: baselineSeed.baselineDate,
+          originalTaskCount: baselineSeed.originalTaskCount,
+          originalMilestoneCount: baselineSeed.originalMilestoneCount,
+          originalScope: baselineSeed.originalScope,
+          isActive: baselineSeed.isActive,
+        },
+      });
+    }
+  }
+  console.log(
+    `  ✓ Created/updated ${projectScopeBaselineSeeds.length} project scope baselines`,
+  );
+
+  // Seed project health predictions
+  let predictionCount = 0;
+  for (const predSeed of projectHealthPredictionSeeds) {
+    const projectKey = `${predSeed.clientName}::${predSeed.projectName}`;
+    const projectData = projectMap.get(projectKey);
+    if (!projectData) {
+      console.warn(
+        `  ⚠ Project ${projectKey} not found for health predictions`,
+      );
+      continue;
+    }
+
+    for (const pred of predSeed.predictions) {
+      const existingPrediction = await prisma.projectHealthPrediction.findFirst(
+        {
+          where: {
+            projectId: projectData.id,
+            predictedDate: pred.predictedDate,
+          },
+        },
+      );
+
+      if (existingPrediction) {
+        await prisma.projectHealthPrediction.update({
+          where: { id: existingPrediction.id },
+          data: {
+            predictedHealth: pred.predictedHealth,
+            confidence: pred.confidence,
+            factors: pred.factors,
+            actualHealth: pred.actualHealth,
+            wasAccurate: pred.wasAccurate,
+          },
+        });
+      } else {
+        await prisma.projectHealthPrediction.create({
+          data: {
+            tenantId: defaultTenant.id,
+            projectId: projectData.id,
+            predictedHealth: pred.predictedHealth,
+            confidence: pred.confidence,
+            predictedDate: pred.predictedDate,
+            factors: pred.factors,
+            actualHealth: pred.actualHealth,
+            wasAccurate: pred.wasAccurate,
+          },
+        });
+      }
+      predictionCount++;
+    }
+  }
+  console.log(
+    `  ✓ Created/updated ${predictionCount} project health predictions`,
+  );
+
+  // Seed project risks
+  let riskCount = 0;
+  for (const riskSeed of projectRiskSeeds) {
+    const projectKey = `${riskSeed.clientName}::${riskSeed.projectName}`;
+    const projectData = projectMap.get(projectKey);
+    if (!projectData) {
+      console.warn(`  ⚠ Project ${projectKey} not found for risks`);
+      continue;
+    }
+
+    for (const risk of riskSeed.risks) {
+      let sourceId: number | undefined;
+      if (
+        risk.sourceType === RiskSourceType.MEETING &&
+        risk.sourceMeetingTitle
+      ) {
+        const meetingKey = `${riskSeed.clientName}::${riskSeed.projectName}::${risk.sourceMeetingTitle}`;
+        sourceId = meetingMap.get(meetingKey);
+      }
+
+      const existingRisk = await prisma.projectRisk.findFirst({
+        where: {
+          projectId: projectData.id,
+          title: risk.title,
+        },
+      });
+
+      if (existingRisk) {
+        await prisma.projectRisk.update({
+          where: { id: existingRisk.id },
+          data: {
+            sourceType: risk.sourceType,
+            sourceId,
+            description: risk.description,
+            severity: risk.severity,
+            category: risk.category,
+            suggestedMitigation: risk.suggestedMitigation,
+            relatedQuote: risk.relatedQuote,
+            status: risk.status,
+          },
+        });
+      } else {
+        await prisma.projectRisk.create({
+          data: {
+            tenantId: defaultTenant.id,
+            projectId: projectData.id,
+            sourceType: risk.sourceType,
+            sourceId,
+            title: risk.title,
+            description: risk.description,
+            severity: risk.severity,
+            category: risk.category,
+            suggestedMitigation: risk.suggestedMitigation,
+            relatedQuote: risk.relatedQuote,
+            status: risk.status,
+          },
+        });
+      }
+      riskCount++;
+    }
+  }
+  console.log(`  ✓ Created/updated ${riskCount} project risks`);
+
+  // Seed project documents
+  let documentCount = 0;
+  for (const docSeed of projectDocumentSeeds) {
+    const projectKey = `${docSeed.clientName}::${docSeed.projectName}`;
+    const projectData = projectMap.get(projectKey);
+    if (!projectData) {
+      console.warn(`  ⚠ Project ${projectKey} not found for documents`);
+      continue;
+    }
+
+    for (const doc of docSeed.documents) {
+      const editorId = doc.createdByEmail
+        ? userMap.get(doc.createdByEmail)
+        : undefined;
+
+      const existingDoc = await prisma.projectDocument.findFirst({
+        where: {
+          projectId: projectData.id,
+          templateType: doc.templateType,
+          name: doc.name,
+        },
+      });
+
+      if (existingDoc) {
+        await prisma.projectDocument.update({
+          where: { id: existingDoc.id },
+          data: {
+            category: doc.category,
+            description: doc.description,
+            status: doc.status,
+            content: doc.content,
+            version: doc.version,
+            lastEditedBy: editorId,
+            lastEditedAt: new Date(),
+          },
+        });
+      } else {
+        await prisma.projectDocument.create({
+          data: {
+            tenantId: defaultTenant.id,
+            projectId: projectData.id,
+            templateType: doc.templateType,
+            category: doc.category,
+            name: doc.name,
+            description: doc.description,
+            status: doc.status,
+            content: doc.content,
+            version: doc.version,
+            lastEditedBy: editorId,
+          },
+        });
+      }
+      documentCount++;
+    }
+  }
+  console.log(`  ✓ Created/updated ${documentCount} project documents`);
+
+  // Seed project digest configurations
+  let digestConfigCount = 0;
+  for (const digestSeed of projectDigestConfigSeeds) {
+    const projectKey = `${digestSeed.clientName}::${digestSeed.projectName}`;
+    const projectData = projectMap.get(projectKey);
+    if (!projectData) {
+      console.warn(`  ⚠ Project ${projectKey} not found for digest configs`);
+      continue;
+    }
+
+    for (const config of digestSeed.configs) {
+      const existingConfig = await prisma.projectDigestConfig.findFirst({
+        where: {
+          projectId: projectData.id,
+          recipientType: config.recipientType,
+        },
+      });
+
+      if (existingConfig) {
+        await prisma.projectDigestConfig.update({
+          where: { id: existingConfig.id },
+          data: {
+            customEmails: config.customEmails,
+            frequency: config.frequency,
+            dayOfWeek: config.dayOfWeek,
+            timeOfDay: config.timeOfDay,
+            timezone: config.timezone,
+            detailLevel: config.detailLevel,
+            includeSections: config.includeSections,
+            isActive: config.isActive,
+          },
+        });
+      } else {
+        await prisma.projectDigestConfig.create({
+          data: {
+            tenantId: defaultTenant.id,
+            projectId: projectData.id,
+            recipientType: config.recipientType,
+            customEmails: config.customEmails,
+            frequency: config.frequency,
+            dayOfWeek: config.dayOfWeek,
+            timeOfDay: config.timeOfDay,
+            timezone: config.timezone,
+            detailLevel: config.detailLevel,
+            includeSections: config.includeSections,
+            isActive: config.isActive,
+          },
+        });
+      }
+      digestConfigCount++;
+    }
+  }
+  console.log(
+    `  ✓ Created/updated ${digestConfigCount} project digest configurations`,
+  );
+
+  // Seed team availability
+  let availabilityCount = 0;
+  for (const availSeed of teamAvailabilitySeeds) {
+    const userId = userMap.get(availSeed.userEmail);
+    if (!userId) {
+      console.warn(
+        `  ⚠ User ${availSeed.userEmail} not found for availability`,
+      );
+      continue;
+    }
+
+    for (const avail of availSeed.availability) {
+      await prisma.teamAvailability.upsert({
+        where: {
+          userId_date: {
+            userId,
+            date: avail.date,
+          },
+        },
+        update: {
+          availableHours: avail.availableHours,
+          allocatedHours: avail.allocatedHours,
+        },
+        create: {
+          tenantId: defaultTenant.id,
+          userId,
+          date: avail.date,
+          availableHours: avail.availableHours,
+          allocatedHours: avail.allocatedHours,
+        },
+      });
+      availabilityCount++;
+    }
+  }
+  console.log(
+    `  ✓ Created/updated ${availabilityCount} team availability records`,
+  );
 
   console.log('\n✅ Seed data complete!');
 }
