@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -32,24 +32,28 @@ let mockCostBreakdown = {
   data: null,
   isLoading: false,
   isError: false,
+  refetch: vi.fn(),
 };
 
 let mockSystemHealth = {
   data: null,
   isLoading: false,
   isError: false,
+  refetch: vi.fn(),
 };
 
 let mockAnomalyStats = {
   data: null,
   isLoading: false,
   isError: false,
+  refetch: vi.fn(),
 };
 
 let mockAlertHistory = {
   data: null,
   isLoading: false,
   isError: false,
+  refetch: vi.fn(),
 };
 
 let mockAssistantHealth = {
@@ -97,21 +101,25 @@ describe('OperationsDashboardPage', () => {
       data: null,
       isLoading: false,
       isError: false,
+      refetch: vi.fn(),
     };
     mockSystemHealth = {
       data: null,
       isLoading: false,
       isError: false,
+      refetch: vi.fn(),
     };
     mockAnomalyStats = {
       data: null,
       isLoading: false,
       isError: false,
+      refetch: vi.fn(),
     };
     mockAlertHistory = {
       data: null,
       isLoading: false,
       isError: false,
+      refetch: vi.fn(),
     };
     mockAssistantHealth = {
       isSuccess: false,
@@ -248,6 +256,22 @@ describe('OperationsDashboardPage', () => {
       ).toBeInTheDocument();
     });
 
+    it('calls refetch when retry button is clicked for Real-time AI Usage', () => {
+      const mockRefetch = vi.fn();
+      mockRealtimeStats = {
+        ...mockRealtimeStats,
+        isError: true,
+        refetch: mockRefetch,
+      };
+
+      renderWithProviders(<OperationsDashboardPage />);
+
+      const retryButton = screen.getByRole('button', { name: /retry/i });
+      fireEvent.click(retryButton);
+
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
+    });
+
     it('shows error state for Anomalies card', () => {
       mockAnomalyStats = {
         ...mockAnomalyStats,
@@ -259,6 +283,28 @@ describe('OperationsDashboardPage', () => {
       expect(
         screen.getByText('Failed to load anomaly data'),
       ).toBeInTheDocument();
+    });
+
+    it('calls refetch when retry button is clicked for Anomalies', () => {
+      const mockRefetch = vi.fn();
+      mockAnomalyStats = {
+        ...mockAnomalyStats,
+        isError: true,
+        refetch: mockRefetch,
+      };
+
+      renderWithProviders(<OperationsDashboardPage />);
+
+      const retryButtons = screen.getAllByRole('button', { name: /retry/i });
+      // Find the retry button in the Anomalies card
+      const anomalyRetry = retryButtons.find(
+        (btn) =>
+          btn.closest('.p-6')?.querySelector('span')?.textContent ===
+          'Failed to load anomaly data',
+      );
+      if (anomalyRetry) fireEvent.click(anomalyRetry);
+
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
     });
 
     it('shows error state for System Health card', () => {
@@ -274,6 +320,27 @@ describe('OperationsDashboardPage', () => {
       ).toBeInTheDocument();
     });
 
+    it('calls refetch when retry button is clicked for System Health', () => {
+      const mockRefetch = vi.fn();
+      mockSystemHealth = {
+        ...mockSystemHealth,
+        isError: true,
+        refetch: mockRefetch,
+      };
+
+      renderWithProviders(<OperationsDashboardPage />);
+
+      const retryButtons = screen.getAllByRole('button', { name: /retry/i });
+      const healthRetry = retryButtons.find(
+        (btn) =>
+          btn.closest('.p-6')?.querySelector('span')?.textContent ===
+          'Failed to load system health',
+      );
+      if (healthRetry) fireEvent.click(healthRetry);
+
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
+    });
+
     it('shows error state for Recent Alerts card', () => {
       mockAlertHistory = {
         ...mockAlertHistory,
@@ -285,6 +352,27 @@ describe('OperationsDashboardPage', () => {
       expect(screen.getByText('Failed to load alerts')).toBeInTheDocument();
     });
 
+    it('calls refetch when retry button is clicked for Recent Alerts', () => {
+      const mockRefetch = vi.fn();
+      mockAlertHistory = {
+        ...mockAlertHistory,
+        isError: true,
+        refetch: mockRefetch,
+      };
+
+      renderWithProviders(<OperationsDashboardPage />);
+
+      const retryButtons = screen.getAllByRole('button', { name: /retry/i });
+      const alertRetry = retryButtons.find(
+        (btn) =>
+          btn.closest('.p-6')?.querySelector('span')?.textContent ===
+          'Failed to load alerts',
+      );
+      if (alertRetry) fireEvent.click(alertRetry);
+
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
+    });
+
     it('shows error state for Cost Breakdown card', () => {
       mockCostBreakdown = {
         ...mockCostBreakdown,
@@ -294,6 +382,27 @@ describe('OperationsDashboardPage', () => {
       renderWithProviders(<OperationsDashboardPage />);
 
       expect(screen.getByText('Failed to load cost data')).toBeInTheDocument();
+    });
+
+    it('calls refetch when retry button is clicked for Cost Breakdown', () => {
+      const mockRefetch = vi.fn();
+      mockCostBreakdown = {
+        ...mockCostBreakdown,
+        isError: true,
+        refetch: mockRefetch,
+      };
+
+      renderWithProviders(<OperationsDashboardPage />);
+
+      const retryButtons = screen.getAllByRole('button', { name: /retry/i });
+      const costRetry = retryButtons.find(
+        (btn) =>
+          btn.closest('.p-6')?.querySelector('span')?.textContent ===
+          'Failed to load cost data',
+      );
+      if (costRetry) fireEvent.click(costRetry);
+
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
     });
   });
 
