@@ -2690,14 +2690,23 @@ async function main() {
   // Create pipeline stages
   const stageMap = new Map<string, number>();
   for (const stageSeed of pipelineStageSeeds) {
-    const existingStage = await prisma.salesPipelineStage.findFirst({
+    // Check by name first, then by order (unique constraint is on pipelineId + order)
+    let existingStage = await prisma.salesPipelineStage.findFirst({
       where: { pipelineId: pipeline.id, name: stageSeed.name },
     });
+
+    // If not found by name, check if there's a stage with the same order
+    if (!existingStage) {
+      existingStage = await prisma.salesPipelineStage.findFirst({
+        where: { pipelineId: pipeline.id, order: stageSeed.order },
+      });
+    }
 
     const stage = existingStage
       ? await prisma.salesPipelineStage.update({
           where: { id: existingStage.id },
           data: {
+            name: stageSeed.name,
             description: stageSeed.description,
             order: stageSeed.order,
             probability: stageSeed.probability,
