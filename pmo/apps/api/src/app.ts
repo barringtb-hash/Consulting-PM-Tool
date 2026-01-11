@@ -248,6 +248,69 @@ export function createApp(): express.Express {
   // Log enabled modules at startup
   logEnabledModules();
 
+  // ============ CORS PREFLIGHT HANDLER ============
+  // Handle OPTIONS preflight requests explicitly BEFORE other middleware.
+  // This ensures preflight requests get proper 204 responses with CORS headers
+  // for allowed origins, or 204 without headers for denied origins.
+  // This prevents the "Preflight response is not successful. Status code: 403" error.
+  // Note: Express 5.x uses '{*path}' syntax for catch-all routes (not '*')
+  app.options('{*path}', (req, res) => {
+    const origin = req.get('Origin');
+    const allowedMethods = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+
+    // Widget paths, public lead paths - allow any origin
+    if (isWidgetPath(req.path) || isPublicLeadPath(req.path)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+      res.setHeader('Access-Control-Allow-Methods', allowedMethods);
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      res.status(204).end();
+      return;
+    }
+
+    // Conversation paths - check if from allowed origin or third-party widget
+    if (isConversationPath(req.path)) {
+      if (isAllowedOrigin(origin)) {
+        // Dashboard request - credentialed CORS
+        res.setHeader('Access-Control-Allow-Origin', origin || '');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', allowedMethods);
+        res.setHeader(
+          'Access-Control-Allow-Headers',
+          'Content-Type, Authorization, X-Tenant-ID',
+        );
+        res.setHeader('Access-Control-Max-Age', '86400');
+      } else {
+        // Third-party widget - permissive CORS without credentials
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Methods', allowedMethods);
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Max-Age', '86400');
+      }
+      res.status(204).end();
+      return;
+    }
+
+    // Standard API routes - check if origin is allowed
+    if (isAllowedOrigin(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', allowedMethods);
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, X-Tenant-ID, X-API-Key',
+      );
+      res.setHeader('Access-Control-Max-Age', '86400');
+      res.status(204).end();
+      return;
+    }
+
+    // Origin not allowed - return 204 without CORS headers
+    // Browser will see no CORS headers and block the actual request
+    // Using 204 instead of 403 prevents "Preflight response is not successful" errors
+    res.status(204).end();
+  });
+
   // CORS configuration for cross-origin requests
   // Supports multiple origins, Vercel preview deployments, and widget embedding
   // Explicitly allows Authorization header for Safari ITP fallback authentication
