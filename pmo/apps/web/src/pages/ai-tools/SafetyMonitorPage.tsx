@@ -1,0 +1,828 @@
+/**
+ * Safety Monitor Page
+ *
+ * Tool 3.5: Digital safety checklists, incident reporting,
+ * OSHA 300 log management, and training compliance tracking
+ */
+
+import React, { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
+import { buildOptions, ApiError } from '../../api/http';
+import { buildApiUrl } from '../../api/config';
+import { PageHeader } from '../../ui/PageHeader';
+import { Button } from '../../ui/Button';
+import { Card, CardBody, CardHeader } from '../../ui/Card';
+import { Select } from '../../ui/Select';
+import { Badge } from '../../ui/Badge';
+import { useToast } from '../../ui/Toast';
+import { useAccounts } from '../../api/hooks/crm';
+import {
+  HardHat,
+  Settings,
+  Plus,
+  ClipboardCheck,
+  AlertTriangle,
+  GraduationCap,
+  FileText,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from 'lucide-react';
+
+// Types
+interface SafetyConfig {
+  id: number;
+  clientId: number;
+  oshaLoggingEnabled: boolean;
+  autoIncidentReporting: boolean;
+  trainingTrackingEnabled: boolean;
+  checklistFrequencyDays: number;
+  isActive: boolean;
+  client?: { id: number; name: string };
+}
+
+interface SafetyChecklist {
+  id: number;
+  name: string;
+  category: string;
+  itemCount: number;
+  completionRate: number;
+  lastCompletedAt: string | null;
+  isRequired: boolean;
+}
+
+interface SafetyIncident {
+  id: number;
+  type: string;
+  severity: string;
+  description: string;
+  location: string | null;
+  status: string;
+  reportedAt: string;
+  resolvedAt: string | null;
+}
+
+interface TrainingRecord {
+  id: number;
+  courseName: string;
+  employeeName: string;
+  status: string;
+  dueDate: string | null;
+  completedAt: string | null;
+  expiresAt: string | null;
+}
+
+const SEVERITY_VARIANTS: Record<
+  string,
+  'primary' | 'success' | 'warning' | 'neutral' | 'secondary'
+> = {
+  CRITICAL: 'secondary',
+  HIGH: 'warning',
+  MEDIUM: 'primary',
+  LOW: 'neutral',
+};
+
+const INCIDENT_STATUS_VARIANTS: Record<
+  string,
+  'primary' | 'success' | 'warning' | 'neutral' | 'secondary'
+> = {
+  OPEN: 'secondary',
+  INVESTIGATING: 'warning',
+  RESOLVED: 'success',
+  CLOSED: 'neutral',
+};
+
+const TRAINING_STATUS_VARIANTS: Record<
+  string,
+  'primary' | 'success' | 'warning' | 'neutral' | 'secondary'
+> = {
+  COMPLETED: 'success',
+  IN_PROGRESS: 'warning',
+  OVERDUE: 'secondary',
+  SCHEDULED: 'primary',
+  EXPIRED: 'neutral',
+};
+
+// Skeleton loader for stats cards (available for future overview loading states)
+function _StatCardSkeleton(): JSX.Element {
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="h-3 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+            <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+          <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+// Skeleton loader for checklist items
+function ChecklistSkeleton(): JSX.Element {
+  return (
+    <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <div className="h-6 w-6 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        <div>
+          <div className="h-4 w-40 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+          <div className="h-3 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="h-8 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        <div className="w-20 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+// Skeleton loader for table rows
+function TableRowSkeleton(): JSX.Element {
+  return (
+    <tr className="border-b border-neutral-200 dark:border-neutral-700">
+      <td className="px-6 py-4">
+        <div className="h-4 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-28 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+    </tr>
+  );
+}
+
+// API functions
+async function fetchSafetyConfigs(): Promise<SafetyConfig[]> {
+  const res = await fetch(
+    buildApiUrl('/safety-monitor/configs'),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch safety configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.configs || [];
+}
+
+async function fetchChecklists(configId: number): Promise<SafetyChecklist[]> {
+  const res = await fetch(
+    buildApiUrl(`/safety-monitor/${configId}/checklists`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch checklists') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.checklists || [];
+}
+
+async function fetchIncidents(configId: number): Promise<SafetyIncident[]> {
+  const res = await fetch(
+    buildApiUrl(`/safety-monitor/${configId}/incidents`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch incidents') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.incidents || [];
+}
+
+async function fetchTraining(configId: number): Promise<TrainingRecord[]> {
+  const res = await fetch(
+    buildApiUrl(`/safety-monitor/${configId}/training`),
+    buildOptions(),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to fetch training records') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.training || [];
+}
+
+async function createSafetyConfig(
+  clientId: number,
+  data: Partial<SafetyConfig>,
+): Promise<SafetyConfig> {
+  const res = await fetch(
+    buildApiUrl(`/clients/${clientId}/safety-monitor`),
+    buildOptions({
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  );
+  if (!res.ok) {
+    const error = new Error('Failed to create safety config') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const result = await res.json();
+  return result.config;
+}
+
+function SafetyMonitorPage(): JSX.Element {
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'checklists' | 'incidents' | 'training'
+  >('overview');
+
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Queries
+  const accountsQuery = useAccounts({ archived: false });
+  const configsQuery = useQuery({
+    queryKey: ['safety-configs'],
+    queryFn: fetchSafetyConfigs,
+  });
+
+  const selectedConfig = useMemo(() => {
+    if (!selectedConfigId || !configsQuery.data) return null;
+    return configsQuery.data.find((c) => c.id === selectedConfigId) || null;
+  }, [selectedConfigId, configsQuery.data]);
+
+  const checklistsQuery = useQuery({
+    queryKey: ['safety-checklists', selectedConfigId],
+    queryFn: () => fetchChecklists(selectedConfigId!),
+    enabled: !!selectedConfigId && activeTab === 'checklists',
+  });
+
+  const incidentsQuery = useQuery({
+    queryKey: ['safety-incidents', selectedConfigId],
+    queryFn: () => fetchIncidents(selectedConfigId!),
+    enabled: !!selectedConfigId && activeTab === 'incidents',
+  });
+
+  const trainingQuery = useQuery({
+    queryKey: ['safety-training', selectedConfigId],
+    queryFn: () => fetchTraining(selectedConfigId!),
+    enabled: !!selectedConfigId && activeTab === 'training',
+  });
+
+  // Mutations
+  const createConfigMutation = useMutation({
+    mutationFn: (data: { clientId: number; config: Partial<SafetyConfig> }) =>
+      createSafetyConfig(data.clientId, data.config),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['safety-configs'] });
+      setShowCreateModal(false);
+      showToast('Safety Monitor configuration created', 'success');
+    },
+    onError: (error: Error) => {
+      showToast(error.message, 'error');
+    },
+  });
+
+  // Redirect to login on 401 errors from queries or mutations
+  useRedirectOnUnauthorized(configsQuery.error);
+  useRedirectOnUnauthorized(accountsQuery.error);
+  useRedirectOnUnauthorized(createConfigMutation.error);
+
+  const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const clientId = parseInt(formData.get('clientId') as string, 10);
+
+    createConfigMutation.mutate({
+      clientId,
+      config: {
+        oshaLoggingEnabled: formData.get('oshaLoggingEnabled') === 'on',
+        autoIncidentReporting: formData.get('autoIncidentReporting') === 'on',
+        trainingTrackingEnabled:
+          formData.get('trainingTrackingEnabled') === 'on',
+        checklistFrequencyDays:
+          parseInt(formData.get('checklistFrequencyDays') as string, 10) || 7,
+      },
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title="Safety Monitor"
+        description="Digital safety checklists, incident reporting, and OSHA compliance tracking"
+        icon={HardHat}
+        actions={
+          <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
+            <Settings className="mr-2 h-4 w-4" />
+            New Configuration
+          </Button>
+        }
+      />
+
+      <div className="page-content space-y-6">
+        {/* Configuration Selector */}
+        <Card>
+          <CardBody>
+            <div className="flex gap-4 flex-wrap">
+              <Select
+                label="Select Configuration"
+                value={selectedConfigId?.toString() || ''}
+                onChange={(e) =>
+                  setSelectedConfigId(
+                    e.target.value ? parseInt(e.target.value, 10) : null,
+                  )
+                }
+              >
+                <option value="">Select a configuration...</option>
+                {configsQuery.data?.map((config) => (
+                  <option key={config.id} value={config.id}>
+                    {config.client?.name || `Config ${config.id}`}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Tabs */}
+        {selectedConfigId && (
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: HardHat },
+                { id: 'checklists', label: 'Checklists', icon: ClipboardCheck },
+                { id: 'incidents', label: 'Incidents', icon: AlertTriangle },
+                { id: 'training', label: 'Training', icon: GraduationCap },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as typeof activeTab)}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {selectedConfigId && activeTab === 'overview' && selectedConfig && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      OSHA Logging
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.oshaLoggingEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <FileText className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Auto Incident Report
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.autoIncidentReporting
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Training Tracking
+                    </p>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.trainingTrackingEnabled
+                        ? 'Enabled'
+                        : 'Disabled'}
+                    </p>
+                  </div>
+                  <GraduationCap className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Checklist Frequency
+                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {selectedConfig.checklistFrequencyDays} days
+                    </p>
+                  </div>
+                  <ClipboardCheck className="h-8 w-8 text-green-500" />
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Checklists Tab */}
+        {selectedConfigId && activeTab === 'checklists' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Safety Checklists</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Checklist
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {checklistsQuery.isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <ChecklistSkeleton key={i} />
+                  ))}
+                </div>
+              ) : checklistsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No checklists configured. Create your first safety checklist.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {checklistsQuery.data?.map((checklist) => (
+                    <div
+                      key={checklist.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <ClipboardCheck className="h-6 w-6 text-neutral-400 dark:text-neutral-500" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {checklist.name}
+                            </p>
+                            {checklist.isRequired && (
+                              <Badge variant="secondary">Required</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {checklist.category} • {checklist.itemCount} items
+                          </p>
+                          {checklist.lastCompletedAt && (
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                              Last completed:{' '}
+                              {new Date(
+                                checklist.lastCompletedAt,
+                              ).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                            {checklist.completionRate}%
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Completion
+                          </p>
+                        </div>
+                        <div className="w-20 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              checklist.completionRate >= 80
+                                ? 'bg-green-500'
+                                : checklist.completionRate >= 50
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
+                            }`}
+                            style={{ width: `${checklist.completionRate}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Incidents Tab */}
+        {selectedConfigId && activeTab === 'incidents' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Safety Incidents</h3>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Report Incident
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {incidentsQuery.isLoading ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  Loading incidents...
+                </div>
+              ) : incidentsQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No incidents reported. Your safety record is clean.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {incidentsQuery.data?.map((incident) => (
+                    <div
+                      key={incident.id}
+                      className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                SEVERITY_VARIANTS[incident.severity] ||
+                                'neutral'
+                              }
+                            >
+                              {incident.severity}
+                            </Badge>
+                            <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                              {incident.type}
+                            </span>
+                          </div>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                            {incident.description}
+                          </p>
+                          {incident.location && (
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                              Location: {incident.location}
+                            </p>
+                          )}
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                            Reported:{' '}
+                            {new Date(incident.reportedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={
+                            INCIDENT_STATUS_VARIANTS[incident.status] ||
+                            'neutral'
+                          }
+                        >
+                          {incident.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Training Tab */}
+        {selectedConfigId && activeTab === 'training' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Training Compliance</h3>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ['safety-training'],
+                    })
+                  }
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {trainingQuery.isLoading ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Course
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Employee
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Due Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Expires
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : trainingQuery.data?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                  No training records. Add training requirements to track
+                  compliance.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Course
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Employee
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Due Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Expires
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {trainingQuery.data?.map((record) => (
+                        <tr key={record.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            {record.courseName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                            {record.employeeName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              {record.status === 'COMPLETED' ? (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              ) : record.status === 'OVERDUE' ? (
+                                <XCircle className="h-4 w-4 text-red-500" />
+                              ) : (
+                                <Clock className="h-4 w-4 text-yellow-500" />
+                              )}
+                              <Badge
+                                variant={
+                                  TRAINING_STATUS_VARIANTS[record.status] ||
+                                  'neutral'
+                                }
+                              >
+                                {record.status}
+                              </Badge>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
+                            {record.dueDate
+                              ? new Date(record.dueDate).toLocaleDateString()
+                              : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
+                            {record.expiresAt
+                              ? new Date(record.expiresAt).toLocaleDateString()
+                              : 'Never'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+      </div>
+
+      {/* Create Configuration Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
+              Create Safety Monitor Configuration
+            </h2>
+            <form onSubmit={handleCreateConfig} className="space-y-4">
+              <Select
+                label="Client"
+                name="clientId"
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                required
+              >
+                <option value="">Select a client...</option>
+                {accountsQuery.data?.data?.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </Select>
+
+              <Select
+                label="Checklist Frequency"
+                name="checklistFrequencyDays"
+                defaultValue="7"
+              >
+                <option value="1">Daily</option>
+                <option value="7">Weekly</option>
+                <option value="14">Bi-weekly</option>
+                <option value="30">Monthly</option>
+              </Select>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
+                  <input
+                    type="checkbox"
+                    name="oshaLoggingEnabled"
+                    defaultChecked
+                  />
+                  <span className="text-sm">
+                    Enable OSHA 300 Log Management
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
+                  <input
+                    type="checkbox"
+                    name="autoIncidentReporting"
+                    defaultChecked
+                  />
+                  <span className="text-sm">
+                    Enable Automatic Incident Reporting
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
+                  <input
+                    type="checkbox"
+                    name="trainingTrackingEnabled"
+                    defaultChecked
+                  />
+                  <span className="text-sm">
+                    Enable Training Compliance Tracking
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createConfigMutation.isPending}>
+                  {createConfigMutation.isPending ? 'Creating...' : 'Create'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default SafetyMonitorPage;

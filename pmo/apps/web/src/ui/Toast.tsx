@@ -1,0 +1,250 @@
+import React, {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { cn } from './utils';
+
+/**
+ * Toast variant types.
+ * Note: 'destructive' is accepted as input but internally maps to 'error' styling.
+ * This provides API compatibility with shadcn/ui conventions while using
+ * a simpler internal implementation.
+ */
+type ToastVariant = 'success' | 'error' | 'info' | 'destructive';
+
+interface Toast {
+  id: string;
+  message: string;
+  variant: ToastVariant;
+}
+
+interface ToastOptions {
+  message: string;
+  variant?: ToastVariant;
+}
+
+interface ToastContextValue {
+  showToast: (
+    messageOrOptions: string | ToastOptions,
+    variant?: ToastVariant,
+  ) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast must be used within ToastProvider');
+  }
+  return context;
+}
+
+interface ToastProviderProps {
+  children: React.ReactNode;
+}
+
+export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  // PERF FIX: Track timeouts for cleanup on unmount
+  const timeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+
+  // Cleanup all timeouts on unmount
+  useEffect(() => {
+    const timeouts = timeoutsRef.current;
+    return () => {
+      timeouts.forEach((timeout) => clearTimeout(timeout));
+      timeouts.clear();
+    };
+  }, []);
+
+  const showToast = useCallback(
+    (
+      messageOrOptions: string | ToastOptions,
+      variantArg: ToastVariant = 'info',
+    ) => {
+      // Support both (message, variant) and ({ message, variant }) signatures
+      let message: string;
+      let variant: ToastVariant;
+
+      if (typeof messageOrOptions === 'string') {
+        message = messageOrOptions;
+        variant = variantArg;
+      } else {
+        message = messageOrOptions.message;
+        // Map 'destructive' to 'error' for display
+        const v = messageOrOptions.variant ?? 'info';
+        variant = v === 'destructive' ? 'error' : v;
+      }
+
+      const id = Math.random().toString(36).substring(2, 9);
+      setToasts((prev) => [...prev, { id, message, variant }]);
+
+      // PERF FIX: Track timeout for cleanup
+      const timeout = setTimeout(() => {
+        setToasts((prev) => prev.filter((toast) => toast.id !== id));
+        timeoutsRef.current.delete(id);
+      }, 5000);
+      timeoutsRef.current.set(id, timeout);
+    },
+    [],
+  );
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    // PERF FIX: Clear timeout when manually removing toast
+    const timeout = timeoutsRef.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutsRef.current.delete(id);
+    }
+  }, []);
+
+  const contextValue = useMemo(() => ({ showToast }), [showToast]);
+
+  return (
+    <ToastContext.Provider value={contextValue}>
+      {children}
+      <div
+        className="fixed top-4 right-4 z-50 flex flex-col gap-2"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {toasts.map((toast) => (
+          <ToastItem
+            key={toast.id}
+            toast={toast}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+interface ToastItemProps {
+  toast: Toast;
+  onClose: () => void;
+}
+
+const variantStyles: Record<ToastVariant, string> = {
+  success:
+    'bg-success-50 dark:bg-success-900/80 text-success-800 dark:text-success-100 border-success-200 dark:border-success-700',
+  error:
+    'bg-danger-50 dark:bg-danger-900/80 text-danger-800 dark:text-danger-100 border-danger-200 dark:border-danger-700',
+  destructive:
+    'bg-danger-50 dark:bg-danger-900/80 text-danger-800 dark:text-danger-100 border-danger-200 dark:border-danger-700',
+  info: 'bg-primary-50 dark:bg-primary-900/80 text-primary-800 dark:text-primary-100 border-primary-200 dark:border-primary-700',
+};
+
+const iconPaths: Record<ToastVariant, JSX.Element> = {
+  success: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  ),
+  error: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  ),
+  destructive: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  ),
+  info: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  ),
+};
+
+const ToastItem = memo(function ToastItem({
+  toast,
+  onClose,
+}: ToastItemProps): JSX.Element {
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-3 min-w-[320px] p-4 rounded-lg border shadow-lg',
+        'animate-in slide-in-from-right duration-300',
+        variantStyles[toast.variant],
+      )}
+      role="alert"
+    >
+      <div className="flex-shrink-0">{iconPaths[toast.variant]}</div>
+      <p className="flex-1 text-sm font-medium">{toast.message}</p>
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex-shrink-0 rounded hover:opacity-70 transition-opacity"
+        aria-label="Close notification"
+      >
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+});
+
+ToastItem.displayName = 'ToastItem';

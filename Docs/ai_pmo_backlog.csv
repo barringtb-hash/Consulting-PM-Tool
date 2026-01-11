@@ -1,0 +1,28 @@
+title,body,labels,status,milestone
+E0: Set up monorepo and workspaces,Create a pnpm or npm workspace monorepo with apps/web and apps/api plus shared packages.,"epic:E0,area:foundation,priority:P1,type:chore",open,MVP
+"E0: Configure TypeScript, ESLint, and Prettier","Add strict TypeScript configs, ESLint, Prettier, and shared tsconfig/base lint rules.","epic:E0,area:foundation,priority:P1,type:chore",open,MVP
+E0: Add GitHub Actions CI pipeline,"Configure GitHub Actions to run lint, typecheck, tests, and build on push and pull request.","epic:E0,area:foundation,priority:P1,type:chore",open,MVP
+E7: Implement zod schemas for core DTOs,"Define zod validation schemas for auth, client, project, task, milestone, meeting, and asset payloads.","epic:E7,area:api-auth,priority:P1,type:feature",open,MVP
+E7: Implement auth routes and middleware,"Add /auth/login, /auth/logout, /auth/me plus JWT or cookie-based auth middleware for protected routes.","epic:E7,area:api-auth,priority:P1,type:feature",open,MVP
+E7: Centralize API error handling,Create Express error-handling middleware that maps zod and domain errors into consistent JSON error responses.,"epic:E7,area:api-auth,priority:P2,type:chore",open,MVP
+E1: Implement clients CRUD API,"Add GET, POST, PATCH, DELETE endpoints for /clients with filtering by name and industry.","epic:E1,area:clients,priority:P1,type:feature",open,MVP
+E1: Implement contacts API and link to clients,Add nested contacts endpoints under clients and standalone /contacts/:id update and delete.,"epic:E1,area:clients,priority:P1,type:feature",open,MVP
+E1: Build clients list and detail UI,"Create clients list page with filters and a detail page showing contacts, projects, recent meetings, and assets.","epic:E1,area:clients,priority:P1,type:ui",open,MVP
+E2: Implement projects CRUD API,"Add GET, POST, PATCH, DELETE endpoints for /projects with filters for clientId, status, type, and tag.","epic:E2,area:projects,priority:P1,type:feature",open,MVP
+E2: Implement project templates API,Load JSON project templates and expose a POST /projects/from-template/:templateId endpoint.,"epic:E2,area:projects,priority:P1,type:feature",open,MVP
+E2: Build project list and detail UI with tabs,"Create projects list page and project detail view with tabs for Summary, Tasks, Milestones, Meetings, Assets, and Status.","epic:E2,area:projects,priority:P1,type:ui",open,MVP
+E3: Implement tasks CRUD API,"Add /tasks endpoints and /projects/:id/tasks view to create, read, update, and delete tasks.","epic:E3,area:tasks,priority:P1,type:feature",open,MVP
+E3: Implement task Kanban move endpoint,Add PATCH /tasks/:id/move to update task status and ordering for the Kanban board.,"epic:E3,area:tasks,priority:P2,type:feature",open,MVP
+E3: Build project task list and Kanban UI,Add project-level tasks list and Kanban board grouped by status with drag and drop.,"epic:E3,area:tasks,priority:P1,type:ui",open,MVP
+E3: Implement milestones CRUD API and UI,Add CRUD endpoints and UI for project milestones with due dates and status.,"epic:E3,area:milestones,priority:P1,type:feature",open,MVP
+E3: Integrate milestones into project summary,Show current milestone and upcoming milestones in the project Summary tab.,"epic:E3,area:milestones,priority:P2,type:ui",open,MVP
+E4: Implement meetings CRUD API and UI,"Add meeting endpoints and a meeting editor with fields for notes, decisions, and risks.","epic:E4,area:meetings,priority:P1,type:feature",open,MVP
+E4: Implement selection-to-task flow for meeting notes,Allow selecting text in meeting notes to create a linked task via POST /meetings/:id/tasks-from-selection.,"epic:E4,area:meetings,priority:P1,type:feature",open,MVP
+E5: Implement AI asset library API,"Add /assets endpoints to manage prompts, workflows, integrations, datasets, and training materials with filters.","epic:E5,area:assets,priority:P1,type:feature",open,MVP
+E5: Implement project asset linking API,Add endpoints to link and unlink assets to projects using a join table.,"epic:E5,area:assets,priority:P2,type:feature",open,MVP
+E5: Build asset library and project assets UI,Create asset library page with filters and a project Assets tab with link and unlink actions.,"epic:E5,area:assets,priority:P1,type:ui",open,MVP
+E6: Implement project status snapshot service and API,"Compute task counts, overdue tasks, current milestone, and upcoming deadlines in a /projects/:id/status endpoint.","epic:E6,area:status,priority:P1,type:feature",open,MVP
+E6: Build project status UI and dashboard tiles,Render status snapshot and summary text in the project Status tab and show key metrics on the dashboard.,"epic:E6,area:status,priority:P1,type:ui",open,MVP
+E8: Add error and empty states plus toasts,"Implement user-friendly error states, empty list placeholders, and success/error toast notifications.","epic:E8,area:ux,priority:P2,type:ui",open,MVP
+E8: Add unit and integration tests for core modules,"Write Jest or Vitest unit tests and API integration tests for auth, clients, projects, tasks, and status.","epic:E8,area:testing,priority:P2,type:test",open,MVP
+E8: Add Playwright end-to-end happy-path test,"Automate a full happy-path flow from login through client creation, project template use, meeting notes, task creation, asset linking, and status view.","epic:E8,area:testing,priority:P2,type:test",open,MVP

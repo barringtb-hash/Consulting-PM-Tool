@@ -1,0 +1,230 @@
+@import 'tailwindcss';
+
+/* Source paths for Tailwind to scan */
+@source "../index.html";
+@source "./**/*.{js,ts,jsx,tsx}";
+
+/* Custom theme variables */
+@theme {
+  /* Primary brand color - LaunchPad Orange */
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #ffedd5;
+  --color-primary-200: #fed7aa;
+  --color-primary-300: #fdba74;
+  --color-primary-400: #fb923c;
+  --color-primary-500: #f97316;
+  --color-primary-600: #ea580c;
+  --color-primary-700: #c2410c;
+  --color-primary-800: #9a3412;
+  --color-primary-900: #7c2d12;
+  --color-primary-950: #431407;
+
+  /* Brand accent colors */
+  --color-brand-primary: #f97316;
+  --color-brand-orange: #f97316;
+  --color-brand-amber: #f59e0b;
+  --color-brand-rose: #9f1239;
+  --color-brand-yellow: #fcd34d;
+  --color-brand-red: #ef4444;
+
+  /* Neutral grays */
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
+
+  /* Success colors */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #16a34a;
+  --color-success-600: #15803d;
+  --color-success-700: #166534;
+  --color-success-800: #14532d;
+  --color-success-900: #052e16;
+
+  /* Warning colors */
+  --color-warning-50: #fefce8;
+  --color-warning-100: #fef9c3;
+  --color-warning-200: #fef08a;
+  --color-warning-300: #fde047;
+  --color-warning-400: #facc15;
+  --color-warning-500: #eab308;
+  --color-warning-600: #ca8a04;
+  --color-warning-700: #a16207;
+  --color-warning-800: #854d0e;
+  --color-warning-900: #713f12;
+
+  /* Danger colors */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #dc2626;
+  --color-danger-600: #b91c1c;
+  --color-danger-700: #991b1b;
+  --color-danger-800: #7f1d1d;
+  --color-danger-900: #450a0a;
+
+  /* Font families */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Custom shadows */
+  --shadow-dark-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-dark-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-dark-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-dark-elevated: 0 0 0 1px rgb(255 255 255 / 0.05), 0 4px 6px -1px rgb(0 0 0 / 0.4);
+}
+
+/* Dark mode variant */
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  /* Global typography defaults */
+  html {
+    @apply antialiased;
+    font-size: 16px;
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900;
+    @apply dark:bg-neutral-900 dark:text-neutral-100;
+    line-height: 1.6;
+  }
+
+  /* Headings */
+  h1 {
+    @apply text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100;
+    line-height: 1.2;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100;
+    line-height: 1.3;
+  }
+
+  h3 {
+    @apply text-xl font-semibold text-neutral-900 dark:text-neutral-100;
+    line-height: 1.4;
+  }
+
+  h4 {
+    @apply text-lg font-medium text-neutral-900 dark:text-neutral-100;
+    line-height: 1.5;
+  }
+
+  h5 {
+    @apply text-base font-medium text-neutral-900 dark:text-neutral-100;
+  }
+
+  h6 {
+    @apply text-sm font-medium text-neutral-900 dark:text-neutral-100;
+  }
+
+  /* Links */
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors;
+    @apply dark:text-primary-400 dark:hover:text-primary-300;
+  }
+
+  a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-600 dark:outline-primary-400 rounded;
+  }
+
+  /* Focus styles for interactive elements */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-600 dark:outline-primary-400 rounded;
+  }
+
+  /* Improve readability of paragraphs */
+  p {
+    @apply mb-4 last:mb-0;
+  }
+
+  /* Code */
+  code {
+    @apply font-mono text-sm bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded;
+  }
+
+  pre {
+    @apply font-mono text-sm bg-neutral-100 dark:bg-neutral-800 p-4 rounded overflow-x-auto;
+  }
+
+  pre code {
+    @apply bg-transparent p-0;
+  }
+}
+
+@layer utilities {
+  /* Custom vertical rhythm utilities */
+  .section-spacing {
+    @apply py-8 md:py-12;
+  }
+
+  .container-padding {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+
+  /* Page content container - max-width + padding + centering */
+  .page-content {
+    @apply px-4 md:px-6 lg:px-8 py-6 mx-auto;
+    max-width: 1600px;
+  }
+
+  /* Consistent card spacing for grids */
+  .card-grid {
+    @apply grid gap-4 md:gap-6;
+  }
+
+  /* Text overflow utilities */
+  .text-truncate {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+
+  /* AI Assistant slide-in animation */
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@layer components {
+  /* Dark mode glass effect for elevated surfaces */
+  .dark-glass {
+    @apply dark:bg-neutral-800/80 dark:backdrop-blur-sm dark:ring-1 dark:ring-white/5;
+  }
+
+  /* Dark mode card with better elevation */
+  .dark-card {
+    @apply dark:bg-neutral-800/80 dark:border-neutral-700/80 dark:shadow-dark-md dark:ring-1 dark:ring-white/5;
+  }
+
+  /* Dark mode input styling */
+  .dark-input {
+    @apply dark:bg-neutral-900/50 dark:border-neutral-600;
+  }
+}

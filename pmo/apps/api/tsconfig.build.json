@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@pmo/modules": ["../../packages/modules"],
+      "@pmo/modules/*": ["../../packages/modules/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "../../packages/modules/**/*.ts"],
+  "exclude": ["test", "node_modules", "src/scripts"]
+}

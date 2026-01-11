@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <defs>
+    <linearGradient id="sunGradientLogo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sun rays -->
+  <g stroke="#FCD34D" stroke-width="16" stroke-linecap="round">
+    <!-- Top ray -->
+    <line x1="300" y1="40" x2="300" y2="85"/>
+    <!-- Top-left ray -->
+    <line x1="195" y1="105" x2="225" y2="135"/>
+    <!-- Top-right ray -->
+    <line x1="405" y1="105" x2="375" y2="135"/>
+  </g>
+
+  <!-- Sun (half circle) -->
+  <path d="M 180 220 A 120 120 0 0 1 420 220 L 180 220" fill="url(#sunGradientLogo)"/>
+
+  <!-- Base line -->
+  <rect x="150" y="220" width="300" height="24" rx="12" fill="#9F1239"/>
+
+  <!-- LAUNCHPAD text -->
+  <text x="300" y="300" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="48" fill="#9F1239" font-style="italic">LAUNCHPAD</text>
+
+  <!-- COMMAND CENTER text -->
+  <text x="300" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-weight="400" font-size="22" letter-spacing="6" fill="#64748B">COMMAND CENTER</text>
+</svg>

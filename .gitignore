@@ -1,0 +1,21 @@
+node_modules/
+pmo/node_modules/
+pmo/prisma/dev.db
+pmo/prisma/*.db-journal
+
+# Build outputs
+dist/
+pmo/apps/*/dist/
+
+# Environment files (contain secrets and local config)
+.env
+pmo/apps/*/.env
+
+# MCP configuration (contains API keys)
+.mcp.json
+
+# Playwright
+pmo/e2e/.auth/
+pmo/test-results/
+pmo/playwright-report/
+pmo/playwright/.cache/
