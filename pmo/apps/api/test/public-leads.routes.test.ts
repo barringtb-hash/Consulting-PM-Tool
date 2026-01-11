@@ -1,12 +1,17 @@
 /// <reference types="vitest" />
 import request from 'supertest';
-import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, expect, it, afterAll } from 'vitest';
 
 import { createApp } from '../src/app';
 import { getRawPrisma } from './utils/test-fixtures';
 
 const app = createApp();
 const rawPrisma = getRawPrisma();
+
+// Helper to generate unique IP for each test to avoid rate limiting
+let ipCounter = 0;
+const getUniqueIp = () =>
+  `10.${Math.floor(ipCounter / 256)}.${ipCounter++ % 256}.1`;
 
 describe('public leads routes', () => {
   const testEmail = `public-lead-test-${Date.now()}@example.com`;
@@ -29,6 +34,7 @@ describe('public leads routes', () => {
     it('creates a lead with valid data and returns correct response format', async () => {
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'John Doe',
           email: testEmail,
@@ -61,6 +67,7 @@ describe('public leads routes', () => {
       const email = `public-lead-test-utm-${Date.now()}@example.com`;
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'Jane Smith',
           email,
@@ -102,6 +109,7 @@ describe('public leads routes', () => {
         const email = `public-lead-test-source-${source}-${Date.now()}@example.com`;
         const response = await request(app)
           .post('/api/public/inbound-leads')
+          .set('X-Forwarded-For', getUniqueIp())
           .send({
             name: 'Test User',
             email,
@@ -116,6 +124,7 @@ describe('public leads routes', () => {
     it('returns 400 when name is missing', async () => {
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           email: 'missing-name@example.com',
           company: 'Some Company',
@@ -129,6 +138,7 @@ describe('public leads routes', () => {
     it('returns 400 when email is missing', async () => {
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'No Email User',
           company: 'Some Company',
@@ -142,6 +152,7 @@ describe('public leads routes', () => {
     it('returns 400 for invalid email format', async () => {
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'Invalid Email User',
           email: 'not-an-email',
@@ -155,6 +166,7 @@ describe('public leads routes', () => {
     it('returns 400 for empty name', async () => {
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: '',
           email: 'empty-name@example.com',
@@ -167,6 +179,7 @@ describe('public leads routes', () => {
     it('returns 400 for invalid source enum value', async () => {
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'Test User',
           email: 'invalid-source@example.com',
@@ -181,6 +194,7 @@ describe('public leads routes', () => {
       const email = `public-lead-test-minimal-${Date.now()}@example.com`;
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'Minimal User',
           email,
@@ -203,6 +217,7 @@ describe('public leads routes', () => {
       const email = `public-lead-test-headers-${Date.now()}@example.com`;
       const response = await request(app)
         .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'Header Test User',
           email,
