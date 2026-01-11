@@ -48,7 +48,7 @@ router.post(
 
       if (!tenant) {
         res.status(400).json({
-          error: 'Invalid tenant configuration',
+          error: 'Tenant not found',
         });
         return;
       }

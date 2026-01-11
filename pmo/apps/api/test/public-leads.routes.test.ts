@@ -175,7 +175,40 @@ describe('public leads routes', () => {
         });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Invalid tenant configuration');
+      expect(response.body.error).toBe('Tenant not found');
+    });
+
+    it('returns 400 when tenant is inactive', async () => {
+      // Create an inactive tenant for this test
+      const inactiveTenantSlug = `inactive-tenant-${Date.now()}`;
+      const inactiveTenant = await rawPrisma.tenant.create({
+        data: {
+          id: `test-inactive-${Date.now()}`,
+          name: 'Inactive Test Tenant',
+          slug: inactiveTenantSlug,
+          plan: 'PROFESSIONAL',
+          status: 'SUSPENDED',
+        },
+      });
+
+      try {
+        const response = await request(app)
+          .post('/api/public/inbound-leads')
+          .set('X-Forwarded-For', getUniqueIp())
+          .send({
+            name: 'Inactive Tenant User',
+            email: 'inactive-tenant@example.com',
+            tenantSlug: inactiveTenantSlug,
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Tenant is not active');
+      } finally {
+        // Clean up the inactive tenant
+        await rawPrisma.tenant.delete({
+          where: { id: inactiveTenant.id },
+        });
+      }
     });
 
     it('returns 400 when name is missing', async () => {
