@@ -93,7 +93,7 @@ export async function getAccessibleClientIds(
     select: { role: true },
   });
 
-  if (user?.role === 'ADMIN') {
+  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
     // Return null to indicate "all clients" - caller should not filter
     return null;
   }
@@ -485,7 +485,7 @@ export async function hasLeadAccess(
     select: { role: true },
   });
 
-  if (user?.role === 'ADMIN') {
+  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
     return true;
   }
 
@@ -525,7 +525,7 @@ export async function getLeadAccessFilter(
     select: { role: true },
   });
 
-  if (user?.role === 'ADMIN') {
+  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
     // No filter needed - admin can see all
     return {};
   }
