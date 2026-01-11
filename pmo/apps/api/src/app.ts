@@ -338,6 +338,7 @@ export function createApp(): express.Express {
   app.use('/api', authRouter);
   app.use('/api', healthRouter); // Health check endpoint at /api/healthz
   app.use('/api', featureFlagsRouter); // Module discovery & feature flags API (public endpoints)
+  app.use('/api/public', publicLeadsRouter); // Public lead submission for external website forms
 
   // Protected routes (require authentication)
   app.use('/api/clients', clientsRouter);
@@ -425,10 +426,11 @@ export function createApp(): express.Express {
     app.use('/api', requireModule('marketing'), publishingRouter);
   }
 
-  // Leads module - leadsRouter needs /api/leads, publicLeadsRouter needs /api/public
+  // Leads module - authenticated lead management routes
+  // Note: Public lead submission (/api/public/inbound-leads) is registered separately
+  // in the public routes section to ensure it's always available for external websites
   if (isModuleEnabled('leads')) {
     app.use('/api/leads', requireModule('leads'), leadsRouter);
-    app.use('/api/public', requireModule('leads'), publicLeadsRouter);
   }
 
   // Admin module (user management)
