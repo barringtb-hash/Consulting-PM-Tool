@@ -192,10 +192,10 @@ export const createLead = async (data: LeadCreateInput) => {
   });
 };
 
-export const createPublicLead = async (data: PublicLeadCreateInput) => {
-  // Get tenant context for multi-tenant isolation (if available)
-  const tenantId = hasTenantContext() ? getTenantId() : undefined;
-
+export const createPublicLead = async (
+  data: Omit<PublicLeadCreateInput, 'tenantSlug'>,
+  tenantId: string,
+) => {
   return prisma.inboundLead.create({
     data: {
       ...data,

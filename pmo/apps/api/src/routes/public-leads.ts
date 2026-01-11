@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { createRateLimiter } from '../middleware/rate-limit.middleware';
 import { publicLeadCreateSchema } from '../validation/lead.schema';
 import { createPublicLead } from '../services/lead.service';
+import prisma from '../prisma/client';
 
 const router = Router();
 
@@ -18,6 +19,8 @@ const submitLeadRateLimiter = createRateLimiter({
  *
  * This endpoint is intentionally unauthenticated to allow website forms to submit leads
  * Rate limiting is applied to prevent spam
+ *
+ * Requires tenantSlug to associate leads with the correct tenant
  */
 router.post(
   '/inbound-leads',
@@ -35,8 +38,30 @@ router.post(
         return;
       }
 
-      // Create the lead
-      const lead = await createPublicLead(parsed.data);
+      const { tenantSlug, ...leadData } = parsed.data;
+
+      // Look up tenant by slug
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true, status: true },
+      });
+
+      if (!tenant) {
+        res.status(400).json({
+          error: 'Tenant not found',
+        });
+        return;
+      }
+
+      if (tenant.status !== 'ACTIVE') {
+        res.status(400).json({
+          error: 'Tenant is not active',
+        });
+        return;
+      }
+
+      // Create the lead with tenant association
+      const lead = await createPublicLead(leadData, tenant.id);
 
       // TODO: Send email notification to admin/sales team
       // This could use a service like SendGrid, AWS SES, or Resend

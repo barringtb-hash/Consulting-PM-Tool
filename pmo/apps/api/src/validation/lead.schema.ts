@@ -61,6 +61,8 @@ export const publicLeadCreateSchema = z.object({
     .default(ServiceInterest.NOT_SURE),
   message: z.string().optional(),
   source: z.nativeEnum(LeadSource).default(LeadSource.WEBSITE_CONTACT),
+  // Tenant association - required for multi-tenant lead routing
+  tenantSlug: z.string().min(1, 'Tenant slug is required'),
   // Tracking fields
   page: z.string().optional(),
   utmSource: z.string().optional(),

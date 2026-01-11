@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import request from 'supertest';
-import { describe, expect, it, afterAll } from 'vitest';
+import { describe, expect, it, afterAll, beforeAll } from 'vitest';
 
 import { createApp } from '../src/app';
 import { getRawPrisma } from './utils/test-fixtures';
@@ -16,9 +16,28 @@ const getUniqueIp = () =>
 describe('public leads routes', () => {
   const testEmail = `public-lead-test-${Date.now()}@example.com`;
   const createdLeadIds: number[] = [];
+  let testTenantSlug: string;
+  let testTenantId: string;
 
-  // Clean up any leads created during tests
+  // Create a test tenant before all tests
+  beforeAll(async () => {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    testTenantSlug = `public-leads-test-${suffix}`;
+    const tenant = await rawPrisma.tenant.create({
+      data: {
+        id: `test-tenant-public-leads-${suffix}`,
+        name: `Public Leads Test Tenant ${suffix}`,
+        slug: testTenantSlug,
+        plan: 'PROFESSIONAL',
+        status: 'ACTIVE',
+      },
+    });
+    testTenantId = tenant.id;
+  });
+
+  // Clean up after all tests
   afterAll(async () => {
+    // Clean up leads
     if (createdLeadIds.length > 0) {
       await rawPrisma.inboundLead.deleteMany({
         where: { id: { in: createdLeadIds } },
@@ -28,6 +47,12 @@ describe('public leads routes', () => {
     await rawPrisma.inboundLead.deleteMany({
       where: { email: { contains: 'public-lead-test-' } },
     });
+    // Clean up test tenant
+    if (testTenantId) {
+      await rawPrisma.tenant.delete({
+        where: { id: testTenantId },
+      });
+    }
   });
 
   describe('POST /api/public/inbound-leads', () => {
@@ -38,6 +63,7 @@ describe('public leads routes', () => {
         .send({
           name: 'John Doe',
           email: testEmail,
+          tenantSlug: testTenantSlug,
           company: 'Acme Corp',
           message: 'Interested in your AI services',
           source: 'WEBSITE_CONTACT',
@@ -52,7 +78,7 @@ describe('public leads routes', () => {
       // Track for cleanup
       createdLeadIds.push(parseInt(response.body.leadId));
 
-      // Verify the lead was actually created in the database
+      // Verify the lead was actually created in the database with correct tenant
       const lead = await rawPrisma.inboundLead.findUnique({
         where: { id: parseInt(response.body.leadId) },
       });
@@ -61,6 +87,7 @@ describe('public leads routes', () => {
       expect(lead?.email).toBe(testEmail);
       expect(lead?.company).toBe('Acme Corp');
       expect(lead?.status).toBe('NEW');
+      expect(lead?.tenantId).toBe(testTenantId);
     });
 
     it('accepts UTM tracking fields', async () => {
@@ -71,6 +98,7 @@ describe('public leads routes', () => {
         .send({
           name: 'Jane Smith',
           email,
+          tenantSlug: testTenantSlug,
           company: 'Tech Co',
           source: 'WEBSITE_CONTACT',
           page: 'https://example.com/contact',
@@ -113,11 +141,73 @@ describe('public leads routes', () => {
           .send({
             name: 'Test User',
             email,
+            tenantSlug: testTenantSlug,
             source,
           });
 
         expect(response.status).toBe(201);
         createdLeadIds.push(parseInt(response.body.leadId));
+      }
+    });
+
+    it('returns 400 when tenantSlug is missing', async () => {
+      const response = await request(app)
+        .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
+        .send({
+          name: 'No Tenant User',
+          email: 'no-tenant@example.com',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid lead data');
+      expect(response.body.details).toBeDefined();
+    });
+
+    it('returns 400 when tenantSlug is invalid', async () => {
+      const response = await request(app)
+        .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
+        .send({
+          name: 'Invalid Tenant User',
+          email: 'invalid-tenant@example.com',
+          tenantSlug: 'nonexistent-tenant-slug-12345',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Tenant not found');
+    });
+
+    it('returns 400 when tenant is inactive', async () => {
+      // Create an inactive tenant for this test
+      const inactiveTenantSlug = `inactive-tenant-${Date.now()}`;
+      const inactiveTenant = await rawPrisma.tenant.create({
+        data: {
+          id: `test-inactive-${Date.now()}`,
+          name: 'Inactive Test Tenant',
+          slug: inactiveTenantSlug,
+          plan: 'PROFESSIONAL',
+          status: 'SUSPENDED',
+        },
+      });
+
+      try {
+        const response = await request(app)
+          .post('/api/public/inbound-leads')
+          .set('X-Forwarded-For', getUniqueIp())
+          .send({
+            name: 'Inactive Tenant User',
+            email: 'inactive-tenant@example.com',
+            tenantSlug: inactiveTenantSlug,
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Tenant is not active');
+      } finally {
+        // Clean up the inactive tenant
+        await rawPrisma.tenant.delete({
+          where: { id: inactiveTenant.id },
+        });
       }
     });
 
@@ -127,6 +217,7 @@ describe('public leads routes', () => {
         .set('X-Forwarded-For', getUniqueIp())
         .send({
           email: 'missing-name@example.com',
+          tenantSlug: testTenantSlug,
           company: 'Some Company',
         });
 
@@ -141,6 +232,7 @@ describe('public leads routes', () => {
         .set('X-Forwarded-For', getUniqueIp())
         .send({
           name: 'No Email User',
+          tenantSlug: testTenantSlug,
           company: 'Some Company',
         });
 
@@ -156,6 +248,7 @@ describe('public leads routes', () => {
         .send({
           name: 'Invalid Email User',
           email: 'not-an-email',
+          tenantSlug: testTenantSlug,
           company: 'Some Company',
         });
 
@@ -170,6 +263,7 @@ describe('public leads routes', () => {
         .send({
           name: '',
           email: 'empty-name@example.com',
+          tenantSlug: testTenantSlug,
         });
 
       expect(response.status).toBe(400);
@@ -183,6 +277,7 @@ describe('public leads routes', () => {
         .send({
           name: 'Test User',
           email: 'invalid-source@example.com',
+          tenantSlug: testTenantSlug,
           source: 'INVALID_SOURCE',
         });
 
@@ -198,6 +293,7 @@ describe('public leads routes', () => {
         .send({
           name: 'Minimal User',
           email,
+          tenantSlug: testTenantSlug,
         });
 
       expect(response.status).toBe(201);
@@ -221,6 +317,7 @@ describe('public leads routes', () => {
         .send({
           name: 'Header Test User',
           email,
+          tenantSlug: testTenantSlug,
         });
 
       expect(response.status).toBe(201);
@@ -247,6 +344,7 @@ describe('public leads routes', () => {
           .send({
             name: `Rate Limit Test ${i}`,
             email,
+            tenantSlug: testTenantSlug,
           });
 
         if (response.status === 201) {
@@ -261,6 +359,7 @@ describe('public leads routes', () => {
         .send({
           name: 'Over Limit User',
           email: `rate-limit-over-${Date.now()}@example.com`,
+          tenantSlug: testTenantSlug,
         });
 
       expect(response.status).toBe(429);
