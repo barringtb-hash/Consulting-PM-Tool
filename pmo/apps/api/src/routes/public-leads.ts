@@ -51,11 +51,7 @@ router.post(
 
       res.status(201).json({
         success: true,
-        lead: {
-          id: lead.id,
-          email: lead.email,
-          message: "Thank you for your interest! We'll be in touch soon.",
-        },
+        leadId: String(lead.id),
       });
     } catch (error) {
       console.error('Failed to create public lead:', error);

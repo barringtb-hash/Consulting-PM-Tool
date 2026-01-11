@@ -53,11 +53,10 @@ Content-Type: application/json
 
 #### Required Fields
 
+- `name` (string): Contact's full name
 - `email` (string): Valid email address
 
 #### Optional Fields
-
-- `name` (string): Contact's full name
 - `company` (string): Company name
 - `website` (string): Company website (must be valid URL or empty string)
 - `serviceInterest` (enum): Type of service they're interested in
@@ -93,11 +92,7 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "lead": {
-    "id": 123,
-    "email": "ada@acme.ai",
-    "message": "Thank you for your interest! We'll be in touch soon."
-  }
+  "leadId": "123"
 }
 ```
 
@@ -194,7 +189,7 @@ Content-Type: application/json
         const result = await response.json();
 
         if (response.ok) {
-          alert(result.lead.message);
+          alert("Thank you for your interest! We'll be in touch soon.");
           e.target.reset();
         } else {
           alert('Error: ' + result.error);
