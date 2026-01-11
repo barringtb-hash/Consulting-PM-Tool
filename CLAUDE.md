@@ -671,6 +671,12 @@ For detailed documentation on the AI Chatbot and Document Analyzer, see [Docs/AI
 ### Working with CRM Features
 For the comprehensive CRM transformation plan, see [Docs/CRM-TRANSFORMATION-PLAN.md](Docs/CRM-TRANSFORMATION-PLAN.md).
 
+**Public API Endpoints (No Authentication Required):**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/public/inbound-leads` | POST | Submit leads from external website forms. Rate limited to 5 requests/15min per IP. Accepts: `name` (required), `email` (required), `company`, `message`, `source` (enum: WEBSITE_CONTACT, REFERRAL, LINKEDIN, EVENT, OTHER), `serviceInterest`, UTM tracking fields (`page`, `utmSource`, `utmMedium`, `utmCampaign`, `utmContent`, `utmTerm`). |
+
 **CRM API Endpoints:**
 
 | Resource | Endpoints |

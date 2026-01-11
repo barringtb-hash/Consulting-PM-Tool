@@ -142,6 +142,14 @@ function isWidgetPath(path: string): boolean {
 }
 
 /**
+ * Check if a request path is a public lead submission path.
+ * These paths need permissive CORS to allow external website forms to submit leads.
+ */
+function isPublicLeadPath(path: string): boolean {
+  return path === '/api/public/inbound-leads';
+}
+
+/**
  * Check if a request path is a chatbot conversation path.
  * These paths can be accessed both from the dashboard (with credentials)
  * and from embedded widgets (without credentials).
@@ -255,6 +263,15 @@ export function createApp(): express.Express {
         exposedHeaders: ['Content-Type'],
         maxAge: 86400,
       })(req, res, next);
+    } else if (isPublicLeadPath(req.path)) {
+      // Public lead submission endpoint - allow any origin for website form submissions
+      cors({
+        origin: true, // Allow any origin for external website forms
+        credentials: false, // Public leads don't need credentials
+        allowedHeaders: ['Content-Type'],
+        exposedHeaders: ['Content-Type'],
+        maxAge: 86400,
+      })(req, res, next);
     } else if (isConversationPath(req.path)) {
       // Conversation paths can be accessed from both dashboard and widgets
       // Use credentials if request is from allowed origin, otherwise allow any origin
@@ -321,6 +338,7 @@ export function createApp(): express.Express {
   app.use('/api', authRouter);
   app.use('/api', healthRouter); // Health check endpoint at /api/healthz
   app.use('/api', featureFlagsRouter); // Module discovery & feature flags API (public endpoints)
+  app.use('/api/public', publicLeadsRouter); // Public lead submission for external website forms
 
   // Protected routes (require authentication)
   app.use('/api/clients', clientsRouter);
@@ -408,10 +426,11 @@ export function createApp(): express.Express {
     app.use('/api', requireModule('marketing'), publishingRouter);
   }
 
-  // Leads module - leadsRouter needs /api/leads, publicLeadsRouter needs /api/public
+  // Leads module - authenticated lead management routes
+  // Note: Public lead submission (/api/public/inbound-leads) is registered separately
+  // in the public routes section to ensure it's always available for external websites
   if (isModuleEnabled('leads')) {
     app.use('/api/leads', requireModule('leads'), leadsRouter);
-    app.use('/api/public', requireModule('leads'), publicLeadsRouter);
   }
 
   // Admin module (user management)
