@@ -272,35 +272,43 @@ export function createApp(): express.Express {
     if (isConversationPath(req.path)) {
       if (isAllowedOrigin(origin)) {
         // Dashboard request - credentialed CORS
-        res.setHeader('Access-Control-Allow-Origin', origin || '');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-        res.setHeader('Access-Control-Allow-Methods', allowedMethods);
-        res.setHeader(
-          'Access-Control-Allow-Headers',
-          'Content-Type, Authorization, X-Tenant-ID',
-        );
-        res.setHeader('Access-Control-Max-Age', '86400');
+        // If no origin (server-to-server, curl), skip CORS headers - request works without them
+        if (origin) {
+          res.setHeader('Access-Control-Allow-Origin', origin);
+          res.setHeader('Access-Control-Allow-Credentials', 'true');
+          res.setHeader('Access-Control-Allow-Methods', allowedMethods);
+          res.setHeader(
+            'Access-Control-Allow-Headers',
+            'Content-Type, Authorization, X-Tenant-ID',
+          );
+          res.setHeader('Access-Control-Max-Age', '86400');
+        }
+        res.status(204).end();
+        return;
       } else {
         // Third-party widget - permissive CORS without credentials
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
         res.setHeader('Access-Control-Allow-Methods', allowedMethods);
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         res.setHeader('Access-Control-Max-Age', '86400');
+        res.status(204).end();
+        return;
       }
-      res.status(204).end();
-      return;
     }
 
     // Standard API routes - check if origin is allowed
     if (isAllowedOrigin(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin || '');
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Allow-Methods', allowedMethods);
-      res.setHeader(
-        'Access-Control-Allow-Headers',
-        'Content-Type, Authorization, X-Tenant-ID, X-API-Key',
-      );
-      res.setHeader('Access-Control-Max-Age', '86400');
+      // If no origin (server-to-server, curl), skip CORS headers - request works without them
+      if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', allowedMethods);
+        res.setHeader(
+          'Access-Control-Allow-Headers',
+          'Content-Type, Authorization, X-Tenant-ID, X-API-Key',
+        );
+        res.setHeader('Access-Control-Max-Age', '86400');
+      }
       res.status(204).end();
       return;
     }
