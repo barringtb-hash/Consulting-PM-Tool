@@ -35,6 +35,7 @@ Content-Type: application/json
 {
   "name": "Ada Lovelace",
   "email": "ada@acme.ai",
+  "tenantSlug": "your-tenant-slug",
   "company": "Acme AI",
   "website": "https://acme.ai",
   "serviceInterest": "STRATEGY",
@@ -55,8 +56,10 @@ Content-Type: application/json
 
 - `name` (string): Contact's full name
 - `email` (string): Valid email address
+- `tenantSlug` (string): Your tenant's unique slug (used to route leads to the correct CRM tenant)
 
 #### Optional Fields
+
 - `company` (string): Company name
 - `website` (string): Company website (must be valid URL or empty string)
 - `serviceInterest` (enum): Type of service they're interested in
