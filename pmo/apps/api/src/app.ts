@@ -142,6 +142,14 @@ function isWidgetPath(path: string): boolean {
 }
 
 /**
+ * Check if a request path is a public lead submission path.
+ * These paths need permissive CORS to allow external website forms to submit leads.
+ */
+function isPublicLeadPath(path: string): boolean {
+  return path === '/api/public/inbound-leads';
+}
+
+/**
  * Check if a request path is a chatbot conversation path.
  * These paths can be accessed both from the dashboard (with credentials)
  * and from embedded widgets (without credentials).
@@ -251,6 +259,15 @@ export function createApp(): express.Express {
       cors({
         origin: true, // Allow any origin for widget paths
         credentials: false, // Widgets don't need credentials
+        allowedHeaders: ['Content-Type'],
+        exposedHeaders: ['Content-Type'],
+        maxAge: 86400,
+      })(req, res, next);
+    } else if (isPublicLeadPath(req.path)) {
+      // Public lead submission endpoint - allow any origin for website form submissions
+      cors({
+        origin: true, // Allow any origin for external website forms
+        credentials: false, // Public leads don't need credentials
         allowedHeaders: ['Content-Type'],
         exposedHeaders: ['Content-Type'],
         maxAge: 86400,
