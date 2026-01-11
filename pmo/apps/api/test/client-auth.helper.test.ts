@@ -25,7 +25,7 @@ describe('client-auth.helper', () => {
         name: `Test Tenant ${Date.now()}`,
         slug: `test-tenant-${Date.now()}`,
         status: 'ACTIVE',
-        plan: 'FREE',
+        plan: 'STARTER',
       },
     });
     testTenantId = tenant.id;
