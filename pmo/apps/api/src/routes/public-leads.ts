@@ -40,9 +40,12 @@ router.post(
 
       const { tenantSlug, ...leadData } = parsed.data;
 
-      // Look up tenant by slug
-      const tenant = await prisma.tenant.findUnique({
-        where: { slug: tenantSlug },
+      // Look up tenant by slug or by ID in a single query
+      // This allows users to use either their human-readable slug or tenant ID
+      const tenant = await prisma.tenant.findFirst({
+        where: {
+          OR: [{ slug: tenantSlug }, { id: tenantSlug }],
+        },
         select: { id: true, status: true },
       });
 

@@ -56,7 +56,7 @@ Content-Type: application/json
 
 - `name` (string): Contact's full name
 - `email` (string): Valid email address
-- `tenantSlug` (string): Your tenant's unique slug (used to route leads to the correct CRM tenant). You can find your tenant slug in the CRM under **Settings → Organization → Tenant Slug**, or ask your CRM administrator.
+- `tenantSlug` (string): Your tenant's unique slug **or** tenant ID (used to route leads to the correct CRM tenant). You can find your tenant slug in the CRM under **Settings → Organization → Tenant Slug**, or use your tenant ID. Ask your CRM administrator if unsure.
 
 #### Optional Fields
 

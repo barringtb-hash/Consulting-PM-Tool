@@ -211,6 +211,29 @@ describe('public leads routes', () => {
       }
     });
 
+    it('accepts tenant ID as fallback when slug not found', async () => {
+      // Use the tenant ID directly instead of slug
+      const email = `public-lead-test-id-fallback-${Date.now()}@example.com`;
+      const response = await request(app)
+        .post('/api/public/inbound-leads')
+        .set('X-Forwarded-For', getUniqueIp())
+        .send({
+          name: 'Tenant ID User',
+          email,
+          tenantSlug: testTenantId, // Using ID instead of slug
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      createdLeadIds.push(parseInt(response.body.leadId));
+
+      // Verify the lead was created with the correct tenant
+      const lead = await rawPrisma.inboundLead.findUnique({
+        where: { id: parseInt(response.body.leadId) },
+      });
+      expect(lead?.tenantId).toBe(testTenantId);
+    });
+
     it('returns 400 when name is missing', async () => {
       const response = await request(app)
         .post('/api/public/inbound-leads')
