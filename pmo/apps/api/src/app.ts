@@ -253,8 +253,13 @@ export function createApp(): express.Express {
   // This ensures preflight requests get proper 204 responses with CORS headers
   // for allowed origins, or 204 without headers for denied origins.
   // This prevents the "Preflight response is not successful. Status code: 403" error.
-  // Note: Express 5.x uses '{*path}' syntax for catch-all routes (not '*')
-  app.options('{*path}', (req, res) => {
+  // Using middleware (app.use) instead of app.options() for more reliable matching.
+  app.use((req, res, next) => {
+    // Only handle OPTIONS requests
+    if (req.method !== 'OPTIONS') {
+      return next();
+    }
+
     const origin = req.get('Origin');
     const allowedMethods = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
 
