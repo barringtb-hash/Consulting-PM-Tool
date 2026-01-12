@@ -20,36 +20,74 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock hook return values
-let mockRealtimeStats = {
+// Mock hook return values with explicit types to allow reassignment
+interface MockQueryResult<T> {
+  data: T | null;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: ReturnType<typeof vi.fn>;
+}
+
+let mockRealtimeStats: MockQueryResult<{
+  data: {
+    today: { calls: number; tokens: number };
+    last5Minutes: { calls: number; tokens: number };
+    last1Hour: { calls: number; tokens: number };
+    activeTools: string[];
+  };
+}> = {
   data: null,
   isLoading: false,
   isError: false,
   refetch: vi.fn(),
 };
 
-let mockCostBreakdown = {
+let mockCostBreakdown: MockQueryResult<{
+  data: {
+    total: number;
+    byTool: { toolId: string; cost: number; percentage: number }[];
+    byModel: { model: string; cost: number; percentage: number }[];
+  };
+}> = {
   data: null,
   isLoading: false,
   isError: false,
   refetch: vi.fn(),
 };
 
-let mockSystemHealth = {
+let mockSystemHealth: MockQueryResult<{
+  data: {
+    memoryUsagePercent: number;
+    memoryUsedMB: number;
+    memoryTotalMB: number;
+    cpuUsagePercent: number;
+    eventLoopLagMs: number;
+    uptimeSeconds: number;
+  };
+}> = {
   data: null,
   isLoading: false,
   isError: false,
   refetch: vi.fn(),
 };
 
-let mockAnomalyStats = {
+let mockAnomalyStats: MockQueryResult<{
+  data: {
+    open: number;
+    acknowledged: number;
+    resolved: number;
+    falsePositive: number;
+    total: number;
+    bySeverity: { CRITICAL: number; HIGH: number; MEDIUM: number };
+  };
+}> = {
   data: null,
   isLoading: false,
   isError: false,
   refetch: vi.fn(),
 };
 
-let mockAlertHistory = {
+let mockAlertHistory: MockQueryResult<{ data: unknown[] }> = {
   data: null,
   isLoading: false,
   isError: false,
@@ -441,6 +479,7 @@ describe('OperationsDashboardPage', () => {
         },
         isLoading: false,
         isError: false,
+        refetch: vi.fn(),
       };
 
       renderWithProviders(<OperationsDashboardPage />);
@@ -462,6 +501,7 @@ describe('OperationsDashboardPage', () => {
         },
         isLoading: false,
         isError: false,
+        refetch: vi.fn(),
       };
 
       renderWithProviders(<OperationsDashboardPage />);
@@ -486,6 +526,7 @@ describe('OperationsDashboardPage', () => {
         },
         isLoading: false,
         isError: false,
+        refetch: vi.fn(),
       };
 
       renderWithProviders(<OperationsDashboardPage />);
@@ -501,6 +542,7 @@ describe('OperationsDashboardPage', () => {
         data: { data: [] },
         isLoading: false,
         isError: false,
+        refetch: vi.fn(),
       };
 
       renderWithProviders(<OperationsDashboardPage />);
@@ -513,6 +555,7 @@ describe('OperationsDashboardPage', () => {
         data: null,
         isLoading: false,
         isError: false,
+        refetch: vi.fn(),
       };
 
       renderWithProviders(<OperationsDashboardPage />);

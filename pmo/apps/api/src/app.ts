@@ -94,6 +94,8 @@ import contactRouter from './crm/routes/contact.routes';
 import opportunityRouter from './crm/routes/opportunity.routes';
 import activityRouter from './crm/routes/activity.routes';
 import playbookRouter from './crm/routes/playbook.routes';
+// Customer Success ML Routes
+import { customerSuccessMLRouter } from './modules/customer-success-ml';
 // Tenant Routes
 import tenantRouter from './tenant/tenant.routes';
 // Notification Routes
@@ -459,6 +461,11 @@ export function createApp(): express.Express {
   app.use('/api/crm/opportunities', opportunityRouter);
   app.use('/api/crm/activities', activityRouter);
   app.use('/api/crm/playbooks', playbookRouter);
+
+  // ============ CUSTOMER SUCCESS ML ROUTES ============
+  // ML-powered predictions and insights for Customer Success
+  // Mounted under /api/crm/accounts for account-level predictions
+  app.use('/api/crm/accounts', customerSuccessMLRouter);
 
   // ============ CRM PLATFORM ROUTES (Phase 3-6) ============
   // Module licensing and feature gating

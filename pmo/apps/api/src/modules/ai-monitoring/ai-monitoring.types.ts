@@ -86,6 +86,11 @@ export const AI_TOOLS = {
     name: 'MCP AI Query',
     operations: ['query', 'analyze'],
   },
+  'customer-success-ml': {
+    id: 'customer-success-ml',
+    name: 'Customer Success ML',
+    operations: ['churn-prediction', 'health-analysis', 'cta-generation'],
+  },
 } as const;
 
 export type AIToolId = keyof typeof AI_TOOLS;

@@ -420,10 +420,10 @@ function ProjectDashboardPage(): JSX.Element {
     Number.isNaN(projectId) ? undefined : projectId,
   );
   const project = projectQuery.data as Project | undefined;
-  const clientQuery = useClient(project?.clientId);
+  const clientQuery = useClient(project?.clientId ?? undefined);
   const updateProjectMutation = useUpdateProject(projectId || 0);
   const deleteProjectMutation = useDeleteProject();
-  const { setSelectedClient, setSelectedProject } = useClientProjectContext();
+  const { setSelectedProject } = useClientProjectContext();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [showStatusEditor, setShowStatusEditor] = useState(false);
@@ -440,7 +440,7 @@ function ProjectDashboardPage(): JSX.Element {
   const linkAssetMutation = useLinkAssetToProject(projectId || 0);
   const unlinkAssetMutation = useUnlinkAssetFromProject(projectId || 0);
   const availableAssetsQuery = useAssets(
-    project ? { clientId: project.clientId } : undefined,
+    project?.clientId ? { clientId: project.clientId } : undefined,
   );
   const createAssetMutation = useCreateAsset();
   const [selectedAssetId, setSelectedAssetId] = useState('');
@@ -519,11 +519,8 @@ function ProjectDashboardPage(): JSX.Element {
     }
   };
 
-  useEffect(() => {
-    if (clientQuery.data) {
-      setSelectedClient(clientQuery.data);
-    }
-  }, [clientQuery.data, setSelectedClient]);
+  // Note: Legacy client-project context is deprecated. The CRM now uses Account-based context.
+  // Client data is fetched and displayed directly without storing in context.
 
   const handleUpdateProjectStatus = async () => {
     if (!project) return;
