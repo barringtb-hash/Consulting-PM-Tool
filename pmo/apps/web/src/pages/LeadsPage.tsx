@@ -1,7 +1,10 @@
 /**
- * Leads Page
+ * Leads Page with ML Dashboard & Analytics
  *
- * Displays a list of inbound leads with filtering, conversion, and CRUD operations.
+ * Enhanced Inbound Leads page featuring:
+ * - Leads list with filtering, conversion, and CRUD operations
+ * - Dashboard with ML insights, conversion predictions, and top priority leads
+ * - Analytics with source breakdown, funnel metrics, and performance tracking
  * Features:
  * - Stats cards with icons and colored accents
  * - Professional table layout with hover states
@@ -36,6 +39,17 @@ import {
   Trash2,
   ArrowRightCircle,
   UserX,
+  List,
+  BarChart3,
+  Heart,
+  Brain,
+  CheckCircle,
+  AlertTriangle,
+  Star,
+  Zap,
+  Activity,
+  PieChart,
+  ArrowRight,
 } from 'lucide-react';
 
 import {
@@ -52,16 +66,50 @@ import {
   useConvertLead,
   useDeleteLead,
 } from '../api/queries';
+import {
+  useTopPriorityLeads,
+  useFeatureImportance,
+  usePredictionAccuracy,
+} from '../api/hooks/lead-ml';
+import { buildOptions, ApiError } from '../api/http';
+import { buildApiUrl } from '../api/config';
 import { useAuth } from '../auth/AuthContext';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Badge, BadgeVariant } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
+import { Card, CardBody, CardHeader } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { PageHeader } from '../ui/PageHeader';
 import { Select } from '../ui/Select';
 import { useToast } from '../ui/Toast';
 import { EMPTY_STATES } from '../utils/typography';
+import { useQuery } from '@tanstack/react-query';
+
+// Tab types
+type TabType = 'leads' | 'dashboard' | 'analytics';
+
+// Lead Scoring Config type
+interface LeadScoringConfig {
+  id: number;
+  clientId: number;
+  hotThreshold: number;
+  warmThreshold: number;
+  coldThreshold: number;
+  isActive: boolean;
+  client?: { id: number; name: string };
+}
+
+// Fetch lead scoring configs
+async function fetchLeadScoringConfigs(): Promise<LeadScoringConfig[]> {
+  const res = await fetch(buildApiUrl('/lead-scoring/configs'), buildOptions());
+  if (!res.ok) {
+    const error = new Error('Failed to fetch lead scoring configs') as ApiError;
+    error.status = res.status;
+    throw error;
+  }
+  const data = await res.json();
+  return data.configs || [];
+}
 
 interface ConversionFormData {
   opportunityName: string;
@@ -619,9 +667,642 @@ const LeadDetailPanel = memo(function LeadDetailPanel({
 
 LeadDetailPanel.displayName = 'LeadDetailPanel';
 
+// ============== DASHBOARD TAB ==============
+
+interface DashboardTabProps {
+  leads: InboundLead[];
+  configId?: number;
+}
+
+function DashboardTab({ leads, configId }: DashboardTabProps): JSX.Element {
+  // ML hooks - only fetch if we have a config
+  const topLeadsQuery = useTopPriorityLeads(configId || 0, 5);
+  const featureImportanceQuery = useFeatureImportance(configId || 0);
+  const accuracyQuery = usePredictionAccuracy(configId || 0);
+
+  const hasMLData = configId && configId > 0;
+
+  // Calculate lead pipeline stats from leads data
+  const pipelineStats = useMemo(() => {
+    const newCount = leads.filter((l) => l.status === 'NEW').length;
+    const contactedCount = leads.filter((l) => l.status === 'CONTACTED').length;
+    const qualifiedCount = leads.filter((l) => l.status === 'QUALIFIED').length;
+    const convertedCount = leads.filter((l) => l.status === 'CONVERTED').length;
+    const disqualifiedCount = leads.filter(
+      (l) => l.status === 'DISQUALIFIED',
+    ).length;
+
+    const conversionRate =
+      leads.length > 0 ? (convertedCount / leads.length) * 100 : 0;
+
+    return {
+      newCount,
+      contactedCount,
+      qualifiedCount,
+      convertedCount,
+      disqualifiedCount,
+      total: leads.length,
+      conversionRate,
+    };
+  }, [leads]);
+
+  // Get feature importance data
+  const featureImportance = featureImportanceQuery.data;
+  const topFeatures = useMemo(() => {
+    if (!featureImportance?.featureWeights) return [];
+    const entries = Object.entries(
+      featureImportance.featureWeights as Record<string, number>,
+    );
+    return entries
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, weight]) => ({
+        name: name.replace(/([A-Z])/g, ' $1').trim(),
+        weight: Math.round(weight * 100),
+      }));
+  }, [featureImportance]);
+
+  return (
+    <div className="space-y-6">
+      {/* Pipeline Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                Pipeline Health
+              </p>
+              <p className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mt-1">
+                {pipelineStats.total}
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                {pipelineStats.conversionRate.toFixed(1)}% conversion rate
+              </p>
+            </div>
+            <div className="p-2 sm:p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30 shrink-0">
+              <Target className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                New Leads
+              </p>
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                {pipelineStats.newCount}
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                Awaiting contact
+              </p>
+            </div>
+            <div className="p-2 sm:p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 shrink-0">
+              <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                In Progress
+              </p>
+              <p className="text-2xl sm:text-3xl font-bold text-amber-600 dark:text-amber-400 mt-1">
+                {pipelineStats.contactedCount + pipelineStats.qualifiedCount}
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                Being nurtured
+              </p>
+            </div>
+            <div className="p-2 sm:p-3 rounded-xl bg-amber-100 dark:bg-amber-900/30 shrink-0">
+              <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                Converted
+              </p>
+              <p className="text-2xl sm:text-3xl font-bold text-violet-600 dark:text-violet-400 mt-1">
+                {pipelineStats.convertedCount}
+              </p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                Successfully closed
+              </p>
+            </div>
+            <div className="p-2 sm:p-3 rounded-xl bg-violet-100 dark:bg-violet-900/30 shrink-0">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-violet-600 dark:text-violet-400" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ML Insights Panel */}
+        <div className="lg:col-span-2 space-y-6">
+          {hasMLData ? (
+            <>
+              {/* Top Priority Leads */}
+              <Card>
+                <CardHeader className="flex justify-between items-center">
+                  <h3 className="font-semibold flex items-center gap-2 text-neutral-900 dark:text-white">
+                    <Star className="w-5 h-5 text-amber-500" /> Top Priority
+                    Leads
+                  </h3>
+                  <Badge variant="secondary">ML Ranked</Badge>
+                </CardHeader>
+                <CardBody>
+                  {topLeadsQuery.isLoading ? (
+                    <div className="animate-pulse space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-16 bg-neutral-200 dark:bg-neutral-700 rounded"
+                        />
+                      ))}
+                    </div>
+                  ) : topLeadsQuery.data?.leads?.length ? (
+                    <div className="space-y-3">
+                      {topLeadsQuery.data.leads.map(
+                        (lead: Record<string, unknown>, index: number) => (
+                          <div
+                            key={lead.id as number}
+                            className="p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-bold text-sm">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-neutral-900 dark:text-white">
+                                    {(lead.name as string) ||
+                                      (lead.email as string)}
+                                  </p>
+                                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                    {lead.company as string}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="flex items-center gap-2">
+                                  <Zap className="w-4 h-4 text-green-500" />
+                                  <span className="font-medium text-green-600 dark:text-green-400">
+                                    {Math.round(
+                                      ((lead.conversionProbability as number) ||
+                                        0) * 100,
+                                    )}
+                                    %
+                                  </span>
+                                </div>
+                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                  Conversion prob.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                      <Brain className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>No ML predictions available yet</p>
+                      <p className="text-sm mt-1">
+                        Run bulk predictions to see top leads
+                      </p>
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+
+              {/* Feature Importance */}
+              {topFeatures.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <h3 className="font-semibold flex items-center gap-2 text-neutral-900 dark:text-white">
+                      <Brain className="w-5 h-5 text-violet-500" /> Feature
+                      Importance
+                    </h3>
+                  </CardHeader>
+                  <CardBody>
+                    <div className="space-y-3">
+                      {topFeatures.map((feature) => (
+                        <div key={feature.name}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-neutral-700 dark:text-neutral-300">
+                              {feature.name}
+                            </span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {feature.weight}%
+                            </span>
+                          </div>
+                          <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-violet-500 rounded-full"
+                              style={{ width: `${feature.weight}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card className="p-6">
+              <div className="text-center py-8">
+                <Brain className="w-12 h-12 mx-auto mb-4 text-neutral-400 dark:text-neutral-500" />
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                  ML Insights Available
+                </h3>
+                <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+                  Set up Lead Scoring to unlock ML-powered predictions,
+                  conversion probability, and priority ranking.
+                </p>
+                <Button variant="outline">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Configure Lead Scoring
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* Quick Stats & Actions */}
+        <div className="space-y-6">
+          {/* Model Accuracy */}
+          {hasMLData && accuracyQuery.data && (
+            <Card className="p-6">
+              <h3 className="font-semibold flex items-center gap-2 text-neutral-900 dark:text-white mb-4">
+                <Target className="w-5 h-5 text-blue-500" /> Model Accuracy
+              </h3>
+              <div className="space-y-3">
+                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                    {Math.round((accuracyQuery.data.accuracy || 0) * 100)}%
+                  </p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Prediction Accuracy
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                    <p className="text-lg font-bold text-neutral-900 dark:text-white">
+                      {accuracyQuery.data.totalPredictions || 0}
+                    </p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Predictions
+                    </p>
+                  </div>
+                  <div className="text-center p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                    <p className="text-lg font-bold text-neutral-900 dark:text-white">
+                      {accuracyQuery.data.validatedCount || 0}
+                    </p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Validated
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Pipeline Funnel */}
+          <Card className="p-6">
+            <h3 className="font-semibold flex items-center gap-2 text-neutral-900 dark:text-white mb-4">
+              <PieChart className="w-5 h-5 text-indigo-500" /> Lead Funnel
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
+                <span className="text-sm font-medium">New</span>
+                <Badge variant="success">{pipelineStats.newCount}</Badge>
+              </div>
+              <div className="flex justify-center">
+                <ArrowRight className="w-4 h-4 text-neutral-400 rotate-90" />
+              </div>
+              <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 rounded">
+                <span className="text-sm font-medium">Contacted</span>
+                <Badge variant="warning">{pipelineStats.contactedCount}</Badge>
+              </div>
+              <div className="flex justify-center">
+                <ArrowRight className="w-4 h-4 text-neutral-400 rotate-90" />
+              </div>
+              <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                <span className="text-sm font-medium">Qualified</span>
+                <Badge variant="primary">{pipelineStats.qualifiedCount}</Badge>
+              </div>
+              <div className="flex justify-center">
+                <ArrowRight className="w-4 h-4 text-neutral-400 rotate-90" />
+              </div>
+              <div className="flex items-center justify-between p-2 bg-violet-50 dark:bg-violet-900/20 rounded">
+                <span className="text-sm font-medium">Converted</span>
+                <Badge variant="secondary">
+                  {pipelineStats.convertedCount}
+                </Badge>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============== ANALYTICS TAB ==============
+
+interface AnalyticsTabProps {
+  leads: InboundLead[];
+}
+
+function AnalyticsTab({ leads }: AnalyticsTabProps): JSX.Element {
+  // Calculate analytics from leads data
+  const analytics = useMemo(() => {
+    // Source breakdown
+    const sourceBreakdown = leads.reduce(
+      (acc, lead) => {
+        const source = lead.source || 'OTHER';
+        acc[source] = (acc[source] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Status breakdown
+    const statusBreakdown = leads.reduce(
+      (acc, lead) => {
+        const status = lead.status || 'NEW';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Service interest breakdown
+    const interestBreakdown = leads.reduce(
+      (acc, lead) => {
+        const interest = lead.serviceInterest || 'NOT_SURE';
+        acc[interest] = (acc[interest] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Conversion metrics
+    const converted = statusBreakdown['CONVERTED'] || 0;
+    const disqualified = statusBreakdown['DISQUALIFIED'] || 0;
+    const conversionRate =
+      leads.length > 0 ? (converted / leads.length) * 100 : 0;
+    const disqualificationRate =
+      leads.length > 0 ? (disqualified / leads.length) * 100 : 0;
+
+    return {
+      sourceBreakdown,
+      statusBreakdown,
+      interestBreakdown,
+      converted,
+      disqualified,
+      conversionRate,
+      disqualificationRate,
+      total: leads.length,
+    };
+  }, [leads]);
+
+  const sourceColors: Record<string, string> = {
+    WEBSITE_CONTACT: 'bg-blue-500',
+    WEBSITE_DOWNLOAD: 'bg-indigo-500',
+    REFERRAL: 'bg-green-500',
+    LINKEDIN: 'bg-sky-500',
+    OUTBOUND: 'bg-orange-500',
+    EVENT: 'bg-purple-500',
+    OTHER: 'bg-neutral-500',
+  };
+
+  const formatSourceLabel = (source: string): string => {
+    return source
+      .split('_')
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const formatInterestLabel = (interest: string): string => {
+    return interest
+      .split('_')
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Total Leads
+              </p>
+              <p className="text-3xl font-bold text-neutral-900 dark:text-white mt-1">
+                {analytics.total}
+              </p>
+            </div>
+            <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Conversion Rate
+              </p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
+                {analytics.conversionRate.toFixed(1)}%
+              </p>
+            </div>
+            <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+              <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+            {analytics.converted} converted
+          </p>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Active Leads
+              </p>
+              <p className="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-1">
+                {analytics.total - analytics.converted - analytics.disqualified}
+              </p>
+            </div>
+            <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
+              <Activity className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+            In pipeline
+          </p>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Disqualified
+              </p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-1">
+                {analytics.disqualified}
+              </p>
+            </div>
+            <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+            {analytics.disqualificationRate.toFixed(1)}% rate
+          </p>
+        </Card>
+      </div>
+
+      {/* Source Distribution */}
+      <Card>
+        <CardHeader>
+          <h3 className="font-semibold flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" /> Lead Source Distribution
+          </h3>
+        </CardHeader>
+        <CardBody>
+          <div className="space-y-4">
+            {Object.entries(analytics.sourceBreakdown)
+              .sort((a, b) => b[1] - a[1])
+              .map(([source, count]) => {
+                const percentage =
+                  analytics.total > 0 ? (count / analytics.total) * 100 : 0;
+                return (
+                  <div key={source}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="flex items-center gap-2">
+                        <div
+                          className={`w-3 h-3 rounded-full ${sourceColors[source] || 'bg-neutral-500'}`}
+                        />
+                        {formatSourceLabel(source)}
+                      </span>
+                      <span className="font-medium">
+                        {count} ({percentage.toFixed(0)}%)
+                      </span>
+                    </div>
+                    <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${sourceColors[source] || 'bg-neutral-500'} rounded-full`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Status & Interest Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Status Breakdown */}
+        <Card>
+          <CardHeader>
+            <h3 className="font-semibold flex items-center gap-2">
+              <PieChart className="w-5 h-5" /> Status Breakdown
+            </h3>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-2 gap-4">
+              {Object.entries(analytics.statusBreakdown).map(
+                ([status, count]) => {
+                  const colors: Record<string, string> = {
+                    NEW: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
+                    CONTACTED:
+                      'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+                    QUALIFIED:
+                      'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+                    CONVERTED:
+                      'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400',
+                    DISQUALIFIED:
+                      'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400',
+                  };
+                  return (
+                    <div
+                      key={status}
+                      className={`text-center p-4 rounded-lg ${colors[status] || 'bg-neutral-50 dark:bg-neutral-800'}`}
+                    >
+                      <p className="text-2xl font-bold">{count}</p>
+                      <p className="text-sm">
+                        {status.charAt(0) + status.slice(1).toLowerCase()}
+                      </p>
+                    </div>
+                  );
+                },
+              )}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Service Interest Breakdown */}
+        <Card>
+          <CardHeader>
+            <h3 className="font-semibold flex items-center gap-2">
+              <Heart className="w-5 h-5" /> Service Interest
+            </h3>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-3">
+              {Object.entries(analytics.interestBreakdown)
+                .sort((a, b) => b[1] - a[1])
+                .map(([interest, count]) => {
+                  const percentage =
+                    analytics.total > 0 ? (count / analytics.total) * 100 : 0;
+                  return (
+                    <div
+                      key={interest}
+                      className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-neutral-800 rounded"
+                    >
+                      <span className="text-sm font-medium">
+                        {formatInterestLabel(interest)}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                          {percentage.toFixed(0)}%
+                        </span>
+                        <Badge variant="secondary">{count}</Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ============== MAIN PAGE ==============
+
 export function LeadsPage(): JSX.Element {
   const { showToast } = useToast();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabType>('leads');
   const [selectedLead, setSelectedLead] = useState<InboundLead | null>(null);
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [filters, setFilters] = useState<Filters>({
@@ -648,6 +1329,20 @@ export function LeadsPage(): JSX.Element {
     contactRole: '',
   });
 
+  // Fetch lead scoring configs for ML features
+  const configsQuery = useQuery({
+    queryKey: ['lead-scoring-configs'],
+    queryFn: fetchLeadScoringConfigs,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Get first active config for ML features
+  const activeConfigId = useMemo(() => {
+    const configs = configsQuery.data || [];
+    const activeConfig = configs.find((c) => c.isActive) || configs[0];
+    return activeConfig?.id;
+  }, [configsQuery.data]);
+
   const filterParams = useMemo(
     () => ({
       search: filters.search || undefined,
@@ -664,6 +1359,13 @@ export function LeadsPage(): JSX.Element {
   const deleteLead = useDeleteLead();
 
   useRedirectOnUnauthorized(leadsQuery.error);
+
+  // Tab configuration
+  const tabs = [
+    { id: 'leads' as const, label: 'Leads', icon: List },
+    { id: 'dashboard' as const, label: 'Dashboard', icon: Heart },
+    { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+  ];
 
   const leads = useMemo(() => leadsQuery.data ?? [], [leadsQuery.data]);
 
@@ -810,7 +1512,7 @@ export function LeadsPage(): JSX.Element {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Inbound Leads"
-        description="Capture and qualify inbound leads, then convert them to Accounts and Opportunities."
+        description="Capture leads, track pipeline health, and analyze conversion performance"
         action={
           <Button onClick={() => setShowNewLeadForm(!showNewLeadForm)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -820,93 +1522,218 @@ export function LeadsPage(): JSX.Element {
       />
 
       <div className="page-content space-y-6">
-        {/* Stats Cards */}
-        {leadsQuery.isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={<Users className="h-5 w-5" />}
-              label="Total Leads"
-              value={stats.total}
-              iconBg="bg-blue-100 dark:bg-blue-900/50"
-              iconColor="text-blue-600 dark:text-blue-400"
-            />
-            <StatCard
-              icon={<UserPlus className="h-5 w-5" />}
-              label="New"
-              value={stats.newLeads}
-              iconBg="bg-emerald-100 dark:bg-emerald-900/50"
-              iconColor="text-emerald-600 dark:text-emerald-400"
-            />
-            <StatCard
-              icon={<TrendingUp className="h-5 w-5" />}
-              label="Contacted"
-              value={stats.contacted}
-              iconBg="bg-amber-100 dark:bg-amber-900/50"
-              iconColor="text-amber-600 dark:text-amber-400"
-            />
-            <StatCard
-              icon={<Target className="h-5 w-5" />}
-              label="Qualified"
-              value={stats.qualified}
-              iconBg="bg-violet-100 dark:bg-violet-900/50"
-              iconColor="text-violet-600 dark:text-violet-400"
-            />
-          </div>
+        {/* Stats Cards (visible on Leads tab) */}
+        {activeTab === 'leads' && (
+          <>
+            {leadsQuery.isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard
+                  icon={<Users className="h-5 w-5" />}
+                  label="Total Leads"
+                  value={stats.total}
+                  iconBg="bg-blue-100 dark:bg-blue-900/50"
+                  iconColor="text-blue-600 dark:text-blue-400"
+                />
+                <StatCard
+                  icon={<UserPlus className="h-5 w-5" />}
+                  label="New"
+                  value={stats.newLeads}
+                  iconBg="bg-emerald-100 dark:bg-emerald-900/50"
+                  iconColor="text-emerald-600 dark:text-emerald-400"
+                />
+                <StatCard
+                  icon={<TrendingUp className="h-5 w-5" />}
+                  label="Contacted"
+                  value={stats.contacted}
+                  iconBg="bg-amber-100 dark:bg-amber-900/50"
+                  iconColor="text-amber-600 dark:text-amber-400"
+                />
+                <StatCard
+                  icon={<Target className="h-5 w-5" />}
+                  label="Qualified"
+                  value={stats.qualified}
+                  iconBg="bg-violet-100 dark:bg-violet-900/50"
+                  iconColor="text-violet-600 dark:text-violet-400"
+                />
+              </div>
+            )}
+          </>
         )}
 
-        {/* New Lead Form */}
-        {showNewLeadForm && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-              New Lead
-            </h2>
-            <form onSubmit={handleCreateLead} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Name"
-                  type="text"
-                  placeholder="Lead's name"
-                  value={newLead.name}
-                  onChange={(e) =>
-                    setNewLead((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                />
-                <Input
-                  label="Email *"
-                  type="email"
-                  placeholder="email@example.com"
-                  value={newLead.email}
-                  onChange={(e) =>
-                    setNewLead((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  required
-                />
-                <Input
-                  label="Company"
-                  type="text"
-                  placeholder="Company name"
-                  value={newLead.company}
-                  onChange={(e) =>
-                    setNewLead((prev) => ({ ...prev, company: e.target.value }))
-                  }
-                />
+        {/* Tab Navigation */}
+        <div className="border-b border-neutral-200 dark:border-neutral-700">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-300'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'leads' && (
+          <>
+            {/* New Lead Form */}
+            {showNewLeadForm && (
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+                  New Lead
+                </h2>
+                <form onSubmit={handleCreateLead} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      label="Name"
+                      type="text"
+                      placeholder="Lead's name"
+                      value={newLead.name}
+                      onChange={(e) =>
+                        setNewLead((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                    />
+                    <Input
+                      label="Email *"
+                      type="email"
+                      placeholder="email@example.com"
+                      value={newLead.email}
+                      onChange={(e) =>
+                        setNewLead((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                    <Input
+                      label="Company"
+                      type="text"
+                      placeholder="Company name"
+                      value={newLead.company}
+                      onChange={(e) =>
+                        setNewLead((prev) => ({
+                          ...prev,
+                          company: e.target.value,
+                        }))
+                      }
+                    />
+                    <Select
+                      label="Source"
+                      value={newLead.source}
+                      onChange={(e) =>
+                        setNewLead((prev) => ({
+                          ...prev,
+                          source: e.target.value as LeadSource,
+                        }))
+                      }
+                    >
+                      <option value="WEBSITE_CONTACT">Website Contact</option>
+                      <option value="WEBSITE_DOWNLOAD">Website Download</option>
+                      <option value="REFERRAL">Referral</option>
+                      <option value="LINKEDIN">LinkedIn</option>
+                      <option value="OUTBOUND">Outbound</option>
+                      <option value="EVENT">Event</option>
+                      <option value="OTHER">Other</option>
+                    </Select>
+                    <Select
+                      label="Service Interest"
+                      value={newLead.serviceInterest}
+                      onChange={(e) =>
+                        setNewLead((prev) => ({
+                          ...prev,
+                          serviceInterest: e.target.value as ServiceInterest,
+                        }))
+                      }
+                      className="md:col-span-2"
+                    >
+                      <option value="STRATEGY">Strategy</option>
+                      <option value="POC">POC</option>
+                      <option value="IMPLEMENTATION">Implementation</option>
+                      <option value="TRAINING">Training</option>
+                      <option value="PMO_ADVISORY">PMO Advisory</option>
+                      <option value="NOT_SURE">Not Sure</option>
+                    </Select>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                        Message
+                      </label>
+                      <textarea
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-800 dark:text-neutral-100"
+                        rows={3}
+                        placeholder="Any additional information..."
+                        value={newLead.message}
+                        onChange={(e) =>
+                          setNewLead((prev) => ({
+                            ...prev,
+                            message: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button type="submit" disabled={createLead.isPending}>
+                      {createLead.isPending ? 'Creating...' : 'Create Lead'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      onClick={() => setShowNewLeadForm(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+            )}
+
+            {/* Filters */}
+            <Card className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name, email, or company..."
+                    value={filters.search}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        search: e.target.value,
+                      }))
+                    }
+                    className="pl-10"
+                  />
+                </div>
                 <Select
-                  label="Source"
-                  value={newLead.source}
+                  value={filters.source}
                   onChange={(e) =>
-                    setNewLead((prev) => ({
+                    setFilters((prev) => ({
                       ...prev,
-                      source: e.target.value as LeadSource,
+                      source: e.target.value as LeadSource | '',
                     }))
                   }
+                  className="w-full sm:w-44"
                 >
+                  <option value="">All Sources</option>
                   <option value="WEBSITE_CONTACT">Website Contact</option>
                   <option value="WEBSITE_DOWNLOAD">Website Download</option>
                   <option value="REFERRAL">Referral</option>
@@ -916,268 +1743,198 @@ export function LeadsPage(): JSX.Element {
                   <option value="OTHER">Other</option>
                 </Select>
                 <Select
-                  label="Service Interest"
-                  value={newLead.serviceInterest}
+                  value={filters.status}
                   onChange={(e) =>
-                    setNewLead((prev) => ({
+                    setFilters((prev) => ({
                       ...prev,
-                      serviceInterest: e.target.value as ServiceInterest,
+                      status: e.target.value as LeadStatus | '',
                     }))
                   }
-                  className="md:col-span-2"
+                  className="w-full sm:w-36"
                 >
-                  <option value="STRATEGY">Strategy</option>
-                  <option value="POC">POC</option>
-                  <option value="IMPLEMENTATION">Implementation</option>
-                  <option value="TRAINING">Training</option>
-                  <option value="PMO_ADVISORY">PMO Advisory</option>
-                  <option value="NOT_SURE">Not Sure</option>
+                  <option value="">All Statuses</option>
+                  <option value="NEW">New</option>
+                  <option value="CONTACTED">Contacted</option>
+                  <option value="QUALIFIED">Qualified</option>
+                  <option value="DISQUALIFIED">Disqualified</option>
+                  <option value="CONVERTED">Converted</option>
                 </Select>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-800 dark:text-neutral-100"
-                    rows={3}
-                    placeholder="Any additional information..."
-                    value={newLead.message}
-                    onChange={(e) =>
-                      setNewLead((prev) => ({
-                        ...prev,
-                        message: e.target.value,
-                      }))
-                    }
-                  />
+              </div>
+            </Card>
+
+            {/* Leads Table */}
+            {leadsQuery.isLoading ? (
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Lead
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden sm:table-cell">
+                          Email
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden md:table-cell">
+                          Source
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <Button type="submit" disabled={createLead.isPending}>
-                  {createLead.isPending ? 'Creating...' : 'Create Lead'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="subtle"
-                  onClick={() => setShowNewLeadForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </Card>
-        )}
-
-        {/* Filters */}
-        <Card className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 dark:text-neutral-500" />
-              <Input
-                type="text"
-                placeholder="Search by name, email, or company..."
-                value={filters.search}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, search: e.target.value }))
-                }
-                className="pl-10"
+              </Card>
+            ) : leads.length === 0 ? (
+              <EmptyState
+                hasFilters={hasFilters}
+                onAddLead={() => setShowNewLeadForm(true)}
               />
-            </div>
-            <Select
-              value={filters.source}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  source: e.target.value as LeadSource | '',
-                }))
-              }
-              className="w-full sm:w-44"
-            >
-              <option value="">All Sources</option>
-              <option value="WEBSITE_CONTACT">Website Contact</option>
-              <option value="WEBSITE_DOWNLOAD">Website Download</option>
-              <option value="REFERRAL">Referral</option>
-              <option value="LINKEDIN">LinkedIn</option>
-              <option value="OUTBOUND">Outbound</option>
-              <option value="EVENT">Event</option>
-              <option value="OTHER">Other</option>
-            </Select>
-            <Select
-              value={filters.status}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  status: e.target.value as LeadStatus | '',
-                }))
-              }
-              className="w-full sm:w-36"
-            >
-              <option value="">All Statuses</option>
-              <option value="NEW">New</option>
-              <option value="CONTACTED">Contacted</option>
-              <option value="QUALIFIED">Qualified</option>
-              <option value="DISQUALIFIED">Disqualified</option>
-              <option value="CONVERTED">Converted</option>
-            </Select>
-          </div>
-        </Card>
-
-        {/* Leads Table */}
-        {leadsQuery.isLoading ? (
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Lead
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden sm:table-cell">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden md:table-cell">
-                      Source
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...Array(5)].map((_, i) => (
-                    <TableRowSkeleton key={i} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        ) : leads.length === 0 ? (
-          <EmptyState
-            hasFilters={hasFilters}
-            onAddLead={() => setShowNewLeadForm(true)}
-          />
-        ) : (
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      Lead
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden sm:table-cell">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden md:table-cell">
-                      Source
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
-                  {leads.map((lead) => (
-                    <tr
-                      key={lead.id}
-                      onClick={() => setSelectedLead(lead)}
-                      className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors group"
-                    >
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <LeadAvatar
-                            name={lead.name || ''}
-                            email={lead.email}
-                          />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                                {lead.name || lead.email}
-                              </span>
-                              <Badge
-                                variant={getStatusVariant(lead.status)}
-                                size="sm"
-                              >
-                                {formatStatus(lead.status)}
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                              {lead.company && (
-                                <span className="inline-flex items-center gap-1">
-                                  <Building2 className="h-3 w-3 inline" />
-                                  {lead.company}
-                                </span>
-                              )}
-                              {!lead.company && lead.serviceInterest && (
-                                <span>
-                                  {formatServiceInterest(lead.serviceInterest)}
-                                </span>
-                              )}
-                              {!lead.company && !lead.serviceInterest && (
-                                <span className="text-neutral-400 dark:text-neutral-500">
-                                  No company info
-                                </span>
-                              )}
-                            </div>
-                            {/* Show email on mobile */}
-                            {lead.email && lead.name && (
-                              <div className="sm:hidden text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-1">
-                                <Mail className="h-3 w-3" />
-                                <span className="truncate">{lead.email}</span>
+            ) : (
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Lead
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden sm:table-cell">
+                          Email
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden md:table-cell">
+                          Source
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {leads.map((lead) => (
+                        <tr
+                          key={lead.id}
+                          onClick={() => setSelectedLead(lead)}
+                          className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors group"
+                        >
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <LeadAvatar
+                                name={lead.name || ''}
+                                email={lead.email}
+                              />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                    {lead.name || lead.email}
+                                  </span>
+                                  <Badge
+                                    variant={getStatusVariant(lead.status)}
+                                    size="sm"
+                                  >
+                                    {formatStatus(lead.status)}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+                                  {lead.company && (
+                                    <span className="inline-flex items-center gap-1">
+                                      <Building2 className="h-3 w-3 inline" />
+                                      {lead.company}
+                                    </span>
+                                  )}
+                                  {!lead.company && lead.serviceInterest && (
+                                    <span>
+                                      {formatServiceInterest(
+                                        lead.serviceInterest,
+                                      )}
+                                    </span>
+                                  )}
+                                  {!lead.company && !lead.serviceInterest && (
+                                    <span className="text-neutral-400 dark:text-neutral-500">
+                                      No company info
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Show email on mobile */}
+                                {lead.email && lead.name && (
+                                  <div className="sm:hidden text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-1">
+                                    <Mail className="h-3 w-3" />
+                                    <span className="truncate">
+                                      {lead.email}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 hidden sm:table-cell">
+                            {lead.email ? (
+                              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+                                <Mail className="h-4 w-4 text-neutral-400" />
+                                <span className="truncate max-w-[200px]">
+                                  {lead.email}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-neutral-400 dark:text-neutral-500">
+                                -
+                              </span>
                             )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 hidden sm:table-cell">
-                        {lead.email ? (
-                          <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
-                            <Mail className="h-4 w-4 text-neutral-400" />
-                            <span className="truncate max-w-[200px]">
-                              {lead.email}
+                          </td>
+                          <td className="px-4 py-4 hidden md:table-cell">
+                            <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                              {formatLeadSource(lead.source)}
                             </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-neutral-400 dark:text-neutral-500">
-                            -
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 hidden md:table-cell">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                          {formatLeadSource(lead.source)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <ActionMenu
-                          onEdit={() => setSelectedLead(lead)}
-                          onConvert={() =>
-                            handleOpenConversionModalForLead(lead)
-                          }
-                          onDelete={() => handleDeleteLeadWithConfirm(lead.id)}
-                          showConvert={
-                            lead.status !== 'CONVERTED' &&
-                            lead.status !== 'DISQUALIFIED'
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <ActionMenu
+                              onEdit={() => setSelectedLead(lead)}
+                              onConvert={() =>
+                                handleOpenConversionModalForLead(lead)
+                              }
+                              onDelete={() =>
+                                handleDeleteLeadWithConfirm(lead.id)
+                              }
+                              showConvert={
+                                lead.status !== 'CONVERTED' &&
+                                lead.status !== 'DISQUALIFIED'
+                              }
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            {/* Results count footer */}
-            <div className="px-4 py-3 bg-neutral-50 dark:bg-neutral-800/30 border-t border-neutral-200 dark:border-neutral-700">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Showing{' '}
-                <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                  {leads.length}
-                </span>{' '}
-                lead{leads.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </Card>
+                {/* Results count footer */}
+                <div className="px-4 py-3 bg-neutral-50 dark:bg-neutral-800/30 border-t border-neutral-200 dark:border-neutral-700">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Showing{' '}
+                    <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                      {leads.length}
+                    </span>{' '}
+                    lead{leads.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </Card>
+            )}
+          </>
         )}
+
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <DashboardTab leads={leads} configId={activeConfigId} />
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && <AnalyticsTab leads={leads} />}
       </div>
 
       {/* Lead Detail Panel */}
