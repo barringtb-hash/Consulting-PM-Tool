@@ -449,6 +449,11 @@ const LeadDetailPanel = memo(function LeadDetailPanel({
 }: LeadDetailPanelProps) {
   const [status, setStatus] = useState(lead.status);
 
+  // Sync local status state when lead prop changes (e.g., after refresh or external update)
+  useEffect(() => {
+    setStatus(lead.status);
+  }, [lead.status]);
+
   const handleStatusChange = useCallback(
     async (newStatus: LeadStatus) => {
       setStatus(newStatus);

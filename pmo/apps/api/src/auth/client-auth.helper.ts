@@ -13,6 +13,7 @@
 
 import { prisma } from '../prisma/client';
 import { Prisma } from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 
 /**
  * Check if a Prisma error is due to a missing column (typically from pending migration)
@@ -490,8 +491,10 @@ export async function hasLeadAccess(
   }
 
   // Get the lead with owner and client info
-  const lead = await prisma.inboundLead.findUnique({
-    where: { id: leadId },
+  // Filter by tenantId to ensure cross-tenant data isolation
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const lead = await prisma.inboundLead.findFirst({
+    where: { id: leadId, tenantId },
     select: { ownerUserId: true, clientId: true },
   });
 

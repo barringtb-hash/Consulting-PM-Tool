@@ -9,7 +9,7 @@
  * 2. CONTACTED → First outreach made
  * 3. QUALIFIED → Meets qualification criteria
  * 4. CONVERTED → Converted to Account + Opportunity (and optionally Project)
- * 5. REJECTED → Not a fit / spam / duplicate
+ * 5. DISQUALIFIED → Not a fit / spam / duplicate
  *
  * Conversion Workflow (convertLead):
  * The convertLead function transforms a qualified lead into CRM entities:
@@ -299,20 +299,22 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
-  const lead = await prisma.inboundLead.findFirst({
-    where: { id, tenantId },
-    include: { client: true, primaryContact: true },
-  });
-
-  if (!lead) {
-    throw new Error('Lead not found');
-  }
-
-  if (lead.status === LeadStatus.CONVERTED) {
-    throw new Error('Lead already converted');
-  }
-
   return prisma.$transaction(async (tx) => {
+    // Fetch and check lead inside transaction to prevent race conditions
+    // Multiple concurrent requests could otherwise both pass the status check
+    const lead = await tx.inboundLead.findFirst({
+      where: { id, tenantId },
+      include: { client: true, primaryContact: true },
+    });
+
+    if (!lead) {
+      throw new Error('Lead not found');
+    }
+
+    if (lead.status === LeadStatus.CONVERTED) {
+      throw new Error('Lead already converted');
+    }
+
     // Legacy: clientId still tracked for backward compatibility with existing projects
     const clientId = conversion.clientId || lead.clientId;
     let contactId = lead.primaryContactId;
