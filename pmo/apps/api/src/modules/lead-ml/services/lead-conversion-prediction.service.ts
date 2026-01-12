@@ -378,11 +378,7 @@ export async function predictLeadConversion(
 
   // Check for recent prediction unless force refresh
   if (!options?.forceRefresh) {
-    const existing = await getLatestPrediction(
-      leadId,
-      tenantId,
-      'CONVERSION',
-    );
+    const existing = await getLatestPrediction(leadId, tenantId, 'CONVERSION');
     if (existing && !existing.isExpired) {
       return {
         ...(existing.prediction as ConversionPrediction),
@@ -484,11 +480,7 @@ export async function predictLeadScore(
 
   // Check for recent prediction
   if (!options?.forceRefresh) {
-    const existing = await getLatestPrediction(
-      leadId,
-      tenantId,
-      'SCORE',
-    );
+    const existing = await getLatestPrediction(leadId, tenantId, 'SCORE');
     if (existing && !existing.isExpired) {
       return {
         ...(existing.prediction as ScorePrediction),
@@ -577,11 +569,7 @@ export async function getLeadPrediction(
   prediction: LeadPredictionResult;
   isExpired: boolean;
 } | null> {
-  return getLatestPrediction(
-    leadId,
-    tenantId,
-    predictionType,
-  );
+  return getLatestPrediction(leadId, tenantId, predictionType);
 }
 
 /**
