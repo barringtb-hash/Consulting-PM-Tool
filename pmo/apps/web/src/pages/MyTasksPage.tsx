@@ -420,15 +420,6 @@ function MyTasksPage(): JSX.Element {
     );
   }, [projectsQuery.data, tasks]);
 
-  // Create a map of project IDs to names for display
-  const _projectMap = useMemo(() => {
-    const map: Record<number, string> = {};
-    projects.forEach((project) => {
-      map[project.id] = project.name;
-    });
-    return map;
-  }, [projects]);
-
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       if (filters.projectId && Number(filters.projectId) !== task.projectId) {
