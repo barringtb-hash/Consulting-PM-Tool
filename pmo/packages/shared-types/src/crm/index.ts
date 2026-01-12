@@ -346,7 +346,7 @@ export interface PipelineStage {
   name: string;
   order: number;
   probability: number;
-  stageType: StageType;
+  type: StageType;
   color?: string | null;
   rottenDays?: number | null;
   createdAt: string;

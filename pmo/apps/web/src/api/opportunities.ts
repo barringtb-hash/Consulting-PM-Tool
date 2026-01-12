@@ -124,7 +124,7 @@ export interface PipelineStats {
   byStage: Array<{
     stageId: number;
     stageName: string;
-    stageType: StageType;
+    type: StageType;
     count: number;
     value: number;
     weightedValue: number;

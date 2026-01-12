@@ -651,7 +651,7 @@ function OpportunitiesPage(): JSX.Element {
                     <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100">
                       {stage.stageName}
                     </span>
-                    <Badge variant={getStageVariant(stage.stageType)}>
+                    <Badge variant={getStageVariant(stage.type)}>
                       {stage.count}
                     </Badge>
                   </div>

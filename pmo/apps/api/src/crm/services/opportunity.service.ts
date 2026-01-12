@@ -730,7 +730,7 @@ export async function getPipelineStats(pipelineId?: number) {
         return {
           stageId: s.stageId,
           stageName: stage?.name ?? 'Unknown',
-          stageType: stage?.type ?? 'OPEN',
+          type: stage?.type ?? 'OPEN',
           stageColor: stage?.color,
           stageOrder: stage?.order ?? 0,
           count: s._count,
