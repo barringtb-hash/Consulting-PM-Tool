@@ -268,7 +268,7 @@ describe('Lead ML Services', () => {
       const features = extractEngagementFeatures(lead, enrollment);
 
       expect(features.emailOpenRate).toBe(0.5); // 1 open / 2 sends
-      expect(features.emailClickRate).toBe(1); // 1 click / 1 open
+      expect(features.emailClickRate).toBe(0.5); // 1 click / 2 sends (not clicks/opens)
       expect(features.isInActiveSequence).toBe(true);
       expect(features.currentSequenceStep).toBe(1);
       expect(features.sequenceEngagement).toBeGreaterThan(0);

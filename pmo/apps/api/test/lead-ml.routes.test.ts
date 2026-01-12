@@ -31,6 +31,7 @@ vi.mock('../src/prisma/client', () => {
   const mockPrisma = {
     scoredLead: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
     },
@@ -176,8 +177,9 @@ describe('Lead ML API Routes', () => {
         coldThreshold: 20,
       };
 
+      // Mock findFirst for tenant-isolated lead lookup
       (
-        prisma.scoredLead.findUnique as ReturnType<typeof vi.fn>
+        prisma.scoredLead.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockLead);
       (prisma.scoredLead.update as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockLead,
