@@ -188,6 +188,8 @@ The platform supports **toggleable modules** to customize deployments per custom
 | `leads` | Toggleable | Lead capture and management |
 | `pipeline` | Toggleable | Sales pipeline visualization |
 | `admin` | Toggleable | User administration & module management |
+| `finance-tracking` | Toggleable | Expense tracking, budgets, profitability reporting |
+| `mcp` | Toggleable | Model Context Protocol for AI queries against CRM data |
 
 ### Quick Configuration
 
