@@ -405,11 +405,15 @@ async function calculateSentimentScoreFromAccountData(
   if (opportunities.length === 0) return 50; // Neutral if no data
 
   const wonCount = opportunities.filter((o) => o.stage?.type === 'WON').length;
-  const _lostCount = opportunities.filter(
+  const lostCount = opportunities.filter(
     (o) => o.stage?.type === 'LOST',
   ).length;
 
-  const winRate = wonCount / opportunities.length;
+  // Calculate win rate considering only closed deals (won + lost)
+  const closedDeals = wonCount + lostCount;
+  if (closedDeals === 0) return 50; // No closed deals yet
+
+  const winRate = wonCount / closedDeals;
 
   if (winRate >= 0.8) return 90;
   if (winRate >= 0.6) return 70;

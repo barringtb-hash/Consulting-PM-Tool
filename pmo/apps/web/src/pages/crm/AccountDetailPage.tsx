@@ -315,12 +315,14 @@ function StatCard({
 }
 
 function HealthScoreIndicator({ score }: { score: number }): JSX.Element {
+  // Match backend thresholds from account-health.service.ts
+  // CRITICAL: < 31, AT_RISK: 31-70, HEALTHY: >= 71
   let color = 'bg-green-500';
   let label = 'Healthy';
-  if (score < 50) {
+  if (score < 31) {
     color = 'bg-red-500';
     label = 'Critical';
-  } else if (score < 80) {
+  } else if (score < 71) {
     color = 'bg-yellow-500';
     label = 'At Risk';
   }
@@ -336,7 +338,7 @@ function HealthScoreIndicator({ score }: { score: number }): JSX.Element {
       <span className="text-sm font-medium w-12 text-right">{score}%</span>
       <Badge
         variant={
-          score >= 80 ? 'success' : score >= 50 ? 'warning' : 'destructive'
+          score >= 71 ? 'success' : score >= 31 ? 'warning' : 'destructive'
         }
       >
         {label}
@@ -1625,18 +1627,16 @@ function AccountDetailPage(): JSX.Element {
                       calculateHealthScore.mutate(undefined, {
                         onSuccess: () => {
                           showToast({
-                            title: 'Health Score Recalculated',
-                            description:
-                              'The health score has been auto-calculated from CRM data.',
-                            type: 'success',
+                            message: 'Health score recalculated from CRM data',
+                            variant: 'success',
                           });
                         },
                         onError: (error) => {
                           showToast({
-                            title: 'Failed to recalculate',
-                            description:
-                              error.message || 'Please try again later.',
-                            type: 'error',
+                            message:
+                              error.message ||
+                              'Failed to recalculate health score',
+                            variant: 'destructive',
                           });
                         },
                       });
