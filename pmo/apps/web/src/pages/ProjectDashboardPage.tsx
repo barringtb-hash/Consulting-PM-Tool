@@ -18,6 +18,7 @@ import {
   Trash2,
   Pencil,
   FolderX,
+  Brain,
 } from 'lucide-react';
 import {
   useClient,
@@ -37,6 +38,7 @@ import { ProjectTasksTab } from '../features/projects/ProjectTasksTab';
 import { ProjectDocumentsTab } from '../features/projects/ProjectDocumentsTab';
 import { ProjectStatusTab } from '../features/status/ProjectStatusTab';
 import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
+import { ProjectMLTab } from '../features/project-ml/ProjectMLTab';
 import { Badge } from '../ui/Badge';
 import { ProjectStatusPill } from '../components/ProjectStatusPill';
 import { ProjectMembersManager } from '../components/projects/ProjectMembersManager';
@@ -961,6 +963,10 @@ function ProjectDashboardPage(): JSX.Element {
               <Settings className="w-4 h-4" />
               Status & Reporting
             </TabsTrigger>
+            <TabsTrigger value="ml-insights">
+              <Brain className="w-4 h-4" />
+              ML Insights
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -1395,6 +1401,10 @@ function ProjectDashboardPage(): JSX.Element {
 
           <TabsContent value="status">
             <ProjectStatusTab projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value="ml-insights">
+            <ProjectMLTab projectId={projectId} />
           </TabsContent>
         </Tabs>
       </main>

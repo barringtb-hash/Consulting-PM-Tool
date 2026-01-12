@@ -516,6 +516,7 @@ model Project {
   // AI Projects Module
   chatConversations ChatConversation[] // Project Assistant conversations
   healthPredictions ProjectHealthPrediction[]
+  mlPredictions     ProjectMLPrediction[] // Project ML predictions (success, risk, timeline, resource)
   scopeBaselines    ProjectScopeBaseline[]
   scopeChangeAlerts ScopeChangeAlert[]
   budgetForecasts   ProjectBudgetForecast[]
@@ -3831,6 +3832,8 @@ model LeadScoringConfig {
   scoredLeads      ScoredLead[]
   nurtureSequences NurtureSequence[]
   leadActivities   LeadActivity[]
+  trainingData     LeadTrainingData[]
+  mlModels         LeadMLModel[]
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
@@ -3897,6 +3900,7 @@ model ScoredLead {
   config              LeadScoringConfig   @relation(fields: [configId], references: [id], onDelete: Cascade)
   activities          LeadActivity[]
   sequenceEnrollments NurtureEnrollment[]
+  mlPredictions       LeadMLPrediction[]
 
   @@unique([configId, email])
   @@index([configId, scoreLevel])
@@ -6211,6 +6215,16 @@ enum MLPredictionStatus {
   VALIDATED // Compared against actual outcome
 }
 
+/**
+ * Project ML Prediction Type - Types of ML predictions for Project Management
+ */
+enum ProjectMLPredictionType {
+  SUCCESS_PREDICTION // Predicts likelihood of on-time/budget completion
+  RISK_FORECAST // Predicts potential risks and delays
+  TIMELINE_PREDICTION // Predicts realistic completion dates
+  RESOURCE_OPTIMIZATION // Suggests task assignments and workload balancing
+}
+
 enum ObjectiveStatus {
   NOT_STARTED
   IN_PROGRESS
@@ -7181,9 +7195,10 @@ model Tenant {
   projectDocuments ProjectDocument[]
 
   // AI Projects Module relations
-  taskDurationLearning TaskDurationLearning[]
-  teamAvailability     TeamAvailability[]
-  healthPredictions    ProjectHealthPrediction[]
+  taskDurationLearning   TaskDurationLearning[]
+  teamAvailability       TeamAvailability[]
+  healthPredictions      ProjectHealthPrediction[]
+  projectMLPredictions   ProjectMLPrediction[] // Project ML predictions
   scopeBaselines       ProjectScopeBaseline[]
   scopeChangeAlerts    ScopeChangeAlert[]
   budgetForecasts      ProjectBudgetForecast[]
@@ -7193,6 +7208,11 @@ model Tenant {
   performanceMetrics   TeamPerformanceMetrics[]
   engagementScores     ClientEngagementScore[]
   projectLessons       ProjectLesson[]
+
+  // Lead ML relations
+  leadTrainingData     LeadTrainingData[]
+  leadMLModels         LeadMLModel[]
+  leadMLPredictions    LeadMLPrediction[]
 
   @@index([slug])
   @@index([status])
@@ -9143,6 +9163,64 @@ model ProjectHealthPrediction {
 }
 
 /**
+ * ProjectMLPrediction - ML-powered predictions for Project Management
+ * Stores success predictions, risk forecasts, timeline predictions,
+ * and resource optimization recommendations following customer-success-ml patterns.
+ */
+model ProjectMLPrediction {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  predictionType ProjectMLPredictionType
+  status         MLPredictionStatus      @default(ACTIVE)
+
+  // Core prediction data
+  probability      Float // 0-1 primary prediction score
+  confidence       Float // 0-1 model confidence
+  predictionWindow Int // Days in prediction window
+
+  // Explanation & reasoning
+  riskFactors     Json    @db.JsonB // Array of contributing factors with impact/trend
+  explanation     String? @db.Text // LLM-generated explanation
+  recommendations Json?   @db.JsonB // Array of suggested actions
+
+  // Timeline prediction specific fields
+  predictedEndDate DateTime? // For timeline predictions
+  originalEndDate  DateTime? // Original planned end date
+  daysVariance     Int? // Predicted days early/late (negative = early)
+
+  // Resource optimization specific fields
+  resourceRecommendations Json? @db.JsonB // Task reassignment suggestions
+  workloadAnalysis        Json? @db.JsonB // Team workload balance data
+
+  // Validation tracking
+  predictedAt   DateTime  @default(now())
+  validUntil    DateTime
+  actualOutcome Boolean? // True = successful outcome
+  validatedAt   DateTime?
+  wasAccurate   Boolean? // Whether prediction matched outcome
+
+  // LLM usage tracking (for cost monitoring)
+  llmModel      String?
+  llmTokensUsed Int?
+  llmCost       Float?
+
+  // Optional link to generated task (for actionable recommendations)
+  generatedTaskId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, predictionType, status])
+  @@index([tenantId, predictionType])
+  @@index([validUntil, status])
+}
+
+/**
  * ProjectLesson - Lessons learned from projects
  * Used for cross-project knowledge sharing
  */
@@ -9545,4 +9623,146 @@ model ClientEngagementScore {
 
   @@index([accountId, calculatedAt])
   @@index([tenantId])
+}
+
+// ============================================================================
+// LEAD ML - Machine Learning for Lead Scoring & Conversion Prediction
+// ============================================================================
+
+enum LeadPredictionType {
+  CONVERSION
+  TIME_TO_CLOSE
+  SCORE
+  PRIORITY
+}
+
+enum LeadPredictionStatus {
+  ACTIVE
+  EXPIRED
+  VALIDATED
+  INVALIDATED
+}
+
+/**
+ * LeadTrainingData - Historical lead data snapshots for ML training
+ */
+model LeadTrainingData {
+  id        Int      @id @default(autoincrement())
+  tenantId  String?
+  configId  Int
+
+  // Snapshot of features at time of scoring
+  features Json // { demographic: {...}, behavioral: {...}, temporal: {...}, engagement: {...} }
+
+  // Outcome labels
+  didConvert    Boolean
+  daysToConvert Int?
+  actualValue   Decimal? @db.Decimal(12, 2)
+
+  // Scoring at snapshot time
+  predictedScore Int
+  predictedProb  Float
+
+  // Metadata
+  snapshotDate   DateTime
+  conversionDate DateTime?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  config LeadScoringConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, configId])
+  @@index([snapshotDate])
+  @@index([didConvert])
+}
+
+/**
+ * LeadMLModel - Trained model metadata and performance metrics
+ */
+model LeadMLModel {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+  configId Int
+
+  modelVersion String // e.g., "v1.0.0"
+  modelType    String // "conversion", "time_to_close", "scoring", "priority"
+
+  // Model configuration
+  hyperparameters Json // { temperature, threshold, weights, llmModel }
+
+  // Training metadata
+  trainingDataCount Int
+  trainedAt         DateTime
+  trainingDuration  Int // seconds
+
+  // Performance metrics
+  accuracy  Float?
+  precision Float?
+  recall    Float?
+  f1Score   Float?
+  auc       Float?
+
+  // Feature weights for interpretability
+  featureWeights Json // { feature: weight }
+
+  // Status
+  isActive   Boolean   @default(false)
+  validUntil DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  config      LeadScoringConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+  predictions LeadMLPrediction[]
+
+  @@unique([configId, modelType, isActive])
+  @@index([tenantId, configId])
+  @@index([isActive])
+}
+
+/**
+ * LeadMLPrediction - Individual ML prediction records for audit and validation
+ */
+model LeadMLPrediction {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+  leadId   Int
+  modelId  Int?
+
+  predictionType LeadPredictionType
+
+  // Prediction outputs
+  probability    Float
+  confidence     Float
+  predictedValue Decimal? @db.Decimal(12, 2)
+  predictedDays  Int?
+
+  // Explanation (SHAP-like factors)
+  riskFactors     Json    // [{ factor, impact, currentValue, trend, description }]
+  explanation     String?
+  recommendations Json? // [{ action, priority, rationale }]
+
+  // LLM metadata (for tracking costs and debugging)
+  llmModel      String?
+  llmTokensUsed Int?
+  llmLatencyMs  Int?
+  llmCost       Decimal? @db.Decimal(8, 6)
+
+  // Validation tracking
+  status      LeadPredictionStatus @default(ACTIVE)
+  wasAccurate Boolean?
+  validatedAt DateTime?
+  validUntil  DateTime
+
+  predictedAt DateTime @default(now())
+
+  tenant Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead   ScoredLead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  model  LeadMLModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, leadId])
+  @@index([predictionType, status])
+  @@index([validUntil])
 }

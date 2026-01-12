@@ -69,7 +69,9 @@ export type ModuleId =
   // Bug Tracking module
   | 'bugTracking'
   // AI Projects module
-  | 'aiProjects';
+  | 'aiProjects'
+  // Project ML module
+  | 'projectML';
 
 /**
  * Navigation group identifiers
@@ -794,6 +796,21 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
       'AI-powered project management features including status summaries, task enrichment, template matching, health predictions, and smart scheduling',
     showInNavigation: true,
   },
+
+  // ============ PROJECT ML MODULE ============
+  projectML: {
+    id: 'projectML',
+    label: 'Project ML Insights',
+    navGroup: 'aiTools',
+    path: '/projects/:id', // Accessed via project dashboard ML tab
+    icon: 'Brain',
+    isCore: false,
+    dependencies: ['projects'],
+    apiPrefixes: ['/api/projects/:projectId/ml', '/api/projects/portfolio/ml'],
+    description:
+      'ML-powered predictions for projects including success prediction, risk forecasting, timeline prediction, and resource optimization',
+    showInNavigation: false, // Accessed via project dashboard, not standalone nav
+  },
 };
 
 /**
@@ -876,6 +893,8 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'bugTracking',
   // AI Projects
   'aiProjects',
+  // Project ML
+  'projectML',
 ];
 
 /**
