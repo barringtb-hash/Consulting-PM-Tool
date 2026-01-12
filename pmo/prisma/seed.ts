@@ -71,8 +71,8 @@ type SeedUser = {
 const users: SeedUser[] = [
   {
     name: 'Bryant Barrington',
-    email: 'Bryant.Barrington@elipseconsulting.ai',
-    password: 'ElipseAdmin2024!',
+    email: 'Bryant.Barrington@verdanthorizon.ai',
+    password: 'VerdantAdmin2024!',
     timezone: 'America/Chicago',
     role: UserRole.SUPER_ADMIN,
   },
@@ -164,7 +164,7 @@ const clients = [
     ],
   },
   {
-    name: 'Elipse Consulting',
+    name: 'Verdant Horizon Solutions',
     industry: 'Consulting',
     companySize: CompanySize.SMALL,
     timezone: 'America/New_York',
@@ -178,7 +178,7 @@ const projectSeeds = [
   // Admin-owned project for demo purposes
   {
     name: 'AI Strategy Roadmap',
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     ownerEmail: 'admin@pmo.test',
     status: ProjectStatus.IN_PROGRESS,
     startDate: new Date('2024-01-01'),
@@ -533,60 +533,60 @@ const aiAssetSeeds = [
 
 const brandProfileSeeds = [
   {
-    clientName: 'Elipse Consulting',
-    name: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
+    name: 'Verdant Horizon Solutions',
     description:
-      'A modern consulting brand with "ELIPSE" in bold text and "CONSULTING" as a subtitle with letter spacing.',
-    primaryColor: '#9F1239', // Rose - used for main headings and "ELIPSE" text
-    secondaryColor: '#F97316', // Orange - central color in the sunrise gradient
-    accentColor: '#FCD34D', // Yellow - sun rays/accents
+      'A modern consulting brand with "VERDANT HORIZON" in bold text and "SOLUTIONS" as a subtitle with letter spacing.',
+    primaryColor: '#166534', // Green - used for main headings and "VERDANT HORIZON" text
+    secondaryColor: '#22C55E', // Light green - secondary color
+    accentColor: '#86EFAC', // Mint - accents
     fonts: {
       primary: {
         name: 'Primary Font',
-        usage: 'ELIPSE heading text - bold weight',
+        usage: 'VERDANT HORIZON heading text - bold weight',
       },
       secondary: {
         name: 'Secondary Font',
-        usage: 'CONSULTING subtitle - letter spacing applied',
+        usage: 'SOLUTIONS subtitle - letter spacing applied',
       },
     },
     toneVoiceGuidelines:
-      'Professional, innovative, and approachable. Emphasizes partnership and launching successful initiatives.',
+      'Professional, sustainable, and forward-thinking. Emphasizes growth, innovation, and sustainable solutions.',
     valueProposition:
-      'Expert consulting partners helping organizations launch and scale their strategic initiatives.',
+      'Expert consulting partners helping organizations grow and thrive with sustainable, innovative solutions.',
     targetAudience:
-      'Organizations seeking strategic consulting for digital transformation and business growth.',
+      'Organizations seeking strategic consulting for digital transformation and sustainable business growth.',
     keyMessages: [
-      'Launching success together',
-      'Strategic partnerships for growth',
-      'From vision to reality',
+      'Growing success together',
+      'Sustainable solutions for tomorrow',
+      'From vision to verdant reality',
     ],
     brandColors: {
       gradient: {
-        top: { name: 'Red', hex: '#EF4444', usage: 'Gradient top (sunrise)' },
+        top: { name: 'Green', hex: '#166534', usage: 'Gradient top (horizon)' },
         middle: {
-          name: 'Orange',
-          hex: '#F97316',
-          usage: 'Gradient middle (sunrise)',
+          name: 'Emerald',
+          hex: '#22C55E',
+          usage: 'Gradient middle (horizon)',
         },
         bottom: {
-          name: 'Amber',
-          hex: '#F59E0B',
-          usage: 'Gradient bottom (sunrise)',
+          name: 'Teal',
+          hex: '#14B8A6',
+          usage: 'Gradient bottom (horizon)',
         },
       },
       accents: {
-        yellow: { name: 'Yellow', hex: '#FCD34D', usage: 'Sun rays/accents' },
+        mint: { name: 'Mint', hex: '#86EFAC', usage: 'Accents and highlights' },
       },
       text: {
         primary: {
-          name: 'Rose',
-          hex: '#9F1239',
+          name: 'Forest Green',
+          hex: '#166534',
           usage: 'Primary text & horizon line (light backgrounds)',
         },
         primaryDark: {
-          name: 'Pink',
-          hex: '#FDA4AF',
+          name: 'Light Green',
+          hex: '#86EFAC',
           usage: 'Horizon line (dark backgrounds)',
         },
         secondary: {
@@ -606,7 +606,7 @@ const brandProfileSeeds = [
         name: 'Primary Logo (Light Background)',
         type: BrandAssetType.LOGO,
         description:
-          'Primary horizontal logo for light backgrounds - full color with ELIPSE text',
+          'Primary horizontal logo for light backgrounds - full color with VERDANT HORIZON text',
         tags: ['primary', 'horizontal', 'light-bg'],
       },
       {
@@ -659,7 +659,7 @@ const marketingContentSeeds = [
     type: ContentType.LINKEDIN_POST,
     channel: ContentChannel.LINKEDIN,
     status: ContentStatus.PUBLISHED,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Case study highlighting AI chatbot implementation results',
@@ -685,7 +685,7 @@ Want to learn how AI can transform your business? Drop a comment below or visit 
     type: ContentType.BLOG_POST,
     channel: ContentChannel.WEB,
     status: ContentStatus.PUBLISHED,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Comprehensive guide to AI in customer service',
@@ -723,7 +723,7 @@ The future of customer service isn't about replacing humans with machines - it's
     type: ContentType.LINKEDIN_POST,
     channel: ContentChannel.LINKEDIN,
     status: ContentStatus.READY,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Sharing insights from our predictive maintenance project',
@@ -749,7 +749,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.CASE_STUDY,
     channel: ContentChannel.WEB,
     status: ContentStatus.READY,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Detailed case study on healthcare AI implementation',
@@ -782,7 +782,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.NEWSLETTER,
     channel: ContentChannel.EMAIL,
     status: ContentStatus.DRAFT,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Monthly newsletter showcasing AI trends and company updates',
@@ -807,7 +807,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.TWITTER_POST,
     channel: ContentChannel.TWITTER,
     status: ContentStatus.DRAFT,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Thread sharing practical AI implementation advice',
@@ -829,7 +829,7 @@ Ready to stop reactive maintenance and start predicting failures before they hap
     type: ContentType.EMAIL_TEMPLATE,
     channel: ContentChannel.EMAIL,
     status: ContentStatus.IN_REVIEW,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Lead nurture email offering free AI readiness assessment',
@@ -850,7 +850,7 @@ No sales pitch. Just actionable insights.
 [Take the Assessment →]
 
 Best,
-The Elipse Team`,
+The Verdant Horizon Team`,
     },
     tags: ['email', 'lead-nurture', 'assessment', 'marketing'],
   },
@@ -860,7 +860,7 @@ The Elipse Team`,
     type: ContentType.VIDEO_SCRIPT,
     channel: ContentChannel.WEB,
     status: ContentStatus.IDEA,
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     projectName: 'AI Strategy Roadmap',
     createdByEmail: 'admin@pmo.test',
     summary: 'Webinar concept targeting small business owners',
@@ -883,8 +883,8 @@ const campaignSeeds = [
   {
     name: 'Q1 2024 Thought Leadership',
     description:
-      'Establish Elipse as the go-to AI consulting firm through thought leadership content',
-    clientName: 'Elipse Consulting',
+      'Establish Verdant Horizon as the go-to AI consulting firm through thought leadership content',
+    clientName: 'Verdant Horizon Solutions',
     status: CampaignStatus.ACTIVE,
     startDate: new Date('2024-01-01'),
     endDate: new Date('2024-03-31'),
@@ -899,7 +899,7 @@ const campaignSeeds = [
     name: 'Manufacturing AI Solutions Launch',
     description:
       'Launch campaign for predictive maintenance and industrial AI solutions',
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     status: CampaignStatus.PLANNING,
     startDate: new Date('2024-02-15'),
     endDate: new Date('2024-05-15'),
@@ -1511,7 +1511,7 @@ const taskAIEnhancements = [
   },
   {
     projectName: 'AI Strategy Roadmap',
-    clientName: 'Elipse Consulting',
+    clientName: 'Verdant Horizon Solutions',
     tasks: [
       {
         title: 'Publish AI customer service blog post',
@@ -2007,10 +2007,10 @@ async function main() {
   const defaultTenant = await prisma.tenant.upsert({
     where: { slug: 'default' },
     update: {
-      name: 'Elipse Consulting',
+      name: 'Verdant Horizon Solutions',
     },
     create: {
-      name: 'Elipse Consulting',
+      name: 'Verdant Horizon Solutions',
       slug: 'default',
       plan: 'PROFESSIONAL',
       status: 'ACTIVE',

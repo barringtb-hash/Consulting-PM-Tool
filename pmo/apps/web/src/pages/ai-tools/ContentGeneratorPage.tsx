@@ -280,10 +280,10 @@ function ContentGeneratorPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Content Generation Suite"
-        subtitle="AI-powered content creation with brand voice consistency and approval workflows"
+        description="AI-powered content creation with brand voice consistency and approval workflows"
         icon={PenTool}
         actions={
           <div className="flex gap-2">
@@ -532,9 +532,9 @@ function ContentGeneratorPage(): JSX.Element {
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
               Create Content Generator Configuration
             </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
@@ -560,7 +560,7 @@ function ContentGeneratorPage(): JSX.Element {
                 <textarea
                   name="brandVoiceDescription"
                   rows={3}
-                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500"
                   placeholder="Describe your brand voice (e.g., professional, friendly, innovative...)"
                 />
               </div>
@@ -581,11 +581,11 @@ function ContentGeneratorPage(): JSX.Element {
               </Select>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input type="checkbox" name="enableSEO" defaultChecked />
                   <span className="text-sm">Enable SEO Optimization</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="enablePlagiarismCheck"
@@ -614,9 +614,11 @@ function ContentGeneratorPage(): JSX.Element {
 
       {/* Generate Content Modal */}
       {showGenerateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-lg w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Generate New Content</h2>
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
+              Generate New Content
+            </h2>
             <form onSubmit={handleGenerateContent} className="space-y-4">
               <Input
                 label="Title"
@@ -641,7 +643,7 @@ function ContentGeneratorPage(): JSX.Element {
                 <textarea
                   name="prompt"
                   rows={4}
-                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500"
                   placeholder="Describe what you want to generate..."
                 />
               </div>

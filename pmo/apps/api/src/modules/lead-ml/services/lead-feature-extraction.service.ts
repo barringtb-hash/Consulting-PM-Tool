@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '../../../prisma/client';
+import { logger } from '../../../utils/logger';
 import type {
   LeadActivity,
   ScoredLead,
@@ -337,7 +338,7 @@ export function extractEngagementFeatures(
   const emailsClicked = lead.totalEmailsClicked || 0;
 
   const emailOpenRate = emailsSent > 0 ? emailsOpened / emailsSent : 0;
-  const emailClickRate = emailsOpened > 0 ? emailsClicked / emailsOpened : 0;
+  const emailClickRate = emailsSent > 0 ? emailsClicked / emailsSent : 0;
 
   // Calculate sequence engagement
   let sequenceEngagement = 0;
@@ -569,7 +570,7 @@ export async function extractLeadFeaturesBatch(
       const features = await extractLeadFeatures(leadId);
       results.set(leadId, features);
     } catch (error) {
-      console.error(`Failed to extract features for lead ${leadId}:`, error);
+      logger.error(`Failed to extract features for lead ${leadId}:`, error);
     }
   }
 

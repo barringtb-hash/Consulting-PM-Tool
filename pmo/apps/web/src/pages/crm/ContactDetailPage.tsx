@@ -47,7 +47,7 @@ import type {
 
 // Lifecycle stage colors
 const LIFECYCLE_COLORS: Record<ContactLifecycle, string> = {
-  LEAD: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+  LEAD: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
   MQL: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   SQL: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   OPPORTUNITY:
@@ -187,221 +187,331 @@ export function ContactDetailPage(): JSX.Element {
   const fullName = `${contact.firstName} ${contact.lastName}`;
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="secondary" onClick={() => navigate('/crm/contacts')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
-              <User className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                {fullName}
-              </h1>
-              <div className="flex items-center gap-2 text-neutral-500">
-                {contact.jobTitle && <span>{contact.jobTitle}</span>}
-                {contact.account && (
-                  <>
-                    {contact.jobTitle && <span>at</span>}
-                    <Link
-                      to={`/crm/accounts/${contact.account.id}`}
-                      className="text-primary-600 hover:underline flex items-center gap-1"
-                    >
-                      {contact.account.name}
-                      <ExternalLink className="h-3 w-3" />
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {contact.archived ? (
-            <Button
-              variant="secondary"
-              onClick={handleRestore}
-              disabled={restoreContact.isPending}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Restore
-            </Button>
-          ) : (
-            <>
-              <Button variant="secondary" onClick={handleStartEdit}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+      <div className="border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <div className="container-padding py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <Button
-                variant="destructive"
-                onClick={handleArchive}
-                disabled={deleteContact.isPending}
+                variant="secondary"
+                onClick={() => navigate('/crm/contacts')}
               >
-                <Archive className="h-4 w-4 mr-2" />
-                Archive
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
               </Button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Status badges */}
-      <div className="flex items-center gap-2">
-        <Badge className={LIFECYCLE_COLORS[contact.lifecycle]}>
-          {LIFECYCLE_LABELS[contact.lifecycle]}
-        </Badge>
-        {contact.isPrimary && <Badge variant="warning">Primary Contact</Badge>}
-        {contact.doNotContact && <Badge variant="danger">Do Not Contact</Badge>}
-        {contact.archived && <Badge variant="secondary">Archived</Badge>}
-        {contact.leadScore != null && (
-          <Badge variant="info">Lead Score: {contact.leadScore}</Badge>
-        )}
-      </div>
-
-      {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Contact Details */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {contact.email && (
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-neutral-400" />
-                    <div>
-                      <p className="text-sm text-neutral-500">Email</p>
-                      <a
-                        href={`mailto:${contact.email}`}
-                        className="text-primary-600 hover:underline"
-                      >
-                        {contact.email}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {contact.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-neutral-400" />
-                    <div>
-                      <p className="text-sm text-neutral-500">Phone</p>
-                      <a
-                        href={`tel:${contact.phone}`}
-                        className="text-primary-600 hover:underline"
-                      >
-                        {contact.phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {contact.mobile && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-neutral-400" />
-                    <div>
-                      <p className="text-sm text-neutral-500">Mobile</p>
-                      <a
-                        href={`tel:${contact.mobile}`}
-                        className="text-primary-600 hover:underline"
-                      >
-                        {contact.mobile}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {contact.jobTitle && (
-                  <div className="flex items-center gap-3">
-                    <Briefcase className="h-5 w-5 text-neutral-400" />
-                    <div>
-                      <p className="text-sm text-neutral-500">Job Title</p>
-                      <p className="text-neutral-900 dark:text-white">
-                        {contact.jobTitle}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {contact.department && (
-                  <div className="flex items-center gap-3">
-                    <Building2 className="h-5 w-5 text-neutral-400" />
-                    <div>
-                      <p className="text-sm text-neutral-500">Department</p>
-                      <p className="text-neutral-900 dark:text-white">
-                        {contact.department}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {contact.address && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-neutral-400" />
-                    <div>
-                      <p className="text-sm text-neutral-500">Address</p>
-                      <p className="text-neutral-900 dark:text-white">
-                        {[
-                          contact.address.street,
-                          contact.address.city,
-                          contact.address.state,
-                          contact.address.postalCode,
-                          contact.address.country,
-                        ]
-                          .filter(Boolean)
-                          .join(', ')}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Social Links */}
-              {(contact.linkedinUrl || contact.twitterUrl) && (
-                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                    Social Profiles
-                  </p>
-                  <div className="flex items-center gap-4">
-                    {contact.linkedinUrl && (
-                      <a
-                        href={contact.linkedinUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-blue-600 hover:underline"
-                      >
-                        <Linkedin className="h-4 w-4" />
-                        LinkedIn
-                      </a>
-                    )}
-                    {contact.twitterUrl && (
-                      <a
-                        href={contact.twitterUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sky-500 hover:underline"
-                      >
-                        <Twitter className="h-4 w-4" />
-                        Twitter
-                      </a>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
+                  <User className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    {fullName}
+                  </h1>
+                  <div className="flex items-center gap-2 text-neutral-500">
+                    {contact.jobTitle && <span>{contact.jobTitle}</span>}
+                    {contact.account && (
+                      <>
+                        {contact.jobTitle && <span>at</span>}
+                        <Link
+                          to={`/crm/accounts/${contact.account.id}`}
+                          className="text-primary-600 hover:underline flex items-center gap-1"
+                        >
+                          {contact.account.name}
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </>
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {contact.archived ? (
+                <Button
+                  variant="secondary"
+                  onClick={handleRestore}
+                  disabled={restoreContact.isPending}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Restore
+                </Button>
+              ) : (
+                <>
+                  <Button variant="secondary" onClick={handleStartEdit}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleArchive}
+                    disabled={deleteContact.isPending}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive
+                  </Button>
+                </>
               )}
+            </div>
+          </div>
 
-              {/* Tags */}
-              {contact.tags && contact.tags.length > 0 && (
-                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                    Tags
-                  </p>
+          {/* Status badges */}
+          <div className="flex items-center gap-2 mt-4">
+            <Badge className={LIFECYCLE_COLORS[contact.lifecycle]}>
+              {LIFECYCLE_LABELS[contact.lifecycle]}
+            </Badge>
+            {contact.isPrimary && (
+              <Badge variant="warning">Primary Contact</Badge>
+            )}
+            {contact.doNotContact && (
+              <Badge variant="danger">Do Not Contact</Badge>
+            )}
+            {contact.archived && <Badge variant="secondary">Archived</Badge>}
+            {contact.leadScore != null && (
+              <Badge variant="info">Lead Score: {contact.leadScore}</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="page-content">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Contact Details */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Information</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  {/* Email */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Mail className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Email
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.email ? (
+                          <a
+                            href={`mailto:${contact.email}`}
+                            className="text-primary-600 hover:underline break-all"
+                          >
+                            {contact.email}
+                          </a>
+                        ) : (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Phone className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Phone
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.phone ? (
+                          <a
+                            href={`tel:${contact.phone}`}
+                            className="text-primary-600 hover:underline"
+                          >
+                            {contact.phone}
+                          </a>
+                        ) : (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+
+                  {/* Mobile */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Phone className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Mobile
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.mobile ? (
+                          <a
+                            href={`tel:${contact.mobile}`}
+                            className="text-primary-600 hover:underline"
+                          >
+                            {contact.mobile}
+                          </a>
+                        ) : (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+
+                  {/* Job Title */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Briefcase className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Job Title
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.jobTitle || (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+
+                  {/* Department */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Building2 className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Department
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.department || (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <MapPin className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Address
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.address ? (
+                          [
+                            contact.address.street,
+                            contact.address.city,
+                            contact.address.state,
+                            contact.address.postalCode,
+                            contact.address.country,
+                          ]
+                            .filter(Boolean)
+                            .join(', ') || (
+                            <span className="text-neutral-400 dark:text-neutral-500 italic">
+                              Not provided
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+                </dl>
+              </CardBody>
+            </Card>
+
+            {/* Social Profiles */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Social Profiles</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  {/* LinkedIn */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Linkedin className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        LinkedIn
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.linkedinUrl ? (
+                          <a
+                            href={contact.linkedinUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline flex items-center gap-1 break-all"
+                          >
+                            View Profile
+                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+
+                  {/* Twitter */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Twitter className="h-5 w-5 text-neutral-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        Twitter
+                      </dt>
+                      <dd className="mt-1 text-neutral-900 dark:text-white">
+                        {contact.twitterUrl ? (
+                          <a
+                            href={contact.twitterUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sky-500 hover:underline flex items-center gap-1 break-all"
+                          >
+                            View Profile
+                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-neutral-400 dark:text-neutral-500 italic">
+                            Not provided
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </div>
+                </dl>
+              </CardBody>
+            </Card>
+
+            {/* Tags */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Tags</CardTitle>
+              </CardHeader>
+              <CardBody>
+                {contact.tags && contact.tags.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {contact.tags.map((tag) => (
                       <Badge key={tag} variant="secondary">
@@ -409,95 +519,99 @@ export function ContactDetailPage(): JSX.Element {
                       </Badge>
                     ))}
                   </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Account */}
-          {contact.account && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Account</CardTitle>
-              </CardHeader>
-              <CardBody>
-                <Link
-                  to={`/crm/accounts/${contact.account.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
-                >
-                  <Building2 className="h-5 w-5 text-neutral-400" />
-                  <div>
-                    <p className="font-medium text-neutral-900 dark:text-white">
-                      {contact.account.name}
-                    </p>
-                    {contact.account.type && (
-                      <p className="text-sm text-neutral-500">
-                        {contact.account.type}
-                      </p>
-                    )}
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-neutral-400 ml-auto" />
-                </Link>
+                ) : (
+                  <p className="text-neutral-400 dark:text-neutral-500 italic">
+                    No tags assigned
+                  </p>
+                )}
               </CardBody>
             </Card>
-          )}
+          </div>
 
-          {/* Metadata */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              {contact.owner && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-500">Owner</span>
-                  <span className="text-neutral-900 dark:text-white">
-                    {contact.owner.name}
-                  </span>
-                </div>
-              )}
-              {contact.leadSource && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-500">Lead Source</span>
-                  <span className="text-neutral-900 dark:text-white">
-                    {contact.leadSource.replace('_', ' ')}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-500">Created</span>
-                <span className="text-neutral-900 dark:text-white flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {new Date(contact.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-500">Updated</span>
-                <span className="text-neutral-900 dark:text-white">
-                  {new Date(contact.updatedAt).toLocaleDateString()}
-                </span>
-              </div>
-              {contact._count && (
-                <>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Account */}
+            {contact.account && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <Link
+                    to={`/crm/accounts/${contact.account.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                  >
+                    <Building2 className="h-5 w-5 text-neutral-400" />
+                    <div>
+                      <p className="font-medium text-neutral-900 dark:text-white">
+                        {contact.account.name}
+                      </p>
+                      {contact.account.type && (
+                        <p className="text-sm text-neutral-500">
+                          {contact.account.type}
+                        </p>
+                      )}
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-neutral-400 ml-auto" />
+                  </Link>
+                </CardBody>
+              </Card>
+            )}
+
+            {/* Metadata */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Details</CardTitle>
+              </CardHeader>
+              <CardBody className="space-y-3">
+                {contact.owner && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-500">Opportunities</span>
+                    <span className="text-neutral-500">Owner</span>
                     <span className="text-neutral-900 dark:text-white">
-                      {contact._count.opportunityContacts}
+                      {contact.owner.name}
                     </span>
                   </div>
+                )}
+                {contact.leadSource && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-500">Activities</span>
+                    <span className="text-neutral-500">Lead Source</span>
                     <span className="text-neutral-900 dark:text-white">
-                      {contact._count.activities}
+                      {contact.leadSource.replace('_', ' ')}
                     </span>
                   </div>
-                </>
-              )}
-            </CardBody>
-          </Card>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-500">Created</span>
+                  <span className="text-neutral-900 dark:text-white flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(contact.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-500">Updated</span>
+                  <span className="text-neutral-900 dark:text-white">
+                    {new Date(contact.updatedAt).toLocaleDateString()}
+                  </span>
+                </div>
+                {contact._count && (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-neutral-500">Opportunities</span>
+                      <span className="text-neutral-900 dark:text-white">
+                        {contact._count.opportunityContacts}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-neutral-500">Activities</span>
+                      <span className="text-neutral-900 dark:text-white">
+                        {contact._count.activities}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </CardBody>
+            </Card>
+          </div>
         </div>
       </div>
 

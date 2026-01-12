@@ -13,8 +13,17 @@ import {
   BarChart3,
   Clock,
   Zap,
+  Heart,
 } from 'lucide-react';
-import { Button, Card, Badge } from '../../ui';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Badge,
+  PageHeader,
+} from '../../ui';
 import { buildApiUrl } from '../../api/config';
 import { buildOptions, handleResponse } from '../../api/http';
 
@@ -73,6 +82,59 @@ interface HistoryRecord {
   apiCallsToday: number;
 }
 
+/**
+ * Skeleton loader for health page loading state
+ */
+function HealthPageSkeleton(): JSX.Element {
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <div className="border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <div className="container-padding py-6">
+          <div className="h-8 w-56 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+          <div className="h-4 w-80 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="page-content space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardBody className="p-6">
+              <div className="flex items-center justify-center py-4">
+                <div className="w-32 h-32 bg-neutral-200 dark:bg-neutral-700 rounded-full animate-pulse" />
+              </div>
+            </CardBody>
+          </Card>
+          <Card className="lg:col-span-2">
+            <CardBody className="p-6">
+              <div className="h-6 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-4" />
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse"
+                  />
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+        <Card>
+          <CardBody className="p-6">
+            <div className="h-6 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="h-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse"
+                />
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 function UsageGauge({
   label,
   current,
@@ -87,11 +149,11 @@ function UsageGauge({
   icon: React.ElementType;
 }) {
   const getColor = () => {
-    if (limit === -1) return 'text-green-600 bg-green-100 dark:bg-green-900/30';
-    if (percentage >= 90) return 'text-red-600 bg-red-100 dark:bg-red-900/30';
+    if (limit === -1) return 'text-green-600 bg-green-100 dark:bg-green-900/50';
+    if (percentage >= 90) return 'text-red-600 bg-red-100 dark:bg-red-900/50';
     if (percentage >= 75)
-      return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30';
-    return 'text-green-600 bg-green-100 dark:bg-green-900/30';
+      return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/50';
+    return 'text-green-600 bg-green-100 dark:bg-green-900/50';
   };
 
   const getBarColor = () => {
@@ -112,7 +174,7 @@ function UsageGauge({
             {label}
           </span>
         </div>
-        <span className="text-sm text-neutral-500">
+        <span className="text-sm text-neutral-500 dark:text-neutral-400">
           {current.toLocaleString()}
           {limit !== -1 && ` / ${limit.toLocaleString()}`}
         </span>
@@ -126,12 +188,14 @@ function UsageGauge({
         />
       </div>
       {limit !== -1 && (
-        <div className="text-xs text-neutral-500 mt-1 text-right">
+        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 text-right">
           {percentage}% used
         </div>
       )}
       {limit === -1 && (
-        <div className="text-xs text-green-600 mt-1 text-right">Unlimited</div>
+        <div className="text-xs text-green-600 dark:text-green-400 mt-1 text-right">
+          Unlimited
+        </div>
       )}
     </div>
   );
@@ -211,8 +275,8 @@ function AlertItem({ alert }: { alert: HealthAlert }) {
           {alert.message}
         </p>
         {alert.metric && (
-          <p className="text-xs text-neutral-500 mt-1">
-            Category: {alert.category} • Metric: {alert.metric}
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            Category: {alert.category} - Metric: {alert.metric}
           </p>
         )}
       </div>
@@ -256,262 +320,299 @@ export function TenantHealthPage(): JSX.Element {
   });
 
   if (healthLoading) {
-    return (
-      <div className="page-content space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 animate-spin text-primary-500" />
-        </div>
-      </div>
-    );
+    return <HealthPageSkeleton />;
   }
 
   if (healthError) {
     return (
-      <div className="p-6">
-        <Card>
-          <div className="p-6 text-center">
-            <XCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-2">
-              Failed to load health data
-            </h3>
-            <p className="text-neutral-500 mb-4">
-              {healthError instanceof Error
-                ? healthError.message
-                : 'An error occurred'}
-            </p>
-            <Button onClick={() => refetchHealth()}>Try Again</Button>
-          </div>
-        </Card>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <PageHeader
+          title="Tenant Health Dashboard"
+          description="Monitor tenant health metrics and usage"
+          icon={Heart}
+        />
+        <div className="page-content">
+          <Card>
+            <CardBody className="p-6 text-center">
+              <div className="p-3 bg-red-100 dark:bg-red-900/50 rounded-full inline-block mb-4">
+                <XCircle className="w-12 h-12 text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-2">
+                Failed to load health data
+              </h3>
+              <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+                {healthError instanceof Error
+                  ? healthError.message
+                  : 'An error occurred'}
+              </p>
+              <Button onClick={() => refetchHealth()}>Try Again</Button>
+            </CardBody>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (!health) {
     return (
-      <div className="p-6">
-        <Card>
-          <div className="p-6 text-center">
-            <Activity className="w-12 h-12 mx-auto text-neutral-400 mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
-              No health data available
-            </h3>
-          </div>
-        </Card>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <PageHeader
+          title="Tenant Health Dashboard"
+          description="Monitor tenant health metrics and usage"
+          icon={Heart}
+        />
+        <div className="page-content">
+          <Card>
+            <CardBody className="p-6 text-center">
+              <div className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-full inline-block mb-4">
+                <Activity className="w-12 h-12 text-neutral-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200">
+                No health data available
+              </h3>
+            </CardBody>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="page-content space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
-            Tenant Health Dashboard
-          </h1>
-          <p className="text-neutral-500 mt-1">
-            {health.tenantName} • {health.plan} Plan • Last updated:{' '}
-            {new Date(health.recordedAt).toLocaleString()}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => refetchHealth()}
-          className="gap-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </Button>
-      </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title="Tenant Health Dashboard"
+        description={`${health.tenantName} - ${health.plan} Plan - Last updated: ${new Date(health.recordedAt).toLocaleString()}`}
+        icon={Heart}
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => refetchHealth()}
+            className="gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-      {/* Health Score & Alerts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Health Score Card */}
+      <div className="page-content space-y-6">
+        {/* Health Score & Alerts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Health Score Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                  <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                Health Score
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              <div className="flex items-center justify-center py-4">
+                <HealthScoreRing score={health.healthScore} />
+              </div>
+              <div className="mt-4 text-center">
+                <Badge
+                  variant={health.status === 'ACTIVE' ? 'success' : 'warning'}
+                >
+                  {health.status}
+                </Badge>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Alerts Card */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                Active Alerts ({health.alerts.length})
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              {health.alerts.length === 0 ? (
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="text-sm text-green-700 dark:text-green-300">
+                    No active alerts. Your tenant is healthy!
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {health.alerts.map((alert, index) => (
+                    <AlertItem key={index} alert={alert} />
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Usage Metrics */}
         <Card>
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-primary-500" />
-              Health Score
-            </h2>
-            <div className="flex items-center justify-center py-4">
-              <HealthScoreRing score={health.healthScore} />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              Usage Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <UsageGauge
+                label="Users"
+                current={health.usage.users.total}
+                limit={health.usage.users.limit}
+                percentage={health.usage.users.percentage}
+                icon={Users}
+              />
+              <UsageGauge
+                label="Accounts"
+                current={health.usage.accounts.total}
+                limit={health.usage.accounts.limit}
+                percentage={health.usage.accounts.percentage}
+                icon={Building2}
+              />
+              <UsageGauge
+                label="Contacts"
+                current={health.usage.contacts.total}
+                limit={health.usage.contacts.limit}
+                percentage={health.usage.contacts.percentage}
+                icon={Users}
+              />
+              <UsageGauge
+                label="Opportunities"
+                current={health.usage.opportunities.total}
+                limit={health.usage.opportunities.limit}
+                percentage={health.usage.opportunities.percentage}
+                icon={TrendingUp}
+              />
+              <UsageGauge
+                label="Storage"
+                current={health.usage.storage.usedMB}
+                limit={health.usage.storage.limitMB}
+                percentage={health.usage.storage.percentage}
+                icon={Database}
+              />
+              <UsageGauge
+                label="API Calls Today"
+                current={health.usage.apiCalls.today}
+                limit={health.usage.apiCalls.dailyLimit}
+                percentage={health.usage.apiCalls.percentage}
+                icon={Zap}
+              />
             </div>
-            <div className="mt-4 text-center">
-              <Badge
-                variant={health.status === 'ACTIVE' ? 'success' : 'warning'}
-              >
-                {health.status}
-              </Badge>
-            </div>
-          </div>
+          </CardBody>
         </Card>
 
-        {/* Alerts Card */}
-        <Card className="lg:col-span-2">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
-              Active Alerts ({health.alerts.length})
-            </h2>
-            {health.alerts.length === 0 ? (
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-green-700 dark:text-green-300">
-                  No active alerts. Your tenant is healthy!
-                </span>
+        {/* Engagement Metrics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                <Activity className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
-            ) : (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {health.alerts.map((alert, index) => (
-                  <AlertItem key={index} alert={alert} />
-                ))}
+              Engagement Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                  {health.engagement.dailyActiveUsers}
+                </div>
+                <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                  Daily Active
+                </div>
               </div>
-            )}
-          </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                  {health.engagement.weeklyActiveUsers}
+                </div>
+                <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                  Weekly Active
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                  {health.engagement.monthlyActiveUsers}
+                </div>
+                <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                  Monthly Active
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                  {health.usage.users.active}/{health.usage.users.total}
+                </div>
+                <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                  Active Users
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                  <div className="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg">
+                    <Clock className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Last Activity
+                    </div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {health.engagement.lastActivityAt
+                        ? new Date(
+                            health.engagement.lastActivityAt,
+                          ).toLocaleString()
+                        : 'No activity recorded'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                  <div className="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg">
+                    <Activity className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Activities This Week
+                    </div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {health.engagement.activitiesCreatedThisWeek} created
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                  <div className="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Opportunities This Week
+                    </div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {health.engagement.opportunitiesUpdatedThisWeek} updated
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardBody>
         </Card>
-      </div>
 
-      {/* Usage Metrics */}
-      <Card>
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary-500" />
-            Usage Metrics
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <UsageGauge
-              label="Users"
-              current={health.usage.users.total}
-              limit={health.usage.users.limit}
-              percentage={health.usage.users.percentage}
-              icon={Users}
-            />
-            <UsageGauge
-              label="Accounts"
-              current={health.usage.accounts.total}
-              limit={health.usage.accounts.limit}
-              percentage={health.usage.accounts.percentage}
-              icon={Building2}
-            />
-            <UsageGauge
-              label="Contacts"
-              current={health.usage.contacts.total}
-              limit={health.usage.contacts.limit}
-              percentage={health.usage.contacts.percentage}
-              icon={Users}
-            />
-            <UsageGauge
-              label="Opportunities"
-              current={health.usage.opportunities.total}
-              limit={health.usage.opportunities.limit}
-              percentage={health.usage.opportunities.percentage}
-              icon={TrendingUp}
-            />
-            <UsageGauge
-              label="Storage"
-              current={health.usage.storage.usedMB}
-              limit={health.usage.storage.limitMB}
-              percentage={health.usage.storage.percentage}
-              icon={Database}
-            />
-            <UsageGauge
-              label="API Calls Today"
-              current={health.usage.apiCalls.today}
-              limit={health.usage.apiCalls.dailyLimit}
-              percentage={health.usage.apiCalls.percentage}
-              icon={Zap}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Engagement Metrics */}
-      <Card>
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary-500" />
-            Engagement Metrics
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary-600">
-                {health.engagement.dailyActiveUsers}
+        {/* History Chart */}
+        <Card>
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
-              <div className="text-sm text-neutral-500 mt-1">Daily Active</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary-600">
-                {health.engagement.weeklyActiveUsers}
-              </div>
-              <div className="text-sm text-neutral-500 mt-1">Weekly Active</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary-600">
-                {health.engagement.monthlyActiveUsers}
-              </div>
-              <div className="text-sm text-neutral-500 mt-1">
-                Monthly Active
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary-600">
-                {health.usage.users.active}/{health.usage.users.total}
-              </div>
-              <div className="text-sm text-neutral-500 mt-1">Active Users</div>
-            </div>
-          </div>
-          <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
-                <Clock className="w-5 h-5 text-neutral-400" />
-                <div>
-                  <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Last Activity
-                  </div>
-                  <div className="text-xs text-neutral-500">
-                    {health.engagement.lastActivityAt
-                      ? new Date(
-                          health.engagement.lastActivityAt,
-                        ).toLocaleString()
-                      : 'No activity recorded'}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
-                <Activity className="w-5 h-5 text-neutral-400" />
-                <div>
-                  <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Activities This Week
-                  </div>
-                  <div className="text-xs text-neutral-500">
-                    {health.engagement.activitiesCreatedThisWeek} created
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
-                <TrendingUp className="w-5 h-5 text-neutral-400" />
-                <div>
-                  <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                    Opportunities This Week
-                  </div>
-                  <div className="text-xs text-neutral-500">
-                    {health.engagement.opportunitiesUpdatedThisWeek} updated
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* History Chart */}
-      <Card>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary-500" />
               Usage History
-            </h2>
+            </CardTitle>
             <select
               value={historyDays}
               onChange={(e) => setHistoryDays(Number(e.target.value))}
@@ -521,62 +622,64 @@ export function TenantHealthPage(): JSX.Element {
               <option value={30}>Last 30 days</option>
               <option value={90}>Last 90 days</option>
             </select>
-          </div>
-          {historyLoading ? (
-            <div className="h-64 flex items-center justify-center">
-              <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
-            </div>
-          ) : history && history.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-neutral-500 border-b border-neutral-200 dark:border-neutral-700">
-                    <th className="pb-2 font-medium">Date</th>
-                    <th className="pb-2 font-medium">Active Users</th>
-                    <th className="pb-2 font-medium">Total Users</th>
-                    <th className="pb-2 font-medium">Accounts</th>
-                    <th className="pb-2 font-medium">Contacts</th>
-                    <th className="pb-2 font-medium">Opportunities</th>
-                    <th className="pb-2 font-medium">API Calls</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
-                  {history.slice(-10).map((record, index) => (
-                    <tr key={index}>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {new Date(record.recordedAt).toLocaleDateString()}
-                      </td>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {record.activeUsers}
-                      </td>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {record.totalUsers}
-                      </td>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {record.accountCount}
-                      </td>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {record.contactCount}
-                      </td>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {record.opportunityCount}
-                      </td>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {record.apiCallsToday}
-                      </td>
+          </CardHeader>
+          <CardBody>
+            {historyLoading ? (
+              <div className="h-64 flex items-center justify-center">
+                <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
+              </div>
+            ) : history && history.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-neutral-700">
+                      <th className="pb-2 font-medium">Date</th>
+                      <th className="pb-2 font-medium">Active Users</th>
+                      <th className="pb-2 font-medium">Total Users</th>
+                      <th className="pb-2 font-medium">Accounts</th>
+                      <th className="pb-2 font-medium">Contacts</th>
+                      <th className="pb-2 font-medium">Opportunities</th>
+                      <th className="pb-2 font-medium">API Calls</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="h-64 flex items-center justify-center text-neutral-500">
-              No history data available yet. Check back after metrics are
-              recorded.
-            </div>
-          )}
-        </div>
-      </Card>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {history.slice(-10).map((record, index) => (
+                      <tr key={index}>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {new Date(record.recordedAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {record.activeUsers}
+                        </td>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {record.totalUsers}
+                        </td>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {record.accountCount}
+                        </td>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {record.contactCount}
+                        </td>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {record.opportunityCount}
+                        </td>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {record.apiCallsToday}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-neutral-500 dark:text-neutral-400">
+                No history data available yet. Check back after metrics are
+                recorded.
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

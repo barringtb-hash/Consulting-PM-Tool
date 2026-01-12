@@ -2,8 +2,10 @@
  * Active Projects Summary Card Plugin
  *
  * Displays the count of projects with IN_PROGRESS status.
+ * Updated to match ContactsPage UI patterns with icons.
  */
 
+import { FolderKanban } from 'lucide-react';
 import { SummaryCard } from './SummaryCard';
 import { useDashboardPluginContext } from '../DashboardPluginContext';
 import type { DashboardPanelPlugin, DashboardPanelConfig } from '../types';
@@ -14,10 +16,10 @@ function ActiveProjectsCardPanel(): JSX.Element {
 
   return (
     <SummaryCard
+      icon={<FolderKanban className="h-5 w-5" />}
       title="Active Projects"
       value={projectsData?.active ?? 0}
-      description="Projects in progress"
-      variant="primary"
+      variant="emerald"
       onClick={() => navigate('/projects')}
       isLoading={projectsData?.isLoading}
     />

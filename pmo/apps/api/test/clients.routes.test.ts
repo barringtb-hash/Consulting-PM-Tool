@@ -52,7 +52,7 @@ describe('clients routes', () => {
     const agent = getAgent();
 
     const createResponse = await agent.post('/api/clients').send({
-      name: 'Acme Corp',
+      name: 'Test Corp',
       industry: 'Technology',
       companySize: CompanySize.MEDIUM,
       aiMaturity: AiMaturity.LOW,
@@ -71,10 +71,10 @@ describe('clients routes', () => {
 
     const searchResponse = await agent
       .get('/api/clients')
-      .query({ search: 'acme' });
+      .query({ search: 'test' });
     expect(searchResponse.status).toBe(200);
     expect(searchResponse.body.clients).toHaveLength(1);
-    expect(searchResponse.body.clients[0]).toMatchObject({ name: 'Acme Corp' });
+    expect(searchResponse.body.clients[0]).toMatchObject({ name: 'Test Corp' });
 
     const filteredResponse = await agent.get('/api/clients').query({
       companySize: CompanySize.MICRO,

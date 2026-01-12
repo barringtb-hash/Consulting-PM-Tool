@@ -441,7 +441,7 @@ function ProductDescriptionsPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Product Descriptions"
         description="Generate AI-powered product descriptions for multiple marketplaces"
@@ -454,7 +454,7 @@ function ProductDescriptionsPage(): JSX.Element {
         }
       />
 
-      <div className="page-content space-y-6">
+      <main className="page-content space-y-6">
         {/* Configuration Selector */}
         <Card className="p-4">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
@@ -845,7 +845,7 @@ function ProductDescriptionsPage(): JSX.Element {
             )}
           </>
         )}
-      </div>
+      </main>
 
       {/* Create Config Modal */}
       {showCreateConfigModal && (

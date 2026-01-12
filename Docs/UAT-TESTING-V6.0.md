@@ -5,7 +5,7 @@
 **Version:** 6.0
 **Last Updated:** January 6, 2026
 **Purpose:** Complete UAT with Full Multi-Tenant Isolation Testing
-**Application URL:** https://elipseconsulting.ai
+**Application URL:** https://verdanthorizon.ai
 
 ---
 
@@ -80,7 +80,7 @@ This version builds upon UAT v5.0 with comprehensive **multi-tenant isolation te
 
 ## 1. Pre-Test Setup
 
-### 1.1 Test Credentials - Default Tenant (Elipse Consulting)
+### 1.1 Test Credentials - Default Tenant (Verdant Horizon Solutions)
 
 | Role | Email | Password | Tenant | Use For |
 |------|-------|----------|--------|---------|
@@ -125,13 +125,13 @@ V6.0 testing requires **three distinct tenants** with deliberately overlapping d
 
 | Tenant Slug | Tenant Name | Plan | Purpose |
 |-------------|-------------|------|---------|
-| `default` | Elipse Consulting | PROFESSIONAL | Primary testing tenant |
+| `default` | Verdant Horizon Solutions | PROFESSIONAL | Primary testing tenant |
 | `acme-corp` | Acme Corporation | PROFESSIONAL | Secondary tenant with overlapping names |
 | `global-tech` | Global Technologies | STARTER | Third tenant for isolation edge cases |
 
 ### 2.2 Test Users Per Tenant
 
-**Tenant 1: Elipse Consulting (slug: `default`)**
+**Tenant 1: Verdant Horizon Solutions (slug: `default`)**
 | Role | Email | Password |
 |------|-------|----------|
 | Owner/Admin | admin@pmo.test | AdminDemo123! |
@@ -214,7 +214,7 @@ Testing can be performed via:
 | 2 | Enter admin@pmo.test / AdminDemo123! | Credentials accepted |
 | 3 | Click Login | Redirects to dashboard |
 | 4 | Check sidebar navigation | All menu items visible |
-| 5 | **Verify tenant context** | Shows "Elipse Consulting" or default tenant indicator |
+| 5 | **Verify tenant context** | Shows "Verdant Horizon Solutions" or default tenant indicator |
 
 **Status:** [ ] Pass [ ] Fail
 **Notes:**
@@ -760,7 +760,7 @@ These tests verify that data is completely isolated between tenants. No user sho
 
 Before running isolation tests, record the IDs of key entities in each tenant:
 
-**Tenant 1 (Elipse Consulting) Entity IDs:**
+**Tenant 1 (Verdant Horizon Solutions) Entity IDs:**
 | Entity | Name | ID |
 |--------|------|-------|
 | Account | Acme Manufacturing | _____ |
@@ -800,7 +800,7 @@ Before running isolation tests, record the IDs of key entities in each tenant:
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Login as admin@pmo.test (Tenant 1) | Login successful |
-| 2 | Note the tenant context | Shows "Elipse Consulting" |
+| 2 | Note the tenant context | Shows "Verdant Horizon Solutions" |
 | 3 | Open browser DevTools > Application > Cookies | View JWT token |
 | 4 | **Verify tenant claim in token** | Token should include tenantId |
 | 5 | Open new incognito window | New session |
@@ -1598,13 +1598,13 @@ Before running isolation tests, record the IDs of key entities in each tenant:
 ### Authentication
 ```bash
 # Login as Tenant 1 Admin
-curl -X POST https://elipseconsulting.ai/api/auth/login \
+curl -X POST https://verdanthorizon.ai/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@pmo.test","password":"AdminDemo123!"}' \
   -c cookies.txt
 
 # Login as Tenant 2 Admin
-curl -X POST https://elipseconsulting.ai/api/auth/login \
+curl -X POST https://verdanthorizon.ai/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"acme.admin@pmo.test","password":"AcmeDemo123!"}' \
   -c cookies-t2.txt
@@ -1613,17 +1613,17 @@ curl -X POST https://elipseconsulting.ai/api/auth/login \
 ### Cross-Tenant Access Tests
 ```bash
 # Try to access Tenant 2 account from Tenant 1 session
-curl -X GET https://elipseconsulting.ai/api/crm/accounts/{TENANT2_ACCOUNT_ID} \
+curl -X GET https://verdanthorizon.ai/api/crm/accounts/{TENANT2_ACCOUNT_ID} \
   -b cookies.txt
 
 # Try to update Tenant 2 account from Tenant 1 session
-curl -X PUT https://elipseconsulting.ai/api/crm/accounts/{TENANT2_ACCOUNT_ID} \
+curl -X PUT https://verdanthorizon.ai/api/crm/accounts/{TENANT2_ACCOUNT_ID} \
   -H "Content-Type: application/json" \
   -d '{"name":"Hacked Account"}' \
   -b cookies.txt
 
 # Try header injection
-curl -X GET https://elipseconsulting.ai/api/crm/accounts \
+curl -X GET https://verdanthorizon.ai/api/crm/accounts \
   -H "X-Tenant-ID: {TENANT2_ID}" \
   -b cookies.txt
 ```
@@ -1634,7 +1634,7 @@ curl -X GET https://elipseconsulting.ai/api/crm/accounts \
 
 Use this section to record entity IDs discovered during testing:
 
-### Tenant 1 (Elipse Consulting) IDs
+### Tenant 1 (Verdant Horizon Solutions) IDs
 ```
 Tenant ID: _____
 Account IDs: _____

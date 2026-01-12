@@ -20,10 +20,22 @@ export interface PipelineStage {
   name: string;
   order: number;
   probability: number;
-  stageType: StageType;
+  type: StageType;
   color?: string | null;
   rottenDays?: number | null;
   description?: string | null;
+}
+
+export interface OpportunityContact {
+  contact: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    jobTitle?: string | null;
+  };
+  isPrimary?: boolean;
+  role?: string | null;
 }
 
 export interface Opportunity {
@@ -52,6 +64,7 @@ export interface Opportunity {
     type: string;
   };
   stage?: PipelineStage;
+  contacts?: OpportunityContact[];
   _count?: {
     contacts: number;
     activities: number;
@@ -111,7 +124,7 @@ export interface PipelineStats {
   byStage: Array<{
     stageId: number;
     stageName: string;
-    stageType: StageType;
+    type: StageType;
     count: number;
     value: number;
     weightedValue: number;

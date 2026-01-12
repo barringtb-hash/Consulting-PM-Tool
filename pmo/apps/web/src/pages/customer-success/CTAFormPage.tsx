@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Target } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
@@ -89,6 +89,7 @@ function CTAFormPage(): JSX.Element {
           </div>
         }
         description="Create a new Call-to-Action to track customer success tasks"
+        icon={Target}
       />
 
       <div className="page-content">

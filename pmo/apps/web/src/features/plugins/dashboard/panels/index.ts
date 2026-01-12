@@ -15,7 +15,13 @@ export { UpcomingTasksPanelPlugin } from './UpcomingTasksPanel';
 export { RecentProjectsPanelPlugin } from './RecentProjectsPanel';
 
 // Reusable Components
-export { SummaryCard, type SummaryCardProps } from './SummaryCard';
+export {
+  SummaryCard,
+  SummaryCardSkeleton,
+  STAT_STYLES,
+  type SummaryCardProps,
+  type StatStyleVariant,
+} from './SummaryCard';
 
 // Plugin Collection for easy registration
 export const corePlugins = [

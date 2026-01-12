@@ -242,10 +242,10 @@ function RevenueManagementPage(): JSX.Element {
     }).format(value);
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Revenue Management"
-        subtitle="AI-powered dynamic pricing with demand forecasting and competitor monitoring"
+        description="AI-powered dynamic pricing with demand forecasting and competitor monitoring"
         icon={DollarSign}
         actions={
           <Button variant="secondary" onClick={() => setShowCreateModal(true)}>

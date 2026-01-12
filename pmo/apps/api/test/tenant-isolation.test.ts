@@ -121,6 +121,10 @@ describe('Tenant Isolation', () => {
     afterEach(async () => {
       // Cleanup accounts
       const testPrisma = getTestPrisma();
+      // Delete opportunities before accounts due to foreign key constraint
+      await testPrisma.opportunity.deleteMany({
+        where: { account: { name: { contains: 'Tenant' } } },
+      });
       await testPrisma.account.deleteMany({
         where: { name: { contains: 'Tenant' } },
       });
@@ -269,6 +273,10 @@ describe('Tenant Isolation', () => {
           OR: [{ firstName: 'Alice' }, { firstName: 'Bob' }],
         },
       });
+      // Delete opportunities before accounts due to foreign key constraint
+      await testPrisma.opportunity.deleteMany({
+        where: { account: { name: { contains: 'Test Account' } } },
+      });
       await testPrisma.account.deleteMany({
         where: { name: { contains: 'Test Account' } },
       });
@@ -336,6 +344,10 @@ describe('Tenant Isolation', () => {
       await testPrisma.cRMActivity.deleteMany({
         where: { subject: { contains: 'Test Activity' } },
       });
+      // Delete opportunities before accounts due to foreign key constraint
+      await testPrisma.opportunity.deleteMany({
+        where: { account: { name: { contains: 'Test Account' } } },
+      });
       await testPrisma.account.deleteMany({
         where: { name: { contains: 'Test Account' } },
       });
@@ -392,6 +404,10 @@ describe('Tenant Isolation', () => {
 
     afterEach(async () => {
       const testPrisma = getTestPrisma();
+      // Delete opportunities before accounts due to foreign key constraint
+      await testPrisma.opportunity.deleteMany({
+        where: { account: { name: { contains: 'Test Account' } } },
+      });
       await testPrisma.account.deleteMany({
         where: { name: { contains: 'Test Account' } },
       });
@@ -474,6 +490,18 @@ describe('Tenant Isolation', () => {
 
     afterEach(async () => {
       const testPrisma = getTestPrisma();
+      // Delete opportunities before accounts due to foreign key constraint
+      await testPrisma.opportunity.deleteMany({
+        where: {
+          account: {
+            OR: [
+              { name: { contains: 'Parent Account' } },
+              { name: { contains: 'Child Account' } },
+              { name: { contains: 'Account B' } },
+            ],
+          },
+        },
+      });
       await testPrisma.account.deleteMany({
         where: {
           OR: [
@@ -566,6 +594,10 @@ describe('Tenant Isolation', () => {
 
     afterEach(async () => {
       const testPrisma = getTestPrisma();
+      // Delete opportunities before accounts due to foreign key constraint
+      await testPrisma.opportunity.deleteMany({
+        where: { account: { name: { contains: 'Protected Account' } } },
+      });
       await testPrisma.account.deleteMany({
         where: { name: { contains: 'Protected Account' } },
       });

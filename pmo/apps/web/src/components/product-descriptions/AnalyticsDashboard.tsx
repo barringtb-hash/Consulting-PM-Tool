@@ -103,12 +103,10 @@ export function AnalyticsDashboard({ configId }: AnalyticsDashboardProps) {
     refetch: refetchOverview,
   } = useQuery({
     queryKey: ['product-descriptions', 'analytics', 'overview', configId],
-    queryFn: async () => {
-      const res = await http.get(
+    queryFn: () =>
+      http.get<OverviewAnalytics>(
         `/api/product-descriptions/${configId}/analytics/overview`,
-      );
-      return res.json() as Promise<OverviewAnalytics>;
-    },
+      ),
     enabled: !!configId,
   });
 
@@ -120,24 +118,20 @@ export function AnalyticsDashboard({ configId }: AnalyticsDashboardProps) {
       'seo-distribution',
       configId,
     ],
-    queryFn: async () => {
-      const res = await http.get(
+    queryFn: () =>
+      http.get<SEODistribution>(
         `/api/product-descriptions/${configId}/analytics/seo-distribution`,
-      );
-      return res.json() as Promise<SEODistribution>;
-    },
+      ),
     enabled: !!configId,
   });
 
   // Fetch A/B test results
   const { data: abTestsData } = useQuery({
     queryKey: ['product-descriptions', 'analytics', 'ab-tests', configId],
-    queryFn: async () => {
-      const res = await http.get(
+    queryFn: () =>
+      http.get<{ abTests: ABTestResult[] }>(
         `/api/product-descriptions/${configId}/analytics/ab-tests`,
-      );
-      return res.json() as Promise<{ abTests: ABTestResult[] }>;
-    },
+      ),
     enabled: !!configId,
   });
 
@@ -150,17 +144,16 @@ export function AnalyticsDashboard({ configId }: AnalyticsDashboardProps) {
       configId,
       timeRange,
     ],
-    queryFn: async () => {
+    queryFn: () => {
       const endDate = new Date();
       const startDate = new Date();
       if (timeRange === 'day') startDate.setDate(startDate.getDate() - 1);
       else if (timeRange === 'week') startDate.setDate(startDate.getDate() - 7);
       else startDate.setDate(startDate.getDate() - 30);
 
-      const res = await http.get(
+      return http.get<{ trends: TrendDataPoint[] }>(
         `/api/product-descriptions/${configId}/analytics/trends?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&granularity=${timeRange === 'month' ? 'week' : 'day'}`,
       );
-      return res.json() as Promise<{ trends: TrendDataPoint[] }>;
     },
     enabled: !!configId,
   });

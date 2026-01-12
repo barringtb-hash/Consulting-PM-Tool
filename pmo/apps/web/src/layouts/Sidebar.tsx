@@ -139,15 +139,15 @@ export function Sidebar(): JSX.Element {
         <Link to="/dashboard" className="flex items-center gap-3 no-underline">
           <img
             src="/favicon.svg"
-            alt="Launchpad"
+            alt="LaunchPad"
             className="w-10 h-10 flex-shrink-0"
           />
           <div className="flex flex-col">
             <span className="font-bold text-rose-800 dark:text-rose-400 text-sm tracking-tight">
-              Launchpad
+              LaunchPad
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400 tracking-wide">
-              Consulting Partners
+              Command Center
             </span>
           </div>
         </Link>

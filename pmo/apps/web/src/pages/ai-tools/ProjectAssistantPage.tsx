@@ -422,10 +422,10 @@ function ProjectAssistantPage(): JSX.Element {
   const reminders = (remindersQuery.data || []).filter((r) => !r.dismissed);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col">
       <PageHeader
         title="AI Project Assistant"
-        subtitle="Your intelligent project management companion"
+        description="Your intelligent project management companion"
         icon={Sparkles}
         actions={
           <Select

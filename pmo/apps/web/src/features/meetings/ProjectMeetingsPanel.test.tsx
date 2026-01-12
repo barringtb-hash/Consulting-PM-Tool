@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
+import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../test/utils';
 import ProjectMeetingsPanel from './ProjectMeetingsPanel';
 
@@ -45,7 +46,8 @@ describe('ProjectMeetingsPanel', () => {
       data: undefined,
     });
     const loading = renderWithProviders(<ProjectMeetingsPanel projectId={1} />);
-    loading.getByText('Loading meetings...');
+    // Loading state now shows skeleton loader, verify the header is present
+    loading.getByText('Meetings');
 
     const noData: unknown[] = [];
     mockUseProjectMeetings.mockReturnValue({
@@ -55,9 +57,7 @@ describe('ProjectMeetingsPanel', () => {
     });
 
     const empty = renderWithProviders(<ProjectMeetingsPanel projectId={1} />);
-    empty.getByText(
-      'No meetings yet. Create the first one to capture decisions.',
-    );
+    empty.getByText('No meetings yet');
   });
 
   it('opens the modal and submits create meeting requests', async () => {
@@ -70,14 +70,28 @@ describe('ProjectMeetingsPanel', () => {
     const user = userEvent.setup();
     const view = renderWithProviders(<ProjectMeetingsPanel projectId={42} />);
 
-    await user.click(view.getByRole('button', { name: /schedule meeting/i }));
+    await user.click(
+      view.getByRole('button', { name: /schedule first meeting/i }),
+    );
 
-    await user.type(view.getByLabelText('Title'), 'Sprint planning');
-    await user.type(view.getByLabelText('Date'), '2024-12-01');
-    await user.type(view.getByLabelText('Time'), '09:00');
-    await user.type(view.getByLabelText('Attendees'), 'Alice, Bob');
+    // Wait for the modal dialog to appear (check for modal title)
+    expect(
+      await screen.findByRole('heading', { name: /new meeting/i }),
+    ).toBeInTheDocument();
 
-    await user.click(view.getByRole('button', { name: /save/i }));
+    // Fill in the form (using regex for labels that include required asterisk)
+    await user.type(
+      screen.getByRole('textbox', { name: /title/i }),
+      'Sprint planning',
+    );
+    await user.type(screen.getByLabelText(/date/i), '2024-12-01');
+    await user.type(screen.getByLabelText(/time/i), '09:00');
+    await user.type(
+      screen.getByRole('textbox', { name: /attendees/i }),
+      'Alice, Bob',
+    );
+
+    await user.click(screen.getByRole('button', { name: /save/i }));
 
     expect(mockUseCreateMeeting).toHaveBeenCalledWith({
       projectId: 42,
@@ -85,9 +99,9 @@ describe('ProjectMeetingsPanel', () => {
       date: new Date('2024-12-01'),
       time: '09:00',
       attendees: ['Alice', 'Bob'],
-      notes: '',
-      decisions: '',
-      risks: '',
+      notes: undefined,
+      decisions: undefined,
+      risks: undefined,
     });
   });
 });

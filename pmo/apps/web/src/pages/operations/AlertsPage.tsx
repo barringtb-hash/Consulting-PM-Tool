@@ -19,7 +19,7 @@ import {
   Send,
   Settings,
 } from 'lucide-react';
-import { Card, Badge, Button, Input, Modal } from '../../ui';
+import { Card, Badge, Button, Input, Modal, PageHeader } from '../../ui';
 import {
   useAlertRules,
   useCreateAlertRule,
@@ -42,6 +42,14 @@ function getChannelIcon(channel: string) {
     default:
       return <Send className="w-4 h-4" />;
   }
+}
+
+function ContentSkeleton() {
+  return (
+    <div className="h-48 flex items-center justify-center">
+      <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
+    </div>
+  );
 }
 
 function AlertRuleModal({
@@ -268,7 +276,7 @@ function AlertRuleModal({
             id="enabled"
             checked={formData.enabled !== false}
             onChange={(e) => handleFieldChange('enabled', e.target.checked)}
-            className="w-4 h-4 rounded border-neutral-300"
+            className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-600"
           />
           <label
             htmlFor="enabled"
@@ -306,8 +314,6 @@ export function AlertsPage(): JSX.Element {
   const testAlert = useTestAlert();
   const sendDigest = useSendDailyDigest();
 
-  const _isLoading = rulesLoading || historyLoading;
-
   const handleSaveRule = async (data: Partial<AlertRule>) => {
     if (editingRule?.id) {
       await updateRule.mutateAsync({ id: editingRule.id, data });
@@ -330,222 +336,222 @@ export function AlertsPage(): JSX.Element {
   };
 
   return (
-    <div className="page-content space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">
-            Alert Management
-          </h1>
-          <p className="text-neutral-500 mt-1">
-            Configure alert rules and view notification history
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => sendDigest.mutate()}
-            disabled={sendDigest.isPending}
-            className="gap-2"
-          >
-            <Mail className="w-4 h-4" />
-            Send Digest
-          </Button>
-          <Button
-            onClick={() => {
-              setEditingRule(null);
-              setShowRuleModal(true);
-            }}
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Rule
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title="Alert Management"
+        description="Configure alert rules and view notification history"
+        icon={Bell}
+        actions={
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => sendDigest.mutate()}
+              disabled={sendDigest.isPending}
+              className="gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              Send Digest
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingRule(null);
+                setShowRuleModal(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              New Rule
+            </Button>
+          </div>
+        }
+      />
 
-      {/* Alert Rules */}
-      <Card>
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary-500" />
-            Alert Rules
-          </h2>
-          {rulesLoading ? (
-            <div className="h-48 flex items-center justify-center">
-              <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
-            </div>
-          ) : (rules?.data?.length || 0) > 0 ? (
-            <div className="space-y-3">
-              {rules?.data?.map((rule) => (
-                <div
-                  key={rule.id}
-                  className={`flex items-center gap-4 p-4 rounded-lg border ${
-                    rule.enabled
-                      ? 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800'
-                      : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 opacity-60'
-                  }`}
-                >
-                  <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                    {getChannelIcon(rule.channel)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                        {rule.name}
-                      </span>
-                      {!rule.enabled && (
-                        <Badge variant="default">Disabled</Badge>
-                      )}
+      <div className="page-content space-y-6">
+        {/* Alert Rules */}
+        <Card>
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              Alert Rules
+            </h2>
+            {rulesLoading ? (
+              <ContentSkeleton />
+            ) : (rules?.data?.length || 0) > 0 ? (
+              <div className="space-y-3">
+                {rules?.data?.map((rule) => (
+                  <div
+                    key={rule.id}
+                    className={`flex items-center gap-4 p-4 rounded-lg border ${
+                      rule.enabled
+                        ? 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800'
+                        : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 opacity-60'
+                    }`}
+                  >
+                    <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/50">
+                      {getChannelIcon(rule.channel)}
                     </div>
-                    {rule.description && (
-                      <div className="text-xs text-neutral-500 mt-1">
-                        {rule.description}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {rule.severity?.map((s) => (
-                        <Badge key={s} variant="warning" className="text-xs">
-                          {s}
-                        </Badge>
-                      ))}
-                      {rule.category?.map((c) => (
-                        <Badge key={c} variant="default" className="text-xs">
-                          {c}
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="text-xs text-neutral-400 mt-2">
-                      {rule.recipients?.length || 0} recipients •{' '}
-                      {rule.throttleMinutes}min throttle
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleTestAlert(rule.id)}
-                      disabled={testAlert.isPending}
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingRule(rule);
-                        setShowRuleModal(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteRule(rule.id)}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Bell className="w-12 h-12 text-neutral-400 mb-4" />
-              <h3 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-                No Alert Rules
-              </h3>
-              <p className="text-neutral-500 mt-1 mb-4">
-                Create your first alert rule to get notified
-              </p>
-              <Button
-                onClick={() => {
-                  setEditingRule(null);
-                  setShowRuleModal(true);
-                }}
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Create Rule
-              </Button>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Alert History */}
-      <Card>
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary-500" />
-            Alert History
-          </h2>
-          {historyLoading ? (
-            <div className="h-48 flex items-center justify-center">
-              <RefreshCw className="w-6 h-6 animate-spin text-primary-500" />
-            </div>
-          ) : (history?.data?.length || 0) > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-neutral-500 border-b border-neutral-200 dark:border-neutral-700">
-                    <th className="pb-2 font-medium">Status</th>
-                    <th className="pb-2 font-medium">Rule</th>
-                    <th className="pb-2 font-medium">Channel</th>
-                    <th className="pb-2 font-medium">Recipient</th>
-                    <th className="pb-2 font-medium">Sent At</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
-                  {history?.data?.map((alert) => (
-                    <tr key={alert.id}>
-                      <td className="py-2">
-                        {alert.status === 'SENT' ? (
-                          <Badge variant="success" className="gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Sent
-                          </Badge>
-                        ) : alert.status === 'FAILED' ? (
-                          <Badge variant="danger" className="gap-1">
-                            <XCircle className="w-3 h-3" />
-                            Failed
-                          </Badge>
-                        ) : (
-                          <Badge variant="warning" className="gap-1">
-                            <Clock className="w-3 h-3" />
-                            {alert.status}
-                          </Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                          {rule.name}
+                        </span>
+                        {!rule.enabled && (
+                          <Badge variant="default">Disabled</Badge>
                         )}
-                      </td>
-                      <td className="py-2 text-neutral-700 dark:text-neutral-300">
-                        {alert.rule?.name || '--'}
-                      </td>
-                      <td className="py-2">
-                        <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
-                          {getChannelIcon(alert.channel)}
-                          <span>{alert.channel}</span>
+                      </div>
+                      {rule.description && (
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          {rule.description}
                         </div>
-                      </td>
-                      <td className="py-2 text-neutral-600 dark:text-neutral-400">
-                        {alert.recipient}
-                      </td>
-                      <td className="py-2 text-neutral-500">
-                        {new Date(alert.sentAt).toLocaleString()}
-                      </td>
+                      )}
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {rule.severity?.map((s) => (
+                          <Badge key={s} variant="warning" className="text-xs">
+                            {s}
+                          </Badge>
+                        ))}
+                        {rule.category?.map((c) => (
+                          <Badge key={c} variant="default" className="text-xs">
+                            {c}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-2">
+                        {rule.recipients?.length || 0} recipients •{' '}
+                        {rule.throttleMinutes}min throttle
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleTestAlert(rule.id)}
+                        disabled={testAlert.isPending}
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingRule(rule);
+                          setShowRuleModal(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteRule(rule.id)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-800 mb-4">
+                  <Bell className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                </div>
+                <h3 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
+                  No Alert Rules
+                </h3>
+                <p className="text-neutral-500 dark:text-neutral-400 mt-1 mb-4">
+                  Create your first alert rule to get notified
+                </p>
+                <Button
+                  onClick={() => {
+                    setEditingRule(null);
+                    setShowRuleModal(true);
+                  }}
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Rule
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Alert History */}
+        <Card>
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/50">
+                <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              </div>
+              Alert History
+            </h2>
+            {historyLoading ? (
+              <ContentSkeleton />
+            ) : (history?.data?.length || 0) > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-neutral-700">
+                      <th className="pb-2 font-medium">Status</th>
+                      <th className="pb-2 font-medium">Rule</th>
+                      <th className="pb-2 font-medium">Channel</th>
+                      <th className="pb-2 font-medium">Recipient</th>
+                      <th className="pb-2 font-medium">Sent At</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center text-neutral-500 py-8">
-              No alerts have been sent yet
-            </div>
-          )}
-        </div>
-      </Card>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {history?.data?.map((alert) => (
+                      <tr key={alert.id}>
+                        <td className="py-2">
+                          {alert.status === 'SENT' ? (
+                            <Badge variant="success" className="gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Sent
+                            </Badge>
+                          ) : alert.status === 'FAILED' ? (
+                            <Badge variant="danger" className="gap-1">
+                              <XCircle className="w-3 h-3" />
+                              Failed
+                            </Badge>
+                          ) : (
+                            <Badge variant="warning" className="gap-1">
+                              <Clock className="w-3 h-3" />
+                              {alert.status}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-2 text-neutral-700 dark:text-neutral-300">
+                          {alert.rule?.name || '--'}
+                        </td>
+                        <td className="py-2">
+                          <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                            {getChannelIcon(alert.channel)}
+                            <span>{alert.channel}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 text-neutral-600 dark:text-neutral-400">
+                          {alert.recipient}
+                        </td>
+                        <td className="py-2 text-neutral-500 dark:text-neutral-400">
+                          {new Date(alert.sentAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center text-neutral-500 dark:text-neutral-400 py-8">
+                No alerts have been sent yet
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
 
       {/* Rule Modal */}
       <AlertRuleModal

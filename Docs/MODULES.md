@@ -92,6 +92,8 @@ These modules provide operational visibility and debugging capabilities:
 |-----------|-------|--------------|-------------|--------|
 | `aiMonitoring` | AI Monitoring | None | AI usage tracking, cost monitoring, predictive analytics | `/operations/ai-usage`, `/operations/dashboard` |
 | `bugTracking` | Bug Tracking | None | Issue tracking, error collection, external integrations | `/bug-tracking/issues`, `/bug-tracking/issues/:id` |
+| `finance-tracking` | Finance Tracking | admin | Expense tracking, budgets, recurring costs, profitability reporting | `/admin/finance` |
+| `mcp` | MCP Integration | None | Model Context Protocol for AI queries against CRM data | `/api/mcp/*` |
 
 ### AI Tools Modules
 

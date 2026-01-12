@@ -6,7 +6,7 @@
 
 /* Custom theme variables */
 @theme {
-  /* Primary brand color - Launchpad Consulting Partners Orange */
+  /* Primary brand color - LaunchPad Orange */
   --color-primary-50: #fff7ed;
   --color-primary-100: #ffedd5;
   --color-primary-200: #fed7aa;
@@ -20,12 +20,12 @@
   --color-primary-950: #431407;
 
   /* Brand accent colors */
-  --color-brand-primary: #F97316;
-  --color-brand-orange: #F97316;
-  --color-brand-yellow: #FCD34D;
-  --color-brand-red: #EF4444;
-  --color-brand-amber: #F59E0B;
-  --color-brand-rose: #9F1239;
+  --color-brand-primary: #f97316;
+  --color-brand-orange: #f97316;
+  --color-brand-amber: #f59e0b;
+  --color-brand-rose: #9f1239;
+  --color-brand-yellow: #fcd34d;
+  --color-brand-red: #ef4444;
 
   /* Neutral grays */
   --color-neutral-50: #f8fafc;

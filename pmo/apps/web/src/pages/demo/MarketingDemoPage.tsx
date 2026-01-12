@@ -346,7 +346,7 @@ function ContentGeneratorDemo(): JSX.Element {
 }
 
 function BrandVoiceDemo(): JSX.Element {
-  const [brandName, setBrandName] = useState('Acme Corp');
+  const [brandName, setBrandName] = useState('Verdant Horizon Solutions');
   const [voiceTraits, setVoiceTraits] = useState<string[]>([
     'Professional',
     'Innovative',
@@ -600,7 +600,7 @@ function AnalyticsDemo(): JSX.Element {
 
 function RepurposeDemo(): JSX.Element {
   const [sourceContent, setSourceContent] = useState(
-    'Our AI chatbot solution helped TechCorp reduce support tickets by 60% and improve customer satisfaction scores to 92%.',
+    'Our AI chatbot solution helped GreenTech Industries reduce support tickets by 60% and improve customer satisfaction scores to 92%.',
   );
   const [repurposedContent, setRepurposedContent] = useState<
     Record<string, string>
@@ -612,11 +612,12 @@ function RepurposeDemo(): JSX.Element {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setRepurposedContent({
       twitter:
-        "60% fewer support tickets. 92% customer satisfaction. That's what happens when AI meets customer service. See how TechCorp did it. #AI #CX",
+        "60% fewer support tickets. 92% customer satisfaction. That's what happens when AI meets customer service. See how GreenTech Industries did it. #AI #CX",
       linkedin:
-        'Case Study: How TechCorp Transformed Customer Support with AI\n\nResults speak for themselves:\n- 60% reduction in support tickets\n- 92% customer satisfaction score\n\nThe future of customer service is here.',
-      email_subject: 'How TechCorp Cut Support Tickets by 60%',
-      blog_title: 'TechCorp Case Study: AI-Powered Customer Service Success',
+        'Case Study: How GreenTech Industries Transformed Customer Support with AI\n\nResults speak for themselves:\n- 60% reduction in support tickets\n- 92% customer satisfaction score\n\nThe future of customer service is here.',
+      email_subject: 'How GreenTech Industries Cut Support Tickets by 60%',
+      blog_title:
+        'GreenTech Industries Case Study: AI-Powered Customer Service Success',
     });
     setIsRepurposing(false);
   };

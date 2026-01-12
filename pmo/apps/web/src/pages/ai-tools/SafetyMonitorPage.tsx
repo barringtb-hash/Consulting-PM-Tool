@@ -105,6 +105,65 @@ const TRAINING_STATUS_VARIANTS: Record<
   EXPIRED: 'neutral',
 };
 
+// Skeleton loader for stats cards (available for future overview loading states)
+function _StatCardSkeleton(): JSX.Element {
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="h-3 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+            <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+          <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+// Skeleton loader for checklist items
+function ChecklistSkeleton(): JSX.Element {
+  return (
+    <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <div className="h-6 w-6 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        <div>
+          <div className="h-4 w-40 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+          <div className="h-3 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="h-8 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        <div className="w-20 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+// Skeleton loader for table rows
+function TableRowSkeleton(): JSX.Element {
+  return (
+    <tr className="border-b border-neutral-200 dark:border-neutral-700">
+      <td className="px-6 py-4">
+        <div className="h-4 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-28 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+    </tr>
+  );
+}
+
 // API functions
 async function fetchSafetyConfigs(): Promise<SafetyConfig[]> {
   const res = await fetch(
@@ -261,10 +320,10 @@ function SafetyMonitorPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Safety Monitor"
-        subtitle="Digital safety checklists, incident reporting, and OSHA compliance tracking"
+        description="Digital safety checklists, incident reporting, and OSHA compliance tracking"
         icon={HardHat}
         actions={
           <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
@@ -412,8 +471,10 @@ function SafetyMonitorPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {checklistsQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  Loading checklists...
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <ChecklistSkeleton key={i} />
+                  ))}
                 </div>
               ) : checklistsQuery.data?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
@@ -573,8 +634,33 @@ function SafetyMonitorPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {trainingQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  Loading training records...
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Course
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Employee
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Due Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Expires
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : trainingQuery.data?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">

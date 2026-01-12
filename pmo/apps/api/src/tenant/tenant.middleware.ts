@@ -3,8 +3,8 @@
  *
  * This middleware extracts and validates tenant context from incoming requests.
  * Tenant can be identified via:
- * 1. Subdomain: acme.yourcrm.com -> tenant slug "acme"
- * 2. Custom domain: crm.acmecorp.com -> lookup in TenantDomain table
+ * 1. Subdomain: client.yourcrm.com -> tenant slug "client"
+ * 2. Custom domain: crm.clientcompany.com -> lookup in TenantDomain table
  * 3. JWT claim: For API calls, tenant info embedded in token
  * 4. Header: X-Tenant-ID for service-to-service calls
  */
@@ -24,7 +24,7 @@ export interface TenantRequest extends AuthenticatedRequest {
 /**
  * Extract subdomain from hostname.
  * Examples:
- * - acme.yourcrm.com -> "acme"
+ * - client.yourcrm.com -> "client"
  * - www.yourcrm.com -> null (www is not a tenant)
  * - localhost:3001 -> null
  * - yourcrm.com -> null

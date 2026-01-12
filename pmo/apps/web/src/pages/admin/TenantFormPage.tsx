@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Building2, Plus, Edit2 } from 'lucide-react';
 import {
   Button,
   Card,
   CardBody,
   CardHeader,
   CardTitle,
-  Container,
   PageHeader,
-  Section,
   Input,
   Modal,
 } from '../../ui';
@@ -26,6 +24,46 @@ function generateSlug(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 50);
+}
+
+/**
+ * Skeleton loader for form page loading state
+ */
+function FormPageSkeleton(): JSX.Element {
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <div className="border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <div className="container-padding py-6">
+          <div className="h-8 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+          <div className="h-4 w-48 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="page-content">
+        <div className="mb-6">
+          <div className="h-10 w-36 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <div className="h-6 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i}>
+                  <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+                  <div className="h-10 w-full bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                </div>
+              ))}
+              <div className="flex justify-end gap-3 pt-4">
+                <div className="h-10 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                <div className="h-10 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
 export function TenantFormPage(): JSX.Element {
@@ -155,13 +193,7 @@ export function TenantFormPage(): JSX.Element {
   };
 
   if (isEditing && loadingTenant) {
-    return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
-        <div className="text-neutral-500 dark:text-neutral-400">
-          Loading tenant...
-        </div>
-      </div>
-    );
+    return <FormPageSkeleton />;
   }
 
   return (
@@ -173,200 +205,196 @@ export function TenantFormPage(): JSX.Element {
             ? `Editing ${existingTenant?.name}`
             : 'Create a new customer tenant for the platform'
         }
+        icon={isEditing ? Edit2 : Plus}
       />
 
-      <Section>
-        <Container>
-          <div className="mb-6">
-            <Button variant="secondary" onClick={handleBack}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {isEditing ? 'Back to Tenant' : 'Back to Tenants'}
-            </Button>
-          </div>
+      <div className="page-content">
+        <div className="mb-6">
+          <Button variant="secondary" onClick={handleBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {isEditing ? 'Back to Tenant' : 'Back to Tenants'}
+          </Button>
+        </div>
 
-          <Card className="max-w-2xl">
-            <CardHeader>
-              <CardTitle>
-                {isEditing ? 'Tenant Details' : 'New Tenant'}
-              </CardTitle>
-            </CardHeader>
-            <CardBody>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Tenant Name */}
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              {isEditing ? 'Tenant Details' : 'New Tenant'}
+            </CardTitle>
+          </CardHeader>
+          <CardBody>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Tenant Name */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Tenant Name *
+                </label>
+                <Input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Company Name"
+                  required
+                />
+              </div>
+
+              {/* Slug */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Slug {!isEditing && '(auto-generated from name)'}
+                </label>
+                <Input
+                  type="text"
+                  value={slug}
+                  onChange={(e) => {
+                    setSlug(e.target.value);
+                    if (!isEditing) setSlugManuallyEdited(true);
+                  }}
+                  placeholder="company-name"
+                  pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                  title="Lowercase letters, numbers, and hyphens only"
+                  disabled={isEditing}
+                />
+                {isEditing && (
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                    Slug cannot be changed after creation.
+                  </p>
+                )}
+              </div>
+
+              {/* Plan */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Plan *
+                </label>
+                <select
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value as TenantPlan)}
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                  required
+                >
+                  <option value="TRIAL">Trial</option>
+                  <option value="STARTER">Starter</option>
+                  <option value="PROFESSIONAL">Professional</option>
+                  <option value="ENTERPRISE">Enterprise</option>
+                </select>
+              </div>
+
+              {/* Trial End Date (only for Trial plan) */}
+              {plan === 'TRIAL' && (
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Tenant Name *
+                    Trial End Date
                   </label>
                   <Input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Acme Corporation"
-                    required
+                    type="date"
+                    value={trialEndsAt}
+                    onChange={(e) => setTrialEndsAt(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
+              )}
 
-                {/* Slug */}
+              {/* Status (only when editing) */}
+              {isEditing && (
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Slug {!isEditing && '(auto-generated from name)'}
-                  </label>
-                  <Input
-                    type="text"
-                    value={slug}
-                    onChange={(e) => {
-                      setSlug(e.target.value);
-                      if (!isEditing) setSlugManuallyEdited(true);
-                    }}
-                    placeholder="acme-corporation"
-                    pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-                    title="Lowercase letters, numbers, and hyphens only"
-                    disabled={isEditing}
-                  />
-                  {isEditing && (
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                      Slug cannot be changed after creation.
-                    </p>
-                  )}
-                </div>
-
-                {/* Plan */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Plan *
+                    Status
                   </label>
                   <select
-                    value={plan}
-                    onChange={(e) => setPlan(e.target.value as TenantPlan)}
+                    value={status}
+                    onChange={(e) =>
+                      setStatus(
+                        e.target.value as
+                          | 'PENDING'
+                          | 'ACTIVE'
+                          | 'SUSPENDED'
+                          | 'CANCELLED',
+                      )
+                    }
                     className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-                    required
                   >
-                    <option value="TRIAL">Trial</option>
-                    <option value="STARTER">Starter</option>
-                    <option value="PROFESSIONAL">Professional</option>
-                    <option value="ENTERPRISE">Enterprise</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="SUSPENDED">Suspended</option>
+                    <option value="CANCELLED">Cancelled</option>
                   </select>
                 </div>
+              )}
 
-                {/* Trial End Date (only for Trial plan) */}
-                {plan === 'TRIAL' && (
+              {/* Owner fields (only when creating) */}
+              {!isEditing && (
+                <>
+                  <hr className="border-neutral-200 dark:border-neutral-700" />
+                  <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
+                    Owner Account
+                  </h3>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 -mt-4">
+                    If the email does not exist, a new user will be created with
+                    a temporary password.
+                  </p>
+
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                      Trial End Date
+                      Owner Email *
                     </label>
                     <Input
-                      type="date"
-                      value={trialEndsAt}
-                      onChange={(e) => setTrialEndsAt(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
+                      type="email"
+                      value={ownerEmail}
+                      onChange={(e) => setOwnerEmail(e.target.value)}
+                      placeholder="owner@company.com"
+                      required
                     />
                   </div>
-                )}
 
-                {/* Status (only when editing) */}
-                {isEditing && (
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                      Status
+                      Owner Name (for new users)
                     </label>
-                    <select
-                      value={status}
-                      onChange={(e) =>
-                        setStatus(
-                          e.target.value as
-                            | 'PENDING'
-                            | 'ACTIVE'
-                            | 'SUSPENDED'
-                            | 'CANCELLED',
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-                    >
-                      <option value="ACTIVE">Active</option>
-                      <option value="PENDING">Pending</option>
-                      <option value="SUSPENDED">Suspended</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
+                    <Input
+                      type="text"
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value)}
+                      placeholder="John Doe"
+                    />
                   </div>
-                )}
+                </>
+              )}
 
-                {/* Owner fields (only when creating) */}
-                {!isEditing && (
-                  <>
-                    <hr className="border-neutral-200 dark:border-neutral-700" />
-                    <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
-                      Owner Account
-                    </h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 -mt-4">
-                      If the email does not exist, a new user will be created
-                      with a temporary password.
-                    </p>
+              <hr className="border-neutral-200 dark:border-neutral-700" />
 
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Owner Email *
-                      </label>
-                      <Input
-                        type="email"
-                        value={ownerEmail}
-                        onChange={(e) => setOwnerEmail(e.target.value)}
-                        placeholder="owner@acme.com"
-                        required
-                      />
-                    </div>
+              {/* Billing Email */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Billing Email (optional)
+                </label>
+                <Input
+                  type="email"
+                  value={billingEmail}
+                  onChange={(e) => setBillingEmail(e.target.value)}
+                  placeholder="billing@company.com"
+                />
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Owner Name (for new users)
-                      </label>
-                      <Input
-                        type="text"
-                        value={ownerName}
-                        onChange={(e) => setOwnerName(e.target.value)}
-                        placeholder="John Doe"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <hr className="border-neutral-200 dark:border-neutral-700" />
-
-                {/* Billing Email */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                    Billing Email (optional)
-                  </label>
-                  <Input
-                    type="email"
-                    value={billingEmail}
-                    onChange={(e) => setBillingEmail(e.target.value)}
-                    placeholder="billing@acme.com"
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleBack}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    isLoading={
-                      createMutation.isPending || updateMutation.isPending
-                    }
-                  >
-                    {isEditing ? 'Save Changes' : 'Create Tenant'}
-                  </Button>
-                </div>
-              </form>
-            </CardBody>
-          </Card>
-        </Container>
-      </Section>
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="secondary" onClick={handleBack}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  isLoading={
+                    createMutation.isPending || updateMutation.isPending
+                  }
+                >
+                  {isEditing ? 'Save Changes' : 'Create Tenant'}
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+      </div>
 
       {/* Create Result Modal */}
       <Modal
@@ -390,13 +418,17 @@ export function TenantFormPage(): JSX.Element {
               </p>
               <div className="p-3 bg-white dark:bg-neutral-800 rounded font-mono text-sm">
                 <div className="mb-1">
-                  <span className="text-neutral-500">Email:</span>{' '}
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    Email:
+                  </span>{' '}
                   <span className="text-neutral-900 dark:text-neutral-100">
                     {createResult.ownerEmail}
                   </span>
                 </div>
                 <div>
-                  <span className="text-neutral-500">Password:</span>{' '}
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    Password:
+                  </span>{' '}
                   <span className="text-neutral-900 dark:text-neutral-100">
                     {createResult.tempPassword}
                   </span>

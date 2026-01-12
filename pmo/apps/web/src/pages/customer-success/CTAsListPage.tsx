@@ -13,6 +13,11 @@ import {
   AlertTriangle,
   Filter,
   ChevronRight,
+  ListChecks,
+  CircleDot,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
@@ -71,10 +76,15 @@ function CTASummaryStats(): JSX.Element {
     return (
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {[1, 2, 3, 4, 5].map((i) => (
-          <Card key={i} className="p-4">
+          <Card key={i} className="p-4 sm:p-6">
             <div className="animate-pulse">
-              <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2 mb-2" />
-              <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3" />
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2 mb-3" />
+                  <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3" />
+                </div>
+                <div className="h-10 w-10 bg-neutral-200 dark:bg-neutral-700 rounded-xl shrink-0" />
+              </div>
             </div>
           </Card>
         ))}
@@ -84,41 +94,80 @@ function CTASummaryStats(): JSX.Element {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-      <Card className="p-4">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">Total</p>
-        <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-          {summary.total}
-        </p>
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
+              Total
+            </p>
+            <p className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mt-1">
+              {summary.total}
+            </p>
+          </div>
+          <div className="p-2 sm:p-3 rounded-xl bg-blue-100 dark:bg-blue-900/50 shrink-0">
+            <ListChecks className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+          </div>
+        </div>
       </Card>
-      <Card className="p-4">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">Open</p>
-        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-          {summary.open}
-        </p>
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
+              Open
+            </p>
+            <p className="text-2xl sm:text-3xl font-bold text-primary-600 dark:text-primary-400 mt-1">
+              {summary.open}
+            </p>
+          </div>
+          <div className="p-2 sm:p-3 rounded-xl bg-primary-100 dark:bg-primary-900/50 shrink-0">
+            <CircleDot className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600 dark:text-primary-400" />
+          </div>
+        </div>
       </Card>
-      <Card className="p-4">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          In Progress
-        </p>
-        <p className="text-2xl font-bold text-warning-600 dark:text-warning-400">
-          {summary.inProgress}
-        </p>
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
+              In Progress
+            </p>
+            <p className="text-2xl sm:text-3xl font-bold text-warning-600 dark:text-warning-400 mt-1">
+              {summary.inProgress}
+            </p>
+          </div>
+          <div className="p-2 sm:p-3 rounded-xl bg-warning-100 dark:bg-warning-900/50 shrink-0">
+            <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-warning-600 dark:text-warning-400" />
+          </div>
+        </div>
       </Card>
-      <Card className="p-4">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Completed
-        </p>
-        <p className="text-2xl font-bold text-success-600 dark:text-success-400">
-          {summary.completed}
-        </p>
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
+              Completed
+            </p>
+            <p className="text-2xl sm:text-3xl font-bold text-success-600 dark:text-success-400 mt-1">
+              {summary.completed}
+            </p>
+          </div>
+          <div className="p-2 sm:p-3 rounded-xl bg-success-100 dark:bg-success-900/50 shrink-0">
+            <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-success-600 dark:text-success-400" />
+          </div>
+        </div>
       </Card>
-      <Card className="p-4">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Overdue
-        </p>
-        <p className="text-2xl font-bold text-danger-600 dark:text-danger-400">
-          {summary.overdue}
-        </p>
+      <Card className="p-4 sm:p-6 h-full">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-neutral-500 dark:text-neutral-400 leading-tight">
+              Overdue
+            </p>
+            <p className="text-2xl sm:text-3xl font-bold text-danger-600 dark:text-danger-400 mt-1">
+              {summary.overdue}
+            </p>
+          </div>
+          <div className="p-2 sm:p-3 rounded-xl bg-danger-100 dark:bg-danger-900/50 shrink-0">
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-danger-600 dark:text-danger-400" />
+          </div>
+        </div>
       </Card>
     </div>
   );

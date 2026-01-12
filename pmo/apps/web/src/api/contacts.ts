@@ -26,9 +26,11 @@ export type CRMLeadSource =
   | 'REFERRAL'
   | 'LINKEDIN'
   | 'COLD_CALL'
-  | 'EMAIL'
+  | 'COLD_EMAIL'
   | 'EVENT'
   | 'PARTNER'
+  | 'INBOUND'
+  | 'OUTBOUND'
   | 'OTHER';
 
 export interface ContactAddress {

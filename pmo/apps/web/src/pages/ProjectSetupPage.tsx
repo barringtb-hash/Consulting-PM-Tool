@@ -600,7 +600,7 @@ function ProjectSetupPage(): JSX.Element {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    placeholder="e.g., Acme Corp - AI Discovery & Roadmap"
+                    placeholder="e.g., Client Name - AI Discovery & Roadmap"
                     required
                   />
                 </div>

@@ -71,6 +71,7 @@ import intakeRouter from './modules/intake/intake.router';
 import documentAnalyzerRouter from './modules/document-analyzer/document-analyzer.router';
 import contentGeneratorRouter from './modules/content-generator/content-generator.router';
 import leadScoringRouter from './modules/lead-scoring/lead-scoring.router';
+import { leadMLRouter } from './modules/lead-ml';
 import priorAuthRouter from './modules/prior-auth/prior-auth.router';
 // Phase 3 AI Tools
 import inventoryForecastingRouter from './modules/inventory-forecasting/inventory-forecasting.router';
@@ -94,6 +95,10 @@ import contactRouter from './crm/routes/contact.routes';
 import opportunityRouter from './crm/routes/opportunity.routes';
 import activityRouter from './crm/routes/activity.routes';
 import playbookRouter from './crm/routes/playbook.routes';
+// Customer Success ML Routes
+import { customerSuccessMLRouter } from './modules/customer-success-ml';
+// Project ML Routes
+import { projectMLRouter } from './modules/project-ml';
 // Tenant Routes
 import tenantRouter from './tenant/tenant.routes';
 // Notification Routes
@@ -460,6 +465,16 @@ export function createApp(): express.Express {
   app.use('/api/crm/activities', activityRouter);
   app.use('/api/crm/playbooks', playbookRouter);
 
+  // ============ CUSTOMER SUCCESS ML ROUTES ============
+  // ML-powered predictions and insights for Customer Success
+  // Mounted under /api/crm/accounts for account-level predictions
+  app.use('/api/crm/accounts', customerSuccessMLRouter);
+
+  // ============ PROJECT ML ROUTES ============
+  // ML-powered predictions for Project Management
+  // Includes success prediction, risk forecast, timeline prediction, resource optimization
+  app.use('/api', projectMLRouter);
+
   // ============ CRM PLATFORM ROUTES (Phase 3-6) ============
   // Module licensing and feature gating
   app.use('/api', licensingRouter);
@@ -627,6 +642,9 @@ export function createApp(): express.Express {
 
   // Lead Scoring & CRM Assistant module (Tool 2.3)
   app.use('/api', requireModule('leadScoring'), leadScoringRouter);
+
+  // Lead ML - Machine Learning for Lead Scoring (Extension to Tool 2.3)
+  app.use('/api/lead-scoring', requireModule('leadScoring'), leadMLRouter);
 
   // Prior Authorization Bot module (Tool 2.4)
   app.use('/api', requireModule('priorAuth'), priorAuthRouter);

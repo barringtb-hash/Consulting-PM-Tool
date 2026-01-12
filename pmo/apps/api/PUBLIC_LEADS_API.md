@@ -34,10 +34,10 @@ Content-Type: application/json
 ```json
 {
   "name": "Ada Lovelace",
-  "email": "ada@acme.ai",
+  "email": "ada@example.ai",
   "tenantSlug": "your-tenant-slug",
-  "company": "Acme AI",
-  "website": "https://acme.ai",
+  "company": "Example Company",
+  "website": "https://example.ai",
   "serviceInterest": "STRATEGY",
   "message": "We need help scoping AI roadmap.",
   "source": "WEBSITE_CONTACT",

@@ -1,3 +1,15 @@
+/**
+ * Marketing Content Page
+ *
+ * Displays and manages marketing content with filtering, calendar, and CRUD operations.
+ * Features:
+ * - List and calendar view modes
+ * - Content type and status filtering
+ * - Client association
+ * - Skeleton loading states
+ * - Responsive design with dark mode support
+ */
+
 import React, { useMemo, useState } from 'react';
 import {
   useMarketingContents,
@@ -12,7 +24,14 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { useToast } from '../ui/Toast';
-import { Plus, Edit2, Archive, FileText, Calendar } from 'lucide-react';
+import {
+  Plus,
+  Edit2,
+  Archive,
+  FileText,
+  Calendar,
+  Megaphone,
+} from 'lucide-react';
 import {
   type MarketingContent,
   type ContentType,
@@ -37,6 +56,42 @@ const CONTENT_STATUS_VARIANTS: Record<
   PUBLISHED: 'success',
   ARCHIVED: 'secondary',
 };
+
+/**
+ * Skeleton loader for content cards during loading state
+ */
+function ContentCardSkeleton(): JSX.Element {
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardBody>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded bg-neutral-200 dark:bg-neutral-700 animate-pulse" />
+              <div>
+                <div className="h-5 w-48 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="h-5 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                  <div className="h-5 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+            <div className="h-4 w-full max-w-md bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mt-2" />
+            <div className="h-4 w-3/4 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mt-1" />
+            <div className="flex items-center gap-4 mt-3">
+              <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+              <div className="h-4 w-28 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="w-8 h-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+            <div className="w-8 h-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
 
 function MarketingContentPage(): JSX.Element {
   const [search, setSearch] = useState('');
@@ -124,6 +179,7 @@ function MarketingContentPage(): JSX.Element {
       <PageHeader
         title="Marketing & Content"
         description="Create and manage marketing content from your projects and meetings"
+        icon={Megaphone}
         actions={
           <div className="flex gap-2">
             <Button
@@ -218,13 +274,11 @@ function MarketingContentPage(): JSX.Element {
         {viewMode === 'list' ? (
           <div className="space-y-4">
             {contentsQuery.isLoading ? (
-              <Card>
-                <CardBody>
-                  <p className="text-center text-neutral-500 dark:text-neutral-400">
-                    Loading content...
-                  </p>
-                </CardBody>
-              </Card>
+              <>
+                <ContentCardSkeleton />
+                <ContentCardSkeleton />
+                <ContentCardSkeleton />
+              </>
             ) : contents.length === 0 ? (
               <Card>
                 <CardBody>

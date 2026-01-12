@@ -234,10 +234,10 @@ function InventoryForecastingPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Inventory Forecasting"
-        subtitle="ML-powered inventory forecasting with seasonal trends and automated alerts"
+        description="ML-powered inventory forecasting with seasonal trends and automated alerts"
         icon={Package}
         actions={
           <Button variant="secondary" onClick={() => setShowCreateModal(true)}>

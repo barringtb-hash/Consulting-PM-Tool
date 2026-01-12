@@ -25,6 +25,6 @@
   <!-- LAUNCHPAD text -->
   <text x="300" y="300" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="48" fill="#9F1239" font-style="italic">LAUNCHPAD</text>
 
-  <!-- CONSULTING PARTNERS text -->
-  <text x="300" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-weight="400" font-size="22" letter-spacing="6" fill="#64748B">CONSULTING PARTNERS</text>
+  <!-- COMMAND CENTER text -->
+  <text x="300" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-weight="400" font-size="22" letter-spacing="6" fill="#64748B">COMMAND CENTER</text>
 </svg>

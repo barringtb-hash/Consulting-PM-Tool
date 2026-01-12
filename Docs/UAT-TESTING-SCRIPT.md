@@ -2,7 +2,7 @@
 
 **Last Updated:** January 2026
 **Purpose:** Comprehensive User Acceptance Testing script for the AI CRM Platform
-**Application URL:** https://pmo.elipseconsulting.ai
+**Application URL:** https://pmo.verdanthorizon.ai
 
 ---
 

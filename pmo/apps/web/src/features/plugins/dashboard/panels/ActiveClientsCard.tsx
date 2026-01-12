@@ -2,8 +2,10 @@
  * Active Accounts Summary Card Plugin
  *
  * Displays the count of active (non-archived) CRM accounts.
+ * Updated to match ContactsPage UI patterns with icons.
  */
 
+import { Building2 } from 'lucide-react';
 import { SummaryCard } from './SummaryCard';
 import { useDashboardPluginContext } from '../DashboardPluginContext';
 import type { DashboardPanelPlugin, DashboardPanelConfig } from '../types';
@@ -14,10 +16,10 @@ function ActiveAccountsCardPanel(): JSX.Element {
 
   return (
     <SummaryCard
+      icon={<Building2 className="h-5 w-5" />}
       title="Active Accounts"
       value={accountsData?.active ?? 0}
-      description="Accounts you're working with"
-      variant="primary"
+      variant="blue"
       onClick={() => navigate('/crm/accounts')}
       isLoading={accountsData?.isLoading}
     />

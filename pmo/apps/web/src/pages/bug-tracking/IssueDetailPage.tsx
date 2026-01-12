@@ -17,8 +17,27 @@ import {
   Image,
   FileText,
   X,
+  MoreHorizontal,
+  Tag,
+  User,
+  Calendar,
+  Globe,
+  Server,
+  Monitor,
+  Hash,
+  RefreshCw,
 } from 'lucide-react';
-import { Button, Badge, Card, Input, Modal } from '../../ui';
+import {
+  Button,
+  Badge,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+  Input,
+  Modal,
+  Select,
+} from '../../ui';
 import { useToast } from '../../ui/Toast';
 import { PageHeader } from '../../ui/PageHeader';
 import {
@@ -39,66 +58,181 @@ import type {
 } from '../../api/bug-tracking';
 import { copyToClipboard } from '../../utils/clipboard';
 
-// Status badge colors
+// Status badge configuration with proper Badge variants
 const STATUS_CONFIG: Record<
   IssueStatus,
   {
     label: string;
-    variant: 'default' | 'secondary' | 'success' | 'destructive' | 'warning';
+    variant:
+      | 'default'
+      | 'secondary'
+      | 'success'
+      | 'destructive'
+      | 'warning'
+      | 'primary';
   }
 > = {
   OPEN: { label: 'Open', variant: 'destructive' },
   TRIAGING: { label: 'Triaging', variant: 'warning' },
-  IN_PROGRESS: { label: 'In Progress', variant: 'default' },
+  IN_PROGRESS: { label: 'In Progress', variant: 'primary' },
   IN_REVIEW: { label: 'In Review', variant: 'secondary' },
   RESOLVED: { label: 'Resolved', variant: 'success' },
   CLOSED: { label: 'Closed', variant: 'secondary' },
   WONT_FIX: { label: "Won't Fix", variant: 'secondary' },
 };
 
-// Priority badge colors
-const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> =
+// Priority badge configuration with proper Badge variants
+const PRIORITY_CONFIG: Record<
+  IssuePriority,
   {
-    LOW: {
-      label: 'Low',
-      color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-    },
-    MEDIUM: {
-      label: 'Medium',
-      color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
-    },
-    HIGH: {
-      label: 'High',
-      color:
-        'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
-    },
-    CRITICAL: {
-      label: 'Critical',
-      color: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
-    },
-  };
+    label: string;
+    variant:
+      | 'default'
+      | 'secondary'
+      | 'success'
+      | 'destructive'
+      | 'warning'
+      | 'primary';
+  }
+> = {
+  LOW: { label: 'Low', variant: 'secondary' },
+  MEDIUM: { label: 'Medium', variant: 'primary' },
+  HIGH: { label: 'High', variant: 'warning' },
+  CRITICAL: { label: 'Critical', variant: 'destructive' },
+};
 
-// Type icons
+// Type configuration with icons
 const TYPE_CONFIG: Record<IssueType, { label: string; icon: React.ReactNode }> =
   {
-    BUG: { label: 'Bug', icon: <Bug className="h-5 w-5 text-red-500" /> },
+    BUG: { label: 'Bug', icon: <Bug className="h-5 w-5 text-danger-500" /> },
     ISSUE: {
       label: 'Issue',
-      icon: <AlertCircle className="h-5 w-5 text-yellow-500" />,
+      icon: <AlertCircle className="h-5 w-5 text-warning-500" />,
     },
     FEATURE_REQUEST: {
       label: 'Feature Request',
-      icon: <Sparkles className="h-5 w-5 text-green-500" />,
+      icon: <Sparkles className="h-5 w-5 text-success-500" />,
     },
     IMPROVEMENT: {
       label: 'Improvement',
-      icon: <CheckCircle2 className="h-5 w-5 text-blue-500" />,
+      icon: <CheckCircle2 className="h-5 w-5 text-primary-500" />,
     },
     TASK: {
       label: 'Task',
-      icon: <Clock className="h-5 w-5 text-gray-500 dark:text-neutral-400" />,
+      icon: <Clock className="h-5 w-5 text-neutral-500" />,
     },
   };
+
+// Skeleton loader components
+function SkeletonLine({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse bg-neutral-200 dark:bg-neutral-700 rounded ${className}`}
+    />
+  );
+}
+
+function SkeletonCard({ children }: { children?: React.ReactNode }) {
+  return (
+    <Card>
+      <CardBody>{children}</CardBody>
+    </Card>
+  );
+}
+
+function IssueDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      {/* Header skeleton */}
+      <header className="border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <div className="container-padding py-6">
+          <div className="flex items-center gap-2 mb-3">
+            <SkeletonLine className="h-4 w-24" />
+            <SkeletonLine className="h-4 w-4" />
+            <SkeletonLine className="h-4 w-16" />
+          </div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <SkeletonLine className="h-8 w-8 rounded-full" />
+                <SkeletonLine className="h-8 w-96" />
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                <SkeletonLine className="h-6 w-20 rounded-md" />
+                <SkeletonLine className="h-6 w-16 rounded-md" />
+                <SkeletonLine className="h-6 w-24 rounded-md" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <SkeletonLine className="h-10 w-36 rounded-lg" />
+              <SkeletonLine className="h-10 w-20 rounded-lg" />
+              <SkeletonLine className="h-10 w-10 rounded-lg" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="page-content space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main content skeleton */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Description skeleton */}
+            <SkeletonCard>
+              <SkeletonLine className="h-6 w-32 mb-4" />
+              <div className="space-y-2">
+                <SkeletonLine className="h-4 w-full" />
+                <SkeletonLine className="h-4 w-5/6" />
+                <SkeletonLine className="h-4 w-4/6" />
+              </div>
+            </SkeletonCard>
+
+            {/* Attachments skeleton */}
+            <SkeletonCard>
+              <SkeletonLine className="h-6 w-40 mb-4" />
+              <SkeletonLine className="h-32 w-full rounded-lg" />
+            </SkeletonCard>
+
+            {/* Comments skeleton */}
+            <SkeletonCard>
+              <SkeletonLine className="h-6 w-32 mb-4" />
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex gap-3">
+                    <SkeletonLine className="h-10 w-10 rounded-full flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <SkeletonLine className="h-4 w-32" />
+                      <SkeletonLine className="h-4 w-full" />
+                      <SkeletonLine className="h-4 w-2/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SkeletonCard>
+          </div>
+
+          {/* Sidebar skeleton */}
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i}>
+                <SkeletonLine className="h-5 w-24 mb-4" />
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <SkeletonLine className="h-4 w-20" />
+                    <SkeletonLine className="h-4 w-24" />
+                  </div>
+                  <div className="flex justify-between">
+                    <SkeletonLine className="h-4 w-16" />
+                    <SkeletonLine className="h-4 w-20" />
+                  </div>
+                </div>
+              </SkeletonCard>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function IssueDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -123,10 +257,12 @@ export default function IssueDetailPage() {
   );
   const [newComment, setNewComment] = useState('');
   const [showAIPromptOptions, setShowAIPromptOptions] = useState(false);
+  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showPromptModal, setShowPromptModal] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Clear any existing timeout before setting a new one
   const setPromptCopiedWithTimeout = useCallback(
@@ -222,8 +358,6 @@ export default function IssueDetailPage() {
   };
 
   const handleDeleteIssue = async () => {
-    if (!window.confirm('Are you sure you want to delete this issue?')) return;
-
     try {
       await deleteIssue.mutateAsync(issueId);
       navigate('/bug-tracking');
@@ -296,30 +430,53 @@ export default function IssueDetailPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (date: string | Date) => {
+    return new Date(date).toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Loading state with skeleton
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500 dark:text-neutral-500">
-            Loading issue...
-          </div>
-        </div>
-      </div>
-    );
+    return <IssueDetailSkeleton />;
   }
 
+  // Not found state
   if (!issue) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="text-gray-500 dark:text-neutral-500">
-            Issue not found
-          </div>
-          <Button variant="outline" onClick={() => navigate('/bug-tracking')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Issues
-          </Button>
-        </div>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
+        <Card className="max-w-md text-center">
+          <CardBody className="py-12">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700 mx-auto mb-4">
+              <Bug className="h-8 w-8 text-neutral-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
+              Issue Not Found
+            </h2>
+            <p className="text-neutral-500 dark:text-neutral-400 mb-6">
+              The issue you are looking for does not exist or has been deleted.
+            </p>
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/bug-tracking')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Issues
+            </Button>
+          </CardBody>
+        </Card>
       </div>
     );
   }
@@ -330,8 +487,11 @@ export default function IssueDetailPage() {
         title={
           <div className="flex items-center gap-3">
             {TYPE_CONFIG[issue.type]?.icon}
-            <span>
-              #{issue.id} {issue.title}
+            <span className="truncate">
+              <span className="text-neutral-500 dark:text-neutral-400 font-normal">
+                #{issue.id}
+              </span>{' '}
+              {issue.title}
             </span>
           </div>
         }
@@ -341,32 +501,51 @@ export default function IssueDetailPage() {
           { label: `#${issue.id}` },
         ]}
         description={
-          <div className="flex items-center gap-3 mt-1">
-            <Badge variant={STATUS_CONFIG[issue.status]?.variant || 'default'}>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            {/* Status badge - prominent */}
+            <Badge
+              variant={STATUS_CONFIG[issue.status]?.variant || 'default'}
+              size="lg"
+            >
               {STATUS_CONFIG[issue.status]?.label || issue.status}
             </Badge>
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
+            {/* Priority badge */}
+            <Badge
+              variant={PRIORITY_CONFIG[issue.priority]?.variant || 'default'}
+              size="lg"
             >
-              {PRIORITY_CONFIG[issue.priority]?.label || issue.priority}
-            </span>
-            {issue.labels.map((label) => (
-              <span
-                key={label.id}
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                style={{
-                  backgroundColor: label.color + '20',
-                  color: label.color,
-                }}
-              >
-                {label.name}
-              </span>
-            ))}
+              {PRIORITY_CONFIG[issue.priority]?.label || issue.priority}{' '}
+              Priority
+            </Badge>
+            {/* Labels - clean tag display */}
+            {issue.labels.length > 0 && (
+              <>
+                <span className="text-neutral-300 dark:text-neutral-600">
+                  |
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <Tag className="h-4 w-4 text-neutral-400" />
+                  {issue.labels.map((label) => (
+                    <Badge
+                      key={label.id}
+                      className="border"
+                      style={{
+                        backgroundColor: `${label.color}15`,
+                        borderColor: `${label.color}40`,
+                        color: label.color,
+                      }}
+                    >
+                      {label.name}
+                    </Badge>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         }
         actions={
           <div className="flex items-center gap-2">
-            {/* AI Prompt Button */}
+            {/* AI Prompt Button - Primary action */}
             <div className="relative">
               <Button
                 variant="outline"
@@ -375,7 +554,7 @@ export default function IssueDetailPage() {
               >
                 {promptCopied ? (
                   <>
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-success-500" />
                     Copied!
                   </>
                 ) : (
@@ -388,41 +567,45 @@ export default function IssueDetailPage() {
               </Button>
 
               {showAIPromptOptions && (
-                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-neutral-800 border dark:border-neutral-700 rounded-lg shadow-lg z-10">
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg z-20">
                   <div className="p-2">
                     <button
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-neutral-700 rounded"
+                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-md transition-colors"
                       onClick={() => handleCopyAIPrompt('basic')}
                     >
-                      <div className="font-medium">Quick Prompt</div>
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                      <div className="font-medium text-neutral-900 dark:text-white">
+                        Quick Prompt
+                      </div>
+                      <div className="text-neutral-500 dark:text-neutral-400 text-xs mt-0.5">
                         Issue details + stack trace (minimal context)
                       </div>
                     </button>
                     <button
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-neutral-700 rounded"
+                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-md transition-colors"
                       onClick={() => handleCopyAIPrompt('full')}
                     >
-                      <div className="font-medium">Full Context</div>
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                      <div className="font-medium text-neutral-900 dark:text-white">
+                        Full Context
+                      </div>
+                      <div className="text-neutral-500 dark:text-neutral-400 text-xs mt-0.5">
                         + Comments, 5 error logs, environment info
                       </div>
                     </button>
                     <button
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-neutral-700 rounded border-l-2 border-blue-500"
+                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-md border-l-2 border-primary-500 transition-colors"
                       onClick={() => handleCopyAIPrompt('comprehensive')}
                     >
-                      <div className="font-medium text-blue-600 dark:text-blue-400">
+                      <div className="font-medium text-primary-600 dark:text-primary-400">
                         Comprehensive (Recommended)
                       </div>
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">
+                      <div className="text-neutral-500 dark:text-neutral-400 text-xs mt-0.5">
                         All context + 10 error logs for deep analysis
                       </div>
                     </button>
-                    <div className="border-t dark:border-neutral-700 my-1" />
-                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-neutral-500">
+                    <div className="border-t border-neutral-200 dark:border-neutral-700 my-2" />
+                    <div className="px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400">
                       <strong>Tip:</strong> Use{' '}
-                      <code className="bg-gray-100 dark:bg-neutral-700 px-1 rounded">
+                      <code className="bg-neutral-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded text-neutral-700 dark:text-neutral-300">
                         /implement-issue {issue.id}
                       </code>{' '}
                       in Claude Code for best results.
@@ -432,6 +615,7 @@ export default function IssueDetailPage() {
               )}
             </div>
 
+            {/* Edit button */}
             <Button
               variant="outline"
               onClick={() => navigate(`/bug-tracking/${issue.id}/edit`)}
@@ -439,482 +623,607 @@ export default function IssueDetailPage() {
               <Edit2 className="h-4 w-4 mr-2" />
               Edit
             </Button>
-            <Button variant="destructive" onClick={handleDeleteIssue}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
+
+            {/* More actions dropdown */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+                aria-label="More actions"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+
+              {showActionsDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg z-20">
+                  <div className="p-1">
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-md flex items-center gap-2 transition-colors"
+                      onClick={() => {
+                        setShowActionsDropdown(false);
+                        setShowDeleteConfirm(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Issue
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         }
       />
 
+      {/* Click outside handler for dropdowns */}
+      {(showAIPromptOptions || showActionsDropdown) && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => {
+            setShowAIPromptOptions(false);
+            setShowActionsDropdown(false);
+          }}
+        />
+      )}
+
       <div className="page-content space-y-6">
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
-          <div className="col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             {/* Description */}
-            <Card className="p-6">
-              <h2 className="text-lg font-medium mb-4 dark:text-white">
-                Description
-              </h2>
-              {issue.description ? (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <p className="whitespace-pre-wrap dark:text-gray-300">
-                    {issue.description}
+            <Card>
+              <CardHeader>
+                <CardTitle>Description</CardTitle>
+              </CardHeader>
+              <CardBody>
+                {issue.description ? (
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <p className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">
+                      {issue.description}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-neutral-400 dark:text-neutral-500 italic">
+                    No description provided
                   </p>
-                </div>
-              ) : (
-                <p className="text-gray-400 dark:text-gray-500 italic">
-                  No description provided
-                </p>
-              )}
+                )}
+              </CardBody>
             </Card>
 
             {/* Stack Trace (if exists) */}
             {issue.stackTrace && (
-              <Card className="p-6">
-                <h2 className="text-lg font-medium mb-4 dark:text-white">
-                  Stack Trace
-                </h2>
-                <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm">
-                  {issue.stackTrace}
-                </pre>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Stack Trace</CardTitle>
+                </CardHeader>
+                <CardBody className="p-0">
+                  <pre className="bg-neutral-900 text-green-400 p-4 rounded-b-lg overflow-x-auto text-sm font-mono">
+                    {issue.stackTrace}
+                  </pre>
+                </CardBody>
               </Card>
             )}
 
             {/* Attachments */}
-            <Card className="p-6">
-              <h2 className="text-lg font-medium mb-4 flex items-center gap-2 dark:text-white">
-                <Paperclip className="h-5 w-5" />
-                Attachments ({attachments?.length || 0})
-              </h2>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Paperclip className="h-5 w-5 text-neutral-400" />
+                  Attachments
+                  {attachments && attachments.length > 0 && (
+                    <Badge variant="secondary" size="sm">
+                      {attachments.length}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                {/* Upload Area */}
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 mb-4 text-center transition-colors ${
+                    isDragging
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf,.txt,.csv,.json"
+                    className="hidden"
+                    onChange={(e) =>
+                      e.target.files && handleFileUpload(e.target.files)
+                    }
+                  />
+                  <Upload className="h-8 w-8 mx-auto text-neutral-400 mb-2" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-1">
+                    Drag & drop screenshots or files here, or{' '}
+                    <button
+                      type="button"
+                      className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      browse
+                    </button>
+                  </p>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                    Supported: Images, PDF, TXT, CSV, JSON (max 5MB each)
+                  </p>
+                  {uploadAttachments.isPending && (
+                    <p className="text-sm text-primary-600 dark:text-primary-400 mt-2 flex items-center justify-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Uploading...
+                    </p>
+                  )}
+                </div>
 
-              {/* Upload Area */}
-              <div
-                className={`border-2 border-dashed rounded-lg p-6 mb-4 text-center transition-colors ${
-                  isDragging
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-neutral-500'
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf,.txt,.csv,.json"
-                  className="hidden"
-                  onChange={(e) =>
-                    e.target.files && handleFileUpload(e.target.files)
-                  }
-                />
-                <Upload className="h-8 w-8 mx-auto text-gray-400 dark:text-gray-500 mb-2" />
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Drag & drop screenshots or files here, or{' '}
-                  <button
-                    type="button"
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    browse
-                  </button>
-                </p>
-                <p className="text-xs text-gray-400 dark:text-neutral-400">
-                  Supported: Images, PDF, TXT, CSV, JSON (max 5MB each)
-                </p>
-                {uploadAttachments.isPending && (
-                  <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-                    Uploading...
+                {/* Attachment List */}
+                {attachments && attachments.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {attachments.map((attachment) => (
+                      <div
+                        key={attachment.id}
+                        className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 flex items-start gap-3 group hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                      >
+                        {attachment.mimeType.startsWith('image/') ? (
+                          <div className="w-14 h-14 flex-shrink-0 rounded-md overflow-hidden bg-neutral-100 dark:bg-neutral-700">
+                            <img
+                              src={attachment.url}
+                              alt={attachment.filename}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-14 h-14 flex-shrink-0 rounded-md bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
+                            {attachment.mimeType.includes('pdf') ? (
+                              <FileText className="h-7 w-7 text-danger-500" />
+                            ) : (
+                              <FileText className="h-7 w-7 text-neutral-400" />
+                            )}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-sm font-medium text-neutral-900 dark:text-white truncate"
+                            title={attachment.filename}
+                          >
+                            {attachment.filename}
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            {formatFileSize(attachment.size)} &middot;{' '}
+                            {formatDate(attachment.createdAt)}
+                          </p>
+                          <div className="flex gap-3 mt-2">
+                            {attachment.mimeType.startsWith('image/') && (
+                              <a
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+                              >
+                                <Image className="h-3 w-3" />
+                                View
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteAttachment(attachment.id)
+                              }
+                              className="text-xs text-danger-600 dark:text-danger-400 hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-neutral-400 dark:text-neutral-500 text-center py-2 text-sm">
+                    No attachments yet. Upload screenshots to provide visual
+                    context for AI prompts.
                   </p>
                 )}
-              </div>
-
-              {/* Attachment List */}
-              {attachments && attachments.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {attachments.map((attachment) => (
-                    <div
-                      key={attachment.id}
-                      className="border dark:border-neutral-700 rounded-lg p-3 flex items-start gap-3 group hover:bg-gray-50 dark:hover:bg-neutral-800"
-                    >
-                      {attachment.mimeType.startsWith('image/') ? (
-                        <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100 dark:bg-neutral-700">
-                          <img
-                            src={attachment.url}
-                            alt={attachment.filename}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 flex-shrink-0 rounded bg-gray-100 dark:bg-neutral-700 flex items-center justify-center">
-                          {attachment.mimeType.includes('pdf') ? (
-                            <FileText className="h-8 w-8 text-red-500" />
-                          ) : (
-                            <FileText className="h-8 w-8 text-gray-400 dark:text-neutral-400" />
-                          )}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-sm font-medium text-gray-900 dark:text-white truncate"
-                          title={attachment.filename}
-                        >
-                          {attachment.filename}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-neutral-500">
-                          {formatFileSize(attachment.size)} •{' '}
-                          {new Date(attachment.createdAt).toLocaleDateString()}
-                        </p>
-                        <div className="flex gap-2 mt-1">
-                          {attachment.mimeType.startsWith('image/') && (
-                            <a
-                              href={attachment.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                            >
-                              <Image className="h-3 w-3" />
-                              View
-                            </a>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDeleteAttachment(attachment.id)
-                            }
-                            className="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-3 w-3" />
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-400 dark:text-gray-500 text-center py-2">
-                  No attachments yet. Upload screenshots to provide visual
-                  context for AI prompts.
-                </p>
-              )}
+              </CardBody>
             </Card>
 
-            {/* Comments */}
-            <Card className="p-6">
-              <h2 className="text-lg font-medium mb-4 flex items-center gap-2 dark:text-white">
-                <MessageSquare className="h-5 w-5" />
-                Comments ({comments?.length || 0})
-              </h2>
-
-              <div className="space-y-4">
-                {comments?.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="border-b dark:border-neutral-700 pb-4 last:border-0"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-sm font-medium dark:text-white">
-                        {comment.user?.name?.charAt(0).toUpperCase() || '?'}
-                      </div>
-                      <div>
-                        <span className="font-medium dark:text-white">
-                          {comment.user?.name || 'System'}
-                        </span>
-                        {comment.isSystem && (
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            System
-                          </Badge>
+            {/* Comments - Timeline style */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-neutral-400" />
+                  Comments
+                  {comments && comments.length > 0 && (
+                    <Badge variant="secondary" size="sm">
+                      {comments.length}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                {/* Comments list - Timeline design */}
+                {comments && comments.length > 0 ? (
+                  <div className="space-y-0">
+                    {comments.map((comment, index) => (
+                      <div
+                        key={comment.id}
+                        className="relative pl-12 pb-6 last:pb-0"
+                      >
+                        {/* Timeline line */}
+                        {index < comments.length - 1 && (
+                          <div className="absolute left-5 top-10 bottom-0 w-px bg-neutral-200 dark:bg-neutral-700" />
                         )}
+                        {/* Avatar */}
+                        <div className="absolute left-0 top-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-sm font-medium text-primary-700 dark:text-primary-300">
+                          {comment.user?.name?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        {/* Content */}
+                        <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {comment.user?.name || 'System'}
+                            </span>
+                            {comment.isSystem && (
+                              <Badge variant="secondary" size="sm">
+                                System
+                              </Badge>
+                            )}
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {formatDateTime(comment.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap text-sm">
+                            {comment.content}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-neutral-500">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap pl-10">
-                      {comment.content}
-                    </p>
+                    ))}
                   </div>
-                ))}
-
-                {(!comments || comments.length === 0) && (
-                  <p className="text-gray-400 dark:text-gray-500 text-center py-4">
-                    No comments yet
+                ) : (
+                  <p className="text-neutral-400 dark:text-neutral-500 text-center py-6 text-sm">
+                    No comments yet. Be the first to comment.
                   </p>
                 )}
 
                 {/* Add Comment */}
-                <div className="flex gap-2 mt-4 pt-4 border-t dark:border-neutral-700">
-                  <Input
-                    placeholder="Add a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === 'Enter' && !e.shiftKey && handleAddComment()
-                    }
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim() || addComment.isPending}
-                  >
-                    {addComment.isPending ? 'Adding...' : 'Comment'}
-                  </Button>
+                <div className="flex gap-3 mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+                  <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                    <User className="h-5 w-5 text-neutral-500" />
+                  </div>
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      placeholder="Add a comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && !e.shiftKey && handleAddComment()
+                      }
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleAddComment}
+                      disabled={!newComment.trim() || addComment.isPending}
+                    >
+                      {addComment.isPending ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Comment'
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </CardBody>
             </Card>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Details */}
-            <Card className="p-6">
-              <h3 className="font-medium mb-4 dark:text-white">Details</h3>
-              <div className="space-y-4 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Status
-                  </span>
-                  <select
-                    value={issue.status}
-                    onChange={(e) =>
-                      handleStatusChange(e.target.value as IssueStatus)
-                    }
-                    className="border dark:border-neutral-700 rounded px-2 py-1 text-sm bg-white dark:bg-neutral-800 dark:text-white"
-                  >
-                    {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                      <option key={key} value={key}>
-                        {config.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Type
-                  </span>
-                  <div className="flex items-center gap-1 dark:text-gray-300">
-                    {TYPE_CONFIG[issue.type]?.icon}
-                    <span>{TYPE_CONFIG[issue.type]?.label}</span>
+            {/* Issue Details - Using dl/dt/dd pattern */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Details</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <dl className="grid grid-cols-1 gap-4">
+                  {/* Status - Editable */}
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Status
+                    </dt>
+                    <dd>
+                      <Select
+                        value={issue.status}
+                        onChange={(e) =>
+                          handleStatusChange(e.target.value as IssueStatus)
+                        }
+                        className="text-sm"
+                      >
+                        {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                          <option key={key} value={key}>
+                            {config.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </dd>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Priority
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-medium ${PRIORITY_CONFIG[issue.priority]?.color}`}
-                  >
-                    {PRIORITY_CONFIG[issue.priority]?.label}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Source
-                  </span>
-                  <span className="text-gray-700 dark:text-gray-300">
-                    {issue.source.replace('_', ' ')}
-                  </span>
-                </div>
-
-                {issue.errorCount > 1 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-neutral-500">
-                      Error Count
-                    </span>
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {issue.errorCount}
-                    </span>
+                  {/* Type */}
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Type
+                    </dt>
+                    <dd className="flex items-center gap-2 font-medium text-neutral-900 dark:text-neutral-100">
+                      {TYPE_CONFIG[issue.type]?.icon}
+                      <span>{TYPE_CONFIG[issue.type]?.label}</span>
+                    </dd>
                   </div>
-                )}
-              </div>
+
+                  {/* Priority */}
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Priority
+                    </dt>
+                    <dd>
+                      <Badge
+                        variant={
+                          PRIORITY_CONFIG[issue.priority]?.variant || 'default'
+                        }
+                      >
+                        {PRIORITY_CONFIG[issue.priority]?.label}
+                      </Badge>
+                    </dd>
+                  </div>
+
+                  {/* Source */}
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Source
+                    </dt>
+                    <dd className="font-medium text-neutral-900 dark:text-neutral-100">
+                      {issue.source.replace('_', ' ')}
+                    </dd>
+                  </div>
+
+                  {/* Error Count */}
+                  {issue.errorCount > 1 && (
+                    <div>
+                      <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                        Error Count
+                      </dt>
+                      <dd className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-neutral-400" />
+                        {issue.errorCount}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </CardBody>
             </Card>
 
             {/* People */}
-            <Card className="p-6">
-              <h3 className="font-medium mb-4 dark:text-white">People</h3>
-              <div className="space-y-4 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Assignee
-                  </span>
-                  {issue.assignedTo ? (
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-xs font-medium dark:text-white">
-                        {issue.assignedTo.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="dark:text-gray-300">
-                        {issue.assignedTo.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 dark:text-neutral-400">
-                      Unassigned
-                    </span>
-                  )}
-                </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>People</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <dl className="grid grid-cols-1 gap-4">
+                  {/* Assignee */}
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Assignee
+                    </dt>
+                    <dd>
+                      {issue.assignedTo ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xs font-medium text-primary-700 dark:text-primary-300">
+                            {issue.assignedTo.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {issue.assignedTo.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-neutral-400 dark:text-neutral-500 italic">
+                          Unassigned
+                        </span>
+                      )}
+                    </dd>
+                  </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Reporter
-                  </span>
-                  {issue.reportedBy ? (
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-xs font-medium dark:text-white">
-                        {issue.reportedBy.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="dark:text-gray-300">
-                        {issue.reportedBy.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 dark:text-neutral-400">
-                      System
-                    </span>
-                  )}
-                </div>
-              </div>
+                  {/* Reporter */}
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Reporter
+                    </dt>
+                    <dd>
+                      {issue.reportedBy ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                            {issue.reportedBy.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                            {issue.reportedBy.name}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-neutral-400 dark:text-neutral-500 italic">
+                          System
+                        </span>
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+              </CardBody>
             </Card>
 
             {/* Dates */}
-            <Card className="p-6">
-              <h3 className="font-medium mb-4 dark:text-white">Dates</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Created
-                  </span>
-                  <span className="dark:text-gray-300">
-                    {new Date(issue.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-neutral-500">
-                    Updated
-                  </span>
-                  <span className="dark:text-gray-300">
-                    {new Date(issue.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-                {issue.resolvedAt && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-neutral-500">
-                      Resolved
-                    </span>
-                    <span className="dark:text-gray-300">
-                      {new Date(issue.resolvedAt).toLocaleDateString()}
-                    </span>
+            <Card>
+              <CardHeader>
+                <CardTitle>Dates</CardTitle>
+              </CardHeader>
+              <CardBody>
+                <dl className="grid grid-cols-1 gap-4">
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Created
+                    </dt>
+                    <dd className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-neutral-400" />
+                      {formatDate(issue.createdAt)}
+                    </dd>
                   </div>
-                )}
-              </div>
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                      Updated
+                    </dt>
+                    <dd className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 text-neutral-400" />
+                      {formatDate(issue.updatedAt)}
+                    </dd>
+                  </div>
+                  {issue.resolvedAt && (
+                    <div>
+                      <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                        Resolved
+                      </dt>
+                      <dd className="font-medium text-success-600 dark:text-success-400 flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        {formatDate(issue.resolvedAt)}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </CardBody>
             </Card>
 
             {/* Links */}
             {(issue.project || issue.account || issue.url) && (
-              <Card className="p-6">
-                <h3 className="font-medium mb-4 dark:text-white">Links</h3>
-                <div className="space-y-3 text-sm">
-                  {issue.project && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-neutral-500">
-                        Project
-                      </span>
-                      <Link
-                        to={`/projects/${issue.project.id}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                      >
-                        {issue.project.name}
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  )}
-                  {issue.account && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-neutral-500">
-                        Account
-                      </span>
-                      <Link
-                        to={`/crm/accounts/${issue.account.id}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                      >
-                        {issue.account.name}
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  )}
-                  {issue.url && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-neutral-500">
-                        URL
-                      </span>
-                      <a
-                        href={issue.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 truncate max-w-[150px]"
-                      >
-                        {(() => {
-                          try {
-                            return new URL(issue.url).pathname;
-                          } catch {
-                            return issue.url;
-                          }
-                        })()}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                  )}
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Links</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <dl className="grid grid-cols-1 gap-4">
+                    {issue.project && (
+                      <div>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                          Project
+                        </dt>
+                        <dd>
+                          <Link
+                            to={`/projects/${issue.project.id}`}
+                            className="text-primary-600 dark:text-primary-400 hover:underline font-medium flex items-center gap-1"
+                          >
+                            {issue.project.name}
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
+                        </dd>
+                      </div>
+                    )}
+                    {issue.account && (
+                      <div>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                          Account
+                        </dt>
+                        <dd>
+                          <Link
+                            to={`/crm/accounts/${issue.account.id}`}
+                            className="text-primary-600 dark:text-primary-400 hover:underline font-medium flex items-center gap-1"
+                          >
+                            {issue.account.name}
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
+                        </dd>
+                      </div>
+                    )}
+                    {issue.url && (
+                      <div>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                          URL
+                        </dt>
+                        <dd>
+                          <a
+                            href={issue.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary-600 dark:text-primary-400 hover:underline font-medium flex items-center gap-1 truncate"
+                            title={issue.url}
+                          >
+                            <Globe className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">
+                              {(() => {
+                                try {
+                                  return new URL(issue.url).pathname;
+                                } catch {
+                                  return issue.url;
+                                }
+                              })()}
+                            </span>
+                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                          </a>
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </CardBody>
               </Card>
             )}
 
             {/* Environment Info */}
             {(issue.environment || issue.appVersion || issue.browserInfo) && (
-              <Card className="p-6">
-                <h3 className="font-medium mb-4 dark:text-white">
-                  Environment
-                </h3>
-                <div className="space-y-3 text-sm">
-                  {issue.environment && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-neutral-500">
-                        Environment
-                      </span>
-                      <span className="dark:text-gray-300">
-                        {issue.environment}
-                      </span>
-                    </div>
-                  )}
-                  {issue.appVersion && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-neutral-500">
-                        App Version
-                      </span>
-                      <span className="dark:text-gray-300">
-                        {issue.appVersion}
-                      </span>
-                    </div>
-                  )}
-                  {issue.browserInfo && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 dark:text-neutral-500">
-                        Browser
-                      </span>
-                      <span className="truncate max-w-[150px] dark:text-gray-300">
-                        {(
-                          issue.browserInfo as {
-                            browser?: string;
-                            version?: string;
-                          }
-                        )?.browser || 'Unknown'}
-                      </span>
-                    </div>
-                  )}
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Environment</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <dl className="grid grid-cols-1 gap-4">
+                    {issue.environment && (
+                      <div>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                          Environment
+                        </dt>
+                        <dd className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                          <Server className="h-4 w-4 text-neutral-400" />
+                          {issue.environment}
+                        </dd>
+                      </div>
+                    )}
+                    {issue.appVersion && (
+                      <div>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                          App Version
+                        </dt>
+                        <dd className="font-medium text-neutral-900 dark:text-neutral-100">
+                          <Badge variant="secondary">{issue.appVersion}</Badge>
+                        </dd>
+                      </div>
+                    )}
+                    {issue.browserInfo && (
+                      <div>
+                        <dt className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                          Browser
+                        </dt>
+                        <dd className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                          <Monitor className="h-4 w-4 text-neutral-400" />
+                          <span className="truncate">
+                            {(
+                              issue.browserInfo as {
+                                browser?: string;
+                                version?: string;
+                              }
+                            )?.browser || 'Unknown'}
+                          </span>
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </CardBody>
               </Card>
             )}
           </div>
@@ -929,7 +1238,7 @@ export default function IssueDetailPage() {
         size="medium"
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-gray-600 dark:text-neutral-500">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
             Click the Copy button below or select all text and copy manually:
           </p>
           <textarea
@@ -937,11 +1246,14 @@ export default function IssueDetailPage() {
             value={generatedPrompt}
             readOnly
             aria-label="AI generated prompt text"
-            className="w-full p-3 text-sm font-mono bg-gray-50 dark:bg-neutral-900 border dark:border-neutral-700 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[300px]"
+            className="w-full p-3 text-sm font-mono bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[300px] text-neutral-900 dark:text-neutral-100"
             onClick={(e) => (e.target as HTMLTextAreaElement).select()}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t dark:border-neutral-700">
-            <Button variant="outline" onClick={() => setShowPromptModal(false)}>
+          <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+            <Button
+              variant="secondary"
+              onClick={() => setShowPromptModal(false)}
+            >
               Close
             </Button>
             <Button onClick={handleManualCopy}>
@@ -953,6 +1265,44 @@ export default function IssueDetailPage() {
               ) : (
                 'Copy to Clipboard'
               )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Issue"
+        size="small"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Are you sure you want to delete this issue? This action cannot be
+            undone.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                handleDeleteIssue();
+              }}
+              disabled={deleteIssue.isPending}
+            >
+              {deleteIssue.isPending ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Delete Issue
             </Button>
           </div>
         </div>

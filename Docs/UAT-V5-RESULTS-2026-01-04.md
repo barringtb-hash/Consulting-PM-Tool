@@ -1,7 +1,7 @@
 # UAT v5.0 Test Results Summary
 
 **Date:** January 4, 2026
-**Environment:** https://elipseconsulting.ai
+**Environment:** https://verdanthorizon.ai
 **Tester:** AI Agent
 **Status:** NOT PRODUCTION READY
 

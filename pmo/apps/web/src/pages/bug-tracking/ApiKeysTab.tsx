@@ -176,13 +176,13 @@ export BUG_TRACKER_API_URL="https://<your-api-domain>/api"`}
 
         {/* API Keys List */}
         {isLoading ? (
-          <div className="text-center py-8 text-gray-500 dark:text-neutral-500">
+          <div className="text-center py-8 text-neutral-500 dark:text-neutral-500">
             Loading API keys...
           </div>
         ) : !apiKeys || apiKeys.length === 0 ? (
           <Card className="p-8 text-center">
-            <Key className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <Key className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+            <p className="text-neutral-500 dark:text-neutral-400 mb-4">
               No API keys created yet
             </p>
             <Button onClick={() => setShowCreateModal(true)}>
@@ -197,7 +197,7 @@ export BUG_TRACKER_API_URL="https://<your-api-domain>/api"`}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Key className="h-4 w-4 text-gray-400 dark:text-neutral-500" />
+                      <Key className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
                       <span className="font-medium dark:text-white">
                         {apiKey.name}
                       </span>
@@ -205,7 +205,7 @@ export BUG_TRACKER_API_URL="https://<your-api-domain>/api"`}
                         <Badge variant="destructive">Revoked</Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-neutral-500">
+                    <div className="flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-500">
                       <span className="font-mono">{apiKey.keyPrefix}...</span>
                       <span>
                         Created{' '}
@@ -366,7 +366,7 @@ function CreateApiKeyModal({
             onChange={(e) => setName(e.target.value)}
             required
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             A descriptive name to identify this key
           </p>
         </div>
@@ -380,7 +380,7 @@ function CreateApiKeyModal({
               <label
                 key={perm.id}
                 htmlFor={`perm-${perm.id}`}
-                className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-neutral-800 cursor-pointer"
+                className="flex items-start gap-3 p-2 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer"
               >
                 <input
                   id={`perm-${perm.id}`}

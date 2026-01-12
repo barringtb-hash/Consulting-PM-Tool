@@ -201,27 +201,27 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps): JSX.Element {
         aria-modal="true"
         aria-label="Mobile navigation menu"
       >
-        {/* Header - Launchpad Consulting Partners */}
+        {/* Header - LaunchPad Command Center */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-neutral-200 dark:border-neutral-700">
           <Link
             to="/dashboard"
             className="flex items-center gap-2 no-underline"
           >
-            {/* Sunrise Icon */}
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-b from-brand-red via-brand-orange to-brand-amber relative overflow-hidden">
-              {/* Sun rays */}
+            {/* LaunchPad Icon */}
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-b from-amber-500 via-orange-500 to-rose-500 relative overflow-hidden">
+              {/* Sun element */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-3.5 h-3.5 bg-brand-yellow rounded-full opacity-90" />
+                <div className="w-3.5 h-3.5 bg-yellow-300 rounded-full opacity-90" />
               </div>
               {/* Horizon line */}
-              <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-brand-rose rounded" />
+              <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-rose-800 rounded" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-primary-600 dark:text-primary-400 text-sm leading-tight tracking-tight">
+              <span className="font-bold text-rose-700 dark:text-rose-400 text-sm leading-tight tracking-tight">
                 LAUNCHPAD
               </span>
               <span className="text-[9px] text-neutral-500 dark:text-neutral-400 tracking-widest">
-                CONSULTING
+                COMMAND CENTER
               </span>
             </div>
           </Link>

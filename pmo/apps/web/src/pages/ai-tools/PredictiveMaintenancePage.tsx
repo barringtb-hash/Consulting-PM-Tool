@@ -108,6 +108,68 @@ const WORK_ORDER_STATUS_VARIANTS: Record<
   CANCELLED: 'neutral',
 };
 
+// Skeleton loader for stats cards (available for future overview loading states)
+function _StatCardSkeleton(): JSX.Element {
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="h-3 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+            <div className="h-7 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+          <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+// Skeleton loader for table rows
+function TableRowSkeleton(): JSX.Element {
+  return (
+    <tr className="border-b border-neutral-200 dark:border-neutral-700">
+      <td className="px-6 py-4">
+        <div className="h-4 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-1" />
+        <div className="h-3 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="flex items-center">
+          <div className="w-16 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full animate-pulse mr-2" />
+          <div className="h-4 w-10 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+    </tr>
+  );
+}
+
+// Skeleton loader for sensor cards
+function SensorCardSkeleton(): JSX.Element {
+  return (
+    <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+          <div className="h-3 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </div>
+      <div className="mt-3">
+        <div className="h-8 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+        <div className="h-3 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 // API functions
 async function fetchMaintenanceConfigs(): Promise<MaintenanceConfig[]> {
   const res = await fetch(
@@ -265,10 +327,10 @@ function PredictiveMaintenancePage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Predictive Maintenance"
-        subtitle="IoT-integrated predictive maintenance with ML anomaly detection"
+        description="IoT-integrated predictive maintenance with ML anomaly detection"
         icon={Wrench}
         actions={
           <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
@@ -418,8 +480,33 @@ function PredictiveMaintenancePage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {equipmentQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  Loading equipment...
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Location
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Health
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : equipmentQuery.data?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
@@ -522,8 +609,10 @@ function PredictiveMaintenancePage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {sensorsQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  Loading sensors...
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <SensorCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : sensorsQuery.data?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">

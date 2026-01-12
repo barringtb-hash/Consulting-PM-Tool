@@ -9,8 +9,9 @@ import { useNavigate, useParams, Link } from 'react-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, RefreshCw, Loader2 } from 'lucide-react';
+import { Save, RefreshCw, Loader2 } from 'lucide-react';
 import { Card, Button, Input } from '../../ui';
+import { PageHeader } from '../../ui/PageHeader';
 import {
   useRecurringCost,
   useCreateRecurringCost,
@@ -127,6 +128,38 @@ const STATUS_OPTIONS = [
   { value: 'EXPIRED', label: 'Expired' },
 ];
 
+/**
+ * Loading skeleton for the recurring cost form page.
+ */
+function RecurringCostFormSkeleton() {
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <div className="border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <div className="container-padding py-6">
+          <div className="h-4 w-48 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-4" />
+          <div className="h-8 w-64 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          <div className="h-4 w-48 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mt-2" />
+        </div>
+      </div>
+      <div className="page-content">
+        <div className="max-w-3xl mx-auto">
+          <Card className="p-6 space-y-6 animate-pulse">
+            <div className="space-y-4">
+              <div className="h-6 w-32 bg-neutral-200 dark:bg-neutral-700 rounded" />
+              <div className="h-10 w-full bg-neutral-200 dark:bg-neutral-700 rounded" />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                <div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                <div className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded" />
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RecurringCostFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -231,320 +264,322 @@ export default function RecurringCostFormPage() {
   };
 
   if (isEditing && costLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
-      </div>
-    );
+    return <RecurringCostFormSkeleton />;
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="secondary" as={Link} to="/finance/recurring-costs">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
-            {isEditing ? 'Edit Recurring Cost' : 'New Recurring Cost'}
-          </h1>
-          <p className="text-gray-500 dark:text-neutral-400">
-            {isEditing
-              ? 'Update recurring cost details'
-              : 'Add a new subscription or recurring expense'}
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title={isEditing ? 'Edit Recurring Cost' : 'New Recurring Cost'}
+        description={
+          isEditing
+            ? 'Update recurring cost details'
+            : 'Add a new subscription or recurring expense'
+        }
+        icon={RefreshCw}
+        breadcrumbs={[
+          { label: 'Finance', href: '/finance' },
+          { label: 'Recurring Costs', href: '/finance/recurring-costs' },
+          { label: isEditing ? 'Edit Recurring Cost' : 'New Recurring Cost' },
+        ]}
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Card className="p-6 space-y-6">
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <RefreshCw className="h-5 w-5" />
-              Cost Details
-            </h2>
+      <div className="page-content">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Card className="p-6 space-y-6">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  Cost Details
+                </h2>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                {...register('name')}
-                placeholder="e.g., GitHub Enterprise, AWS Services"
-                className={errors.name ? 'border-red-500' : ''}
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Name <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    {...register('name')}
+                    placeholder="e.g., GitHub Enterprise, AWS Services"
+                    className={errors.name ? 'border-red-500' : ''}
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                {...register('description')}
-                rows={2}
-                placeholder="Describe what this recurring cost covers..."
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    {...register('description')}
+                    rows={2}
+                    placeholder="Describe what this recurring cost covers..."
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type <span className="text-red-500">*</span>
-              </label>
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {TYPE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => field.onChange(opt.value)}
-                        className={`p-3 rounded-lg border text-left transition-colors ${
-                          field.value === opt.value
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <p className="font-medium text-sm">{opt.label}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {opt.description}
-                        </p>
-                      </button>
-                    ))}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Type <span className="text-red-500">*</span>
+                  </label>
+                  <Controller
+                    name="type"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {TYPE_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => field.onChange(opt.value)}
+                            className={`p-3 rounded-lg border text-left transition-colors ${
+                              field.value === opt.value
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 text-neutral-900 dark:text-neutral-100'
+                            }`}
+                          >
+                            <p className="font-medium text-sm">{opt.label}</p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                              {opt.description}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Amount <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      {...register('amount')}
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      className={errors.amount ? 'border-red-500' : ''}
+                    />
+                    {errors.amount && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.amount.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Currency
+                    </label>
+                    <select
+                      {...register('currency')}
+                      className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                    >
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="GBP">GBP</option>
+                      <option value="CAD">CAD</option>
+                      <option value="AUD">AUD</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Frequency <span className="text-red-500">*</span>
+                    </label>
+                    <Controller
+                      name="frequency"
+                      control={control}
+                      render={({ field }) => (
+                        <select
+                          {...field}
+                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                        >
+                          {FREQUENCY_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Schedule */}
+              <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  Schedule
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Start Date <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      {...register('startDate')}
+                      type="date"
+                      className={errors.startDate ? 'border-red-500' : ''}
+                    />
+                    {errors.startDate && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.startDate.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      End Date
+                    </label>
+                    <Input {...register('endDate')} type="date" />
+                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      Leave empty for ongoing costs
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Next Due Date <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      {...register('nextDueDate')}
+                      type="date"
+                      className={errors.nextDueDate ? 'border-red-500' : ''}
+                    />
+                    {errors.nextDueDate && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.nextDueDate.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {isEditing && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Status
+                    </label>
+                    <Controller
+                      name="status"
+                      control={control}
+                      render={({ field }) => (
+                        <select
+                          {...field}
+                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                        >
+                          {STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    />
                   </div>
                 )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  {...register('amount')}
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  className={errors.amount ? 'border-red-500' : ''}
-                />
-                {errors.amount && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.amount.message}
-                  </p>
-                )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Currency
-                </label>
-                <select
-                  {...register('currency')}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              {/* Associations */}
+              <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  Associations (Optional)
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Vendor Name
+                    </label>
+                    <Input
+                      {...register('vendorName')}
+                      placeholder="e.g., Microsoft, Amazon, Salesforce"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Category
+                    </label>
+                    <Controller
+                      name="categoryId"
+                      control={control}
+                      render={({ field }) => (
+                        <select
+                          {...field}
+                          className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                        >
+                          <option value="">No category</option>
+                          {categoriesData?.categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Account
+                  </label>
+                  <Controller
+                    name="accountId"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="">No account</option>
+                        {accountsData?.data.map((acc) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                <Button
+                  variant="secondary"
+                  as={Link}
+                  to="/finance/recurring-costs"
                 >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="CAD">CAD</option>
-                  <option value="AUD">AUD</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Frequency <span className="text-red-500">*</span>
-                </label>
-                <Controller
-                  name="frequency"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      {FREQUENCY_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      {isEditing ? 'Update' : 'Create'} Recurring Cost
+                    </>
                   )}
-                />
+                </Button>
               </div>
-            </div>
-          </div>
-
-          {/* Schedule */}
-          <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
-              Schedule
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  {...register('startDate')}
-                  type="date"
-                  className={errors.startDate ? 'border-red-500' : ''}
-                />
-                {errors.startDate && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.startDate.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date
-                </label>
-                <Input {...register('endDate')} type="date" />
-                <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
-                  Leave empty for ongoing costs
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Next Due Date <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  {...register('nextDueDate')}
-                  type="date"
-                  className={errors.nextDueDate ? 'border-red-500' : ''}
-                />
-                {errors.nextDueDate && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.nextDueDate.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {isEditing && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Associations */}
-          <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
-              Associations (Optional)
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Vendor Name
-                </label>
-                <Input
-                  {...register('vendorName')}
-                  placeholder="e.g., Microsoft, Amazon, Salesforce"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <Controller
-                  name="categoryId"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">No category</option>
-                      {categoriesData?.categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Account
-              </label>
-              <Controller
-                name="accountId"
-                control={control}
-                render={({ field }) => (
-                  <select
-                    {...field}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">No account</option>
-                    {accountsData?.data.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="secondary" as={Link} to="/finance/recurring-costs">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isEditing ? 'Update' : 'Create'} Recurring Cost
-                </>
-              )}
-            </Button>
-          </div>
-        </Card>
-      </form>
+            </Card>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

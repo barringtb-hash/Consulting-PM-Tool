@@ -13,7 +13,12 @@ vi.mock('../api/hooks/crm', () => ({
   useAccounts: vi.fn(() => ({
     data: {
       data: [
-        { id: 1, name: 'Acme Corp', industry: 'Technology', archived: false },
+        {
+          id: 1,
+          name: 'Verdant Horizon Solutions',
+          industry: 'Technology',
+          archived: false,
+        },
         { id: 2, name: 'Beta Inc', industry: 'Finance', archived: false },
       ],
       meta: { total: 2, page: 1, limit: 20 },
@@ -31,8 +36,8 @@ vi.mock('../api/queries', () => ({
   })),
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -86,7 +91,7 @@ describe('Project Setup Flow', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Select a (Client|Account)/i),
+        screen.getByText(/Select an? (Client|Account)/i),
       ).toBeInTheDocument();
     });
 
@@ -97,7 +102,7 @@ describe('Project Setup Flow', () => {
     // Should show validation error
     await waitFor(() => {
       expect(
-        screen.getByText(/Please select a (client|account) to continue/i),
+        screen.getByText(/Please select an? (client|account) to continue/i),
       ).toBeInTheDocument();
     });
   });
@@ -107,11 +112,13 @@ describe('Project Setup Flow', () => {
     renderWithProviders(<ProjectSetupPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.getByText('Verdant Horizon Solutions')).toBeInTheDocument();
     });
 
     // Select an account
-    const accountButton = screen.getByRole('button', { name: /Acme Corp/i });
+    const accountButton = screen.getByRole('button', {
+      name: /Verdant Horizon Solutions/i,
+    });
     await user.click(accountButton);
 
     // Verify account is selected (check icon should appear)
@@ -133,9 +140,11 @@ describe('Project Setup Flow', () => {
 
     // Select account
     await waitFor(() => {
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.getByText('Verdant Horizon Solutions')).toBeInTheDocument();
     });
-    await user.click(screen.getByRole('button', { name: /Acme Corp/i }));
+    await user.click(
+      screen.getByRole('button', { name: /Verdant Horizon Solutions/i }),
+    );
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     // Select template
@@ -167,9 +176,11 @@ describe('Project Setup Flow', () => {
 
     // Navigate to Step 3
     await waitFor(() => {
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.getByText('Verdant Horizon Solutions')).toBeInTheDocument();
     });
-    await user.click(screen.getByRole('button', { name: /Acme Corp/i }));
+    await user.click(
+      screen.getByRole('button', { name: /Verdant Horizon Solutions/i }),
+    );
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     await waitFor(() => {
@@ -203,7 +214,7 @@ describe('Project Setup Flow', () => {
     const user = userEvent.setup();
     mockMutateAsync.mockResolvedValue({
       id: 1,
-      name: 'Acme Corp - AI Discovery',
+      name: 'Verdant Horizon Solutions - AI Discovery',
       accountId: 1,
       status: 'PLANNING',
     });
@@ -212,9 +223,11 @@ describe('Project Setup Flow', () => {
 
     // Step 1: Select Account
     await waitFor(() => {
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.getByText('Verdant Horizon Solutions')).toBeInTheDocument();
     });
-    await user.click(screen.getByRole('button', { name: /Acme Corp/i }));
+    await user.click(
+      screen.getByRole('button', { name: /Verdant Horizon Solutions/i }),
+    );
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     // Step 2: Select Template
@@ -273,9 +286,11 @@ describe('Project Setup Flow', () => {
 
     // Step 1
     await waitFor(() => {
-      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+      expect(screen.getByText('Verdant Horizon Solutions')).toBeInTheDocument();
     });
-    await user.click(screen.getByRole('button', { name: /Acme Corp/i }));
+    await user.click(
+      screen.getByRole('button', { name: /Verdant Horizon Solutions/i }),
+    );
     await user.click(screen.getByRole('button', { name: /Next/i }));
 
     // Step 2
@@ -290,7 +305,7 @@ describe('Project Setup Flow', () => {
     // Should be back at Step 1
     await waitFor(() => {
       expect(
-        screen.getByText(/Select a (Client|Account)/i),
+        screen.getByText(/Select an? (Client|Account)/i),
       ).toBeInTheDocument();
     });
   });

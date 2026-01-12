@@ -2,8 +2,10 @@
  * Overdue Tasks Summary Card Plugin
  *
  * Displays the count of overdue tasks with warning styling.
+ * Updated to match ContactsPage UI patterns with icons.
  */
 
+import { AlertTriangle } from 'lucide-react';
 import { SummaryCard } from './SummaryCard';
 import { useDashboardPluginContext } from '../DashboardPluginContext';
 import type { DashboardPanelPlugin, DashboardPanelConfig } from '../types';
@@ -15,10 +17,10 @@ function OverdueTasksCardPanel(): JSX.Element {
 
   return (
     <SummaryCard
+      icon={<AlertTriangle className="h-5 w-5" />}
       title="Overdue Tasks"
       value={overdueCount}
-      description="Tasks past due date"
-      variant={overdueCount > 0 ? 'danger' : 'default'}
+      variant={overdueCount > 0 ? 'rose' : 'amber'}
       onClick={() => navigate('/tasks')}
       isLoading={tasksData?.isLoading}
     />

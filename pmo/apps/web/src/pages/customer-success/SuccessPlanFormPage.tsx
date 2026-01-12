@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ClipboardList } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
@@ -106,6 +106,7 @@ function SuccessPlanFormPage(): JSX.Element {
           </div>
         }
         description="Create a success plan to track customer goals and objectives"
+        icon={ClipboardList}
       />
 
       <div className="page-content">

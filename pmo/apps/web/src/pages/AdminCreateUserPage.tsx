@@ -1,4 +1,13 @@
+/**
+ * Admin Create User Page
+ *
+ * Provides a form interface for creating new users in the system.
+ * Supports setting name, email, password, timezone, and role.
+ */
+
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { UserPlus, ArrowLeft } from 'lucide-react';
 import { createUser, type CreateUserInput } from '../api/users';
 import { useAuth } from '../auth/AuthContext';
 import {
@@ -7,15 +16,14 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
-  Container,
   Input,
   PageHeader,
-  Section,
   Select,
 } from '../ui';
 
 export function AdminCreateUserPage() {
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
   const [form, setForm] = useState<CreateUserInput>({
@@ -60,18 +68,29 @@ export function AdminCreateUserPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleBack = () => {
+    navigate('/admin/users');
+  };
+
   return (
-    <div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Create New User"
         description="Add a new user to the AI Consulting PMO platform."
+        icon={UserPlus}
+        actions={
+          <Button variant="secondary" onClick={handleBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Users
+          </Button>
+        }
       />
 
-      <Section>
-        <Container maxWidth="md">
+      <div className="page-content">
+        <div className="container-padding py-6 max-w-2xl mx-auto">
           {success && (
             <div
-              className="mb-6 p-4 bg-success-50 border border-success-200 rounded-lg text-success-800"
+              className="mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg text-success-800 dark:text-success-200"
               role="alert"
             >
               <strong className="font-medium">Success!</strong> User created
@@ -81,7 +100,7 @@ export function AdminCreateUserPage() {
 
           {error && (
             <div
-              className="mb-6 p-4 bg-danger-50 border border-danger-200 rounded-lg text-danger-800"
+              className="mb-6 p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg text-danger-800 dark:text-danger-200"
               role="alert"
             >
               <strong className="font-medium">Error:</strong> {error}
@@ -190,8 +209,8 @@ export function AdminCreateUserPage() {
               </form>
             </CardBody>
           </Card>
-        </Container>
-      </Section>
+        </div>
+      </div>
     </div>
   );
 }

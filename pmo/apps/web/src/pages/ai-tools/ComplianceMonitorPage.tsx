@@ -91,6 +91,65 @@ const STATUS_VARIANTS: Record<
   ACCEPTED: 'neutral',
 };
 
+// Skeleton loader for stats cards (available for future overview loading states)
+function _StatCardSkeleton(): JSX.Element {
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="h-3 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+            <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+          <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+// Skeleton loader for table rows
+function TableRowSkeleton(): JSX.Element {
+  return (
+    <tr className="border-b border-neutral-200 dark:border-neutral-700">
+      <td className="px-6 py-4">
+        <div className="h-4 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-40 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-5 w-5 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+    </tr>
+  );
+}
+
+// Skeleton loader for violation cards
+function ViolationSkeleton(): JSX.Element {
+  return (
+    <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-4 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+            <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+          <div className="h-4 w-48 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+          <div className="h-3 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+        <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 // API functions
 async function fetchComplianceConfigs(): Promise<ComplianceConfig[]> {
   const res = await fetch(
@@ -252,10 +311,10 @@ function ComplianceMonitorPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Compliance Monitor"
-        subtitle="Real-time compliance monitoring with risk scoring and regulatory reporting"
+        description="Real-time compliance monitoring with risk scoring and regulatory reporting"
         icon={Scale}
         actions={
           <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
@@ -305,8 +364,8 @@ function ComplianceMonitorPage(): JSX.Element {
                   onClick={() => setActiveTab(id as typeof activeTab)}
                   className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === id
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
+                      ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -324,7 +383,7 @@ function ComplianceMonitorPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       Frameworks
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1">
@@ -343,7 +402,7 @@ function ComplianceMonitorPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       Auto Scan
                     </p>
                     <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
@@ -358,7 +417,7 @@ function ComplianceMonitorPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       Scan Frequency
                     </p>
                     <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
@@ -373,7 +432,7 @@ function ComplianceMonitorPage(): JSX.Element {
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       Risk Threshold
                     </p>
                     <p className="text-2xl font-bold text-orange-500">
@@ -410,31 +469,56 @@ function ComplianceMonitorPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {rulesQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                  Loading rules...
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Code
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Framework
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Severity
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : rulesQuery.data?.length === 0 ? (
-                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                   No rules configured. Add compliance rules to monitor.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                    <thead className="bg-neutral-50 dark:bg-neutral-800">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Code
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Framework
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Severity
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Status
                         </th>
                       </tr>
@@ -499,11 +583,13 @@ function ComplianceMonitorPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {violationsQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                  Loading violations...
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <ViolationSkeleton key={i} />
+                  ))}
                 </div>
               ) : violationsQuery.data?.length === 0 ? (
-                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                   No violations detected. Your compliance status is healthy.
                 </div>
               ) : (
@@ -575,31 +661,56 @@ function ComplianceMonitorPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {auditsQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
-                  Loading audits...
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Score
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Findings
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Started
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : auditsQuery.data?.length === 0 ? (
-                <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                   No audits performed yet. Start your first compliance audit.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
-                    <thead className="bg-neutral-50 dark:bg-neutral-800">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Type
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Score
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Findings
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                           Started
                         </th>
                       </tr>
@@ -637,7 +748,7 @@ function ComplianceMonitorPage(): JSX.Element {
                                 {audit.score}%
                               </span>
                             ) : (
-                              <span className="text-neutral-600 dark:text-neutral-400">
+                              <span className="text-neutral-500 dark:text-neutral-400">
                                 -
                               </span>
                             )}
@@ -645,7 +756,7 @@ function ComplianceMonitorPage(): JSX.Element {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
                             {audit.findings}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
                             {new Date(audit.startedAt).toLocaleDateString()}
                           </td>
                         </tr>
@@ -661,7 +772,7 @@ function ComplianceMonitorPage(): JSX.Element {
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
               Create Compliance Monitor Configuration

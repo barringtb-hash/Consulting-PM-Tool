@@ -373,7 +373,7 @@ function SchedulingPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="AI Scheduling"
         description="Smart appointment scheduling with no-show prediction and automated reminders"
@@ -1038,10 +1038,10 @@ function SchedulingPage(): JSX.Element {
 
       {/* Create Config Modal */}
       {showCreateConfigModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <h2 className="text-xl font-semibold">
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                 New Scheduling Configuration
               </h2>
             </CardHeader>
@@ -1089,10 +1089,12 @@ function SchedulingPage(): JSX.Element {
 
       {/* Book Appointment Modal */}
       {showBookModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <h2 className="text-xl font-semibold">Book Appointment</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                Book Appointment
+              </h2>
             </CardHeader>
             <CardBody>
               <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">

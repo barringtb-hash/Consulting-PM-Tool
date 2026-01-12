@@ -3,7 +3,7 @@
 ## AI CRM Platform - User Acceptance Testing Results
 
 **Test Date:** January 2026
-**Environment:** Production (elipseconsulting.ai)
+**Environment:** Production (verdanthorizon.ai)
 **Tester Role:** Admin
 **Test Script Version:** 2.0
 
@@ -213,7 +213,7 @@ The following features passed all tests and function as expected:
 
 ## Test Environment Notes
 
-- **URL:** https://elipseconsulting.ai
+- **URL:** https://verdanthorizon.ai
 - **Browser:** Standard web browser
 - **Admin Account:** admin@pmo.test / AdminDemo123!
 - **Limitations:** Mobile responsiveness and direct API testing not possible in test environment

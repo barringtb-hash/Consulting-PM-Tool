@@ -76,17 +76,18 @@ test.describe('Lead ML Features', () => {
       // Navigate to ML Insights
       await page.getByRole('button', { name: /ml insights/i }).click();
 
-      // Check for category indicators
+      // Check that at least one category indicator is visible in the legend
       const categories = [
         'behavioral',
         'demographic',
         'temporal',
         'engagement',
       ];
+
+      // Verify each category label is visible in the feature importance legend
       for (const category of categories) {
-        // At least one category should be visible in the legend
         const categoryElement = page.getByText(new RegExp(category, 'i'));
-        // This is a soft check - just verify the page structure exists
+        await expect(categoryElement).toBeVisible();
       }
     });
   });
@@ -134,11 +135,8 @@ test.describe('Lead ML Features', () => {
         name: /run bulk predictions/i,
       });
 
-      // The button should be clickable
+      // Verify the button exists and is enabled
       await expect(bulkButton).toBeEnabled();
-
-      // Note: In real test with mocked API, we would verify the loading state
-      // For now, just verify the button exists and is clickable
     });
   });
 
@@ -149,10 +147,9 @@ test.describe('Lead ML Features', () => {
       // Navigate to ML Insights
       await page.getByRole('button', { name: /ml insights/i }).click();
 
-      // Check for accuracy by type heading (may not be visible if no data)
-      // This is a soft check since it depends on having prediction data
+      // Verify the accuracy by prediction type section is visible
       const accuracySection = page.getByText(/accuracy by prediction type/i);
-      // Section may or may not be visible depending on data
+      await expect(accuracySection).toBeVisible();
     });
   });
 
@@ -163,23 +160,20 @@ test.describe('Lead ML Features', () => {
       // Navigate to ML Insights
       await page.getByRole('button', { name: /ml insights/i }).click();
 
-      // If there are leads in the top priority list, clicking one should show details
-      // This test depends on having leads with predictions
+      // Find clickable lead items in the top priority list
       const topLeadsList = page.locator('[class*="space-y-3"]');
-
-      // Check if there are any lead items
       const leadItems = topLeadsList.locator('[class*="cursor-pointer"]');
-      const count = await leadItems.count();
 
-      if (count > 0) {
-        // Click on the first lead
-        await leadItems.first().click();
+      // Ensure at least one lead exists before proceeding
+      await expect(leadItems.first()).toBeVisible({ timeout: 5000 });
 
-        // Should show prediction details panel
-        await expect(
-          page.getByRole('heading', { name: /prediction details/i }),
-        ).toBeVisible({ timeout: 5000 });
-      }
+      // Click on the first lead
+      await leadItems.first().click();
+
+      // Verify prediction details panel is displayed
+      await expect(
+        page.getByRole('heading', { name: /prediction details/i }),
+      ).toBeVisible({ timeout: 5000 });
     });
 
     test('should display close button in prediction details panel', async ({
@@ -188,17 +182,18 @@ test.describe('Lead ML Features', () => {
       // Navigate to ML Insights
       await page.getByRole('button', { name: /ml insights/i }).click();
 
-      // Find and click a lead to open details
+      // Find clickable lead items
       const leadItems = page.locator('[class*="cursor-pointer"]');
-      const count = await leadItems.count();
 
-      if (count > 0) {
-        await leadItems.first().click();
+      // Ensure at least one lead exists before proceeding
+      await expect(leadItems.first()).toBeVisible({ timeout: 5000 });
 
-        // Should have a close button
-        const closeButton = page.getByRole('button', { name: /close/i });
-        await expect(closeButton).toBeVisible();
-      }
+      // Click on the first lead to open the details panel
+      await leadItems.first().click();
+
+      // Verify the close button is present in the details panel
+      const closeButton = page.getByRole('button', { name: /close/i });
+      await expect(closeButton).toBeVisible();
     });
   });
 

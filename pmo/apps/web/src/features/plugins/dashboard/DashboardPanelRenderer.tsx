@@ -2,9 +2,11 @@
  * Dashboard Panel Renderer
  *
  * Components for rendering dashboard plugins in their respective positions.
+ * Updated to match ContactsPage UI patterns.
  */
 
 import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Card, CardBody } from '../../../ui/Card';
 import { Button } from '../../../ui/Button';
 import type {
@@ -56,18 +58,28 @@ class DashboardPanelErrorBoundary extends Component<
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <Card className="border-danger-200 bg-danger-50/30">
+        <Card className="border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20">
           <CardBody>
-            <div className="text-center py-4">
-              <p className="text-danger-700 font-medium mb-2">
-                Failed to load {this.props.pluginName}
-              </p>
-              <p className="text-sm text-danger-600 mb-3">
-                {this.state.error?.message ?? 'An unexpected error occurred'}
-              </p>
-              <Button variant="secondary" size="sm" onClick={this.handleRetry}>
-                Retry
-              </Button>
+            <div className="flex items-start gap-3 py-2">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-rose-900 dark:text-rose-100 font-medium mb-1">
+                  Failed to load {this.props.pluginName}
+                </p>
+                <p className="text-sm text-rose-700 dark:text-rose-300 mb-3">
+                  {this.state.error?.message ?? 'An unexpected error occurred'}
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={this.handleRetry}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
             </div>
           </CardBody>
         </Card>

@@ -14,6 +14,9 @@ import {
   RefreshCw,
   AlertCircle,
   Lock,
+  Layers,
+  Building2,
+  ToggleRight,
 } from 'lucide-react';
 import {
   Button,
@@ -21,9 +24,7 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
-  Container,
   PageHeader,
-  Section,
 } from '../ui';
 import {
   getAllTenants,
@@ -39,6 +40,76 @@ interface TenantConfig {
   config: TenantModuleConfigResponse | null;
   loading: boolean;
   error: string | null;
+}
+
+/**
+ * Skeleton loader for the tenant list sidebar
+ */
+function TenantListSkeleton(): JSX.Element {
+  return (
+    <div className="space-y-2 animate-pulse">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div
+          key={i}
+          className="h-10 bg-neutral-200 dark:bg-neutral-700 rounded-lg"
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton loader for the modules grid
+ */
+function ModulesGridSkeleton(): JSX.Element {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {[1, 2, 3].map((group) => (
+        <div key={group}>
+          <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded mb-3" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((module) => (
+              <div
+                key={module}
+                className="p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="h-5 w-32 bg-neutral-200 dark:bg-neutral-700 rounded mb-2" />
+                    <div className="h-4 w-48 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                  </div>
+                  <div className="ml-4 p-2 w-9 h-9 bg-neutral-200 dark:bg-neutral-700 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton loader for stat cards
+ */
+function StatCardsSkeleton(): JSX.Element {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      {[1, 2, 3].map((i) => (
+        <Card key={i}>
+          <CardBody className="py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-3 animate-pulse">
+              <div className="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg shrink-0 w-9 h-9 sm:w-10 sm:h-10" />
+              <div className="min-w-0 flex-1">
+                <div className="h-6 sm:h-7 bg-neutral-200 dark:bg-neutral-700 rounded w-12 mb-1" />
+                <div className="h-3 sm:h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-20" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ))}
+    </div>
+  );
 }
 
 export function AdminModulesPage() {
@@ -235,37 +306,104 @@ export function AdminModulesPage() {
     return module?.isCore ?? false;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
-      </div>
-    );
-  }
+  // Calculate stats
+  const stats = {
+    totalModules: modules.length,
+    enabledModules: currentModules.filter((m) => m.enabled).length,
+    totalTenants: tenants.length,
+  };
 
   return (
-    <div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Module Management"
         description="Configure which modules are enabled for each tenant/deployment."
+        icon={Layers}
+        actions={
+          <Button onClick={loadData} variant="secondary" disabled={loading}>
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
+            />
+            Refresh
+          </Button>
+        }
       />
 
-      <Section>
-        <Container>
+      <div className="page-content">
+        <div className="container-padding py-6">
           {error && (
             <div
               className="mb-6 p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg text-danger-800 dark:text-danger-200 flex items-center gap-2"
               role="alert"
             >
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5 shrink-0" />
               {error}
             </div>
           )}
 
           {successMessage && (
             <div className="mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg text-success-800 dark:text-success-200 flex items-center gap-2">
-              <Check className="w-5 h-5" />
+              <Check className="w-5 h-5 shrink-0" />
               {successMessage}
+            </div>
+          )}
+
+          {/* Stats Cards */}
+          {loading ? (
+            <StatCardsSkeleton />
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <Card>
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
+                      <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {stats.totalModules}
+                      </p>
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
+                        Total Modules
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg shrink-0">
+                      <ToggleRight className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {stats.enabledModules}
+                      </p>
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
+                        Enabled
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg shrink-0">
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {stats.totalTenants}
+                      </p>
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
+                        Tenants
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
             </div>
           )}
 
@@ -274,45 +412,51 @@ export function AdminModulesPage() {
             <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
+                  <Settings className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                   Tenants
                 </CardTitle>
               </CardHeader>
               <CardBody>
-                <div className="space-y-2">
-                  {tenants.map((tenantId) => (
-                    <button
-                      key={tenantId}
-                      onClick={() => handleTenantSelect(tenantId)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                        selectedTenant === tenantId
-                          ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200 font-medium'
-                          : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
-                      }`}
-                    >
-                      {tenantId === 'default' ? 'Default (All)' : tenantId}
-                    </button>
-                  ))}
-                </div>
+                {loading ? (
+                  <TenantListSkeleton />
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      {tenants.map((tenantId) => (
+                        <button
+                          key={tenantId}
+                          onClick={() => handleTenantSelect(tenantId)}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                            selectedTenant === tenantId
+                              ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200 font-medium'
+                              : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                          }`}
+                        >
+                          {tenantId === 'default' ? 'Default (All)' : tenantId}
+                        </button>
+                      ))}
+                    </div>
 
-                <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newTenantId}
-                      onChange={(e) => setNewTenantId(e.target.value)}
-                      placeholder="New tenant ID"
-                      className="flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900/50 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleAddTenant}
-                      disabled={!newTenantId.trim()}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                    <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newTenantId}
+                          onChange={(e) => setNewTenantId(e.target.value)}
+                          placeholder="New tenant ID"
+                          className="flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleAddTenant}
+                          disabled={!newTenantId.trim()}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardBody>
             </Card>
 
@@ -333,10 +477,8 @@ export function AdminModulesPage() {
                 )}
               </CardHeader>
               <CardBody>
-                {tenantConfigs[selectedTenant]?.loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <RefreshCw className="w-6 h-6 animate-spin text-primary-600" />
-                  </div>
+                {tenantConfigs[selectedTenant]?.loading || loading ? (
+                  <ModulesGridSkeleton />
                 ) : tenantConfigs[selectedTenant]?.error ? (
                   <div className="text-danger-600 dark:text-danger-400 py-4">
                     {tenantConfigs[selectedTenant].error}
@@ -437,7 +579,7 @@ export function AdminModulesPage() {
                       Default Configuration:
                     </strong>{' '}
                     Used when no tenant-specific configuration exists. Set via{' '}
-                    <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">
+                    <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-neutral-800 dark:text-neutral-200">
                       ENABLED_MODULES
                     </code>{' '}
                     environment variable.
@@ -467,8 +609,8 @@ export function AdminModulesPage() {
               </div>
             </CardBody>
           </Card>
-        </Container>
-      </Section>
+        </div>
+      </div>
     </div>
   );
 }

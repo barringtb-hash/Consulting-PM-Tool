@@ -117,6 +117,7 @@ export interface LeadConversionResult {
   projectId?: number;
   accountId?: number;
   opportunityId?: number;
+  crmContactId?: number;
 }
 
 const LEADS_BASE_PATH = buildApiUrl('/leads');

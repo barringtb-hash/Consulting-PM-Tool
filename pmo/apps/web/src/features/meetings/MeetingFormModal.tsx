@@ -47,7 +47,7 @@ function MeetingFormModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title={heading} size="lg">
+    <Modal isOpen={isOpen} onClose={onCancel} title={heading} size="large">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Title"

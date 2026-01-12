@@ -1,5 +1,13 @@
+/**
+ * Admin Users List Page
+ *
+ * Displays a list of all users in the system with management capabilities.
+ * Supports viewing, editing, and deleting users with role-based access control.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { Users, Plus, UserCheck, Shield, ShieldAlert } from 'lucide-react';
 import { deleteUser, getAllUsers, type User } from '../api/users';
 import {
   Button,
@@ -7,10 +15,69 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
-  Container,
   PageHeader,
-  Section,
 } from '../ui';
+
+/**
+ * Skeleton loader component for the users table
+ * Displays placeholder content while data is being fetched
+ */
+function UsersTableSkeleton(): JSX.Element {
+  return (
+    <div className="animate-pulse">
+      {/* Table header skeleton */}
+      <div className="bg-neutral-100 dark:bg-neutral-800 px-6 py-3 flex gap-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div
+            key={i}
+            className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded flex-1"
+          />
+        ))}
+      </div>
+      {/* Table rows skeleton */}
+      {[1, 2, 3, 4, 5].map((row) => (
+        <div
+          key={row}
+          className="px-6 py-4 flex gap-4 border-b border-neutral-200 dark:border-neutral-700"
+        >
+          {[1, 2, 3, 4, 5].map((col) => (
+            <div
+              key={col}
+              className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded flex-1"
+            />
+          ))}
+          <div className="flex gap-2 flex-1">
+            <div className="h-8 w-16 bg-neutral-200 dark:bg-neutral-700 rounded" />
+            <div className="h-8 w-16 bg-neutral-200 dark:bg-neutral-700 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton loader for stat cards
+ */
+function StatCardsSkeleton(): JSX.Element {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i}>
+          <CardBody className="py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-3 animate-pulse">
+              <div className="p-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg shrink-0 w-9 h-9 sm:w-10 sm:h-10" />
+              <div className="min-w-0 flex-1">
+                <div className="h-6 sm:h-7 bg-neutral-200 dark:bg-neutral-700 rounded w-12 mb-1" />
+                <div className="h-3 sm:h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-20" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export function AdminUsersListPage() {
   const navigate = useNavigate();
@@ -82,15 +149,30 @@ export function AdminUsersListPage() {
     navigate('/admin/users/new');
   };
 
+  // Calculate user stats
+  const stats = {
+    total: users.length,
+    admins: users.filter((u) => u.role === 'ADMIN').length,
+    superAdmins: users.filter((u) => u.role === 'SUPER_ADMIN').length,
+    regularUsers: users.filter((u) => u.role === 'USER').length,
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="User Management"
         description="View and manage all users in the system."
+        icon={Users}
+        actions={
+          <Button onClick={handleCreateNew}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create New User
+          </Button>
+        }
       />
 
-      <Section>
-        <Container>
+      <div className="page-content">
+        <div className="container-padding py-6">
           {error && (
             <div
               className="mb-6 p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg text-danger-800 dark:text-danger-200"
@@ -100,19 +182,89 @@ export function AdminUsersListPage() {
             </div>
           )}
 
-          <div className="mb-6 flex justify-end">
-            <Button onClick={handleCreateNew}>Create New User</Button>
-          </div>
+          {/* Stats Cards */}
+          {loading ? (
+            <StatCardsSkeleton />
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg shrink-0">
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {stats.total}
+                      </p>
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
+                        Total Users
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg shrink-0">
+                      <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {stats.regularUsers}
+                      </p>
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
+                        Regular Users
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg shrink-0">
+                      <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {stats.admins}
+                      </p>
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
+                        Admins
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody className="py-3 sm:py-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg shrink-0">
+                      <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        {stats.superAdmins}
+                      </p>
+                      <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-tight">
+                        Super Admins
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          )}
 
           <Card>
             <CardHeader>
               <CardTitle>All Users</CardTitle>
             </CardHeader>
-            <CardBody>
+            <CardBody className="p-0">
               {loading ? (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  Loading users...
-                </div>
+                <UsersTableSkeleton />
               ) : users.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                   No users found.
@@ -203,8 +355,8 @@ export function AdminUsersListPage() {
               )}
             </CardBody>
           </Card>
-        </Container>
-      </Section>
+        </div>
+      </div>
     </div>
   );
 }

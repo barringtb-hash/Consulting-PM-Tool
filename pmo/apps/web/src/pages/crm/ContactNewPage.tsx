@@ -198,7 +198,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   First Name <span className="text-red-500">*</span>
                 </label>
@@ -218,7 +218,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Last Name <span className="text-red-500">*</span>
                 </label>
@@ -238,7 +238,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Email
                 </label>
@@ -259,7 +259,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Phone
                 </label>
@@ -273,7 +273,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="jobTitle"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Job Title
                 </label>
@@ -287,7 +287,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="department"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Department
                 </label>
@@ -309,7 +309,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="accountId"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Account
                 </label>
@@ -326,7 +326,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="lifecycle"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Lifecycle Stage
                 </label>
@@ -342,7 +342,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="leadSource"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Lead Source
                 </label>
@@ -361,9 +361,9 @@ export default function ContactNewPage() {
                   <input
                     type="checkbox"
                     {...register('isPrimary')}
-                    className="rounded border-gray-300"
+                    className="rounded border-neutral-300"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">
                     Primary Contact
                   </span>
                 </label>
@@ -371,9 +371,9 @@ export default function ContactNewPage() {
                   <input
                     type="checkbox"
                     {...register('doNotContact')}
-                    className="rounded border-gray-300"
+                    className="rounded border-neutral-300"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">
                     Do Not Contact
                   </span>
                 </label>
@@ -390,7 +390,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="linkedinUrl"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   LinkedIn URL
                 </label>
@@ -410,7 +410,7 @@ export default function ContactNewPage() {
               <div>
                 <label
                   htmlFor="twitterUrl"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Twitter URL
                 </label>

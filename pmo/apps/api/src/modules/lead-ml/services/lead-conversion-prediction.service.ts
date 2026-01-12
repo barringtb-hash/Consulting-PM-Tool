@@ -56,11 +56,17 @@ const MAX_TOKENS = 2000;
 // ============================================================================
 
 /**
- * Gather complete context for a lead
+ * Gather complete context for a lead with tenant isolation
  */
-async function gatherLeadContext(leadId: number): Promise<LeadMLContext> {
-  const lead = await prisma.scoredLead.findUnique({
-    where: { id: leadId },
+async function gatherLeadContext(
+  leadId: number,
+  tenantId: string,
+): Promise<LeadMLContext> {
+  const lead = await prisma.scoredLead.findFirst({
+    where: {
+      id: leadId,
+      config: { tenantId },
+    },
     include: {
       activities: {
         orderBy: { createdAt: 'desc' },
@@ -79,7 +85,7 @@ async function gatherLeadContext(leadId: number): Promise<LeadMLContext> {
   });
 
   if (!lead) {
-    throw new Error(`Lead not found: ${leadId}`);
+    throw new Error(`Lead not found or access denied: ${leadId}`);
   }
 
   // Extract features
@@ -307,10 +313,11 @@ async function storePrediction(
 }
 
 /**
- * Get latest active prediction for a lead
+ * Get latest active prediction for a lead with tenant isolation
  */
 async function getLatestPrediction(
   leadId: number,
+  tenantId: string,
   predictionType: LeadPredictionType,
 ): Promise<{
   id: number;
@@ -320,6 +327,7 @@ async function getLatestPrediction(
   const prediction = await prisma.leadMLPrediction.findFirst({
     where: {
       leadId,
+      tenantId,
       predictionType,
       status: 'ACTIVE',
     },
@@ -356,16 +364,6 @@ async function getLatestPrediction(
   };
 }
 
-/**
- * Expire old predictions
- */
-async function _expirePrediction(predictionId: number): Promise<void> {
-  await prisma.leadMLPrediction.update({
-    where: { id: predictionId },
-    data: { status: 'EXPIRED' },
-  });
-}
-
 // ============================================================================
 // Main Prediction Functions
 // ============================================================================
@@ -380,7 +378,7 @@ export async function predictLeadConversion(
 
   // Check for recent prediction unless force refresh
   if (!options?.forceRefresh) {
-    const existing = await getLatestPrediction(leadId, 'CONVERSION');
+    const existing = await getLatestPrediction(leadId, tenantId, 'CONVERSION');
     if (existing && !existing.isExpired) {
       return {
         ...(existing.prediction as ConversionPrediction),
@@ -389,8 +387,8 @@ export async function predictLeadConversion(
     }
   }
 
-  // Gather context
-  const context = await gatherLeadContext(leadId);
+  // Gather context with tenant isolation
+  const context = await gatherLeadContext(leadId, tenantId);
 
   let prediction: ConversionPrediction;
 
@@ -442,7 +440,11 @@ export async function predictTimeToClose(
 
   // Check for recent prediction
   if (!options?.forceRefresh) {
-    const existing = await getLatestPrediction(leadId, 'TIME_TO_CLOSE');
+    const existing = await getLatestPrediction(
+      leadId,
+      tenantId,
+      'TIME_TO_CLOSE',
+    );
     if (existing && !existing.isExpired) {
       return {
         ...(existing.prediction as TimeToClosePrediction),
@@ -451,8 +453,8 @@ export async function predictTimeToClose(
     }
   }
 
-  // Gather context
-  const context = await gatherLeadContext(leadId);
+  // Gather context with tenant isolation
+  const context = await gatherLeadContext(leadId, tenantId);
 
   // Use rule-based for now (LLM prompt similar pattern)
   const prediction = predictTimeToCloseRuleBased(context.features);
@@ -478,7 +480,7 @@ export async function predictLeadScore(
 
   // Check for recent prediction
   if (!options?.forceRefresh) {
-    const existing = await getLatestPrediction(leadId, 'SCORE');
+    const existing = await getLatestPrediction(leadId, tenantId, 'SCORE');
     if (existing && !existing.isExpired) {
       return {
         ...(existing.prediction as ScorePrediction),
@@ -487,8 +489,8 @@ export async function predictLeadScore(
     }
   }
 
-  // Gather context and extract features
-  const context = await gatherLeadContext(leadId);
+  // Gather context with tenant isolation
+  const context = await gatherLeadContext(leadId, tenantId);
   const prediction = predictScoreRuleBased(context.features);
 
   // Store prediction
@@ -505,10 +507,11 @@ export async function bulkPredictConversions(
 ): Promise<BulkLeadPredictionResult> {
   const { configId, tenantId, limit = 50, minScore = 0, options } = input;
 
-  // Get leads to process
+  // Get leads to process with tenant isolation
   const leads = await prisma.scoredLead.findMany({
     where: {
       configId,
+      config: { tenantId },
       score: { gte: minScore },
       isActive: true,
     },
@@ -559,13 +562,14 @@ export async function bulkPredictConversions(
  */
 export async function getLeadPrediction(
   leadId: number,
+  tenantId: string,
   predictionType: LeadPredictionType,
 ): Promise<{
   id: number;
   prediction: LeadPredictionResult;
   isExpired: boolean;
 } | null> {
-  return getLatestPrediction(leadId, predictionType);
+  return getLatestPrediction(leadId, tenantId, predictionType);
 }
 
 /**
@@ -586,10 +590,11 @@ export async function validatePrediction(
 }
 
 /**
- * Get prediction accuracy metrics
+ * Get prediction accuracy metrics with tenant isolation
  */
 export async function getPredictionAccuracy(
   configId: number,
+  tenantId: string,
   options?: { startDate?: Date; endDate?: Date },
 ): Promise<{
   totalPredictions: number;
@@ -599,7 +604,7 @@ export async function getPredictionAccuracy(
   byType: Record<string, { total: number; accurate: number; accuracy: number }>;
 }> {
   const whereClause: Prisma.LeadMLPredictionWhereInput = {
-    lead: { configId },
+    lead: { configId, config: { tenantId } },
   };
 
   if (options?.startDate || options?.endDate) {

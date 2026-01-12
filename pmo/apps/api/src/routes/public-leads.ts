@@ -3,7 +3,9 @@ import { createRateLimiter } from '../middleware/rate-limit.middleware';
 import { publicLeadCreateSchema } from '../validation/lead.schema';
 import { createPublicLead } from '../services/lead.service';
 import prisma from '../prisma/client';
+import { createChildLogger } from '../utils/logger';
 
+const log = createChildLogger({ module: 'public-leads' });
 const router = Router();
 
 // Rate limit: 5 submissions per 15 minutes per IP
@@ -82,7 +84,7 @@ router.post(
         leadId: String(lead.id),
       });
     } catch (error) {
-      console.error('Failed to create public lead:', error);
+      log.error('Failed to create public lead', error);
       res.status(500).json({
         error: 'Failed to submit your information. Please try again later.',
       });

@@ -148,7 +148,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   LEGAL: 'bg-indigo-100 text-indigo-800',
   FINANCIAL: 'bg-yellow-100 text-yellow-800',
   REAL_ESTATE: 'bg-orange-100 text-orange-800',
-  MANUFACTURING: 'bg-gray-100 text-gray-800',
+  MANUFACTURING:
+    'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
   GENERAL: 'bg-neutral-100 text-neutral-800',
 };
 
@@ -488,10 +489,10 @@ function DocumentAnalyzerPage(): JSX.Element {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Smart Document Analyzer"
-        subtitle="AI-powered document analysis with industry templates, compliance checking, and ROI tracking"
+        description="AI-powered document analysis with industry templates, compliance checking, and ROI tracking"
         icon={FileSearch}
         actions={
           <Button onClick={() => setShowCreateModal(true)}>
@@ -501,7 +502,7 @@ function DocumentAnalyzerPage(): JSX.Element {
         }
       />
 
-      <div className="page-content space-y-6">
+      <main className="page-content space-y-6">
         {/* Configuration Selector */}
         <Card>
           <CardBody>
@@ -571,7 +572,7 @@ function DocumentAnalyzerPage(): JSX.Element {
                   onClick={() => setActiveTab(id as typeof activeTab)}
                   className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                     activeTab === id
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                       : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300'
                   }`}
                 >
@@ -1314,11 +1315,11 @@ function DocumentAnalyzerPage(): JSX.Element {
             )}
           </div>
         )}
-      </div>
+      </main>
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">
               Create Document Analyzer Configuration
@@ -1417,7 +1418,7 @@ function DocumentAnalyzerPage(): JSX.Element {
 
       {/* Upload Document Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
             <form onSubmit={handleUploadDocument} className="space-y-4">

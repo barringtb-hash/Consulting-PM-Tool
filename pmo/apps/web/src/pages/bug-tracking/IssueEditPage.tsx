@@ -152,7 +152,7 @@ export default function IssueEditPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-500 dark:text-neutral-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-neutral-500 dark:text-neutral-400" />
         </div>
       </div>
     );
@@ -162,7 +162,7 @@ export default function IssueEditPage() {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="text-gray-500 dark:text-neutral-400">
+          <div className="text-neutral-500 dark:text-neutral-400">
             Issue not found
           </div>
           <Button variant="outline" onClick={() => navigate('/bug-tracking')}>
@@ -204,7 +204,7 @@ export default function IssueEditPage() {
               <div>
                 <label
                   htmlFor="title"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Title <span className="text-red-500">*</span>
                 </label>
@@ -224,7 +224,7 @@ export default function IssueEditPage() {
               <div>
                 <label
                   htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Description
                 </label>
@@ -232,7 +232,7 @@ export default function IssueEditPage() {
                   id="description"
                   {...register('description')}
                   rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
                   placeholder="Detailed description of the issue..."
                 />
               </div>
@@ -248,14 +248,14 @@ export default function IssueEditPage() {
               <div>
                 <label
                   htmlFor="type"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Type
                 </label>
                 <select
                   id="type"
                   {...register('type')}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
                 >
                   {TYPE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -268,14 +268,14 @@ export default function IssueEditPage() {
               <div>
                 <label
                   htmlFor="priority"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Priority
                 </label>
                 <select
                   id="priority"
                   {...register('priority')}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
                 >
                   {PRIORITY_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -288,14 +288,14 @@ export default function IssueEditPage() {
               <div>
                 <label
                   htmlFor="status"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
                 >
                   Status
                 </label>
                 <select
                   id="status"
                   {...register('status')}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
                 >
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -315,7 +315,7 @@ export default function IssueEditPage() {
             <div>
               <label
                 htmlFor="assignedToId"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
                 Assigned To
               </label>
@@ -324,7 +324,7 @@ export default function IssueEditPage() {
                 {...register('assignedToId', {
                   setValueAs: (v) => (v === '' ? null : Number(v)),
                 })}
-                className="w-full max-w-md px-3 py-2 border border-gray-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
+                className="w-full max-w-md px-3 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-neutral-800 dark:text-white"
               >
                 <option value="">Unassigned</option>
                 {users?.map((user) => (
@@ -350,7 +350,7 @@ export default function IssueEditPage() {
                     onClick={() => handleLabelToggle(label.id)}
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-all ${
                       selectedLabelIds.includes(label.id)
-                        ? 'ring-2 ring-offset-2 ring-blue-500'
+                        ? 'ring-2 ring-offset-2 ring-primary-500'
                         : 'opacity-60 hover:opacity-100'
                     }`}
                     style={{

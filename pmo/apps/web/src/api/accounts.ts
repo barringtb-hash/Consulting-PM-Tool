@@ -36,6 +36,15 @@ export interface Address {
   country?: string;
 }
 
+export interface AccountContact {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  jobTitle?: string | null;
+  lifecycle?: string | null;
+}
+
 export interface Account {
   id: number;
   tenantId: string;
@@ -59,8 +68,9 @@ export interface Account {
   parentAccountId?: number | null;
   createdAt: string;
   updatedAt: string;
+  crmContacts?: AccountContact[];
   _count?: {
-    contacts: number;
+    crmContacts: number;
     opportunities: number;
     activities: number;
     childAccounts: number;

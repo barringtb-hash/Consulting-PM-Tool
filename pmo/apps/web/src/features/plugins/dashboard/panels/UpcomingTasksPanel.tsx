@@ -2,9 +2,11 @@
  * Upcoming Tasks Panel Plugin
  *
  * Displays a list of upcoming tasks sorted by due date.
+ * Updated to match ContactsPage UI patterns with table layout.
  */
 
 import { Link } from 'react-router';
+import { Clock, CheckCircle2, ListTodo, Calendar } from 'lucide-react';
 import { Card, CardBody, CardTitle } from '../../../../ui/Card';
 import { Badge, type BadgeVariant } from '../../../../ui/Badge';
 import { useDashboardPluginContext } from '../DashboardPluginContext';
@@ -87,64 +89,139 @@ function formatStatus(status: string): string {
     .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
+/**
+ * Task row with table-style layout matching ContactsPage patterns
+ */
 function TaskRow({ task, onNavigate }: TaskRowProps): JSX.Element {
   const overdueFlag = isOverdue(task.dueDate);
 
   return (
-    <button
+    <tr
       onClick={() => onNavigate(`/projects/${task.projectId}`)}
-      className="w-full text-left p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-all group"
+      className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors group border-b border-neutral-200 dark:border-neutral-700 last:border-b-0"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-neutral-900 dark:text-neutral-100 truncate group-hover:text-primary-700 dark:group-hover:text-primary-400 mb-1">
-            {task.title}
-          </h4>
-          {task.projectName && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mb-2">
-              {task.projectName}
-            </p>
-          )}
-          <div className="flex items-center gap-2">
-            <Badge variant={statusColors[task.status] ?? 'neutral'} size="sm">
-              {formatStatus(task.status)}
-            </Badge>
-            {task.priority && (
-              <Badge
-                variant={priorityColors[task.priority] ?? 'neutral'}
-                size="sm"
-              >
-                {priorityLabels[task.priority] ?? task.priority}
-              </Badge>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/50">
+            <ListTodo className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
+              {task.title}
+            </div>
+            {task.projectName && (
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                {task.projectName}
+              </div>
             )}
           </div>
         </div>
-        <div className="flex-shrink-0 text-right">
+      </td>
+      <td className="px-4 py-3 hidden sm:table-cell">
+        <div className="flex items-center gap-2">
+          <Badge variant={statusColors[task.status] ?? 'neutral'} size="sm">
+            {formatStatus(task.status)}
+          </Badge>
+          {task.priority && (
+            <Badge
+              variant={priorityColors[task.priority] ?? 'neutral'}
+              size="sm"
+            >
+              {priorityLabels[task.priority] ?? task.priority}
+            </Badge>
+          )}
+        </div>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="flex flex-col items-end">
           <div
-            className={`text-sm font-medium ${overdueFlag ? 'text-danger-600 dark:text-danger-400' : 'text-neutral-600 dark:text-neutral-300'}`}
+            className={`text-sm font-medium flex items-center gap-1 ${
+              overdueFlag
+                ? 'text-rose-600 dark:text-rose-400'
+                : 'text-neutral-600 dark:text-neutral-300'
+            }`}
           >
+            <Calendar className="h-3.5 w-3.5" />
             {formatDate(task.dueDate)}
           </div>
           {overdueFlag && (
-            <span className="text-xs text-danger-600 dark:text-danger-400 font-medium">
+            <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">
               Overdue
             </span>
           )}
         </div>
-      </div>
-    </button>
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * Skeleton loader for task table rows
+ */
+function TaskRowSkeleton(): JSX.Element {
+  return (
+    <tr className="border-b border-neutral-200 dark:border-neutral-700">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-neutral-200 dark:bg-neutral-700 animate-pulse" />
+          <div className="flex-1">
+            <div className="h-4 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-1.5" />
+            <div className="h-3 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 hidden sm:table-cell">
+        <div className="h-5 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="h-4 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse ml-auto" />
+      </td>
+    </tr>
   );
 }
 
 function TaskListSkeleton(): JSX.Element {
   return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="h-16 bg-neutral-100 dark:bg-neutral-800 animate-pulse rounded-lg"
-        />
-      ))}
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
+          <tr>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+              Task
+            </th>
+            <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden sm:table-cell">
+              Status
+            </th>
+            <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+              Due
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <TaskRowSkeleton key={i} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Empty state component matching ContactsPage pattern
+ */
+function EmptyState(): JSX.Element {
+  return (
+    <div className="flex flex-col items-center text-center py-8">
+      <div className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/50 mb-4">
+        <CheckCircle2 className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+      </div>
+      <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">
+        All caught up!
+      </h3>
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        No upcoming tasks with due dates
+      </p>
     </div>
   );
 }
@@ -156,47 +233,64 @@ function UpcomingTasksPanelComponent(): JSX.Element {
   const isLoading = tasksData?.isLoading ?? false;
 
   return (
-    <Card className="h-full">
-      <CardBody className="h-full flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle>Upcoming Tasks</CardTitle>
+    <Card className="h-full overflow-hidden">
+      <CardBody className="p-0 h-full flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
+            <CardTitle className="text-base">Upcoming Tasks</CardTitle>
+          </div>
           <Link
             to="/tasks"
             className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
           >
-            View all →
+            View all
           </Link>
         </div>
 
-        {isLoading ? (
-          <TaskListSkeleton />
-        ) : upcomingTasks.length === 0 ? (
-          <div className="text-center py-8 flex-1 flex flex-col justify-center">
-            <svg
-              className="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-500 mb-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-neutral-600 dark:text-neutral-300 font-medium mb-1">
-              All caught up!
-            </p>
+        {/* Content */}
+        <div className="flex-1 overflow-auto">
+          {isLoading ? (
+            <TaskListSkeleton />
+          ) : upcomingTasks.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                      Task
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider hidden sm:table-cell">
+                      Status
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                      Due
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {upcomingTasks.map((task) => (
+                    <TaskRow key={task.id} task={task} onNavigate={navigate} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Footer with count */}
+        {!isLoading && upcomingTasks.length > 0 && (
+          <div className="px-4 py-2.5 bg-neutral-50 dark:bg-neutral-800/30 border-t border-neutral-200 dark:border-neutral-700">
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              No upcoming tasks with due dates
+              Showing{' '}
+              <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                {upcomingTasks.length}
+              </span>{' '}
+              task{upcomingTasks.length !== 1 ? 's' : ''}
             </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {upcomingTasks.map((task) => (
-              <TaskRow key={task.id} task={task} onNavigate={navigate} />
-            ))}
           </div>
         )}
       </CardBody>

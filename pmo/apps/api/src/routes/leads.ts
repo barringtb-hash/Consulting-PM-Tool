@@ -228,7 +228,20 @@ router.post('/:id/convert', async (req: AuthenticatedRequest, res) => {
     log.error('Convert lead error', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to convert lead';
-    res.status(500).json({ error: errorMessage });
+
+    // Return appropriate status codes based on error type
+    if (errorMessage === 'Lead not found') {
+      res.status(404).json({ error: errorMessage });
+    } else if (errorMessage === 'Lead already converted') {
+      res.status(409).json({ error: errorMessage });
+    } else if (
+      errorMessage.includes('owner not specified') ||
+      errorMessage.includes('not specified')
+    ) {
+      res.status(400).json({ error: errorMessage });
+    } else {
+      res.status(500).json({ error: errorMessage });
+    }
   }
 });
 

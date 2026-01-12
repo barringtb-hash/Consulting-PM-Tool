@@ -23,8 +23,9 @@
  * @module index
  */
 
-import { createApp } from './app';
+// IMPORTANT: env must be imported FIRST to load dotenv before any database clients
 import { env } from './config/env';
+import { createApp } from './app';
 
 // Handle uncaught exceptions - exit immediately as state may be corrupted
 process.on('uncaughtException', (error: Error) => {

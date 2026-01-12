@@ -514,15 +514,16 @@ model Project {
   projectDocuments ProjectDocument[]
 
   // AI Projects Module
-  chatConversations     ChatConversation[]      // Project Assistant conversations
-  healthPredictions     ProjectHealthPrediction[]
-  scopeBaselines        ProjectScopeBaseline[]
-  scopeChangeAlerts     ScopeChangeAlert[]
-  budgetForecasts       ProjectBudgetForecast[]
-  digestConfigs         ProjectDigestConfig[]
-  smartReminders        SmartReminder[]         @relation("ProjectReminders")
-  projectRisks          ProjectRisk[]
-  projectLessons        ProjectLesson[]
+  chatConversations ChatConversation[] // Project Assistant conversations
+  healthPredictions ProjectHealthPrediction[]
+  mlPredictions     ProjectMLPrediction[] // Project ML predictions (success, risk, timeline, resource)
+  scopeBaselines    ProjectScopeBaseline[]
+  scopeChangeAlerts ScopeChangeAlert[]
+  budgetForecasts   ProjectBudgetForecast[]
+  digestConfigs     ProjectDigestConfig[]
+  smartReminders    SmartReminder[]           @relation("ProjectReminders")
+  projectRisks      ProjectRisk[]
+  projectLessons    ProjectLesson[]
 
   @@index([status])
   @@index([renewalDate])
@@ -607,10 +608,10 @@ model Task {
   updatedAt       DateTime   @updatedAt
 
   // AI Projects Module - Time tracking for AI estimation
-  estimatedHours     Float?    // User-provided estimate
-  actualHours        Float?    // Tracked actual time
-  aiEstimatedHours   Float?    // AI-suggested estimate
-  aiEstimateAccepted Boolean?  // Did user accept AI estimate?
+  estimatedHours     Float? // User-provided estimate
+  actualHours        Float? // Tracked actual time
+  aiEstimatedHours   Float? // AI-suggested estimate
+  aiEstimateAccepted Boolean? // Did user accept AI estimate?
 
   // AI Projects Module - Scheduling
   scheduledStartDate DateTime?
@@ -968,14 +969,14 @@ enum IntentType {
   ESCALATION
   UNKNOWN
   // Project Management Intents (AI Projects Module)
-  PROJECT_STATUS    // "How's Project Alpha doing?"
-  PROJECT_CREATE    // "Create a new project"
-  TASK_STATUS       // "What tasks are overdue?"
-  TASK_CREATE       // "Add a task to..."
-  MILESTONE_STATUS  // "When is the next milestone?"
-  TEAM_QUERY        // "Who's working on...?"
-  SCHEDULE_QUERY    // "What's due this week?"
-  REPORT_REQUEST    // "Generate a status report"
+  PROJECT_STATUS // "How's Project Alpha doing?"
+  PROJECT_CREATE // "Create a new project"
+  TASK_STATUS // "What tasks are overdue?"
+  TASK_CREATE // "Add a task to..."
+  MILESTONE_STATUS // "When is the next milestone?"
+  TEAM_QUERY // "Who's working on...?"
+  SCHEDULE_QUERY // "What's due this week?"
+  REPORT_REQUEST // "Generate a status report"
 }
 
 /**
@@ -1159,9 +1160,9 @@ model ChatConversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  chatbotConfig ChatbotConfig    @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
+  chatbotConfig ChatbotConfig @relation(fields: [chatbotConfigId], references: [id], onDelete: Cascade)
   messages      ChatMessage[]
-  project       Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([chatbotConfigId, status])
   @@index([customerEmail])
@@ -3831,6 +3832,8 @@ model LeadScoringConfig {
   scoredLeads      ScoredLead[]
   nurtureSequences NurtureSequence[]
   leadActivities   LeadActivity[]
+  trainingData     LeadTrainingData[]
+  mlModels         LeadMLModel[]
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
@@ -3897,6 +3900,7 @@ model ScoredLead {
   config              LeadScoringConfig   @relation(fields: [configId], references: [id], onDelete: Cascade)
   activities          LeadActivity[]
   sequenceEnrollments NurtureEnrollment[]
+  mlPredictions       LeadMLPrediction[]
 
   @@unique([configId, email])
   @@index([configId, scoreLevel])
@@ -6192,6 +6196,35 @@ enum SuccessPlanStatus {
   CANCELLED
 }
 
+/**
+ * ML Prediction Type - Types of ML predictions for Customer Success
+ */
+enum MLPredictionType {
+  CHURN // Predicts likelihood of account churning
+  HEALTH_TREND // Predicts health score trajectory
+  EXPANSION // Predicts expansion/upsell opportunities
+  ENGAGEMENT_DECLINE // Predicts engagement drops
+}
+
+/**
+ * ML Prediction Status - Lifecycle of predictions
+ */
+enum MLPredictionStatus {
+  ACTIVE // Current prediction within validity window
+  EXPIRED // Past validity window, awaiting validation
+  VALIDATED // Compared against actual outcome
+}
+
+/**
+ * Project ML Prediction Type - Types of ML predictions for Project Management
+ */
+enum ProjectMLPredictionType {
+  SUCCESS_PREDICTION // Predicts likelihood of on-time/budget completion
+  RISK_FORECAST // Predicts potential risks and delays
+  TIMELINE_PREDICTION // Predicts realistic completion dates
+  RESOURCE_OPTIMIZATION // Suggests task assignments and workload balancing
+}
+
 enum ObjectiveStatus {
   NOT_STARTED
   IN_PROGRESS
@@ -6340,7 +6373,7 @@ model AccountHealthScoreHistory {
   // Trend tracking
   previousScore   Int?
   scoreTrend      String? // UP, DOWN, STABLE
-  trendPercentage Float?  // Percentage change from previous
+  trendPercentage Float? // Percentage change from previous
 
   // Risk indicators
   churnRisk          Float? // 0-1 probability score
@@ -6367,8 +6400,8 @@ model AccountHealthScoreHistory {
 model SuccessPlan {
   id        Int     @id @default(autoincrement())
   tenantId  String? // Multi-tenant support
-  clientId  Int?    // Legacy - use accountId for new plans
-  accountId Int?    // Primary reference for Account-based plans
+  clientId  Int? // Legacy - use accountId for new plans
+  accountId Int? // Primary reference for Account-based plans
   projectId Int?
   ownerId   Int
 
@@ -6474,8 +6507,8 @@ model SuccessTask {
 model CTA {
   id        Int     @id @default(autoincrement())
   tenantId  String? // Multi-tenant support
-  clientId  Int?    // Legacy - use accountId for new CTAs
-  accountId Int?    // Primary reference for Account-based CTAs
+  clientId  Int? // Legacy - use accountId for new CTAs
+  accountId Int? // Primary reference for Account-based CTAs
   projectId Int?
   ownerId   Int
 
@@ -6519,6 +6552,9 @@ model CTA {
   playbook Playbook? @relation(fields: [playbookId], references: [id], onDelete: SetNull)
   ctaTasks CTATask[]
 
+  // ML Prediction that generated this CTA (one-to-one back relation)
+  generatedFromPrediction AccountMLPrediction? @relation("CTAPrediction")
+
   @@index([tenantId])
   @@index([clientId, status])
   @@index([accountId, status])
@@ -6551,6 +6587,57 @@ model CTATask {
   owner User? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([ctaId, status])
+}
+
+/**
+ * AccountMLPrediction - ML-powered predictions for Customer Success
+ * Stores churn predictions, health insights, and expansion opportunities
+ * with LLM-generated explanations and recommendations
+ */
+model AccountMLPrediction {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  accountId Int
+
+  predictionType MLPredictionType
+  status         MLPredictionStatus @default(ACTIVE)
+
+  // Core prediction data
+  probability      Float // 0-1 prediction score
+  confidence       Float // 0-1 model confidence
+  predictionWindow Int // Days until predicted event
+
+  // Explanation & reasoning (from LLM)
+  riskFactors     Json // Array of contributing factors with impact/trend
+  explanation     String? @db.Text // LLM-generated human-readable explanation
+  recommendations Json? // Array of suggested actions
+
+  // Validation tracking
+  predictedAt   DateTime  @default(now())
+  validUntil    DateTime // When prediction expires
+  actualOutcome Boolean? // Did the predicted event occur?
+  validatedAt   DateTime? // When outcome was validated
+  wasAccurate   Boolean? // Was prediction correct?
+
+  // LLM usage tracking
+  llmModel      String? // Model used (e.g., gpt-4o-mini)
+  llmTokensUsed Int? // Total tokens consumed
+  llmCost       Float? // Estimated cost in USD
+
+  // Generated CTA reference (one-to-one)
+  generatedCtaId Int? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant       Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  account      Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  generatedCta CTA?    @relation("CTAPrediction", fields: [generatedCtaId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, predictionType])
+  @@index([accountId, predictionType, status])
+  @@index([validUntil, status])
+  @@index([predictedAt])
 }
 
 /**
@@ -7091,11 +7178,12 @@ model Tenant {
   aiUsageSummaries AIUsageSummary[]
 
   // Customer Success relations
-  customerHealthScores     CustomerHealthScore[]     // Legacy - linked to Client
+  customerHealthScores      CustomerHealthScore[] // Legacy - linked to Client
   accountHealthScoreHistory AccountHealthScoreHistory[] // New - linked to Account
-  successPlans             SuccessPlan[]
-  ctas                     CTA[]
-  playbooks                Playbook[]
+  successPlans              SuccessPlan[]
+  ctas                      CTA[]
+  playbooks                 Playbook[]
+  mlPredictions             AccountMLPrediction[] // ML-powered predictions
 
   // Bug Tracking relations
   issues             Issue[]
@@ -7107,18 +7195,24 @@ model Tenant {
   projectDocuments ProjectDocument[]
 
   // AI Projects Module relations
-  taskDurationLearning  TaskDurationLearning[]
-  teamAvailability      TeamAvailability[]
-  healthPredictions     ProjectHealthPrediction[]
-  scopeBaselines        ProjectScopeBaseline[]
-  scopeChangeAlerts     ScopeChangeAlert[]
-  budgetForecasts       ProjectBudgetForecast[]
-  projectRisks          ProjectRisk[]
-  digestConfigs         ProjectDigestConfig[]
-  smartReminders        SmartReminder[]
-  performanceMetrics    TeamPerformanceMetrics[]
-  engagementScores      ClientEngagementScore[]
-  projectLessons        ProjectLesson[]
+  taskDurationLearning   TaskDurationLearning[]
+  teamAvailability       TeamAvailability[]
+  healthPredictions      ProjectHealthPrediction[]
+  projectMLPredictions   ProjectMLPrediction[] // Project ML predictions
+  scopeBaselines       ProjectScopeBaseline[]
+  scopeChangeAlerts    ScopeChangeAlert[]
+  budgetForecasts      ProjectBudgetForecast[]
+  projectRisks         ProjectRisk[]
+  digestConfigs        ProjectDigestConfig[]
+  smartReminders       SmartReminder[]
+  performanceMetrics   TeamPerformanceMetrics[]
+  engagementScores     ClientEngagementScore[]
+  projectLessons       ProjectLesson[]
+
+  // Lead ML relations
+  leadTrainingData     LeadTrainingData[]
+  leadMLModels         LeadMLModel[]
+  leadMLPredictions    LeadMLPrediction[]
 
   @@index([slug])
   @@index([status])
@@ -7269,10 +7363,10 @@ model Account {
   meetings          Meeting[]
 
   // AI Tool configurations (replaces legacy Client relations)
-  chatbotConfig              ChatbotConfig?
-  documentAnalyzerConfig     DocumentAnalyzerConfig?
-  productDescriptionConfig   ProductDescriptionConfig?
-  intakeConfig               IntakeConfig?
+  chatbotConfig               ChatbotConfig?
+  documentAnalyzerConfig      DocumentAnalyzerConfig?
+  productDescriptionConfig    ProductDescriptionConfig?
+  intakeConfig                IntakeConfig?
   // Phase 3 AI Tools
   inventoryForecastConfig     InventoryForecastConfig?
   complianceMonitorConfig     ComplianceMonitorConfig?
@@ -7295,12 +7389,13 @@ model Account {
   issues Issue[]
 
   // Customer Success relations (merged from legacy Customer Success module)
-  ctas                     CTA[]
-  successPlans             SuccessPlan[]
-  healthScoreHistory       AccountHealthScoreHistory[]
+  ctas               CTA[]
+  successPlans       SuccessPlan[]
+  healthScoreHistory AccountHealthScoreHistory[]
+  mlPredictions      AccountMLPrediction[]
 
   // AI Projects Module relations
-  engagementScores         ClientEngagementScore[]
+  engagementScores ClientEngagementScore[]
 
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
@@ -8858,25 +8953,25 @@ model BugTrackingApiKey {
  */
 enum ProjectDocumentType {
   // Core Project Documents
-  PROJECT_PLAN          // Scope, schedule, milestones, deliverables
-  STATUS_REPORT         // Progress with RAG status, accomplishments, risks
-  RISK_REGISTER         // Likelihood, impact scoring, mitigation strategies
-  ISSUE_LOG             // Problem tracking, severity, resolution
-  MEETING_NOTES         // Decisions, action items, parking lot
-  LESSONS_LEARNED       // Post-project insights and recommendations
-  COMMUNICATION_PLAN    // Stakeholders, channels, cadence, escalation
+  PROJECT_PLAN // Scope, schedule, milestones, deliverables
+  STATUS_REPORT // Progress with RAG status, accomplishments, risks
+  RISK_REGISTER // Likelihood, impact scoring, mitigation strategies
+  ISSUE_LOG // Problem tracking, severity, resolution
+  MEETING_NOTES // Decisions, action items, parking lot
+  LESSONS_LEARNED // Post-project insights and recommendations
+  COMMUNICATION_PLAN // Stakeholders, channels, cadence, escalation
 
   // Lifecycle Documents
-  KICKOFF_AGENDA        // Project alignment meeting structure
-  CHANGE_REQUEST        // Scope change with impact analysis
-  PROJECT_CLOSURE       // Handoff checklist and transition
-  KNOWLEDGE_TRANSFER    // System documentation for handoff
+  KICKOFF_AGENDA // Project alignment meeting structure
+  CHANGE_REQUEST // Scope change with impact analysis
+  PROJECT_CLOSURE // Handoff checklist and transition
+  KNOWLEDGE_TRANSFER // System documentation for handoff
 
   // AI Project-Specific Documents
-  AI_FEASIBILITY        // Problem, data, technical, org, financial assessment
-  AI_LIMITATIONS        // Capabilities, failure modes, edge cases
+  AI_FEASIBILITY // Problem, data, technical, org, financial assessment
+  AI_LIMITATIONS // Capabilities, failure modes, edge cases
   MONITORING_MAINTENANCE // Drift detection, retraining, incident response
-  DATA_REQUIREMENTS     // Client data specifications
+  DATA_REQUIREMENTS // Client data specifications
   DELIVERABLE_CHECKLIST // Quality gates before client delivery
 }
 
@@ -8894,9 +8989,9 @@ enum ProjectDocumentStatus {
  * ProjectDocumentCategory - Categories for grouping templates
  */
 enum ProjectDocumentCategory {
-  CORE            // Essential project management documents
-  LIFECYCLE       // Project phase-specific documents
-  AI_SPECIFIC     // AI/ML project documentation
+  CORE // Essential project management documents
+  LIFECYCLE // Project phase-specific documents
+  AI_SPECIFIC // AI/ML project documentation
 }
 
 /**
@@ -8904,16 +8999,16 @@ enum ProjectDocumentCategory {
  * Each document is an instance of a template filled in for a specific project
  */
 model ProjectDocument {
-  id        Int                     @id @default(autoincrement())
+  id        Int    @id @default(autoincrement())
   tenantId  String
   projectId Int
 
   // Document metadata
   templateType ProjectDocumentType
   category     ProjectDocumentCategory
-  name         String                     // User-customizable name
-  description  String?                    // Optional description
-  status       ProjectDocumentStatus      @default(DRAFT)
+  name         String // User-customizable name
+  description  String? // Optional description
+  status       ProjectDocumentStatus   @default(DRAFT)
 
   // Content stored as structured JSON based on templateType
   content Json @db.JsonB
@@ -8949,11 +9044,11 @@ model ProjectDocumentVersion {
   documentId Int
 
   version   Int
-  content   Json     @db.JsonB
+  content   Json                  @db.JsonB
   status    ProjectDocumentStatus
   editedBy  Int?
   editedAt  DateTime
-  changeLog String?  // Optional description of changes
+  changeLog String? // Optional description of changes
 
   createdAt DateTime @default(now())
 
@@ -8974,8 +9069,8 @@ model ProjectDocumentVersion {
  */
 model TaskDependency {
   id              Int            @id @default(autoincrement())
-  dependentTaskId Int            // Task that depends on another
-  blockingTaskId  Int            // Task that blocks another
+  dependentTaskId Int // Task that depends on another
+  blockingTaskId  Int // Task that blocks another
   dependencyType  DependencyType @default(FINISH_TO_START)
 
   dependentTask Task @relation("DependentTask", fields: [dependentTaskId], references: [id], onDelete: Cascade)
@@ -8988,8 +9083,8 @@ model TaskDependency {
 }
 
 enum DependencyType {
-  FINISH_TO_START  // B can't start until A finishes
-  START_TO_START   // B can't start until A starts
+  FINISH_TO_START // B can't start until A finishes
+  START_TO_START // B can't start until A starts
   FINISH_TO_FINISH // B can't finish until A finishes
 }
 
@@ -8998,14 +9093,14 @@ enum DependencyType {
  * Stores task outcomes to improve future estimates
  */
 model TaskDurationLearning {
-  id       Int     @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   tenantId String
 
   // Task characteristics
-  taskType   String? // Derived from title/description
-  complexity String? // low/medium/high
+  taskType    String? // Derived from title/description
+  complexity  String? // low/medium/high
   hasSubtasks Boolean
-  teamSize   Int
+  teamSize    Int
 
   // Outcomes
   estimatedHours Float
@@ -9028,7 +9123,7 @@ model TeamAvailability {
   userId   Int
 
   date           DateTime @db.Date
-  availableHours Float    // Hours available this day
+  availableHours Float // Hours available this day
   allocatedHours Float    @default(0) // Hours already allocated
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -9065,6 +9160,64 @@ model ProjectHealthPrediction {
 
   @@index([projectId, predictedDate])
   @@index([tenantId])
+}
+
+/**
+ * ProjectMLPrediction - ML-powered predictions for Project Management
+ * Stores success predictions, risk forecasts, timeline predictions,
+ * and resource optimization recommendations following customer-success-ml patterns.
+ */
+model ProjectMLPrediction {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  predictionType ProjectMLPredictionType
+  status         MLPredictionStatus      @default(ACTIVE)
+
+  // Core prediction data
+  probability      Float // 0-1 primary prediction score
+  confidence       Float // 0-1 model confidence
+  predictionWindow Int // Days in prediction window
+
+  // Explanation & reasoning
+  riskFactors     Json    @db.JsonB // Array of contributing factors with impact/trend
+  explanation     String? @db.Text // LLM-generated explanation
+  recommendations Json?   @db.JsonB // Array of suggested actions
+
+  // Timeline prediction specific fields
+  predictedEndDate DateTime? // For timeline predictions
+  originalEndDate  DateTime? // Original planned end date
+  daysVariance     Int? // Predicted days early/late (negative = early)
+
+  // Resource optimization specific fields
+  resourceRecommendations Json? @db.JsonB // Task reassignment suggestions
+  workloadAnalysis        Json? @db.JsonB // Team workload balance data
+
+  // Validation tracking
+  predictedAt   DateTime  @default(now())
+  validUntil    DateTime
+  actualOutcome Boolean? // True = successful outcome
+  validatedAt   DateTime?
+  wasAccurate   Boolean? // Whether prediction matched outcome
+
+  // LLM usage tracking (for cost monitoring)
+  llmModel      String?
+  llmTokensUsed Int?
+  llmCost       Float?
+
+  // Optional link to generated task (for actionable recommendations)
+  generatedTaskId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, predictionType, status])
+  @@index([tenantId, predictionType])
+  @@index([validUntil, status])
 }
 
 /**
@@ -9118,7 +9271,7 @@ model ProjectScopeBaseline {
   baselineDate           DateTime
   originalTaskCount      Int
   originalMilestoneCount Int
-  originalScope          Json @db.JsonB // { goals, deliverables, exclusions }
+  originalScope          Json     @db.JsonB // { goals, deliverables, exclusions }
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -9141,7 +9294,7 @@ model ScopeChangeAlert {
   changeType    ScopeChangeType
   severity      ScopeSeverity
   description   String
-  affectedItems Json @db.JsonB // { tasks: [], milestones: [] }
+  affectedItems Json            @db.JsonB // { tasks: [], milestones: [] }
 
   // AI Analysis
   impactAnalysis String?
@@ -9153,9 +9306,9 @@ model ScopeChangeAlert {
 
   createdAt DateTime @default(now())
 
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  acknowledger User?  @relation("ScopeAlertAcknowledger", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
+  tenant       Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  acknowledger User?   @relation("ScopeAlertAcknowledger", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
 
   @@index([projectId, status])
   @@index([tenantId])
@@ -9201,8 +9354,8 @@ model ProjectBudgetForecast {
 
   // AI Analysis
   riskLevel       BudgetRiskLevel
-  recommendations Json @db.JsonB // Array of suggested actions
-  factors         Json @db.JsonB // Contributing factors to forecast
+  recommendations Json            @db.JsonB // Array of suggested actions
+  factors         Json            @db.JsonB // Contributing factors to forecast
 
   createdAt DateTime @default(now())
 
@@ -9247,9 +9400,9 @@ model ProjectRisk {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  resolver User?    @relation("RiskResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  resolver User?   @relation("RiskResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
 
   @@index([projectId, status])
   @@index([tenantId])
@@ -9340,8 +9493,8 @@ enum DigestFrequency {
 
 enum DigestDetailLevel {
   EXECUTIVE // 2-3 sentences + key metrics
-  STANDARD  // Full summary + metrics + highlights
-  DETAILED  // Everything including task lists
+  STANDARD // Full summary + metrics + highlights
+  DETAILED // Everything including task lists
 }
 
 /**
@@ -9457,7 +9610,7 @@ model ClientEngagementScore {
 
   // Scores (0-100)
   overallScore    Float
-  componentScores Json @db.JsonB // { meetingAttendance, responseTime, feedbackFrequency, ... }
+  componentScores Json  @db.JsonB // { meetingAttendance, responseTime, feedbackFrequency, ... }
   trend           Float // Change from previous score
 
   // AI interpretation
@@ -9470,4 +9623,146 @@ model ClientEngagementScore {
 
   @@index([accountId, calculatedAt])
   @@index([tenantId])
+}
+
+// ============================================================================
+// LEAD ML - Machine Learning for Lead Scoring & Conversion Prediction
+// ============================================================================
+
+enum LeadPredictionType {
+  CONVERSION
+  TIME_TO_CLOSE
+  SCORE
+  PRIORITY
+}
+
+enum LeadPredictionStatus {
+  ACTIVE
+  EXPIRED
+  VALIDATED
+  INVALIDATED
+}
+
+/**
+ * LeadTrainingData - Historical lead data snapshots for ML training
+ */
+model LeadTrainingData {
+  id        Int      @id @default(autoincrement())
+  tenantId  String?
+  configId  Int
+
+  // Snapshot of features at time of scoring
+  features Json // { demographic: {...}, behavioral: {...}, temporal: {...}, engagement: {...} }
+
+  // Outcome labels
+  didConvert    Boolean
+  daysToConvert Int?
+  actualValue   Decimal? @db.Decimal(12, 2)
+
+  // Scoring at snapshot time
+  predictedScore Int
+  predictedProb  Float
+
+  // Metadata
+  snapshotDate   DateTime
+  conversionDate DateTime?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  config LeadScoringConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, configId])
+  @@index([snapshotDate])
+  @@index([didConvert])
+}
+
+/**
+ * LeadMLModel - Trained model metadata and performance metrics
+ */
+model LeadMLModel {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+  configId Int
+
+  modelVersion String // e.g., "v1.0.0"
+  modelType    String // "conversion", "time_to_close", "scoring", "priority"
+
+  // Model configuration
+  hyperparameters Json // { temperature, threshold, weights, llmModel }
+
+  // Training metadata
+  trainingDataCount Int
+  trainedAt         DateTime
+  trainingDuration  Int // seconds
+
+  // Performance metrics
+  accuracy  Float?
+  precision Float?
+  recall    Float?
+  f1Score   Float?
+  auc       Float?
+
+  // Feature weights for interpretability
+  featureWeights Json // { feature: weight }
+
+  // Status
+  isActive   Boolean   @default(false)
+  validUntil DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  config      LeadScoringConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+  predictions LeadMLPrediction[]
+
+  @@unique([configId, modelType, isActive])
+  @@index([tenantId, configId])
+  @@index([isActive])
+}
+
+/**
+ * LeadMLPrediction - Individual ML prediction records for audit and validation
+ */
+model LeadMLPrediction {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+  leadId   Int
+  modelId  Int?
+
+  predictionType LeadPredictionType
+
+  // Prediction outputs
+  probability    Float
+  confidence     Float
+  predictedValue Decimal? @db.Decimal(12, 2)
+  predictedDays  Int?
+
+  // Explanation (SHAP-like factors)
+  riskFactors     Json    // [{ factor, impact, currentValue, trend, description }]
+  explanation     String?
+  recommendations Json? // [{ action, priority, rationale }]
+
+  // LLM metadata (for tracking costs and debugging)
+  llmModel      String?
+  llmTokensUsed Int?
+  llmLatencyMs  Int?
+  llmCost       Decimal? @db.Decimal(8, 6)
+
+  // Validation tracking
+  status      LeadPredictionStatus @default(ACTIVE)
+  wasAccurate Boolean?
+  validatedAt DateTime?
+  validUntil  DateTime
+
+  predictedAt DateTime @default(now())
+
+  tenant Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead   ScoredLead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  model  LeadMLModel? @relation(fields: [modelId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, leadId])
+  @@index([predictionType, status])
+  @@index([validUntil])
 }

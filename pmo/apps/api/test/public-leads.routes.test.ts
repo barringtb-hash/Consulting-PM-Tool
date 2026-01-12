@@ -64,7 +64,7 @@ describe('public leads routes', () => {
           name: 'John Doe',
           email: testEmail,
           tenantSlug: testTenantSlug,
-          company: 'Acme Corp',
+          company: 'Test Company',
           message: 'Interested in your AI services',
           source: 'WEBSITE_CONTACT',
         });
@@ -85,7 +85,7 @@ describe('public leads routes', () => {
       expect(lead).not.toBeNull();
       expect(lead?.name).toBe('John Doe');
       expect(lead?.email).toBe(testEmail);
-      expect(lead?.company).toBe('Acme Corp');
+      expect(lead?.company).toBe('Test Company');
       expect(lead?.status).toBe('NEW');
       expect(lead?.tenantId).toBe(testTenantId);
     });

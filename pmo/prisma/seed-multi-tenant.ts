@@ -106,7 +106,7 @@ interface TenantConfig {
 const TENANTS: TenantConfig[] = [
   {
     slug: 'default',
-    name: 'Elipse Consulting',
+    name: 'Verdant Horizon Solutions',
     plan: 'PROFESSIONAL',
     users: [
       {

@@ -9,7 +9,7 @@
  * 2. CONTACTED → First outreach made
  * 3. QUALIFIED → Meets qualification criteria
  * 4. CONVERTED → Converted to Account + Opportunity (and optionally Project)
- * 5. REJECTED → Not a fit / spam / duplicate
+ * 5. DISQUALIFIED → Not a fit / spam / duplicate
  *
  * Conversion Workflow (convertLead):
  * The convertLead function transforms a qualified lead into CRM entities:
@@ -299,32 +299,35 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
   // Get tenant context for multi-tenant filtering
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
-  const lead = await prisma.inboundLead.findFirst({
-    where: { id, tenantId },
-    include: { client: true, primaryContact: true },
-  });
-
-  if (!lead) {
-    throw new Error('Lead not found');
-  }
-
-  if (lead.status === LeadStatus.CONVERTED) {
-    throw new Error('Lead already converted');
-  }
-
   return prisma.$transaction(async (tx) => {
+    // Fetch and check lead inside transaction to prevent race conditions
+    // Multiple concurrent requests could otherwise both pass the status check
+    const lead = await tx.inboundLead.findFirst({
+      where: { id, tenantId },
+      include: { client: true, primaryContact: true },
+    });
+
+    if (!lead) {
+      throw new Error('Lead not found');
+    }
+
+    if (lead.status === LeadStatus.CONVERTED) {
+      throw new Error('Lead already converted');
+    }
+
     // Legacy: clientId still tracked for backward compatibility with existing projects
     const clientId = conversion.clientId || lead.clientId;
     let contactId = lead.primaryContactId;
     let projectId: number | undefined;
     let opportunityId: number | undefined;
     let accountId: number | undefined;
+    let crmContactId: number | undefined;
 
     // Note: Client creation removed - Accounts are now the primary entity
     // Legacy createClient flag is ignored; use Accounts instead
 
-    // Create contact if requested and we have a legacy client
-    // TODO: Migrate to CRMContact creation linked to Account
+    // Create legacy contact if requested and we have a legacy client
+    // Note: CRMContact is now created below when Account is created
     if (conversion.createContact && clientId && !contactId) {
       const contact = await tx.contact.create({
         data: {
@@ -389,6 +392,55 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
         });
       }
       accountId = account.id;
+
+      // Create CRMContact linked to Account (primary contact from lead)
+      if (lead.email) {
+        // Check if a CRMContact already exists for this email in this tenant
+        const existingCrmContact = await tx.cRMContact.findUnique({
+          where: {
+            tenantId_email: {
+              tenantId,
+              email: lead.email,
+            },
+          },
+        });
+
+        if (!existingCrmContact) {
+          // Parse name into firstName/lastName
+          const nameParts = (lead.name || '').trim().split(/\s+/);
+          const firstName = nameParts[0] || lead.email.split('@')[0];
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          const crmContact = await tx.cRMContact.create({
+            data: {
+              tenantId,
+              accountId: account.id,
+              firstName,
+              lastName,
+              email: lead.email,
+              jobTitle: conversion.contactRole || null,
+              lifecycle: 'CUSTOMER',
+              leadSource: lead.source ? LEAD_SOURCE_TO_CRM[lead.source] : null,
+              isPrimary: true,
+              ownerId: opportunityOwnerId,
+              customFields: {
+                createdFrom: 'lead-conversion',
+                leadId: id,
+              },
+            },
+          });
+          crmContactId = crmContact.id;
+        } else {
+          crmContactId = existingCrmContact.id;
+          if (!existingCrmContact.accountId) {
+            // Link existing contact to this account if not already linked
+            await tx.cRMContact.update({
+              where: { id: existingCrmContact.id },
+              data: { accountId: account.id },
+            });
+          }
+        }
+      }
 
       // Get or create default pipeline with stages
       let pipeline = await tx.pipeline.findFirst({
@@ -506,6 +558,18 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
           changedById: opportunityOwnerId,
         },
       });
+
+      // Link CRMContact to Opportunity via OpportunityContact junction table
+      if (crmContactId) {
+        await tx.opportunityContact.create({
+          data: {
+            opportunityId: opportunity.id,
+            contactId: crmContactId,
+            isPrimary: true,
+            role: conversion.contactRole || 'Primary Contact',
+          },
+        });
+      }
     }
 
     // Create project for delivery tracking (legacy - requires existing clientId)
@@ -560,6 +624,7 @@ export const convertLead = async (id: number, conversion: LeadConvertInput) => {
       projectId,
       accountId,
       opportunityId,
+      crmContactId,
     };
   });
 };

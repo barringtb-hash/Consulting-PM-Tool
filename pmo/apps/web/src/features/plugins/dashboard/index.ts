@@ -96,5 +96,8 @@ export {
   UpcomingTasksPanelPlugin,
   RecentProjectsPanelPlugin,
   SummaryCard,
+  SummaryCardSkeleton,
+  STAT_STYLES,
   type SummaryCardProps,
+  type StatStyleVariant,
 } from './panels';

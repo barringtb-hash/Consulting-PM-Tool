@@ -91,6 +91,52 @@ const URGENCY_VARIANTS: Record<string, 'neutral' | 'warning' | 'secondary'> = {
   EMERGENT: 'secondary',
 };
 
+// Skeleton loader for stats cards (available for future overview loading states)
+function _StatCardSkeleton(): JSX.Element {
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="h-3 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+            <div className="h-6 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+          <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+// Skeleton loader for table rows
+function TableRowSkeleton(): JSX.Element {
+  return (
+    <tr className="border-b border-neutral-200 dark:border-neutral-700">
+      <td className="px-6 py-4">
+        <div className="h-4 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-8 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+      </td>
+    </tr>
+  );
+}
+
 // API functions
 async function fetchPriorAuthConfigs(): Promise<PriorAuthConfig[]> {
   const res = await fetch(buildApiUrl('/prior-auth/configs'), buildOptions());
@@ -298,10 +344,10 @@ function PriorAuthPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Prior Authorization Bot"
-        subtitle="Automated PA submission, status tracking, and appeals management"
+        description="Automated PA submission, status tracking, and appeals management"
         icon={ShieldCheck}
         actions={
           <div className="flex gap-2">
@@ -475,8 +521,39 @@ function PriorAuthPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               {requestsQuery.isLoading ? (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  Loading requests...
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                    <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Request #
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Patient
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Payer
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Service
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Urgency
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...Array(5)].map((_, i) => (
+                        <TableRowSkeleton key={i} />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : requestsQuery.data?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
@@ -520,7 +597,7 @@ function PriorAuthPage(): JSX.Element {
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {request.patientName}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-400">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-400">
                             {request.payerName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -698,9 +775,9 @@ function PriorAuthPage(): JSX.Element {
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
               Create Prior Auth Configuration
             </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
@@ -741,11 +818,11 @@ function PriorAuthPage(): JSX.Element {
               </Select>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input type="checkbox" name="isHipaaEnabled" defaultChecked />
                   <span className="text-sm">Enable HIPAA Compliance</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="notifyOnSubmission"
@@ -753,7 +830,7 @@ function PriorAuthPage(): JSX.Element {
                   />
                   <span className="text-sm">Notify on Submission</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="notifyOnStatusChange"

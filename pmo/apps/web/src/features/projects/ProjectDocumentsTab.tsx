@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
+  FolderOpen,
 } from 'lucide-react';
 import {
   useProjectDocuments,
@@ -29,7 +30,7 @@ import {
   type ProjectDocumentCategory,
   type ProjectDocumentStatus,
 } from '../../api/hooks/projectDocuments';
-import { Card, CardBody } from '../../ui/Card';
+import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Modal } from '../../ui/Modal';
@@ -38,6 +39,170 @@ import { useToast } from '../../ui/Toast';
 
 interface ProjectDocumentsTabProps {
   projectId: number;
+}
+
+// Style configuration for consistent theming
+const STAT_STYLES = {
+  blue: {
+    iconBg: 'bg-blue-100 dark:bg-blue-900/50',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+  },
+  emerald: {
+    iconBg: 'bg-emerald-100 dark:bg-emerald-900/50',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+  },
+  violet: {
+    iconBg: 'bg-violet-100 dark:bg-violet-900/50',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+  },
+  amber: {
+    iconBg: 'bg-amber-100 dark:bg-amber-900/50',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+  },
+  neutral: {
+    iconBg: 'bg-neutral-100 dark:bg-neutral-800',
+    iconColor: 'text-neutral-600 dark:text-neutral-400',
+  },
+} as const;
+
+type StatStyleVariant = keyof typeof STAT_STYLES;
+
+// Stat card component with icon
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  variant?: StatStyleVariant;
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  variant = 'neutral',
+}: StatCardProps): JSX.Element {
+  const styles = STAT_STYLES[variant];
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex items-center justify-center w-10 h-10 rounded-lg ${styles.iconBg}`}
+        >
+          <div className={styles.iconColor}>{icon}</div>
+        </div>
+        <div>
+          <div className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+            {label}
+          </div>
+          <div className="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+            {value}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// Skeleton loader for stats cards
+function StatCardSkeleton(): JSX.Element {
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-neutral-200 dark:bg-neutral-700 animate-pulse" />
+        <div className="flex-1">
+          <div className="h-3 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+          <div className="h-6 w-12 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// Section header with icon in colored background
+interface SectionHeaderProps {
+  icon: React.ReactNode;
+  title: string;
+  variant?: StatStyleVariant;
+  action?: React.ReactNode;
+}
+
+function SectionHeader({
+  icon,
+  title,
+  variant = 'neutral',
+  action,
+}: SectionHeaderProps): JSX.Element {
+  const styles = STAT_STYLES[variant];
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex items-center justify-center w-10 h-10 rounded-lg ${styles.iconBg}`}
+        >
+          <div className={styles.iconColor}>{icon}</div>
+        </div>
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          {title}
+        </h3>
+      </div>
+      {action && <div>{action}</div>}
+    </div>
+  );
+}
+
+// Empty state component
+interface EmptyStateProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}
+
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: EmptyStateProps): JSX.Element {
+  return (
+    <div className="flex flex-col items-center text-center py-12 px-4">
+      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 mb-4">
+        <div className="text-neutral-400 dark:text-neutral-500">{icon}</div>
+      </div>
+      <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+        {title}
+      </h3>
+      <p className="text-neutral-500 dark:text-neutral-400 max-w-md mb-6">
+        {description}
+      </p>
+      {action}
+    </div>
+  );
+}
+
+// Document grid skeleton
+function DocumentGridSkeleton(): JSX.Element {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="border rounded-lg p-4 dark:border-neutral-700">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-neutral-200 dark:bg-neutral-700 animate-pulse" />
+            <div className="flex-1">
+              <div className="h-5 w-3/4 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse mb-2" />
+              <div className="h-4 w-full bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-3 border-t dark:border-neutral-700">
+            <div className="h-3 w-24 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+            <div className="h-6 w-16 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // Status badge colors
@@ -74,6 +239,13 @@ const categoryLabels: Record<ProjectDocumentCategory, string> = {
   CORE: 'Core Project Documents',
   LIFECYCLE: 'Project Lifecycle',
   AI_SPECIFIC: 'AI Project-Specific',
+};
+
+// Category variants for icons
+const categoryVariants: Record<ProjectDocumentCategory, StatStyleVariant> = {
+  CORE: 'blue',
+  LIFECYCLE: 'emerald',
+  AI_SPECIFIC: 'violet',
 };
 
 // Template Picker Modal
@@ -293,26 +465,35 @@ function DocumentCard({
         </div>
       </Modal>
       <div
-        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer dark:border-neutral-700 dark:hover:bg-neutral-800"
+        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer dark:border-neutral-700 dark:hover:bg-neutral-800/50"
         onClick={() => onView(document.id)}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
         <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary-500" />
-              <h3 className="font-medium text-neutral-900 dark:text-neutral-100">
+          <div className="flex items-start gap-3 flex-1">
+            <div
+              className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${STAT_STYLES[categoryVariants[document.category]].iconBg}`}
+            >
+              <FileText
+                className={`w-5 h-5 ${STAT_STYLES[categoryVariants[document.category]].iconColor}`}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                 {document.name}
               </h3>
+              {document.description && (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
+                  {document.description}
+                </p>
+              )}
             </div>
-            {document.description && (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                {document.description}
-              </p>
-            )}
           </div>
-          <Badge variant={statusColors[document.status]}>
+          <Badge
+            variant={statusColors[document.status]}
+            className="ml-2 flex-shrink-0"
+          >
             <StatusIcon status={document.status} />
             <span className="ml-1">{document.status.replace('_', ' ')}</span>
           </Badge>
@@ -421,26 +602,52 @@ export function ProjectDocumentsTab({ projectId }: ProjectDocumentsTabProps) {
     };
   }, [documentsQuery.data]);
 
+  // Loading state with skeleton
   if (documentsQuery.isLoading) {
     return (
-      <Card>
-        <CardBody>
-          <p className="text-neutral-600 dark:text-neutral-400">
-            Loading documents...
-          </p>
-        </CardBody>
-      </Card>
+      <div className="space-y-6">
+        {/* Stats cards skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
+
+        {/* Documents section skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-neutral-200 dark:bg-neutral-700 animate-pulse" />
+              <div className="h-5 w-32 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
+            </div>
+          </CardHeader>
+          <CardBody>
+            <DocumentGridSkeleton />
+          </CardBody>
+        </Card>
+      </div>
     );
   }
 
+  // Error state
   if (documentsQuery.error) {
     return (
       <Card>
         <CardBody>
-          <div className="flex items-center gap-2 text-danger-600">
-            <AlertCircle className="w-5 h-5" />
-            <p>Unable to load documents</p>
-          </div>
+          <EmptyState
+            icon={<AlertCircle className="h-8 w-8" />}
+            title="Unable to load documents"
+            description="There was a problem loading the documents for this project. Please try again."
+            action={
+              <Button
+                variant="secondary"
+                onClick={() => documentsQuery.refetch()}
+              >
+                Retry
+              </Button>
+            }
+          />
         </CardBody>
       </Card>
     );
@@ -451,122 +658,162 @@ export function ProjectDocumentsTab({ projectId }: ProjectDocumentsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-            Documents
-          </h2>
-          {stats && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              {stats.total} document{stats.total !== 1 ? 's' : ''} •{' '}
-              {stats.byStatus.DRAFT || 0} draft •{' '}
-              {stats.byStatus.IN_REVIEW || 0} in review •{' '}
-              {stats.byStatus.APPROVED || 0} approved
-            </p>
-          )}
-        </div>
-        <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-          <Plus className="w-5 h-5" />
-          New Document
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
-          <Input
-            type="text"
-            placeholder="Search documents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard
+            icon={<FileText className="h-5 w-5" />}
+            label="Total Documents"
+            value={stats.total}
+            variant="blue"
+          />
+          <StatCard
+            icon={<FileText className="h-5 w-5" />}
+            label="Draft"
+            value={stats.byStatus.DRAFT || 0}
+            variant="neutral"
+          />
+          <StatCard
+            icon={<Clock className="h-5 w-5" />}
+            label="In Review"
+            value={stats.byStatus.IN_REVIEW || 0}
+            variant="amber"
+          />
+          <StatCard
+            icon={<CheckCircle className="h-5 w-5" />}
+            label="Approved"
+            value={stats.byStatus.APPROVED || 0}
+            variant="emerald"
           />
         </div>
-        <select
-          value={filterCategory}
-          onChange={(e) =>
-            setFilterCategory(e.target.value as ProjectDocumentCategory | '')
-          }
-          className="border rounded-md px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
-        >
-          <option value="">All Categories</option>
-          <option value="CORE">Core</option>
-          <option value="LIFECYCLE">Lifecycle</option>
-          <option value="AI_SPECIFIC">AI-Specific</option>
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) =>
-            setFilterStatus(e.target.value as ProjectDocumentStatus | '')
-          }
-          className="border rounded-md px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
-        >
-          <option value="">All Statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="IN_REVIEW">In Review</option>
-          <option value="APPROVED">Approved</option>
-          <option value="ARCHIVED">Archived</option>
-        </select>
-      </div>
-
-      {/* Document List by Category */}
-      {documents.length === 0 ? (
-        <Card>
-          <CardBody className="text-center py-12">
-            <FileText className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
-              No documents yet
-            </h3>
-            <p className="text-neutral-500 dark:text-neutral-400 mb-4">
-              Create your first document from one of our templates to get
-              started.
-            </p>
-            <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-              <Plus className="w-5 h-5" />
-              Create First Document
-            </Button>
-          </CardBody>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {(
-            ['CORE', 'LIFECYCLE', 'AI_SPECIFIC'] as ProjectDocumentCategory[]
-          ).map((category) => {
-            const categoryDocs = groupedDocuments[category];
-            if (
-              categoryDocs.length === 0 &&
-              filterCategory &&
-              filterCategory !== category
-            ) {
-              return null;
-            }
-            if (categoryDocs.length === 0) {
-              return null;
-            }
-
-            return (
-              <div key={category}>
-                <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-3">
-                  {categoryLabels[category]}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {categoryDocs.map((doc) => (
-                    <DocumentCard
-                      key={doc.id}
-                      document={doc}
-                      onView={handleViewDocument}
-                      onClone={handleCloneDocument}
-                      onDelete={handleDeleteDocument}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       )}
+
+      {/* Documents Section */}
+      <Card>
+        <CardHeader>
+          <SectionHeader
+            icon={<FolderOpen className="h-5 w-5" />}
+            title="Documents"
+            variant="blue"
+            action={
+              <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+                <Plus className="w-5 h-5" />
+                New Document
+              </Button>
+            }
+          />
+        </CardHeader>
+        <CardBody>
+          {/* Filters */}
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Input
+                type="text"
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <select
+              value={filterCategory}
+              onChange={(e) =>
+                setFilterCategory(
+                  e.target.value as ProjectDocumentCategory | '',
+                )
+              }
+              className="border rounded-md px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-100"
+            >
+              <option value="">All Categories</option>
+              <option value="CORE">Core</option>
+              <option value="LIFECYCLE">Lifecycle</option>
+              <option value="AI_SPECIFIC">AI-Specific</option>
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) =>
+                setFilterStatus(e.target.value as ProjectDocumentStatus | '')
+              }
+              className="border rounded-md px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-100"
+            >
+              <option value="">All Statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="IN_REVIEW">In Review</option>
+              <option value="APPROVED">Approved</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+          </div>
+
+          {/* Document List by Category */}
+          {documents.length === 0 ? (
+            <EmptyState
+              icon={<FileText className="h-8 w-8" />}
+              title="No documents yet"
+              description="Create your first document from one of our templates to get started with project documentation."
+              action={
+                <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+                  <Plus className="w-5 h-5" />
+                  Create First Document
+                </Button>
+              }
+            />
+          ) : (
+            <div className="space-y-8">
+              {(
+                [
+                  'CORE',
+                  'LIFECYCLE',
+                  'AI_SPECIFIC',
+                ] as ProjectDocumentCategory[]
+              ).map((category) => {
+                const categoryDocs = groupedDocuments[category];
+                if (
+                  categoryDocs.length === 0 &&
+                  filterCategory &&
+                  filterCategory !== category
+                ) {
+                  return null;
+                }
+                if (categoryDocs.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <div key={category}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div
+                        className={`flex items-center justify-center w-8 h-8 rounded-lg ${STAT_STYLES[categoryVariants[category]].iconBg}`}
+                      >
+                        <FileText
+                          className={`w-4 h-4 ${STAT_STYLES[categoryVariants[category]].iconColor}`}
+                        />
+                      </div>
+                      <h4 className="text-md font-medium text-neutral-900 dark:text-neutral-100">
+                        {categoryLabels[category]}
+                      </h4>
+                      <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                        ({categoryDocs.length})
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {categoryDocs.map((doc) => (
+                        <DocumentCard
+                          key={doc.id}
+                          document={doc}
+                          onView={handleViewDocument}
+                          onClone={handleCloneDocument}
+                          onDelete={handleDeleteDocument}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Template Picker Modal */}
       <TemplatePickerModal

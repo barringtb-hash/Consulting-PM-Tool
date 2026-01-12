@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Save, Wallet, Loader2 } from 'lucide-react';
 import { Card, Button, Input } from '../../ui';
+import { PageHeader } from '../../ui/PageHeader';
 import {
   useBudget,
   useCreateBudget,
@@ -161,322 +162,328 @@ export default function BudgetFormPage() {
 
   if (isEditing && budgetLoading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="secondary" as={Link} to="/finance/budgets">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">
-            {isEditing ? 'Edit Budget' : 'New Budget'}
-          </h1>
-          <p className="text-gray-500 dark:text-neutral-400">
-            {isEditing
-              ? 'Update budget details'
-              : 'Create a new spending budget'}
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      <PageHeader
+        title={isEditing ? 'Edit Budget' : 'New Budget'}
+        description={
+          isEditing ? 'Update budget details' : 'Create a new spending budget'
+        }
+        icon={Wallet}
+        breadcrumbs={[
+          { label: 'Finance', href: '/finance' },
+          { label: 'Budgets', href: '/finance/budgets' },
+          { label: isEditing ? 'Edit' : 'New' },
+        ]}
+        action={
+          <Button variant="secondary" as={Link} to="/finance/budgets">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Card className="p-6 space-y-6">
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Wallet className="h-5 w-5" />
-              Budget Details
-            </h2>
+      <div className="page-content">
+        <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto">
+          <Card className="p-6 space-y-6">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                Budget Details
+              </h2>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                {...register('name')}
-                placeholder="Enter budget name"
-                className={errors.name ? 'border-red-500' : ''}
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.name.message}
-                </p>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  {...register('name')}
+                  placeholder="Enter budget name"
+                  className={errors.name ? 'border-red-500' : ''}
+                />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  {...register('description')}
+                  rows={2}
+                  placeholder="Describe the purpose of this budget..."
+                  className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Amount <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    {...register('amount')}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className={errors.amount ? 'border-red-500' : ''}
+                  />
+                  {errors.amount && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.amount.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Currency
+                  </label>
+                  <select
+                    {...register('currency')}
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                  >
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="CAD">CAD</option>
+                    <option value="AUD">AUD</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Period <span className="text-red-500">*</span>
+                  </label>
+                  <Controller
+                    name="period"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                      >
+                        {PERIOD_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    {...register('startDate')}
+                    type="date"
+                    className={errors.startDate ? 'border-red-500' : ''}
+                  />
+                  {errors.startDate && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.startDate.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    End Date{' '}
+                    {selectedPeriod === 'CUSTOM' && (
+                      <span className="text-red-500">*</span>
+                    )}
+                  </label>
+                  <Input {...register('endDate')} type="date" />
+                  <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    {selectedPeriod !== 'CUSTOM'
+                      ? 'Optional - budget will repeat based on period'
+                      : 'Required for custom period budgets'}
+                  </p>
+                </div>
+              </div>
+
+              {isEditing && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Status
+                  </label>
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                      >
+                        {STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                {...register('description')}
-                rows={2}
-                placeholder="Describe the purpose of this budget..."
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  {...register('amount')}
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  className={errors.amount ? 'border-red-500' : ''}
-                />
-                {errors.amount && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.amount.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Currency
-                </label>
-                <select
-                  {...register('currency')}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="CAD">CAD</option>
-                  <option value="AUD">AUD</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Period <span className="text-red-500">*</span>
-                </label>
-                <Controller
-                  name="period"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      {PERIOD_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  {...register('startDate')}
-                  type="date"
-                  className={errors.startDate ? 'border-red-500' : ''}
-                />
-                {errors.startDate && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.startDate.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date{' '}
-                  {selectedPeriod === 'CUSTOM' && (
-                    <span className="text-red-500">*</span>
-                  )}
-                </label>
-                <Input {...register('endDate')} type="date" />
-                <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
-                  {selectedPeriod !== 'CUSTOM'
-                    ? 'Optional - budget will repeat based on period'
-                    : 'Required for custom period budgets'}
-                </p>
-              </div>
-            </div>
-
-            {isEditing && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Associations */}
-          <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
-              Scope (Optional)
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-neutral-400">
-              Associate this budget with an account, project, or category to
-              track spending automatically.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Account
-                </label>
-                <Controller
-                  name="accountId"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">All accounts</option>
-                      {accountsData?.data.map((acc) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project
-                </label>
-                <Controller
-                  name="projectId"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">All projects</option>
-                      {filteredProjects?.map((proj) => (
-                        <option key={proj.id} value={proj.id}>
-                          {proj.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <Controller
-                  name="categoryId"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      {...field}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">All categories</option>
-                      {categoriesData?.categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Alert Settings */}
-          <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">
-              Alert Settings
-            </h2>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Alert Thresholds (%)
-              </label>
-              <Input
-                {...register('alertThresholds')}
-                placeholder="50, 75, 90, 100"
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-neutral-400">
-                Comma-separated percentages at which to trigger budget alerts
+            {/* Associations */}
+            <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Scope (Optional)
+              </h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Associate this budget with an account, project, or category to
+                track spending automatically.
               </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Account
+                  </label>
+                  <Controller
+                    name="accountId"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="">All accounts</option>
+                        {accountsData?.data.map((acc) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Project
+                  </label>
+                  <Controller
+                    name="projectId"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="">All projects</option>
+                        {filteredProjects?.map((proj) => (
+                          <option key={proj.id} value={proj.id}>
+                            {proj.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Category
+                  </label>
+                  <Controller
+                    name="categoryId"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="">All categories</option>
+                        {categoriesData?.categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('allowRollover')}
-                id="allowRollover"
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label
-                htmlFor="allowRollover"
-                className="text-sm text-gray-700 dark:text-neutral-300"
-              >
-                Allow rollover of unused budget to the next period
-              </label>
-            </div>
-          </div>
+            {/* Alert Settings */}
+            <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Alert Settings
+              </h2>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="secondary" as={Link} to="/finance/budgets">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isEditing ? 'Update Budget' : 'Create Budget'}
-                </>
-              )}
-            </Button>
-          </div>
-        </Card>
-      </form>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Alert Thresholds (%)
+                </label>
+                <Input
+                  {...register('alertThresholds')}
+                  placeholder="50, 75, 90, 100"
+                />
+                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                  Comma-separated percentages at which to trigger budget alerts
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  {...register('allowRollover')}
+                  id="allowRollover"
+                  className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500"
+                />
+                <label
+                  htmlFor="allowRollover"
+                  className="text-sm text-neutral-700 dark:text-neutral-300"
+                >
+                  Allow rollover of unused budget to the next period
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+              <Button variant="secondary" as={Link} to="/finance/budgets">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isEditing ? 'Update Budget' : 'Create Budget'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+        </form>
+      </div>
     </div>
   );
 }

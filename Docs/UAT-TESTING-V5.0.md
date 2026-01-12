@@ -5,7 +5,7 @@
 **Version:** 5.0
 **Last Updated:** January 4, 2026
 **Purpose:** Comprehensive UAT with Enhanced UX/UI Visual Consistency & Dark Mode Testing
-**Application URL:** https://elipseconsulting.ai
+**Application URL:** https://verdanthorizon.ai
 
 ---
 

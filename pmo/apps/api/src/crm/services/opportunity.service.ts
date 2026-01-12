@@ -197,6 +197,13 @@ export async function getOpportunityById(id: number) {
           owner: { select: { id: true, name: true } },
         },
       },
+      _count: {
+        select: {
+          contacts: true,
+          stageHistory: true,
+          activities: true,
+        },
+      },
     },
   });
 }
@@ -282,6 +289,12 @@ export async function listOpportunities(
         account: { select: { id: true, name: true } },
         stage: true,
         owner: { select: { id: true, name: true } },
+        _count: {
+          select: {
+            contacts: true,
+            activities: true,
+          },
+        },
       },
     }),
     prisma.opportunity.count({ where }),
@@ -717,7 +730,7 @@ export async function getPipelineStats(pipelineId?: number) {
         return {
           stageId: s.stageId,
           stageName: stage?.name ?? 'Unknown',
-          stageType: stage?.type ?? 'OPEN',
+          type: stage?.type ?? 'OPEN',
           stageColor: stage?.color,
           stageOrder: stage?.order ?? 0,
           count: s._count,
@@ -829,7 +842,7 @@ export async function getPipelineStages(pipelineId?: number) {
           id: s.id,
           pipelineId: pipeline!.id,
           name: s.name,
-          stageType: s.type,
+          type: s.type,
           color: s.color,
           order: s.order,
           probability: s.probability,
@@ -877,7 +890,7 @@ export async function getPipelineStages(pipelineId?: number) {
       id: s.id,
       pipelineId: pipeline.id,
       name: s.name,
-      stageType: s.type,
+      type: s.type,
       color: s.color,
       order: s.order,
       probability: s.probability,

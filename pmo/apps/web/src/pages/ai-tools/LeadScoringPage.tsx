@@ -95,7 +95,9 @@ const SCORE_LEVEL_ICONS: Record<string, JSX.Element> = {
   HOT: <Flame className="h-4 w-4 text-red-500" />,
   WARM: <Thermometer className="h-4 w-4 text-orange-500" />,
   COLD: <Snowflake className="h-4 w-4 text-blue-500" />,
-  DEAD: <Snowflake className="h-4 w-4 text-gray-400 dark:text-neutral-500" />,
+  DEAD: (
+    <Snowflake className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+  ),
 };
 
 // API functions
@@ -344,10 +346,10 @@ function LeadScoringPage(): JSX.Element {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <PageHeader
         title="Lead Scoring & CRM Assistant"
-        subtitle="ML-powered lead scoring with predictive analytics and nurture sequences"
+        description="ML-powered lead scoring with predictive analytics and nurture sequences"
         icon={Target}
         actions={
           <div className="flex gap-2">
@@ -423,7 +425,7 @@ function LeadScoringPage(): JSX.Element {
                   onClick={() => setActiveTab(id as typeof activeTab)}
                   className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === id
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                       : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:border-neutral-300 dark:hover:border-neutral-600'
                   }`}
                 >
@@ -580,7 +582,7 @@ function LeadScoringPage(): JSX.Element {
                                         ? 'bg-orange-500'
                                         : lead.score >= 20
                                           ? 'bg-blue-500'
-                                          : 'bg-gray-400'
+                                          : 'bg-neutral-400'
                                   }`}
                                   style={{ width: `${lead.score}%` }}
                                 />
@@ -729,7 +731,7 @@ function LeadScoringPage(): JSX.Element {
                                   ? 'bg-orange-500'
                                   : item.level === 'COLD'
                                     ? 'bg-blue-500'
-                                    : 'bg-gray-400'
+                                    : 'bg-neutral-400'
                             }`}
                             style={{
                               width: `${(item.count / analyticsQuery.data.summary.totalLeads) * 100}%`,
@@ -1218,9 +1220,9 @@ function LeadScoringPage(): JSX.Element {
 
       {/* Create Configuration Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
               Create Lead Scoring Configuration
             </h2>
             <form onSubmit={handleCreateConfig} className="space-y-4">
@@ -1267,7 +1269,7 @@ function LeadScoringPage(): JSX.Element {
               </div>
 
               <div className="space-y-2">
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="trackEmailOpens"
@@ -1275,7 +1277,7 @@ function LeadScoringPage(): JSX.Element {
                   />
                   <span className="text-sm">Track Email Opens</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="trackEmailClicks"
@@ -1283,7 +1285,7 @@ function LeadScoringPage(): JSX.Element {
                   />
                   <span className="text-sm">Track Email Clicks</span>
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     name="trackWebsiteVisits"
@@ -1312,9 +1314,11 @@ function LeadScoringPage(): JSX.Element {
 
       {/* Add Lead Modal */}
       {showAddLeadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Add New Lead</h2>
+            <h2 className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">
+              Add New Lead
+            </h2>
             <form onSubmit={handleAddLead} className="space-y-4">
               <Input
                 label="Email"
@@ -1324,7 +1328,11 @@ function LeadScoringPage(): JSX.Element {
                 placeholder="lead@company.com"
               />
               <Input label="Name" name="name" placeholder="John Doe" />
-              <Input label="Company" name="company" placeholder="Acme Inc." />
+              <Input
+                label="Company"
+                name="company"
+                placeholder="Company Name"
+              />
 
               <div className="flex gap-2 justify-end">
                 <Button
