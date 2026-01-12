@@ -43,6 +43,7 @@ import {
   LeadStatus,
   ServiceInterest,
   InboundLead,
+  LeadUpdatePayload,
 } from '../api/leads';
 import {
   useLeads,
@@ -433,7 +434,7 @@ function EmptyState({
 interface LeadDetailPanelProps {
   lead: InboundLead;
   onClose: () => void;
-  onUpdate: (leadId: number, updates: Partial<InboundLead>) => Promise<void>;
+  onUpdate: (leadId: number, updates: LeadUpdatePayload) => Promise<void>;
   onConvert: (leadId: number) => void;
   onDelete: (leadId: number) => Promise<void>;
 }
@@ -696,7 +697,7 @@ export function LeadsPage(): JSX.Element {
   );
 
   const handleUpdateLead = useCallback(
-    async (_leadId: number, updates: Partial<InboundLead>) => {
+    async (_leadId: number, updates: LeadUpdatePayload) => {
       try {
         await updateLead.mutateAsync(updates);
         showToast('Lead updated successfully', 'success');
