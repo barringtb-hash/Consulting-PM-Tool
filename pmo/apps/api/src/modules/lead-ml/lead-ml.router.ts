@@ -82,7 +82,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      if (isNaN(leadId)) {
+      if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
@@ -117,13 +117,15 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      if (isNaN(leadId)) {
+      if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
+      const tenantId = hasTenantContext() ? getTenantId() : 'system';
       const predictionType = (req.query.type as string) || 'CONVERSION';
       const prediction = await getLeadPrediction(
         leadId,
+        tenantId,
         predictionType as 'CONVERSION' | 'TIME_TO_CLOSE' | 'SCORE' | 'PRIORITY',
       );
 
@@ -151,7 +153,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      if (isNaN(leadId)) {
+      if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
@@ -185,7 +187,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      if (isNaN(leadId)) {
+      if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
@@ -219,7 +221,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const leadId = parseInt(req.params.id, 10);
-      if (isNaN(leadId)) {
+      if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
@@ -244,7 +246,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
+      if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
@@ -283,7 +285,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
+      if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
@@ -297,7 +299,7 @@ router.get(
         minProbability: req.query.minProbability
           ? parseFloat(req.query.minProbability as string)
           : undefined,
-        useLLM: req.query.useLLM === 'true',
+        useLLM: req.query.useLLM ? req.query.useLLM === 'true' : true,
       });
 
       const result = await getRankedLeads(configId, query);
@@ -317,7 +319,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
+      if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
@@ -339,7 +341,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
+      if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
@@ -369,7 +371,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const predictionId = parseInt(req.params.id, 10);
-      if (isNaN(predictionId)) {
+      if (isNaN(predictionId) || predictionId <= 0) {
         return res.status(400).json({ error: 'Invalid prediction ID' });
       }
 
@@ -392,16 +394,17 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
+      if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
+      const tenantId = hasTenantContext() ? getTenantId() : 'system';
       const query = accuracyQuerySchema.parse({
         startDate: req.query.startDate as string | undefined,
         endDate: req.query.endDate as string | undefined,
       });
 
-      const accuracy = await getPredictionAccuracy(configId, {
+      const accuracy = await getPredictionAccuracy(configId, tenantId, {
         startDate: query.startDate ? new Date(query.startDate) : undefined,
         endDate: query.endDate ? new Date(query.endDate) : undefined,
       });
@@ -426,7 +429,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const configId = parseInt(req.params.configId, 10);
-      if (isNaN(configId)) {
+      if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
