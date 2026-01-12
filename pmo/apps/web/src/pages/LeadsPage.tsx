@@ -505,20 +505,32 @@ const LeadDetailPanel = memo(function LeadDetailPanel({
 
   const handleStatusChange = useCallback(
     async (newStatus: LeadStatus) => {
+      const previousStatus = status;
       setStatus(newStatus);
-      await onUpdate(lead.id, { status: newStatus });
+      try {
+        await onUpdate(lead.id, { status: newStatus });
+      } catch {
+        setStatus(previousStatus); // Rollback on failure
+      }
     },
-    [lead.id, onUpdate],
+    [lead.id, onUpdate, status],
   );
 
   const handleConvert = useCallback(() => {
     onConvert(lead.id);
   }, [lead.id, onConvert]);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleDelete = useCallback(async () => {
-    if (confirm('Are you sure you want to delete this lead?')) {
+    setIsDeleting(true);
+    try {
       await onDelete(lead.id);
       onClose();
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   }, [lead.id, onDelete, onClose]);
 
@@ -650,14 +662,40 @@ const LeadDetailPanel = memo(function LeadDetailPanel({
                 Convert to Opportunity
               </Button>
             )}
-            <Button
-              onClick={handleDelete}
-              variant="subtle"
-              className="w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Lead
-            </Button>
+            {!showDeleteConfirm ? (
+              <Button
+                onClick={() => setShowDeleteConfirm(true)}
+                variant="subtle"
+                className="w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Lead
+              </Button>
+            ) : (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg space-y-2">
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  Are you sure you want to delete this lead?
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    variant="subtle"
+                    className="flex-1 bg-red-600 text-white hover:bg-red-700"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                  </Button>
+                  <Button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    variant="subtle"
+                    className="flex-1"
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -709,16 +747,16 @@ function DashboardTab({ leads, configId }: DashboardTabProps): JSX.Element {
   // Get feature importance data
   const featureImportance = featureImportanceQuery.data;
   const topFeatures = useMemo(() => {
-    if (!featureImportance?.featureWeights) return [];
-    const entries = Object.entries(
-      featureImportance.featureWeights as Record<string, number>,
-    );
-    return entries
-      .sort((a, b) => b[1] - a[1])
+    if (
+      !featureImportance?.importance ||
+      featureImportance.importance.length === 0
+    )
+      return [];
+    return featureImportance.importance
       .slice(0, 5)
-      .map(([name, weight]) => ({
-        name: name.replace(/([A-Z])/g, ' $1').trim(),
-        weight: Math.round(weight * 100),
+      .map((f: { name: string; importance: number }) => ({
+        name: f.name.replace(/([A-Z])/g, ' $1').trim(),
+        weight: Math.round(f.importance * 100),
       }));
   }, [featureImportance]);
 
