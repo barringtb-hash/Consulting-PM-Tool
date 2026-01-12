@@ -18,6 +18,13 @@ import { Badge } from '../../ui/Badge';
 import { useToast } from '../../ui/Toast';
 import { useAccounts } from '../../api/hooks/crm';
 import {
+  useFeatureImportance,
+  usePredictionAccuracy,
+  useTopPriorityLeads,
+  useLeadPrediction,
+  useBulkPredictConversions,
+} from '../../api/hooks/lead-ml';
+import {
   Plus,
   Target,
   Settings,
@@ -29,6 +36,11 @@ import {
   Flame,
   Thermometer,
   Snowflake,
+  Brain,
+  Zap,
+  AlertTriangle,
+  CheckCircle2,
+  Star,
 } from 'lucide-react';
 
 // Types
@@ -208,8 +220,9 @@ function LeadScoringPage(): JSX.Element {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'leads' | 'sequences' | 'analytics'
+    'overview' | 'leads' | 'sequences' | 'analytics' | 'ml-insights'
   >('overview');
+  const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -243,6 +256,15 @@ function LeadScoringPage(): JSX.Element {
     queryFn: () => fetchAnalytics(selectedConfigId!),
     enabled: !!selectedConfigId && activeTab === 'analytics',
   });
+
+  // ML Queries
+  const featureImportanceQuery = useFeatureImportance(selectedConfigId || 0);
+  const predictionAccuracyQuery = usePredictionAccuracy(selectedConfigId || 0);
+  const topLeadsQuery = useTopPriorityLeads(selectedConfigId || 0, 5);
+  const leadPredictionQuery = useLeadPrediction(selectedLeadId || 0);
+
+  // ML Mutations
+  const bulkPredictMutation = useBulkPredictConversions();
 
   // Mutations
   const createConfigMutation = useMutation({
@@ -396,6 +418,7 @@ function LeadScoringPage(): JSX.Element {
                 { id: 'leads', label: 'Leads', icon: Users },
                 { id: 'sequences', label: 'Sequences', icon: Mail },
                 { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+                { id: 'ml-insights', label: 'ML Insights', icon: Brain },
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -762,6 +785,437 @@ function LeadScoringPage(): JSX.Element {
               </Card>
             </div>
           )}
+
+        {/* ML Insights Tab */}
+        {selectedConfigId && activeTab === 'ml-insights' && (
+          <div className="space-y-6">
+            {/* ML Actions Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  ML-Powered Lead Intelligence
+                </h3>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Conversion predictions, scoring explanations, and priority
+                  rankings
+                </p>
+              </div>
+              <Button
+                onClick={() =>
+                  bulkPredictMutation.mutate({
+                    configId: selectedConfigId,
+                    options: { limit: 50 },
+                  })
+                }
+                disabled={bulkPredictMutation.isPending}
+              >
+                <Zap className="mr-2 h-4 w-4" />
+                {bulkPredictMutation.isPending
+                  ? 'Running Predictions...'
+                  : 'Run Bulk Predictions'}
+              </Button>
+            </div>
+
+            {/* Prediction Accuracy & Performance */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Model Accuracy
+                      </p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {predictionAccuracyQuery.data?.accuracy
+                          ? `${Math.round(predictionAccuracyQuery.data.accuracy * 100)}%`
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <CheckCircle2 className="h-8 w-8 text-green-500" />
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Total Predictions
+                      </p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {predictionAccuracyQuery.data?.totalPredictions || 0}
+                      </p>
+                    </div>
+                    <Brain className="h-8 w-8 text-blue-500" />
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Validated
+                      </p>
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        {predictionAccuracyQuery.data?.validatedCount || 0}
+                      </p>
+                    </div>
+                    <Target className="h-8 w-8 text-purple-500" />
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardBody>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Accurate
+                      </p>
+                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                        {predictionAccuracyQuery.data?.accurateCount || 0}
+                      </p>
+                    </div>
+                    <Star className="h-8 w-8 text-amber-500" />
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Feature Importance Chart */}
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Feature Importance</h3>
+                </CardHeader>
+                <CardBody>
+                  {featureImportanceQuery.isLoading ? (
+                    <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                      Loading feature importance...
+                    </div>
+                  ) : featureImportanceQuery.data?.importance?.length === 0 ? (
+                    <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                      No feature data available yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {featureImportanceQuery.data?.importance?.map(
+                        (feature) => (
+                          <div
+                            key={feature.name}
+                            className="flex items-center gap-3"
+                          >
+                            <div className="w-32 text-sm text-neutral-600 dark:text-neutral-400 truncate">
+                              {feature.name}
+                            </div>
+                            <div className="flex-1 bg-neutral-200 dark:bg-neutral-700 rounded-full h-3">
+                              <div
+                                className={`h-3 rounded-full ${
+                                  feature.category === 'behavioral'
+                                    ? 'bg-blue-500'
+                                    : feature.category === 'demographic'
+                                      ? 'bg-green-500'
+                                      : feature.category === 'temporal'
+                                        ? 'bg-purple-500'
+                                        : 'bg-amber-500'
+                                }`}
+                                style={{
+                                  width: `${feature.importance * 100}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="w-12 text-right text-sm font-medium">
+                              {Math.round(feature.importance * 100)}%
+                            </span>
+                          </div>
+                        ),
+                      )}
+                      <div className="flex gap-4 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700 text-xs">
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                          Behavioral
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-green-500 rounded-full" />
+                          Demographic
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-purple-500 rounded-full" />
+                          Temporal
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 bg-amber-500 rounded-full" />
+                          Engagement
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+
+              {/* Top Priority Leads */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">
+                      Top Priority Leads
+                    </h3>
+                    <Badge variant="primary">ML Ranked</Badge>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {topLeadsQuery.isLoading ? (
+                    <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                      Loading top leads...
+                    </div>
+                  ) : !topLeadsQuery.data?.leads?.length ? (
+                    <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                      <Brain className="mx-auto h-12 w-12 mb-2 opacity-30" />
+                      <p>No ML predictions yet.</p>
+                      <p className="text-xs mt-1">
+                        Run bulk predictions to rank leads.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {topLeadsQuery.data.leads.map((lead, index) => (
+                        <div
+                          key={lead.leadId}
+                          className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                          onClick={() => setSelectedLeadId(lead.leadId)}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                              index === 0
+                                ? 'bg-amber-500'
+                                : index === 1
+                                  ? 'bg-neutral-400'
+                                  : index === 2
+                                    ? 'bg-amber-700'
+                                    : 'bg-neutral-300'
+                            }`}
+                          >
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">
+                              {lead.name || lead.email}
+                            </div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {lead.company || 'Unknown company'}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-green-600 dark:text-green-400">
+                              {Math.round(lead.conversionProbability * 100)}%
+                            </div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                              Conversion
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* Lead Prediction Detail Panel */}
+            {selectedLeadId && leadPredictionQuery.data && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">
+                      Prediction Details
+                    </h3>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setSelectedLeadId(null)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Prediction Summary */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
+                        Summary
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-neutral-500 dark:text-neutral-400">
+                            Probability
+                          </span>
+                          <span className="font-semibold">
+                            {Math.round(
+                              leadPredictionQuery.data.prediction.probability *
+                                100,
+                            )}
+                            %
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-neutral-500 dark:text-neutral-400">
+                            Confidence
+                          </span>
+                          <span className="font-semibold">
+                            {Math.round(
+                              leadPredictionQuery.data.prediction.confidence *
+                                100,
+                            )}
+                            %
+                          </span>
+                        </div>
+                        {leadPredictionQuery.data.prediction.predictedDays && (
+                          <div className="flex justify-between">
+                            <span className="text-neutral-500 dark:text-neutral-400">
+                              Est. Days to Close
+                            </span>
+                            <span className="font-semibold">
+                              {
+                                leadPredictionQuery.data.prediction
+                                  .predictedDays
+                              }{' '}
+                              days
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Risk Factors */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
+                        Risk Factors
+                      </h4>
+                      {leadPredictionQuery.data.prediction.riskFactors
+                        ?.length ? (
+                        <div className="space-y-2">
+                          {leadPredictionQuery.data.prediction.riskFactors
+                            .slice(0, 4)
+                            .map((risk, i) => (
+                              <div
+                                key={i}
+                                className="flex items-start gap-2 text-sm"
+                              >
+                                <AlertTriangle
+                                  className={`h-4 w-4 mt-0.5 ${
+                                    risk.impact === 'high'
+                                      ? 'text-red-500'
+                                      : risk.impact === 'medium'
+                                        ? 'text-amber-500'
+                                        : 'text-blue-500'
+                                  }`}
+                                />
+                                <div>
+                                  <div className="font-medium">
+                                    {risk.factor}
+                                  </div>
+                                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                                    {risk.description}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          No risk factors identified
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Recommendations */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
+                        Recommendations
+                      </h4>
+                      {leadPredictionQuery.data.prediction.recommendations
+                        ?.length ? (
+                        <div className="space-y-2">
+                          {leadPredictionQuery.data.prediction.recommendations
+                            .slice(0, 3)
+                            .map((rec, i) => (
+                              <div
+                                key={i}
+                                className="p-2 bg-green-50 dark:bg-green-950/30 rounded text-sm"
+                              >
+                                <div className="flex items-center gap-1 font-medium text-green-700 dark:text-green-400">
+                                  <Zap className="h-3 w-3" />
+                                  {rec.action}
+                                </div>
+                                <div className="text-xs text-green-600 dark:text-green-500 mt-1">
+                                  {rec.rationale}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          No specific recommendations
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Explanation */}
+                  {leadPredictionQuery.data.prediction.explanation && (
+                    <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+                      <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                        AI Explanation
+                      </h4>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        {leadPredictionQuery.data.prediction.explanation}
+                      </p>
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            )}
+
+            {/* Prediction Accuracy by Type */}
+            {predictionAccuracyQuery.data?.byType && (
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">
+                    Accuracy by Prediction Type
+                  </h3>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {Object.entries(predictionAccuracyQuery.data.byType).map(
+                      ([type, stats]) => (
+                        <div
+                          key={type}
+                          className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg"
+                        >
+                          <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+                            {type.replace('_', ' ')}
+                          </div>
+                          <div className="text-2xl font-bold">
+                            {stats.total > 0
+                              ? `${Math.round(stats.accuracy * 100)}%`
+                              : 'N/A'}
+                          </div>
+                          <div className="text-xs text-neutral-400">
+                            {stats.accurate}/{stats.total} accurate
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Create Configuration Modal */}

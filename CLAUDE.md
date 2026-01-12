@@ -235,9 +235,82 @@ POST /api/admin/modules/bulk
 4. **Navigation**: Sidebar dynamically shows only enabled modules
 5. **Lazy Loading**: Optional modules use `React.lazy()` for code splitting
 
+## ML Modules
+
+The platform includes ML-powered features for predictive analytics and intelligent automation.
+
+### Lead ML Module
+
+Location: `pmo/apps/api/src/modules/lead-ml/`
+
+**Features:**
+- Conversion probability prediction
+- Time-to-close estimation
+- Lead priority ranking
+- Score explanation with feature breakdown
+- Risk factor analysis
+- AI-generated recommendations
+
+**Architecture:**
+- Hybrid approach: LLM-based predictions (OpenAI GPT-4o-mini) with rule-based fallback
+- Feature engineering: demographic, behavioral, temporal, engagement
+- Prediction caching: 24-hour validity by default
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `services/lead-feature-extraction.service.ts` | Extract features from lead data |
+| `services/lead-rule-based-prediction.service.ts` | Fallback rule-based predictions |
+| `services/lead-conversion-prediction.service.ts` | Main prediction orchestration |
+| `services/lead-priority-ranking.service.ts` | Lead ranking and sorting |
+| `prompts/lead-ml-prompts.ts` | LLM prompt templates |
+| `lead-ml.router.ts` | API endpoints |
+| `types/` | TypeScript interfaces |
+
+**API Endpoints:**
+```
+POST /api/lead-scoring/leads/:id/ml/predict       # Generate prediction
+GET  /api/lead-scoring/leads/:id/ml/prediction    # Get existing prediction
+GET  /api/lead-scoring/leads/:id/ml/features      # Get extracted features
+POST /api/lead-scoring/:configId/ml/bulk-predict  # Bulk predictions
+GET  /api/lead-scoring/:configId/ml/ranked-leads  # Priority-ranked leads
+GET  /api/lead-scoring/:configId/ml/top-leads     # Top N leads
+GET  /api/lead-scoring/:configId/ml/accuracy      # Prediction accuracy
+GET  /api/lead-scoring/:configId/ml/feature-importance  # Feature weights
+```
+
+**Database Models:**
+- `LeadTrainingData`: Historical data for model training
+- `LeadMLModel`: Trained model metadata
+- `LeadMLPrediction`: Stored predictions
+
+**Documentation:**
+- Feature guide: `docs/features/lead-ml-capabilities.md`
+- API reference: `docs/api/lead-ml-endpoints.md`
+
+### Customer Success ML Module
+
+Location: `pmo/apps/api/src/modules/customer-success-ml/`
+
+**Features:**
+- Churn prediction
+- Health insights
+- Intelligent CTA generation
+
+### Project ML Module
+
+Location: `pmo/apps/api/src/modules/project-ml/`
+
+**Features:**
+- Success prediction
+- Risk forecasting
+- Timeline prediction
+- Resource optimization
+
 ## Important Notes
 
 - Authentication uses httpOnly cookies with JWT
 - Safari ITP compatibility: includes cookie partitioning and Authorization header fallbacks
 - CORS configured for Vercel preview deployments (`*.vercel.app`)
 - API health check: `GET /api/healthz`
+- ML features require OpenAI API key in `OPENAI_API_KEY` environment variable

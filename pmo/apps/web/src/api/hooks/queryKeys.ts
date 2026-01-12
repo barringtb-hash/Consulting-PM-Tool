@@ -437,6 +437,50 @@ export const queryKeys = {
     users: (tenantId: string) =>
       [...queryKeys.tenantAdmin.all, 'users', tenantId] as const,
   },
+
+  // ---------------------------------------------------------------------------
+  // Lead ML Module
+  // ---------------------------------------------------------------------------
+  leadML: {
+    all: ['leadML'] as const,
+    // Predictions
+    predictions: {
+      all: () => [...queryKeys.leadML.all, 'predictions'] as const,
+      lead: (leadId: number, type?: string) =>
+        [...queryKeys.leadML.predictions.all(), 'lead', leadId, type] as const,
+      bulk: (configId: number) =>
+        [...queryKeys.leadML.predictions.all(), 'bulk', configId] as const,
+    },
+    // Features
+    features: {
+      all: () => [...queryKeys.leadML.all, 'features'] as const,
+      lead: (leadId: number) =>
+        [...queryKeys.leadML.features.all(), 'lead', leadId] as const,
+      importance: (configId: number) =>
+        [...queryKeys.leadML.features.all(), 'importance', configId] as const,
+    },
+    // Rankings
+    rankings: {
+      all: () => [...queryKeys.leadML.all, 'rankings'] as const,
+      ranked: (configId: number, options?: Record<string, unknown>) =>
+        [
+          ...queryKeys.leadML.rankings.all(),
+          'ranked',
+          configId,
+          options,
+        ] as const,
+      top: (configId: number, n?: number) =>
+        [...queryKeys.leadML.rankings.all(), 'top', configId, n] as const,
+      byTier: (configId: number, tier: string) =>
+        [...queryKeys.leadML.rankings.all(), 'tier', configId, tier] as const,
+    },
+    // Accuracy & Performance
+    accuracy: {
+      all: () => [...queryKeys.leadML.all, 'accuracy'] as const,
+      config: (configId: number, options?: Record<string, unknown>) =>
+        [...queryKeys.leadML.accuracy.all(), configId, options] as const,
+    },
+  },
 } as const;
 
 // ============================================================================
