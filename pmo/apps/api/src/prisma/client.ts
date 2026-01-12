@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+// Ensure dotenv is loaded before Prisma tries to read DATABASE_URL
+dotenv.config();
+
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -9,6 +13,30 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /**
+ * Parse DATABASE_URL into pg Pool config options.
+ * Handles various URL formats to avoid parsing issues with the Prisma adapter.
+ */
+function parseDbUrl(url: string | undefined): import('pg').PoolConfig {
+  if (!url) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+
+  try {
+    const parsed = new URL(url);
+    return {
+      host: parsed.hostname || 'localhost',
+      port: parsed.port ? parseInt(parsed.port, 10) : 5432,
+      database: parsed.pathname.replace(/^\//, '') || undefined,
+      user: parsed.username || parsed.searchParams.get('user') || undefined,
+      password: parsed.password || undefined,
+    };
+  } catch {
+    // Fallback to connectionString if URL parsing fails
+    return { connectionString: url };
+  }
+}
+
+/**
  * Create a Prisma client with tenant isolation extension and RLS support.
  * The extension automatically filters queries by tenantId when tenant context is available.
  * RLS context is set within the tenant extension's query handlers.
@@ -18,10 +46,7 @@ const globalForPrisma = globalThis as unknown as {
 function createExtendedPrismaClient() {
   // Create a PostgreSQL connection pool (reuse existing if available)
   const pool =
-    globalForPrisma.pgPool ??
-    new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
+    globalForPrisma.pgPool ?? new Pool(parseDbUrl(process.env.DATABASE_URL));
 
   // Cache the pool in all environments to prevent memory leaks from multiple pool instances
   globalForPrisma.pgPool = pool;
