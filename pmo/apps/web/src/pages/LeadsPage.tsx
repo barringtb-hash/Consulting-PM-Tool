@@ -778,7 +778,13 @@ export function LeadsPage(): JSX.Element {
     } catch {
       showToast('Failed to convert lead', 'error');
     }
-  }, [convertLead, conversionForm, showToast, selectedLead?.ownerUserId, user?.id]);
+  }, [
+    convertLead,
+    conversionForm,
+    showToast,
+    selectedLead?.ownerUserId,
+    user?.id,
+  ]);
 
   const handleDeleteLead = useCallback(
     async (leadId: number) => {
