@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Mail, Building2, User } from 'lucide-react';
 
 import {
@@ -14,6 +14,7 @@ import {
   useConvertLead,
   useDeleteLead,
 } from '../api/queries';
+import { useAuth } from '../auth/AuthContext';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -93,6 +94,11 @@ const LeadDetailPanel = memo(function LeadDetailPanel({
   onDelete,
 }: LeadDetailPanelProps) {
   const [status, setStatus] = useState(lead.status);
+
+  // Sync local status state with prop changes
+  useEffect(() => {
+    setStatus(lead.status);
+  }, [lead.status]);
 
   const handleStatusChange = useCallback(
     async (newStatus: LeadStatus) => {
@@ -258,6 +264,7 @@ LeadDetailPanel.displayName = 'LeadDetailPanel';
 
 export function LeadsPage(): JSX.Element {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [selectedLead, setSelectedLead] = useState<InboundLead | null>(null);
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [filters, setFilters] = useState<Filters>({
@@ -340,8 +347,14 @@ export function LeadsPage(): JSX.Element {
 
   const handleConvertLead = useCallback(async () => {
     try {
+      // Use the lead's existing owner or fall back to current user
+      const ownerId =
+        selectedLead?.ownerUserId ??
+        (user?.id ? parseInt(user.id, 10) : undefined);
+
       const result = await convertLead.mutateAsync({
         createOpportunity: true,
+        ownerId,
       });
       showToast(
         `Lead converted successfully! Created Account${result.opportunityId ? ' and Opportunity' : ''}.`,
@@ -350,7 +363,7 @@ export function LeadsPage(): JSX.Element {
     } catch {
       showToast('Failed to convert lead', 'error');
     }
-  }, [convertLead, showToast]);
+  }, [convertLead, showToast, selectedLead?.ownerUserId, user?.id]);
 
   const handleDeleteLead = useCallback(
     async (leadId: number) => {
