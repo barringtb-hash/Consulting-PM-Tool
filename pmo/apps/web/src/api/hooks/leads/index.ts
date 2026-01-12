@@ -116,12 +116,28 @@ export function useConvertLead(
       queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
 
+      // Invalidate CRM entities (Account and Opportunity) created during conversion
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.opportunities.all });
+
       if (result.clientId) {
         queryClient.invalidateQueries({
           queryKey: queryKeys.clients.detail(result.clientId),
         });
         queryClient.invalidateQueries({
           queryKey: queryKeys.contacts.byClient(result.clientId),
+        });
+      }
+
+      if (result.accountId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.accounts.detail(result.accountId),
+        });
+      }
+
+      if (result.opportunityId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.opportunities.detail(result.opportunityId),
         });
       }
 

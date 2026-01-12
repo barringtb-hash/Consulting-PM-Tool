@@ -52,6 +52,7 @@ import {
   useConvertLead,
   useDeleteLead,
 } from '../api/queries';
+import { useAuth } from '../auth/AuthContext';
 import useRedirectOnUnauthorized from '../auth/useRedirectOnUnauthorized';
 import { Badge, BadgeVariant } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -620,6 +621,7 @@ LeadDetailPanel.displayName = 'LeadDetailPanel';
 
 export function LeadsPage(): JSX.Element {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [selectedLead, setSelectedLead] = useState<InboundLead | null>(null);
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
   const [filters, setFilters] = useState<Filters>({
@@ -750,6 +752,11 @@ export function LeadsPage(): JSX.Element {
   // Submit the conversion with form data
   const handleConvertLead = useCallback(async () => {
     try {
+      // Use the lead's existing owner or fall back to current user
+      const ownerId =
+        selectedLead?.ownerUserId ??
+        (user?.id ? parseInt(user.id, 10) : undefined);
+
       const result = await convertLead.mutateAsync({
         createOpportunity: true,
         opportunityName: conversionForm.opportunityName || undefined,
@@ -760,6 +767,7 @@ export function LeadsPage(): JSX.Element {
           ? new Date(conversionForm.expectedCloseDate).toISOString()
           : undefined,
         contactRole: conversionForm.contactRole || undefined,
+        ownerId,
       });
       setShowConversionModal(false);
       setSelectedLead(null);
@@ -770,7 +778,7 @@ export function LeadsPage(): JSX.Element {
     } catch {
       showToast('Failed to convert lead', 'error');
     }
-  }, [convertLead, conversionForm, showToast]);
+  }, [convertLead, conversionForm, showToast, selectedLead?.ownerUserId, user?.id]);
 
   const handleDeleteLead = useCallback(
     async (leadId: number) => {
