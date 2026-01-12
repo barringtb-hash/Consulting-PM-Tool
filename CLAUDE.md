@@ -85,7 +85,7 @@ npx prisma studio                    # Visual DB explorer
 
 | Account | Email | Password |
 |---------|-------|----------|
-| Admin | `admin@pmo.test` | `AdminDemo123!` |
+| Admin | `admin@pmo.test` | `Seattleu21*` |
 | Consultant | `avery.chen@pmo.test` | `PmoDemo123!` |
 
 ## Code Patterns
