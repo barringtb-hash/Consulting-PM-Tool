@@ -377,7 +377,7 @@ function calculateTeamMetrics(
 
   // Count tasks per member
   for (const task of tasks) {
-    for (const assignee of task.assignees) {
+    for (const assignee of task.assignees ?? []) {
       const workload = workloadMap.get(assignee.userId);
       if (workload) {
         workload.taskCount++;
