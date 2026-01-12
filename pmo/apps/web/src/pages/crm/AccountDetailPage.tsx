@@ -1671,11 +1671,45 @@ function AccountDetailPage(): JSX.Element {
                 />
               </CardHeader>
               <CardBody className="space-y-2">
-                <Button variant="secondary" className="w-full justify-start">
+                <Button
+                  variant="secondary"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    const primaryContact = account.crmContacts?.[0];
+                    if (primaryContact?.email) {
+                      window.open(
+                        `mailto:${primaryContact.email}?subject=Re: ${account.name}`,
+                        '_blank',
+                      );
+                    } else {
+                      showToast({
+                        message: 'No contact email available for this account',
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                >
                   <Mail className="h-4 w-4 mr-2" />
                   Send Email
                 </Button>
-                <Button variant="secondary" className="w-full justify-start">
+                <Button
+                  variant="secondary"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    if (account.phone) {
+                      window.open(`tel:${account.phone}`, '_self');
+                      showToast({
+                        message: `Initiating call to ${account.phone}`,
+                        variant: 'success',
+                      });
+                    } else {
+                      showToast({
+                        message: 'No phone number available for this account',
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                >
                   <Phone className="h-4 w-4 mr-2" />
                   Log Call
                 </Button>
