@@ -70,14 +70,7 @@ router.post(
         return res.status(400).json({ error: 'Tenant context required' });
       }
 
-      // Check if ML is available
-      if (!isMLAvailable()) {
-        return res.status(503).json({
-          error: 'ML service unavailable',
-          message: 'OpenAI API key not configured',
-        });
-      }
-
+      // Note: Services have built-in rule-based fallback when LLM is unavailable
       let result;
 
       switch (predictionType) {
@@ -155,14 +148,7 @@ router.get(
         return res.json({ data: existing, cached: true });
       }
 
-      // Generate new prediction
-      if (!isMLAvailable()) {
-        return res.status(503).json({
-          error: 'ML service unavailable',
-          message: 'OpenAI API key not configured',
-        });
-      }
-
+      // Generate new prediction (services have built-in rule-based fallback)
       const result = await predictChurn({
         accountId: id,
         tenantId,
@@ -380,14 +366,7 @@ router.post(
         return res.status(400).json({ error: 'Tenant context required' });
       }
 
-      if (!isMLAvailable()) {
-        return res.status(503).json({
-          error: 'ML service unavailable',
-          message: 'OpenAI API key not configured',
-        });
-      }
-
-      // This is a simplified batch implementation
+      // This is a simplified batch implementation (services have rule-based fallback)
       // In production, you would use a job queue
       const _results = {
         processed: 0,
