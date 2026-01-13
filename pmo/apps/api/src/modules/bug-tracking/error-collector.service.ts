@@ -107,6 +107,9 @@ async function findOrCreateIssueForError(
       ) {
         // Another request created the issue - retry to find it
         if (attempt < maxRetries - 1) {
+          // Add a small randomized delay before retrying to reduce repeated collisions
+          const delayMs = 10 + Math.floor(Math.random() * 41); // 10–50ms
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
           continue;
         }
       }
@@ -121,6 +124,7 @@ async function findOrCreateIssueForError(
     where: {
       errorHash,
       tenantId: tenantId || null,
+      status: { notIn: ['CLOSED', 'WONT_FIX'] }, // Only match open/active issues, consistent with retry loop
     },
   });
 

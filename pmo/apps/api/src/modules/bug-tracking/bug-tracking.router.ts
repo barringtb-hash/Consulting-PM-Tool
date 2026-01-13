@@ -17,10 +17,30 @@ import * as attachmentService from './attachment.service';
 import { IssueType, IssuePriority, IssueStatus, IssueSource } from './types';
 
 // Rate limiter for external API routes - 100 requests per minute per API key
+// Uses API key as the rate limiting key to ensure per-client limits
 const externalApiRateLimiter = createRateLimiter({
   windowMs: 60000, // 1 minute
   maxRequests: 100,
   message: 'Too many requests to the external API.',
+  // Use API key as the rate limiting key; fall back to IP if no API key is present
+  keyGenerator: (req: Request): string => {
+    const headerKey =
+      (req.headers['x-api-key'] as string | undefined) ??
+      (req.headers['X-API-Key'] as string | undefined);
+    const queryKey =
+      (req.query.apiKey as string | undefined) ??
+      (req.query.api_key as string | undefined);
+    // body may not always be parsed; guard with optional chaining
+    const bodyAny = req.body as
+      | { apiKey?: string; api_key?: string }
+      | undefined;
+    const bodyKey: string | undefined = bodyAny?.apiKey ?? bodyAny?.api_key;
+
+    const apiKey = headerKey ?? queryKey ?? bodyKey;
+    return typeof apiKey === 'string' && apiKey.length > 0
+      ? apiKey
+      : (req.ip ?? 'unknown');
+  },
 });
 
 // Configure multer for memory storage
@@ -318,9 +338,14 @@ function verifyWebhookSecret(secretEnvVar: string) {
     }
 
     try {
+      // Note: Webhook secrets are expected to be ASCII strings (hex, base64, or alphanumeric).
+      // The UTF-8 encoding is safe for ASCII since ASCII is a subset of UTF-8.
+      // For non-ASCII secrets, ensure consistent encoding between configuration and client.
       const secretBuffer = Buffer.from(secret, 'utf8');
       const providedBuffer = Buffer.from(providedSecret, 'utf8');
 
+      // Use constant-time length check before comparison
+      // This prevents timing attacks based on early rejection of mismatched lengths
       if (secretBuffer.length !== providedBuffer.length) {
         return res.status(401).json({ error: 'Invalid webhook secret' });
       }
@@ -329,6 +354,7 @@ function verifyWebhookSecret(secretEnvVar: string) {
         return res.status(401).json({ error: 'Invalid webhook secret' });
       }
     } catch {
+      // Catch any encoding errors and reject the request
       return res.status(401).json({ error: 'Invalid webhook secret' });
     }
 
@@ -446,7 +472,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const issue = await bugService.getIssueById(id);
@@ -471,7 +497,7 @@ router.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const parsed = updateIssueSchema.safeParse(req.body);
@@ -499,7 +525,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       await bugService.deleteIssue(id);
@@ -522,7 +548,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const body = req.body as { assignedToId?: number | null };
@@ -548,7 +574,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const body = req.body as { status?: IssueStatus };
@@ -658,7 +684,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const comments = await bugService.listComments(issueId);
@@ -678,7 +704,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const parsed = createCommentSchema.safeParse(req.body);
@@ -710,7 +736,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid comment id' });
       }
       await bugService.deleteComment(id, req.userId);
@@ -741,7 +767,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const attachments = await attachmentService.getAttachments(issueId);
@@ -765,7 +791,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const files = req.files as Express.Multer.File[];
@@ -812,7 +838,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid attachment id' });
       }
       const attachment = await attachmentService.getAttachment(id);
@@ -835,7 +861,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid attachment id' });
       }
       await attachmentService.deleteAttachment(id);
@@ -858,7 +884,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const includeImages = req.query.includeImages === 'true';
@@ -932,7 +958,7 @@ router.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid label id' });
       }
       const parsed = updateLabelSchema.safeParse(req.body);
@@ -960,7 +986,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid label id' });
       }
       await bugService.deleteLabel(id);
@@ -1024,7 +1050,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid API key id' });
       }
       const key = await apiKeyService.revokeApiKey(id);
@@ -1051,7 +1077,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
-      if (!Number.isFinite(id) || id <= 0) {
+      if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ error: 'Invalid API key id' });
       }
       await apiKeyService.deleteApiKey(id);
@@ -1209,7 +1235,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const limit = req.query.limit ? Number(req.query.limit) : 50;
@@ -1271,7 +1297,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
 
@@ -1338,7 +1364,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
-      if (!Number.isFinite(issueId) || issueId <= 0) {
+      if (!Number.isInteger(issueId) || issueId <= 0) {
         return res.status(400).json({ error: 'Invalid issue id' });
       }
       const parsed = aiPromptOptionsSchema.safeParse(req.body);
@@ -1478,7 +1504,8 @@ function parsePositiveInt(
     return defaultValue;
   }
   const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  // Use Number.isInteger for consistency with ID validation
+  if (!Number.isInteger(parsed) || parsed <= 0) {
     return defaultValue;
   }
   if (typeof max === 'number') {

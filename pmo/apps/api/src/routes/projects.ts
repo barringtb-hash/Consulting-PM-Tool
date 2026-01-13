@@ -467,13 +467,15 @@ router.patch('/:id/status', async (req: ProjectRequest, res: Response) => {
     }
 
     // Update project status with tenant isolation
+    // Note: This adds tenant filtering at the database level as an additional safety layer.
+    // While getProjectById already validates tenant access, including tenantId in the where
+    // clause ensures the update only affects rows matching both id AND tenant.
     const tenantId = hasTenantContext() ? getTenantId() : undefined;
     const updated = await prisma.project.update({
       where: {
         id: projectId,
-        // Ensure tenant isolation even though getProjectById already checked
-        // This prevents race conditions and ensures atomic tenant-scoped updates
-        ...(tenantId && { tenantId }),
+        // Add tenant isolation at the database level for defense in depth
+        ...(tenantId ? { tenantId } : {}),
       },
       data: {
         healthStatus: bodyParsed.data.healthStatus,
