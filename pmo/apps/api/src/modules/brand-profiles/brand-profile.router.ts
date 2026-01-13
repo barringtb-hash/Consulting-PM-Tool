@@ -19,6 +19,18 @@ const router = Router();
 router.use(requireAuth);
 router.use(tenantMiddleware);
 
+// Schema for brand fonts - flexible but typed structure
+const brandFontsSchema = z
+  .object({
+    primary: z.string().max(100).optional(),
+    secondary: z.string().max(100).optional(),
+    headings: z.string().max(100).optional(),
+    body: z.string().max(100).optional(),
+    monospace: z.string().max(100).optional(),
+  })
+  .passthrough()
+  .optional();
+
 const brandProfileCreateSchema = z.object({
   clientId: z.number(),
   name: z.string().min(1),
@@ -27,7 +39,7 @@ const brandProfileCreateSchema = z.object({
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
   accentColor: z.string().optional(),
-  fonts: z.any().optional(),
+  fonts: brandFontsSchema,
   toneVoiceGuidelines: z.string().optional(),
   valueProposition: z.string().optional(),
   targetAudience: z.string().optional(),
@@ -41,7 +53,7 @@ const brandProfileUpdateSchema = z.object({
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
   accentColor: z.string().optional(),
-  fonts: z.any().optional(),
+  fonts: brandFontsSchema,
   toneVoiceGuidelines: z.string().optional(),
   valueProposition: z.string().optional(),
   targetAudience: z.string().optional(),

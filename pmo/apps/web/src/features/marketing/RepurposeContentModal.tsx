@@ -5,6 +5,7 @@ import { Modal } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
 import { Select } from '../../ui/Select';
 import { Input } from '../../ui/Input';
+import { useToast } from '../../ui/Toast';
 import {
   useRepurposeMarketingContent,
   useCreateMarketingContent,
@@ -44,6 +45,7 @@ export function RepurposeContentModal({
     summary?: string;
   } | null>(null);
 
+  const { showToast } = useToast();
   const repurposeMutation = useRepurposeMarketingContent();
   const createMutation = useCreateMarketingContent();
 
@@ -62,6 +64,9 @@ export function RepurposeContentModal({
 
       setGeneratedContent(result);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to repurpose content';
+      showToast(errorMessage, 'error');
       console.error('Error repurposing content:', error);
     }
   };
@@ -82,9 +87,15 @@ export function RepurposeContentModal({
         summary: generatedContent.summary,
       });
 
+      showToast('Content saved as draft successfully', 'success');
       onClose();
       setGeneratedContent(null);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to save repurposed content';
+      showToast(errorMessage, 'error');
       console.error('Error saving repurposed content:', error);
     }
   };

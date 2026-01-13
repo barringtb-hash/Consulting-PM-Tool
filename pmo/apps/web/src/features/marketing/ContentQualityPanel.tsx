@@ -27,12 +27,19 @@ export function ContentQualityPanel({
 
   useEffect(() => {
     if (autoLint && content.body) {
+      // Reset any pending mutation before starting new one to prevent stale results
+      lintMutation.reset();
       lintMutation.mutate(content, {
         onSuccess: (result) => {
           onLintComplete?.(result);
         },
       });
     }
+
+    return () => {
+      // Cancel pending mutation on cleanup to prevent displaying stale results
+      lintMutation.reset();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content.body, content.title, content.summary, autoLint]);
 

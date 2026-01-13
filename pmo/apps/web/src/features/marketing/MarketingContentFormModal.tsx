@@ -79,6 +79,20 @@ function MarketingContentFormModal({
       return;
     }
 
+    // Validate JSON content before submission
+    let parsedContent: Record<string, unknown> | undefined;
+    if (formData.content) {
+      try {
+        parsedContent = JSON.parse(formData.content) as Record<string, unknown>;
+      } catch {
+        showToast(
+          'Invalid JSON in content field. Please check the syntax.',
+          'error',
+        );
+        return;
+      }
+    }
+
     try {
       const payload: {
         name: string;
@@ -102,9 +116,7 @@ function MarketingContentFormModal({
               .map((tag) => tag.trim())
               .filter(Boolean)
           : [],
-        content: formData.content
-          ? (JSON.parse(formData.content) as Record<string, unknown>)
-          : undefined,
+        content: parsedContent,
       };
 
       if (editingContent) {

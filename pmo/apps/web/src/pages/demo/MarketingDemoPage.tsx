@@ -13,6 +13,7 @@ import { Input } from '../../ui/Input';
 import { Badge } from '../../ui/Badge';
 import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
+import { useToast } from '../../ui/Toast';
 import {
   Sparkles,
   Megaphone,
@@ -144,6 +145,7 @@ function ContentGeneratorDemo(): JSX.Element {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [copied, setCopied] = useState(false);
+  const { showToast } = useToast();
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -176,8 +178,9 @@ function ContentGeneratorDemo(): JSX.Element {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } else {
-      window.alert(
+      showToast(
         'Failed to copy content to clipboard. Please copy it manually.',
+        'error',
       );
     }
   };

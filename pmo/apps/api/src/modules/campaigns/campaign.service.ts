@@ -108,9 +108,9 @@ export const listCampaigns = async (
           isSharedWithTenant: true,
         },
       },
-      // Campaigns with no project (client-level campaigns)
+      // Campaigns with no project (client-level campaigns) - must be created by this user
       {
-        projectId: null,
+        AND: [{ projectId: null }, { createdById: ownerId }],
       },
     ],
   };
