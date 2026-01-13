@@ -3050,50 +3050,9 @@ async function main() {
     }
   }
 
-  // Seed task dependencies
-  let dependencyCount = 0;
-  for (const depSeed of taskDependencySeeds) {
-    const projectKey = `${depSeed.clientName}::${depSeed.projectName}`;
-    const projectData = projectMap.get(projectKey);
-    if (!projectData) {
-      console.warn(`  ⚠ Project ${projectKey} not found for task dependencies`);
-      continue;
-    }
-
-    for (const dep of depSeed.dependencies) {
-      const dependentTaskKey = `${depSeed.clientName}::${depSeed.projectName}::${dep.dependentTask}`;
-      const blockingTaskKey = `${depSeed.clientName}::${depSeed.projectName}::${dep.blockingTask}`;
-
-      const dependentTaskId = taskMap.get(dependentTaskKey);
-      const blockingTaskId = taskMap.get(blockingTaskKey);
-
-      if (!dependentTaskId || !blockingTaskId) {
-        console.warn(
-          `  ⚠ Task not found for dependency: ${dep.dependentTask} <- ${dep.blockingTask}`,
-        );
-        continue;
-      }
-
-      await prisma.taskDependency.upsert({
-        where: {
-          dependentTaskId_blockingTaskId: {
-            dependentTaskId,
-            blockingTaskId,
-          },
-        },
-        update: {
-          dependencyType: dep.dependencyType,
-        },
-        create: {
-          dependentTaskId,
-          blockingTaskId,
-          dependencyType: dep.dependencyType,
-        },
-      });
-      dependencyCount++;
-    }
-  }
-  console.log(`  ✓ Created/updated ${dependencyCount} task dependencies`);
+  // Skip task dependencies - TaskDependency model not yet in schema
+  // TODO: Add TaskDependency model to schema and uncomment this section
+  console.log(`  ⚠ Skipping task dependencies (model not yet in schema)`);
 
   // Seed AI task enhancements
   let taskEnhancementCount = 0;
@@ -3124,6 +3083,14 @@ async function main() {
   }
   console.log(`  ✓ Updated ${taskEnhancementCount} tasks with AI enhancements`);
 
+  // Skip advanced AI Projects models that may not exist in all environments
+  // These models (ProjectScopeBaseline, ProjectRisk, ProjectDigestConfig, TeamAvailability)
+  // are part of newer migrations that may not be deployed to production yet
+  console.log(
+    `  ⚠ Skipping advanced AI Projects models (tables may not exist yet)`,
+  );
+
+  /* Temporarily disabled - uncomment when tables are deployed
   // Seed project scope baselines
   for (const baselineSeed of projectScopeBaselineSeeds) {
     const projectKey = `${baselineSeed.clientName}::${baselineSeed.projectName}`;
@@ -3435,6 +3402,7 @@ async function main() {
   console.log(
     `  ✓ Created/updated ${availabilityCount} team availability records`,
   );
+  // End of temporarily disabled section */
 
   console.log('\n✅ Seed data complete!');
 }
