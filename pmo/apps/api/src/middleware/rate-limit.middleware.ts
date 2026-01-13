@@ -77,13 +77,15 @@ interface RateLimitEntry {
 /**
  * Configuration options for rate limiting.
  */
-interface RateLimitOptions {
+export interface RateLimitOptions {
   /** Time window in milliseconds (e.g., 60000 for 1 minute) */
   windowMs: number;
   /** Maximum requests allowed per window */
   maxRequests: number;
   /** Custom error message for rate limit exceeded */
   message?: string;
+  /** Custom function to generate the rate limit key (defaults to IP-based) */
+  keyGenerator?: (req: Request) => string;
 }
 
 /**
@@ -167,6 +169,10 @@ export class RateLimiter {
   };
 
   private getClientKey(req: Request): string {
+    // Use custom key generator if provided
+    if (this.options.keyGenerator) {
+      return `rate-limit:${this.options.keyGenerator(req)}`;
+    }
     // Use req.ip which respects Express's trust proxy setting
     // This prevents IP spoofing via X-Forwarded-For header when trust proxy is properly configured
     // If trust proxy is not set, req.ip returns the direct connection IP (safe default)
