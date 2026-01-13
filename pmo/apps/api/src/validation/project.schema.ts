@@ -17,24 +17,26 @@ const projectDatesRefinement = (
   }
 };
 
-export const projectCreateSchema = z
-  .object({
-    accountId: z.number().int().positive().optional(), // Preferred: link to CRM Account
-    clientId: z.number().int().positive().optional(), // @deprecated - use accountId
-    name: z.string().min(1, 'Name is required').max(MAX_NAME_LENGTH),
-    status: z.nativeEnum(ProjectStatus).optional(),
-    startDate: z.coerce.date().optional(),
-    endDate: z.coerce.date().optional(),
-    isSharedWithTenant: z.boolean().optional(), // @deprecated - use visibility
-    visibility: z.nativeEnum(ProjectVisibility).optional().default('PRIVATE'),
-  })
+// Base schema without refinements (for Zod v4 compatibility with .partial())
+const projectBaseSchema = z.object({
+  accountId: z.number().int().positive().optional(), // Preferred: link to CRM Account
+  clientId: z.number().int().positive().optional(), // @deprecated - use accountId
+  name: z.string().min(1, 'Name is required').max(MAX_NAME_LENGTH),
+  status: z.nativeEnum(ProjectStatus).optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  isSharedWithTenant: z.boolean().optional(), // @deprecated - use visibility
+  visibility: z.nativeEnum(ProjectVisibility).optional().default('PRIVATE'),
+});
+
+export const projectCreateSchema = projectBaseSchema
   .refine(
     (data) => data.accountId !== undefined || data.clientId !== undefined,
     'Either accountId or clientId is required',
   )
   .superRefine(projectDatesRefinement);
 
-export const projectUpdateSchema = projectCreateSchema
+export const projectUpdateSchema = projectBaseSchema
   .partial()
   .refine(
     (data) => Object.values(data).some((value) => value !== undefined),
