@@ -102,6 +102,11 @@ router.post('/generate', async (req: AuthenticatedRequest, res) => {
 
   const document = await generateDocument(req.userId, parsed.data);
 
+  if (!document) {
+    res.status(403).json({ error: 'Access denied to associated resources' });
+    return;
+  }
+
   res.status(201).json({ document });
 });
 
@@ -134,7 +139,14 @@ router.delete(
       return;
     }
 
-    await deleteDocument(documentId);
+    const deleted = await deleteDocument(documentId);
+
+    if (!deleted) {
+      // This shouldn't happen since we already validated with getDocumentById,
+      // but handle the race condition case
+      res.status(404).json({ error: 'Document not found' });
+      return;
+    }
 
     res.status(204).send();
   },

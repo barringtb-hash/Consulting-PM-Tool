@@ -14,6 +14,7 @@ import {
   AlertSeverity,
 } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as maintenanceService from './predictive-maintenance.service';
 import { hasClientAccess } from '../../auth/client-auth.helper';
 
@@ -26,6 +27,7 @@ const router = Router();
 
 // Apply authentication middleware to all routes
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 // ============ Validation Schemas ============
 

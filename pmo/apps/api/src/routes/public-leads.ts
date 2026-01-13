@@ -51,16 +51,11 @@ router.post(
         select: { id: true, status: true },
       });
 
-      if (!tenant) {
+      // Use generic error message for all tenant-related failures to prevent
+      // information disclosure (attacker could enumerate valid tenant slugs)
+      if (!tenant || tenant.status !== 'ACTIVE') {
         res.status(400).json({
-          error: 'Tenant not found',
-        });
-        return;
-      }
-
-      if (tenant.status !== 'ACTIVE') {
-        res.status(400).json({
-          error: 'Tenant is not active',
+          error: 'Unable to process lead submission',
         });
         return;
       }

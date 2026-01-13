@@ -12,8 +12,28 @@ import { adminResetPassword } from '../auth/password-reset.service';
 import { createUserSchema, updateUserSchema } from '../validation/user.schema';
 import { adminResetPasswordSchema } from '../validation/password-reset.schema';
 import { prisma } from '../prisma/client';
+import {
+  logAudit,
+  createChangeDiff,
+  sanitizeForAudit,
+  createAuditMetadata,
+} from '../services/audit.service';
+import { AuditAction } from '@prisma/client';
+import { createRateLimiter } from '../middleware/rate-limit.middleware';
 
 const router = express.Router();
+
+// Rate limit admin user operations: 30 requests per minute per IP
+// This prevents abuse while allowing legitimate admin workflow
+const isTestEnv = process.env.NODE_ENV === 'test';
+const adminRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: isTestEnv ? 1000 : 30,
+  message: 'Too many admin requests. Please slow down and try again.',
+});
+
+// Apply rate limiting to all routes in this router
+router.use(adminRateLimiter);
 
 /**
  * POST /api/users
@@ -54,6 +74,25 @@ router.post(
       }
 
       const user = await createUser({ name, email, password, timezone, role });
+
+      // Audit log: user creation
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.CREATE,
+        entityType: 'User',
+        entityId: String(user.id),
+        after: sanitizeForAudit({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          timezone: user.timezone,
+          role: user.role,
+        }),
+        metadata: {
+          ...createAuditMetadata(req),
+          adminAction: 'create-user',
+        },
+      });
 
       res.status(201).json(user);
     } catch (err: unknown) {
@@ -149,21 +188,22 @@ router.put(
         return;
       }
 
+      // Fetch the user before update for audit logging
+      const userBeforeUpdate = await getUserById(id);
+      if (!userBeforeUpdate) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
       // Check permissions for Super Admin role changes
       if (validation.data.role) {
-        const [currentUser, targetUser] = await Promise.all([
-          prisma.user.findUnique({
-            where: { id: req.userId },
-            select: { role: true },
-          }),
-          prisma.user.findUnique({
-            where: { id },
-            select: { role: true },
-          }),
-        ]);
+        const currentUser = await prisma.user.findUnique({
+          where: { id: req.userId },
+          select: { role: true },
+        });
 
         const isCallerSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
-        const isTargetSuperAdmin = targetUser?.role === 'SUPER_ADMIN';
+        const isTargetSuperAdmin = userBeforeUpdate.role === 'SUPER_ADMIN';
 
         // Only Super Admins can promote users to Super Admin
         if (validation.data.role === 'SUPER_ADMIN' && !isCallerSuperAdmin) {
@@ -183,6 +223,38 @@ router.put(
       }
 
       const user = await updateUser(id, validation.data);
+
+      // Audit log: user update with before/after diff
+      const beforeState = sanitizeForAudit({
+        name: userBeforeUpdate.name,
+        email: userBeforeUpdate.email,
+        timezone: userBeforeUpdate.timezone,
+        role: userBeforeUpdate.role,
+      });
+      const afterState = sanitizeForAudit({
+        name: user.name,
+        email: user.email,
+        timezone: user.timezone,
+        role: user.role,
+      });
+      const { before: changedBefore, after: changedAfter } = createChangeDiff(
+        beforeState,
+        afterState,
+      );
+
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.UPDATE,
+        entityType: 'User',
+        entityId: String(user.id),
+        before: changedBefore,
+        after: changedAfter,
+        metadata: {
+          ...createAuditMetadata(req),
+          adminAction: 'update-user',
+          targetUserId: user.id,
+        },
+      });
 
       res.json(user);
     } catch (err: unknown) {
@@ -221,7 +293,40 @@ router.delete(
         return;
       }
 
+      // Prevent admin from deleting their own account
+      if (id === req.userId) {
+        res.status(400).json({ error: 'Cannot delete your own account' });
+        return;
+      }
+
+      // Fetch user before deletion for audit logging
+      const userToDelete = await getUserById(id);
+      if (!userToDelete) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
       await deleteUser(id);
+
+      // Audit log: user deletion
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.DELETE,
+        entityType: 'User',
+        entityId: String(id),
+        before: sanitizeForAudit({
+          id: userToDelete.id,
+          name: userToDelete.name,
+          email: userToDelete.email,
+          timezone: userToDelete.timezone,
+          role: userToDelete.role,
+        }),
+        metadata: {
+          ...createAuditMetadata(req),
+          adminAction: 'delete-user',
+          deletedUserEmail: userToDelete.email,
+        },
+      });
 
       res.status(204).send();
     } catch (err: unknown) {
@@ -272,6 +377,13 @@ router.post(
         return;
       }
 
+      // Fetch target user for audit logging
+      const targetUser = await getUserById(id);
+      if (!targetUser) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
       const result = await adminResetPassword(
         req.userId!,
         validation.data.userId,
@@ -282,6 +394,21 @@ router.post(
         res.status(400).json({ error: result.message });
         return;
       }
+
+      // Audit log: password reset
+      await logAudit({
+        userId: req.userId,
+        action: AuditAction.UPDATE,
+        entityType: 'User',
+        entityId: String(id),
+        after: { passwordReset: true },
+        metadata: {
+          ...createAuditMetadata(req),
+          adminAction: 'reset-password',
+          targetUserId: id,
+          targetUserEmail: targetUser.email,
+        },
+      });
 
       res.json({ message: result.message });
     } catch (err: unknown) {

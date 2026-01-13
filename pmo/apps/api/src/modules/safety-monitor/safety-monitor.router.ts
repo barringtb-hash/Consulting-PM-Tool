@@ -14,6 +14,7 @@ import {
   RiskLevel,
 } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as safetyService from './safety-monitor.service';
 import { hasClientAccess } from '../../auth/client-auth.helper';
 
@@ -21,6 +22,7 @@ const router = Router();
 
 // Apply authentication middleware to all routes
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 // ============ Validation Schemas ============
 

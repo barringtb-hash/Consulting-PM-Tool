@@ -121,36 +121,36 @@ export async function tenantMiddleware(
       }
     }
 
-    // 3. Try X-Tenant-ID header (for service-to-service calls or explicit tenant selection)
-    if (!tenant) {
+    // 3. Try X-Tenant-ID header for authenticated users only
+    //
+    // SECURITY: The X-Tenant-ID header is ONLY trusted when:
+    //   1. The user IS authenticated (req.userId exists), AND
+    //   2. The user has verified membership in the requested tenant
+    //
+    // We do NOT allow X-Tenant-ID to set tenant context for unauthenticated
+    // requests because this would allow any client to impersonate any tenant
+    // by simply setting a header. Unauthenticated requests must resolve tenant
+    // via subdomain or custom domain lookup only - these are server-controlled
+    // and cannot be spoofed by the client.
+    if (!tenant && req.userId) {
       const headerTenantId = req.headers['x-tenant-id'] as string | undefined;
       if (headerTenantId) {
-        // If user is authenticated, verify they have access to the requested tenant
-        if (req.userId) {
-          const tenantUser = await prisma.tenantUser.findUnique({
-            where: {
-              tenantId_userId: {
-                tenantId: headerTenantId,
-                userId: req.userId,
-              },
+        // Verify the authenticated user has access to the requested tenant
+        const tenantUser = await prisma.tenantUser.findUnique({
+          where: {
+            tenantId_userId: {
+              tenantId: headerTenantId,
+              userId: req.userId,
             },
-            include: { tenant: true },
-          });
+          },
+          include: { tenant: true },
+        });
 
-          if (tenantUser) {
-            tenant = tenantUser.tenant;
-            tenantSlug = tenant.slug;
-          }
-          // If user doesn't have access, fall through to step 4 (user's default tenant)
-        } else {
-          // For unauthenticated service-to-service calls, trust the header
-          tenant = await prisma.tenant.findUnique({
-            where: { id: headerTenantId },
-          });
-          if (tenant) {
-            tenantSlug = tenant.slug;
-          }
+        if (tenantUser) {
+          tenant = tenantUser.tenant;
+          tenantSlug = tenant.slug;
         }
+        // If user doesn't have access, fall through to step 4 (user's default tenant)
       }
     }
 

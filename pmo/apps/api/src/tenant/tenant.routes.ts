@@ -310,11 +310,12 @@ router.get(
 
 /**
  * PUT /api/tenants/current/branding
- * Update tenant branding
+ * Update tenant branding (OWNER or ADMIN only)
  */
 router.put(
   '/tenants/current/branding',
   requireAuth,
+  requireTenantRole(['OWNER', 'ADMIN']),
   async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext();
     const parsed = brandingSchema.safeParse(req.body);
@@ -351,11 +352,12 @@ router.get(
 
 /**
  * POST /api/tenants/current/domains
- * Add custom domain
+ * Add custom domain (OWNER or ADMIN only)
  */
 router.post(
   '/tenants/current/domains',
   requireAuth,
+  requireTenantRole(['OWNER', 'ADMIN']),
   async (req: TenantRequest, res: Response) => {
     try {
       const { tenantId } = getTenantContext();
@@ -381,11 +383,12 @@ router.post(
 
 /**
  * POST /api/tenants/current/domains/:domainId/verify
- * Verify domain
+ * Verify domain (OWNER or ADMIN only)
  */
 router.post(
   '/tenants/current/domains/:domainId/verify',
   requireAuth,
+  requireTenantRole(['OWNER', 'ADMIN']),
   async (req: TenantRequest, res: Response) => {
     const domainId = Array.isArray(req.params.domainId)
       ? req.params.domainId[0]
@@ -397,11 +400,12 @@ router.post(
 
 /**
  * DELETE /api/tenants/current/domains/:domainId
- * Remove custom domain
+ * Remove custom domain (OWNER or ADMIN only)
  */
 router.delete(
   '/tenants/current/domains/:domainId',
   requireAuth,
+  requireTenantRole(['OWNER', 'ADMIN']),
   async (req: TenantRequest, res: Response) => {
     const domainId = Array.isArray(req.params.domainId)
       ? req.params.domainId[0]
@@ -776,11 +780,12 @@ router.get(
 
 /**
  * PUT /api/tenants/current/modules/:moduleId
- * Configure module
+ * Configure module (OWNER or ADMIN only)
  */
 router.put(
   '/tenants/current/modules/:moduleId',
   requireAuth,
+  requireTenantRole(['OWNER', 'ADMIN']),
   async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext();
     const moduleId = Array.isArray(req.params.moduleId)
@@ -805,11 +810,12 @@ router.put(
 
 /**
  * POST /api/tenants/current/modules/:moduleId/trial
- * Start module trial
+ * Start module trial (OWNER or ADMIN only)
  */
 router.post(
   '/tenants/current/modules/:moduleId/trial',
   requireAuth,
+  requireTenantRole(['OWNER', 'ADMIN']),
   async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext();
     const moduleId = Array.isArray(req.params.moduleId)
