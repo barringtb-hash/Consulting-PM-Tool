@@ -8,8 +8,13 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../../auth/auth.middleware';
+import { requireAuth, AuthenticatedRequest } from '../../auth/auth.middleware';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
+import {
+  hasClientAccess,
+  getClientIdFromScoredLead,
+  getClientIdFromLeadScoringConfig,
+} from '../../auth/client-auth.helper';
 
 import {
   predictLeadConversion,
@@ -86,6 +91,19 @@ router.post(
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromScoredLead(leadId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const body = predictLeadSchema.parse(req.body || {});
       const tenantId = hasTenantContext() ? getTenantId() : 'system';
 
@@ -119,6 +137,19 @@ router.get(
       const leadId = parseInt(req.params.id, 10);
       if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
+      }
+
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromScoredLead(leadId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
       }
 
       const tenantId = hasTenantContext() ? getTenantId() : 'system';
@@ -157,6 +188,19 @@ router.post(
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromScoredLead(leadId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const body = predictLeadSchema.parse(req.body || {});
       const tenantId = hasTenantContext() ? getTenantId() : 'system';
 
@@ -189,6 +233,19 @@ router.post(
       const leadId = parseInt(req.params.id, 10);
       if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
+      }
+
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromScoredLead(leadId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
       }
 
       const body = predictLeadSchema.parse(req.body || {});
@@ -225,6 +282,19 @@ router.get(
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
 
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromScoredLead(leadId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const features = await extractLeadFeatures(leadId);
       res.json({ features });
     } catch (error) {
@@ -248,6 +318,19 @@ router.post(
       const configId = parseInt(req.params.configId, 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
+      }
+
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromLeadScoringConfig(configId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Config not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
       }
 
       const body = bulkPredictSchema.parse(req.body || {});
@@ -289,6 +372,19 @@ router.get(
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromLeadScoringConfig(configId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Config not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const query = rankLeadsSchema.parse({
         limit: req.query.limit
           ? parseInt(req.query.limit as string, 10)
@@ -323,6 +419,19 @@ router.get(
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromLeadScoringConfig(configId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Config not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const n = req.query.n ? parseInt(req.query.n as string, 10) : 10;
       const leads = await getTopPriorityLeads(configId, n);
       res.json({ leads });
@@ -343,6 +452,19 @@ router.get(
       const configId = parseInt(req.params.configId, 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
+      }
+
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromLeadScoringConfig(configId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Config not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
       }
 
       const tier = req.query.tier as 'top' | 'high' | 'medium' | 'low';
@@ -398,6 +520,19 @@ router.get(
         return res.status(400).json({ error: 'Invalid config ID' });
       }
 
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromLeadScoringConfig(configId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Config not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const tenantId = hasTenantContext() ? getTenantId() : 'system';
       const query = accuracyQuerySchema.parse({
         startDate: req.query.startDate as string | undefined,
@@ -431,6 +566,19 @@ router.get(
       const configId = parseInt(req.params.configId, 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
+      }
+
+      // Authorization check
+      const authReq = req as AuthenticatedRequest;
+      const clientId = await getClientIdFromLeadScoringConfig(configId);
+      if (!clientId) {
+        return res.status(404).json({ error: 'Config not found' });
+      }
+      if (
+        !authReq.userId ||
+        !(await hasClientAccess(authReq.userId, clientId))
+      ) {
+        return res.status(403).json({ error: 'Forbidden' });
       }
 
       // Return default feature importance based on weights

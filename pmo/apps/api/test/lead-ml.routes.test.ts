@@ -58,6 +58,9 @@ vi.mock('../src/prisma/client', () => {
     user: {
       findUnique: vi.fn(),
     },
+    client: {
+      findUnique: vi.fn(),
+    },
     tenant: {
       findUnique: vi.fn(),
     },
@@ -110,6 +113,33 @@ describe('Lead ML API Routes', () => {
     (tenantContext.getTenantId as ReturnType<typeof vi.fn>).mockReturnValue(
       'test-tenant-routes',
     );
+
+    // Set up default authorization mocks
+    // Mock user for hasClientAccess
+    (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1,
+      role: 'ADMIN',
+    });
+    // Mock client for hasClientAccess
+    (prisma.client.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 1,
+    });
+    // Mock scored lead for getClientIdFromScoredLead (authorization check)
+    (
+      prisma.scoredLead.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      config: { clientId: 1 },
+    });
+    // Mock lead scoring config for getClientIdFromLeadScoringConfig
+    (
+      prisma.leadScoringConfig.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: 1,
+      clientId: 1,
+      hotThreshold: 80,
+      warmThreshold: 50,
+      coldThreshold: 20,
+    });
   });
 
   afterAll(async () => {
@@ -275,6 +305,7 @@ describe('Lead ML API Routes', () => {
         phone: '555-1234',
         createdAt: new Date(Date.now() - 7 * 86400000),
         lastEngagementAt: new Date(),
+        config: { clientId: 1 }, // Required for authorization check
       };
 
       (

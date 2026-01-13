@@ -751,7 +751,10 @@ Focus on actionable insights for executives.`;
       });
     }
 
-    if (summary.healthDistribution.atRisk > summary.totalProjects * 0.3) {
+    if (
+      summary.totalProjects > 0 &&
+      summary.healthDistribution.atRisk > summary.totalProjects * 0.3
+    ) {
       keyFindings.push({
         type: 'WARNING',
         title: 'High percentage of at-risk projects',
@@ -806,7 +809,10 @@ Focus on actionable insights for executives.`;
     }
 
     // Positive findings
-    if (summary.healthDistribution.onTrack > summary.totalProjects * 0.7) {
+    if (
+      summary.totalProjects > 0 &&
+      summary.healthDistribution.onTrack > summary.totalProjects * 0.7
+    ) {
       keyFindings.push({
         type: 'POSITIVE',
         title: 'Majority of projects on track',

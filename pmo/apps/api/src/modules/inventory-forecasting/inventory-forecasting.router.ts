@@ -15,11 +15,13 @@ import {
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as inventoryService from './inventory-forecasting.service';
+import { prisma } from '../../prisma/client';
 import {
   hasClientAccess,
   getAccessibleClientIds,
   getClientIdFromInventoryForecastConfig,
 } from '../../auth/client-auth.helper';
+import { parseDateSafe } from '../../utils/date-utils';
 
 const router = Router();
 
@@ -451,6 +453,20 @@ router.get(
       return;
     }
 
+    // Authorization check via product's config
+    const clientId = await getClientIdFromInventoryForecastConfig(
+      product.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
     res.json({ product });
   },
 );
@@ -611,6 +627,28 @@ router.post(
       return;
     }
 
+    // Authorization check via alert's config
+    const alertData = await prisma.inventoryAlert.findUnique({
+      where: { id },
+      select: { configId: true },
+    });
+    if (!alertData) {
+      res.status(404).json({ error: 'Alert not found' });
+      return;
+    }
+    const clientId = await getClientIdFromInventoryForecastConfig(
+      alertData.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
     const alert = await inventoryService.acknowledgeAlert(id, req.userId);
     res.json({ alert });
   },
@@ -628,6 +666,28 @@ router.post(
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       res.status(400).json({ error: 'Invalid alert ID' });
+      return;
+    }
+
+    // Authorization check via alert's config
+    const alertData = await prisma.inventoryAlert.findUnique({
+      where: { id },
+      select: { configId: true },
+    });
+    if (!alertData) {
+      res.status(404).json({ error: 'Alert not found' });
+      return;
+    }
+    const clientId = await getClientIdFromInventoryForecastConfig(
+      alertData.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
       return;
     }
 
@@ -728,6 +788,28 @@ router.post(
       return;
     }
 
+    // Authorization check via scenario's config
+    const scenario = await prisma.inventoryScenario.findUnique({
+      where: { id },
+      select: { configId: true },
+    });
+    if (!scenario) {
+      res.status(404).json({ error: 'Scenario not found' });
+      return;
+    }
+    const clientId = await getClientIdFromInventoryForecastConfig(
+      scenario.configId,
+    );
+    if (!clientId) {
+      res.status(404).json({ error: 'Config not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, clientId);
+    if (!canAccess) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
     try {
       const result = await inventoryService.runScenario(id);
       res.json({ result });
@@ -771,12 +853,11 @@ router.get(
       return;
     }
 
-    const startDate = req.query.start
-      ? new Date(req.query.start as string)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = req.query.end
-      ? new Date(req.query.end as string)
-      : new Date();
+    const parsedStart = parseDateSafe(req.query.start as string);
+    const parsedEnd = parseDateSafe(req.query.end as string);
+    const startDate =
+      parsedStart ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = parsedEnd ?? new Date();
 
     const analytics = await inventoryService.getInventoryAnalytics(configId, {
       start: startDate,
