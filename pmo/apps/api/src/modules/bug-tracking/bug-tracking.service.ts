@@ -19,6 +19,29 @@ import {
 } from './types';
 
 // ============================================================================
+// TENANT ISOLATION DESIGN
+// ============================================================================
+//
+// This service uses a flexible tenant isolation pattern:
+//
+// 1. When hasTenantContext() returns true (normal user requests):
+//    - Queries are filtered by tenantId
+//    - This prevents cross-tenant data access
+//
+// 2. When hasTenantContext() returns false (system operations):
+//    - Queries proceed without tenant filtering
+//    - Used for: system jobs, migrations, admin operations
+//
+// IMPORTANT: All user-facing routes MUST set up tenant context before calling
+// these services:
+// - Authenticated routes: use tenantMiddleware (sets context from session)
+// - External API routes: use runWithTenantContext (sets context from API key)
+//
+// This pattern ensures tenant isolation at the route layer while allowing
+// flexibility for system-level operations that may need cross-tenant access.
+// ============================================================================
+
+// ============================================================================
 // ISSUE CRUD OPERATIONS
 // ============================================================================
 

@@ -40,6 +40,9 @@ export function generateErrorHash(
  * Find or create an issue for a given error
  * If an issue with the same error hash exists, increment its count
  * Otherwise, create a new issue
+ *
+ * Uses retry logic to handle race conditions when multiple identical errors
+ * arrive simultaneously
  */
 async function findOrCreateIssueForError(
   errorHash: string,
@@ -59,19 +62,75 @@ async function findOrCreateIssueForError(
 ) {
   const tenantId = hasTenantContext() ? getTenantId() : null;
 
-  // Try to find existing issue with same error hash
-  const existingIssue = await prisma.issue.findFirst({
+  // Retry loop to handle race conditions
+  // If two identical errors arrive simultaneously, one will create the issue
+  // and the other will retry and find the existing issue
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    // Try to find existing issue with same error hash
+    const existingIssue = await prisma.issue.findFirst({
+      where: {
+        errorHash,
+        tenantId: tenantId || null,
+        status: { notIn: ['CLOSED', 'WONT_FIX'] }, // Only match open/active issues
+      },
+    });
+
+    if (existingIssue) {
+      // Increment error count and update timestamp
+      return prisma.issue.update({
+        where: { id: existingIssue.id },
+        data: {
+          errorCount: { increment: 1 },
+          updatedAt: new Date(),
+        },
+      });
+    }
+
+    try {
+      // Create new issue - pass reportedById if provided
+      return await createIssue(
+        {
+          ...createData,
+          errorHash,
+          type: 'BUG',
+          priority: determinePriority(createData.source),
+        },
+        reportedById,
+      );
+    } catch (error) {
+      // Check if this is a unique constraint violation (race condition)
+      // If so, retry to find the issue that was just created
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        // Another request created the issue - retry to find it
+        if (attempt < maxRetries - 1) {
+          // Add a small randomized delay before retrying to reduce repeated collisions
+          const delayMs = 10 + Math.floor(Math.random() * 41); // 10–50ms
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue;
+        }
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  // Final fallback - should rarely reach here
+  // Try one more time to find the issue
+  const finalIssue = await prisma.issue.findFirst({
     where: {
       errorHash,
       tenantId: tenantId || null,
-      status: { notIn: ['CLOSED', 'WONT_FIX'] }, // Only match open/active issues
+      status: { notIn: ['CLOSED', 'WONT_FIX'] }, // Only match open/active issues, consistent with retry loop
     },
   });
 
-  if (existingIssue) {
-    // Increment error count and update timestamp
+  if (finalIssue) {
     return prisma.issue.update({
-      where: { id: existingIssue.id },
+      where: { id: finalIssue.id },
       data: {
         errorCount: { increment: 1 },
         updatedAt: new Date(),
@@ -79,16 +138,7 @@ async function findOrCreateIssueForError(
     });
   }
 
-  // Create new issue - pass reportedById if provided
-  return createIssue(
-    {
-      ...createData,
-      errorHash,
-      type: 'BUG',
-      priority: determinePriority(createData.source),
-    },
-    reportedById,
-  );
+  throw new Error('Failed to find or create issue after multiple attempts');
 }
 
 /**

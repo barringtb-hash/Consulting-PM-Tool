@@ -7,6 +7,7 @@ import {
   tenantMiddleware,
   type TenantRequest,
 } from '../tenant/tenant.middleware';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import prisma from '../prisma/client';
 import {
   createProject,
@@ -209,8 +210,12 @@ router.post('/', async (req: TenantRequest, res: Response) => {
     // Verify account exists (support both clientId and accountId)
     const accountId = parsed.data.accountId || parsed.data.clientId;
     if (accountId) {
-      const account = await prisma.account.findUnique({
-        where: { id: accountId },
+      const tenantId = hasTenantContext() ? getTenantId() : undefined;
+      const account = await prisma.account.findFirst({
+        where: {
+          id: accountId,
+          tenantId,
+        },
       });
 
       if (!account) {
@@ -285,8 +290,12 @@ router.put('/:id', async (req: ProjectRequest, res: Response) => {
     // Verify account exists if changing (support both clientId and accountId)
     const newAccountId = parsed.data.accountId || parsed.data.clientId;
     if (newAccountId && newAccountId !== project.accountId) {
-      const account = await prisma.account.findUnique({
-        where: { id: newAccountId },
+      const tenantId = hasTenantContext() ? getTenantId() : undefined;
+      const account = await prisma.account.findFirst({
+        where: {
+          id: newAccountId,
+          tenantId,
+        },
       });
 
       if (!account) {
@@ -457,9 +466,17 @@ router.patch('/:id/status', async (req: ProjectRequest, res: Response) => {
       return;
     }
 
-    // Update project status
+    // Update project status with tenant isolation
+    // Note: This adds tenant filtering at the database level as an additional safety layer.
+    // While getProjectById already validates tenant access, including tenantId in the where
+    // clause ensures the update only affects rows matching both id AND tenant.
+    const tenantId = hasTenantContext() ? getTenantId() : undefined;
     const updated = await prisma.project.update({
-      where: { id: projectId },
+      where: {
+        id: projectId,
+        // Add tenant isolation at the database level for defense in depth
+        ...(tenantId ? { tenantId } : {}),
+      },
       data: {
         healthStatus: bodyParsed.data.healthStatus,
         statusSummary: bodyParsed.data.statusSummary,

@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { timingSafeEqual } from 'crypto';
 import { z } from 'zod';
 import multer from 'multer';
 import { requireAuth, AuthenticatedRequest } from '../../auth/auth.middleware';
@@ -7,12 +8,40 @@ import {
   optionalTenantMiddleware,
 } from '../../tenant/tenant.middleware';
 import { runWithTenantContext } from '../../tenant/tenant.context';
+import { createRateLimiter } from '../../middleware/rate-limit.middleware';
 import * as bugService from './bug-tracking.service';
 import * as errorService from './error-collector.service';
 import * as apiKeyService from './api-key.service';
 import * as aiPromptService from './ai-prompt.service';
 import * as attachmentService from './attachment.service';
 import { IssueType, IssuePriority, IssueStatus, IssueSource } from './types';
+
+// Rate limiter for external API routes - 100 requests per minute per API key
+// Uses API key as the rate limiting key to ensure per-client limits
+const externalApiRateLimiter = createRateLimiter({
+  windowMs: 60000, // 1 minute
+  maxRequests: 100,
+  message: 'Too many requests to the external API.',
+  // Use API key as the rate limiting key; fall back to IP if no API key is present
+  keyGenerator: (req: Request): string => {
+    const headerKey =
+      (req.headers['x-api-key'] as string | undefined) ??
+      (req.headers['X-API-Key'] as string | undefined);
+    const queryKey =
+      (req.query.apiKey as string | undefined) ??
+      (req.query.api_key as string | undefined);
+    // body may not always be parsed; guard with optional chaining
+    const bodyAny = req.body as
+      | { apiKey?: string; api_key?: string }
+      | undefined;
+    const bodyKey: string | undefined = bodyAny?.apiKey ?? bodyAny?.api_key;
+
+    const apiKey = headerKey ?? queryKey ?? bodyKey;
+    return typeof apiKey === 'string' && apiKey.length > 0
+      ? apiKey
+      : (req.ip ?? 'unknown');
+  },
+});
 
 // Configure multer for memory storage
 const upload = multer({
@@ -44,22 +73,26 @@ const upload = multer({
 const router = Router();
 
 // ============================================================================
-// DEBUG: Log ALL requests entering this router
+// DEBUG: Log ALL requests entering this router (development only)
 // ============================================================================
-router.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(
-    `[BUG-TRACKING ROUTER] Received: ${req.method} ${req.path} | Original URL: ${req.originalUrl}`,
-  );
-  next();
-});
+if (process.env.NODE_ENV === 'development') {
+  router.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(
+      `[BUG-TRACKING ROUTER] Received: ${req.method} ${req.path} | Original URL: ${req.originalUrl}`,
+    );
+    next();
+  });
+}
 
 // ============================================================================
-// DEBUG: Public diagnostic endpoint - MUST be first to avoid any interference
+// DEBUG: Public diagnostic endpoint (development only)
 // ============================================================================
-router.get('/debug/ping', (_req: Request, res: Response) => {
-  console.log('[BUG-TRACKING] Debug ping endpoint hit');
-  res.json({ pong: true, timestamp: new Date().toISOString() });
-});
+if (process.env.NODE_ENV === 'development') {
+  router.get('/debug/ping', (_req: Request, res: Response) => {
+    console.log('[BUG-TRACKING] Debug ping endpoint hit');
+    res.json({ pong: true, timestamp: new Date().toISOString() });
+  });
+}
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -288,18 +321,40 @@ function verifyWebhookSecret(secretEnvVar: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const secret = process.env[secretEnvVar];
     if (!secret) {
-      // In production, fail closed if no secret is configured
       if (process.env.NODE_ENV === 'production') {
         console.error(`Error: ${secretEnvVar} not configured in production`);
         return res.status(500).json({ error: 'Webhook secret not configured' });
       }
-      // In development, allow without secret but warn
       console.warn(`Warning: ${secretEnvVar} not configured`);
       return next();
     }
 
-    const providedSecret = req.headers['x-webhook-secret'] || req.query.secret;
-    if (providedSecret !== secret) {
+    // Only accept secrets via headers (not query strings for security)
+    const providedSecret = req.headers['x-webhook-secret'];
+    if (!providedSecret || typeof providedSecret !== 'string') {
+      return res
+        .status(401)
+        .json({ error: 'Webhook secret required in X-Webhook-Secret header' });
+    }
+
+    try {
+      // Note: Webhook secrets are expected to be ASCII strings (hex, base64, or alphanumeric).
+      // The UTF-8 encoding is safe for ASCII since ASCII is a subset of UTF-8.
+      // For non-ASCII secrets, ensure consistent encoding between configuration and client.
+      const secretBuffer = Buffer.from(secret, 'utf8');
+      const providedBuffer = Buffer.from(providedSecret, 'utf8');
+
+      // Use constant-time length check before comparison
+      // This prevents timing attacks based on early rejection of mismatched lengths
+      if (secretBuffer.length !== providedBuffer.length) {
+        return res.status(401).json({ error: 'Invalid webhook secret' });
+      }
+
+      if (!timingSafeEqual(secretBuffer, providedBuffer)) {
+        return res.status(401).json({ error: 'Invalid webhook secret' });
+      }
+    } catch {
+      // Catch any encoding errors and reject the request
       return res.status(401).json({ error: 'Invalid webhook secret' });
     }
 
@@ -417,6 +472,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const issue = await bugService.getIssueById(id);
 
       if (!issue) {
@@ -439,6 +497,9 @@ router.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const parsed = updateIssueSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ errors: parsed.error.flatten() });
@@ -464,6 +525,9 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       await bugService.deleteIssue(id);
       res.status(204).send();
     } catch (error) {
@@ -484,6 +548,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const body = req.body as { assignedToId?: number | null };
       const assignedToId = body.assignedToId ?? null;
 
@@ -507,6 +574,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const body = req.body as { status?: IssueStatus };
       const status = body.status;
 
@@ -614,6 +684,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const comments = await bugService.listComments(issueId);
       res.json(comments);
     } catch (error) {
@@ -631,6 +704,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const parsed = createCommentSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ errors: parsed.error.flatten() });
@@ -660,6 +736,9 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid comment id' });
+      }
       await bugService.deleteComment(id, req.userId);
       res.status(204).send();
     } catch (error) {
@@ -688,6 +767,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const attachments = await attachmentService.getAttachments(issueId);
       res.json(attachments);
     } catch (error) {
@@ -709,6 +791,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const files = req.files as Express.Multer.File[];
 
       if (!files || files.length === 0) {
@@ -753,6 +838,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid attachment id' });
+      }
       const attachment = await attachmentService.getAttachment(id);
       res.json(attachment);
     } catch (error) {
@@ -773,6 +861,9 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid attachment id' });
+      }
       await attachmentService.deleteAttachment(id);
       res.status(204).send();
     } catch (error) {
@@ -793,6 +884,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const includeImages = req.query.includeImages === 'true';
 
       const descriptions =
@@ -864,6 +958,9 @@ router.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid label id' });
+      }
       const parsed = updateLabelSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ errors: parsed.error.flatten() });
@@ -889,6 +986,9 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid label id' });
+      }
       await bugService.deleteLabel(id);
       res.status(204).send();
     } catch (error) {
@@ -950,6 +1050,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid API key id' });
+      }
       const key = await apiKeyService.revokeApiKey(id);
       res.json(key);
     } catch (error) {
@@ -974,6 +1077,9 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid API key id' });
+      }
       await apiKeyService.deleteApiKey(id);
       res.status(204).send();
     } catch (error) {
@@ -1129,6 +1235,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const limit = req.query.limit ? Number(req.query.limit) : 50;
 
       const errors = await errorService.getErrorLogsForIssue(issueId, limit);
@@ -1188,6 +1297,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
 
       // Parse query params as options
       // Only set options that are explicitly provided, letting service defaults handle the rest
@@ -1252,6 +1364,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const issueId = Number(req.params.id);
+      if (!Number.isInteger(issueId) || issueId <= 0) {
+        return res.status(400).json({ error: 'Invalid issue id' });
+      }
       const parsed = aiPromptOptionsSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -1389,7 +1504,8 @@ function parsePositiveInt(
     return defaultValue;
   }
   const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  // Use Number.isInteger for consistency with ID validation
+  if (!Number.isInteger(parsed) || parsed <= 0) {
     return defaultValue;
   }
   if (typeof max === 'number') {
@@ -1423,6 +1539,7 @@ function buildApiKeyTenantContext(apiKey: { tenantId: string }) {
 // GET /bug-tracking/external/issues/:id/prompt - Get AI prompt via API key
 router.get(
   '/external/issues/:id/prompt',
+  externalApiRateLimiter,
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
   async (req: ApiKeyRequest, res: Response) => {
@@ -1466,6 +1583,7 @@ router.get(
 // GET /bug-tracking/external/issues - List issues via API key
 router.get(
   '/external/issues',
+  externalApiRateLimiter,
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
   async (req: ApiKeyRequest, res: Response) => {
@@ -1511,6 +1629,7 @@ router.get(
 // GET /bug-tracking/external/issues/:id - Get single issue via API key
 router.get(
   '/external/issues/:id',
+  externalApiRateLimiter,
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_READ),
   async (req: ApiKeyRequest, res: Response) => {
@@ -1542,6 +1661,7 @@ router.get(
 // POST /bug-tracking/external/issues/:id/status - Update issue status via API key
 router.post(
   '/external/issues/:id/status',
+  externalApiRateLimiter,
   requireApiKey,
   requirePermission(apiKeyService.PERMISSIONS.ISSUES_WRITE),
   async (req: ApiKeyRequest, res: Response) => {
