@@ -6,6 +6,7 @@
 
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as calendarService from './calendar.service';
 
@@ -66,13 +67,17 @@ router.post(
 
       const { configId, providerId, platform } = parsed.data;
 
-      // Create state parameter with config info
+      // Generate CSRF token for OAuth state validation
+      const csrfToken = crypto.randomBytes(32).toString('hex');
+
+      // Create state parameter with config info and CSRF token
       const state = Buffer.from(
         JSON.stringify({
           configId,
           providerId: providerId || null,
           platform,
           userId: req.userId!,
+          csrfToken,
         }),
       ).toString('base64');
 
@@ -90,6 +95,7 @@ router.post(
       res.json({
         data: {
           authUrl,
+          csrfToken, // Return CSRF token for frontend to store in sessionStorage
         },
       });
     } catch (error) {

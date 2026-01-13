@@ -81,7 +81,7 @@ async function fetchCalendarIntegrations(
 async function initiateCalendarOAuth(
   configId: number,
   platform: 'GOOGLE' | 'OUTLOOK',
-): Promise<{ authUrl: string }> {
+): Promise<{ authUrl: string; csrfToken: string }> {
   const res = await fetch(buildApiUrl('/scheduling/calendar/oauth/initiate'), {
     ...buildOptions(),
     method: 'POST',
@@ -116,7 +116,7 @@ async function fetchVideoConfigs(configId: number): Promise<VideoConfig[]> {
 async function getVideoOAuthUrl(
   configId: number,
   platform: string,
-): Promise<{ authUrl: string }> {
+): Promise<{ authUrl: string; csrfToken: string }> {
   const res = await fetch(
     buildApiUrl(`/scheduling/${configId}/video/oauth/${platform}`),
     buildOptions(),
@@ -204,6 +204,8 @@ export function IntegrationsSettingsTab({
     mutationFn: (platform: 'GOOGLE' | 'OUTLOOK') =>
       initiateCalendarOAuth(configId, platform),
     onSuccess: (data) => {
+      // Store CSRF token for validation on callback
+      sessionStorage.setItem('oauth_csrf', data.csrfToken);
       window.location.href = data.authUrl;
     },
   });
@@ -220,6 +222,8 @@ export function IntegrationsSettingsTab({
   const connectVideoMutation = useMutation({
     mutationFn: (platform: string) => getVideoOAuthUrl(configId, platform),
     onSuccess: (data) => {
+      // Store CSRF token for validation on callback
+      sessionStorage.setItem('oauth_csrf', data.csrfToken);
       window.location.href = data.authUrl;
     },
   });

@@ -8,6 +8,7 @@
  */
 
 import { Router } from 'express';
+import crypto from 'crypto';
 import { requireAuth } from '../../auth/auth.middleware';
 import * as videoService from './video.service';
 import { VideoPlatform } from '@prisma/client';
@@ -64,10 +65,16 @@ router.get(
         return res.status(400).json({ error: 'Invalid platform' });
       }
 
-      const state = req.query.state as string | undefined;
-      const authUrl = videoService.getOAuthUrl(platform, configId, state);
+      // Generate CSRF token for OAuth state validation
+      const csrfToken = crypto.randomBytes(32).toString('hex');
+      const authUrl = videoService.getOAuthUrl(platform, configId, csrfToken);
 
-      return res.json({ data: { authUrl } });
+      return res.json({
+        data: {
+          authUrl,
+          csrfToken, // Return CSRF token for frontend to store in sessionStorage
+        },
+      });
     } catch (error) {
       console.error('Failed to get OAuth URL:', error);
 
