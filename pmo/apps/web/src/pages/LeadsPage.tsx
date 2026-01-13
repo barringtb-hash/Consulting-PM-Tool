@@ -23,6 +23,7 @@ import React, {
   useState,
   useRef,
 } from 'react';
+import { useNavigate } from 'react-router';
 import {
   Plus,
   Search,
@@ -84,6 +85,7 @@ import { Select } from '../ui/Select';
 import { useToast } from '../ui/Toast';
 import { EMPTY_STATES } from '../utils/typography';
 import { useQuery } from '@tanstack/react-query';
+import { useModules } from '../modules/ModuleContext';
 
 // Tab types
 type TabType = 'leads' | 'dashboard' | 'analytics';
@@ -713,6 +715,12 @@ interface DashboardTabProps {
 }
 
 function DashboardTab({ leads, configId }: DashboardTabProps): JSX.Element {
+  const navigate = useNavigate();
+  const { isModuleEnabled } = useModules();
+
+  // Check if leadScoring module is enabled for the Configure button
+  const isLeadScoringEnabled = isModuleEnabled('leadScoring');
+
   // ML hooks - only fetch if we have a config
   const topLeadsQuery = useTopPriorityLeads(configId || 0, 5);
   const featureImportanceQuery = useFeatureImportance(configId || 0);
@@ -962,13 +970,19 @@ function DashboardTab({ leads, configId }: DashboardTabProps): JSX.Element {
                   ML Insights Available
                 </h3>
                 <p className="text-neutral-500 dark:text-neutral-400 mb-4">
-                  Set up Lead Scoring to unlock ML-powered predictions,
-                  conversion probability, and priority ranking.
+                  {isLeadScoringEnabled
+                    ? 'Set up Lead Scoring to unlock ML-powered predictions, conversion probability, and priority ranking.'
+                    : 'Enable the Lead Scoring module to unlock ML-powered predictions, conversion probability, and priority ranking.'}
                 </p>
-                <Button variant="outline">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Configure Lead Scoring
-                </Button>
+                {isLeadScoringEnabled && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/ai-tools/lead-scoring')}
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Configure Lead Scoring
+                  </Button>
+                )}
               </div>
             </Card>
           )}
