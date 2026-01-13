@@ -308,14 +308,17 @@ export function BookingRulesTab({
                       min="0"
                       max="168"
                       value={rules.modificationRules.rescheduleMinHoursNotice}
-                      onChange={(e) =>
-                        updateRulesMutation.mutate({
-                          modificationRules: {
-                            ...rules.modificationRules,
-                            rescheduleMinHoursNotice: parseInt(e.target.value),
-                          },
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        if (!isNaN(value)) {
+                          updateRulesMutation.mutate({
+                            modificationRules: {
+                              ...rules.modificationRules,
+                              rescheduleMinHoursNotice: value,
+                            },
+                          });
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -327,14 +330,17 @@ export function BookingRulesTab({
                       min="1"
                       max="10"
                       value={rules.modificationRules.rescheduleMaxTimes}
-                      onChange={(e) =>
-                        updateRulesMutation.mutate({
-                          modificationRules: {
-                            ...rules.modificationRules,
-                            rescheduleMaxTimes: parseInt(e.target.value),
-                          },
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        if (!isNaN(value)) {
+                          updateRulesMutation.mutate({
+                            modificationRules: {
+                              ...rules.modificationRules,
+                              rescheduleMaxTimes: value,
+                            },
+                          });
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -346,14 +352,17 @@ export function BookingRulesTab({
                       min="0"
                       step="0.01"
                       value={rules.modificationRules.rescheduleFee}
-                      onChange={(e) =>
-                        updateRulesMutation.mutate({
-                          modificationRules: {
-                            ...rules.modificationRules,
-                            rescheduleFee: parseFloat(e.target.value),
-                          },
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (!isNaN(value)) {
+                          updateRulesMutation.mutate({
+                            modificationRules: {
+                              ...rules.modificationRules,
+                              rescheduleFee: value,
+                            },
+                          });
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -412,14 +421,17 @@ export function BookingRulesTab({
                       min="0"
                       max="168"
                       value={rules.modificationRules.cancelMinHoursNotice}
-                      onChange={(e) =>
-                        updateRulesMutation.mutate({
-                          modificationRules: {
-                            ...rules.modificationRules,
-                            cancelMinHoursNotice: parseInt(e.target.value),
-                          },
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        if (!isNaN(value)) {
+                          updateRulesMutation.mutate({
+                            modificationRules: {
+                              ...rules.modificationRules,
+                              cancelMinHoursNotice: value,
+                            },
+                          });
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -431,14 +443,17 @@ export function BookingRulesTab({
                       min="0"
                       step="0.01"
                       value={rules.modificationRules.cancelFee}
-                      onChange={(e) =>
-                        updateRulesMutation.mutate({
-                          modificationRules: {
-                            ...rules.modificationRules,
-                            cancelFee: parseFloat(e.target.value),
-                          },
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (!isNaN(value)) {
+                          updateRulesMutation.mutate({
+                            modificationRules: {
+                              ...rules.modificationRules,
+                              cancelFee: value,
+                            },
+                          });
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -450,14 +465,17 @@ export function BookingRulesTab({
                       min="0"
                       max="168"
                       value={rules.modificationRules.fullRefundHoursNotice}
-                      onChange={(e) =>
-                        updateRulesMutation.mutate({
-                          modificationRules: {
-                            ...rules.modificationRules,
-                            fullRefundHoursNotice: parseInt(e.target.value),
-                          },
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        if (!isNaN(value)) {
+                          updateRulesMutation.mutate({
+                            modificationRules: {
+                              ...rules.modificationRules,
+                              fullRefundHoursNotice: value,
+                            },
+                          });
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -469,14 +487,17 @@ export function BookingRulesTab({
                       min="0"
                       max="100"
                       value={rules.modificationRules.partialRefundPercent}
-                      onChange={(e) =>
-                        updateRulesMutation.mutate({
-                          modificationRules: {
-                            ...rules.modificationRules,
-                            partialRefundPercent: parseInt(e.target.value),
-                          },
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        if (!isNaN(value)) {
+                          updateRulesMutation.mutate({
+                            modificationRules: {
+                              ...rules.modificationRules,
+                              partialRefundPercent: value,
+                            },
+                          });
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -499,14 +520,17 @@ export function BookingRulesTab({
                   min="0"
                   step="0.01"
                   value={rules.modificationRules.noShowFee}
-                  onChange={(e) =>
-                    updateRulesMutation.mutate({
-                      modificationRules: {
-                        ...rules.modificationRules,
-                        noShowFee: parseFloat(e.target.value),
-                      },
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      updateRulesMutation.mutate({
+                        modificationRules: {
+                          ...rules.modificationRules,
+                          noShowFee: value,
+                        },
+                      });
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -518,14 +542,17 @@ export function BookingRulesTab({
                   min="1"
                   max="10"
                   value={rules.modificationRules.noShowCountMax}
-                  onChange={(e) =>
-                    updateRulesMutation.mutate({
-                      modificationRules: {
-                        ...rules.modificationRules,
-                        noShowCountMax: parseInt(e.target.value),
-                      },
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      updateRulesMutation.mutate({
+                        modificationRules: {
+                          ...rules.modificationRules,
+                          noShowCountMax: value,
+                        },
+                      });
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -559,14 +586,17 @@ export function BookingRulesTab({
                   min="1"
                   max="20"
                   value={rules.bookingLimits.maxActiveBookingsPerCustomer}
-                  onChange={(e) =>
-                    updateRulesMutation.mutate({
-                      bookingLimits: {
-                        ...rules.bookingLimits,
-                        maxActiveBookingsPerCustomer: parseInt(e.target.value),
-                      },
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      updateRulesMutation.mutate({
+                        bookingLimits: {
+                          ...rules.bookingLimits,
+                          maxActiveBookingsPerCustomer: value,
+                        },
+                      });
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -581,14 +611,17 @@ export function BookingRulesTab({
                   min="1"
                   max="500"
                   value={rules.bookingLimits.maxBookingsPerDay}
-                  onChange={(e) =>
-                    updateRulesMutation.mutate({
-                      bookingLimits: {
-                        ...rules.bookingLimits,
-                        maxBookingsPerDay: parseInt(e.target.value),
-                      },
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      updateRulesMutation.mutate({
+                        bookingLimits: {
+                          ...rules.bookingLimits,
+                          maxBookingsPerDay: value,
+                        },
+                      });
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -603,14 +636,17 @@ export function BookingRulesTab({
                   min="1"
                   max="100"
                   value={rules.bookingLimits.maxBookingsPerProviderPerDay}
-                  onChange={(e) =>
-                    updateRulesMutation.mutate({
-                      bookingLimits: {
-                        ...rules.bookingLimits,
-                        maxBookingsPerProviderPerDay: parseInt(e.target.value),
-                      },
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      updateRulesMutation.mutate({
+                        bookingLimits: {
+                          ...rules.bookingLimits,
+                          maxBookingsPerProviderPerDay: value,
+                        },
+                      });
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -625,16 +661,17 @@ export function BookingRulesTab({
                   min="0"
                   max="168"
                   value={rules.bookingLimits.minIntervalBetweenBookingsHours}
-                  onChange={(e) =>
-                    updateRulesMutation.mutate({
-                      bookingLimits: {
-                        ...rules.bookingLimits,
-                        minIntervalBetweenBookingsHours: parseInt(
-                          e.target.value,
-                        ),
-                      },
-                    })
-                  }
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value)) {
+                      updateRulesMutation.mutate({
+                        bookingLimits: {
+                          ...rules.bookingLimits,
+                          minIntervalBetweenBookingsHours: value,
+                        },
+                      });
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -670,14 +707,17 @@ export function BookingRulesTab({
                 min="0"
                 max="120"
                 value={rules.bufferSettings.bufferBetweenAppointmentsMin}
-                onChange={(e) =>
-                  updateRulesMutation.mutate({
-                    bufferSettings: {
-                      ...rules.bufferSettings,
-                      bufferBetweenAppointmentsMin: parseInt(e.target.value),
-                    },
-                  })
-                }
+                onChange={(e) => {
+                  const value = parseInt(e.target.value, 10);
+                  if (!isNaN(value)) {
+                    updateRulesMutation.mutate({
+                      bufferSettings: {
+                        ...rules.bufferSettings,
+                        bufferBetweenAppointmentsMin: value,
+                      },
+                    });
+                  }
+                }}
                 className="max-w-xs"
               />
             </div>

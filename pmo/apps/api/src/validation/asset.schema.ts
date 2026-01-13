@@ -5,7 +5,7 @@ import {
   UpdateAIAssetSchema,
   type CreateAIAssetInput,
   type UpdateAIAssetInput,
-} from '../types/assets';
+} from '@pmo/types';
 
 export const assetCreateSchema = CreateAIAssetSchema;
 

@@ -13,6 +13,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router';
+import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import {
   Sparkles,
   Send,
@@ -264,6 +265,13 @@ function ProjectAssistantPage(): JSX.Element {
   const generateScheduleMutation = useGenerateSchedule();
   const applyScheduleMutation = useApplySchedule();
   const generateDocumentMutation = useGenerateAIDocument();
+
+  // Redirect to login on 401 errors from queries
+  useRedirectOnUnauthorized(projectsQuery.error);
+  useRedirectOnUnauthorized(aiStatusQuery.error);
+  useRedirectOnUnauthorized(healthPredictionQuery.error);
+  useRedirectOnUnauthorized(remindersQuery.error);
+  useRedirectOnUnauthorized(templatesQuery.error);
 
   // Auto-scroll to bottom
   useEffect(() => {

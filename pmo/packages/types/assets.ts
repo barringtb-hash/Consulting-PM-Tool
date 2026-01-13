@@ -25,12 +25,23 @@ export type AssetType = z.infer<typeof AssetTypeSchema>;
  *   engineering or retrieval workflows without duplicating proprietary data verbatim.
  */
 const AIAssetBaseSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(255, 'Name must be at most 255 characters'),
   type: AssetTypeSchema,
+  /** @deprecated Use accountId instead */
   clientId: z.number().int().positive().nullable().optional(),
-  description: z.string().optional(),
+  accountId: z.number().int().positive().nullable().optional(),
+  description: z
+    .string()
+    .max(10000, 'Description must be at most 10000 characters')
+    .optional(),
   content: z.unknown().optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z
+    .array(z.string().max(100, 'Each tag must be at most 100 characters'))
+    .max(50, 'At most 50 tags allowed')
+    .optional(),
   isTemplate: z.boolean().optional(),
 });
 
@@ -42,6 +53,7 @@ export type UpdateAIAssetInput = z.infer<typeof UpdateAIAssetSchema>;
 
 export const AIAssetDTOSchema = AIAssetBaseSchema.extend({
   id: z.number().int().positive(),
+  tenantId: z.string().nullable().optional(),
   archived: z.boolean(),
   createdById: z.number().int().positive().nullable().optional(),
   createdAt: z.coerce.date(),

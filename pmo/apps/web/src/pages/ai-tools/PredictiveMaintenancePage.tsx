@@ -314,13 +314,25 @@ function PredictiveMaintenancePage(): JSX.Element {
     const formData = new FormData(e.currentTarget);
     const clientId = parseInt(formData.get('clientId') as string, 10);
 
+    if (isNaN(clientId)) {
+      return;
+    }
+
+    const anomalyThreshold = parseFloat(
+      formData.get('anomalyThreshold') as string,
+    );
+    const predictionHorizonDays = parseInt(
+      formData.get('predictionHorizonDays') as string,
+      10,
+    );
+
     createConfigMutation.mutate({
       clientId,
       config: {
-        anomalyThreshold:
-          parseFloat(formData.get('anomalyThreshold') as string) || 2.0,
-        predictionHorizonDays:
-          parseInt(formData.get('predictionHorizonDays') as string, 10) || 7,
+        anomalyThreshold: isNaN(anomalyThreshold) ? 2.0 : anomalyThreshold,
+        predictionHorizonDays: isNaN(predictionHorizonDays)
+          ? 7
+          : predictionHorizonDays,
         autoWorkOrderEnabled: formData.get('autoWorkOrderEnabled') === 'on',
       },
     });
@@ -348,11 +360,16 @@ function PredictiveMaintenancePage(): JSX.Element {
               <Select
                 label="Select Configuration"
                 value={selectedConfigId?.toString() || ''}
-                onChange={(e) =>
-                  setSelectedConfigId(
-                    e.target.value ? parseInt(e.target.value, 10) : null,
-                  )
-                }
+                onChange={(e) => {
+                  if (!e.target.value) {
+                    setSelectedConfigId(null);
+                    return;
+                  }
+                  const value = parseInt(e.target.value, 10);
+                  if (!isNaN(value)) {
+                    setSelectedConfigId(value);
+                  }
+                }}
               >
                 <option value="">Select a configuration...</option>
                 {configsQuery.data?.map((config) => (

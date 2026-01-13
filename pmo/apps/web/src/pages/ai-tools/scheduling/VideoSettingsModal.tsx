@@ -3,7 +3,7 @@
  * Configure default settings for video conferencing integrations
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X,
   Video,
@@ -170,6 +170,15 @@ export function VideoSettingsModal({
     },
   });
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateMutation.mutate();
@@ -194,7 +203,12 @@ export function VideoSettingsModal({
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>

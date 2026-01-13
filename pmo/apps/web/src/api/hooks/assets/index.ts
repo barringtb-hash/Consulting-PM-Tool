@@ -65,7 +65,9 @@ export function useAsset(assetId?: number): UseQueryResult<Asset, Error> {
   const isModuleEnabled = moduleRegistry.isModuleEnabled('assets');
 
   return useQuery({
-    queryKey: assetId ? queryKeys.assets.detail(assetId) : queryKeys.assets.all,
+    queryKey: assetId
+      ? queryKeys.assets.detail(assetId)
+      : ['assets', 'detail', null],
     enabled: Boolean(assetId) && isModuleEnabled,
     queryFn: () => fetchAssetById(assetId as number),
     initialData: () => {
@@ -150,16 +152,26 @@ export function useCreateAsset(): UseMutationResult<
 
 /**
  * Update an existing asset
+ *
+ * Note: assetId is passed as part of the mutation variables to avoid stale closure issues
+ * when the hook is instantiated before the asset ID is known.
  */
-export function useUpdateAsset(
-  assetId: number,
-): UseMutationResult<Asset, Error, Partial<AssetPayload>> {
+export function useUpdateAsset(): UseMutationResult<
+  Asset,
+  Error,
+  { assetId: number; data: Partial<AssetPayload> }
+> {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: Partial<AssetPayload>) =>
-      updateAsset(assetId, payload),
-    onSuccess: (asset) => {
+    mutationFn: ({
+      assetId,
+      data,
+    }: {
+      assetId: number;
+      data: Partial<AssetPayload>;
+    }) => updateAsset(assetId, data),
+    onSuccess: (asset, { assetId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.assets.all });
       queryClient.setQueryData(queryKeys.assets.detail(assetId), asset);
     },

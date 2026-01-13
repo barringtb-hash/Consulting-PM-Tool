@@ -62,6 +62,25 @@ export function OAuthCallbackPage({
         // Determine the callback endpoint based on integration type and platform
         let callbackEndpoint: string;
 
+        // Parse and validate state parameter with CSRF protection
+        let stateData: { configId?: number; csrfToken?: string } = {};
+        if (state) {
+          try {
+            stateData = JSON.parse(atob(state));
+          } catch {
+            throw new Error(
+              'Invalid OAuth state parameter. Please try connecting again.',
+            );
+          }
+
+          // Validate CSRF token
+          const storedCsrf = sessionStorage.getItem('oauth_csrf');
+          sessionStorage.removeItem('oauth_csrf');
+          if (!storedCsrf || stateData.csrfToken !== storedCsrf) {
+            throw new Error('Invalid state parameter - CSRF validation failed');
+          }
+        }
+
         if (integrationType === 'calendar') {
           if (platform === 'google') {
             callbackEndpoint = '/scheduling/calendar/google/callback';
@@ -71,17 +90,6 @@ export function OAuthCallbackPage({
             throw new Error(`Unknown calendar platform: ${platform}`);
           }
         } else if (integrationType === 'video') {
-          // Parse configId from state with proper error handling
-          let stateData: { configId?: number } = {};
-          if (state) {
-            try {
-              stateData = JSON.parse(atob(state));
-            } catch {
-              throw new Error(
-                'Invalid OAuth state parameter. Please try connecting again.',
-              );
-            }
-          }
           const configId = stateData.configId;
 
           if (!configId) {
@@ -130,6 +138,16 @@ export function OAuthCallbackPage({
 
     handleCallback();
   }, [searchParams, integrationType, platform]);
+
+  // Auto-redirect to scheduling page after successful authentication
+  useEffect(() => {
+    if (status === 'success') {
+      const timeoutId = setTimeout(() => {
+        navigate('/ai-tools/scheduling');
+      }, 3000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [status, navigate]);
 
   const getSuccessMessage = (platform: Platform): string => {
     const platformNames: Record<Platform, string> = {

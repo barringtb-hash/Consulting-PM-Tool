@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Edit2, Archive, FileText, Tag, Calendar } from 'lucide-react';
 import { type Asset } from '../../api/assets';
 import { type Client } from '../../api/clients';
@@ -39,6 +39,30 @@ function AssetDetailModal({
   onEdit,
   onArchive,
 }: AssetDetailModalProps): JSX.Element {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  // Focus trap - focus the close button when modal opens
+  useEffect(() => {
+    const previouslyFocusedElement = document.activeElement as HTMLElement;
+    closeButtonRef.current?.focus();
+
+    return () => {
+      // Return focus to the previously focused element when modal closes
+      previouslyFocusedElement?.focus?.();
+    };
+  }, []);
+
   const formatDate = (dateStr: string): string => {
     try {
       return new Date(dateStr).toLocaleDateString('en-US', {
@@ -64,6 +88,9 @@ function AssetDetailModal({
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="asset-detail-modal-title"
           className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full"
           onClick={(e) => e.stopPropagation()}
         >
@@ -71,7 +98,10 @@ function AssetDetailModal({
           <div className="flex items-start justify-between p-6 border-b border-neutral-200">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-xl font-semibold text-neutral-900 truncate">
+                <h2
+                  id="asset-detail-modal-title"
+                  className="text-xl font-semibold text-neutral-900 truncate"
+                >
                   {asset.name}
                 </h2>
                 <Badge variant={ASSET_TYPE_VARIANTS[asset.type]}>
@@ -82,6 +112,7 @@ function AssetDetailModal({
               </div>
             </div>
             <button
+              ref={closeButtonRef}
               onClick={onClose}
               className="ml-4 text-neutral-400 hover:text-neutral-600 transition-colors"
               aria-label="Close modal"

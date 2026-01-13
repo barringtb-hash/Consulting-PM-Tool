@@ -290,6 +290,9 @@ function ComplianceMonitorPage(): JSX.Element {
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(rulesQuery.error);
+  useRedirectOnUnauthorized(violationsQuery.error);
+  useRedirectOnUnauthorized(auditsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

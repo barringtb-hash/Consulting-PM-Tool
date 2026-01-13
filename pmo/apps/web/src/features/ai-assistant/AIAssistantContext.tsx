@@ -4,7 +4,13 @@
  * Provides global state for the AI Assistant sidebar
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 
 interface AIAssistantContextType {
   isOpen: boolean;
@@ -42,18 +48,21 @@ export function AIAssistantProvider({
     [],
   );
 
+  const value = useMemo(
+    () => ({
+      isOpen,
+      open,
+      close,
+      toggle,
+      clientId,
+      projectId,
+      setContext,
+    }),
+    [isOpen, open, close, toggle, clientId, projectId, setContext],
+  );
+
   return (
-    <AIAssistantContext.Provider
-      value={{
-        isOpen,
-        open,
-        close,
-        toggle,
-        clientId,
-        projectId,
-        setContext,
-      }}
-    >
+    <AIAssistantContext.Provider value={value}>
       {children}
     </AIAssistantContext.Provider>
   );
