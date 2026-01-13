@@ -1,5 +1,6 @@
 import prisma from '../../prisma/client';
 import { Prisma } from '@prisma/client';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import {
   CreateBrandProfileInput,
   UpdateBrandProfileInput,
@@ -16,13 +17,19 @@ export const getBrandProfileByClientId = async (
 
   _ownerId: number,
 ) => {
-  const account = await prisma.account.findUnique({ where: { id: accountId } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const account = await prisma.account.findFirst({
+    where: { id: accountId, tenantId },
+  });
   if (!account) {
     return { error: 'client_not_found' as const };
   }
 
-  const brandProfile = await prisma.brandProfile.findUnique({
-    where: { clientId: accountId },
+  const brandProfile = await prisma.brandProfile.findFirst({
+    where: {
+      clientId: accountId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
     include: {
       client: {
         select: { id: true, name: true },
@@ -49,16 +56,20 @@ export const createBrandProfile = async (
   _ownerId: number,
   input: CreateBrandProfileInput,
 ) => {
-  const account = await prisma.account.findUnique({
-    where: { id: input.clientId },
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const account = await prisma.account.findFirst({
+    where: { id: input.clientId, tenantId },
   });
   if (!account) {
     return { error: 'client_not_found' as const };
   }
 
   // Check if brand profile already exists
-  const existing = await prisma.brandProfile.findUnique({
-    where: { clientId: input.clientId },
+  const existing = await prisma.brandProfile.findFirst({
+    where: {
+      clientId: input.clientId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (existing) {
     return { error: 'already_exists' as const };
@@ -89,7 +100,13 @@ export const updateBrandProfile = async (
   _ownerId: number,
   input: UpdateBrandProfileInput,
 ) => {
-  const existing = await prisma.brandProfile.findUnique({ where: { id } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const existing = await prisma.brandProfile.findFirst({
+    where: {
+      id,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
+  });
   if (!existing) {
     return { error: 'not_found' as const };
   }
@@ -126,8 +143,12 @@ export const getBrandAssets = async (
 
   _ownerId: number,
 ) => {
-  const brandProfile = await prisma.brandProfile.findUnique({
-    where: { id: brandProfileId },
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const brandProfile = await prisma.brandProfile.findFirst({
+    where: {
+      id: brandProfileId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (!brandProfile) {
     return { error: 'profile_not_found' as const };
@@ -151,8 +172,12 @@ export const createBrandAsset = async (
   _ownerId: number,
   input: CreateBrandAssetInput,
 ) => {
-  const brandProfile = await prisma.brandProfile.findUnique({
-    where: { id: input.brandProfileId },
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  const brandProfile = await prisma.brandProfile.findFirst({
+    where: {
+      id: input.brandProfileId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (!brandProfile) {
     return { error: 'profile_not_found' as const };
@@ -173,7 +198,14 @@ export const updateBrandAsset = async (
   _ownerId: number,
   input: UpdateBrandAssetInput,
 ) => {
-  const existing = await prisma.brandAsset.findUnique({ where: { id } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  // Join with brand profile to verify tenant access
+  const existing = await prisma.brandAsset.findFirst({
+    where: {
+      id,
+      ...(tenantId ? { brandProfile: { client: { tenantId } } } : {}),
+    },
+  });
   if (!existing) {
     return { error: 'not_found' as const };
   }
@@ -194,7 +226,14 @@ export const archiveBrandAsset = async (
 
   _ownerId: number,
 ) => {
-  const existing = await prisma.brandAsset.findUnique({ where: { id } });
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+  // Join with brand profile to verify tenant access
+  const existing = await prisma.brandAsset.findFirst({
+    where: {
+      id,
+      ...(tenantId ? { brandProfile: { client: { tenantId } } } : {}),
+    },
+  });
   if (!existing) {
     return { error: 'not_found' as const };
   }

@@ -169,9 +169,9 @@ export function getVideoOAuthStatus(): Record<
 export function getOAuthUrl(
   platform: VideoPlatform,
   configId: number,
-  state?: string,
+  csrfToken?: string,
 ): string {
-  const statePayload = JSON.stringify({ configId, state });
+  const statePayload = JSON.stringify({ configId, csrfToken });
   const encodedState = Buffer.from(statePayload).toString('base64');
 
   switch (platform) {

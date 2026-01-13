@@ -338,7 +338,8 @@ async function getCategoryBreakdownForecast(
   const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
   return categorySpending.slice(0, 10).map((c) => {
-    const percentage = Number(c._sum.amount || 0) / totalHistorical;
+    const percentage =
+      totalHistorical > 0 ? Number(c._sum.amount || 0) / totalHistorical : 0;
     return {
       categoryId: c.categoryId,
       categoryName: categoryMap.get(c.categoryId) || 'Unknown',

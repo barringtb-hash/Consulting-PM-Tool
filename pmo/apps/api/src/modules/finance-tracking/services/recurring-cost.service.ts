@@ -74,6 +74,22 @@ function calculateAnnualCost(
   return amount * (multipliers[frequency] || 1);
 }
 
+/**
+ * Adds months to a date while properly handling end-of-month edge cases.
+ * For example, Jan 31 + 1 month = Feb 28 (not Mar 3).
+ */
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  const originalDay = result.getDate();
+  result.setMonth(result.getMonth() + months);
+  // If the day changed due to month overflow (e.g., Jan 31 -> Mar 3),
+  // set to the last day of the target month
+  if (result.getDate() !== originalDay) {
+    result.setDate(0); // Sets to last day of previous month
+  }
+  return result;
+}
+
 function getNextDueDate(
   currentDueDate: Date,
   frequency: RecurringFrequency,
@@ -87,14 +103,11 @@ function getNextDueDate(
       next.setDate(next.getDate() + 14);
       break;
     case 'MONTHLY':
-      next.setMonth(next.getMonth() + 1);
-      break;
+      return addMonths(currentDueDate, 1);
     case 'QUARTERLY':
-      next.setMonth(next.getMonth() + 3);
-      break;
+      return addMonths(currentDueDate, 3);
     case 'SEMIANNUALLY':
-      next.setMonth(next.getMonth() + 6);
-      break;
+      return addMonths(currentDueDate, 6);
     case 'YEARLY':
       next.setFullYear(next.getFullYear() + 1);
       break;
@@ -231,13 +244,15 @@ export async function createRecurringCost(
     }
   }
 
-  // Validate employee if provided
+  // Validate employee if provided - ensure they belong to this tenant
   if (input.employeeId) {
-    const employee = await prisma.user.findUnique({
-      where: { id: input.employeeId },
+    const tenantUser = await prisma.tenantUser.findUnique({
+      where: {
+        tenantId_userId: { tenantId, userId: input.employeeId },
+      },
     });
-    if (!employee) {
-      throw new Error('Employee not found');
+    if (!tenantUser) {
+      throw new Error('Employee not found or not in tenant');
     }
   }
 

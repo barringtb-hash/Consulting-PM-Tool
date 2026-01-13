@@ -455,7 +455,7 @@ export async function predictNoShow(
   // Calculate weighted average
   const totalWeight = scores.reduce((sum, s) => sum + s.weight, 0);
   const weightedSum = scores.reduce((sum, s) => sum + s.score * s.weight, 0);
-  const rawScore = weightedSum / totalWeight;
+  const rawScore = totalWeight > 0 ? weightedSum / totalWeight : 0.5;
 
   // Apply sigmoid normalization to keep in 0-1 range
   const score = Math.min(0.95, Math.max(0.05, rawScore));

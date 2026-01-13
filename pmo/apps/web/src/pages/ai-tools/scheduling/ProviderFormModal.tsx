@@ -3,7 +3,7 @@
  * Create and edit service providers with availability schedule
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, User, Clock, Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '../../../ui/Card';
 import { Button } from '../../../ui/Button';
@@ -137,8 +137,12 @@ export function ProviderFormModal({
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<Provider>) =>
-      updateProvider(provider!.id!, data),
+    mutationFn: (data: Partial<Provider>) => {
+      if (!provider?.id) {
+        return Promise.reject(new Error('Provider ID is required for updates'));
+      }
+      return updateProvider(provider.id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['scheduling-providers', configId],
@@ -156,6 +160,15 @@ export function ProviderFormModal({
   });
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,7 +238,12 @@ export function ProviderFormModal({
           <h2 className="text-xl font-semibold">
             {isEditing ? 'Edit Provider' : 'Add New Provider'}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>

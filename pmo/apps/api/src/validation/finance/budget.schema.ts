@@ -1,10 +1,41 @@
 import { z } from 'zod';
 
-export const createBudgetSchema = z.object({
+// Valid ISO 4217 currency codes (common currencies)
+const VALID_CURRENCIES = [
+  'USD',
+  'EUR',
+  'GBP',
+  'CAD',
+  'AUD',
+  'JPY',
+  'CHF',
+  'CNY',
+  'INR',
+  'MXN',
+  'BRL',
+  'KRW',
+  'SGD',
+  'HKD',
+  'NZD',
+] as const;
+
+// Base budget fields schema (without refinements)
+const budgetBaseSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().max(1000).optional(),
   amount: z.number().positive(),
-  currency: z.string().length(3).default('USD'),
+  currency: z
+    .string()
+    .length(3)
+    .toUpperCase()
+    .refine(
+      (val) =>
+        VALID_CURRENCIES.includes(val as (typeof VALID_CURRENCIES)[number]),
+      {
+        message: 'Invalid currency code',
+      },
+    )
+    .default('USD'),
   period: z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']),
   startDate: z.string().datetime().or(z.date()),
   endDate: z.string().datetime().or(z.date()).optional(),
@@ -17,9 +48,42 @@ export const createBudgetSchema = z.object({
   allowRollover: z.boolean().default(false),
 });
 
-export const updateBudgetSchema = createBudgetSchema.partial().extend({
-  status: z.enum(['DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED']).optional(),
-});
+// Date validation refinement
+const dateValidation = (data: {
+  period?: string;
+  startDate?: string | Date;
+  endDate?: string | Date;
+}) => {
+  // End date is required for CUSTOM period
+  if (data.period === 'CUSTOM' && !data.endDate) {
+    return false;
+  }
+  // End date must be after start date if provided
+  if (data.endDate && data.startDate) {
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    return end > start;
+  }
+  return true;
+};
+
+const dateValidationMessage = {
+  message:
+    'End date is required for custom period and must be after start date',
+  path: ['endDate'],
+};
+
+export const createBudgetSchema = budgetBaseSchema.refine(
+  dateValidation,
+  dateValidationMessage,
+);
+
+export const updateBudgetSchema = budgetBaseSchema
+  .partial()
+  .extend({
+    status: z.enum(['DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED']).optional(),
+  })
+  .refine(dateValidation, dateValidationMessage);
 
 export const listBudgetsSchema = z.object({
   page: z.coerce.number().int().positive().default(1),

@@ -888,7 +888,7 @@ function calculateKeywordDensity(text: string, keywords: string[]): number {
     keywordCount += matches ? matches.length : 0;
   }
 
-  return (keywordCount / totalWords) * 100;
+  return totalWords > 0 ? (keywordCount / totalWords) * 100 : 0;
 }
 
 /**

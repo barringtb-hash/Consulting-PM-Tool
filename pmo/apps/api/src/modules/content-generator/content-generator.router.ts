@@ -501,6 +501,24 @@ router.get(
   },
 );
 
+// Validation schema for content updates
+const contentUpdateSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  content: z.string().max(100000).optional(),
+  contentHtml: z.string().max(200000).optional(),
+  approvalStatus: z
+    .enum([
+      'DRAFT',
+      'PENDING_REVIEW',
+      'REVISION_REQUESTED',
+      'APPROVED',
+      'REJECTED',
+      'PUBLISHED',
+    ])
+    .optional(),
+  revisionNotes: z.string().max(5000).optional(),
+});
+
 /**
  * PATCH /api/content-generator/contents/:id
  * Update content
@@ -534,20 +552,17 @@ router.patch(
       return;
     }
 
+    const parsed = contentUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid content data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
     const { title, content, contentHtml, approvalStatus, revisionNotes } =
-      req.body as {
-        title?: string;
-        content?: string;
-        contentHtml?: string;
-        approvalStatus?:
-          | 'DRAFT'
-          | 'PENDING_REVIEW'
-          | 'REVISION_REQUESTED'
-          | 'APPROVED'
-          | 'REJECTED'
-          | 'PUBLISHED';
-        revisionNotes?: string;
-      };
+      parsed.data;
 
     try {
       const updated = await contentGeneratorService.updateContent(id, {
@@ -1139,9 +1154,23 @@ router.get(
   '/content-generator/crm-placeholders/account/:accountId',
   requireAuth,
   async (req: AuthenticatedRequest<{ accountId: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const accountId = Number(req.params.accountId);
     if (Number.isNaN(accountId)) {
       res.status(400).json({ error: 'Invalid account ID' });
+      return;
+    }
+
+    // Authorization check - verify user has access to this account
+    const canAccess = await hasClientAccess(req.userId, accountId);
+    if (!canAccess) {
+      res
+        .status(403)
+        .json({ error: 'Forbidden: You do not have access to this account' });
       return;
     }
 
@@ -1166,9 +1195,29 @@ router.get(
     req: AuthenticatedRequest<{ opportunityId: string }>,
     res: Response,
   ) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const opportunityId = Number(req.params.opportunityId);
     if (Number.isNaN(opportunityId)) {
       res.status(400).json({ error: 'Invalid opportunity ID' });
+      return;
+    }
+
+    // Authorization check - verify user has access to the opportunity's account
+    const accountId =
+      await contentGeneratorService.getAccountIdFromOpportunity(opportunityId);
+    if (!accountId) {
+      res.status(404).json({ error: 'Opportunity not found' });
+      return;
+    }
+    const canAccess = await hasClientAccess(req.userId, accountId);
+    if (!canAccess) {
+      res.status(403).json({
+        error: 'Forbidden: You do not have access to this opportunity',
+      });
       return;
     }
 
@@ -2116,7 +2165,7 @@ router.post(
   '/contents/:contentId/translate',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const contentId = parseInt(req.params.contentId, 10);
+    const contentId = parseInt(String(req.params.contentId), 10);
     if (isNaN(contentId)) {
       res.status(400).json({ error: 'Invalid content ID' });
       return;
@@ -2235,7 +2284,7 @@ router.get(
   '/contents/:contentId/translations',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const contentId = parseInt(req.params.contentId, 10);
+    const contentId = parseInt(String(req.params.contentId), 10);
     if (isNaN(contentId)) {
       res.status(400).json({ error: 'Invalid content ID' });
       return;
@@ -2277,7 +2326,7 @@ router.delete(
   '/translations/:translationId',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const translationId = parseInt(req.params.translationId, 10);
+    const translationId = parseInt(String(req.params.translationId), 10);
     if (isNaN(translationId)) {
       res.status(400).json({ error: 'Invalid translation ID' });
       return;
@@ -2418,7 +2467,7 @@ router.post(
   '/contents/:contentId/compliance-check',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const contentId = parseInt(req.params.contentId, 10);
+    const contentId = parseInt(String(req.params.contentId), 10);
     if (isNaN(contentId)) {
       res.status(400).json({ error: 'Invalid content ID' });
       return;

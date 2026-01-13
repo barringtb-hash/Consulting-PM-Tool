@@ -30,7 +30,7 @@ router.get(
   '/projects/:projectId/documents',
   async (req: AuthenticatedRequest, res) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
 
       if (isNaN(projectId)) {
         res.status(400).json({ error: 'Invalid project ID' });
@@ -64,7 +64,7 @@ router.get(
   '/projects/:projectId/documents/stats',
   async (req: AuthenticatedRequest, res) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
 
       if (isNaN(projectId)) {
         res.status(400).json({ error: 'Invalid project ID' });
@@ -89,7 +89,7 @@ router.post(
   '/projects/:projectId/documents',
   async (req: AuthenticatedRequest, res) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
 
       if (isNaN(projectId)) {
         res.status(400).json({ error: 'Invalid project ID' });

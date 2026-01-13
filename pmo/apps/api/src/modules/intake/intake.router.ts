@@ -1612,7 +1612,7 @@ router.post(
 router.post(
   '/public/intake/conversation/:token/message',
   async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = String(req.params.token);
     const parsed = sendMessageSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -1648,7 +1648,7 @@ router.post(
 router.get(
   '/public/intake/conversation/:token/summary',
   async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = String(req.params.token);
 
     try {
       const summary = await conversationService.getConversationSummary(token);
@@ -1673,7 +1673,7 @@ router.get(
 router.get(
   '/public/intake/conversation/:token/history',
   async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = String(req.params.token);
 
     try {
       const history = await conversationService.getConversationHistory(token);
@@ -1698,7 +1698,7 @@ router.get(
 router.post(
   '/public/intake/conversation/:token/pause',
   async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = String(req.params.token);
 
     try {
       await conversationService.pauseConversation(token);
@@ -1723,7 +1723,7 @@ router.post(
 router.post(
   '/public/intake/conversation/:token/resume',
   async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = String(req.params.token);
 
     try {
       const result = await conversationService.resumeConversation(token);
@@ -1752,7 +1752,7 @@ router.post(
 router.post(
   '/public/intake/conversation/:token/abandon',
   async (req: Request, res: Response) => {
-    const { token } = req.params;
+    const token = String(req.params.token);
 
     try {
       await conversationService.abandonConversation(token);

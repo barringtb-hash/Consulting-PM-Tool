@@ -214,6 +214,9 @@ function RevenueManagementPage(): JSX.Element {
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(pricingQuery.error);
+  useRedirectOnUnauthorized(competitorsQuery.error);
+  useRedirectOnUnauthorized(forecastsQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

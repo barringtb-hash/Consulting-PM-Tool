@@ -17,10 +17,23 @@ const router = Router();
 router.use(requireAuth);
 router.use(tenantMiddleware);
 
+// Schema for campaign goals - flexible but typed structure
+const campaignGoalsSchema = z
+  .object({
+    conversions: z.number().optional(),
+    reach: z.number().optional(),
+    engagement: z.number().optional(),
+    revenue: z.number().optional(),
+    description: z.string().max(1000).optional(),
+    metrics: z.array(z.string()).optional(),
+  })
+  .passthrough()
+  .optional();
+
 const campaignCreateSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  goals: z.any().optional(),
+  goals: campaignGoalsSchema,
   status: z.nativeEnum(CampaignStatus).optional(),
   startDate: z.coerce.date().nullable().optional(),
   endDate: z.coerce.date().nullable().optional(),
@@ -31,7 +44,7 @@ const campaignCreateSchema = z.object({
 const campaignUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
-  goals: z.any().optional(),
+  goals: campaignGoalsSchema,
   status: z.nativeEnum(CampaignStatus).optional(),
   startDate: z.coerce.date().nullable().optional(),
   endDate: z.coerce.date().nullable().optional(),
@@ -122,7 +135,7 @@ router.get(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;
@@ -159,7 +172,7 @@ router.patch(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;
@@ -215,7 +228,7 @@ router.delete(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;
@@ -252,7 +265,7 @@ router.get(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;

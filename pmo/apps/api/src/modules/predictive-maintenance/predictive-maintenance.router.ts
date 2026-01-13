@@ -13,7 +13,7 @@ import {
   WorkOrderPriority,
   AlertSeverity,
 } from '@prisma/client';
-import { AuthenticatedRequest } from '../../auth/auth.middleware';
+import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
 import * as maintenanceService from './predictive-maintenance.service';
 import { hasClientAccess } from '../../auth/client-auth.helper';
 
@@ -23,6 +23,9 @@ function getUserId(req: AuthenticatedRequest): number | null {
 }
 
 const router = Router();
+
+// Apply authentication middleware to all routes
+router.use(requireAuth);
 
 // ============ Validation Schemas ============
 

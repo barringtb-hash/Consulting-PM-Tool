@@ -25,9 +25,11 @@ else
 fi
 
 # Step 1: Install dependencies from workspace root (include dev for TypeScript types)
+# Using npm install instead of npm ci to handle lock file version differences
+# between development environments and Render's Node.js version
 echo ""
 echo "Installing dependencies..."
-npm ci --include=dev
+npm install --include=dev
 echo "Dependencies installed"
 echo ""
 

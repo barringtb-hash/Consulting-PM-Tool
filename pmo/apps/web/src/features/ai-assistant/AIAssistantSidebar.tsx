@@ -68,9 +68,15 @@ export function AIAssistantSidebar(): JSX.Element | null {
   // Focus input when sidebar opens
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      const timeoutId = setTimeout(() => inputRef.current?.focus(), 100);
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen]);
+
+  // Clear messages when context changes
+  useEffect(() => {
+    setMessages([]);
+  }, [clientId, projectId]);
 
   // Handle resize mouse events
   const handleMouseMove = useCallback(
@@ -122,13 +128,13 @@ export function AIAssistantSidebar(): JSX.Element | null {
     if (!messageText.trim() || aiQuery.isPending) return;
 
     const userMessage: Message = {
-      id: `user-${Date.now()}`,
+      id: `user-${crypto.randomUUID()}`,
       role: 'user',
       content: messageText.trim(),
     };
 
     const assistantMessage: Message = {
-      id: `assistant-${Date.now()}`,
+      id: `assistant-${crypto.randomUUID()}`,
       role: 'assistant',
       content: '',
       isLoading: true,
@@ -214,6 +220,8 @@ export function AIAssistantSidebar(): JSX.Element | null {
   return (
     <div
       ref={sidebarRef}
+      role="complementary"
+      aria-label="AI Assistant"
       className={`relative flex flex-col h-full bg-white dark:bg-neutral-800 shadow-xl flex-shrink-0 border-l border-neutral-200 dark:border-neutral-700 ${isResizing ? '' : 'animate-slide-in-right'}`}
       style={{
         width: `${width}px`,
@@ -223,6 +231,8 @@ export function AIAssistantSidebar(): JSX.Element | null {
     >
       {/* Resize Handle */}
       <div
+        role="separator"
+        aria-label="Resize sidebar"
         className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-primary-500/50 active:bg-primary-500 transition-colors group z-10"
         onMouseDown={startResizing}
       >
@@ -250,6 +260,7 @@ export function AIAssistantSidebar(): JSX.Element | null {
           )}
           <button
             onClick={close}
+            aria-label="Close AI Assistant"
             className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
           >
             <X className="w-5 h-5" />

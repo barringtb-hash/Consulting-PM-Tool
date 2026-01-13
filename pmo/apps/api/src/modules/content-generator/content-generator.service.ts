@@ -923,3 +923,16 @@ export async function getCRMPlaceholdersForAccount(accountId: number) {
 export async function getCRMPlaceholdersForOpportunity(opportunityId: number) {
   return crmIntegration.getCRMPlaceholdersForOpportunity(opportunityId);
 }
+
+/**
+ * Get the account ID for an opportunity (for authorization checks)
+ */
+export async function getAccountIdFromOpportunity(
+  opportunityId: number,
+): Promise<number | null> {
+  const opportunity = await prisma.opportunity.findUnique({
+    where: { id: opportunityId },
+    select: { accountId: true },
+  });
+  return opportunity?.accountId ?? null;
+}

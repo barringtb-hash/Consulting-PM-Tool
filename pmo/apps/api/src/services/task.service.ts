@@ -175,9 +175,12 @@ export const listTasksForProject = async (
     return { error: projectAccess } as const;
   }
 
+  // Get tenant context for multi-tenant filtering
+  const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
   // Get parent tasks only (no subtasks) with subtask counts and assignees
   const tasks = await prisma.task.findMany({
-    where: { projectId, parentTaskId: null },
+    where: { projectId, parentTaskId: null, tenantId },
     include: {
       _count: { select: { subTasks: true } },
       subTasks: { select: { status: true } },

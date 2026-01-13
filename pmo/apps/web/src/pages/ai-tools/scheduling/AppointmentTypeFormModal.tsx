@@ -3,7 +3,7 @@
  * Create and edit appointment types with duration, pricing, and color coding
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Clock, DollarSign, Palette, Save, Loader2 } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '../../../ui/Card';
 import { Button } from '../../../ui/Button';
@@ -137,8 +137,14 @@ export function AppointmentTypeFormModal({
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<AppointmentType>) =>
-      updateAppointmentType(appointmentType!.id!, data),
+    mutationFn: (data: Partial<AppointmentType>) => {
+      if (!appointmentType?.id) {
+        return Promise.reject(
+          new Error('Appointment type ID is required for updates'),
+        );
+      }
+      return updateAppointmentType(appointmentType.id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['scheduling-appointment-types', configId],
@@ -159,6 +165,15 @@ export function AppointmentTypeFormModal({
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
@@ -175,7 +190,12 @@ export function AppointmentTypeFormModal({
           <h2 className="text-xl font-semibold">
             {isEditing ? 'Edit Appointment Type' : 'Add Appointment Type'}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>

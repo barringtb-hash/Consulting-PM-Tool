@@ -77,7 +77,7 @@ router.get('/categories', async (req: TenantRequest, res: Response) => {
 // Get category by ID
 router.get('/categories/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid category ID' });
     }
@@ -126,7 +126,7 @@ router.put(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid category ID' });
       }
@@ -156,7 +156,7 @@ router.delete(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid category ID' });
       }
@@ -216,7 +216,7 @@ router.get('/expenses/stats', async (req: TenantRequest, res: Response) => {
 // Get expense by ID
 router.get('/expenses/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid expense ID' });
     }
@@ -261,7 +261,7 @@ router.post('/expenses', async (req: TenantRequest, res: Response) => {
 // Update expense
 router.put('/expenses/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid expense ID' });
     }
@@ -291,7 +291,7 @@ router.put('/expenses/:id', async (req: TenantRequest, res: Response) => {
 // Delete expense
 router.delete('/expenses/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid expense ID' });
     }
@@ -313,7 +313,7 @@ router.post(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid expense ID' });
       }
@@ -347,7 +347,7 @@ router.post(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid expense ID' });
       }
@@ -381,7 +381,7 @@ router.post(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid expense ID' });
       }
@@ -437,7 +437,7 @@ router.get('/budgets/stats', async (req: TenantRequest, res: Response) => {
 // Get budget by ID
 router.get('/budgets/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid budget ID' });
     }
@@ -460,7 +460,7 @@ router.get(
   '/budgets/:id/expenses',
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid budget ID' });
       }
@@ -514,7 +514,7 @@ router.put(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid budget ID' });
       }
@@ -544,7 +544,7 @@ router.delete(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid budget ID' });
       }
@@ -622,7 +622,7 @@ router.get(
   '/recurring-costs/:id',
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid recurring cost ID' });
       }
@@ -672,7 +672,7 @@ router.put(
   '/recurring-costs/:id',
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid recurring cost ID' });
       }
@@ -707,7 +707,7 @@ router.delete(
   '/recurring-costs/:id',
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid recurring cost ID' });
       }
@@ -732,7 +732,7 @@ router.post(
   requireFinanceAdmin,
   async (req: TenantRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         return res.status(400).json({ error: 'Invalid recurring cost ID' });
       }
@@ -951,11 +951,32 @@ router.post(
       const { expenseId, suggestedCategoryId, actualCategoryId, wasAccepted } =
         body;
 
+      // Validate required fields
+      if (
+        typeof expenseId !== 'number' ||
+        expenseId <= 0 ||
+        typeof suggestedCategoryId !== 'number' ||
+        suggestedCategoryId <= 0 ||
+        typeof actualCategoryId !== 'number' ||
+        actualCategoryId <= 0 ||
+        typeof wasAccepted !== 'boolean'
+      ) {
+        return res.status(400).json({
+          error: 'Invalid input',
+          details: {
+            expenseId: 'must be a positive integer',
+            suggestedCategoryId: 'must be a positive integer',
+            actualCategoryId: 'must be a positive integer',
+            wasAccepted: 'must be a boolean',
+          },
+        });
+      }
+
       await categorizationService.recordCategorizationFeedback({
-        expenseId: expenseId!,
-        suggestedCategoryId: suggestedCategoryId!,
-        actualCategoryId: actualCategoryId!,
-        wasAccepted: wasAccepted!,
+        expenseId,
+        suggestedCategoryId,
+        actualCategoryId,
+        wasAccepted,
       });
 
       return res.json({ success: true });
@@ -971,7 +992,7 @@ router.get(
   '/ai/anomalies/:expenseId',
   async (req: TenantRequest, res: Response) => {
     try {
-      const expenseId = parseInt(req.params.expenseId, 10);
+      const expenseId = parseInt(String(req.params.expenseId), 10);
       if (isNaN(expenseId)) {
         return res.status(400).json({ error: 'Invalid expense ID' });
       }

@@ -302,12 +302,14 @@ function MarketingContentPage(): JSX.Element {
                             {getContentTypeIcon(content.type)}
                           </span>
                           <div>
-                            <h3
-                              className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"
+                            <button
+                              type="button"
+                              className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 cursor-pointer hover:text-primary-600 dark:hover:text-primary-400 text-left bg-transparent border-none p-0"
                               onClick={() => handleViewDetail(content)}
+                              aria-label={`View details for ${content.name}`}
                             >
                               {content.name}
-                            </h3>
+                            </button>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge
                                 variant={
@@ -359,6 +361,7 @@ function MarketingContentPage(): JSX.Element {
                           variant="secondary"
                           size="sm"
                           onClick={() => handleEdit(content)}
+                          aria-label={`Edit ${content.name}`}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -366,6 +369,7 @@ function MarketingContentPage(): JSX.Element {
                           variant="secondary"
                           size="sm"
                           onClick={() => handleArchive(content.id)}
+                          aria-label={`Archive ${content.name}`}
                         >
                           <Archive className="w-4 h-4" />
                         </Button>

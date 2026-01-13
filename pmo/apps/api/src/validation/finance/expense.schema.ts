@@ -1,9 +1,39 @@
 import { z } from 'zod';
 
+// Valid ISO 4217 currency codes (common currencies)
+const VALID_CURRENCIES = [
+  'USD',
+  'EUR',
+  'GBP',
+  'CAD',
+  'AUD',
+  'JPY',
+  'CHF',
+  'CNY',
+  'INR',
+  'MXN',
+  'BRL',
+  'KRW',
+  'SGD',
+  'HKD',
+  'NZD',
+] as const;
+
 export const createExpenseSchema = z.object({
   description: z.string().min(1).max(500),
   amount: z.number().positive(),
-  currency: z.string().length(3).default('USD'),
+  currency: z
+    .string()
+    .length(3)
+    .toUpperCase()
+    .refine(
+      (val) =>
+        VALID_CURRENCIES.includes(val as (typeof VALID_CURRENCIES)[number]),
+      {
+        message: 'Invalid currency code',
+      },
+    )
+    .default('USD'),
   date: z.string().datetime().or(z.date()),
   categoryId: z.number().int().positive(),
   accountId: z.number().int().positive().optional(),

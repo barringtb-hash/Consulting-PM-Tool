@@ -320,7 +320,7 @@ export async function deleteExpense(id: number, userId: number): Promise<void> {
 export async function approveExpense(
   id: number,
   approverId: number,
-  _notes?: string,
+  notes?: string,
 ): Promise<ExpenseWithRelations> {
   const tenantId = getTenantId();
 
@@ -340,33 +340,38 @@ export async function approveExpense(
     throw new Error('Cannot approve your own expense');
   }
 
-  // Update budget spent amount if linked
-  if (existing.budgetId) {
-    await prisma.budget.update({
-      where: { id: existing.budgetId },
-      data: {
-        spent: {
-          increment: existing.amount,
+  // Use transaction to prevent race condition when updating budget spent amount
+  const expense = await prisma.$transaction(async (tx) => {
+    // Update budget spent amount if linked
+    if (existing.budgetId) {
+      await tx.budget.update({
+        where: { id: existing.budgetId },
+        data: {
+          spent: {
+            increment: existing.amount,
+          },
         },
+      });
+    }
+
+    return tx.expense.update({
+      where: { id },
+      data: {
+        status: 'APPROVED',
+        approvedBy: approverId,
+        approvedAt: new Date(),
+        // Note: approval notes stored in the general notes field if needed
+        ...(notes ? { notes } : {}),
+      },
+      include: {
+        category: { select: { id: true, name: true, color: true, icon: true } },
+        account: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
+        budget: { select: { id: true, name: true } },
+        owner: { select: { id: true, name: true } },
+        approver: { select: { id: true, name: true } },
       },
     });
-  }
-
-  const expense = await prisma.expense.update({
-    where: { id },
-    data: {
-      status: 'APPROVED',
-      approvedBy: approverId,
-      approvedAt: new Date(),
-    },
-    include: {
-      category: { select: { id: true, name: true, color: true, icon: true } },
-      account: { select: { id: true, name: true } },
-      project: { select: { id: true, name: true } },
-      budget: { select: { id: true, name: true } },
-      owner: { select: { id: true, name: true } },
-      approver: { select: { id: true, name: true } },
-    },
   });
 
   return expense as unknown as ExpenseWithRelations;
@@ -468,10 +473,17 @@ export async function getExpenseStats(params: {
 }> {
   const tenantId = getTenantId();
 
+  // Build date filter separately to properly combine gte and lte
+  let dateFilter: { gte?: Date; lte?: Date } | undefined;
+  if (params.startDate || params.endDate) {
+    dateFilter = {};
+    if (params.startDate) dateFilter.gte = new Date(params.startDate);
+    if (params.endDate) dateFilter.lte = new Date(params.endDate);
+  }
+
   const where: Prisma.ExpenseWhereInput = {
     tenantId,
-    ...(params.startDate && { date: { gte: new Date(params.startDate) } }),
-    ...(params.endDate && { date: { lte: new Date(params.endDate) } }),
+    ...(dateFilter && { date: dateFilter }),
     ...(params.accountId && { accountId: params.accountId }),
   };
 

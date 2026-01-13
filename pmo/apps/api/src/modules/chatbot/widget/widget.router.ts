@@ -22,7 +22,7 @@ const router = Router();
 router.get(
   '/chatbot/widget/:configId.js',
   async (req: Request<{ configId: string }>, res: Response) => {
-    const configId = parseInt(req.params.configId, 10);
+    const configId = parseInt(String(req.params.configId), 10);
 
     if (isNaN(configId)) {
       res.status(400).send('// Invalid config ID');
@@ -148,7 +148,7 @@ router.get(
 router.get(
   '/chatbot/widget/:configId/config',
   async (req: Request<{ configId: string }>, res: Response) => {
-    const configId = parseInt(req.params.configId, 10);
+    const configId = parseInt(String(req.params.configId), 10);
 
     if (isNaN(configId)) {
       res.status(400).json({ error: 'Invalid config ID' });
@@ -207,7 +207,7 @@ router.get(
 router.get(
   '/chatbot/embed/:configId',
   async (req: Request<{ configId: string }>, res: Response) => {
-    const configId = parseInt(req.params.configId, 10);
+    const configId = parseInt(String(req.params.configId), 10);
 
     if (isNaN(configId)) {
       res.status(400).send('Invalid config ID');

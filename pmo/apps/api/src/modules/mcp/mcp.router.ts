@@ -194,7 +194,7 @@ router.get(
     }
 
     try {
-      const uri = req.params.uri;
+      const uri = String(req.params.uri);
       const serverId = req.query.serverId as string | undefined;
       const resource = await mcpClient.readResource(uri, serverId);
       res.type(resource.mimeType).send(resource.content);
@@ -282,7 +282,7 @@ router.delete(
     }
 
     try {
-      await mcpClient.disconnect(req.params.id);
+      await mcpClient.disconnect(String(req.params.id));
       res.status(204).send();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';

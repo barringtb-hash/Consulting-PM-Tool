@@ -14,6 +14,7 @@ import {
   type TenantRequest,
 } from '../../tenant/tenant.middleware';
 import * as chatbotService from './chatbot.service';
+import { parseDateSafe } from '../../utils/date-utils';
 
 const router = Router();
 
@@ -613,12 +614,11 @@ router.get(
       return;
     }
 
-    const startDate = req.query.start
-      ? new Date(req.query.start as string)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = req.query.end
-      ? new Date(req.query.end as string)
-      : new Date();
+    const parsedStart = parseDateSafe(req.query.start as string);
+    const parsedEnd = parseDateSafe(req.query.end as string);
+    const startDate =
+      parsedStart ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = parsedEnd ?? new Date();
 
     // Aggregate analytics for each day in the date range before fetching
     // This ensures the ChatAnalytics table is populated with fresh data

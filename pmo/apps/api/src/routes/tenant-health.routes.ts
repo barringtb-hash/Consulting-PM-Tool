@@ -115,7 +115,7 @@ router.get(
 router.get(
   '/admin/:tenantId',
   requireAdmin,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest<{ tenantId: string }>, res: Response) => {
     try {
       const { tenantId } = req.params;
       const health = await tenantHealthService.getTenantHealth(tenantId);
@@ -142,7 +142,7 @@ router.get(
 router.get(
   '/admin/:tenantId/history',
   requireAdmin,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest<{ tenantId: string }>, res: Response) => {
     try {
       const { tenantId } = req.params;
       const days = parseInt(req.query.days as string) || 30;
@@ -170,7 +170,7 @@ router.get(
 router.post(
   '/admin/:tenantId/record',
   requireAdmin,
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: AuthenticatedRequest<{ tenantId: string }>, res: Response) => {
     try {
       const { tenantId } = req.params;
       await tenantHealthService.recordHealthMetrics(tenantId);

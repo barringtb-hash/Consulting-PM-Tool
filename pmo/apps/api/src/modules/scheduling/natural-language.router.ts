@@ -34,7 +34,7 @@ const classifySchema = z.object({
  */
 router.post('/:configId/nl/message', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const parsed = messageSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -112,7 +112,7 @@ router.delete(
   requireAuth,
   async (req, res) => {
     try {
-      const { conversationId } = req.params;
+      const conversationId = String(req.params.conversationId);
 
       nlService.clearConversation(conversationId);
 

@@ -400,7 +400,7 @@ router.get(
   '/branding/public/:tenantSlug',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { tenantSlug } = req.params;
+      const tenantSlug = String(req.params.tenantSlug);
 
       // Find tenant by slug
       const tenant = await prisma.tenant.findUnique({

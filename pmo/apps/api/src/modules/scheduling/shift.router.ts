@@ -50,7 +50,7 @@ async function resolveShiftConfig(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const schedulingConfigId = parseInt(req.params.configId, 10);
+  const schedulingConfigId = parseInt(String(req.params.configId), 10);
   if (isNaN(schedulingConfigId)) {
     res.status(400).json({ error: 'Invalid config ID' });
     return;
@@ -311,7 +311,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid location ID' });
         return;
@@ -341,7 +341,7 @@ router.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid location ID' });
         return;
@@ -416,7 +416,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid role ID' });
         return;
@@ -446,7 +446,7 @@ router.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid role ID' });
         return;
@@ -539,7 +539,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid employee ID' });
         return;
@@ -568,7 +568,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid employee ID' });
         return;
@@ -598,7 +598,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid employee ID' });
         return;
@@ -622,7 +622,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid employee ID' });
         return;
@@ -653,7 +653,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid employee ID' });
         return;
@@ -707,7 +707,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const employeeId = parseInt(req.params.id, 10);
+      const employeeId = parseInt(String(req.params.id), 10);
       if (isNaN(employeeId)) {
         res.status(400).json({ error: 'Invalid employee ID' });
         return;
@@ -740,7 +740,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid request ID' });
         return;
@@ -769,7 +769,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid request ID' });
         return;
@@ -855,7 +855,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -884,7 +884,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -914,7 +914,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -938,7 +938,7 @@ router.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -962,7 +962,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -990,7 +990,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const scheduleId = parseInt(req.params.scheduleId, 10);
+      const scheduleId = parseInt(String(req.params.scheduleId), 10);
       if (isNaN(scheduleId)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -1025,7 +1025,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const scheduleId = parseInt(req.params.scheduleId, 10);
+      const scheduleId = parseInt(String(req.params.scheduleId), 10);
       if (isNaN(scheduleId)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -1066,7 +1066,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1096,7 +1096,7 @@ router.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1120,7 +1120,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1151,7 +1151,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1202,7 +1202,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const shiftId = parseInt(req.params.id, 10);
+      const shiftId = parseInt(String(req.params.id), 10);
       if (isNaN(shiftId)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1246,7 +1246,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid request ID' });
         return;
@@ -1275,7 +1275,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid request ID' });
         return;
@@ -1380,7 +1380,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1404,7 +1404,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1428,7 +1428,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1464,7 +1464,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid shift ID' });
         return;
@@ -1492,7 +1492,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid schedule ID' });
         return;
@@ -1627,7 +1627,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const employeeId = parseInt(req.params.id, 10);
+      const employeeId = parseInt(String(req.params.id), 10);
       if (isNaN(employeeId)) {
         res.status(400).json({ error: 'Invalid employee ID' });
         return;

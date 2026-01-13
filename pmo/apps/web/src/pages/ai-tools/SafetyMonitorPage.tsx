@@ -300,6 +300,9 @@ function SafetyMonitorPage(): JSX.Element {
   useRedirectOnUnauthorized(configsQuery.error);
   useRedirectOnUnauthorized(accountsQuery.error);
   useRedirectOnUnauthorized(createConfigMutation.error);
+  useRedirectOnUnauthorized(checklistsQuery.error);
+  useRedirectOnUnauthorized(incidentsQuery.error);
+  useRedirectOnUnauthorized(trainingQuery.error);
 
   const handleCreateConfig = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -99,7 +99,7 @@ router.get(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
 
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid user ID' });
@@ -131,7 +131,7 @@ router.put(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
 
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid user ID' });
@@ -214,7 +214,7 @@ router.delete(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
 
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid user ID' });
@@ -250,7 +250,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
 
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid user ID' });

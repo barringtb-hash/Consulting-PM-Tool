@@ -190,7 +190,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const bookingPageId = parseInt(req.params.bookingPageId);
+      const bookingPageId = parseInt(String(req.params.bookingPageId));
       const forms = await intakeFormsService.getIntakeForms(bookingPageId);
 
       return res.json({ data: forms });
@@ -210,7 +210,7 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      const bookingPageId = parseInt(req.params.bookingPageId);
+      const bookingPageId = parseInt(String(req.params.bookingPageId));
 
       const parsed = createFormSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -236,7 +236,7 @@ router.post(
  */
 router.get('/:configId/intake-forms/:id', requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
     const form = await intakeFormsService.getIntakeForm(id);
 
     if (!form) {
@@ -256,7 +256,7 @@ router.get('/:configId/intake-forms/:id', requireAuth, async (req, res) => {
  */
 router.patch('/:configId/intake-forms/:id', requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
 
     const parsed = updateFormSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -278,7 +278,7 @@ router.patch('/:configId/intake-forms/:id', requireAuth, async (req, res) => {
  */
 router.delete('/:configId/intake-forms/:id', requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
     await intakeFormsService.deleteIntakeForm(id);
 
     return res.json({ data: { success: true } });
@@ -300,7 +300,7 @@ router.post(
     res: Response,
   ) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const { name } = req.body;
 
       const form = await intakeFormsService.duplicateIntakeForm(id, name);
@@ -332,7 +332,7 @@ router.post(
     res: Response,
   ) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
 
       const parsed = responseSchema.safeParse(req.body.responses);
       if (!parsed.success) {
@@ -366,7 +366,7 @@ router.post(
     res: Response,
   ) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
 
       const form = await intakeFormsService.getIntakeForm(id);
       if (!form) {
@@ -417,7 +417,7 @@ router.post(
     res: Response,
   ) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const { appointmentId, responses } = req.body;
 
       if (!appointmentId) {
@@ -450,7 +450,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
 
@@ -476,7 +476,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
       const responses =
         await intakeFormsService.getAppointmentResponses(appointmentId);
 

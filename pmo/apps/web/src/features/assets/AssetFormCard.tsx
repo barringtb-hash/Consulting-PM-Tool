@@ -58,7 +58,7 @@ function AssetFormCard({
 
   const { showToast } = useToast();
   const createAssetMutation = useCreateAsset();
-  const updateAssetMutation = useUpdateAsset(editingAsset?.id ?? 0);
+  const updateAssetMutation = useUpdateAsset();
 
   // Load initial values when editing
   useEffect(() => {
@@ -129,7 +129,10 @@ function AssetFormCard({
 
     try {
       if (editingAsset) {
-        await updateAssetMutation.mutateAsync(payload);
+        await updateAssetMutation.mutateAsync({
+          assetId: editingAsset.id,
+          data: payload,
+        });
         showToast(`Asset "${values.name}" updated successfully`, 'success');
       } else {
         await createAssetMutation.mutateAsync(payload);

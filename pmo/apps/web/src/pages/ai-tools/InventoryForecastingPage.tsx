@@ -220,15 +220,28 @@ function InventoryForecastingPage(): JSX.Element {
     const formData = new FormData(e.currentTarget);
     const clientId = parseInt(formData.get('clientId') as string, 10);
 
+    if (isNaN(clientId)) {
+      return;
+    }
+
+    const forecastHorizonDays = parseInt(
+      formData.get('forecastHorizonDays') as string,
+      10,
+    );
+    const alertThreshold = parseInt(
+      formData.get('alertThreshold') as string,
+      10,
+    );
+
     createConfigMutation.mutate({
       clientId,
       config: {
-        forecastHorizonDays:
-          parseInt(formData.get('forecastHorizonDays') as string, 10) || 30,
+        forecastHorizonDays: isNaN(forecastHorizonDays)
+          ? 30
+          : forecastHorizonDays,
         seasonalityEnabled: formData.get('seasonalityEnabled') === 'on',
         autoReorderEnabled: formData.get('autoReorderEnabled') === 'on',
-        alertThreshold:
-          parseInt(formData.get('alertThreshold') as string, 10) || 20,
+        alertThreshold: isNaN(alertThreshold) ? 20 : alertThreshold,
       },
     });
   };
@@ -255,11 +268,16 @@ function InventoryForecastingPage(): JSX.Element {
               <Select
                 label="Select Configuration"
                 value={selectedConfigId?.toString() || ''}
-                onChange={(e) =>
-                  setSelectedConfigId(
-                    e.target.value ? parseInt(e.target.value, 10) : null,
-                  )
-                }
+                onChange={(e) => {
+                  if (!e.target.value) {
+                    setSelectedConfigId(null);
+                    return;
+                  }
+                  const value = parseInt(e.target.value, 10);
+                  if (!isNaN(value)) {
+                    setSelectedConfigId(value);
+                  }
+                }}
               >
                 <option value="">Select a configuration...</option>
                 {configsQuery.data?.map((config) => (

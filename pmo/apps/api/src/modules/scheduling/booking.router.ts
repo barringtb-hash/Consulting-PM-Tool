@@ -55,7 +55,7 @@ const cancelSchema = z.object({
  */
 router.get('/:slug', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { slug } = req.params;
+    const slug = String(req.params.slug);
 
     const bookingPage = await bookingService.getBookingPageBySlug(slug);
 
@@ -127,7 +127,7 @@ router.get(
   '/:slug/availability',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { slug } = req.params;
+      const slug = String(req.params.slug);
       const parsed = availabilityQuerySchema.safeParse(req.query);
 
       if (!parsed.success) {
@@ -178,7 +178,7 @@ router.post(
   '/:slug/book',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { slug } = req.params;
+      const slug = String(req.params.slug);
       const parsed = createBookingSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -245,7 +245,7 @@ router.get(
   '/confirmation/:code',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { code } = req.params;
+      const code = String(req.params.code);
 
       const appointment =
         await bookingService.getAppointmentByConfirmationCode(code);
@@ -291,7 +291,7 @@ router.post(
   '/confirmation/:code/reschedule',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { code } = req.params;
+      const code = String(req.params.code);
       const parsed = rescheduleSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -344,7 +344,7 @@ router.post(
   '/confirmation/:code/cancel',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { code } = req.params;
+      const code = String(req.params.code);
       const parsed = cancelSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -388,7 +388,7 @@ router.get(
   '/confirmation/:code/eligibility',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { code } = req.params;
+      const code = String(req.params.code);
 
       const appointment =
         await bookingService.getAppointmentByConfirmationCode(code);
@@ -427,7 +427,7 @@ router.get(
   '/confirmation/:code/reschedule-availability',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { code } = req.params;
+      const code = String(req.params.code);
       const parsed = availabilityQuerySchema.safeParse(req.query);
 
       if (!parsed.success) {
@@ -498,7 +498,7 @@ router.get(
   '/confirmation/:code/policies',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { code } = req.params;
+      const code = String(req.params.code);
 
       const appointment =
         await bookingService.getAppointmentByConfirmationCode(code);
@@ -572,7 +572,7 @@ router.post(
   '/:slug/nl/message',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { slug } = req.params;
+      const slug = String(req.params.slug);
 
       // Get booking page to find configId
       const bookingPage = await bookingService.getBookingPageBySlug(slug);
@@ -619,7 +619,7 @@ router.delete(
   '/:slug/nl/conversation/:conversationId',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { conversationId } = req.params;
+      const conversationId = String(req.params.conversationId);
 
       nlService.clearConversation(conversationId);
 

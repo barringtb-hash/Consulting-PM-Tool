@@ -54,7 +54,7 @@ const overbookingConfigSchema = z.object({
  */
 router.post('/:configId/smart/optimal-slots', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const parsed = optimalSlotsSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -115,7 +115,7 @@ router.post('/:configId/smart/optimal-slots', requireAuth, async (req, res) => {
  */
 router.get('/:configId/smart/workload', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
     const date = req.query.date
       ? new Date(req.query.date as string)
       : new Date();
@@ -156,7 +156,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const config =
         await smartSchedulingService.getOverbookingConfig(configId);
@@ -183,7 +183,7 @@ router.patch(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const parsed = overbookingConfigSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -217,7 +217,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
       const date = req.query.date
         ? new Date(req.query.date as string)
         : new Date();
@@ -261,7 +261,7 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
       const body = req.body as { slot?: string; providerId?: number };
       const { slot, providerId } = body;
 
@@ -300,7 +300,7 @@ router.post(
  */
 router.get('/:configId/smart/insights', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const now = new Date();
     const startDate = req.query.startDate
@@ -339,7 +339,7 @@ router.get('/:configId/smart/insights', requireAuth, async (req, res) => {
  */
 router.get('/:configId/smart/optimal-times', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const now = new Date();
     const insights = await smartSchedulingService.getSchedulingInsights(
@@ -389,7 +389,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const now = new Date();
       const daysAhead = parseInt(req.query.days as string) || 14;

@@ -80,7 +80,7 @@ router.get(
   '/projects/:projectId/documents',
   async (req: AuthenticatedRequest, res) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
 
       if (isNaN(projectId)) {
         res.status(400).json({ error: 'Invalid project ID' });
@@ -114,7 +114,7 @@ router.get(
   '/projects/:projectId/documents/stats',
   async (req: AuthenticatedRequest, res) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
 
       if (isNaN(projectId)) {
         res.status(400).json({ error: 'Invalid project ID' });
@@ -139,7 +139,7 @@ router.post(
   '/projects/:projectId/documents',
   async (req: AuthenticatedRequest, res) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
 
       if (isNaN(projectId)) {
         res.status(400).json({ error: 'Invalid project ID' });
@@ -184,7 +184,7 @@ router.post(
  */
 router.get('/:id', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
 
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
@@ -211,7 +211,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
  */
 router.put('/:id', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
 
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
@@ -253,7 +253,7 @@ router.put('/:id', async (req: AuthenticatedRequest, res) => {
  */
 router.patch('/:id/status', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
 
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
@@ -295,7 +295,7 @@ router.patch('/:id/status', async (req: AuthenticatedRequest, res) => {
  */
 router.post('/:id/clone', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
 
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
@@ -337,7 +337,7 @@ router.post('/:id/clone', async (req: AuthenticatedRequest, res) => {
  */
 router.delete('/:id', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
 
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
@@ -373,7 +373,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res) => {
  */
 router.get('/:id/versions', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
 
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
@@ -401,8 +401,8 @@ router.get('/:id/versions', async (req: AuthenticatedRequest, res) => {
  */
 router.get('/:id/versions/:version', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const version = parseInt(req.params.version, 10);
+    const id = parseInt(String(req.params.id), 10);
+    const version = parseInt(String(req.params.version), 10);
 
     if (isNaN(id) || isNaN(version)) {
       res.status(400).json({ error: 'Invalid document ID or version' });
@@ -439,7 +439,7 @@ router.get('/:id/versions/:version', async (req: AuthenticatedRequest, res) => {
  */
 router.post('/:id/versions/restore', async (req: AuthenticatedRequest, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
 
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid document ID' });
