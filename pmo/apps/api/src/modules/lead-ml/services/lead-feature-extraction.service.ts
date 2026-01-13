@@ -216,20 +216,31 @@ function calculateRecencyScore(daysSinceLastActivity: number): number {
 function detectActivityBurst(activities: Array<{ createdAt: Date }>): boolean {
   if (activities.length < 3) return false;
 
-  // Group activities by day
-  const byDay = new Map<string, number>();
-  for (const activity of activities) {
-    const day = activity.createdAt.toISOString().split('T')[0];
-    byDay.set(day, (byDay.get(day) || 0) + 1);
+  // Sort activities by time (newest first)
+  const sorted = [...activities].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  );
+
+  // Check for any 24-hour window with 3+ activities using sliding window
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  for (let i = 0; i <= sorted.length - 3; i++) {
+    const windowStart = sorted[i].createdAt.getTime();
+    const windowEnd = windowStart - twentyFourHours;
+
+    // Count activities within this 24-hour window
+    let count = 1;
+    for (let j = i + 1; j < sorted.length; j++) {
+      const activityTime = sorted[j].createdAt.getTime();
+      if (activityTime >= windowEnd) {
+        count++;
+        if (count >= 3) return true;
+      } else {
+        break; // Activities are sorted, so no more will be in this window
+      }
+    }
   }
 
-  // Check if any day has 3+ activities
-  let hasBurst = false;
-  byDay.forEach((count) => {
-    if (count >= 3) hasBurst = true;
-  });
-
-  return hasBurst;
+  return false;
 }
 
 /**
