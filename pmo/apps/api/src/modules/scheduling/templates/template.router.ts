@@ -147,7 +147,7 @@ router.get('/categories', async (_req: Request, res: Response) => {
  */
 router.get('/:templateId', async (req: Request, res: Response) => {
   try {
-    const { templateId } = req.params;
+    const templateId = String(req.params.templateId);
     const template = await templateService.getTemplate(templateId);
 
     if (!template) {
@@ -167,7 +167,7 @@ router.get('/:templateId', async (req: Request, res: Response) => {
  */
 router.get('/:templateId/preview', async (req: Request, res: Response) => {
   try {
-    const { templateId } = req.params;
+    const templateId = String(req.params.templateId);
     const preview = await templateService.previewTemplate(templateId);
 
     if (!preview) {
@@ -187,7 +187,7 @@ router.get('/:templateId/preview', async (req: Request, res: Response) => {
  */
 router.get('/by-category/:category', async (req: Request, res: Response) => {
   try {
-    const { category } = req.params;
+    const category = String(req.params.category);
     const validCategories = [
       'healthcare',
       'professional',
@@ -305,7 +305,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const accountId = parseInt(req.params.accountId, 10);
+      const accountId = parseInt(String(req.params.accountId), 10);
       if (isNaN(accountId)) {
         return res.status(400).json({ error: 'Invalid account ID' });
       }
@@ -434,7 +434,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const clientId = parseInt(req.params.clientId, 10);
+      const clientId = parseInt(String(req.params.clientId), 10);
       if (isNaN(clientId)) {
         return res.status(400).json({ error: 'Invalid client ID' });
       }

@@ -86,7 +86,7 @@ router.post(
   '/leads/:id/ml/predict',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const leadId = parseInt(req.params.id, 10);
+      const leadId = parseInt(String(req.params.id), 10);
       if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
@@ -134,7 +134,7 @@ router.get(
   '/leads/:id/ml/prediction',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const leadId = parseInt(req.params.id, 10);
+      const leadId = parseInt(String(req.params.id), 10);
       if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
@@ -183,7 +183,7 @@ router.post(
   '/leads/:id/ml/predict-time',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const leadId = parseInt(req.params.id, 10);
+      const leadId = parseInt(String(req.params.id), 10);
       if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
@@ -230,7 +230,7 @@ router.post(
   '/leads/:id/ml/predict-score',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const leadId = parseInt(req.params.id, 10);
+      const leadId = parseInt(String(req.params.id), 10);
       if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
@@ -277,7 +277,7 @@ router.get(
   '/leads/:id/ml/features',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const leadId = parseInt(req.params.id, 10);
+      const leadId = parseInt(String(req.params.id), 10);
       if (isNaN(leadId) || leadId <= 0) {
         return res.status(400).json({ error: 'Invalid lead ID' });
       }
@@ -315,7 +315,7 @@ router.post(
   '/:configId/ml/bulk-predict',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
@@ -367,7 +367,7 @@ router.get(
   '/:configId/ml/ranked-leads',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
@@ -414,7 +414,7 @@ router.get(
   '/:configId/ml/top-leads',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
@@ -449,7 +449,7 @@ router.get(
   '/:configId/ml/leads-by-tier',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
@@ -492,7 +492,7 @@ router.post(
   '/predictions/:id/validate',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const predictionId = parseInt(req.params.id, 10);
+      const predictionId = parseInt(String(req.params.id), 10);
       if (isNaN(predictionId) || predictionId <= 0) {
         return res.status(400).json({ error: 'Invalid prediction ID' });
       }
@@ -515,7 +515,7 @@ router.get(
   '/:configId/ml/accuracy',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }
@@ -563,7 +563,7 @@ router.get(
   '/:configId/ml/feature-importance',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       if (isNaN(configId) || configId <= 0) {
         return res.status(400).json({ error: 'Invalid config ID' });
       }

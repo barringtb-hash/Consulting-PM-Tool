@@ -231,7 +231,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const tenantId = getTenantId();
-      const conversationId = req.params.id;
+      const conversationId = String(req.params.id);
 
       const conversation = getConversation(conversationId, tenantId);
 
@@ -263,7 +263,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const tenantId = getTenantId();
-      const conversationId = req.params.id;
+      const conversationId = String(req.params.id);
 
       // Get conversation to check ownership
       const conversation = getConversation(conversationId, tenantId);

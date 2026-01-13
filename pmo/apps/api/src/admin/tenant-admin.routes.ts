@@ -108,7 +108,7 @@ router.get(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const tenant = await tenantAdminService.getTenantDetailsById(tenantId);
       return res.json(tenant);
     } catch (error) {
@@ -132,7 +132,7 @@ router.put(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const parsed = updateTenantAdminSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ errors: parsed.error.flatten() });
@@ -165,7 +165,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const body = req.body as { reason?: string };
       const { reason } = body;
 
@@ -205,7 +205,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const tenant = await tenantService.reactivateTenant(tenantId);
 
       // Audit log
@@ -244,7 +244,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const tenant = await tenantAdminService.activateTenant(tenantId);
       return res.json(tenant);
     } catch (error) {
@@ -266,7 +266,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const tenant = await tenantService.initiateTenantDeletion(tenantId);
 
       // Audit log
@@ -305,7 +305,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const tenant = await tenantService.cancelTenantDeletion(tenantId);
 
       // Audit log
@@ -344,7 +344,7 @@ router.get(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const exportData = await tenantService.exportTenantData(tenantId);
 
       // Audit log
@@ -385,7 +385,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const tenant = await tenantAdminService.cancelTenant(tenantId);
       return res.json(tenant);
     } catch (error) {
@@ -407,7 +407,7 @@ router.get(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const users = await tenantAdminService.getTenantUsersByAdmin(tenantId);
       return res.json(users);
     } catch (error) {
@@ -430,7 +430,7 @@ router.post(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const parsed = addTenantUserAdminSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ errors: parsed.error.flatten() });
@@ -466,7 +466,8 @@ router.put(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId, userId } = req.params;
+      const tenantId = String(req.params.tenantId);
+      const userId = String(req.params.userId);
       const parsedUserId = parseInt(userId, 10);
 
       if (isNaN(parsedUserId)) {
@@ -511,7 +512,8 @@ router.delete(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId, userId } = req.params;
+      const tenantId = String(req.params.tenantId);
+      const userId = String(req.params.userId);
       await tenantAdminService.removeUserFromTenantByAdmin(
         tenantId,
         parseInt(userId, 10),
@@ -538,7 +540,7 @@ router.put(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const parsed = configureTenantModuleAdminSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ errors: parsed.error.flatten() });
@@ -570,7 +572,7 @@ router.put(
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const branding = await tenantAdminService.updateTenantBrandingByAdmin(
         tenantId,
         req.body as UpdateTenantBrandingInput,
@@ -608,7 +610,7 @@ router.delete(
   requireSuperAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { tenantId } = req.params;
+      const tenantId = String(req.params.tenantId);
       const body = req.body as { confirmSlug?: string };
 
       // Get tenant info for audit and validation

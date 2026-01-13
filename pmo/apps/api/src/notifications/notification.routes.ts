@@ -90,7 +90,7 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid notification ID' });
     }
@@ -113,7 +113,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid notification ID' });
     }
@@ -146,7 +146,7 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid notification ID' });
     }

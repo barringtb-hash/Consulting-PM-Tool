@@ -271,7 +271,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
 
       if (isNaN(configId)) {
         res.status(400).json({ error: 'Invalid config ID' });
@@ -308,7 +308,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
 
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid integration ID' });
@@ -338,7 +338,7 @@ router.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = parseInt(String(req.params.id), 10);
 
       if (isNaN(id)) {
         res.status(400).json({ error: 'Invalid integration ID' });
@@ -368,7 +368,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId, 10);
+      const appointmentId = parseInt(String(req.params.appointmentId), 10);
 
       if (isNaN(appointmentId)) {
         res.status(400).json({ error: 'Invalid appointment ID' });

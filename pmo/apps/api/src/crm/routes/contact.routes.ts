@@ -192,7 +192,7 @@ router.get(
   '/by-account/:accountId',
   async (req: TenantRequest, res: Response) => {
     try {
-      const accountId = parseInt(req.params.accountId, 10);
+      const accountId = parseInt(String(req.params.accountId), 10);
       if (isNaN(accountId)) {
         res.status(400).json({ error: 'Invalid account ID' });
         return;
@@ -212,7 +212,7 @@ router.get(
  */
 router.get('/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid contact ID' });
       return;
@@ -273,7 +273,7 @@ router.post('/', async (req: TenantRequest, res: Response) => {
  */
 router.put('/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid contact ID' });
       return;
@@ -305,7 +305,7 @@ router.put('/:id', async (req: TenantRequest, res: Response) => {
  */
 router.delete('/:id', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid contact ID' });
       return;
@@ -328,7 +328,7 @@ router.delete('/:id', async (req: TenantRequest, res: Response) => {
  */
 router.post('/:id/restore', async (req: TenantRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid contact ID' });
       return;

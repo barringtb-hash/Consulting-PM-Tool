@@ -144,7 +144,7 @@ router.get(
   '/status/:projectId/summary',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -181,7 +181,7 @@ router.get(
   '/status/:projectId/quick',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -213,7 +213,7 @@ router.get(
   '/tasks/:taskId/enrich',
   async (req: TenantRequest, res: Response) => {
     try {
-      const taskId = parseInt(req.params.taskId, 10);
+      const taskId = parseInt(String(req.params.taskId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(taskId)) {
@@ -263,7 +263,7 @@ router.post(
   '/tasks/:taskId/apply-enrichment',
   async (req: TenantRequest, res: Response) => {
     try {
-      const taskId = parseInt(req.params.taskId, 10);
+      const taskId = parseInt(String(req.params.taskId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(taskId)) {
@@ -409,7 +409,7 @@ router.post(
   '/tasks/:taskId/record-completion',
   async (req: TenantRequest, res: Response) => {
     try {
-      const taskId = parseInt(req.params.taskId, 10);
+      const taskId = parseInt(String(req.params.taskId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(taskId)) {
@@ -579,7 +579,7 @@ router.get(
   '/health/:projectId/predict',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
       const windowDays = parseInt(req.query.windowDays as string, 10) || 14;
 
@@ -636,7 +636,7 @@ router.post(
   '/scope/:projectId/baseline',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
       const { description } = req.body as { description?: string };
 
@@ -666,7 +666,7 @@ router.get(
   '/scope/:projectId/analyze',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -694,7 +694,7 @@ router.get(
   '/scope/:projectId/changes',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
       const limit = parseInt(req.query.limit as string, 10) || 50;
 
@@ -724,7 +724,7 @@ router.post(
   '/scope/:projectId/detect',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -752,7 +752,7 @@ router.post(
   '/scope/changes/:changeId/acknowledge',
   async (req: TenantRequest, res: Response) => {
     try {
-      const changeId = parseInt(req.params.changeId, 10);
+      const changeId = parseInt(String(req.params.changeId), 10);
       const tenantId = getTenantId(req);
       const userId = req.userId!;
 
@@ -782,7 +782,7 @@ router.post(
   '/risks/extract/meeting/:meetingId',
   async (req: TenantRequest, res: Response) => {
     try {
-      const meetingId = parseInt(req.params.meetingId, 10);
+      const meetingId = parseInt(String(req.params.meetingId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(meetingId)) {
@@ -845,7 +845,7 @@ router.post(
  */
 router.get('/risks/:projectId', async (req: TenantRequest, res: Response) => {
   try {
-    const projectId = parseInt(req.params.projectId, 10);
+    const projectId = parseInt(String(req.params.projectId), 10);
     const tenantId = getTenantId(req);
 
     if (isNaN(projectId)) {
@@ -872,7 +872,7 @@ router.get(
   '/risks/:projectId/trends',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -944,7 +944,7 @@ router.get(
   '/digests/:projectId/configs',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -969,7 +969,7 @@ router.post(
   '/digests/:projectId/preview',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -1030,7 +1030,7 @@ router.post(
   '/scheduling/:projectId/generate',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -1074,7 +1074,7 @@ router.post(
   '/scheduling/:projectId/apply',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -1107,7 +1107,7 @@ router.get(
   '/scheduling/tasks/:taskId/suggest',
   async (req: TenantRequest, res: Response) => {
     try {
-      const taskId = parseInt(req.params.taskId, 10);
+      const taskId = parseInt(String(req.params.taskId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(taskId)) {
@@ -1230,7 +1230,7 @@ router.post(
   '/reminders/:reminderId/dismiss',
   async (req: TenantRequest, res: Response) => {
     try {
-      const reminderId = parseInt(req.params.reminderId, 10);
+      const reminderId = parseInt(String(req.params.reminderId), 10);
       const userId = req.userId!;
       const tenantId = getTenantId(req);
 
@@ -1260,7 +1260,7 @@ router.post(
   '/reminders/:reminderId/snooze',
   async (req: TenantRequest, res: Response) => {
     try {
-      const reminderId = parseInt(req.params.reminderId, 10);
+      const reminderId = parseInt(String(req.params.reminderId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(reminderId)) {
@@ -1294,7 +1294,7 @@ router.post(
   '/reminders/:reminderId/action-taken',
   async (req: TenantRequest, res: Response) => {
     try {
-      const reminderId = parseInt(req.params.reminderId, 10);
+      const reminderId = parseInt(String(req.params.reminderId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(reminderId)) {
@@ -1384,7 +1384,7 @@ router.post('/similarity/search', async (req: TenantRequest, res: Response) => {
  */
 router.get('/lessons/:projectId', async (req: TenantRequest, res: Response) => {
   try {
-    const projectId = parseInt(req.params.projectId, 10);
+    const projectId = parseInt(String(req.params.projectId), 10);
     const tenantId = getTenantId(req);
 
     if (isNaN(projectId)) {
@@ -1419,7 +1419,7 @@ router.post(
   '/lessons/:projectId',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -1453,7 +1453,7 @@ router.post(
   '/lessons/:projectId/extract',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -1584,7 +1584,7 @@ router.post(
   '/documents/:projectId/generate',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -1623,7 +1623,7 @@ router.get(
   '/documents/:projectId',
   async (req: TenantRequest, res: Response) => {
     try {
-      const projectId = parseInt(req.params.projectId, 10);
+      const projectId = parseInt(String(req.params.projectId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(projectId)) {
@@ -1651,7 +1651,7 @@ router.get(
   '/documents/view/:documentId',
   async (req: TenantRequest, res: Response) => {
     try {
-      const documentId = parseInt(req.params.documentId, 10);
+      const documentId = parseInt(String(req.params.documentId), 10);
       const tenantId = getTenantId(req);
 
       if (isNaN(documentId)) {
@@ -1687,8 +1687,8 @@ router.put(
   '/documents/:documentId/sections/:sectionId',
   async (req: TenantRequest, res: Response) => {
     try {
-      const documentId = parseInt(req.params.documentId, 10);
-      const sectionId = req.params.sectionId;
+      const documentId = parseInt(String(req.params.documentId), 10);
+      const sectionId = String(req.params.sectionId);
       const tenantId = getTenantId(req);
 
       if (isNaN(documentId)) {
@@ -1723,7 +1723,7 @@ router.get(
   '/documents/:documentId/export',
   async (req: TenantRequest, res: Response) => {
     try {
-      const documentId = parseInt(req.params.documentId, 10);
+      const documentId = parseInt(String(req.params.documentId), 10);
       const tenantId = getTenantId(req);
       const format =
         (req.query.format as 'markdown' | 'html' | 'text') || 'markdown';

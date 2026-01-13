@@ -127,9 +127,10 @@ router.get(
       orderBy: { acceptedAt: 'desc' },
     });
 
+    type MembershipWithTenant = (typeof memberships)[number];
     const tenants = memberships
-      .filter((m) => m.tenant.status === 'ACTIVE')
-      .map((m) => ({
+      .filter((m: MembershipWithTenant) => m.tenant.status === 'ACTIVE')
+      .map((m: MembershipWithTenant) => ({
         id: m.tenant.id,
         name: m.tenant.name,
         slug: m.tenant.slug,
@@ -151,7 +152,9 @@ router.post(
   '/tenants/switch/:tenantId',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const { tenantId } = req.params;
+    const tenantId = Array.isArray(req.params.tenantId)
+      ? req.params.tenantId[0]
+      : req.params.tenantId;
 
     // Verify user has access to this tenant
     const membership = await prisma.tenantUser.findUnique({
@@ -170,7 +173,16 @@ router.post(
         .json({ error: 'You do not have access to this tenant' });
     }
 
-    if (membership.tenant.status !== 'ACTIVE') {
+    // Type assertion for included relation
+    const membershipTenant = membership.tenant as {
+      id: string;
+      name: string;
+      slug: string;
+      plan: string;
+      status: string;
+    };
+
+    if (membershipTenant.status !== 'ACTIVE') {
       return res.status(403).json({ error: 'This tenant is not active' });
     }
 
@@ -187,17 +199,19 @@ router.post(
         previousTenantId,
         newTenantId: tenantId,
         ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        userAgent: Array.isArray(req.headers['user-agent'])
+          ? req.headers['user-agent'][0]
+          : req.headers['user-agent'],
       },
     });
 
     res.json({
       data: {
         tenant: {
-          id: membership.tenant.id,
-          name: membership.tenant.name,
-          slug: membership.tenant.slug,
-          plan: membership.tenant.plan,
+          id: membershipTenant.id,
+          name: membershipTenant.name,
+          slug: membershipTenant.slug,
+          plan: membershipTenant.plan,
         },
         role: membership.role,
       },
@@ -373,7 +387,10 @@ router.post(
   '/tenants/current/domains/:domainId/verify',
   requireAuth,
   async (req: TenantRequest, res: Response) => {
-    const domain = await tenantService.verifyTenantDomain(req.params.domainId);
+    const domainId = Array.isArray(req.params.domainId)
+      ? req.params.domainId[0]
+      : req.params.domainId;
+    const domain = await tenantService.verifyTenantDomain(domainId);
     res.json({ data: domain });
   },
 );
@@ -386,7 +403,10 @@ router.delete(
   '/tenants/current/domains/:domainId',
   requireAuth,
   async (req: TenantRequest, res: Response) => {
-    await tenantService.removeTenantDomain(req.params.domainId);
+    const domainId = Array.isArray(req.params.domainId)
+      ? req.params.domainId[0]
+      : req.params.domainId;
+    await tenantService.removeTenantDomain(domainId);
     res.status(204).send();
   },
 );
@@ -533,7 +553,9 @@ router.post(
             after: { userId, role: data.role, isNewUser, tenantId },
             metadata: {
               ip: req.ip,
-              userAgent: req.headers['user-agent'],
+              userAgent: Array.isArray(req.headers['user-agent'])
+                ? req.headers['user-agent'][0]
+                : req.headers['user-agent'],
             },
           });
 
@@ -564,7 +586,9 @@ router.post(
         after: { userId, role: data.role, isNewUser, tenantId },
         metadata: {
           ip: req.ip,
-          userAgent: req.headers['user-agent'],
+          userAgent: Array.isArray(req.headers['user-agent'])
+            ? req.headers['user-agent'][0]
+            : req.headers['user-agent'],
         },
       });
 
@@ -609,7 +633,10 @@ router.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { tenantId } = getTenantContext();
-      const userId = parseInt(req.params.userId, 10);
+      const userIdParam = Array.isArray(req.params.userId)
+        ? req.params.userId[0]
+        : req.params.userId;
+      const userId = parseInt(userIdParam, 10);
 
       if (isNaN(userId)) {
         return res.status(400).json({ error: 'Invalid user ID' });
@@ -645,7 +672,9 @@ router.put(
         after: { targetUserId: userId, role: parsed.data.role, tenantId },
         metadata: {
           ip: req.ip,
-          userAgent: req.headers['user-agent'],
+          userAgent: Array.isArray(req.headers['user-agent'])
+            ? req.headers['user-agent'][0]
+            : req.headers['user-agent'],
         },
       });
 
@@ -674,7 +703,10 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { tenantId } = getTenantContext();
-      const userId = parseInt(req.params.userId, 10);
+      const userIdParam = Array.isArray(req.params.userId)
+        ? req.params.userId[0]
+        : req.params.userId;
+      const userId = parseInt(userIdParam, 10);
 
       // Prevent self-removal
       if (userId === req.userId) {
@@ -685,8 +717,13 @@ router.delete(
 
       // Check if this is the last owner
       const tenantUsers = await tenantService.getTenantUsers(tenantId);
-      const targetUser = tenantUsers.find((tu) => tu.userId === userId);
-      const ownerCount = tenantUsers.filter((tu) => tu.role === 'OWNER').length;
+      type TenantUserResult = (typeof tenantUsers)[number];
+      const targetUser = tenantUsers.find(
+        (tu: TenantUserResult) => tu.userId === userId,
+      );
+      const ownerCount = tenantUsers.filter(
+        (tu: TenantUserResult) => tu.role === 'OWNER',
+      ).length;
 
       if (targetUser?.role === 'OWNER' && ownerCount <= 1) {
         return res.status(400).json({
@@ -705,7 +742,9 @@ router.delete(
         before: { targetUserId: userId, role: targetUser?.role, tenantId },
         metadata: {
           ip: req.ip,
-          userAgent: req.headers['user-agent'],
+          userAgent: Array.isArray(req.headers['user-agent'])
+            ? req.headers['user-agent'][0]
+            : req.headers['user-agent'],
         },
       });
 
@@ -744,8 +783,11 @@ router.put(
   requireAuth,
   async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext();
+    const moduleId = Array.isArray(req.params.moduleId)
+      ? req.params.moduleId[0]
+      : req.params.moduleId;
     const parsed = moduleConfigSchema.safeParse({
-      moduleId: req.params.moduleId,
+      moduleId,
       ...(req.body as object),
     });
 
@@ -770,12 +812,15 @@ router.post(
   requireAuth,
   async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext();
+    const moduleId = Array.isArray(req.params.moduleId)
+      ? req.params.moduleId[0]
+      : req.params.moduleId;
     const body = req.body as { trialDays?: number };
     const trialDays = body.trialDays || 14;
 
     const module = await tenantService.startModuleTrial(
       tenantId,
-      req.params.moduleId,
+      moduleId,
       trialDays,
     );
     res.json({ data: module });

@@ -26,7 +26,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       const channels = await channelService.getChannels(configId);
       res.json({ data: channels });
     } catch (error) {
@@ -47,7 +47,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       const status = await channelService.getChannelStatus(configId);
       res.json({ data: status });
     } catch (error) {
@@ -68,7 +68,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       const { channel, name, credentials, settings, identifier } = req.body;
 
       if (!channel || !name || !credentials) {
@@ -104,7 +104,7 @@ router.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const channelId = parseInt(req.params.channelId, 10);
+      const channelId = parseInt(String(req.params.channelId), 10);
       const { name, credentials, settings, identifier, isActive } = req.body;
 
       const channelConfig = await channelService.updateChannel(channelId, {
@@ -134,7 +134,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const channelId = parseInt(req.params.channelId, 10);
+      const channelId = parseInt(String(req.params.channelId), 10);
       await channelService.deleteChannel(channelId);
       res.status(204).send();
     } catch (error) {
@@ -155,7 +155,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const channelId = parseInt(req.params.channelId, 10);
+      const channelId = parseInt(String(req.params.channelId), 10);
       const { recipient } = req.body;
 
       if (!recipient) {
@@ -216,7 +216,7 @@ router.post(
   '/chatbot/:configId/webhooks/twilio/sms',
   async (req: Request, res: Response) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       const signature = req.headers['x-twilio-signature'] as string;
 
       const result = await channelManager.processIncomingMessage(
@@ -246,7 +246,7 @@ router.post(
   '/chatbot/:configId/webhooks/twilio/whatsapp',
   async (req: Request, res: Response) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
       const signature = req.headers['x-twilio-signature'] as string;
 
       const result = await channelManager.processIncomingMessage(
@@ -276,7 +276,7 @@ router.post(
   '/chatbot/:configId/webhooks/slack',
   async (req: Request, res: Response) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
 
       // Handle URL verification challenge
       const challenge = slackAdapter.handleChallenge(req.body);
@@ -324,8 +324,8 @@ router.post(
   '/chatbot/:configId/webhooks/:channel',
   async (req: Request, res: Response) => {
     try {
-      const configId = parseInt(req.params.configId, 10);
-      const channel = req.params.channel.toUpperCase() as ChatChannel;
+      const configId = parseInt(String(req.params.configId), 10);
+      const channel = String(req.params.channel).toUpperCase() as ChatChannel;
 
       if (!channelManager.isSupported(channel)) {
         return res

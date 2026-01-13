@@ -95,7 +95,7 @@ const allRulesSchema = z.object({
  */
 router.get('/:configId/booking-rules', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
     const rules = await bookingRulesService.getAllBookingRules(configId);
 
     return res.json({ data: rules });
@@ -114,7 +114,7 @@ router.get('/:configId/booking-rules', requireAuth, async (req, res) => {
  */
 router.patch('/:configId/booking-rules', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const parsed = allRulesSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -144,7 +144,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
       const rules = await bookingRulesService.getModificationRules(configId);
 
       return res.json({ data: rules });
@@ -166,7 +166,7 @@ router.patch(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const parsed = modificationRulesSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -197,7 +197,7 @@ router.patch(
  */
 router.get('/:configId/booking-rules/limits', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
     const limits = await bookingRulesService.getBookingLimits(configId);
 
     return res.json({ data: limits });
@@ -218,7 +218,7 @@ router.patch(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const parsed = bookingLimitsSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -249,7 +249,7 @@ router.patch(
  */
 router.get('/:configId/booking-rules/buffer', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
     const settings = await bookingRulesService.getBufferTimeSettings(configId);
 
     return res.json({ data: settings });
@@ -270,7 +270,7 @@ router.patch(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const parsed = bufferSettingsSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -305,7 +305,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const startDate = req.query.startDate
         ? new Date(req.query.startDate as string)
@@ -348,7 +348,7 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
 
       const parsed = blackoutDateSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -383,8 +383,8 @@ router.delete(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
-      const blackoutId = parseInt(req.params.id);
+      const configId = parseInt(String(req.params.configId));
+      const blackoutId = parseInt(String(req.params.id));
 
       await bookingRulesService.removeBlackoutDate(configId, blackoutId);
 
@@ -414,7 +414,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
 
       const eligibility =
         await bookingRulesService.checkModificationEligibility(appointmentId);
@@ -444,7 +444,7 @@ router.post(
     res: Response,
   ) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
       const { email, phone } = req.body;
 
       if (!email) {
@@ -483,7 +483,7 @@ router.post(
     res: Response,
   ) => {
     try {
-      const configId = parseInt(req.params.configId);
+      const configId = parseInt(String(req.params.configId));
       const { date, providerId } = req.body;
 
       if (!date) {

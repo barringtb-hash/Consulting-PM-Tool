@@ -124,7 +124,10 @@ router.get(
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
 
-      const status = await licensingService.getModuleStatus(tenantId, moduleId);
+      const status = await licensingService.getModuleStatus(
+        tenantId,
+        String(moduleId),
+      );
 
       if (!status) {
         return res.status(404).json({
@@ -154,7 +157,7 @@ router.get(
 
       const accessResult = await licensingService.checkModuleAccess(
         tenantId,
-        moduleId,
+        String(moduleId),
       );
 
       res.json({ data: accessResult });
@@ -189,7 +192,7 @@ router.post(
       const { tier, startTrial, trialDays, customLimits } = validation.data;
 
       const status = await licensingService.activateModule(tenantId, {
-        moduleId,
+        moduleId: String(moduleId),
         tier,
         startTrial,
         trialDays,
@@ -216,7 +219,7 @@ router.post(
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
 
-      await licensingService.deactivateModule(tenantId, moduleId);
+      await licensingService.deactivateModule(tenantId, String(moduleId));
 
       res.json({ message: 'Module deactivated successfully' });
     } catch (error) {
@@ -242,7 +245,7 @@ router.post(
 
       const status = await licensingService.startModuleTrial(
         tenantId,
-        moduleId,
+        String(moduleId),
         trialDays || 14,
       );
 
@@ -277,7 +280,7 @@ router.post(
 
       const status = await licensingService.upgradeModuleTier(
         tenantId,
-        moduleId,
+        String(moduleId),
         tier as 'BASIC' | 'PREMIUM' | 'ENTERPRISE',
       );
 
@@ -305,7 +308,10 @@ router.get(
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
 
-      const status = await licensingService.getModuleStatus(tenantId, moduleId);
+      const status = await licensingService.getModuleStatus(
+        tenantId,
+        String(moduleId),
+      );
 
       if (!status) {
         return res.status(404).json({
@@ -344,7 +350,7 @@ router.post(
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
 
-      await licensingService.resetModuleUsage(tenantId, moduleId);
+      await licensingService.resetModuleUsage(tenantId, String(moduleId));
 
       res.json({ message: 'Usage counters reset successfully' });
     } catch (error) {

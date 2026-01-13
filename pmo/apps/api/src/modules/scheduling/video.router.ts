@@ -57,8 +57,10 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
-      const platform = req.params.platform.toUpperCase() as VideoPlatform;
+      const configId = parseInt(String(req.params.configId));
+      const platform = String(
+        req.params.platform,
+      ).toUpperCase() as VideoPlatform;
 
       const parsed = platformSchema.safeParse(platform);
       if (!parsed.success) {
@@ -100,8 +102,10 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
-      const platform = req.params.platform.toUpperCase() as VideoPlatform;
+      const configId = parseInt(String(req.params.configId));
+      const platform = String(
+        req.params.platform,
+      ).toUpperCase() as VideoPlatform;
       const body = req.body as { code?: string };
       const { code } = body;
 
@@ -196,7 +200,7 @@ router.get('/:configId/video/oauth/callback', async (req, res) => {
  */
 router.get('/:configId/video/config', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
     const configs = await videoService.getVideoConfigs(configId);
 
     return res.json({ data: configs });
@@ -235,7 +239,7 @@ router.get('/:configId/video/platforms', requireAuth, async (req, res) => {
  */
 router.patch('/:configId/video/config/:id', requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
 
     const parsed = updateVideoConfigSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -259,7 +263,7 @@ router.patch('/:configId/video/config/:id', requireAuth, async (req, res) => {
  */
 router.delete('/:configId/video/config/:id', requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
 
     await videoService.deleteVideoConfig(id);
 
@@ -285,7 +289,7 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
 
       const meeting =
         await videoService.createMeetingForAppointment(appointmentId);
@@ -316,7 +320,7 @@ router.patch(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
 
       const meeting =
         await videoService.updateMeetingForAppointment(appointmentId);
@@ -347,7 +351,7 @@ router.delete(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
 
       await videoService.deleteMeetingForAppointment(appointmentId);
 
@@ -368,7 +372,7 @@ router.delete(
  */
 router.get('/:configId/video/status', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const isConfigured = await videoService.isVideoConfigured(configId);
     const configs = await videoService.getVideoConfigs(configId);

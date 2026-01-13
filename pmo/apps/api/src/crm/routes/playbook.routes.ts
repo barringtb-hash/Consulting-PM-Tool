@@ -143,7 +143,7 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid playbook ID' });
     }
@@ -166,7 +166,7 @@ router.put(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid playbook ID' });
     }
@@ -197,7 +197,7 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid playbook ID' });
     }
@@ -223,7 +223,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid playbook ID' });
     }
@@ -258,7 +258,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid playbook ID' });
     }
@@ -289,7 +289,7 @@ router.put(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const taskId = parseInt(req.params.taskId, 10);
+    const taskId = parseInt(String(req.params.taskId), 10);
     if (isNaN(taskId)) {
       return res.status(400).json({ error: 'Invalid task ID' });
     }
@@ -302,7 +302,7 @@ router.put(
     try {
       await playbookService.updatePlaybookTask(taskId, parsed.data);
       // Return updated playbook
-      const playbookId = parseInt(req.params.id, 10);
+      const playbookId = parseInt(String(req.params.id), 10);
       const playbook = await playbookService.getPlaybookById(playbookId);
       res.json({ data: playbook });
     } catch (error) {
@@ -323,7 +323,7 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const taskId = parseInt(req.params.taskId, 10);
+    const taskId = parseInt(String(req.params.taskId), 10);
     if (isNaN(taskId)) {
       return res.status(400).json({ error: 'Invalid task ID' });
     }
@@ -349,7 +349,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid playbook ID' });
     }

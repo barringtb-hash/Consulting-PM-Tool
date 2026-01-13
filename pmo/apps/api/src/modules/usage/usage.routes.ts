@@ -167,7 +167,7 @@ router.get(
 
       const summary = await usageService.getUsageSummary(
         tenantId,
-        moduleId,
+        String(moduleId),
         period,
         periodStart,
       );
@@ -196,7 +196,10 @@ router.get(
       const { tenantId } = getTenantContext();
       const { moduleId } = req.params;
 
-      const stats = await usageService.getModuleUsageStats(tenantId, moduleId);
+      const stats = await usageService.getModuleUsageStats(
+        tenantId,
+        String(moduleId),
+      );
 
       res.json({ data: stats });
     } catch (error) {

@@ -66,7 +66,8 @@ router.get('/', async (req: TenantRequest, res: Response) => {
 router.get(
   '/entity/:entityType/:entityId',
   async (req: TenantRequest, res: Response) => {
-    const { entityType, entityId } = req.params;
+    const entityType = String(req.params.entityType);
+    const entityId = String(req.params.entityId);
     const limit = parseInt(req.query.limit as string) || 50;
 
     const logs = await getEntityAuditLogs(entityType, entityId, limit);

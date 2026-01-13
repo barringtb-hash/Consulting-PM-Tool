@@ -2165,7 +2165,7 @@ router.post(
   '/contents/:contentId/translate',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const contentId = parseInt(req.params.contentId, 10);
+    const contentId = parseInt(String(req.params.contentId), 10);
     if (isNaN(contentId)) {
       res.status(400).json({ error: 'Invalid content ID' });
       return;
@@ -2284,7 +2284,7 @@ router.get(
   '/contents/:contentId/translations',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const contentId = parseInt(req.params.contentId, 10);
+    const contentId = parseInt(String(req.params.contentId), 10);
     if (isNaN(contentId)) {
       res.status(400).json({ error: 'Invalid content ID' });
       return;
@@ -2326,7 +2326,7 @@ router.delete(
   '/translations/:translationId',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const translationId = parseInt(req.params.translationId, 10);
+    const translationId = parseInt(String(req.params.translationId), 10);
     if (isNaN(translationId)) {
       res.status(400).json({ error: 'Invalid translation ID' });
       return;
@@ -2467,7 +2467,7 @@ router.post(
   '/contents/:contentId/compliance-check',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const contentId = parseInt(req.params.contentId, 10);
+    const contentId = parseInt(String(req.params.contentId), 10);
     if (isNaN(contentId)) {
       res.status(400).json({ error: 'Invalid content ID' });
       return;

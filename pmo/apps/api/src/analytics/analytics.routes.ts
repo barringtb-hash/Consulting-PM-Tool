@@ -335,7 +335,7 @@ router.get(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const reportId = parseInt(req.params.reportId);
+      const reportId = parseInt(String(req.params.reportId));
 
       const report = await reportService.getSavedReport(reportId, tenantId);
 
@@ -361,7 +361,7 @@ router.delete(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const reportId = parseInt(req.params.reportId);
+      const reportId = parseInt(String(req.params.reportId));
 
       await reportService.deleteSavedReport(reportId, tenantId);
 
@@ -383,7 +383,7 @@ router.post(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const reportId = parseInt(req.params.reportId);
+      const reportId = parseInt(String(req.params.reportId));
 
       const report = await reportService.getSavedReport(reportId, tenantId);
 
@@ -450,7 +450,7 @@ router.post(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const reportId = parseInt(req.params.reportId);
+      const reportId = parseInt(String(req.params.reportId));
       const { format } = req.body as { format?: string };
 
       if (!format || !['CSV', 'EXCEL', 'PDF'].includes(format)) {

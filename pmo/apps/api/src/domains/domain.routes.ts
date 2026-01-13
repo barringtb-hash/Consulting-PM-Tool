@@ -106,7 +106,7 @@ router.get(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       const domain = await domainService.getDomainById(domainId);
 
@@ -132,7 +132,7 @@ router.delete(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       await domainService.removeDomain(domainId, tenantId);
 
@@ -154,7 +154,7 @@ router.post(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       await domainService.setPrimaryDomain(domainId, tenantId);
 
@@ -180,7 +180,7 @@ router.get(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       const domain = await domainService.getDomainById(domainId);
 
@@ -211,7 +211,7 @@ router.post(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       // Verify domain belongs to tenant
       const domain = await domainService.getDomainById(domainId);
@@ -244,7 +244,7 @@ router.get(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       const domain = await domainService.getDomainById(domainId);
 
@@ -276,7 +276,7 @@ router.get(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       const domain = await domainService.getDomainById(domainId);
 
@@ -304,7 +304,7 @@ router.post(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       const domain = await domainService.getDomainById(domainId);
 
@@ -345,7 +345,7 @@ router.post(
   async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       const { tenantId } = getTenantContext();
-      const { domainId } = req.params;
+      const domainId = String(req.params.domainId);
 
       const domain = await domainService.getDomainById(domainId);
 

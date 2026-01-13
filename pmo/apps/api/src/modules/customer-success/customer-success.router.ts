@@ -90,7 +90,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const clientId = parseInt(req.params.clientId);
+      const clientId = parseInt(String(req.params.clientId));
       const projectId = req.query.projectId
         ? parseInt(req.query.projectId as string)
         : undefined;
@@ -116,7 +116,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const clientId = parseInt(req.params.clientId);
+      const clientId = parseInt(String(req.params.clientId));
       const {
         projectId,
         auto,
@@ -162,7 +162,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const clientId = parseInt(req.params.clientId);
+      const clientId = parseInt(String(req.params.clientId));
       const projectId = req.query.projectId
         ? parseInt(req.query.projectId as string)
         : undefined;
@@ -304,7 +304,7 @@ router.get(
  */
 router.get('/ctas/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
     const cta = await ctaService.getCTAById(id);
 
     if (!cta) {
@@ -354,7 +354,7 @@ router.post(
  */
 router.patch('/ctas/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
     const parsed = updateCTASchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -390,7 +390,7 @@ router.patch('/ctas/:id', requireAuth, async (req: Request, res: Response) => {
  */
 router.delete('/ctas/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
     await ctaService.deleteCTA(id);
     res.status(204).send();
   } catch (error) {
@@ -520,7 +520,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const playbook = await playbookService.getPlaybookById(id);
 
       if (!playbook) {
@@ -571,7 +571,7 @@ router.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const parsed = updatePlaybookSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -602,7 +602,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       await playbookService.deletePlaybook(id);
       res.status(204).send();
     } catch (error) {
@@ -621,7 +621,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const { name } = req.body as { name?: string };
 
       if (!name) {
@@ -786,7 +786,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const plan = await successPlanService.getSuccessPlanById(id);
 
       if (!plan) {
@@ -843,7 +843,7 @@ router.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       const parsed = updateSuccessPlanSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -883,7 +883,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(String(req.params.id));
       await successPlanService.deleteSuccessPlan(id);
       res.status(204).send();
     } catch (error) {
@@ -902,7 +902,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const successPlanId = parseInt(req.params.id);
+      const successPlanId = parseInt(String(req.params.id));
       const { title, description, dueDate, successCriteria } = req.body;
 
       if (!title) {
@@ -934,7 +934,7 @@ router.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const objectiveId = parseInt(req.params.id);
+      const objectiveId = parseInt(String(req.params.id));
       const { title, description, status, dueDate, successCriteria } = req.body;
 
       await successPlanService.updateObjective(objectiveId, {
@@ -962,7 +962,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const objectiveId = parseInt(req.params.id);
+      const objectiveId = parseInt(String(req.params.id));
       await successPlanService.deleteObjective(objectiveId);
       res.status(204).send();
     } catch (error) {
@@ -981,7 +981,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const objectiveId = parseInt(req.params.id);
+      const objectiveId = parseInt(String(req.params.id));
       const { title, description, priority, dueDate } = req.body as {
         title?: string;
         description?: string;
@@ -1016,7 +1016,7 @@ router.post(
  */
 router.patch('/tasks/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const taskId = parseInt(req.params.id);
+    const taskId = parseInt(String(req.params.id));
     const { title, description, status, priority, dueDate, ownerId } = req.body;
 
     await successPlanService.updateSuccessTask(taskId, {
@@ -1044,7 +1044,7 @@ router.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const taskId = parseInt(req.params.id);
+      const taskId = parseInt(String(req.params.id));
       await successPlanService.deleteSuccessTask(taskId);
       res.status(204).send();
     } catch (error) {
@@ -1112,7 +1112,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const clientId = parseInt(req.params.clientId);
+      const clientId = parseInt(String(req.params.clientId));
       const summary =
         await engagementService.getClientEngagementSummary(clientId);
       res.json(summary);
@@ -1132,7 +1132,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const contactId = parseInt(req.params.contactId);
+      const contactId = parseInt(String(req.params.contactId));
       const engagement =
         await engagementService.getOrCreateContactEngagement(contactId);
       res.json(engagement);
@@ -1152,7 +1152,7 @@ router.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const contactId = parseInt(req.params.contactId);
+      const contactId = parseInt(String(req.params.contactId));
       const { isChampion, isDecisionMaker, notes } = req.body as {
         isChampion?: boolean;
         isDecisionMaker?: boolean;
@@ -1185,7 +1185,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const contactId = parseInt(req.params.contactId);
+      const contactId = parseInt(String(req.params.contactId));
       const { isChampion } = req.body as { isChampion: boolean };
 
       await engagementService.setChampionStatus(contactId, isChampion);
@@ -1206,7 +1206,7 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const contactId = parseInt(req.params.contactId);
+      const contactId = parseInt(String(req.params.contactId));
       const { isDecisionMaker } = req.body as { isDecisionMaker: boolean };
 
       await engagementService.setDecisionMakerStatus(
@@ -1256,7 +1256,7 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const clientId = parseInt(req.params.clientId);
+      const clientId = parseInt(String(req.params.clientId));
       const { projectId, contactId, limit, offset } = req.query;
 
       const result = await engagementService.getActivityTimeline(clientId, {

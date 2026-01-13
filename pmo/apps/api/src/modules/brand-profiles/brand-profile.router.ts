@@ -91,7 +91,7 @@ router.get(
       return;
     }
 
-    const clientId = parseInt(req.params.clientId, 10);
+    const clientId = parseInt(String(req.params.clientId), 10);
     if (isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
@@ -126,7 +126,7 @@ router.post(
       return;
     }
 
-    const clientId = parseInt(req.params.clientId, 10);
+    const clientId = parseInt(String(req.params.clientId), 10);
     if (isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
@@ -175,7 +175,7 @@ router.patch(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid brand profile ID' });
       return;
@@ -215,7 +215,7 @@ router.get(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid brand profile ID' });
       return;
@@ -246,7 +246,7 @@ router.post(
       return;
     }
 
-    const brandProfileId = parseInt(req.params.id, 10);
+    const brandProfileId = parseInt(String(req.params.id), 10);
     if (isNaN(brandProfileId)) {
       res.status(400).json({ error: 'Invalid brand profile ID' });
       return;
@@ -289,7 +289,7 @@ router.patch(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid brand asset ID' });
       return;
@@ -329,7 +329,7 @@ router.delete(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid brand asset ID' });
       return;

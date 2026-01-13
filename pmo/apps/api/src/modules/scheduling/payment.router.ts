@@ -49,7 +49,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
 
       if (isNaN(configId)) {
         res.status(400).json({ error: 'Invalid config ID' });
@@ -92,7 +92,7 @@ router.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const configId = parseInt(req.params.configId, 10);
+      const configId = parseInt(String(req.params.configId), 10);
 
       if (isNaN(configId)) {
         res.status(400).json({ error: 'Invalid config ID' });
@@ -271,7 +271,7 @@ router.post(
   '/confirm/:paymentIntentId',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { paymentIntentId } = req.params;
+      const paymentIntentId = String(req.params.paymentIntentId);
 
       const isSuccessful =
         await paymentService.confirmPaymentSuccess(paymentIntentId);
@@ -301,7 +301,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId, 10);
+      const appointmentId = parseInt(String(req.params.appointmentId), 10);
 
       if (isNaN(appointmentId)) {
         res.status(400).json({ error: 'Invalid appointment ID' });
@@ -340,7 +340,7 @@ router.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId, 10);
+      const appointmentId = parseInt(String(req.params.appointmentId), 10);
 
       if (isNaN(appointmentId)) {
         res.status(400).json({ error: 'Invalid appointment ID' });
@@ -430,7 +430,7 @@ router.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId, 10);
+      const appointmentId = parseInt(String(req.params.appointmentId), 10);
 
       if (isNaN(appointmentId)) {
         res.status(400).json({ error: 'Invalid appointment ID' });
@@ -458,7 +458,7 @@ router.get(
   '/status/:appointmentId',
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId, 10);
+      const appointmentId = parseInt(String(req.params.appointmentId), 10);
 
       if (isNaN(appointmentId)) {
         res.status(400).json({ error: 'Invalid appointment ID' });

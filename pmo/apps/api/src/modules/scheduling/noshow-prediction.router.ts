@@ -56,7 +56,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
 
       const prediction = await noshowService.predictNoShow(appointmentId);
 
@@ -79,7 +79,7 @@ router.get(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
 
       const features = await noshowService.extractFeatures(appointmentId);
 
@@ -103,7 +103,7 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      const appointmentId = parseInt(req.params.appointmentId);
+      const appointmentId = parseInt(String(req.params.appointmentId));
       const body = req.body as { wasNoShow?: boolean };
       const { wasNoShow } = body;
 
@@ -130,7 +130,7 @@ router.post(
  */
 router.get('/:configId/noshow/high-risk', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
     const threshold = parseFloat(req.query.threshold as string) || 0.5;
     const limit = parseInt(req.query.limit as string) || 50;
 
@@ -160,7 +160,7 @@ router.get('/:configId/noshow/high-risk', requireAuth, async (req, res) => {
  */
 router.post('/:configId/noshow/refresh', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const updated = await noshowService.updateAllPredictions(configId);
 
@@ -186,7 +186,7 @@ router.post('/:configId/noshow/refresh', requireAuth, async (req, res) => {
  */
 router.get('/:configId/noshow/performance', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
     const startDate = req.query.startDate
       ? new Date(req.query.startDate as string)
       : undefined;
@@ -218,7 +218,7 @@ router.get('/:configId/noshow/performance', requireAuth, async (req, res) => {
  */
 router.get('/:configId/noshow/experiments', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const experiment = await noshowService.getActiveExperiment(configId);
 
@@ -235,7 +235,7 @@ router.get('/:configId/noshow/experiments', requireAuth, async (req, res) => {
  */
 router.post('/:configId/noshow/experiments', requireAuth, async (req, res) => {
   try {
-    const configId = parseInt(req.params.configId);
+    const configId = parseInt(String(req.params.configId));
 
     const parsed = experimentSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -272,8 +272,8 @@ router.post(
   requireAuth,
   async (req, res) => {
     try {
-      const configId = parseInt(req.params.configId);
-      const { experimentId } = req.params;
+      const configId = parseInt(String(req.params.configId));
+      const experimentId = String(req.params.experimentId);
 
       await noshowService.endExperiment(configId, experimentId);
 

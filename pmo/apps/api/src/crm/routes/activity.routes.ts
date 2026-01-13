@@ -254,7 +254,7 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid activity ID' });
     }
@@ -277,7 +277,7 @@ router.put(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid activity ID' });
     }
@@ -301,7 +301,7 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid activity ID' });
     }
@@ -320,7 +320,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid activity ID' });
     }
@@ -347,7 +347,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid activity ID' });
     }
@@ -425,7 +425,7 @@ router.get(
       | 'account'
       | 'contact'
       | 'opportunity';
-    const entityId = parseInt(req.params.entityId, 10);
+    const entityId = parseInt(String(req.params.entityId), 10);
 
     if (!['account', 'contact', 'opportunity'].includes(entityType)) {
       return res.status(400).json({ error: 'Invalid entity type' });

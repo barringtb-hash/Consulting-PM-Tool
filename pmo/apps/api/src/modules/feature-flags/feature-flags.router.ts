@@ -184,7 +184,10 @@ router.get(
   '/feature-flags/check/:key',
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const result = await isFeatureFlagEnabled(req.params.key, req.userId);
+    const result = await isFeatureFlagEnabled(
+      String(req.params.key),
+      req.userId,
+    );
     res.json(result);
   },
 );
@@ -218,7 +221,7 @@ router.get(
   requireAuth,
   requireRole('ADMIN'),
   async (req: AuthenticatedRequest, res: Response) => {
-    const flag = await getFeatureFlag(req.params.key);
+    const flag = await getFeatureFlag(String(req.params.key));
 
     if (!flag) {
       res.status(404).json({ error: 'Feature flag not found' });
@@ -282,7 +285,7 @@ router.patch(
       return;
     }
 
-    const flag = await updateFeatureFlag(req.params.key, parsed.data);
+    const flag = await updateFeatureFlag(String(req.params.key), parsed.data);
 
     if (!flag) {
       res.status(404).json({ error: 'Feature flag not found' });
@@ -302,7 +305,7 @@ router.delete(
   requireAuth,
   requireRole('ADMIN'),
   async (req: AuthenticatedRequest, res: Response) => {
-    const deleted = await deleteFeatureFlag(req.params.key);
+    const deleted = await deleteFeatureFlag(String(req.params.key));
 
     if (!deleted) {
       res.status(404).json({ error: 'Feature flag not found' });
@@ -338,7 +341,7 @@ router.get(
   requireAuth,
   requireRole('ADMIN'),
   async (req: AuthenticatedRequest, res: Response) => {
-    const config = await getTenantModuleConfig(req.params.tenantId);
+    const config = await getTenantModuleConfig(String(req.params.tenantId));
     res.json(config);
   },
 );
@@ -433,8 +436,8 @@ router.patch(
 
     try {
       const config = await updateTenantModuleConfig(
-        req.params.tenantId,
-        req.params.moduleId,
+        String(req.params.tenantId),
+        String(req.params.moduleId),
         parsed.data,
         req.userId,
       );
@@ -461,8 +464,8 @@ router.delete(
   requireRole('ADMIN'),
   async (req: AuthenticatedRequest, res: Response) => {
     const deleted = await deleteTenantModuleConfig(
-      req.params.tenantId,
-      req.params.moduleId,
+      String(req.params.tenantId),
+      String(req.params.moduleId),
     );
 
     if (!deleted) {

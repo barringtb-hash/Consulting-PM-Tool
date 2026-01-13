@@ -135,7 +135,7 @@ router.get(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;
@@ -172,7 +172,7 @@ router.patch(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;
@@ -228,7 +228,7 @@ router.delete(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;
@@ -265,7 +265,7 @@ router.get(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid campaign ID' });
       return;

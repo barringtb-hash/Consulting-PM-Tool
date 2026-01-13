@@ -52,7 +52,7 @@ router.get(
       return;
     }
 
-    const clientId = parseInt(req.params.clientId, 10);
+    const clientId = parseInt(String(req.params.clientId), 10);
     if (isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
@@ -89,7 +89,7 @@ router.post(
       return;
     }
 
-    const clientId = parseInt(req.params.clientId, 10);
+    const clientId = parseInt(String(req.params.clientId), 10);
     if (isNaN(clientId)) {
       res.status(400).json({ error: 'Invalid client ID' });
       return;
@@ -144,7 +144,7 @@ router.patch(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid publishing connection ID' });
       return;
@@ -194,7 +194,7 @@ router.delete(
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       res.status(400).json({ error: 'Invalid publishing connection ID' });
       return;
@@ -231,7 +231,7 @@ router.post(
       return;
     }
 
-    const contentId = parseInt(req.params.id, 10);
+    const contentId = parseInt(String(req.params.id), 10);
     if (isNaN(contentId)) {
       res.status(400).json({ error: 'Invalid content ID' });
       return;

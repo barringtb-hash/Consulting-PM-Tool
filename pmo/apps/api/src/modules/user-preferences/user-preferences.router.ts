@@ -289,7 +289,10 @@ router.post(
     }
 
     try {
-      const preferences = await toggleDashboardPanel(req.userId, panelId);
+      const preferences = await toggleDashboardPanel(
+        req.userId,
+        String(panelId),
+      );
       res.json(preferences);
     } catch (error) {
       console.error('Error toggling dashboard panel:', error);

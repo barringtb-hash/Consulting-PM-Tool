@@ -198,7 +198,7 @@ router.get(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
@@ -221,7 +221,7 @@ router.put(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
@@ -248,7 +248,7 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
@@ -267,7 +267,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
@@ -295,7 +295,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
@@ -317,7 +317,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: AuthenticatedRequest, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
@@ -347,7 +347,7 @@ router.post(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const opportunityId = parseInt(req.params.id, 10);
+    const opportunityId = parseInt(String(req.params.id), 10);
     if (isNaN(opportunityId)) {
       return res.status(400).json({ error: 'Invalid opportunity ID' });
     }
@@ -376,8 +376,8 @@ router.delete(
   requireAuth,
   requireTenant,
   async (req: TenantRequest, res: Response) => {
-    const opportunityId = parseInt(req.params.id, 10);
-    const contactId = parseInt(req.params.contactId, 10);
+    const opportunityId = parseInt(String(req.params.id), 10);
+    const contactId = parseInt(String(req.params.contactId), 10);
 
     if (isNaN(opportunityId) || isNaN(contactId)) {
       return res.status(400).json({ error: 'Invalid ID' });
