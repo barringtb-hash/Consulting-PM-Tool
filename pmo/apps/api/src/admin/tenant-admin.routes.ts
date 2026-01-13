@@ -23,8 +23,21 @@ import type { UpdateTenantBrandingInput } from './tenant-admin.service';
 import * as tenantService from '../tenant/tenant.service';
 import { logAudit } from '../services/audit.service';
 import { AuditAction } from '@prisma/client';
+import { createRateLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
+
+// Rate limit tenant admin operations: 30 requests per minute per IP
+// This prevents abuse of sensitive tenant management endpoints
+const isTestEnv = process.env.NODE_ENV === 'test';
+const tenantAdminRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: isTestEnv ? 1000 : 30,
+  message: 'Too many tenant admin requests. Please slow down and try again.',
+});
+
+// Apply rate limiting to all routes in this router
+router.use(tenantAdminRateLimiter);
 
 /**
  * GET /api/admin/tenants

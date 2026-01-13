@@ -96,7 +96,9 @@ router.get(
     }
 
     const notification = await notificationService.getNotificationById(id);
-    if (!notification) {
+
+    // Verify ownership - return 404 to prevent resource enumeration
+    if (!notification || notification.userId !== req.userId) {
       return res.status(404).json({ error: 'Notification not found' });
     }
 

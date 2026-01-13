@@ -8,22 +8,33 @@
  * - For startup route registration: uses static isModuleEnabled()
  * - For runtime request checking: uses async isModuleEnabledForTenant()
  *
- * Tenant identification:
- * - X-Tenant-ID header (for multi-tenant deployments)
- * - Falls back to 'default' tenant
+ * Security: Tenant identification uses the verified tenant context from AsyncLocalStorage,
+ * which is set by the tenant middleware after validating user access. This prevents
+ * attackers from spoofing tenant IDs via the X-Tenant-ID header.
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { ModuleId } from '../../../../packages/modules/index';
 import { isModuleEnabled } from '../modules/module-config';
 import { isModuleEnabledForTenant } from '../modules/feature-flags/feature-flags.service';
+import {
+  getTenantId as getTenantIdFromContext,
+  hasTenantContext,
+} from '../tenant/tenant.context';
 
 /**
- * Extract tenant ID from request
- * Checks X-Tenant-ID header, falls back to 'default'
+ * Get tenant ID from verified tenant context.
+ * Uses AsyncLocalStorage which is populated by the tenant middleware
+ * after validating user access to the tenant.
+ *
+ * Falls back to 'default' only if no tenant context exists (e.g., in
+ * single-tenant mode or test environments).
  */
-function getTenantId(req: Request): string {
-  return (req.headers['x-tenant-id'] as string) || 'default';
+function getVerifiedTenantId(): string {
+  if (hasTenantContext()) {
+    return getTenantIdFromContext();
+  }
+  return 'default';
 }
 
 /**
@@ -50,7 +61,7 @@ export function requireModule(moduleId: ModuleId) {
       `[MODULE-GUARD] Checking module '${moduleId}' for path: ${req.path}`,
     );
     try {
-      const tenantId = getTenantId(req);
+      const tenantId = getVerifiedTenantId();
       const enabled = await isModuleEnabledForTenant(moduleId, tenantId);
       console.log(
         `[MODULE-GUARD] Module '${moduleId}' enabled=${enabled} for tenant '${tenantId}'`,

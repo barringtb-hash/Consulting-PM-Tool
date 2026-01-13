@@ -175,7 +175,8 @@ describe('public leads routes', () => {
         });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Tenant not found');
+      // Generic error message to prevent information disclosure (tenant enumeration)
+      expect(response.body.error).toBe('Unable to process lead submission');
     });
 
     it('returns 400 when tenant is inactive', async () => {
@@ -202,7 +203,8 @@ describe('public leads routes', () => {
           });
 
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe('Tenant is not active');
+        // Generic error message to prevent information disclosure (tenant enumeration)
+        expect(response.body.error).toBe('Unable to process lead submission');
       } finally {
         // Clean up the inactive tenant
         await rawPrisma.tenant.delete({

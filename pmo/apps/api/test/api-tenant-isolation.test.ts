@@ -61,6 +61,8 @@ describe('API Tenant Isolation', () => {
     for (const tenantId of tenantIds) {
       try {
         // Delete in order to respect foreign key constraints
+        // Opportunities reference accounts, so delete opportunities first
+        await rawPrisma.opportunity.deleteMany({ where: { tenantId } });
         await rawPrisma.account.deleteMany({ where: { tenantId } });
         await rawPrisma.salesPipelineStage.deleteMany({
           where: { pipeline: { tenantId } },

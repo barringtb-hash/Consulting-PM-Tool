@@ -5,16 +5,30 @@
  *
  * Public endpoints:
  * - GET /api/modules - Get enabled modules for the current deployment
+ *   - If authenticated: returns tenant-specific config from user's tenant context
+ *   - If unauthenticated: returns default/environment configuration only
  *
  * Admin endpoints (require ADMIN role):
  * - GET/POST/PATCH/DELETE /api/admin/feature-flags - Manage feature flags
  * - GET/POST/PATCH /api/admin/modules - Manage tenant module configurations
  */
 
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import {
+  AuthenticatedRequest,
+  requireAuth,
+  optionalAuth,
+} from '../../auth/auth.middleware';
 import { requireRole } from '../../auth/role.middleware';
+import {
+  hasTenantContext,
+  getTenantContext,
+} from '../../tenant/tenant.context';
+import {
+  tenantMiddleware,
+  TenantRequest,
+} from '../../tenant/tenant.middleware';
 import {
   MODULE_DEFINITIONS,
   ModuleId,
@@ -40,6 +54,25 @@ import {
 } from './feature-flags.service';
 
 const router = Router();
+
+/**
+ * Conditional tenant middleware for semi-public endpoints.
+ * - For authenticated users: resolves tenant context via tenantMiddleware
+ * - For unauthenticated users: proceeds without tenant context (returns default config)
+ * This allows endpoints like /api/modules to work for both authenticated and unauthenticated users.
+ */
+const conditionalTenantMiddleware = (
+  req: TenantRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.userId) {
+    // Authenticated user - run full tenant resolution
+    return tenantMiddleware(req, res, next);
+  }
+  // Unauthenticated user - proceed without tenant context
+  next();
+};
 
 // ============================================================================
 // Validation Schemas
@@ -91,86 +124,120 @@ const bulkModuleConfigSchema = z.object({
 
 /**
  * GET /api/modules
- * Get enabled modules for the current deployment or specific tenant
+ * Get enabled modules for the current deployment
  *
- * Query params:
- * - tenantId (optional): Get configuration for a specific tenant
+ * Security:
+ * - If authenticated with tenant context: returns that tenant's configuration
+ * - If unauthenticated or no tenant context: returns default/environment configuration
+ *
+ * This prevents information disclosure about other tenants' module configurations.
+ * The endpoint remains public for frontend initialization (navigation rendering).
  *
  * Returns module definitions, navigation items, and enabled status
  */
-router.get('/modules', async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const tenantId = (req.query.tenantId as string) || 'default';
+router.get(
+  '/modules',
+  optionalAuth,
+  conditionalTenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // Determine tenant ID from authenticated user's context only
+      // Do NOT accept tenantId from query params - this would allow any caller
+      // to enumerate other tenants' module configurations
+      let tenantId = 'default';
 
-    // Get tenant-specific configuration from database (falls back to env/defaults)
-    const tenantConfig = await getTenantModuleConfig(tenantId);
-    const enabledModules = tenantConfig.modules
-      .filter((m) => m.enabled)
-      .map((m) => m.moduleId);
+      if (req.userId && hasTenantContext()) {
+        // User is authenticated and has a tenant context - use their tenant
+        tenantId = getTenantContext().tenantId;
+      }
 
-    const enabledDefinitions = getEnabledModuleDefinitions(enabledModules);
-    const navigationItems = getNavigationItems(enabledModules);
+      // Get tenant-specific configuration from database (falls back to env/defaults)
+      const tenantConfig = await getTenantModuleConfig(tenantId);
+      const enabledModules = tenantConfig.modules
+        .filter((m) => m.enabled)
+        .map((m) => m.moduleId);
 
-    // Build response with all module info
-    const allModules = Object.values(MODULE_DEFINITIONS).map((def) => ({
-      id: def.id,
-      label: def.label,
-      description: def.description,
-      navGroup: def.navGroup,
-      path: def.path,
-      icon: def.icon,
-      isCore: def.isCore,
-      enabled: enabledModules.includes(def.id),
-      dependencies: def.dependencies || [],
-    }));
+      const enabledDefinitions = getEnabledModuleDefinitions(enabledModules);
+      const navigationItems = getNavigationItems(enabledModules);
 
-    res.json({
-      tenantId: tenantConfig.tenantId,
-      source: tenantConfig.source,
-      enabledModules,
-      modules: allModules,
-      enabledDefinitions,
-      navigationItems,
-    });
-  } catch (error) {
-    console.error('Error fetching modules:', error);
-    res.status(500).json({ error: 'Failed to fetch module configuration' });
-  }
-});
+      // Build response with all module info
+      const allModules = Object.values(MODULE_DEFINITIONS).map((def) => ({
+        id: def.id,
+        label: def.label,
+        description: def.description,
+        navGroup: def.navGroup,
+        path: def.path,
+        icon: def.icon,
+        isCore: def.isCore,
+        enabled: enabledModules.includes(def.id),
+        dependencies: def.dependencies || [],
+      }));
+
+      res.json({
+        tenantId: tenantConfig.tenantId,
+        source: tenantConfig.source,
+        enabledModules,
+        modules: allModules,
+        enabledDefinitions,
+        navigationItems,
+      });
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+      res.status(500).json({ error: 'Failed to fetch module configuration' });
+    }
+  },
+);
 
 /**
  * GET /api/modules/check/:moduleId
- * Check if a specific module is enabled for a tenant
+ * Check if a specific module is enabled
  *
- * Query params:
- * - tenantId (optional): Check for a specific tenant
+ * Security:
+ * - If authenticated with tenant context: checks that tenant's configuration
+ * - If unauthenticated or no tenant context: checks default/environment configuration
+ *
+ * This prevents information disclosure about other tenants' module configurations.
  */
-router.get('/modules/check/:moduleId', async (req, res: Response) => {
-  const moduleId = req.params.moduleId as ModuleId;
-  const tenantId = (req.query.tenantId as string) || 'default';
+router.get(
+  '/modules/check/:moduleId',
+  optionalAuth,
+  conditionalTenantMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const moduleId = req.params.moduleId as ModuleId;
 
-  if (!MODULE_DEFINITIONS[moduleId]) {
-    res.status(400).json({ error: 'Invalid module ID' });
-    return;
-  }
+    if (!MODULE_DEFINITIONS[moduleId]) {
+      res.status(400).json({ error: 'Invalid module ID' });
+      return;
+    }
 
-  const tenantConfig = await getTenantModuleConfig(tenantId);
-  const moduleConfig = tenantConfig.modules.find(
-    (m) => m.moduleId === moduleId,
-  );
-  // Default to module's isCore status: core modules default enabled, non-core default disabled
-  // This prevents exposing modules that should remain disabled for tenants without explicit config
-  const isCore = MODULE_DEFINITIONS[moduleId].isCore;
-  const enabled = moduleConfig?.enabled ?? isCore;
+    // Determine tenant ID from authenticated user's context only
+    // Do NOT accept tenantId from query params - this would allow any caller
+    // to probe other tenants' module configurations
+    let tenantId = 'default';
 
-  res.json({
-    moduleId,
-    tenantId: tenantConfig.tenantId,
-    source: tenantConfig.source,
-    enabled,
-    isCore: MODULE_DEFINITIONS[moduleId].isCore,
-  });
-});
+    if (req.userId && hasTenantContext()) {
+      // User is authenticated and has a tenant context - use their tenant
+      tenantId = getTenantContext().tenantId;
+    }
+
+    const tenantConfig = await getTenantModuleConfig(tenantId);
+    const moduleConfig = tenantConfig.modules.find(
+      (m) => m.moduleId === moduleId,
+    );
+    // Default to module's isCore status: core modules default enabled, non-core default disabled
+    // This prevents exposing modules that should remain disabled for tenants without explicit config
+    const isCore = MODULE_DEFINITIONS[moduleId].isCore;
+    const enabled = moduleConfig?.enabled ?? isCore;
+
+    res.json({
+      moduleId,
+      tenantId: tenantConfig.tenantId,
+      source: tenantConfig.source,
+      enabled,
+      isCore: MODULE_DEFINITIONS[moduleId].isCore,
+    });
+  },
+);
 
 // ============================================================================
 // Protected Endpoints (require authentication)

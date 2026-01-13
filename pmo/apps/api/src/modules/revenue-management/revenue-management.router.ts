@@ -8,6 +8,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { PricingStrategy } from '@prisma/client';
 import { AuthenticatedRequest, requireAuth } from '../../auth/auth.middleware';
+import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import * as revenueService from './revenue-management.service';
 import { hasClientAccess } from '../../auth/client-auth.helper';
 
@@ -15,6 +16,7 @@ const router = Router();
 
 // Apply authentication middleware to all routes
 router.use(requireAuth);
+router.use(tenantMiddleware);
 
 // ============ Validation Schemas ============
 
