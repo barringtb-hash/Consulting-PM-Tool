@@ -41,8 +41,21 @@ type RecurringCostType =
   | 'LICENSE'
   | 'SERVICE'
   | 'EMPLOYEE'
+  | 'PAYROLL'
+  | 'BENEFITS'
+  | 'CONTRACTOR'
+  | 'RENT'
+  | 'UTILITIES'
+  | 'INSURANCE'
+  | 'MAINTENANCE'
   | 'OTHER';
-type RecurringFrequency = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+type RecurringFrequency =
+  | 'WEEKLY'
+  | 'BIWEEKLY'
+  | 'MONTHLY'
+  | 'QUARTERLY'
+  | 'SEMIANNUALLY'
+  | 'YEARLY';
 
 const STATUS_CONFIG: Record<
   RecurringCostStatus,
@@ -59,13 +72,22 @@ const TYPE_LABELS: Record<RecurringCostType, string> = {
   LICENSE: 'License',
   SERVICE: 'Service',
   EMPLOYEE: 'Employee',
+  PAYROLL: 'Payroll',
+  BENEFITS: 'Benefits',
+  CONTRACTOR: 'Contractor',
+  RENT: 'Rent',
+  UTILITIES: 'Utilities',
+  INSURANCE: 'Insurance',
+  MAINTENANCE: 'Maintenance',
   OTHER: 'Other',
 };
 
 const FREQUENCY_LABELS: Record<RecurringFrequency, string> = {
   WEEKLY: 'Weekly',
+  BIWEEKLY: 'Bi-weekly',
   MONTHLY: 'Monthly',
   QUARTERLY: 'Quarterly',
+  SEMIANNUALLY: 'Semi-annually',
   YEARLY: 'Yearly',
 };
 

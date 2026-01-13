@@ -32,6 +32,35 @@ export interface CategoryFeedback {
 }
 
 // ============================================================================
+// UTILITIES
+// ============================================================================
+
+/**
+ * Sanitize user input for inclusion in AI prompts to prevent prompt injection.
+ * Removes or escapes potentially harmful characters and limits length.
+ */
+function sanitizeForPrompt(input: string | undefined, maxLength = 200): string {
+  if (!input) return '';
+
+  // Truncate to max length
+  let sanitized = input.slice(0, maxLength);
+
+  // Remove potentially harmful control characters and patterns
+  sanitized = sanitized
+    // Remove newlines and carriage returns that could break prompt structure
+    .replace(/[\r\n]/g, ' ')
+    // Remove common prompt injection patterns
+    .replace(/ignore\s*(previous|all|above)\s*instructions?/gi, '')
+    .replace(/respond\s+only\s+with/gi, '')
+    .replace(/you\s+are\s+(now\s+)?a/gi, '')
+    // Remove multiple spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return sanitized;
+}
+
+// ============================================================================
 // AI CATEGORIZATION SERVICE
 // ============================================================================
 
@@ -107,6 +136,10 @@ async function getAISuggestions(
     return [];
   }
 
+  // Sanitize user inputs to prevent prompt injection
+  const safeDescription = sanitizeForPrompt(description, 300);
+  const safeVendorName = sanitizeForPrompt(vendorName, 100);
+
   const categoryList = categories
     .map(
       (c) =>
@@ -117,8 +150,8 @@ async function getAISuggestions(
   const prompt = `You are an expense categorization assistant. Given the following expense details, suggest the most appropriate category from the list provided.
 
 Expense Details:
-- Description: ${description}
-${vendorName ? `- Vendor: ${vendorName}` : ''}
+- Description: ${safeDescription}
+${safeVendorName ? `- Vendor: ${safeVendorName}` : ''}
 ${amount ? `- Amount: $${amount}` : ''}
 
 Available Categories:

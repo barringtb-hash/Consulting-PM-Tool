@@ -951,11 +951,32 @@ router.post(
       const { expenseId, suggestedCategoryId, actualCategoryId, wasAccepted } =
         body;
 
+      // Validate required fields
+      if (
+        typeof expenseId !== 'number' ||
+        expenseId <= 0 ||
+        typeof suggestedCategoryId !== 'number' ||
+        suggestedCategoryId <= 0 ||
+        typeof actualCategoryId !== 'number' ||
+        actualCategoryId <= 0 ||
+        typeof wasAccepted !== 'boolean'
+      ) {
+        return res.status(400).json({
+          error: 'Invalid input',
+          details: {
+            expenseId: 'must be a positive integer',
+            suggestedCategoryId: 'must be a positive integer',
+            actualCategoryId: 'must be a positive integer',
+            wasAccepted: 'must be a boolean',
+          },
+        });
+      }
+
       await categorizationService.recordCategorizationFeedback({
-        expenseId: expenseId!,
-        suggestedCategoryId: suggestedCategoryId!,
-        actualCategoryId: actualCategoryId!,
-        wasAccepted: wasAccepted!,
+        expenseId,
+        suggestedCategoryId,
+        actualCategoryId,
+        wasAccepted,
       });
 
       return res.json({ success: true });

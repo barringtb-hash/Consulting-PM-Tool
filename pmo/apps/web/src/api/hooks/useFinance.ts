@@ -102,6 +102,7 @@ export function useCreateExpense() {
     mutationFn: expensesApi.createExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: financeKeys.expenses() });
+      queryClient.invalidateQueries({ queryKey: financeKeys.budgets() });
       queryClient.invalidateQueries({ queryKey: financeKeys.analytics() });
     },
   });
@@ -122,6 +123,7 @@ export function useUpdateExpense() {
       queryClient.invalidateQueries({
         queryKey: financeKeys.expenseDetail(id),
       });
+      queryClient.invalidateQueries({ queryKey: financeKeys.budgets() });
       queryClient.invalidateQueries({ queryKey: financeKeys.analytics() });
     },
   });
@@ -133,6 +135,7 @@ export function useDeleteExpense() {
     mutationFn: expensesApi.deleteExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: financeKeys.expenses() });
+      queryClient.invalidateQueries({ queryKey: financeKeys.budgets() });
       queryClient.invalidateQueries({ queryKey: financeKeys.analytics() });
     },
   });
@@ -364,6 +367,7 @@ export function useCategory(id: number) {
   return useQuery({
     queryKey: financeKeys.categoryDetail(id),
     queryFn: () => categoriesApi.getCategory(id),
+    select: (data) => data.category,
     enabled: id > 0,
   });
 }

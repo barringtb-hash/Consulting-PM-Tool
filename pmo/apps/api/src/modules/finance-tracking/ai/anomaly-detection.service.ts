@@ -151,6 +151,11 @@ async function checkAmountAnomaly(
     return null;
   }
 
+  // Prevent division by zero - if stdDev is 0 (all values identical), skip anomaly detection
+  if (baseline.stdDev === 0) {
+    return null;
+  }
+
   const zScore = (amount - baseline.mean) / baseline.stdDev;
   const threshold = 2.0; // 2 standard deviations
 

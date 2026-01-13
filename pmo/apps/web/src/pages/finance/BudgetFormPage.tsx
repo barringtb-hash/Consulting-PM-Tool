@@ -21,21 +21,40 @@ import {
 import { useAccounts } from '../../api/hooks/crm';
 import { useProjects } from '../../api/hooks/projects';
 
-const budgetFormSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255),
-  description: z.string().max(1000).optional(),
-  amount: z.coerce.number().positive('Amount must be positive'),
-  currency: z.string().length(3).default('USD'),
-  period: z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']),
-  startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().optional(),
-  accountId: z.coerce.number().positive().optional().or(z.literal('')),
-  projectId: z.coerce.number().positive().optional().or(z.literal('')),
-  categoryId: z.coerce.number().positive().optional().or(z.literal('')),
-  alertThresholds: z.string().optional(),
-  allowRollover: z.boolean().default(false),
-  status: z.enum(['DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED']).optional(),
-});
+const budgetFormSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required').max(255),
+    description: z.string().max(1000).optional(),
+    amount: z.coerce.number().positive('Amount must be positive'),
+    currency: z.string().length(3).default('USD'),
+    period: z.enum(['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM']),
+    startDate: z.string().min(1, 'Start date is required'),
+    endDate: z.string().optional(),
+    accountId: z.coerce.number().positive().optional().or(z.literal('')),
+    projectId: z.coerce.number().positive().optional().or(z.literal('')),
+    categoryId: z.coerce.number().positive().optional().or(z.literal('')),
+    alertThresholds: z.string().optional(),
+    allowRollover: z.boolean().default(false),
+    status: z.enum(['DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED']).optional(),
+  })
+  .refine(
+    (data) => {
+      // End date is required for CUSTOM period
+      if (data.period === 'CUSTOM' && !data.endDate) {
+        return false;
+      }
+      // End date must be after start date if provided
+      if (data.endDate && data.startDate) {
+        return new Date(data.endDate) > new Date(data.startDate);
+      }
+      return true;
+    },
+    {
+      message:
+        'End date is required for custom period and must be after start date',
+      path: ['endDate'],
+    },
+  );
 
 type BudgetFormData = z.infer<typeof budgetFormSchema>;
 
