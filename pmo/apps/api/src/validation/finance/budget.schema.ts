@@ -70,7 +70,7 @@ const dateValidation = (data: {
 const dateValidationMessage = {
   message:
     'End date is required for custom period and must be after start date',
-  path: ['endDate'] as const,
+  path: ['endDate'],
 };
 
 export const createBudgetSchema = budgetBaseSchema.refine(

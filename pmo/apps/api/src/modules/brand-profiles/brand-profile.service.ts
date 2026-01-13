@@ -26,7 +26,10 @@ export const getBrandProfileByClientId = async (
   }
 
   const brandProfile = await prisma.brandProfile.findFirst({
-    where: { clientId: accountId, tenantId },
+    where: {
+      clientId: accountId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
     include: {
       client: {
         select: { id: true, name: true },
@@ -63,7 +66,10 @@ export const createBrandProfile = async (
 
   // Check if brand profile already exists
   const existing = await prisma.brandProfile.findFirst({
-    where: { clientId: input.clientId, tenantId },
+    where: {
+      clientId: input.clientId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (existing) {
     return { error: 'already_exists' as const };
@@ -74,7 +80,6 @@ export const createBrandProfile = async (
       ...input,
       fonts: input.fonts as Prisma.InputJsonValue,
       metadata: input.metadata as Prisma.InputJsonValue,
-      tenantId,
     },
     include: {
       client: {
@@ -97,7 +102,10 @@ export const updateBrandProfile = async (
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const existing = await prisma.brandProfile.findFirst({
-    where: { id, tenantId },
+    where: {
+      id,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (!existing) {
     return { error: 'not_found' as const };
@@ -137,7 +145,10 @@ export const getBrandAssets = async (
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const brandProfile = await prisma.brandProfile.findFirst({
-    where: { id: brandProfileId, tenantId },
+    where: {
+      id: brandProfileId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (!brandProfile) {
     return { error: 'profile_not_found' as const };
@@ -163,7 +174,10 @@ export const createBrandAsset = async (
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const brandProfile = await prisma.brandProfile.findFirst({
-    where: { id: input.brandProfileId, tenantId },
+    where: {
+      id: input.brandProfileId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (!brandProfile) {
     return { error: 'profile_not_found' as const };
@@ -189,7 +203,7 @@ export const updateBrandAsset = async (
   const existing = await prisma.brandAsset.findFirst({
     where: {
       id,
-      brandProfile: { tenantId },
+      ...(tenantId ? { brandProfile: { client: { tenantId } } } : {}),
     },
   });
   if (!existing) {
@@ -217,7 +231,7 @@ export const archiveBrandAsset = async (
   const existing = await prisma.brandAsset.findFirst({
     where: {
       id,
-      brandProfile: { tenantId },
+      ...(tenantId ? { brandProfile: { client: { tenantId } } } : {}),
     },
   });
   if (!existing) {

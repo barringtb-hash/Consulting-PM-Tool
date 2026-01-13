@@ -789,7 +789,7 @@ router.post(
     }
 
     // Authorization check via scenario's config
-    const scenario = await prisma.inventoryScenario.findUnique({
+    const scenario = await prisma.forecastScenario.findUnique({
       where: { id },
       select: { configId: true },
     });

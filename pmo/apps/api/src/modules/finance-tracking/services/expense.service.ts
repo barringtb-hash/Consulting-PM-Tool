@@ -360,7 +360,8 @@ export async function approveExpense(
         status: 'APPROVED',
         approvedBy: approverId,
         approvedAt: new Date(),
-        approvalNotes: notes,
+        // Note: approval notes stored in the general notes field if needed
+        ...(notes ? { notes } : {}),
       },
       include: {
         category: { select: { id: true, name: true, color: true, icon: true } },

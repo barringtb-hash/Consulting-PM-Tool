@@ -58,7 +58,10 @@ export const getPublishingConnections = async (
   }
 
   const connections = await prisma.publishingConnection.findMany({
-    where: { clientId: accountId, tenantId },
+    where: {
+      clientId: accountId,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
     include: {
       client: {
         select: { id: true, name: true },
@@ -98,7 +101,7 @@ export const createPublishingConnection = async (
       clientId: input.clientId,
       platform: input.platform,
       accountName: input.accountName,
-      tenantId,
+      ...(tenantId ? { client: { tenantId } } : {}),
     },
   });
   if (existing) {
@@ -108,7 +111,6 @@ export const createPublishingConnection = async (
   const connection = await prisma.publishingConnection.create({
     data: {
       ...input,
-      tenantId,
     },
     include: {
       client: {
@@ -130,7 +132,10 @@ export const updatePublishingConnection = async (
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const existing = await prisma.publishingConnection.findFirst({
-    where: { id, tenantId },
+    where: {
+      id,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (!existing) {
     return { error: 'not_found' as const };
@@ -164,7 +169,10 @@ export const deletePublishingConnection = async (
 ) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
   const existing = await prisma.publishingConnection.findFirst({
-    where: { id, tenantId },
+    where: {
+      id,
+      ...(tenantId ? { client: { tenantId } } : {}),
+    },
   });
   if (!existing) {
     return { error: 'not_found' as const };
