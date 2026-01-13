@@ -73,6 +73,15 @@ router.get('/assets', async (req: AuthenticatedRequest, res) => {
   res.json({ assets });
 });
 
+/**
+ * GET /assets/:id
+ * Get a single asset by ID.
+ *
+ * Authorization: All authenticated users within the same tenant can view any asset.
+ * This is intentional for collaborative PMO environments where team members need
+ * access to shared AI assets. Templates are visible to all tenant users by design.
+ * The tenant isolation is enforced at the service layer via tenantId filtering.
+ */
 router.get('/assets/:id', async (req: AuthenticatedRequest, res) => {
   const assetId = Number(req.params.id);
 
