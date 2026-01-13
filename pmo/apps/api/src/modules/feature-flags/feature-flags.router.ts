@@ -13,7 +13,7 @@
  * - GET/POST/PATCH /api/admin/modules - Manage tenant module configurations
  */
 
-import { Router, Response } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import {
   AuthenticatedRequest,
@@ -25,6 +25,10 @@ import {
   hasTenantContext,
   getTenantContext,
 } from '../../tenant/tenant.context';
+import {
+  tenantMiddleware,
+  TenantRequest,
+} from '../../tenant/tenant.middleware';
 import {
   MODULE_DEFINITIONS,
   ModuleId,
@@ -50,6 +54,25 @@ import {
 } from './feature-flags.service';
 
 const router = Router();
+
+/**
+ * Conditional tenant middleware for semi-public endpoints.
+ * - For authenticated users: resolves tenant context via tenantMiddleware
+ * - For unauthenticated users: proceeds without tenant context (returns default config)
+ * This allows endpoints like /api/modules to work for both authenticated and unauthenticated users.
+ */
+const conditionalTenantMiddleware = (
+  req: TenantRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.userId) {
+    // Authenticated user - run full tenant resolution
+    return tenantMiddleware(req, res, next);
+  }
+  // Unauthenticated user - proceed without tenant context
+  next();
+};
 
 // ============================================================================
 // Validation Schemas
@@ -115,6 +138,7 @@ const bulkModuleConfigSchema = z.object({
 router.get(
   '/modules',
   optionalAuth,
+  conditionalTenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Determine tenant ID from authenticated user's context only
@@ -177,6 +201,7 @@ router.get(
 router.get(
   '/modules/check/:moduleId',
   optionalAuth,
+  conditionalTenantMiddleware,
   async (req: AuthenticatedRequest, res: Response) => {
     const moduleId = req.params.moduleId as ModuleId;
 
