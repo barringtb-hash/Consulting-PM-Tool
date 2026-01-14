@@ -593,7 +593,17 @@ async function fetchDocumentTemplates(): Promise<DocumentTemplate[]> {
   }
   const json = await res.json();
   const apiData = json.data || json;
-  return apiData.templates || [];
+  const templates = apiData.templates || [];
+
+  // Normalize API response: map 'type' to 'id' since API returns type as identifier
+  return templates.map(
+    (t: { type?: string; name?: string; description?: string }) => ({
+      id: t.type || '',
+      type: t.type || '',
+      name: t.name || '',
+      description: t.description || '',
+    }),
+  );
 }
 
 async function generateDocument(
