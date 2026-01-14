@@ -42,7 +42,12 @@ These modules cannot be disabled as they form the foundation of the platform:
 |-----------|-------|-------------|--------|
 | `dashboard` | Dashboard | Main dashboard with metrics | `/dashboard` |
 | `tasks` | Tasks | Personal task management | `/tasks` |
-| `projects` | Projects | Project management | `/projects/:id` |
+| `projects` | Projects | Project management with AI-powered insights, ML predictions, scheduling, and document generation | `/projects/:id` |
+
+> **Note**: The `projects` module now includes all AI/ML features (previously in `aiProjects` and `projectML` modules). AI features are accessible via tabs in the Project Dashboard:
+> - **AI Assistant**: Chat-based interface for project management assistance
+> - **AI Scheduling**: AI-powered auto-scheduling for project tasks
+> - **AI Documents**: AI-powered document generation (charters, SOWs, status reports, etc.)
 
 ### Legacy PMO Module (Deprecated)
 
@@ -129,11 +134,19 @@ The platform includes comprehensive AI-powered tools organized into implementati
 | `revenueManagement` | Revenue Management | accounts | Dynamic pricing and revenue optimization | `/ai-tools/revenue-management` |
 | `safetyMonitor` | Safety Monitor | accounts | Safety incident tracking and OSHA compliance | `/ai-tools/safety-monitor` |
 
-#### PMO AI Tools
+#### PMO AI Tools (Deprecated)
 
-| Module ID | Label | Dependencies | Description | Routes |
+> **⚠️ Deprecated**: The `aiProjects` and `projectML` modules have been consolidated into the core `projects` module. AI features are now always available and accessible via tabs in the Project Dashboard. The module IDs are maintained for backwards compatibility but new implementations should not use them.
+
+| Module ID | Label | Dependencies | Description | Status |
 |-----------|-------|--------------|-------------|--------|
-| `aiProjects` | AI Project Assistant | projects | AI-powered project management with status summaries, health predictions, smart reminders, auto-scheduling, and document generation | `/ai-tools/project-assistant` |
+| `aiProjects` | AI Project Assistant | projects | AI-powered project management features | **Deprecated** - Use Project Dashboard AI tabs |
+| `projectML` | Project ML | projects | ML-powered project predictions and analytics | **Deprecated** - Use Project Dashboard ML Insights tab |
+
+**Migration Guide:**
+- Old route `/ai-tools/project-assistant` → Navigate to `/projects/:id` and use AI tabs
+- AI features no longer require module toggles - they're always available in Project Dashboard
+- API endpoints under `/api/ai-projects/*` continue to work (no module guard required)
 
 > **AI Tools Documentation**: For detailed information on configuring the AI Chatbot and Document Analyzer, see [AI-Tools.md](AI-Tools.md).
 
@@ -167,8 +180,9 @@ predictiveMaintenance→ requires → accounts
 revenueManagement    → requires → accounts
 safetyMonitor        → requires → accounts
 
-# PMO AI Tools
-aiProjects           → requires → projects
+# PMO AI Tools (Deprecated - now part of core projects)
+# aiProjects         → DEPRECATED (merged into projects)
+# projectML          → DEPRECATED (merged into projects)
 
 # Operations & Support
 aiMonitoring         → requires → (none, standalone)
