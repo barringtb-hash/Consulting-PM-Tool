@@ -471,7 +471,52 @@ async function generateSchedule(projectId: number): Promise<ScheduleResult> {
     error.status = res.status;
     throw error;
   }
-  return res.json();
+  const json = await res.json();
+  const apiData = json.data || json;
+
+  // Calculate total duration in days from estimatedEndDate
+  const startDate = new Date();
+  const endDate = apiData.estimatedEndDate
+    ? new Date(apiData.estimatedEndDate)
+    : startDate;
+  const totalDuration = Math.ceil(
+    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  // Normalize API response to match expected interface
+  return {
+    projectId,
+    scheduledTasks: Array.isArray(apiData.scheduledTasks)
+      ? apiData.scheduledTasks.map(
+          (task: {
+            taskId?: number;
+            title?: string;
+            scheduledStart?: string;
+            scheduledEnd?: string;
+            assigneeId?: number;
+            dependsOn?: number[];
+          }) => ({
+            taskId: task.taskId ?? 0,
+            taskTitle: task.title || '',
+            scheduledStart: task.scheduledStart || '',
+            scheduledEnd: task.scheduledEnd || '',
+            assigneeId: task.assigneeId,
+            dependencies: task.dependsOn || [],
+            isCriticalPath:
+              apiData.criticalPath?.includes(task.taskId) ?? false,
+          }),
+        )
+      : [],
+    criticalPath: apiData.criticalPath || [],
+    totalDuration: totalDuration > 0 ? totalDuration : 0,
+    conflicts: apiData.warnings
+      ? apiData.warnings.map((w: string, i: number) => ({
+          taskId: i,
+          reason: w,
+          suggestion: '',
+        }))
+      : [],
+  };
 }
 
 async function applySchedule(
