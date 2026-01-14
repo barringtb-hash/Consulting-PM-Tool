@@ -222,7 +222,39 @@ async function fetchAIStatus(projectId: number): Promise<AIStatusSummary> {
     throw error;
   }
   const json = await res.json();
-  return json.data || json;
+  const apiData = json.data || json;
+
+  // Normalize API response to match expected interface
+  return {
+    projectId,
+    projectName: apiData.projectName || '',
+    generatedAt: apiData.generatedAt,
+    healthScore: apiData.healthAnalysis?.healthScore ?? 0,
+    healthStatus: mapHealthStatus(apiData.healthAnalysis?.overallHealth),
+    executiveSummary: apiData.executiveSummary,
+    highlights: apiData.keyHighlights || [],
+    concerns: apiData.concerns || [],
+    recommendations: apiData.recommendations || [],
+    metrics: apiData.metrics || {
+      taskCompletion: { completed: 0, total: 0, percentage: 0 },
+      milestoneProgress: { completed: 0, total: 0, percentage: 0 },
+      overdueItems: { tasks: 0, milestones: 0 },
+      velocity: { current: 0, trend: 'stable' },
+    },
+  };
+}
+
+function mapHealthStatus(status?: string): 'healthy' | 'at-risk' | 'critical' {
+  switch (status) {
+    case 'ON_TRACK':
+      return 'healthy';
+    case 'AT_RISK':
+      return 'at-risk';
+    case 'OFF_TRACK':
+      return 'critical';
+    default:
+      return 'at-risk';
+  }
 }
 
 async function generateQuickStatus(
