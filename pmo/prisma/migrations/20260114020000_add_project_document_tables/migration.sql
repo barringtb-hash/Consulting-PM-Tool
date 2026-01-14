@@ -21,7 +21,8 @@ DO $$ BEGIN
     'AI_FEASIBILITY',
     'AI_LIMITATIONS',
     'MONITORING_MAINTENANCE',
-    'DATA_REQUIREMENTS'
+    'DATA_REQUIREMENTS',
+    'DELIVERABLE_CHECKLIST'
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -51,7 +52,7 @@ CREATE TABLE IF NOT EXISTS "ProjectDocument" (
   "lastEditedBy" INTEGER,
   "lastEditedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
   CONSTRAINT "ProjectDocument_pkey" PRIMARY KEY ("id")
 );
 
@@ -75,6 +76,9 @@ CREATE TABLE IF NOT EXISTS "ProjectDocumentVersion" (
 CREATE UNIQUE INDEX IF NOT EXISTS "ProjectDocument_projectId_templateType_name_key" ON "ProjectDocument"("projectId", "templateType", "name");
 CREATE INDEX IF NOT EXISTS "ProjectDocument_projectId_idx" ON "ProjectDocument"("projectId");
 CREATE INDEX IF NOT EXISTS "ProjectDocument_tenantId_idx" ON "ProjectDocument"("tenantId");
+CREATE INDEX IF NOT EXISTS "ProjectDocument_templateType_idx" ON "ProjectDocument"("templateType");
+CREATE INDEX IF NOT EXISTS "ProjectDocument_status_idx" ON "ProjectDocument"("status");
+CREATE INDEX IF NOT EXISTS "ProjectDocument_category_idx" ON "ProjectDocument"("category");
 
 CREATE UNIQUE INDEX IF NOT EXISTS "ProjectDocumentVersion_documentId_version_key" ON "ProjectDocumentVersion"("documentId", "version");
 CREATE INDEX IF NOT EXISTS "ProjectDocumentVersion_documentId_idx" ON "ProjectDocumentVersion"("documentId");
