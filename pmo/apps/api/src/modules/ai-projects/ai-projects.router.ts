@@ -137,6 +137,40 @@ router.post(
 // ============================================================================
 
 /**
+ * GET /api/ai-projects/status/:projectId
+ * Alias for /status/:projectId/summary - Get AI-generated status summary for a project
+ */
+router.get('/status/:projectId', async (req: TenantRequest, res: Response) => {
+  try {
+    const projectId = parseInt(String(req.params.projectId), 10);
+    const tenantId = getTenantId(req);
+
+    if (isNaN(projectId)) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    const summary = await aiStatusService.generateStatusSummary(
+      projectId,
+      tenantId,
+    );
+
+    // Optionally store for historical tracking
+    const store = req.query.store === 'true';
+    if (store) {
+      await aiStatusService.storeSummary(projectId, tenantId, summary);
+    }
+
+    return res.json({ data: summary });
+  } catch (error) {
+    console.error('Status summary error:', error);
+    return res.status(500).json({
+      error: 'Failed to generate status summary',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
  * GET /api/ai-projects/status/:projectId/summary
  * Get AI-generated status summary for a project
  */
@@ -1174,6 +1208,29 @@ router.post(
 // ============================================================================
 // Phase 3: Smart Reminders Endpoints
 // ============================================================================
+
+/**
+ * GET /api/ai-projects/reminders
+ * Alias for /reminders/my - Get pending reminders for the current user
+ */
+router.get('/reminders', async (req: TenantRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const tenantId = getTenantId(req);
+    const limit = parseInt(req.query.limit as string, 10) || 20;
+
+    const reminders = await smartRemindersService.getPendingReminders(
+      userId,
+      tenantId,
+      limit,
+    );
+
+    return res.json({ data: { reminders } });
+  } catch (error) {
+    console.error('Get reminders error:', error);
+    return res.status(500).json({ error: 'Failed to get reminders' });
+  }
+});
 
 /**
  * GET /api/ai-projects/reminders/my
