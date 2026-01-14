@@ -603,8 +603,14 @@ export async function getPredictionAccuracy(
   accuracy: number;
   byType: Record<string, { total: number; accurate: number; accuracy: number }>;
 }> {
+  // Build config filter: match tenantId or null when 'system' is passed
+  const configFilter =
+    tenantId === 'system'
+      ? { OR: [{ tenantId: null }, { tenantId }] }
+      : { tenantId };
+
   const whereClause: Prisma.LeadMLPredictionWhereInput = {
-    lead: { configId, config: { tenantId } },
+    lead: { configId, config: configFilter },
   };
 
   if (options?.startDate || options?.endDate) {
