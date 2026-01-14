@@ -309,7 +309,7 @@ export function ProjectAIAssistantTab({
   };
 
   // Handle dismiss reminder
-  const handleDismissReminder = async (reminderId: string) => {
+  const handleDismissReminder = async (reminderId: number) => {
     try {
       await dismissReminderMutation.mutateAsync(reminderId);
       remindersQuery.refetch();

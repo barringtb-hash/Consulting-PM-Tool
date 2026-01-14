@@ -56,7 +56,7 @@ export function ProjectAISchedulingTab({
     try {
       await applyScheduleMutation.mutateAsync({
         projectId,
-        scheduleId: generatedSchedule.id,
+        schedule: generatedSchedule,
       });
       showToast('Schedule applied successfully', 'success');
       setGeneratedSchedule(null);
@@ -185,26 +185,19 @@ export function ProjectAISchedulingTab({
                         <p className="font-medium">{task.taskTitle}</p>
                         <div className="flex items-center gap-2 text-sm text-neutral-500">
                           <Clock className="w-3 h-3" />
-                          {task.suggestedStartDate &&
+                          {task.scheduledStart &&
                             new Date(
-                              task.suggestedStartDate,
+                              task.scheduledStart,
                             ).toLocaleDateString()}{' '}
                           -{' '}
-                          {task.suggestedEndDate &&
-                            new Date(
-                              task.suggestedEndDate,
-                            ).toLocaleDateString()}
+                          {task.scheduledEnd &&
+                            new Date(task.scheduledEnd).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {task.isCriticalPath && (
                         <Badge variant="warning">Critical Path</Badge>
-                      )}
-                      {task.estimatedDuration && (
-                        <Badge variant="secondary">
-                          {task.estimatedDuration}h
-                        </Badge>
                       )}
                     </div>
                   </div>
@@ -233,40 +226,14 @@ export function ProjectAISchedulingTab({
                         <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-red-800 dark:text-red-300">
-                            {conflict.type}
+                            {conflict.reason}
                           </p>
-                          <p className="text-sm text-red-600 dark:text-red-400">
-                            {conflict.description}
-                          </p>
+                          {conflict.suggestion && (
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              {conflict.suggestion}
+                            </p>
+                          )}
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                </CardBody>
-              </Card>
-            )}
-
-          {/* Warnings */}
-          {generatedSchedule.warnings &&
-            generatedSchedule.warnings.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                    <h3 className="font-semibold">Warnings</h3>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <ul className="space-y-2">
-                    {generatedSchedule.warnings.map((warning, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
-                      >
-                        <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                          {warning.message || warning}
-                        </p>
                       </li>
                     ))}
                   </ul>

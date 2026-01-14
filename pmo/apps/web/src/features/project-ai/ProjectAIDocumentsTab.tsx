@@ -232,24 +232,31 @@ export function ProjectAIDocumentsTab({
                     <div>
                       <p className="font-medium">{doc.title}</p>
                       <p className="text-sm text-neutral-500">
-                        Generated {new Date(doc.createdAt).toLocaleDateString()}{' '}
-                        • {doc.type}
+                        Generated{' '}
+                        {new Date(doc.generatedAt).toLocaleDateString()} •{' '}
+                        {doc.type}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge
-                      variant={
-                        doc.status === 'completed' ? 'success' : 'secondary'
-                      }
-                    >
-                      {doc.status}
-                    </Badge>
-                    {doc.downloadUrl && (
+                    <Badge variant="secondary">{doc.format}</Badge>
+                    {doc.content && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => window.open(doc.downloadUrl, '_blank')}
+                        onClick={() => {
+                          const blob = new Blob([doc.content], {
+                            type: 'text/plain;charset=utf-8',
+                          });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = `${doc.title}.txt`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          URL.revokeObjectURL(url);
+                        }}
                       >
                         <Download className="w-4 h-4" />
                       </Button>
