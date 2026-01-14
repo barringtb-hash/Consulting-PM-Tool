@@ -21,6 +21,8 @@ export type ModuleId =
   // Toggleable modules
   | 'assets'
   | 'marketing'
+  | 'socialPublishing'
+  | 'contentCalendar'
   | 'leads'
   | 'pipeline'
   | 'admin'
@@ -197,6 +199,30 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     ],
     description:
       'Marketing content creation, campaigns, and publishing workflows',
+  },
+  socialPublishing: {
+    id: 'socialPublishing',
+    label: 'Social Publishing',
+    navGroup: 'marketing',
+    path: '/social-publishing',
+    icon: 'Share2',
+    isCore: false,
+    dependencies: ['marketing'],
+    apiPrefixes: ['/api/social-publishing'],
+    description:
+      'Create, schedule, and publish content across social media platforms',
+  },
+  contentCalendar: {
+    id: 'contentCalendar',
+    label: 'Content Calendar',
+    navGroup: 'marketing',
+    path: '/content-calendar',
+    icon: 'Calendar',
+    isCore: false,
+    dependencies: ['marketing'],
+    apiPrefixes: ['/api/marketing-contents'],
+    description:
+      'Visual calendar for scheduling and managing marketing content with drag-and-drop',
   },
   leads: {
     id: 'leads',
@@ -844,6 +870,8 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'projects',
   'assets',
   'marketing',
+  'socialPublishing',
+  'contentCalendar',
   'leads',
   'pipeline',
   'admin',

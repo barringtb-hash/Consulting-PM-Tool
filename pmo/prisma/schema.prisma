@@ -213,6 +213,30 @@ enum PublishingPlatform {
   TWITTER
   INSTAGRAM
   FACEBOOK
+  TIKTOK
+  THREADS
+  PINTEREST
+  YOUTUBE
+  BLUESKY
+}
+
+// Social Media Publishing Status
+enum PublishStatus {
+  DRAFT
+  PENDING
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  PARTIALLY_PUBLISHED
+}
+
+// Content Priority for Queue Management
+enum ContentPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }
 
 model User {
@@ -241,6 +265,7 @@ model User {
   ownedLeads          InboundLead[]
   createdContents     MarketingContent[]
   createdCampaigns    Campaign[]
+  createdSocialPosts  SocialMediaPost[]
 
   // Customer Success Platform relations
   ownedSuccessPlans    SuccessPlan[]
@@ -768,6 +793,12 @@ model MarketingContent {
   sourceContent     MarketingContent?  @relation("RepurposedFrom", fields: [sourceContentId], references: [id], onDelete: SetNull)
   repurposedContent MarketingContent[] @relation("RepurposedFrom")
 
+  // Social Media Publishing relations
+  socialPosts     SocialMediaPost[]
+  scheduleQueue   ContentScheduleQueue?
+  scheduleHistory ContentScheduleHistory[]
+  feedback        ContentFeedback[]
+
   @@index([clientId, type])
   @@index([accountId, type])
   @@index([status, createdAt(sort: Desc)])
@@ -850,6 +881,7 @@ model BrandAsset {
 
 model PublishingConnection {
   id           Int                @id @default(autoincrement())
+  tenantId     String?
   clientId     Int
   platform     PublishingPlatform
   accountName  String
@@ -860,11 +892,309 @@ model PublishingConnection {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
+  // Integration type: 'unified' uses Ayrshare, 'direct' uses platform-specific APIs
+  integrationType String @default("unified")
+
+  // Token refresh tracking
+  tokenExpiresAt  DateTime?
+  lastRefreshedAt DateTime?
+  refreshError    String?
+
+  tenant            Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   publishedContents MarketingContent[]
+  socialPosts       SocialMediaPost[]
 
   @@unique([clientId, platform, accountName])
   @@index([clientId, platform])
+  @@index([tenantId, platform])
+}
+
+// ============================================================================
+// SOCIAL MEDIA PUBLISHING (Marketing Module Overhaul)
+// ============================================================================
+
+/**
+ * SocialPublishingConfig - Tenant-level configuration for social publishing
+ * Stores Ayrshare API credentials and connected platform information
+ */
+model SocialPublishingConfig {
+  id       Int    @id @default(autoincrement())
+  tenantId String @unique
+
+  // Unified API settings (Ayrshare)
+  provider   String  @default("ayrshare") // ayrshare, buffer, publer
+  apiKey     String // Encrypted - master platform API key or tenant's own key
+  profileKey String? // Ayrshare profile key for this tenant
+
+  // Connected platforms (synced from Ayrshare)
+  // Format: [{ platform, accountId, accountName, connected, lastSync }]
+  connectedPlatforms Json @default("[]")
+
+  // Settings
+  defaultTimezone String  @default("UTC")
+  autoHashtags    Boolean @default(false)
+  shortenUrls     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * SocialMediaPost - Multi-platform social media post
+ * Supports scheduling, multi-platform targeting, and status tracking
+ */
+model SocialMediaPost {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+
+  // Content
+  contentId Int? // Optional link to MarketingContent
+  text      String // Post text (may be platform-optimized)
+  mediaUrls String[] @default([]) // S3/CDN URLs for images/videos
+  linkUrl   String? // Optional link to include
+  hashtags  String[] @default([]) // Platform-specific hashtags
+
+  // Multi-platform targeting
+  targetPlatforms PublishingPlatform[]
+
+  // Scheduling
+  scheduledFor DateTime?
+  publishedAt  DateTime?
+
+  // Status tracking
+  status PublishStatus @default(DRAFT)
+
+  // Result tracking (JSON array of platform results)
+  // Format: [{ platform, status, postId, url, error, publishedAt }]
+  platformResults Json?
+
+  // Retry handling
+  retryCount    Int       @default(0)
+  maxRetries    Int       @default(3)
+  lastAttemptAt DateTime?
+  nextRetryAt   DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById Int?
+
+  // Optional: specific connection to use
+  connectionId Int?
+
+  tenant     Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  content    MarketingContent?     @relation(fields: [contentId], references: [id], onDelete: SetNull)
+  connection PublishingConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  createdBy  User?                 @relation(fields: [createdById], references: [id])
+  history    PublishingHistory[]
+
+  @@index([tenantId, status])
+  @@index([scheduledFor])
+  @@index([status, nextRetryAt])
+}
+
+/**
+ * PublishingHistory - Track individual platform publishing results and metrics
+ */
+model PublishingHistory {
+  id       Int                @id @default(autoincrement())
+  tenantId String?
+  postId   Int
+  platform PublishingPlatform
+
+  // Result data
+  externalPostId String? // Platform's post ID
+  postUrl        String? // URL to view the post
+  status         PublishStatus
+  error          String?
+
+  // Engagement metrics (updated via webhooks or polling)
+  impressions    Int?
+  likes          Int?
+  comments       Int?
+  shares         Int?
+  clicks         Int?
+  lastMetricSync DateTime?
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  tenant Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  post   SocialMediaPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, platform])
+  @@index([postId])
+  @@index([publishedAt])
+}
+
+// ============================================================================
+// CONTENT CALENDAR & SCHEDULING
+// ============================================================================
+
+/**
+ * ContentScheduleQueue - Manage unscheduled content in a prioritized queue
+ */
+model ContentScheduleQueue {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+
+  contentId Int @unique // Link to MarketingContent
+  position  Int // Order in queue
+
+  priority     ContentPriority @default(NORMAL)
+  autoSchedule Boolean         @default(false) // Auto-schedule when optimal time found
+
+  // Target date range (for auto-scheduling)
+  targetDateStart DateTime?
+  targetDateEnd   DateTime?
+
+  // Target platforms
+  platforms String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  content MarketingContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, position])
+  @@index([priority])
+}
+
+/**
+ * ContentScheduleHistory - Track historical scheduling and engagement data
+ */
+model ContentScheduleHistory {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+
+  contentId   Int
+  platform    String
+  scheduledAt DateTime
+  publishedAt DateTime?
+
+  // Engagement tracking
+  engagementScore Float?
+  impressions     Int?
+  clicks          Int?
+  likes           Int?
+  shares          Int?
+  comments        Int?
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  content MarketingContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, platform, publishedAt])
+  @@index([contentId])
+}
+
+/**
+ * OptimalTimeConfiguration - Configure optimal posting times per platform
+ * Used for AI-powered scheduling recommendations
+ */
+model OptimalTimeConfiguration {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+
+  platform  String
+  dayOfWeek Int // 0-6 (Sunday-Saturday)
+  hourOfDay Int // 0-23
+
+  weight    Float   @default(1.0) // Higher weight = better time
+  isEnabled Boolean @default(true)
+
+  // Source of this configuration
+  source String @default("default") // 'default', 'historical', 'custom'
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, platform, dayOfWeek, hourOfDay])
+  @@index([tenantId, platform, isEnabled])
+}
+
+// ============================================================================
+// AI CONTENT GENERATION ENHANCEMENTS
+// ============================================================================
+
+/**
+ * ContentIdea - AI-generated content suggestions and ideas
+ */
+model ContentIdea {
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+  configId Int // Link to ContentGeneratorConfig
+
+  // Idea details
+  title       String
+  description String?
+  contentType String // matches ContentGenerationType
+
+  // Suggested platforms
+  suggestedPlatforms String[] @default([])
+
+  // Keywords/tags
+  keywords String[] @default([])
+
+  // Source of idea
+  ideaSource String // 'trending', 'performance', 'calendar', 'competitor', 'ai_suggestion'
+  sourceData Json? // { trendingTopic, competitorUrl, etc. }
+
+  // Relevance scoring
+  relevanceScore Float?
+  reasoning      String?
+
+  // Status
+  status String @default("suggested") // 'suggested', 'accepted', 'rejected', 'generated'
+
+  // If converted to content
+  generatedContentId Int?
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  tenant Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  config ContentGeneratorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([configId, ideaSource])
+  @@index([expiresAt])
+}
+
+/**
+ * ContentFeedback - Track user feedback on AI-generated content
+ * Used for improving generation quality over time
+ */
+model ContentFeedback {
+  id        Int     @id @default(autoincrement())
+  tenantId  String?
+  configId  Int
+  contentId Int // Link to MarketingContent
+
+  // Feedback data
+  feedbackType String // 'voice_match', 'quality', 'engagement', 'conversion'
+  rating       Float // -1 to 1 scale
+
+  feedbackNotes String?
+
+  // For learning: track edits
+  originalContent String?
+  editedContent   String? // If user edited, what did they change?
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  config  ContentGeneratorConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  content MarketingContent       @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([configId, feedbackType])
+  @@index([contentId])
 }
 
 // ============================================================================
@@ -3511,6 +3841,11 @@ model ContentGeneratorConfig {
   voiceSamples   Json? // [{ text, type, source }]
   voiceTrainedAt DateTime?
 
+  // Enhanced brand voice (Marketing Module Overhaul)
+  brandVoiceProfile   Json? // Structured voice profile from AI analysis
+  voiceTrainingStatus String? // 'pending', 'training', 'trained', 'failed'
+  lastVoiceAnalysis   DateTime?
+
   // SEO settings
   enableSEO      Boolean  @default(true)
   targetKeywords String[] @default([])
@@ -3537,6 +3872,9 @@ model ContentGeneratorConfig {
   contentTemplates  ContentTemplate[]
   approvalWorkflows ContentApprovalWorkflow[]
   contentSequences  ContentSequence[]
+  // AI Content Enhancement relations (Marketing Module Overhaul)
+  contentIdeas      ContentIdea[]
+  contentFeedback   ContentFeedback[]
 
   @@index([tenantId, isActive])
   @@index([clientId, isActive])
@@ -3827,8 +4165,8 @@ model LeadScoringConfig {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenant           Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client           Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   scoredLeads      ScoredLead[]
   nurtureSequences NurtureSequence[]
   leadActivities   LeadActivity[]
@@ -7144,6 +7482,16 @@ model Tenant {
   marketingContents            MarketingContent[]
   campaigns                    Campaign[]
   inboundLeads                 InboundLead[]
+  // Social Media Publishing (Marketing Module Overhaul)
+  publishingConnections        PublishingConnection[]
+  socialPublishingConfig       SocialPublishingConfig?
+  socialMediaPosts             SocialMediaPost[]
+  publishingHistory            PublishingHistory[]
+  contentScheduleQueue         ContentScheduleQueue[]
+  contentScheduleHistory       ContentScheduleHistory[]
+  optimalTimeConfigs           OptimalTimeConfiguration[]
+  contentIdeas                 ContentIdea[]
+  contentFeedback              ContentFeedback[]
   // AI Tool configurations (tenant-scoped)
   productDescriptionConfigs    ProductDescriptionConfig[]
   schedulingConfigs            SchedulingConfig[]
@@ -7195,10 +7543,10 @@ model Tenant {
   projectDocuments ProjectDocument[]
 
   // AI Projects Module relations
-  taskDurationLearning   TaskDurationLearning[]
-  teamAvailability       TeamAvailability[]
-  healthPredictions      ProjectHealthPrediction[]
-  projectMLPredictions   ProjectMLPrediction[] // Project ML predictions
+  taskDurationLearning TaskDurationLearning[]
+  teamAvailability     TeamAvailability[]
+  healthPredictions    ProjectHealthPrediction[]
+  projectMLPredictions ProjectMLPrediction[] // Project ML predictions
   scopeBaselines       ProjectScopeBaseline[]
   scopeChangeAlerts    ScopeChangeAlert[]
   budgetForecasts      ProjectBudgetForecast[]
@@ -7210,9 +7558,9 @@ model Tenant {
   projectLessons       ProjectLesson[]
 
   // Lead ML relations
-  leadTrainingData     LeadTrainingData[]
-  leadMLModels         LeadMLModel[]
-  leadMLPredictions    LeadMLPrediction[]
+  leadTrainingData  LeadTrainingData[]
+  leadMLModels      LeadMLModel[]
+  leadMLPredictions LeadMLPrediction[]
 
   @@index([slug])
   @@index([status])
@@ -9647,9 +9995,9 @@ enum LeadPredictionStatus {
  * LeadTrainingData - Historical lead data snapshots for ML training
  */
 model LeadTrainingData {
-  id        Int      @id @default(autoincrement())
-  tenantId  String?
-  configId  Int
+  id       Int     @id @default(autoincrement())
+  tenantId String?
+  configId Int
 
   // Snapshot of features at time of scoring
   features Json // { demographic: {...}, behavioral: {...}, temporal: {...}, engagement: {...} }
@@ -9740,7 +10088,7 @@ model LeadMLPrediction {
   predictedDays  Int?
 
   // Explanation (SHAP-like factors)
-  riskFactors     Json    // [{ factor, impact, currentValue, trend, description }]
+  riskFactors     Json // [{ factor, impact, currentValue, trend, description }]
   explanation     String?
   recommendations Json? // [{ action, priority, rationale }]
 
