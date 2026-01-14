@@ -481,42 +481,6 @@ export const queryKeys = {
         [...queryKeys.leadML.accuracy.all(), configId, options] as const,
     },
   },
-
-  // ---------------------------------------------------------------------------
-  // Content ML Module (AI Content Generation)
-  // ---------------------------------------------------------------------------
-  contentML: {
-    all: ['contentML'] as const,
-    // Brand Voice
-    voice: {
-      all: () => [...queryKeys.contentML.all, 'voice'] as const,
-      profile: (configId: number) =>
-        [...queryKeys.contentML.voice.all(), 'profile', configId] as const,
-      samples: (configId: number) =>
-        [...queryKeys.contentML.voice.all(), 'samples', configId] as const,
-    },
-    // Content Generation (mutations don't need query keys, but we keep consistency namespace)
-    generation: {
-      all: () => [...queryKeys.contentML.all, 'generation'] as const,
-    },
-    // SEO
-    seo: {
-      all: () => [...queryKeys.contentML.all, 'seo'] as const,
-    },
-    // Content Ideas
-    ideas: {
-      all: (configId: number) =>
-        [...queryKeys.contentML.all, 'ideas', configId] as const,
-      list: (configId: number, filters?: Record<string, unknown>) =>
-        [...queryKeys.contentML.ideas.all(configId), 'list', filters] as const,
-      detail: (configId: number, ideaId: number) =>
-        [...queryKeys.contentML.ideas.all(configId), 'detail', ideaId] as const,
-    },
-    // Repurposing (mutations don't need query keys, but we keep consistency namespace)
-    repurposing: {
-      all: () => [...queryKeys.contentML.all, 'repurposing'] as const,
-    },
-  },
 } as const;
 
 // ============================================================================

@@ -19,8 +19,6 @@ import {
   PieChart,
   RefreshCw,
   Bug,
-  Share2,
-  Calendar,
   LucideIcon,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
@@ -49,8 +47,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   PieChart,
   RefreshCw,
   Bug,
-  Share2,
-  Calendar,
 };
 
 /**

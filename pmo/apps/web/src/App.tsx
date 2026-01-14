@@ -22,8 +22,6 @@ import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 // Lazy-loaded optional module pages
 const AssetsPage = lazy(() => import('./pages/AssetsPage'));
 const MarketingContentPage = lazy(() => import('./pages/MarketingContentPage'));
-const SocialPublishingPage = lazy(() => import('./pages/SocialPublishingPage'));
-const ContentCalendarPage = lazy(() => import('./pages/ContentCalendarPage'));
 const LeadsPage = lazy(() => import('./pages/LeadsPage'));
 // PipelinePage removed - now redirects to CRM Opportunities
 const AdminUsersListPage = lazy(() =>
@@ -407,30 +405,6 @@ function App(): JSX.Element {
                 element={
                   <LazyPage>
                     <MarketingContentPage />
-                  </LazyPage>
-                }
-              />
-            )}
-
-            {/* Social Publishing module (toggleable) */}
-            {isModuleEnabled('socialPublishing') && (
-              <Route
-                path="/social-publishing"
-                element={
-                  <LazyPage>
-                    <SocialPublishingPage />
-                  </LazyPage>
-                }
-              />
-            )}
-
-            {/* Content Calendar module (toggleable) */}
-            {isModuleEnabled('contentCalendar') && (
-              <Route
-                path="/content-calendar"
-                element={
-                  <LazyPage>
-                    <ContentCalendarPage />
                   </LazyPage>
                 }
               />
