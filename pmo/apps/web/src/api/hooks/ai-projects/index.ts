@@ -605,7 +605,7 @@ async function generateDocument(
     buildApiUrl(`/ai-projects/documents/${projectId}/generate`),
     buildOptions({
       method: 'POST',
-      body: JSON.stringify({ templateId, options }),
+      body: JSON.stringify({ type: templateId, input: options }),
     }),
   );
   if (!res.ok) {
