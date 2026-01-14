@@ -11,6 +11,8 @@ import {
   ModuleId,
   MODULE_DEFINITIONS,
   parseEnabledModules,
+  DEPRECATED_MODULE_MAPPINGS,
+  normalizeModuleId,
 } from '../../../../../packages/modules/index';
 
 // ============================================================================
@@ -235,13 +237,33 @@ export async function getEnabledModulesForTenant(
 
 /**
  * Check if a module is enabled for a tenant
+ *
+ * Supports backward compatibility for deprecated module IDs:
+ * - socialPublishing -> marketing
+ * - contentCalendar -> marketing
+ *
+ * @param moduleId - The module ID to check (may be deprecated)
+ * @param tenantId - The tenant ID (defaults to 'default')
+ * @returns true if the module (or its replacement) is enabled
  */
 export async function isModuleEnabledForTenant(
-  moduleId: ModuleId,
+  moduleId: ModuleId | string,
   tenantId: string = 'default',
 ): Promise<boolean> {
+  // Check for deprecated module IDs and log warning
+  const deprecatedMapping = DEPRECATED_MODULE_MAPPINGS[moduleId];
+  if (deprecatedMapping) {
+    console.warn(
+      `[feature-flags] Module "${moduleId}" is deprecated and has been merged into "${deprecatedMapping}". ` +
+        `Please update your code to use "${deprecatedMapping}" instead.`,
+    );
+  }
+
+  // Normalize the module ID (maps deprecated IDs to their replacements)
+  const normalizedModuleId = normalizeModuleId(moduleId);
+
   const enabledModules = await getEnabledModulesForTenant(tenantId);
-  return enabledModules.includes(moduleId);
+  return enabledModules.includes(normalizedModuleId);
 }
 
 /**
@@ -403,18 +425,48 @@ export async function getAllTenantConfigs(): Promise<string[]> {
 // Helper Functions
 // ============================================================================
 
+/**
+ * Build module results from database configs.
+ *
+ * Handles backward compatibility for deprecated module IDs:
+ * - If a tenant has 'socialPublishing' or 'contentCalendar' enabled in the database,
+ *   the 'marketing' module will be automatically enabled.
+ *
+ * @param configs - Array of tenant module configs from database
+ * @returns Array of module results with enabled status
+ */
 function buildModuleResultsFromConfigs(
   configs: TenantModuleConfig[],
 ): TenantModuleResult[] {
   const configMap = new Map(configs.map((c) => [c.moduleId, c]));
 
+  // Check for deprecated module IDs that should enable their replacement
+  const deprecatedEnabledModules: Set<ModuleId> = new Set();
+  for (const config of configs) {
+    const deprecatedMapping = DEPRECATED_MODULE_MAPPINGS[config.moduleId];
+    if (deprecatedMapping && config.enabled) {
+      console.warn(
+        `[feature-flags] Tenant has deprecated module "${config.moduleId}" enabled. ` +
+          `Automatically enabling replacement module "${deprecatedMapping}". ` +
+          `Please update the tenant configuration to use "${deprecatedMapping}" instead.`,
+      );
+      deprecatedEnabledModules.add(deprecatedMapping);
+    }
+  }
+
   return Object.values(MODULE_DEFINITIONS).map((def) => {
     const config = configMap.get(def.id);
+
+    // Module is enabled if:
+    // 1. Explicitly enabled in config, OR
+    // 2. A deprecated module that maps to this one is enabled, OR
+    // 3. It's a core module (and no explicit config)
+    const isEnabledViaDeprecated = deprecatedEnabledModules.has(def.id);
+    const enabled = config?.enabled ?? isEnabledViaDeprecated ?? def.isCore;
+
     return {
       moduleId: def.id,
-      // Default to module's isCore status: core modules enabled, non-core disabled
-      // This prevents exposing modules that should remain disabled for tenants without explicit config
-      enabled: config?.enabled ?? def.isCore,
+      enabled,
       isCore: def.isCore,
       settings: config?.settings as Record<string, unknown> | undefined,
     };

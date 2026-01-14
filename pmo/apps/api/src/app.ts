@@ -472,9 +472,10 @@ export function createApp(): express.Express {
   // Mounted under /api/crm/accounts for account-level predictions
   app.use('/api/crm/accounts', customerSuccessMLRouter);
 
-  // ============ PROJECT ML ROUTES ============
+  // ============ PROJECT ML (Part of Core Projects) ============
   // ML-powered predictions for Project Management
   // Includes success prediction, risk forecast, timeline prediction, resource optimization
+  // Previously toggleable via 'projectML' module - now always available as part of core projects
   app.use('/api', projectMLRouter);
 
   // ============ CRM PLATFORM ROUTES (Phase 3-6) ============
@@ -705,11 +706,10 @@ export function createApp(): express.Express {
     app.use('/api/finance', requireModule('financeTracking'), financeRouter);
   }
 
-  // ============ AI PROJECTS MODULE ============
+  // ============ AI PROJECTS (Part of Core Projects) ============
   // AI-powered project management features (assistant, status summaries, task enrichment)
-  if (isModuleEnabled('aiProjects')) {
-    app.use('/api/ai-projects', requireModule('aiProjects'), aiProjectsRouter);
-  }
+  // Previously toggleable via 'aiProjects' module - now always available as part of core projects
+  app.use('/api/ai-projects', aiProjectsRouter);
 
   // Error handling middleware must be last
   app.use(errorHandler);
