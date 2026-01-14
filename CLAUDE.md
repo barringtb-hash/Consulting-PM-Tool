@@ -182,7 +182,7 @@ The platform supports **toggleable modules** to customize deployments per custom
 | `dashboard` | Core | Main dashboard with metrics |
 | `tasks` | Core | Personal task management |
 | `clients` | Core | Client management |
-| `projects` | Core | Project management |
+| `projects` | Core | Project management with AI-powered insights, ML predictions, scheduling, and document generation |
 | `assets` | Toggleable | AI-generated assets library |
 | `marketing` | Toggleable | Marketing content, campaigns, publishing |
 | `leads` | Toggleable | Lead capture and management |
@@ -301,15 +301,50 @@ Location: `pmo/apps/api/src/modules/customer-success-ml/`
 - Health insights
 - Intelligent CTA generation
 
-### Project ML Module
+### Project ML Module (Consolidated into Core Projects)
 
 Location: `pmo/apps/api/src/modules/project-ml/`
+
+> **Note**: Project ML features are now part of the core `projects` module and always available. Access via Project Dashboard tabs.
 
 **Features:**
 - Success prediction
 - Risk forecasting
 - Timeline prediction
 - Resource optimization
+
+**Project Dashboard AI Tabs:**
+
+The Project Dashboard (`/projects/:id`) includes the following AI-powered tabs:
+
+| Tab | Component | Description |
+|-----|-----------|-------------|
+| AI Assistant | `ProjectAIAssistantTab` | Chat interface for project management assistance, health monitoring, smart reminders |
+| AI Scheduling | `ProjectAISchedulingTab` | AI-powered auto-scheduling with dependency analysis and conflict detection |
+| AI Documents | `ProjectAIDocumentsTab` | Generate project documents (charters, SOWs, status reports, executive summaries) |
+| ML Insights | `ProjectMLInsightsTab` | ML-powered success predictions, risk forecasts, timeline analysis |
+
+**Frontend Components:**
+```
+pmo/apps/web/src/features/project-ai/
+├── index.ts                      # Barrel exports
+├── ProjectAIAssistantTab.tsx     # Chat interface with health score and reminders
+├── ProjectAISchedulingTab.tsx    # Auto-scheduling UI
+└── ProjectAIDocumentsTab.tsx     # Document generation templates
+```
+
+**API Endpoints (always available, no module guard):**
+```
+POST /api/ai-projects/assistant/:projectId/message   # Send chat message
+GET  /api/ai-projects/status/:projectId              # Get AI status summary
+GET  /api/ai-projects/health/:projectId/prediction   # Health prediction
+GET  /api/ai-projects/reminders                      # Smart reminders
+POST /api/ai-projects/scheduling/:projectId/generate # Generate schedule
+POST /api/ai-projects/scheduling/:projectId/apply    # Apply schedule
+GET  /api/ai-projects/documents/templates            # Document templates
+POST /api/ai-projects/documents/:projectId/generate  # Generate document
+GET  /api/ai-projects/documents/:projectId           # List generated documents
+```
 
 ### Content ML Module
 
