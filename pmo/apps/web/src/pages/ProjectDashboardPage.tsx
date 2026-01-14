@@ -19,6 +19,9 @@ import {
   Pencil,
   FolderX,
   Brain,
+  Bot,
+  Calendar,
+  Sparkles,
 } from 'lucide-react';
 import {
   useClient,
@@ -39,6 +42,11 @@ import { ProjectDocumentsTab } from '../features/projects/ProjectDocumentsTab';
 import { ProjectStatusTab } from '../features/status/ProjectStatusTab';
 import ProjectMeetingsPanel from '../features/meetings/ProjectMeetingsPanel';
 import { ProjectMLTab } from '../features/project-ml/ProjectMLTab';
+import {
+  ProjectAIAssistantTab,
+  ProjectAISchedulingTab,
+  ProjectAIDocumentsTab,
+} from '../features/project-ai';
 import { Badge } from '../ui/Badge';
 import { ProjectStatusPill } from '../components/ProjectStatusPill';
 import { ProjectMembersManager } from '../components/projects/ProjectMembersManager';
@@ -967,6 +975,18 @@ function ProjectDashboardPage(): JSX.Element {
               <Brain className="w-4 h-4" />
               ML Insights
             </TabsTrigger>
+            <TabsTrigger value="ai-assistant">
+              <Bot className="w-4 h-4" />
+              AI Assistant
+            </TabsTrigger>
+            <TabsTrigger value="ai-scheduling">
+              <Calendar className="w-4 h-4" />
+              AI Scheduling
+            </TabsTrigger>
+            <TabsTrigger value="ai-documents">
+              <Sparkles className="w-4 h-4" />
+              AI Documents
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -1405,6 +1425,21 @@ function ProjectDashboardPage(): JSX.Element {
 
           <TabsContent value="ml-insights">
             <ProjectMLTab projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value="ai-assistant">
+            <ProjectAIAssistantTab
+              projectId={projectId}
+              projectName={project.name}
+            />
+          </TabsContent>
+
+          <TabsContent value="ai-scheduling">
+            <ProjectAISchedulingTab projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value="ai-documents">
+            <ProjectAIDocumentsTab projectId={projectId} />
           </TabsContent>
         </Tabs>
       </main>

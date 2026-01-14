@@ -21,9 +21,8 @@ import MeetingDetailPage from './features/meetings/MeetingDetailPage';
 
 // Lazy-loaded optional module pages
 const AssetsPage = lazy(() => import('./pages/AssetsPage'));
-const MarketingContentPage = lazy(() => import('./pages/MarketingContentPage'));
-const SocialPublishingPage = lazy(() => import('./pages/SocialPublishingPage'));
-const ContentCalendarPage = lazy(() => import('./pages/ContentCalendarPage'));
+// MarketingContentPage, SocialPublishingPage, ContentCalendarPage removed - consolidated into UnifiedMarketingPage
+const UnifiedMarketingPage = lazy(() => import('./pages/UnifiedMarketingPage'));
 const LeadsPage = lazy(() => import('./pages/LeadsPage'));
 // PipelinePage removed - now redirects to CRM Opportunities
 const AdminUsersListPage = lazy(() =>
@@ -400,39 +399,31 @@ function App(): JSX.Element {
               />
             )}
 
-            {/* Marketing module (toggleable) */}
+            {/* Marketing module (unified with Social Publishing and Content Calendar) */}
             {isModuleEnabled('marketing') && (
               <Route
                 path="/marketing"
                 element={
                   <LazyPage>
-                    <MarketingContentPage />
+                    <UnifiedMarketingPage />
                   </LazyPage>
                 }
               />
             )}
 
-            {/* Social Publishing module (toggleable) */}
-            {isModuleEnabled('socialPublishing') && (
+            {/* Social Publishing - redirect to unified Marketing page */}
+            {isModuleEnabled('marketing') && (
               <Route
                 path="/social-publishing"
-                element={
-                  <LazyPage>
-                    <SocialPublishingPage />
-                  </LazyPage>
-                }
+                element={<Navigate to="/marketing?tab=social" replace />}
               />
             )}
 
-            {/* Content Calendar module (toggleable) */}
-            {isModuleEnabled('contentCalendar') && (
+            {/* Content Calendar - redirect to unified Marketing page */}
+            {isModuleEnabled('marketing') && (
               <Route
                 path="/content-calendar"
-                element={
-                  <LazyPage>
-                    <ContentCalendarPage />
-                  </LazyPage>
-                }
+                element={<Navigate to="/marketing?tab=calendar" replace />}
               />
             )}
 

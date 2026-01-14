@@ -168,8 +168,14 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     icon: 'FolderKanban',
     isCore: true,
     dependencies: ['clients'],
-    apiPrefixes: ['/api/projects', '/api/milestones', '/api/meetings'],
-    description: 'Project management, milestones, and meetings',
+    apiPrefixes: [
+      '/api/projects',
+      '/api/milestones',
+      '/api/meetings',
+      '/api/ai-projects', // AI features (absorbed from aiProjects module)
+    ],
+    description:
+      'Project management with AI-powered insights, ML predictions, milestones, and meetings',
   },
 
   // ============ TOGGLEABLE MODULES ============
@@ -188,6 +194,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     label: 'Marketing',
     navGroup: 'marketing',
     path: '/marketing',
+    additionalPaths: ['/social-publishing', '/content-calendar'],
     icon: 'Megaphone',
     isCore: false,
     dependencies: ['clients', 'projects'],
@@ -196,9 +203,11 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
       '/api/campaigns',
       '/api/brand-profiles',
       '/api/publishing-connections',
+      '/api/social-publishing',
+      '/api/content-ml',
     ],
     description:
-      'Marketing content creation, campaigns, and publishing workflows',
+      'Marketing content creation, campaigns, social publishing, and content calendar',
   },
   socialPublishing: {
     id: 'socialPublishing',
@@ -211,6 +220,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/social-publishing'],
     description:
       'Create, schedule, and publish content across social media platforms',
+    showInNavigation: false, // Hidden - consolidated into Marketing module
   },
   contentCalendar: {
     id: 'contentCalendar',
@@ -223,6 +233,7 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     apiPrefixes: ['/api/marketing-contents'],
     description:
       'Visual calendar for scheduling and managing marketing content with drag-and-drop',
+    showInNavigation: false, // Hidden - consolidated into Marketing module
   },
   leads: {
     id: 'leads',
@@ -807,7 +818,9 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
       'Bug tracking, issue management, and error monitoring with AI assistant integration and external log collection',
   },
 
-  // ============ AI PROJECTS MODULE ============
+  // ============ AI PROJECTS MODULE (DEPRECATED) ============
+  // DEPRECATED: Features merged into core Projects module.
+  // Access AI features via Project Dashboard tabs (AI Assistant, AI Scheduling, AI Documents)
   aiProjects: {
     id: 'aiProjects',
     label: 'AI Project Assistant',
@@ -819,11 +832,13 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     dependencies: ['projects'],
     apiPrefixes: ['/api/ai-projects'],
     description:
-      'AI-powered project management features including status summaries, task enrichment, template matching, health predictions, and smart scheduling',
-    showInNavigation: true,
+      'DEPRECATED: AI features merged into core Projects module. Access via Project Dashboard AI tabs.',
+    showInNavigation: false, // Hidden - features accessible via Project Dashboard tabs
   },
 
-  // ============ PROJECT ML MODULE ============
+  // ============ PROJECT ML MODULE (DEPRECATED) ============
+  // DEPRECATED: Features merged into core Projects module.
+  // Access ML predictions via Project Dashboard ML Insights tab
   projectML: {
     id: 'projectML',
     label: 'Project ML Insights',
@@ -834,10 +849,28 @@ export const MODULE_DEFINITIONS: Record<ModuleId, ModuleDefinition> = {
     dependencies: ['projects'],
     apiPrefixes: ['/api/projects/:projectId/ml', '/api/projects/portfolio/ml'],
     description:
-      'ML-powered predictions for projects including success prediction, risk forecasting, timeline prediction, and resource optimization',
+      'DEPRECATED: ML features merged into core Projects module. Access via Project Dashboard ML Insights tab.',
     showInNavigation: false, // Accessed via project dashboard, not standalone nav
   },
 };
+
+/**
+ * Mapping from deprecated module IDs to their replacement module
+ * Used for backwards compatibility when checking module enablement
+ */
+export const DEPRECATED_MODULE_MAPPINGS: Record<string, ModuleId> = {
+  aiProjects: 'projects',
+  projectML: 'projects',
+  socialPublishing: 'marketing',
+  contentCalendar: 'marketing',
+};
+
+/**
+ * Normalize a module ID by mapping deprecated IDs to their replacements
+ */
+export function normalizeModuleId(moduleId: string): ModuleId {
+  return (DEPRECATED_MODULE_MAPPINGS[moduleId] || moduleId) as ModuleId;
+}
 
 /**
  * Navigation group display configuration
@@ -870,8 +903,6 @@ export const DEFAULT_ENABLED_MODULES: ModuleId[] = [
   'projects',
   'assets',
   'marketing',
-  'socialPublishing',
-  'contentCalendar',
   'leads',
   'pipeline',
   'admin',
@@ -943,16 +974,28 @@ export function parseEnabledModules(
     .map((s) => s.trim().toLowerCase())
     .filter((s) => s.length > 0) as ModuleId[];
 
+  // Handle deprecated module IDs - map to their replacements
+  const normalizedModules = requestedModules.map((m) => {
+    const normalized = DEPRECATED_MODULE_MAPPINGS[m];
+    if (normalized) {
+      console.warn(
+        `Module "${m}" is deprecated and has been merged into "${normalized}". Please update your configuration.`,
+      );
+      return normalized;
+    }
+    return m;
+  }) as ModuleId[];
+
   // Always include core modules
   const coreModules = Object.values(MODULE_DEFINITIONS)
     .filter((m) => m.isCore)
     .map((m) => m.id);
 
-  // Combine core modules with requested modules
-  const enabledSet = new Set([...coreModules, ...requestedModules]);
+  // Combine core modules with normalized requested modules
+  const enabledSet = new Set([...coreModules, ...normalizedModules]);
 
   // Validate that all requested modules exist
-  for (const moduleId of requestedModules) {
+  for (const moduleId of normalizedModules) {
     if (!MODULE_DEFINITIONS[moduleId]) {
       console.warn(`Unknown module "${moduleId}" in configuration, ignoring.`);
       enabledSet.delete(moduleId);
