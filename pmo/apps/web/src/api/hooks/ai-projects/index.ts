@@ -524,8 +524,9 @@ async function fetchDocumentTemplates(): Promise<DocumentTemplate[]> {
     error.status = res.status;
     throw error;
   }
-  const data = await res.json();
-  return data.templates || [];
+  const json = await res.json();
+  const apiData = json.data || json;
+  return apiData.templates || [];
 }
 
 async function generateDocument(
@@ -548,7 +549,8 @@ async function generateDocument(
     error.status = res.status;
     throw error;
   }
-  return res.json();
+  const json = await res.json();
+  return json.data || json;
 }
 
 async function fetchProjectDocuments(
@@ -566,8 +568,9 @@ async function fetchProjectDocuments(
     error.status = res.status;
     throw error;
   }
-  const data = await res.json();
-  return data.documents || [];
+  const json = await res.json();
+  const apiData = json.data || json;
+  return apiData.documents || [];
 }
 
 // ============================================================================
