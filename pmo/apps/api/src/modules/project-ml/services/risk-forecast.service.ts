@@ -55,12 +55,20 @@ export async function forecastProjectRisks(
 
   // Check for recent prediction unless forced
   if (!options.forceRefresh) {
-    const hasRecent = await hasRecentPrediction(projectId, 'RISK_FORECAST', 1);
-    if (hasRecent) {
-      const existing = await getLatestPrediction(projectId, 'RISK_FORECAST');
-      if (existing) {
-        return formatStoredAsResult(existing, predictionWindowDays);
+    try {
+      const hasRecent = await hasRecentPrediction(
+        projectId,
+        'RISK_FORECAST',
+        1,
+      );
+      if (hasRecent) {
+        const existing = await getLatestPrediction(projectId, 'RISK_FORECAST');
+        if (existing) {
+          return formatStoredAsResult(existing, predictionWindowDays);
+        }
       }
+    } catch (error) {
+      console.error('Error checking for existing prediction:', error);
     }
   }
 
@@ -85,7 +93,11 @@ export async function forecastProjectRisks(
   }
 
   // Store prediction
-  await storePrediction(projectId, tenantId, result);
+  try {
+    await storePrediction(projectId, tenantId, result);
+  } catch (error) {
+    console.error('Failed to store prediction:', error);
+  }
 
   return result;
 }
@@ -137,19 +149,26 @@ async function llmPrediction(
 
   return {
     predictionType: 'RISK_FORECAST',
-    probability: data.delayProbability,
-    confidence: data.confidence,
+    probability: data.delayProbability ?? 0.3,
+    confidence: data.confidence ?? 0.5,
     predictionWindowDays,
-    riskFactors: data.riskFactors,
-    explanation: data.explanation,
-    recommendations: data.recommendations,
+    riskFactors: Array.isArray(data.riskFactors) ? data.riskFactors : [],
+    explanation: data.explanation || '',
+    recommendations: Array.isArray(data.recommendations)
+      ? data.recommendations
+      : [],
     llmMetadata,
     overallRiskLevel:
-      data.overallRiskLevel as RiskForecastResult['overallRiskLevel'],
-    identifiedRisks: data.identifiedRisks,
-    delayProbability: data.delayProbability,
-    estimatedDelayDays: data.estimatedDelayDays,
-    earlyWarningIndicators: data.earlyWarningIndicators,
+      (data.overallRiskLevel as RiskForecastResult['overallRiskLevel']) ||
+      'medium',
+    identifiedRisks: Array.isArray(data.identifiedRisks)
+      ? data.identifiedRisks
+      : [],
+    delayProbability: data.delayProbability ?? 0.3,
+    estimatedDelayDays: data.estimatedDelayDays ?? 0,
+    earlyWarningIndicators: Array.isArray(data.earlyWarningIndicators)
+      ? data.earlyWarningIndicators
+      : [],
   };
 }
 
@@ -395,14 +414,15 @@ function formatStoredAsResult(
   stored: NonNullable<Awaited<ReturnType<typeof getLatestPrediction>>>,
   predictionWindowDays: number,
 ): RiskForecastResult {
+  // riskFactors and recommendations are already safely parsed by getLatestPrediction
   return {
     predictionType: 'RISK_FORECAST',
     probability: stored.probability,
     confidence: stored.confidence,
     predictionWindowDays,
-    riskFactors: stored.riskFactors as RiskFactor[],
+    riskFactors: stored.riskFactors || [],
     explanation: stored.explanation || '',
-    recommendations: (stored.recommendations || []) as Recommendation[],
+    recommendations: stored.recommendations || [],
     llmMetadata: {
       model: 'cached',
       tokensUsed: 0,
