@@ -35,7 +35,6 @@ services:
   - type: web
     name: consulting-pm-web
     runtime: static
-    region: oregon
     rootDir: pmo
     buildCommand: npm install && npm run build --workspace pmo-web
     staticPublishPath: apps/web/dist
