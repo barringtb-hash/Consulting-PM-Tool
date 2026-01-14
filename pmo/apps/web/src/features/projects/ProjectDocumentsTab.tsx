@@ -474,13 +474,13 @@ function DocumentCard({
         </div>
       </Modal>
       <div
-        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer dark:border-neutral-700 dark:hover:bg-neutral-800/50"
+        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer dark:border-neutral-700 dark:hover:bg-neutral-800/50 overflow-hidden"
         onClick={() => onView(document.id)}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
-        <div className="flex justify-between items-start">
-          <div className="flex items-start gap-3 flex-1">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
             <div
               className={`flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 ${STAT_STYLES[categoryVariants[document.category]].iconBg}`}
             >
