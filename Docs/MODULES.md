@@ -83,6 +83,8 @@ These modules can be enabled/disabled per customer:
 | `admin` | Admin | None | User & module administration | `/admin/users`, `/admin/modules` |
 | `customerSuccess` | Customer Success | accounts | Customer health scoring, success plans, playbooks | `/customer-success/*` |
 | `brandProfiles` | Brand Profiles | accounts | Brand identity, voice, and asset management | `/marketing/brands` |
+| `social-publishing` | Social Publishing | marketing | Multi-platform social media publishing via Ayrshare API | `/social-publishing` |
+| `content-ml` | Content ML | marketing | AI-powered content generation with brand voice, SEO, repurposing | `/content-ml/*` |
 
 ### Operations & Monitoring Modules
 
@@ -172,6 +174,10 @@ aiProjects           → requires → projects
 aiMonitoring         → requires → (none, standalone)
 bugTracking          → requires → (none, standalone)
 brandProfiles        → requires → accounts
+
+# Social & Content
+social-publishing    → requires → marketing
+content-ml           → requires → marketing
 ```
 
 ---

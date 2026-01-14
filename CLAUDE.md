@@ -190,6 +190,8 @@ The platform supports **toggleable modules** to customize deployments per custom
 | `admin` | Toggleable | User administration & module management |
 | `finance-tracking` | Toggleable | Expense tracking, budgets, profitability reporting |
 | `mcp` | Toggleable | Model Context Protocol for AI queries against CRM data |
+| `social-publishing` | Toggleable | Multi-platform social media publishing via Ayrshare API |
+| `content-ml` | Toggleable | AI-powered content generation with brand voice, SEO, repurposing |
 
 ### Quick Configuration
 
@@ -308,6 +310,80 @@ Location: `pmo/apps/api/src/modules/project-ml/`
 - Risk forecasting
 - Timeline prediction
 - Resource optimization
+
+### Content ML Module
+
+Location: `pmo/apps/api/src/modules/content-ml/`
+
+**Features:**
+- AI-powered content generation with brand voice consistency
+- SEO optimization and keyword analysis
+- Content repurposing (blog → social posts)
+- AI-generated content ideas and suggestions
+- Platform-specific optimization (character limits, hashtags)
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `services/brand-voice.service.ts` | Train and check brand voice consistency |
+| `services/content-generation.service.ts` | Generate platform-optimized content |
+| `services/seo-optimization.service.ts` | SEO analysis and keyword optimization |
+| `services/content-repurposing.service.ts` | Convert content between formats |
+| `services/content-ideas.service.ts` | Generate AI content suggestions |
+| `prompts/content-ml-prompts.ts` | LLM prompt templates |
+| `content-ml.router.ts` | API endpoints |
+
+**API Endpoints:**
+```
+POST /api/content-ml/:configId/train-voice       # Train brand voice from samples
+GET  /api/content-ml/:configId/voice-profile     # Get voice profile
+POST /api/content-ml/:configId/check-voice       # Check content voice consistency
+POST /api/content-ml/:configId/analyze-seo       # SEO analysis
+POST /api/content-ml/:configId/repurpose/:id     # Repurpose content
+POST /api/content-ml/:configId/ideas/generate    # Generate content ideas
+POST /api/content-ml/hashtags                    # Generate hashtags
+POST /api/content-ml/captions                    # Generate captions
+```
+
+### Social Publishing Module
+
+Location: `pmo/apps/api/src/modules/social-publishing/`
+
+**Features:**
+- Multi-platform publishing via Ayrshare unified API
+- Supported platforms: LinkedIn, Twitter/X, Instagram, Facebook, TikTok, YouTube, Pinterest, Threads, Bluesky
+- Platform-level API tenancy (one Ayrshare account, per-tenant profile keys)
+- Scheduled post publishing with BullMQ workers
+- Publishing history tracking with metrics sync
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `adapters/unified/ayrshare.adapter.ts` | Ayrshare API integration |
+| `services/social-publishing.service.ts` | Main orchestration service |
+| `workers/publish.worker.ts` | BullMQ worker for publishing |
+| `workers/scheduled-post.worker.ts` | Scheduled post scanner |
+| `social-publishing.router.ts` | API endpoints |
+
+**API Endpoints:**
+```
+POST /api/social-publishing/config               # Setup publishing config
+GET  /api/social-publishing/platforms            # List connected platforms
+POST /api/social-publishing/posts                # Create post
+POST /api/social-publishing/posts/:id/publish    # Publish immediately
+POST /api/social-publishing/posts/:id/schedule   # Schedule for later
+GET  /api/social-publishing/posts/:id/metrics    # Get engagement metrics
+```
+
+**Database Models:**
+- `SocialMediaPost`: Posts with status, platforms, scheduling
+- `SocialPublishingConfig`: Per-tenant API configuration
+- `PublishingHistory`: Platform-specific publish results
+
+**Environment Variables:**
+```env
+AYRSHARE_API_KEY=your_platform_api_key    # Master key for all tenants
+```
 
 ## Important Notes
 
