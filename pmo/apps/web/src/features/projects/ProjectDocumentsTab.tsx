@@ -271,6 +271,14 @@ function TemplatePickerModal({
     Set<ProjectDocumentCategory>
   >(new Set(['CORE', 'LIFECYCLE', 'AI_SPECIFIC']));
 
+  // Reset state when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setSelectedTemplate(null);
+      setDocumentName('');
+    }
+  }, [isOpen]);
+
   const groupedTemplates = useMemo(() => {
     const templates = templatesQuery.data ?? [];
     return {
