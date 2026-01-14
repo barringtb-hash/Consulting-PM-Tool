@@ -47,8 +47,6 @@ import meetingRouter from './modules/meetings/meeting.router';
 import campaignRouter from './modules/campaigns/campaign.router';
 import brandProfileRouter from './modules/brand-profiles/brand-profile.router';
 import publishingRouter from './modules/publishing/publishing.router';
-import { socialPublishingRouter } from './modules/social-publishing';
-import contentMLRouter from './modules/content-ml/content-ml.router';
 import featureFlagsRouter from './modules/feature-flags/feature-flags.router';
 import userPreferencesRouter from './modules/user-preferences/user-preferences.router';
 import chatbotRouter from './modules/chatbot/chatbot.router';
@@ -512,12 +510,6 @@ export function createApp(): express.Express {
     app.use('/api', requireModule('marketing'), campaignRouter);
     app.use('/api', requireModule('marketing'), brandProfileRouter);
     app.use('/api', requireModule('marketing'), publishingRouter);
-    app.use(
-      '/api/social-publishing',
-      requireModule('marketing'),
-      socialPublishingRouter,
-    );
-    app.use('/api/content-ml', requireModule('marketing'), contentMLRouter);
   }
 
   // Leads module - authenticated lead management routes
