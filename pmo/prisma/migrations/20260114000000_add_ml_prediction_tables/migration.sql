@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS "LeadScoringConfig" (
     "emailCredentials" JSONB,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "LeadScoringConfig_pkey" PRIMARY KEY ("id")
 );
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS "ScoredLead" (
     "segments" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "ScoredLead_pkey" PRIMARY KEY ("id")
 );
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS "NurtureSequence" (
     "totalConversions" INTEGER NOT NULL DEFAULT 0,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "NurtureSequence_pkey" PRIMARY KEY ("id")
 );
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS "NurtureEnrollment" (
     "exitReason" TEXT,
     "variant" TEXT,
     "enrolledAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "NurtureEnrollment_pkey" PRIMARY KEY ("id")
 );
@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS "LeadScoringAnalytics" (
     "sequenceEnrollments" INTEGER NOT NULL DEFAULT 0,
     "sequenceCompletions" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "LeadScoringAnalytics_pkey" PRIMARY KEY ("id")
 );
@@ -310,7 +310,7 @@ CREATE TABLE IF NOT EXISTS "LeadMLModel" (
     "isActive" BOOLEAN NOT NULL DEFAULT false,
     "validUntil" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "LeadMLModel_pkey" PRIMARY KEY ("id")
 );
@@ -370,7 +370,7 @@ CREATE TABLE IF NOT EXISTS "ProjectMLPrediction" (
     "llmCost" DOUBLE PRECISION,
     "generatedTaskId" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "ProjectMLPrediction_pkey" PRIMARY KEY ("id")
 );
