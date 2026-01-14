@@ -222,7 +222,108 @@ async function fetchAIStatus(projectId: number): Promise<AIStatusSummary> {
     throw error;
   }
   const json = await res.json();
-  return json.data || json;
+  const apiData = json.data || json;
+
+  // Normalize API response to match expected interface
+  return {
+    projectId,
+    projectName: apiData.projectName || '',
+    generatedAt: apiData.generatedAt,
+    healthScore: apiData.healthAnalysis?.healthScore ?? 0,
+    healthStatus: mapHealthStatus(apiData.healthAnalysis?.overallHealth),
+    executiveSummary: apiData.executiveSummary,
+    highlights: apiData.keyHighlights || [],
+    // Map concerns: title → area, normalize severity
+    concerns: Array.isArray(apiData.concerns)
+      ? apiData.concerns.map(
+          (concern: {
+            title?: string;
+            description?: string;
+            severity?: string;
+          }) => ({
+            area: concern.title || '',
+            description: concern.description || '',
+            severity: normalizeSeverity(concern.severity),
+          }),
+        )
+      : [],
+    // Map recommendations: title → action, priority string → number
+    recommendations: Array.isArray(apiData.recommendations)
+      ? apiData.recommendations.map(
+          (rec: {
+            priority?: string;
+            title?: string;
+            description?: string;
+            expectedImpact?: string;
+          }) => ({
+            priority: mapPriorityToNumber(rec.priority),
+            action: rec.title || rec.description || '',
+            expectedImpact: rec.expectedImpact || '',
+          }),
+        )
+      : [],
+    metrics: apiData.metrics
+      ? {
+          taskCompletion: apiData.metrics.taskCompletion || {
+            completed: 0,
+            total: 0,
+            percentage: 0,
+          },
+          milestoneProgress: apiData.metrics.milestoneProgress || {
+            completed: 0,
+            total: 0,
+            percentage: 0,
+          },
+          overdueItems: apiData.metrics.overdueItems || {
+            tasks: 0,
+            milestones: 0,
+          },
+          velocity: {
+            current: apiData.metrics.velocity?.tasksCompletedThisWeek ?? 0,
+            trend: apiData.metrics.velocity?.trend || 'stable',
+          },
+        }
+      : {
+          taskCompletion: { completed: 0, total: 0, percentage: 0 },
+          milestoneProgress: { completed: 0, total: 0, percentage: 0 },
+          overdueItems: { tasks: 0, milestones: 0 },
+          velocity: { current: 0, trend: 'stable' },
+        },
+  };
+}
+
+function mapHealthStatus(status?: string): 'healthy' | 'at-risk' | 'critical' {
+  switch (status) {
+    case 'ON_TRACK':
+      return 'healthy';
+    case 'AT_RISK':
+      return 'at-risk';
+    case 'OFF_TRACK':
+      return 'critical';
+    default:
+      return 'at-risk';
+  }
+}
+
+function normalizeSeverity(severity?: string): 'high' | 'medium' | 'low' {
+  if (severity === 'critical' || severity === 'high') return 'high';
+  if (severity === 'medium') return 'medium';
+  return 'low';
+}
+
+function mapPriorityToNumber(priority?: string): number {
+  switch (priority) {
+    case 'urgent':
+      return 1;
+    case 'high':
+      return 2;
+    case 'medium':
+      return 3;
+    case 'low':
+      return 4;
+    default:
+      return 3;
+  }
 }
 
 async function generateQuickStatus(
