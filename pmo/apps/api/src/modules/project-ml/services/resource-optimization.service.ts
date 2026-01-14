@@ -58,19 +58,23 @@ export async function optimizeProjectResources(
 
   // Check for recent prediction unless forced
   if (!options.forceRefresh) {
-    const hasRecent = await hasRecentPrediction(
-      projectId,
-      'RESOURCE_OPTIMIZATION',
-      1,
-    );
-    if (hasRecent) {
-      const existing = await getLatestPrediction(
+    try {
+      const hasRecent = await hasRecentPrediction(
         projectId,
         'RESOURCE_OPTIMIZATION',
+        1,
       );
-      if (existing) {
-        return formatStoredAsResult(existing, predictionWindowDays);
+      if (hasRecent) {
+        const existing = await getLatestPrediction(
+          projectId,
+          'RESOURCE_OPTIMIZATION',
+        );
+        if (existing) {
+          return formatStoredAsResult(existing, predictionWindowDays);
+        }
       }
+    } catch (error) {
+      console.error('Error checking for existing prediction:', error);
     }
   }
 
@@ -95,10 +99,14 @@ export async function optimizeProjectResources(
   }
 
   // Store prediction with resource-specific data
-  await storePrediction(projectId, tenantId, result, {
-    resourceRecommendations: result.reassignmentSuggestions,
-    workloadAnalysis: result.workloadBalance,
-  });
+  try {
+    await storePrediction(projectId, tenantId, result, {
+      resourceRecommendations: result.reassignmentSuggestions,
+      workloadAnalysis: result.workloadBalance,
+    });
+  } catch (error) {
+    console.error('Failed to store prediction:', error);
+  }
 
   return result;
 }
@@ -157,23 +165,59 @@ async function llmPrediction(
     estimatedCost: usage.estimatedCost,
   };
 
+  // Safely parse workload balance with defaults
+  const workloadBalance: WorkloadBalanceScore = data.workloadBalance
+    ? {
+        score: data.workloadBalance.score ?? 0.5,
+        interpretation: data.workloadBalance.interpretation || 'fair',
+        mostOverloaded: data.workloadBalance.mostOverloaded || null,
+        mostUnderloaded: data.workloadBalance.mostUnderloaded || null,
+      }
+    : {
+        score: 0.5,
+        interpretation: 'fair',
+        mostOverloaded: null,
+        mostUnderloaded: null,
+      };
+
+  // Safely parse capacity forecast with proper date conversion
+  const capacityForecast: CapacityForecast[] = Array.isArray(
+    data.capacityForecast,
+  )
+    ? data.capacityForecast.map((cf) => {
+        let weekStart: Date;
+        try {
+          weekStart = cf.weekStart ? new Date(cf.weekStart) : new Date();
+        } catch {
+          weekStart = new Date();
+        }
+        return {
+          weekNumber: cf.weekNumber ?? 1,
+          weekStart,
+          availableHours: cf.availableHours ?? 0,
+          requiredHours: cf.requiredHours ?? 0,
+          status: (cf.status as CapacityForecast['status']) || 'balanced',
+        };
+      })
+    : [];
+
   return {
     predictionType: 'RESOURCE_OPTIMIZATION',
-    probability: data.workloadBalance.score,
-    confidence: data.confidence,
+    probability: workloadBalance.score,
+    confidence: data.confidence ?? 0.5,
     predictionWindowDays,
-    riskFactors: data.riskFactors,
-    explanation: data.explanation,
-    recommendations: data.recommendations,
+    riskFactors: Array.isArray(data.riskFactors) ? data.riskFactors : [],
+    explanation: data.explanation || '',
+    recommendations: Array.isArray(data.recommendations)
+      ? data.recommendations
+      : [],
     llmMetadata,
-    workloadBalance: data.workloadBalance,
-    reassignmentSuggestions: data.reassignmentSuggestions,
-    bottlenecks: data.bottlenecks,
-    capacityForecast: data.capacityForecast.map((cf) => ({
-      ...cf,
-      weekStart: new Date(cf.weekStart),
-      status: cf.status as CapacityForecast['status'],
-    })),
+    workloadBalance,
+    reassignmentSuggestions: Array.isArray(data.reassignmentSuggestions)
+      ? data.reassignmentSuggestions
+      : [],
+    bottlenecks: Array.isArray(data.bottlenecks) ? data.bottlenecks : [],
+    capacityForecast,
   };
 }
 
@@ -450,28 +494,45 @@ function formatStoredAsResult(
   stored: NonNullable<Awaited<ReturnType<typeof getLatestPrediction>>>,
   predictionWindowDays: number,
 ): ResourceOptimizationResult {
+  // Safely parse workloadAnalysis with defaults
+  const workloadAnalysis = stored.workloadAnalysis as
+    | WorkloadBalanceScore
+    | null
+    | undefined;
+
+  const workloadBalance: WorkloadBalanceScore = workloadAnalysis
+    ? {
+        score: workloadAnalysis.score ?? stored.probability,
+        interpretation: workloadAnalysis.interpretation || 'fair',
+        mostOverloaded: workloadAnalysis.mostOverloaded || null,
+        mostUnderloaded: workloadAnalysis.mostUnderloaded || null,
+      }
+    : {
+        score: stored.probability,
+        interpretation: 'fair',
+        mostOverloaded: null,
+        mostUnderloaded: null,
+      };
+
+  // riskFactors and recommendations are already safely parsed by getLatestPrediction
   return {
     predictionType: 'RESOURCE_OPTIMIZATION',
     probability: stored.probability,
     confidence: stored.confidence,
     predictionWindowDays,
-    riskFactors: stored.riskFactors as RiskFactor[],
+    riskFactors: stored.riskFactors || [],
     explanation: stored.explanation || '',
-    recommendations: (stored.recommendations || []) as Recommendation[],
+    recommendations: stored.recommendations || [],
     llmMetadata: {
       model: 'cached',
       tokensUsed: 0,
       latencyMs: 0,
       estimatedCost: 0,
     },
-    workloadBalance: (stored.workloadAnalysis as WorkloadBalanceScore) || {
-      score: stored.probability,
-      interpretation: 'fair',
-      mostOverloaded: null,
-      mostUnderloaded: null,
-    },
-    reassignmentSuggestions: (stored.resourceRecommendations ||
-      []) as TaskReassignment[],
+    workloadBalance,
+    reassignmentSuggestions: Array.isArray(stored.resourceRecommendations)
+      ? (stored.resourceRecommendations as TaskReassignment[])
+      : [],
     bottlenecks: [],
     capacityForecast: [],
   };

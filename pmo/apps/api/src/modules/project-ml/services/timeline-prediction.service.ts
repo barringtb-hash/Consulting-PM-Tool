@@ -55,19 +55,23 @@ export async function predictProjectTimeline(
 
   // Check for recent prediction unless forced
   if (!options.forceRefresh) {
-    const hasRecent = await hasRecentPrediction(
-      projectId,
-      'TIMELINE_PREDICTION',
-      1,
-    );
-    if (hasRecent) {
-      const existing = await getLatestPrediction(
+    try {
+      const hasRecent = await hasRecentPrediction(
         projectId,
         'TIMELINE_PREDICTION',
+        1,
       );
-      if (existing) {
-        return formatStoredAsResult(existing, predictionWindowDays);
+      if (hasRecent) {
+        const existing = await getLatestPrediction(
+          projectId,
+          'TIMELINE_PREDICTION',
+        );
+        if (existing) {
+          return formatStoredAsResult(existing, predictionWindowDays);
+        }
       }
+    } catch (error) {
+      console.error('Error checking for existing prediction:', error);
     }
   }
 
@@ -92,11 +96,15 @@ export async function predictProjectTimeline(
   }
 
   // Store prediction with timeline-specific data
-  await storePrediction(projectId, tenantId, result, {
-    predictedEndDate: result.predictedEndDate,
-    originalEndDate: result.currentEndDate || undefined,
-    daysVariance: result.daysVariance,
-  });
+  try {
+    await storePrediction(projectId, tenantId, result, {
+      predictedEndDate: result.predictedEndDate,
+      originalEndDate: result.currentEndDate || undefined,
+      daysVariance: result.daysVariance,
+    });
+  } catch (error) {
+    console.error('Failed to store prediction:', error);
+  }
 
   return result;
 }
@@ -147,26 +155,56 @@ async function llmPrediction(
   };
 
   // Calculate probability based on variance
-  const probability = Math.max(0, 1 - Math.abs(data.daysVariance) / 30);
+  const daysVariance = data.daysVariance ?? 0;
+  const probability = Math.max(0, 1 - Math.abs(daysVariance) / 30);
+
+  // Safely parse predicted end date
+  let predictedEndDate: Date;
+  try {
+    predictedEndDate = data.predictedEndDate
+      ? new Date(data.predictedEndDate)
+      : new Date();
+  } catch {
+    predictedEndDate = new Date();
+  }
+
+  // Safely parse confidence interval dates
+  let optimistic: Date;
+  let pessimistic: Date;
+  try {
+    optimistic = data.confidenceInterval?.optimistic
+      ? new Date(data.confidenceInterval.optimistic)
+      : predictedEndDate;
+    pessimistic = data.confidenceInterval?.pessimistic
+      ? new Date(data.confidenceInterval.pessimistic)
+      : predictedEndDate;
+  } catch {
+    optimistic = predictedEndDate;
+    pessimistic = predictedEndDate;
+  }
 
   return {
     predictionType: 'TIMELINE_PREDICTION',
     probability,
-    confidence: data.confidence,
+    confidence: data.confidence ?? 0.5,
     predictionWindowDays,
-    riskFactors: data.riskFactors,
-    explanation: data.explanation,
-    recommendations: data.recommendations,
+    riskFactors: Array.isArray(data.riskFactors) ? data.riskFactors : [],
+    explanation: data.explanation || '',
+    recommendations: Array.isArray(data.recommendations)
+      ? data.recommendations
+      : [],
     llmMetadata,
     currentEndDate: context.project.endDate,
-    predictedEndDate: new Date(data.predictedEndDate),
+    predictedEndDate,
     confidenceInterval: {
-      optimistic: new Date(data.confidenceInterval.optimistic),
-      pessimistic: new Date(data.confidenceInterval.pessimistic),
+      optimistic,
+      pessimistic,
     },
-    daysVariance: data.daysVariance,
-    delayFactors: data.delayFactors,
-    accelerationOpportunities: data.accelerationOpportunities,
+    daysVariance,
+    delayFactors: Array.isArray(data.delayFactors) ? data.delayFactors : [],
+    accelerationOpportunities: Array.isArray(data.accelerationOpportunities)
+      ? data.accelerationOpportunities
+      : [],
   };
 }
 
@@ -377,14 +415,15 @@ function formatStoredAsResult(
   const predictedEnd = stored.predictedEndDate || now;
   const variance = stored.daysVariance || 0;
 
+  // riskFactors and recommendations are already safely parsed by getLatestPrediction
   return {
     predictionType: 'TIMELINE_PREDICTION',
     probability: stored.probability,
     confidence: stored.confidence,
     predictionWindowDays,
-    riskFactors: stored.riskFactors as RiskFactor[],
+    riskFactors: stored.riskFactors || [],
     explanation: stored.explanation || '',
-    recommendations: (stored.recommendations || []) as Recommendation[],
+    recommendations: stored.recommendations || [],
     llmMetadata: {
       model: 'cached',
       tokensUsed: 0,

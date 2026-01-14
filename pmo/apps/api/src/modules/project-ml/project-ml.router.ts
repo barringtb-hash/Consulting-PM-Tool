@@ -8,7 +8,7 @@
 
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../auth/auth.middleware';
-import { getTenantId } from '../../tenant/tenant.context';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import {
   predictProjectSuccess,
   forecastProjectRisks,
@@ -46,10 +46,10 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const params = projectIdParamSchema.safeParse(req.params);
       if (!params.success) {
@@ -101,10 +101,10 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const params = projectIdParamSchema.safeParse(req.params);
       if (!params.success) {
@@ -137,10 +137,10 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const params = projectIdParamSchema.safeParse(req.params);
       if (!params.success) {
@@ -173,10 +173,10 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const params = projectIdParamSchema.safeParse(req.params);
       if (!params.success) {
@@ -209,10 +209,10 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const params = projectIdParamSchema.safeParse(req.params);
       if (!params.success) {
@@ -285,10 +285,10 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const query = highRiskQuerySchema.safeParse(req.query);
       if (!query.success) {
@@ -320,17 +320,17 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const _tenantId = getTenantId(); // Reserved for future batch implementation
 
       const body = batchPredictionSchema.safeParse(req.body);
       if (!body.success) {
         return res.status(400).json({ error: body.error.message });
       }
 
-      // TODO: Implement batch prediction
+      // TODO: Implement batch prediction using _tenantId
       // For now, return a placeholder
       return res.json({
         success: true,
@@ -359,10 +359,10 @@ router.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const result = await validateExpiredPredictions(tenantId);
 
@@ -385,10 +385,10 @@ router.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const tenantId = getTenantId();
-      if (!tenantId) {
+      if (!hasTenantContext()) {
         return res.status(400).json({ error: 'Tenant context required' });
       }
+      const tenantId = getTenantId();
 
       const query = accuracyQuerySchema.safeParse(req.query);
       if (!query.success) {

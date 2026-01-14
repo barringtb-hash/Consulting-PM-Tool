@@ -20,6 +20,8 @@ import type {
   PredictionAccuracyMetrics,
   RiskFactor,
   Recommendation,
+  TaskReassignment,
+  WorkloadBalanceScore,
 } from '../types';
 
 // ============================================================================
@@ -47,6 +49,54 @@ export const ML_CONFIG = {
     low: 0,
   },
 };
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Safely parse riskFactors from database JSON
+ * Returns empty array if null or invalid
+ */
+function parseRiskFactors(data: unknown): RiskFactor[] {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+  return data as RiskFactor[];
+}
+
+/**
+ * Safely parse recommendations from database JSON
+ * Returns empty array if null or invalid
+ */
+function parseRecommendations(data: unknown): Recommendation[] {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+  return data as Recommendation[];
+}
+
+/**
+ * Safely parse resourceRecommendations from database JSON
+ * Returns empty array if null or invalid
+ */
+function parseResourceRecommendations(data: unknown): TaskReassignment[] {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+  return data as TaskReassignment[];
+}
+
+/**
+ * Safely parse workloadAnalysis from database JSON
+ * Returns null if invalid
+ */
+function parseWorkloadAnalysis(data: unknown): WorkloadBalanceScore | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+  return data as WorkloadBalanceScore;
+}
 
 // ============================================================================
 // Prediction Storage
@@ -83,9 +133,9 @@ export async function storePrediction(
       probability: result.probability,
       confidence: result.confidence,
       predictionWindow: result.predictionWindowDays,
-      riskFactors: result.riskFactors as unknown as object,
-      explanation: result.explanation,
-      recommendations: result.recommendations as unknown as object,
+      riskFactors: (result.riskFactors || []) as unknown as object,
+      explanation: result.explanation || '',
+      recommendations: (result.recommendations || []) as unknown as object,
       validUntil,
       llmModel: result.llmMetadata.model,
       llmTokensUsed: result.llmMetadata.tokensUsed,
@@ -149,18 +199,20 @@ export async function getLatestPrediction(
     predictionType: prediction.predictionType,
     probability: prediction.probability,
     confidence: prediction.confidence,
-    riskFactors: prediction.riskFactors as unknown as RiskFactor[],
+    riskFactors: parseRiskFactors(prediction.riskFactors),
     explanation: prediction.explanation,
-    recommendations: prediction.recommendations as Recommendation[] | null,
+    recommendations: parseRecommendations(prediction.recommendations),
     predictedAt: prediction.predictedAt,
     validUntil: prediction.validUntil,
     status: prediction.status,
     wasAccurate: prediction.wasAccurate,
     predictedEndDate: prediction.predictedEndDate,
     daysVariance: prediction.daysVariance,
-    resourceRecommendations: prediction.resourceRecommendations as unknown[],
-    workloadAnalysis: prediction.workloadAnalysis,
-  } as StoredPrediction;
+    resourceRecommendations: parseResourceRecommendations(
+      prediction.resourceRecommendations,
+    ),
+    workloadAnalysis: parseWorkloadAnalysis(prediction.workloadAnalysis),
+  };
 }
 
 /**
@@ -204,16 +256,16 @@ export async function listProjectPredictions(
     predictionType: p.predictionType,
     probability: p.probability,
     confidence: p.confidence,
-    riskFactors: p.riskFactors as unknown as RiskFactor[],
+    riskFactors: parseRiskFactors(p.riskFactors),
     explanation: p.explanation,
-    recommendations: p.recommendations as Recommendation[] | null,
+    recommendations: parseRecommendations(p.recommendations),
     predictedAt: p.predictedAt,
     validUntil: p.validUntil,
     status: p.status,
     wasAccurate: p.wasAccurate,
     predictedEndDate: p.predictedEndDate,
     daysVariance: p.daysVariance,
-  })) as StoredPrediction[];
+  }));
 }
 
 // ============================================================================

@@ -86,20 +86,25 @@ export async function predictProjectSuccess(
 
   // Check for recent prediction unless forced
   if (!options.forceRefresh) {
-    const hasRecent = await hasRecentPrediction(
-      projectId,
-      'SUCCESS_PREDICTION',
-      1,
-    );
-    if (hasRecent) {
-      const existing = await getLatestPrediction(
+    try {
+      const hasRecent = await hasRecentPrediction(
         projectId,
         'SUCCESS_PREDICTION',
+        1,
       );
-      if (existing) {
-        // Return existing prediction formatted as result
-        return formatStoredAsResult(existing, predictionWindowDays);
+      if (hasRecent) {
+        const existing = await getLatestPrediction(
+          projectId,
+          'SUCCESS_PREDICTION',
+        );
+        if (existing) {
+          // Return existing prediction formatted as result
+          return formatStoredAsResult(existing, predictionWindowDays);
+        }
       }
+    } catch (error) {
+      // Log and continue to generate new prediction
+      console.error('Error checking for existing prediction:', error);
     }
   }
 
@@ -121,7 +126,12 @@ export async function predictProjectSuccess(
   }
 
   // Store prediction
-  await storePrediction(projectId, tenantId, result);
+  try {
+    await storePrediction(projectId, tenantId, result);
+  } catch (error) {
+    console.error('Failed to store prediction:', error);
+    // Continue to return result even if storage fails
+  }
 
   return result;
 }
@@ -167,33 +177,45 @@ async function llmPrediction(
     estimatedCost: usage.estimatedCost,
   };
 
+  // Safely map risk factors with null checks
+  const riskFactors: RiskFactor[] = Array.isArray(data.riskFactors)
+    ? data.riskFactors.map((rf) => ({
+        factor: rf.factor || 'Unknown',
+        impact: (rf.impact as RiskFactor['impact']) || 'medium',
+        currentValue: rf.currentValue || 'N/A',
+        threshold: rf.threshold,
+        trend: (rf.trend as RiskFactor['trend']) || 'stable',
+        description: rf.description || '',
+      }))
+    : [];
+
+  // Safely map recommendations with null checks
+  const recommendations: Recommendation[] = Array.isArray(data.recommendations)
+    ? data.recommendations.map((r) => ({
+        priority: (r.priority as Recommendation['priority']) || 'medium',
+        action: r.action || '',
+        rationale: r.rationale || '',
+        expectedImpact: r.expectedImpact || '',
+        effort: (r.effort as Recommendation['effort']) || 'medium',
+        timeframe: r.timeframe || '',
+      }))
+    : [];
+
   return {
     predictionType: 'SUCCESS_PREDICTION',
-    probability: data.overallSuccessProbability,
-    confidence: data.confidence,
+    probability: data.overallSuccessProbability ?? 0.5,
+    confidence: data.confidence ?? 0.5,
     predictionWindowDays,
-    riskFactors: data.riskFactors.map((rf) => ({
-      factor: rf.factor,
-      impact: rf.impact as RiskFactor['impact'],
-      currentValue: rf.currentValue,
-      threshold: rf.threshold,
-      trend: rf.trend as RiskFactor['trend'],
-      description: rf.description,
-    })),
-    explanation: data.explanation,
-    recommendations: data.recommendations.map((r) => ({
-      priority: r.priority as Recommendation['priority'],
-      action: r.action,
-      rationale: r.rationale,
-      expectedImpact: r.expectedImpact,
-      effort: r.effort as Recommendation['effort'],
-      timeframe: r.timeframe,
-    })),
+    riskFactors,
+    explanation: data.explanation || '',
+    recommendations,
     llmMetadata,
-    onTimeProbability: data.onTimeProbability,
-    onBudgetProbability: data.onBudgetProbability,
-    overallSuccessProbability: data.overallSuccessProbability,
-    successFactors: data.successFactors,
+    onTimeProbability: data.onTimeProbability ?? 0.5,
+    onBudgetProbability: data.onBudgetProbability ?? 0.5,
+    overallSuccessProbability: data.overallSuccessProbability ?? 0.5,
+    successFactors: Array.isArray(data.successFactors)
+      ? data.successFactors
+      : [],
   };
 }
 
@@ -356,7 +378,6 @@ export function predictProjectSuccessRuleBased(
   const explanation = buildExplanation(
     overallProbability,
     taskMetrics,
-    milestoneMetrics,
     riskFactors.length,
   );
 
@@ -463,7 +484,6 @@ function calculateVelocityScore(
 function buildExplanation(
   probability: number,
   taskMetrics: ProjectMLContext['taskMetrics'],
-  milestoneMetrics: ProjectMLContext['milestoneMetrics'],
   riskCount: number,
 ): string {
   const level =
@@ -496,14 +516,15 @@ function formatStoredAsResult(
   stored: NonNullable<Awaited<ReturnType<typeof getLatestPrediction>>>,
   predictionWindowDays: number,
 ): SuccessPredictionResult {
+  // riskFactors and recommendations are already safely parsed by getLatestPrediction
   return {
     predictionType: 'SUCCESS_PREDICTION',
     probability: stored.probability,
     confidence: stored.confidence,
     predictionWindowDays,
-    riskFactors: stored.riskFactors as RiskFactor[],
+    riskFactors: stored.riskFactors || [],
     explanation: stored.explanation || '',
-    recommendations: (stored.recommendations || []) as Recommendation[],
+    recommendations: stored.recommendations || [],
     llmMetadata: {
       model: 'cached',
       tokensUsed: 0,

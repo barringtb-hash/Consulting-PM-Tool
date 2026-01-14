@@ -61,8 +61,19 @@ const validatePredictionSchema = z.object({
 });
 
 const accuracyQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() ? val.trim() : undefined))
+    .refine(
+      (val) => !val || !isNaN(Date.parse(val)),
+      'Invalid startDate format',
+    ),
+  endDate: z
+    .string()
+    .optional()
+    .transform((val) => (val && val.trim() ? val.trim() : undefined))
+    .refine((val) => !val || !isNaN(Date.parse(val)), 'Invalid endDate format'),
 });
 
 // ============================================================================
