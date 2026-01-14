@@ -175,17 +175,13 @@ export const listTasksForProject = async (
     return { error: projectAccess } as const;
   }
 
-  // Get tenant context for multi-tenant filtering
-  const tenantId = hasTenantContext() ? getTenantId() : undefined;
-
   // Get parent tasks only (no subtasks) with subtask counts and assignees
-  // Include tasks matching current tenantId OR legacy tasks with null tenantId
-  // (safe because project access has already been validated above)
+  // No tenantId filter needed - project access validation above ensures authorization
+  // Tasks inherit access control from their parent project
   const tasks = await prisma.task.findMany({
     where: {
       projectId,
       parentTaskId: null,
-      OR: [{ tenantId }, { tenantId: null }],
     },
     include: {
       _count: { select: { subTasks: true } },
