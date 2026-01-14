@@ -16,9 +16,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: consultingpm-postgres
-          property: connectionString
+        sync: false  # Uses existing database connection from Render dashboard
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -26,10 +24,7 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: consultingpm-redis
-          property: connectionString
+        sync: false  # Optional: set in Render dashboard if using Redis
 
   # Frontend Static Site
   - type: web
@@ -50,15 +45,11 @@ services:
       - key: VITE_API_BASE_URL
         value: https://consulting-pm-api.onrender.com
 
-databases:
-  - name: consultingpm-postgres
-    region: oregon
-    plan: starter
-    databaseName: consultingpm_postgres
-
-# Optional: Redis for BullMQ job queues
-# Uncomment if you need background job processing
-# redis:
-#   - name: consultingpm-redis
+# Database already exists in Render - not managed by blueprint
+# If you need to create a new database, use plan: free or plan: basic
+#
+# databases:
+#   - name: consultingpm-postgres
 #     region: oregon
-#     plan: starter
+#     plan: free
+#     databaseName: consultingpm_postgres
