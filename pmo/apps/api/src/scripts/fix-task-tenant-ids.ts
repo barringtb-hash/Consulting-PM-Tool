@@ -72,6 +72,9 @@ async function main() {
   let fixed = 0;
   let skipped = 0;
 
+  // Prepare updates and log what will be done
+  const updates: Array<{ id: number; tenantId: string }> = [];
+
   for (const task of mismatchedTasks) {
     const projectTenantId = task.project.tenantId;
 
@@ -90,14 +93,22 @@ async function main() {
     console.log(`    Project: "${task.project.name}" (ID: ${task.projectId})`);
     console.log(`    tenantId: ${currentTenantDisplay} -> ${projectTenantId}`);
 
-    if (!isDryRun) {
-      await prisma.task.update({
-        where: { id: task.id },
-        data: { tenantId: projectTenantId },
-      });
-    }
-
+    updates.push({ id: task.id, tenantId: projectTenantId });
     fixed++;
+  }
+
+  // Execute all updates in a single transaction for atomicity
+  if (!isDryRun && updates.length > 0) {
+    console.log('\nApplying updates in transaction...');
+    await prisma.$transaction(
+      updates.map((update) =>
+        prisma.task.update({
+          where: { id: update.id },
+          data: { tenantId: update.tenantId },
+        }),
+      ),
+    );
+    console.log('Transaction completed successfully.');
   }
 
   console.log('\n=== Summary ===');
