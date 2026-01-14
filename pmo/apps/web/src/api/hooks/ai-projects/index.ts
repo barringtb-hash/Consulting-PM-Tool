@@ -160,6 +160,14 @@ export interface GeneratedDocument {
   generatedAt: string;
 }
 
+/** API response type for document templates (before normalization) */
+interface ApiDocumentTemplate {
+  type?: string;
+  name?: string;
+  description?: string;
+  sections?: Array<{ id: string; title: string; required: boolean }>;
+}
+
 // ============================================================================
 // Query Keys
 // ============================================================================
@@ -593,17 +601,15 @@ async function fetchDocumentTemplates(): Promise<DocumentTemplate[]> {
   }
   const json = await res.json();
   const apiData = json.data || json;
-  const templates = apiData.templates || [];
+  const templates: ApiDocumentTemplate[] = apiData.templates || [];
 
   // Normalize API response: map 'type' to 'id' since API returns type as identifier
-  return templates.map(
-    (t: { type?: string; name?: string; description?: string }) => ({
-      id: t.type || '',
-      type: t.type || '',
-      name: t.name || '',
-      description: t.description || '',
-    }),
-  );
+  return templates.map((template) => ({
+    id: template.type || '',
+    type: template.type || '',
+    name: template.name || '',
+    description: template.description || '',
+  }));
 }
 
 async function generateDocument(
