@@ -2,49 +2,74 @@
 -- Creates 11 missing tables for AI-powered project management features
 
 -- ============================================================================
--- ENUMS
+-- ENUMS (using DO blocks to handle existing types)
 -- ============================================================================
 
--- TaskDependency enum
-CREATE TYPE "DependencyType" AS ENUM ('FINISH_TO_START', 'START_TO_START', 'FINISH_TO_FINISH');
+DO $$ BEGIN
+  CREATE TYPE "DependencyType" AS ENUM ('FINISH_TO_START', 'START_TO_START', 'FINISH_TO_FINISH');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ScopeChangeAlert enums
-CREATE TYPE "ScopeChangeType" AS ENUM (
-  'TASK_ADDITION', 'TASK_REMOVAL', 'MILESTONE_ADDITION',
-  'MILESTONE_CHANGE', 'TIMELINE_EXTENSION', 'REQUIREMENT_CHANGE'
-);
-CREATE TYPE "ScopeSeverity" AS ENUM ('INFO', 'WARNING', 'CRITICAL');
-CREATE TYPE "AlertStatus" AS ENUM ('ACTIVE', 'ACKNOWLEDGED', 'RESOLVED');
+DO $$ BEGIN
+  CREATE TYPE "ScopeChangeType" AS ENUM ('TASK_ADDITION', 'TASK_REMOVAL', 'MILESTONE_ADDITION', 'MILESTONE_CHANGE', 'TIMELINE_EXTENSION', 'REQUIREMENT_CHANGE');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectRisk enums
-CREATE TYPE "RiskSourceType" AS ENUM ('MEETING', 'TASK', 'MILESTONE', 'MANUAL', 'AI_DETECTED');
-CREATE TYPE "RiskSeverity" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
-CREATE TYPE "RiskCategory" AS ENUM ('TIMELINE', 'BUDGET', 'SCOPE', 'RESOURCE', 'TECHNICAL', 'EXTERNAL', 'QUALITY');
-CREATE TYPE "RiskStatus" AS ENUM ('IDENTIFIED', 'ANALYZING', 'MITIGATING', 'MONITORING', 'RESOLVED', 'ACCEPTED');
+DO $$ BEGIN
+  CREATE TYPE "ScopeSeverity" AS ENUM ('INFO', 'WARNING', 'CRITICAL');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectBudgetForecast enum
-CREATE TYPE "BudgetRiskLevel" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+DO $$ BEGIN
+  CREATE TYPE "AlertStatus" AS ENUM ('ACTIVE', 'ACKNOWLEDGED', 'RESOLVED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectDigestConfig enums
-CREATE TYPE "DigestRecipientType" AS ENUM ('OWNER', 'TEAM', 'STAKEHOLDER', 'CUSTOM');
-CREATE TYPE "DigestFrequency" AS ENUM ('DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY');
-CREATE TYPE "DigestDetailLevel" AS ENUM ('EXECUTIVE', 'STANDARD', 'DETAILED');
+DO $$ BEGIN
+  CREATE TYPE "RiskSourceType" AS ENUM ('MEETING', 'TASK', 'MILESTONE', 'MANUAL', 'AI_DETECTED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- SmartReminder enums
-CREATE TYPE "SmartReminderType" AS ENUM (
-  'TASK_OVERDUE', 'TASK_DUE_SOON', 'MILESTONE_APPROACHING', 'STALE_PROJECT',
-  'NO_RECENT_ACTIVITY', 'HEALTH_DECLINING', 'MEETING_FOLLOWUP',
-  'STATUS_UPDATE_DUE', 'BUDGET_ALERT', 'SCOPE_CREEP'
-);
-CREATE TYPE "SmartReminderPriority" AS ENUM ('LOW', 'NORMAL', 'HIGH', 'URGENT');
-CREATE TYPE "SmartReminderStatus" AS ENUM ('PENDING', 'SENT', 'DISMISSED', 'ACTION_TAKEN');
+DO $$ BEGIN
+  CREATE TYPE "RiskSeverity" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "RiskCategory" AS ENUM ('TIMELINE', 'BUDGET', 'SCOPE', 'RESOURCE', 'TECHNICAL', 'EXTERNAL', 'QUALITY');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "RiskStatus" AS ENUM ('IDENTIFIED', 'ANALYZING', 'MITIGATING', 'MONITORING', 'RESOLVED', 'ACCEPTED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "BudgetRiskLevel" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "DigestRecipientType" AS ENUM ('OWNER', 'TEAM', 'STAKEHOLDER', 'CUSTOM');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "DigestFrequency" AS ENUM ('DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "DigestDetailLevel" AS ENUM ('EXECUTIVE', 'STANDARD', 'DETAILED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "SmartReminderType" AS ENUM ('TASK_OVERDUE', 'TASK_DUE_SOON', 'MILESTONE_APPROACHING', 'STALE_PROJECT', 'NO_RECENT_ACTIVITY', 'HEALTH_DECLINING', 'MEETING_FOLLOWUP', 'STATUS_UPDATE_DUE', 'BUDGET_ALERT', 'SCOPE_CREEP');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "SmartReminderPriority" AS ENUM ('LOW', 'NORMAL', 'HIGH', 'URGENT');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "SmartReminderStatus" AS ENUM ('PENDING', 'SENT', 'DISMISSED', 'ACTION_TAKEN');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ============================================================================
--- TABLES
+-- TABLES (using IF NOT EXISTS)
 -- ============================================================================
 
--- 1. TaskDependency - Defines dependencies between tasks for auto-scheduling
-CREATE TABLE "TaskDependency" (
+CREATE TABLE IF NOT EXISTS "TaskDependency" (
   "id" SERIAL NOT NULL,
   "dependentTaskId" INTEGER NOT NULL,
   "blockingTaskId" INTEGER NOT NULL,
@@ -54,8 +79,7 @@ CREATE TABLE "TaskDependency" (
   CONSTRAINT "TaskDependency_pkey" PRIMARY KEY ("id")
 );
 
--- 2. TaskDurationLearning - Historical data for AI duration estimation
-CREATE TABLE "TaskDurationLearning" (
+CREATE TABLE IF NOT EXISTS "TaskDurationLearning" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "taskType" TEXT,
@@ -69,8 +93,7 @@ CREATE TABLE "TaskDurationLearning" (
   CONSTRAINT "TaskDurationLearning_pkey" PRIMARY KEY ("id")
 );
 
--- 3. TeamAvailability - Tracks team member capacity for scheduling
-CREATE TABLE "TeamAvailability" (
+CREATE TABLE IF NOT EXISTS "TeamAvailability" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "userId" INTEGER NOT NULL,
@@ -80,8 +103,7 @@ CREATE TABLE "TeamAvailability" (
   CONSTRAINT "TeamAvailability_pkey" PRIMARY KEY ("id")
 );
 
--- 4. ProjectHealthPrediction - AI-powered health predictions
-CREATE TABLE "ProjectHealthPrediction" (
+CREATE TABLE IF NOT EXISTS "ProjectHealthPrediction" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "projectId" INTEGER NOT NULL,
@@ -95,8 +117,7 @@ CREATE TABLE "ProjectHealthPrediction" (
   CONSTRAINT "ProjectHealthPrediction_pkey" PRIMARY KEY ("id")
 );
 
--- 5. ProjectScopeBaseline - Snapshot of original project scope
-CREATE TABLE "ProjectScopeBaseline" (
+CREATE TABLE IF NOT EXISTS "ProjectScopeBaseline" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "projectId" INTEGER NOT NULL,
@@ -110,8 +131,7 @@ CREATE TABLE "ProjectScopeBaseline" (
   CONSTRAINT "ProjectScopeBaseline_pkey" PRIMARY KEY ("id")
 );
 
--- 6. ScopeChangeAlert - Alerts for detected scope changes
-CREATE TABLE "ScopeChangeAlert" (
+CREATE TABLE IF NOT EXISTS "ScopeChangeAlert" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "projectId" INTEGER NOT NULL,
@@ -128,8 +148,7 @@ CREATE TABLE "ScopeChangeAlert" (
   CONSTRAINT "ScopeChangeAlert_pkey" PRIMARY KEY ("id")
 );
 
--- 7. ProjectBudgetForecast - AI-powered budget predictions
-CREATE TABLE "ProjectBudgetForecast" (
+CREATE TABLE IF NOT EXISTS "ProjectBudgetForecast" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "projectId" INTEGER NOT NULL,
@@ -147,8 +166,7 @@ CREATE TABLE "ProjectBudgetForecast" (
   CONSTRAINT "ProjectBudgetForecast_pkey" PRIMARY KEY ("id")
 );
 
--- 8. ProjectRisk - Risks extracted from meetings and project data
-CREATE TABLE "ProjectRisk" (
+CREATE TABLE IF NOT EXISTS "ProjectRisk" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "projectId" INTEGER NOT NULL,
@@ -168,8 +186,7 @@ CREATE TABLE "ProjectRisk" (
   CONSTRAINT "ProjectRisk_pkey" PRIMARY KEY ("id")
 );
 
--- 9. ProjectDigestConfig - Configuration for automated status digest emails
-CREATE TABLE "ProjectDigestConfig" (
+CREATE TABLE IF NOT EXISTS "ProjectDigestConfig" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "projectId" INTEGER NOT NULL,
@@ -190,8 +207,7 @@ CREATE TABLE "ProjectDigestConfig" (
   CONSTRAINT "ProjectDigestConfig_pkey" PRIMARY KEY ("id")
 );
 
--- 10. SmartReminder - Contextual reminders for project activities
-CREATE TABLE "SmartReminder" (
+CREATE TABLE IF NOT EXISTS "SmartReminder" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "userId" INTEGER NOT NULL,
@@ -214,8 +230,7 @@ CREATE TABLE "SmartReminder" (
   CONSTRAINT "SmartReminder_pkey" PRIMARY KEY ("id")
 );
 
--- 11. TeamPerformanceMetrics - Aggregated team performance data
-CREATE TABLE "TeamPerformanceMetrics" (
+CREATE TABLE IF NOT EXISTS "TeamPerformanceMetrics" (
   "id" SERIAL NOT NULL,
   "tenantId" TEXT NOT NULL,
   "userId" INTEGER NOT NULL,
@@ -234,99 +249,138 @@ CREATE TABLE "TeamPerformanceMetrics" (
 );
 
 -- ============================================================================
--- INDEXES
+-- INDEXES (using IF NOT EXISTS)
 -- ============================================================================
 
--- TaskDependency indexes
-CREATE UNIQUE INDEX "TaskDependency_dependentTaskId_blockingTaskId_key" ON "TaskDependency"("dependentTaskId", "blockingTaskId");
-CREATE INDEX "TaskDependency_blockingTaskId_idx" ON "TaskDependency"("blockingTaskId");
+CREATE UNIQUE INDEX IF NOT EXISTS "TaskDependency_dependentTaskId_blockingTaskId_key" ON "TaskDependency"("dependentTaskId", "blockingTaskId");
+CREATE INDEX IF NOT EXISTS "TaskDependency_blockingTaskId_idx" ON "TaskDependency"("blockingTaskId");
 
--- TaskDurationLearning indexes
-CREATE INDEX "TaskDurationLearning_tenantId_taskType_idx" ON "TaskDurationLearning"("tenantId", "taskType");
+CREATE INDEX IF NOT EXISTS "TaskDurationLearning_tenantId_taskType_idx" ON "TaskDurationLearning"("tenantId", "taskType");
 
--- TeamAvailability indexes
-CREATE UNIQUE INDEX "TeamAvailability_userId_date_key" ON "TeamAvailability"("userId", "date");
-CREATE INDEX "TeamAvailability_tenantId_date_idx" ON "TeamAvailability"("tenantId", "date");
+CREATE UNIQUE INDEX IF NOT EXISTS "TeamAvailability_userId_date_key" ON "TeamAvailability"("userId", "date");
+CREATE INDEX IF NOT EXISTS "TeamAvailability_tenantId_date_idx" ON "TeamAvailability"("tenantId", "date");
 
--- ProjectHealthPrediction indexes
-CREATE INDEX "ProjectHealthPrediction_projectId_predictedDate_idx" ON "ProjectHealthPrediction"("projectId", "predictedDate");
-CREATE INDEX "ProjectHealthPrediction_tenantId_idx" ON "ProjectHealthPrediction"("tenantId");
+CREATE INDEX IF NOT EXISTS "ProjectHealthPrediction_projectId_predictedDate_idx" ON "ProjectHealthPrediction"("projectId", "predictedDate");
+CREATE INDEX IF NOT EXISTS "ProjectHealthPrediction_tenantId_idx" ON "ProjectHealthPrediction"("tenantId");
 
--- ProjectScopeBaseline indexes
-CREATE INDEX "ProjectScopeBaseline_projectId_idx" ON "ProjectScopeBaseline"("projectId");
-CREATE INDEX "ProjectScopeBaseline_tenantId_idx" ON "ProjectScopeBaseline"("tenantId");
+CREATE INDEX IF NOT EXISTS "ProjectScopeBaseline_projectId_idx" ON "ProjectScopeBaseline"("projectId");
+CREATE INDEX IF NOT EXISTS "ProjectScopeBaseline_tenantId_idx" ON "ProjectScopeBaseline"("tenantId");
 
--- ScopeChangeAlert indexes
-CREATE INDEX "ScopeChangeAlert_projectId_status_idx" ON "ScopeChangeAlert"("projectId", "status");
-CREATE INDEX "ScopeChangeAlert_tenantId_idx" ON "ScopeChangeAlert"("tenantId");
+CREATE INDEX IF NOT EXISTS "ScopeChangeAlert_projectId_status_idx" ON "ScopeChangeAlert"("projectId", "status");
+CREATE INDEX IF NOT EXISTS "ScopeChangeAlert_tenantId_idx" ON "ScopeChangeAlert"("tenantId");
 
--- ProjectBudgetForecast indexes
-CREATE INDEX "ProjectBudgetForecast_projectId_forecastDate_idx" ON "ProjectBudgetForecast"("projectId", "forecastDate");
-CREATE INDEX "ProjectBudgetForecast_tenantId_idx" ON "ProjectBudgetForecast"("tenantId");
+CREATE INDEX IF NOT EXISTS "ProjectBudgetForecast_projectId_forecastDate_idx" ON "ProjectBudgetForecast"("projectId", "forecastDate");
+CREATE INDEX IF NOT EXISTS "ProjectBudgetForecast_tenantId_idx" ON "ProjectBudgetForecast"("tenantId");
 
--- ProjectRisk indexes
-CREATE INDEX "ProjectRisk_projectId_status_idx" ON "ProjectRisk"("projectId", "status");
-CREATE INDEX "ProjectRisk_tenantId_idx" ON "ProjectRisk"("tenantId");
+CREATE INDEX IF NOT EXISTS "ProjectRisk_projectId_status_idx" ON "ProjectRisk"("projectId", "status");
+CREATE INDEX IF NOT EXISTS "ProjectRisk_tenantId_idx" ON "ProjectRisk"("tenantId");
 
--- ProjectDigestConfig indexes
-CREATE INDEX "ProjectDigestConfig_projectId_idx" ON "ProjectDigestConfig"("projectId");
-CREATE INDEX "ProjectDigestConfig_tenantId_idx" ON "ProjectDigestConfig"("tenantId");
+CREATE INDEX IF NOT EXISTS "ProjectDigestConfig_projectId_idx" ON "ProjectDigestConfig"("projectId");
+CREATE INDEX IF NOT EXISTS "ProjectDigestConfig_tenantId_idx" ON "ProjectDigestConfig"("tenantId");
 
--- SmartReminder indexes
-CREATE INDEX "SmartReminder_userId_status_scheduledFor_idx" ON "SmartReminder"("userId", "status", "scheduledFor");
-CREATE INDEX "SmartReminder_tenantId_idx" ON "SmartReminder"("tenantId");
-CREATE INDEX "SmartReminder_projectId_idx" ON "SmartReminder"("projectId");
+CREATE INDEX IF NOT EXISTS "SmartReminder_userId_status_scheduledFor_idx" ON "SmartReminder"("userId", "status", "scheduledFor");
+CREATE INDEX IF NOT EXISTS "SmartReminder_tenantId_idx" ON "SmartReminder"("tenantId");
+CREATE INDEX IF NOT EXISTS "SmartReminder_projectId_idx" ON "SmartReminder"("projectId");
 
--- TeamPerformanceMetrics indexes
-CREATE UNIQUE INDEX "TeamPerformanceMetrics_userId_periodStart_periodType_key" ON "TeamPerformanceMetrics"("userId", "periodStart", "periodType");
-CREATE INDEX "TeamPerformanceMetrics_tenantId_periodType_idx" ON "TeamPerformanceMetrics"("tenantId", "periodType");
+CREATE UNIQUE INDEX IF NOT EXISTS "TeamPerformanceMetrics_userId_periodStart_periodType_key" ON "TeamPerformanceMetrics"("userId", "periodStart", "periodType");
+CREATE INDEX IF NOT EXISTS "TeamPerformanceMetrics_tenantId_periodType_idx" ON "TeamPerformanceMetrics"("tenantId", "periodType");
 
 -- ============================================================================
--- FOREIGN KEYS
+-- FOREIGN KEYS (with existence checks)
 -- ============================================================================
 
--- TaskDependency foreign keys
-ALTER TABLE "TaskDependency" ADD CONSTRAINT "TaskDependency_dependentTaskId_fkey" FOREIGN KEY ("dependentTaskId") REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "TaskDependency" ADD CONSTRAINT "TaskDependency_blockingTaskId_fkey" FOREIGN KEY ("blockingTaskId") REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "TaskDependency" ADD CONSTRAINT "TaskDependency_dependentTaskId_fkey" FOREIGN KEY ("dependentTaskId") REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- TaskDurationLearning foreign keys
-ALTER TABLE "TaskDurationLearning" ADD CONSTRAINT "TaskDurationLearning_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "TaskDependency" ADD CONSTRAINT "TaskDependency_blockingTaskId_fkey" FOREIGN KEY ("blockingTaskId") REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- TeamAvailability foreign keys
-ALTER TABLE "TeamAvailability" ADD CONSTRAINT "TeamAvailability_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "TeamAvailability" ADD CONSTRAINT "TeamAvailability_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "TaskDurationLearning" ADD CONSTRAINT "TaskDurationLearning_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectHealthPrediction foreign keys
-ALTER TABLE "ProjectHealthPrediction" ADD CONSTRAINT "ProjectHealthPrediction_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ProjectHealthPrediction" ADD CONSTRAINT "ProjectHealthPrediction_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "TeamAvailability" ADD CONSTRAINT "TeamAvailability_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectScopeBaseline foreign keys
-ALTER TABLE "ProjectScopeBaseline" ADD CONSTRAINT "ProjectScopeBaseline_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ProjectScopeBaseline" ADD CONSTRAINT "ProjectScopeBaseline_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "TeamAvailability" ADD CONSTRAINT "TeamAvailability_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ScopeChangeAlert foreign keys
-ALTER TABLE "ScopeChangeAlert" ADD CONSTRAINT "ScopeChangeAlert_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ScopeChangeAlert" ADD CONSTRAINT "ScopeChangeAlert_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ScopeChangeAlert" ADD CONSTRAINT "ScopeChangeAlert_acknowledgedBy_fkey" FOREIGN KEY ("acknowledgedBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "ProjectHealthPrediction" ADD CONSTRAINT "ProjectHealthPrediction_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectBudgetForecast foreign keys
-ALTER TABLE "ProjectBudgetForecast" ADD CONSTRAINT "ProjectBudgetForecast_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ProjectBudgetForecast" ADD CONSTRAINT "ProjectBudgetForecast_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "ProjectHealthPrediction" ADD CONSTRAINT "ProjectHealthPrediction_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectRisk foreign keys
-ALTER TABLE "ProjectRisk" ADD CONSTRAINT "ProjectRisk_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ProjectRisk" ADD CONSTRAINT "ProjectRisk_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ProjectRisk" ADD CONSTRAINT "ProjectRisk_resolvedBy_fkey" FOREIGN KEY ("resolvedBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "ProjectScopeBaseline" ADD CONSTRAINT "ProjectScopeBaseline_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ProjectDigestConfig foreign keys
-ALTER TABLE "ProjectDigestConfig" ADD CONSTRAINT "ProjectDigestConfig_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ProjectDigestConfig" ADD CONSTRAINT "ProjectDigestConfig_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "ProjectScopeBaseline" ADD CONSTRAINT "ProjectScopeBaseline_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- SmartReminder foreign keys
-ALTER TABLE "SmartReminder" ADD CONSTRAINT "SmartReminder_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "SmartReminder" ADD CONSTRAINT "SmartReminder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "SmartReminder" ADD CONSTRAINT "SmartReminder_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "ScopeChangeAlert" ADD CONSTRAINT "ScopeChangeAlert_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- TeamPerformanceMetrics foreign keys
-ALTER TABLE "TeamPerformanceMetrics" ADD CONSTRAINT "TeamPerformanceMetrics_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "TeamPerformanceMetrics" ADD CONSTRAINT "TeamPerformanceMetrics_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "ScopeChangeAlert" ADD CONSTRAINT "ScopeChangeAlert_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ScopeChangeAlert" ADD CONSTRAINT "ScopeChangeAlert_acknowledgedBy_fkey" FOREIGN KEY ("acknowledgedBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ProjectBudgetForecast" ADD CONSTRAINT "ProjectBudgetForecast_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ProjectBudgetForecast" ADD CONSTRAINT "ProjectBudgetForecast_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ProjectRisk" ADD CONSTRAINT "ProjectRisk_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ProjectRisk" ADD CONSTRAINT "ProjectRisk_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ProjectRisk" ADD CONSTRAINT "ProjectRisk_resolvedBy_fkey" FOREIGN KEY ("resolvedBy") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ProjectDigestConfig" ADD CONSTRAINT "ProjectDigestConfig_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "ProjectDigestConfig" ADD CONSTRAINT "ProjectDigestConfig_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "SmartReminder" ADD CONSTRAINT "SmartReminder_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "SmartReminder" ADD CONSTRAINT "SmartReminder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "SmartReminder" ADD CONSTRAINT "SmartReminder_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "TeamPerformanceMetrics" ADD CONSTRAINT "TeamPerformanceMetrics_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "TeamPerformanceMetrics" ADD CONSTRAINT "TeamPerformanceMetrics_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
