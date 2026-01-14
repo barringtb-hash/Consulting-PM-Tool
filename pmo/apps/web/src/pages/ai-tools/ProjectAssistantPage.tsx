@@ -683,11 +683,7 @@ function ProjectAssistantPage(): JSX.Element {
                               <div className="flex items-center justify-between">
                                 <span>Confidence:</span>
                                 <span>
-                                  {Math.round(
-                                    healthPredictionQuery.data.confidenceLevel *
-                                      100,
-                                  )}
-                                  %
+                                  {healthPredictionQuery.data.confidenceLevel}%
                                 </span>
                               </div>
                               <div className="flex items-center justify-between">
