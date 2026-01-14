@@ -460,7 +460,7 @@ async function dismissReminder(reminderId: number): Promise<void> {
 
 async function generateSchedule(projectId: number): Promise<ScheduleResult> {
   const res = await fetch(
-    buildApiUrl(`/ai-projects/schedule/${projectId}/generate`),
+    buildApiUrl(`/ai-projects/scheduling/${projectId}/generate`),
     buildOptions({ method: 'POST' }),
   );
   if (!res.ok) {
@@ -479,7 +479,7 @@ async function applySchedule(
   schedule: ScheduleResult,
 ): Promise<void> {
   const res = await fetch(
-    buildApiUrl(`/ai-projects/schedule/${projectId}/apply`),
+    buildApiUrl(`/ai-projects/scheduling/${projectId}/apply`),
     buildOptions({
       method: 'POST',
       body: JSON.stringify({ schedule }),
