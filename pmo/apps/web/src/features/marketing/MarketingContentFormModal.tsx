@@ -51,10 +51,10 @@ function MarketingContentFormModal({
         name: editingContent.name,
         type: editingContent.type,
         status: editingContent.status,
-        clientId: editingContent.clientId.toString(),
+        clientId: editingContent.clientId?.toString() || '',
         projectId: editingContent.projectId?.toString() || '',
         summary: editingContent.summary || '',
-        tags: editingContent.tags.join(', '),
+        tags: editingContent.tags?.join(', ') || '',
         content: JSON.stringify(editingContent.content, null, 2),
       });
     } else {
