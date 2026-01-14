@@ -360,7 +360,68 @@ async function fetchHealthPrediction(
     throw error;
   }
   const json = await res.json();
-  return json.data || json;
+  const apiData = json.data || json;
+
+  // Normalize API response to match expected interface
+  return {
+    projectId,
+    predictedHealthScore: mapHealthToScore(apiData.predictedHealth),
+    confidenceLevel: Math.round((apiData.confidence ?? 0) * 100),
+    riskLevel: mapHealthToRiskLevel(apiData.predictedHealth),
+    factors: Array.isArray(apiData.riskFactors)
+      ? apiData.riskFactors.map(
+          (rf: {
+            factor?: string;
+            weight?: number;
+            currentValue?: number;
+            threshold?: number;
+            description?: string;
+          }) => ({
+            name: rf.factor || '',
+            impact: Math.round((rf.weight ?? 0) * 100),
+            direction:
+              (rf.currentValue ?? 0) >= (rf.threshold ?? 0)
+                ? ('positive' as const)
+                : ('negative' as const),
+            description: rf.description || '',
+          }),
+        )
+      : [],
+    recommendations: Array.isArray(apiData.recommendations)
+      ? apiData.recommendations.map(
+          (rec: { action?: string }) => rec.action || '',
+        )
+      : [],
+    predictedAt: apiData.predictedAt || new Date().toISOString(),
+  };
+}
+
+function mapHealthToScore(health?: string): number {
+  switch (health) {
+    case 'ON_TRACK':
+      return 85;
+    case 'AT_RISK':
+      return 50;
+    case 'OFF_TRACK':
+      return 25;
+    default:
+      return 50;
+  }
+}
+
+function mapHealthToRiskLevel(
+  health?: string,
+): 'low' | 'medium' | 'high' | 'critical' {
+  switch (health) {
+    case 'ON_TRACK':
+      return 'low';
+    case 'AT_RISK':
+      return 'medium';
+    case 'OFF_TRACK':
+      return 'high';
+    default:
+      return 'medium';
+  }
 }
 
 async function fetchSmartReminders(
