@@ -190,7 +190,7 @@ async function sendAssistantMessage(
   message: string,
 ): Promise<AssistantResponse> {
   const res = await fetch(
-    buildApiUrl('/ai-projects/assistant/chat'),
+    buildApiUrl('/ai-projects/assistant/message'),
     buildOptions({
       method: 'POST',
       body: JSON.stringify({ projectId, message }),
@@ -204,7 +204,8 @@ async function sendAssistantMessage(
     error.status = res.status;
     throw error;
   }
-  return res.json();
+  const json = await res.json();
+  return json.data || json;
 }
 
 async function fetchAIStatus(projectId: number): Promise<AIStatusSummary> {
@@ -220,7 +221,8 @@ async function fetchAIStatus(projectId: number): Promise<AIStatusSummary> {
     error.status = res.status;
     throw error;
   }
-  return res.json();
+  const json = await res.json();
+  return json.data || json;
 }
 
 async function generateQuickStatus(
@@ -256,7 +258,8 @@ async function fetchHealthPrediction(
     error.status = res.status;
     throw error;
   }
-  return res.json();
+  const json = await res.json();
+  return json.data || json;
 }
 
 async function fetchSmartReminders(
