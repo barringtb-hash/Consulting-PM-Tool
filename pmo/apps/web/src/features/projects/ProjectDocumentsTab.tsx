@@ -3,7 +3,7 @@
  * Displays and manages structured project documents from templates
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Plus,
   FileText,
@@ -270,6 +270,15 @@ function TemplatePickerModal({
   const [expandedCategories, setExpandedCategories] = useState<
     Set<ProjectDocumentCategory>
   >(new Set(['CORE', 'LIFECYCLE', 'AI_SPECIFIC']));
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedTemplate(null);
+      setDocumentName('');
+      setExpandedCategories(new Set(['CORE', 'LIFECYCLE', 'AI_SPECIFIC']));
+    }
+  }, [isOpen]);
 
   const groupedTemplates = useMemo(() => {
     const templates = templatesQuery.data ?? [];
