@@ -581,3 +581,68 @@ export type {
   DocumentTemplate,
   GeneratedDocument,
 } from './ai-projects';
+
+// ============================================================================
+// Social Publishing Module
+// ============================================================================
+
+export {
+  // Query keys
+  socialPublishingKeys,
+  // Configuration hooks
+  useSocialPublishingConfig,
+  useUpdateSocialPublishingConfig,
+  useConnectedPlatforms,
+  useSyncPlatforms,
+  // Post hooks
+  useSocialPosts,
+  useSocialPost,
+  useCreateSocialPost,
+  useUpdateSocialPost,
+  useDeleteSocialPost,
+  // Publishing action hooks
+  usePublishPost,
+  useSchedulePost,
+  useCancelScheduledPost,
+  // Metrics hooks
+  usePostMetrics,
+  usePostHistory,
+} from './social-publishing';
+
+export type {
+  // Configuration types
+  SocialPublishingConfig,
+  ConfigCreateUpdateInput,
+  ConnectedPlatform,
+  // Post types
+  SocialPost,
+  PostCreateInput,
+  PostUpdateInput,
+  PostFilters,
+  PostsListResponse,
+  MediaAttachment,
+  PlatformContent,
+  // Publishing types
+  PublishNowInput,
+  PublishResponse,
+  SchedulePostInput,
+  ScheduleResponse,
+  CancelPostInput,
+  CancelResponse,
+  PlatformResult,
+  // Metrics and history types
+  PostMetrics,
+  MetricsResponse,
+  MetricsQuery,
+  HistoryEntry,
+  HistoryResponse,
+  HistoryQuery,
+  // Platform types
+  PlatformSyncInput,
+  PlatformSyncResponse,
+  // Enum types
+  SocialPlatform,
+  PostStatus,
+  PublishingPlatform,
+  PublishStatus,
+} from './social-publishing';
