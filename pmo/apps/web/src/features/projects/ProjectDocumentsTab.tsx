@@ -3,7 +3,7 @@
  * Displays and manages structured project documents from templates
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Plus,
   FileText,
@@ -272,10 +272,11 @@ function TemplatePickerModal({
   >(new Set(['CORE', 'LIFECYCLE', 'AI_SPECIFIC']));
 
   // Reset state when modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setSelectedTemplate(null);
       setDocumentName('');
+      setExpandedCategories(new Set(['CORE', 'LIFECYCLE', 'AI_SPECIFIC']));
     }
   }, [isOpen]);
 
