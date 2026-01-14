@@ -54,7 +54,7 @@ export interface MarketingContent {
   tags: string[];
 
   // Relations
-  clientId: number;
+  clientId: number | null; // Nullable in database schema
   projectId?: number;
   sourceMeetingId?: number;
   createdById?: number;
