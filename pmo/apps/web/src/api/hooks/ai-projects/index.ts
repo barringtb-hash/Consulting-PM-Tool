@@ -474,13 +474,35 @@ async function generateSchedule(projectId: number): Promise<ScheduleResult> {
   const json = await res.json();
   const apiData = json.data || json;
 
-  // Calculate total duration in days from estimatedEndDate
-  const startDate = new Date();
+  // Calculate total duration in days from scheduled tasks
+  const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
+
+  // Derive start date from earliest scheduledStart among tasks
+  let startDate: Date | undefined;
+  if (
+    Array.isArray(apiData.scheduledTasks) &&
+    apiData.scheduledTasks.length > 0
+  ) {
+    const startDates = apiData.scheduledTasks
+      .map((task: { scheduledStart?: string }) =>
+        task?.scheduledStart ? new Date(task.scheduledStart) : null,
+      )
+      .filter((d: Date | null): d is Date => d !== null)
+      .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+
+    if (startDates.length > 0) {
+      startDate = startDates[0];
+    }
+  }
+
   const endDate = apiData.estimatedEndDate
     ? new Date(apiData.estimatedEndDate)
-    : startDate;
-  const totalDuration = Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+    : (startDate ?? new Date());
+  startDate = startDate ?? endDate;
+
+  const totalDuration = Math.max(
+    0,
+    Math.ceil((endDate.getTime() - startDate.getTime()) / MILLISECONDS_PER_DAY),
   );
 
   // Normalize API response to match expected interface
@@ -508,10 +530,10 @@ async function generateSchedule(projectId: number): Promise<ScheduleResult> {
         )
       : [],
     criticalPath: apiData.criticalPath || [],
-    totalDuration: totalDuration > 0 ? totalDuration : 0,
+    totalDuration,
     conflicts: apiData.warnings
-      ? apiData.warnings.map((w: string, i: number) => ({
-          taskId: i,
+      ? apiData.warnings.map((w: string) => ({
+          taskId: -1, // Warnings are not associated with specific tasks
           reason: w,
           suggestion: '',
         }))
