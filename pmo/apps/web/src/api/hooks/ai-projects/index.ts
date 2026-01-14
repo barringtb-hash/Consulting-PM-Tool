@@ -471,7 +471,74 @@ async function generateSchedule(projectId: number): Promise<ScheduleResult> {
     error.status = res.status;
     throw error;
   }
-  return res.json();
+  const json = await res.json();
+  const apiData = json.data || json;
+
+  // Calculate total duration in days from scheduled tasks
+  const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
+
+  // Derive start date from earliest scheduledStart among tasks
+  let startDate: Date | undefined;
+  if (
+    Array.isArray(apiData.scheduledTasks) &&
+    apiData.scheduledTasks.length > 0
+  ) {
+    const startDates = apiData.scheduledTasks
+      .map((task: { scheduledStart?: string }) =>
+        task?.scheduledStart ? new Date(task.scheduledStart) : null,
+      )
+      .filter((d: Date | null): d is Date => d !== null)
+      .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+
+    if (startDates.length > 0) {
+      startDate = startDates[0];
+    }
+  }
+
+  const endDate = apiData.estimatedEndDate
+    ? new Date(apiData.estimatedEndDate)
+    : (startDate ?? new Date());
+  startDate = startDate ?? endDate;
+
+  const totalDuration = Math.max(
+    0,
+    Math.ceil((endDate.getTime() - startDate.getTime()) / MILLISECONDS_PER_DAY),
+  );
+
+  // Normalize API response to match expected interface
+  return {
+    projectId,
+    scheduledTasks: Array.isArray(apiData.scheduledTasks)
+      ? apiData.scheduledTasks.map(
+          (task: {
+            taskId?: number;
+            title?: string;
+            scheduledStart?: string;
+            scheduledEnd?: string;
+            assigneeId?: number;
+            dependsOn?: number[];
+          }) => ({
+            taskId: task.taskId ?? 0,
+            taskTitle: task.title || '',
+            scheduledStart: task.scheduledStart || '',
+            scheduledEnd: task.scheduledEnd || '',
+            assigneeId: task.assigneeId,
+            dependencies: task.dependsOn || [],
+            isCriticalPath:
+              apiData.criticalPath?.includes(task.taskId) ?? false,
+          }),
+        )
+      : [],
+    criticalPath: apiData.criticalPath || [],
+    totalDuration,
+    conflicts: apiData.warnings
+      ? apiData.warnings.map((w: string) => ({
+          taskId: -1, // Warnings are not associated with specific tasks
+          reason: w,
+          suggestion: '',
+        }))
+      : [],
+  };
 }
 
 async function applySchedule(
@@ -524,8 +591,9 @@ async function fetchDocumentTemplates(): Promise<DocumentTemplate[]> {
     error.status = res.status;
     throw error;
   }
-  const data = await res.json();
-  return data.templates || [];
+  const json = await res.json();
+  const apiData = json.data || json;
+  return apiData.templates || [];
 }
 
 async function generateDocument(
@@ -548,7 +616,8 @@ async function generateDocument(
     error.status = res.status;
     throw error;
   }
-  return res.json();
+  const json = await res.json();
+  return json.data || json;
 }
 
 async function fetchProjectDocuments(
@@ -566,8 +635,9 @@ async function fetchProjectDocuments(
     error.status = res.status;
     throw error;
   }
-  const data = await res.json();
-  return data.documents || [];
+  const json = await res.json();
+  const apiData = json.data || json;
+  return apiData.documents || [];
 }
 
 // ============================================================================
