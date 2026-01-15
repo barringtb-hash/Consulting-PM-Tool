@@ -41,7 +41,7 @@ export interface ActionItem {
   sourceMeetingId: number | null;
   sourceText: string | null;
   notes: string | null;
-  convertedTaskId: number | null;
+  linkedTaskId: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -99,12 +99,11 @@ const validateProjectAccess = async (projectId: number, userId: number) => {
 const findActionItemWithAccess = async (id: number) => {
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
-  // Since ActionItem model may not exist yet, we simulate with a JSON storage approach
-  // In production, this would query the ActionItem table
+  // Query the ActionItem table with proper column name
   const actionItem = await prisma.$queryRaw<ActionItem[]>`
     SELECT * FROM "ActionItem"
     WHERE id = ${id}
-    AND (tenant_id = ${tenantId} OR tenant_id IS NULL)
+    AND ("tenantId" = ${tenantId} OR "tenantId" IS NULL)
     LIMIT 1
   `.catch(() => null);
 
@@ -358,15 +357,15 @@ export const update = async (
       values.push(data.description);
     }
     if (data.assigneeId !== undefined) {
-      updates.push(`assignee_id = $${paramIndex++}`);
+      updates.push(`"assigneeId" = $${paramIndex++}`);
       values.push(data.assigneeId);
     }
     if (data.assigneeName !== undefined) {
-      updates.push(`assignee_name = $${paramIndex++}`);
+      updates.push(`"assigneeName" = $${paramIndex++}`);
       values.push(data.assigneeName);
     }
     if (data.dueDate !== undefined) {
-      updates.push(`due_date = $${paramIndex++}`);
+      updates.push(`"dueDate" = $${paramIndex++}`);
       values.push(data.dueDate);
     }
     if (data.priority !== undefined) {
@@ -382,7 +381,7 @@ export const update = async (
       values.push(data.notes);
     }
 
-    updates.push(`updated_at = NOW()`);
+    updates.push(`"updatedAt" = NOW()`);
     values.push(id);
 
     const result = await prisma.$queryRawUnsafe<ActionItem[]>(
@@ -515,8 +514,8 @@ export const convertToTask = async (
       `
       UPDATE "ActionItem"
       SET status = 'CONVERTED_TO_TASK',
-          converted_task_id = $1,
-          updated_at = NOW()
+          "linkedTaskId" = $1,
+          "updatedAt" = NOW()
       WHERE id = $2
       RETURNING *
     `,
@@ -536,7 +535,7 @@ export const convertToTask = async (
       actionItem: {
         ...actionItem,
         status: 'CONVERTED_TO_TASK',
-        convertedTaskId: taskResult.task.id,
+        linkedTaskId: taskResult.task.id,
       },
     };
   }
@@ -568,7 +567,7 @@ export const getStatusCounts = async (
       `
       SELECT status, COUNT(*) as count
       FROM "ActionItem"
-      WHERE project_id = $1
+      WHERE "projectId" = $1
       GROUP BY status
     `,
       projectId,

@@ -591,6 +591,223 @@ export function useDeleteRAIDItem(): UseMutationResult<
 }
 
 // ============================================================================
+// Convert to Task Mutation
+// ============================================================================
+
+interface ConvertToTaskPayload {
+  actionItemId: number;
+  projectId: number;
+  options?: {
+    title?: string;
+    description?: string;
+    milestoneId?: number;
+    status?: string;
+    priority?: string;
+    dueDate?: string;
+    assigneeIds?: number[];
+  };
+}
+
+interface ConvertToTaskResponse {
+  task: {
+    id: number;
+    title: string;
+    status: string;
+    priority: string;
+    projectId: number;
+    [key: string]: unknown;
+  };
+  actionItem: {
+    id: number;
+    status: string;
+    linkedTaskId: number;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Convert an action item to a formal project task.
+ * The action item's status will be changed to CONVERTED_TO_TASK.
+ */
+export function useConvertActionItemToTask(): UseMutationResult<
+  ConvertToTaskResponse,
+  Error,
+  ConvertToTaskPayload
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ actionItemId, options }) => {
+      return http.post<ConvertToTaskResponse>(
+        `/api/raid/action-items/${actionItemId}/convert-to-task`,
+        options ?? {},
+      );
+    },
+    onSuccess: (_, { projectId }) => {
+      // Invalidate action items query to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: raidQueryKeys.actionItems(projectId),
+      });
+      // Invalidate summary to update counts
+      queryClient.invalidateQueries({
+        queryKey: raidQueryKeys.summary(projectId),
+      });
+      // Invalidate tasks queries since a new task was created
+      // Using the common tasks query key pattern
+      queryClient.invalidateQueries({
+        queryKey: ['tasks', 'project', projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['tasks', 'my-tasks'],
+      });
+    },
+  });
+}
+
+// ============================================================================
+// SUPERSEDE DECISION MUTATION
+// ============================================================================
+
+interface SupersedeDecisionPayload {
+  decisionId: number;
+  projectId: number;
+  newDecisionId: number;
+  reason?: string;
+}
+
+interface SupersedeDecisionResponse {
+  decision: {
+    id: number;
+    status: string;
+    supersededById: number;
+    [key: string]: unknown;
+  };
+  newDecision: {
+    id: number;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Supersede a decision with a new decision.
+ * The original decision's status will be changed to SUPERSEDED.
+ */
+export function useSupersedeDecision(): UseMutationResult<
+  SupersedeDecisionResponse,
+  Error,
+  SupersedeDecisionPayload
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ decisionId, newDecisionId, reason }) => {
+      return http.post<SupersedeDecisionResponse>(
+        `/api/raid/decisions/${decisionId}/supersede`,
+        { newDecisionId, reason },
+      );
+    },
+    onSuccess: (_, { projectId }) => {
+      // Invalidate decisions query to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: raidQueryKeys.decisions(projectId),
+      });
+      // Invalidate summary to update counts
+      queryClient.invalidateQueries({
+        queryKey: raidQueryKeys.summary(projectId),
+      });
+    },
+  });
+}
+
+// ============================================================================
+// ESCALATE ISSUE MUTATION
+// ============================================================================
+
+interface EscalateIssuePayload {
+  issueId: number;
+  projectId: number;
+  reason?: string;
+  escalateTo?: string;
+}
+
+interface EscalateIssueResponse {
+  issue: {
+    id: number;
+    status: string;
+    escalationLevel: number;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Escalate an issue to a higher level.
+ * The issue's escalation level will be incremented.
+ */
+export function useEscalateIssue(): UseMutationResult<
+  EscalateIssueResponse,
+  Error,
+  EscalateIssuePayload
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ issueId, reason, escalateTo }) => {
+      return http.post<EscalateIssueResponse>(
+        `/api/raid/issues/${issueId}/escalate`,
+        { reason, escalateTo },
+      );
+    },
+    onSuccess: (_, { projectId }) => {
+      // Invalidate issues query to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: raidQueryKeys.issues(projectId),
+      });
+      // Invalidate summary to update counts
+      queryClient.invalidateQueries({
+        queryKey: raidQueryKeys.summary(projectId),
+      });
+    },
+  });
+}
+
+// ============================================================================
+// RAID TRENDS QUERY
+// ============================================================================
+
+interface RAIDTrendPoint {
+  date: string;
+  risks: number;
+  actionItems: number;
+  issues: number;
+  decisions: number;
+}
+
+interface RAIDTrendsResponse {
+  trends: RAIDTrendPoint[];
+}
+
+/**
+ * Fetch RAID trends data for a project over time.
+ */
+export function useRAIDTrends(
+  projectId: number | null,
+  days: number = 30,
+): UseQueryResult<RAIDTrendsResponse, Error> {
+  return useQuery({
+    queryKey: [...raidQueryKeys.summary(projectId ?? 0), 'trends', days],
+    queryFn: async () => {
+      if (!projectId) throw new Error('Project ID required');
+      return http.get<RAIDTrendsResponse>(
+        `/api/raid/extract/projects/${projectId}/trends`,
+        { days },
+      );
+    },
+    enabled: !!projectId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// ============================================================================
 // Helpers
 // ============================================================================
 

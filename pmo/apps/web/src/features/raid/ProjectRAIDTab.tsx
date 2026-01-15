@@ -28,11 +28,15 @@ import {
   User,
   Calendar,
   Sparkles,
+  ListTodo,
+  ArrowUpCircle,
+  GitBranch,
 } from 'lucide-react';
 
 import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
+import { useToast } from '../../ui/Toast';
 import { RAIDSummaryCards } from './RAIDSummaryCards';
 import { RAIDItemFormModal } from './RAIDItemFormModal';
 import { RAIDExtractionModal } from './RAIDExtractionModal';
@@ -46,6 +50,9 @@ import {
   useDeleteRAIDItem,
   useAcceptExtractedItems,
   useExtractRAID,
+  useConvertActionItemToTask,
+  useEscalateIssue,
+  useSupersedeDecision,
 } from './hooks/useRAIDData';
 import { useProjectMeetings } from '../../api/hooks/meetings';
 import type {
@@ -151,6 +158,10 @@ function getStatusBadgeVariant(
   ) {
     return 'danger';
   }
+  // Converted to task shows as secondary (informational)
+  if (normalizedStatus.includes('CONVERTED_TO_TASK')) {
+    return 'secondary';
+  }
   return 'default';
 }
 
@@ -176,12 +187,24 @@ interface RAIDTableRowProps {
   item: RAIDItem;
   onEdit: (item: RAIDItem) => void;
   onDelete: (item: RAIDItem) => void;
+  onConvertToTask?: (item: RAIDItem) => void;
+  isConverting?: boolean;
+  onEscalate?: (item: RAIDItem) => void;
+  isEscalating?: boolean;
+  onSupersede?: (item: RAIDItem) => void;
+  isSuperseding?: boolean;
 }
 
 function RAIDTableRow({
   item,
   onEdit,
   onDelete,
+  onConvertToTask,
+  isConverting,
+  onEscalate,
+  isEscalating,
+  onSupersede,
+  isSuperseding,
 }: RAIDTableRowProps): JSX.Element {
   const Icon = TYPE_ICONS[item.type];
 
@@ -236,6 +259,65 @@ function RAIDTableRow({
         <Badge variant={getStatusBadgeVariant(item.status)} size="sm">
           {formatLabel(item.status)}
         </Badge>
+        {/* Escalation level badge for issues */}
+        {item.type === 'issue' &&
+          item.escalationLevel !== undefined &&
+          item.escalationLevel > 0 && (
+            <Badge
+              variant="warning"
+              size="sm"
+              title={`Escalated to level ${item.escalationLevel}/5`}
+            >
+              Escalated ({item.escalationLevel}/5)
+            </Badge>
+          )}
+        {/* Convert to Task button - only for action items not yet converted */}
+        {item.type === 'action-item' &&
+          item.status !== 'CONVERTED_TO_TASK' &&
+          onConvertToTask && (
+            <button
+              type="button"
+              onClick={() => onConvertToTask(item)}
+              disabled={isConverting}
+              className="p-1.5 text-neutral-400 hover:text-success-600 dark:hover:text-success-400 rounded-md hover:bg-white dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={`Convert "${item.title}" to task`}
+              title="Convert to Task"
+            >
+              <ListTodo className="w-4 h-4" />
+            </button>
+          )}
+        {/* Escalate button - only for issues that can be escalated */}
+        {item.type === 'issue' &&
+          item.status !== 'RESOLVED' &&
+          item.status !== 'CLOSED' &&
+          (item.escalationLevel === undefined || item.escalationLevel < 5) &&
+          onEscalate && (
+            <button
+              type="button"
+              onClick={() => onEscalate(item)}
+              disabled={isEscalating}
+              className="p-1.5 text-neutral-400 hover:text-warning-600 dark:hover:text-warning-400 rounded-md hover:bg-white dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={`Escalate "${item.title}"`}
+              title="Escalate Issue"
+            >
+              <ArrowUpCircle className="w-4 h-4" />
+            </button>
+          )}
+        {/* Supersede button - only for active decisions */}
+        {item.type === 'decision' &&
+          item.status === 'ACTIVE' &&
+          onSupersede && (
+            <button
+              type="button"
+              onClick={() => onSupersede(item)}
+              disabled={isSuperseding}
+              className="p-1.5 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-md hover:bg-white dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={`Supersede "${item.title}"`}
+              title="Supersede Decision"
+            >
+              <GitBranch className="w-4 h-4" />
+            </button>
+          )}
         <button
           type="button"
           onClick={() => onEdit(item)}
@@ -296,6 +378,12 @@ export function ProjectRAIDTab({
   const deleteMutation = useDeleteRAIDItem();
   const acceptExtractedMutation = useAcceptExtractedItems();
   const extractRAIDMutation = useExtractRAID();
+  const convertToTaskMutation = useConvertActionItemToTask();
+  const escalateIssueMutation = useEscalateIssue();
+  const supersedeDecisionMutation = useSupersedeDecision();
+
+  // Toast notifications
+  const { showToast } = useToast();
 
   // Combine all items for display
   const allItems = useMemo((): RAIDItem[] => {
@@ -401,6 +489,132 @@ export function ProjectRAIDTab({
       });
     } catch (error) {
       console.error('Failed to delete item:', error);
+    }
+  };
+
+  const handleConvertToTask = async (item: RAIDItem): Promise<void> => {
+    // Only allow converting action items
+    if (item.type !== 'action-item') {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Convert "${item.title}" to a formal project task?\n\nThis will create a new task in the project and mark this action item as converted.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const result = await convertToTaskMutation.mutateAsync({
+        actionItemId: item.id,
+        projectId,
+      });
+
+      showToast(
+        `Action item converted to task "${result.task.title}"`,
+        'success',
+      );
+    } catch (error) {
+      console.error('Failed to convert action item to task:', error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to convert action item to task',
+        'error',
+      );
+    }
+  };
+
+  const handleEscalateIssue = async (item: RAIDItem): Promise<void> => {
+    // Only allow escalating issues
+    if (item.type !== 'issue') {
+      return;
+    }
+
+    const reason = window.prompt(
+      `Escalate "${item.title}"?\n\nOptionally provide a reason for escalation:`,
+    );
+
+    // User cancelled
+    if (reason === null) {
+      return;
+    }
+
+    try {
+      const result = await escalateIssueMutation.mutateAsync({
+        issueId: item.id,
+        projectId,
+        reason: reason || undefined,
+      });
+
+      showToast(
+        `Issue escalated to level ${result.issue.escalationLevel}`,
+        'success',
+      );
+    } catch (error) {
+      console.error('Failed to escalate issue:', error);
+      showToast(
+        error instanceof Error ? error.message : 'Failed to escalate issue',
+        'error',
+      );
+    }
+  };
+
+  const handleSupersedeDecision = async (item: RAIDItem): Promise<void> => {
+    // Only allow superseding decisions
+    if (item.type !== 'decision') {
+      return;
+    }
+
+    // Get all active decisions except the current one for selection
+    const activeDecisions = decisionsQuery.data?.filter(
+      (d) => d.status === 'ACTIVE' && d.id !== item.id,
+    );
+
+    if (!activeDecisions || activeDecisions.length === 0) {
+      showToast(
+        'No other active decisions available to supersede with. Please create a new decision first.',
+        'warning',
+      );
+      return;
+    }
+
+    // Simple prompt for selecting decision ID
+    const decisionList = activeDecisions
+      .map((d) => `${d.id}: ${d.title}`)
+      .join('\n');
+
+    const input = window.prompt(
+      `Supersede "${item.title}" with which decision?\n\nAvailable decisions:\n${decisionList}\n\nEnter the ID number:`,
+    );
+
+    // User cancelled
+    if (input === null) {
+      return;
+    }
+
+    const newDecisionId = parseInt(input, 10);
+    if (isNaN(newDecisionId)) {
+      showToast('Invalid decision ID', 'error');
+      return;
+    }
+
+    try {
+      await supersedeDecisionMutation.mutateAsync({
+        decisionId: item.id,
+        projectId,
+        newDecisionId,
+      });
+
+      showToast(`Decision "${item.title}" has been superseded`, 'success');
+    } catch (error) {
+      console.error('Failed to supersede decision:', error);
+      showToast(
+        error instanceof Error ? error.message : 'Failed to supersede decision',
+        'error',
+      );
     }
   };
 
@@ -703,6 +917,12 @@ export function ProjectRAIDTab({
                   item={item}
                   onEdit={handleEditItem}
                   onDelete={handleDeleteItem}
+                  onConvertToTask={handleConvertToTask}
+                  isConverting={convertToTaskMutation.isPending}
+                  onEscalate={handleEscalateIssue}
+                  isEscalating={escalateIssueMutation.isPending}
+                  onSupersede={handleSupersedeDecision}
+                  isSuperseding={supersedeDecisionMutation.isPending}
                 />
               ))}
             </div>

@@ -113,7 +113,7 @@ const findDecisionWithAccess = async (id: number) => {
   const decision = await prisma.$queryRaw<Decision[]>`
     SELECT * FROM "Decision"
     WHERE id = ${id}
-    AND (tenant_id = ${tenantId} OR tenant_id IS NULL)
+    AND ("tenantId" = ${tenantId} OR "tenantId" IS NULL)
     LIMIT 1
   `.catch(() => null);
 
@@ -442,26 +442,13 @@ export const supersede = async (
       `
       UPDATE "Decision"
       SET status = 'SUPERSEDED',
-          superseded_by_id = $1,
-          updated_at = NOW()
+          "supersededById" = $1,
+          "updatedAt" = NOW()
       WHERE id = $2
       RETURNING *
     `,
       data.newDecisionId,
       id,
-    );
-
-    // Update new decision to reference original
-    const updatedNew = await prisma.$queryRawUnsafe<Decision[]>(
-      `
-      UPDATE "Decision"
-      SET superseding_id = $1,
-          updated_at = NOW()
-      WHERE id = $2
-      RETURNING *
-    `,
-      id,
-      data.newDecisionId,
     );
 
     return {
@@ -469,7 +456,7 @@ export const supersede = async (
         ...found.decision,
         status: 'SUPERSEDED',
       },
-      newDecision: updatedNew[0] ?? newDecisionFound.decision,
+      newDecision: newDecisionFound.decision,
     };
   } catch (error) {
     console.error('Error superseding decision:', error);
@@ -503,7 +490,7 @@ export const getStatusCounts = async (
       `
       SELECT status, COUNT(*) as count
       FROM "Decision"
-      WHERE project_id = $1
+      WHERE "projectId" = $1
       GROUP BY status
     `,
       projectId,

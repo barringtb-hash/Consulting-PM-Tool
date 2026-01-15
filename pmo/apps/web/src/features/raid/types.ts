@@ -23,7 +23,8 @@ export type ActionItemStatus =
   | 'OPEN'
   | 'IN_PROGRESS'
   | 'COMPLETED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'CONVERTED_TO_TASK';
 
 /**
  * Status options for issues (matches ProjectIssueStatus in Prisma)
@@ -102,6 +103,8 @@ export interface ActionItem extends RAIDItemBase {
   priority: Priority;
   dueDate?: string;
   completedAt?: string;
+  /** Task ID if this action item was converted to a formal task */
+  linkedTaskId?: number;
 }
 
 /**
@@ -114,6 +117,8 @@ export interface Issue extends RAIDItemBase {
   impact?: string;
   resolution?: string;
   resolvedAt?: string;
+  /** Current escalation level (0-5 scale) */
+  escalationLevel?: number;
 }
 
 /**
@@ -126,6 +131,8 @@ export interface Decision extends RAIDItemBase {
   alternatives?: string;
   decidedAt?: string;
   decisionMakers?: string[];
+  /** ID of the decision that supersedes this one */
+  supersededById?: number;
 }
 
 /**
