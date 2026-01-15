@@ -299,13 +299,11 @@ function MLInsightsSection({ projectId }: MLInsightsSectionProps): JSX.Element {
 
   // Compute display values from the data
   // Use nullish coalescing (??) to handle undefined/null values and avoid NaN
-  const successPercent = successData
-    ? Math.round(
-        (successData.overallSuccessProbability ??
-          successData.probability ??
-          0) * 100,
-      )
-    : null;
+  const successProbability =
+    successData?.overallSuccessProbability ?? successData?.probability ?? null;
+
+  const successPercent =
+    successProbability != null ? Math.round(successProbability * 100) : null;
 
   const riskLevel = riskData?.overallRiskLevel?.toUpperCase() || null;
 

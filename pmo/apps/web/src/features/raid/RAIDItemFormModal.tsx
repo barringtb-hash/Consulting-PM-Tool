@@ -84,15 +84,18 @@ const ACTION_ITEM_STATUS_OPTIONS: ActionItemStatus[] = [
 ];
 const ISSUE_STATUS_OPTIONS: IssueStatus[] = [
   'OPEN',
+  'INVESTIGATING',
   'IN_PROGRESS',
+  'BLOCKED',
   'RESOLVED',
   'CLOSED',
+  'WONT_FIX',
 ];
 const DECISION_STATUS_OPTIONS: DecisionStatus[] = [
   'PENDING',
-  'APPROVED',
-  'REJECTED',
-  'DEFERRED',
+  'ACTIVE',
+  'SUPERSEDED',
+  'REVOKED',
 ];
 
 // ============================================================================

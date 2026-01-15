@@ -26,14 +26,21 @@ export type ActionItemStatus =
   | 'CANCELLED';
 
 /**
- * Status options for issues
+ * Status options for issues (matches ProjectIssueStatus in Prisma)
  */
-export type IssueStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type IssueStatus =
+  | 'OPEN'
+  | 'INVESTIGATING'
+  | 'IN_PROGRESS'
+  | 'BLOCKED'
+  | 'RESOLVED'
+  | 'CLOSED'
+  | 'WONT_FIX';
 
 /**
- * Status options for decisions
+ * Status options for decisions (matches DecisionStatus in Prisma)
  */
-export type DecisionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'DEFERRED';
+export type DecisionStatus = 'PENDING' | 'ACTIVE' | 'SUPERSEDED' | 'REVOKED';
 
 /**
  * Priority levels for RAID items
