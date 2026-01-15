@@ -17,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { moduleRegistry } from '../moduleRegistry';
 import { isProjectDeleting } from '../deletionTracker';
 import {
@@ -52,6 +53,7 @@ export function useAssets(
     queryKey: queryKeys.assets.list(filters),
     queryFn: () => fetchAssets(filters),
     enabled: isModuleEnabled,
+    ...QUERY_CONFIG,
   });
 }
 
@@ -70,6 +72,7 @@ export function useAsset(assetId?: number): UseQueryResult<Asset, Error> {
       : ['assets', 'detail', null],
     enabled: Boolean(assetId) && isModuleEnabled,
     queryFn: () => fetchAssetById(assetId as number),
+    ...QUERY_CONFIG,
     initialData: () => {
       if (!assetId) {
         return undefined;
@@ -124,6 +127,7 @@ export function useProjectAssets(
     enabled:
       Boolean(projectId) && isModuleEnabled && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectAssets(projectId as number, includeArchived),
+    ...QUERY_CONFIG,
   });
 }
 

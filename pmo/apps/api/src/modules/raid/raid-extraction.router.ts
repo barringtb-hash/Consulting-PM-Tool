@@ -40,6 +40,9 @@ const extractedItemSchema = z.object({
   suggestedOwner: z.string().optional(),
   suggestedPriority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
   suggestedSeverity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
+  suggestedLikelihood: z
+    .enum(['RARE', 'UNLIKELY', 'POSSIBLE', 'LIKELY', 'ALMOST_CERTAIN'])
+    .optional(),
   suggestedDueDate: z.string().optional(),
 });
 
@@ -407,7 +410,7 @@ router.post(
                 title: item.title,
                 description: item.description ?? '',
                 severity: mapPriorityToSeverity(item.suggestedSeverity),
-                likelihood: 'POSSIBLE',
+                likelihood: item.suggestedLikelihood ?? 'POSSIBLE',
                 status: 'IDENTIFIED',
                 category: 'TECHNICAL',
                 sourceType: 'AI_DETECTED',

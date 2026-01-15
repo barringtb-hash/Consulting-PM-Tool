@@ -17,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   convertLead,
@@ -44,6 +45,7 @@ export function useLeads(filters?: LeadFilters): UseQueryResult<Lead[], Error> {
   return useQuery({
     queryKey: queryKeys.leads.list(filters),
     queryFn: () => fetchLeads(filters),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -55,6 +57,7 @@ export function useLead(leadId?: number): UseQueryResult<Lead, Error> {
     queryKey: leadId ? queryKeys.leads.detail(leadId) : queryKeys.leads.all,
     enabled: Boolean(leadId),
     queryFn: () => fetchLeadById(leadId as number),
+    ...QUERY_CONFIG,
   });
 }
 

@@ -5,17 +5,18 @@
  * routes, and error handlers. Uses factory pattern for testability.
  *
  * Middleware Stack (in order):
- * 1. Cookie Parser - Parse cookies for JWT auth
- * 2. CORS - Dynamic CORS based on request path
- * 3. JSON Body Parser - Parse JSON request bodies
- * 4. API Metrics - Collect latency, error rates, throughput
- * 5. API Error Capture - Auto-capture errors for bug tracking
- * 6. Health Check - /api/healthz endpoint
- * 7. Public Routes - Unauthenticated endpoints (public leads, widget)
- * 8. Feature Flags - Module availability endpoint
- * 9. Auth Routes - Login/logout/me endpoints
- * 10. Protected Routes - All authenticated API routes
- * 11. Error Handler - Global error handling (must be last)
+ * 1. Helmet - Security headers (CSP, HSTS, X-Frame-Options, etc.)
+ * 2. Cookie Parser - Parse cookies for JWT auth
+ * 3. CORS - Dynamic CORS based on request path
+ * 4. JSON Body Parser - Parse JSON request bodies
+ * 5. API Metrics - Collect latency, error rates, throughput
+ * 6. API Error Capture - Auto-capture errors for bug tracking
+ * 7. Health Check - /api/healthz endpoint
+ * 8. Public Routes - Unauthenticated endpoints (public leads, widget)
+ * 9. Feature Flags - Module availability endpoint
+ * 10. Auth Routes - Login/logout/me endpoints
+ * 11. Protected Routes - All authenticated API routes
+ * 12. Error Handler - Global error handling (must be last)
  *
  * Route Organization:
  * - Core Routes: /api/auth, /api/clients, /api/projects, /api/tasks
@@ -28,6 +29,7 @@
 
 import cors from 'cors';
 import express from 'express';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { CorsError } from './errors/cors.error';
 
@@ -256,6 +258,57 @@ export function createApp(): express.Express {
 
   // Log enabled modules at startup
   logEnabledModules();
+
+  // ============ SECURITY HEADERS (HELMET) ============
+  // Configure helmet middleware for security headers
+  // Must be placed before CORS to ensure headers are set on all responses
+  app.use(
+    helmet({
+      // Content Security Policy - configured for React SPA
+      // Note: 'unsafe-inline' and 'unsafe-eval' are required for React/Vite development
+      // and some React libraries. In production, consider using nonces/hashes for scripts.
+      // TODO: Implement CSP nonces for stricter production security
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://fonts.googleapis.com',
+          ],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+          imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+          connectSrc: ["'self'", 'https:', 'wss:'],
+          frameSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          upgradeInsecureRequests: [],
+        },
+      },
+      // HTTP Strict Transport Security - force HTTPS
+      hsts: {
+        maxAge: 31536000, // 1 year in seconds
+        includeSubDomains: true,
+        preload: true,
+      },
+      // Prevent clickjacking by denying framing
+      frameguard: {
+        action: 'deny',
+      },
+      // Prevent MIME type sniffing
+      noSniff: true,
+      // Control referrer information
+      referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin',
+      },
+      // Disable X-Powered-By header (hides Express)
+      hidePoweredBy: true,
+      // XSS protection (legacy header, still useful for older browsers)
+      xssFilter: true,
+    }),
+  );
 
   // ============ CORS PREFLIGHT HANDLER ============
   // Handle OPTIONS preflight requests explicitly BEFORE other middleware.

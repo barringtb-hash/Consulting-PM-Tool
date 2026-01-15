@@ -121,17 +121,45 @@ Route → Zod Validation → Service → Prisma → Database
 ## Environment Setup
 
 ### API (`pmo/apps/api/.env`)
+
+**Required Variables:**
 ```env
-DATABASE_URL="file:../../prisma/dev.db"  # SQLite for local dev
-JWT_SECRET="your-secret-key"
-JWT_EXPIRES_IN="1h"
-PORT=4000
-NODE_ENV="development"
+DATABASE_URL="file:../../prisma/dev.db"  # SQLite for local dev (PostgreSQL for production)
+JWT_SECRET="your-secret-key"             # Secret for JWT token signing
+JWT_EXPIRES_IN="1h"                      # JWT token expiration
+PORT=4000                                # API server port
+NODE_ENV="development"                   # Environment: development | production | test
+BCRYPT_SALT_ROUNDS=10                    # Password hashing rounds (required)
+```
+
+**ML/AI Features (required for AI functionality):**
+```env
+OPENAI_API_KEY="sk-..."                  # Required for ML predictions and AI features
+ANTHROPIC_API_KEY="sk-ant-..."           # Optional: Anthropic Claude integration
+```
+
+**Production Configuration:**
+```env
+CORS_ORIGIN="https://your-domain.com"    # Production CORS origin
+```
+
+**Multi-Tenant Configuration:**
+```env
+MULTI_TENANT_ENABLED="true"              # Enable multi-tenant mode
+DEFAULT_TENANT_SLUG="default"            # Default tenant for single-tenant mode
+```
+
+**Optional Services:**
+```env
+REDIS_URL="redis://localhost:6379"       # Redis for caching and job queues
+WS_ENABLED="true"                        # Enable WebSocket connections
+AYRSHARE_API_KEY="your_platform_api_key" # Social publishing via Ayrshare API
 ```
 
 ### Web (`pmo/apps/web/.env`)
 ```env
-VITE_API_BASE_URL=  # Leave blank for Vite proxy
+VITE_API_BASE_URL=                       # Leave blank for Vite proxy
+VITE_ENABLED_MODULES=                    # Comma-separated list of enabled modules
 ```
 
 ## CI/CD
@@ -177,21 +205,88 @@ The platform supports **toggleable modules** to customize deployments per custom
 
 ### Available Modules
 
-| Module | Type | Description |
+#### Core Modules (always enabled)
+
+| Module | Description |
+|--------|-------------|
+| `dashboard` | Main dashboard with overview metrics and quick actions |
+| `tasks` | Personal task management and tracking |
+| `clients` | Legacy client management (redirects to CRM Accounts) |
+| `projects` | Project management with AI-powered insights, ML predictions, scheduling, and document generation |
+| `crm` | Customer Relationship Management parent module |
+| `crmAccounts` | CRM account management with hierarchy support and health scoring |
+| `crmOpportunities` | Sales pipeline management with customizable stages and forecasting |
+| `crmContacts` | Contact management with lifecycle stages, lead scoring, and account linking |
+
+#### Toggleable Modules
+
+| Module | Description |
+|--------|-------------|
+| `assets` | AI-generated assets and content library |
+| `marketing` | Marketing content creation, campaigns, social publishing, and content calendar |
+| `leads` | Inbound lead capture, qualification, and conversion to opportunities |
+| `pipeline` | Sales pipeline visualization (Legacy - use Opportunities) |
+| `admin` | User administration, module configuration, and access control |
+| `tenantAdmin` | System admin tenant management - create and manage customer organizations |
+| `customerSuccess` | Customer Success Platform (DEPRECATED: features merged into Account module) |
+| `mcp` | AI-powered assistant with MCP integration for natural language CRM queries |
+| `financeTracking` | Admin-only finance tracking: expenses, budgets, recurring costs |
+| `financeExpenses` | Expense tracking with approval workflows and AI categorization |
+| `financeBudgets` | Budget management by category, account, or project |
+| `financeRecurringCosts` | Track subscriptions and recurring expenses with auto-generation |
+| `bugTracking` | Bug tracking, issue management, and error monitoring with AI assistant |
+| `social-publishing` | Multi-platform social media publishing via Ayrshare API |
+| `content-ml` | AI-powered content generation with brand voice, SEO, repurposing |
+
+#### AI Tool Modules (Phase 1-3)
+
+| Module | Phase | Description |
+|--------|-------|-------------|
+| `chatbot` | 1 | AI-powered customer service chatbot with knowledge base and analytics |
+| `productDescriptions` | 1 | AI-powered product description generator for multiple marketplaces |
+| `scheduling` | 1 | AI scheduling assistant with no-show prediction and automated reminders |
+| `intake` | 1 | Automated client intake with smart forms, document collection, and compliance |
+| `documentAnalyzer` | 2 | Smart document analysis with OCR, NER, custom field extraction |
+| `contentGenerator` | 2 | AI-powered content generation suite with brand voice training |
+| `leadScoring` | 2 | ML-based lead scoring with predictive analytics and nurture sequences |
+| `priorAuth` | 2 | Automated prior authorization submission, status tracking, and appeals |
+| `inventoryForecasting` | 3 | ML-powered inventory forecasting with seasonal trends and alerts |
+| `complianceMonitor` | 3 | Real-time compliance monitoring for HIPAA, SOX, GDPR, PCI |
+| `predictiveMaintenance` | 3 | IoT-integrated predictive maintenance with ML anomaly detection |
+| `revenueManagement` | 3 | AI-powered dynamic pricing with demand forecasting |
+| `safetyMonitor` | 3 | Digital safety checklists, incident reporting, OSHA 300 log management |
+
+#### Infrastructure Modules
+
+| Module | Code | Description |
 |--------|------|-------------|
-| `dashboard` | Core | Main dashboard with metrics |
-| `tasks` | Core | Personal task management |
-| `clients` | Core | Client management |
-| `projects` | Core | Project management with AI-powered insights, ML predictions, scheduling, and document generation |
-| `assets` | Toggleable | AI-generated assets library |
-| `marketing` | Toggleable | Marketing content, campaigns, publishing |
-| `leads` | Toggleable | Lead capture and management |
-| `pipeline` | Toggleable | Sales pipeline visualization |
-| `admin` | Toggleable | User administration & module management |
-| `finance-tracking` | Toggleable | Expense tracking, budgets, profitability reporting |
-| `mcp` | Toggleable | Model Context Protocol for AI queries against CRM data |
-| `social-publishing` | Toggleable | Multi-platform social media publishing via Ayrshare API |
-| `content-ml` | Toggleable | AI-powered content generation with brand voice, SEO, repurposing |
+| `coreInfrastructure` | INF.1 | Authentication, API gateway, audit logging, and billing infrastructure |
+| `aiMlInfrastructure` | INF.2 | NLP services, ML models, and integrations framework management |
+| `iotInfrastructure` | INF.3 | Sensor pipeline, real-time processing, and IoT device management |
+
+#### Compliance Modules
+
+| Module | Code | Description |
+|--------|------|-------------|
+| `healthcareCompliance` | COMP.1 | HIPAA privacy and security rule implementation and monitoring |
+| `financialCompliance` | COMP.2 | SOX, FINRA, and PCI DSS compliance management |
+| `generalCompliance` | COMP.3 | GDPR and CCPA privacy compliance implementation |
+
+#### Demo Modules
+
+| Module | Description |
+|--------|-------------|
+| `demoAITools` | Interactive showcase of all 13 AI tools with descriptions and live demos |
+| `demoMarketing` | Interactive demo of AI-powered marketing content generation |
+
+#### Deprecated Modules
+
+| Module | Status | Replacement |
+|--------|--------|-------------|
+| `aiProjects` | DEPRECATED | Features merged into core `projects` module. Access via Project Dashboard AI tabs. |
+| `projectML` | DEPRECATED | Features merged into core `projects` module. Access via Project Dashboard ML Insights tab. |
+| `socialPublishing` | DEPRECATED | Consolidated into `marketing` module |
+| `contentCalendar` | DEPRECATED | Consolidated into `marketing` module |
 
 ### Quick Configuration
 
@@ -270,33 +365,48 @@ GET    /api/raid/risks/projects/:projectId/risks   - List risks
 POST   /api/raid/risks/projects/:projectId/risks   - Create risk
 GET    /api/raid/risks/:id                         - Get risk
 PUT    /api/raid/risks/:id                         - Update risk
+PATCH  /api/raid/risks/:id                         - Update risk (alias)
 DELETE /api/raid/risks/:id                         - Delete risk
 
 # Action Items
 GET    /api/raid/action-items/projects/:projectId/action-items   - List action items
 POST   /api/raid/action-items/projects/:projectId/action-items   - Create action item
+GET    /api/raid/action-items/projects/:projectId/action-items/counts - Get status counts
 GET    /api/raid/action-items/:id                                - Get action item
-PATCH  /api/raid/action-items/:id                                - Update action item
+PUT    /api/raid/action-items/:id                                - Update action item
+PATCH  /api/raid/action-items/:id                                - Update action item (alias)
 DELETE /api/raid/action-items/:id                                - Delete action item
+POST   /api/raid/action-items/:id/convert-to-task                - Convert to formal task
 
 # Decisions
-GET    /api/raid/decisions/projects/:projectId/decisions   - List decisions
-POST   /api/raid/decisions/projects/:projectId/decisions   - Create decision
-GET    /api/raid/decisions/:id                             - Get decision
-PATCH  /api/raid/decisions/:id                             - Update decision
-DELETE /api/raid/decisions/:id                             - Delete decision
+GET    /api/raid/decisions/projects/:projectId/decisions         - List decisions
+POST   /api/raid/decisions/projects/:projectId/decisions         - Create decision
+GET    /api/raid/decisions/projects/:projectId/decisions/counts  - Get status counts
+GET    /api/raid/decisions/projects/:projectId/decisions/pending-reviews - Get pending reviews
+GET    /api/raid/decisions/:id                                   - Get decision
+PUT    /api/raid/decisions/:id                                   - Update decision
+PATCH  /api/raid/decisions/:id                                   - Update decision (alias)
+DELETE /api/raid/decisions/:id                                   - Delete decision
+POST   /api/raid/decisions/:id/supersede                         - Mark as superseded by another decision
 
 # Issues
-GET    /api/raid/issues/projects/:projectId/issues   - List issues
-POST   /api/raid/issues/projects/:projectId/issues   - Create issue
-GET    /api/raid/issues/:id                          - Get issue
-PATCH  /api/raid/issues/:id                          - Update issue
-DELETE /api/raid/issues/:id                          - Delete issue
+GET    /api/raid/issues/projects/:projectId/issues               - List issues
+POST   /api/raid/issues/projects/:projectId/issues               - Create issue
+GET    /api/raid/issues/projects/:projectId/issues/counts        - Get status counts
+GET    /api/raid/issues/projects/:projectId/issues/severity-counts - Get severity counts
+GET    /api/raid/issues/projects/:projectId/issues/critical      - Get critical issues
+GET    /api/raid/issues/:id                                      - Get issue
+PUT    /api/raid/issues/:id                                      - Update issue
+PATCH  /api/raid/issues/:id                                      - Update issue (alias)
+DELETE /api/raid/issues/:id                                      - Delete issue
+POST   /api/raid/issues/:id/escalate                             - Escalate to next level
 
 # Extraction & Summary
-POST   /api/raid/extract/meetings/:meetingId           - Extract RAID from meeting
+POST   /api/raid/extract/meetings/:meetingId           - Extract RAID from meeting notes
+POST   /api/raid/extract/text                          - Extract RAID from arbitrary text
 POST   /api/raid/extract/projects/:projectId/accept    - Accept extracted items
 GET    /api/raid/extract/projects/:projectId/summary   - Get RAID summary
+GET    /api/raid/extract/projects/:projectId/trends    - Get RAID trends (time-series data)
 ```
 
 **Database Models:**
@@ -375,17 +485,56 @@ GET  /api/lead-scoring/:configId/ml/feature-importance  # Feature weights
 Location: `pmo/apps/api/src/modules/customer-success-ml/`
 
 **Features:**
-- Churn prediction
-- Health insights
-- Intelligent CTA generation
+- Churn prediction with probability scoring and risk factors
+- ML-enhanced health analysis and trend detection
+- Intelligent CTA generation from predictions
+- Batch prediction for portfolio-level insights
+- Prediction accuracy tracking and validation
 
-### Project ML Module (Consolidated into Core Projects)
+**Architecture:**
+- LLM-based predictions with rule-based fallback when OpenAI unavailable
+- Prediction caching with configurable validity period
+- Automatic validation of expired predictions against outcomes
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `services/churn-prediction.service.ts` | Churn probability prediction |
+| `services/ml-health-insights.service.ts` | Health trend analysis |
+| `services/intelligent-cta.service.ts` | CTA generation from predictions |
+| `services/cs-ml-prediction.service.ts` | Main prediction orchestration |
+| `prompts/cs-ml-prompts.ts` | LLM prompt templates |
+| `customer-success-ml.router.ts` | API endpoints |
+
+**API Endpoints:**
+```
+# Account-Level ML
+POST /api/crm/accounts/:id/ml/predict           # Generate ML prediction
+GET  /api/crm/accounts/:id/ml/churn-risk        # Get churn prediction
+GET  /api/crm/accounts/:id/ml/health-insights   # Get ML health analysis
+GET  /api/crm/accounts/:id/ml/predictions       # List account predictions
+POST /api/crm/accounts/:id/ml/generate-cta      # Generate CTA from prediction
+
+# Portfolio-Level ML
+GET  /api/crm/accounts/portfolio/ml/high-risk           # List high-risk accounts
+POST /api/crm/accounts/portfolio/ml/batch-predict       # Batch predictions
+POST /api/crm/accounts/portfolio/ml/generate-ctas       # Batch CTA generation
+POST /api/crm/accounts/portfolio/ml/validate-predictions # Validate expired predictions
+GET  /api/crm/accounts/portfolio/ml/accuracy            # Prediction accuracy metrics
+GET  /api/crm/accounts/portfolio/ml/cta-stats           # ML-generated CTA statistics
+GET  /api/crm/accounts/portfolio/ml/status              # ML service availability check
+```
+
+**Database Models:**
+- `AccountMLPrediction`: Stored predictions with probability, confidence, and metadata
+
+### Project ML Module (DEPRECATED - Merged into Core Projects)
 
 Location: `pmo/apps/api/src/modules/project-ml/`
 
-> **Note**: Project ML features are now part of the core `projects` module and always available. Access via Project Dashboard tabs.
+> **DEPRECATED**: Project ML features have been merged into the core `projects` module and are always available. Access via Project Dashboard tabs (AI Assistant, AI Scheduling, AI Documents, ML Insights).
 
-**Features:**
+**Features (now in core Projects):**
 - Success prediction
 - Risk forecasting
 - Timeline prediction
@@ -493,10 +642,7 @@ GET  /api/social-publishing/posts/:id/metrics    # Get engagement metrics
 - `SocialPublishingConfig`: Per-tenant API configuration
 - `PublishingHistory`: Platform-specific publish results
 
-**Environment Variables:**
-```env
-AYRSHARE_API_KEY=your_platform_api_key    # Master key for all tenants
-```
+> **Note**: `AYRSHARE_API_KEY` is configured in the main API environment variables section.
 
 ## Important Notes
 

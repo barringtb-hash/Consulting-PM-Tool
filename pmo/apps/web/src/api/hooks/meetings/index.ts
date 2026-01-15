@@ -17,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { invalidateRelatedModules } from '../moduleRegistry';
 import { isProjectDeleting } from '../deletionTracker';
 import {
@@ -46,6 +47,7 @@ export function useProjectMeetings(
     // Disable query if project is being deleted to prevent 404 refetch race conditions
     enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectMeetings(projectId as number),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -61,6 +63,7 @@ export function useMeeting(meetingId?: number): UseQueryResult<Meeting, Error> {
       : queryKeys.meetings.all,
     enabled: Boolean(meetingId),
     queryFn: () => fetchMeeting(meetingId as number),
+    ...QUERY_CONFIG,
     initialData: () => {
       if (!meetingId) {
         return undefined;

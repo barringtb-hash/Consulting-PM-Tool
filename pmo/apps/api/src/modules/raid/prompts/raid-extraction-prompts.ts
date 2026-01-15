@@ -7,6 +7,8 @@
  * @module modules/raid/prompts
  */
 
+import { escapePromptContent } from '../../../utils/prompt-sanitizer';
+
 /**
  * System prompt that establishes the AI's role as a project management expert
  */
@@ -54,15 +56,24 @@ export const RAID_EXTRACTION_USER_PROMPT = (
   const extractDecisions = extractAll || options?.extractDecisions;
   const extractIssues = extractAll || options?.extractIssues;
 
+  // Sanitize user-provided content to prevent prompt injection
+  const safeMeetingTitle = escapePromptContent(meetingTitle, {
+    maxLength: 200,
+  });
+  const safeProjectName = escapePromptContent(projectName, { maxLength: 200 });
+  const safeNotes = escapePromptContent(notes.slice(0, 3500), {
+    maxLength: 3500,
+  });
+
   return `Analyze the following meeting notes and extract RAID items.
 
-Meeting: ${meetingTitle}
-Project: ${projectName}
+Meeting: ${safeMeetingTitle}
+Project: ${safeProjectName}
 
 MEETING NOTES:
-"""
-${notes.slice(0, 3500)}
-"""
+'''
+${safeNotes}
+'''
 
 Extract and return a JSON object with the following structure:
 {
@@ -73,7 +84,7 @@ Extract and return a JSON object with the following structure:
       "title": "Brief risk title (max 100 chars)",
       "description": "Detailed description of the risk",
       "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
-      "likelihood": "HIGH" | "MEDIUM" | "LOW",
+      "likelihood": "RARE" | "UNLIKELY" | "POSSIBLE" | "LIKELY" | "ALMOST_CERTAIN",
       "category": "TIMELINE" | "BUDGET" | "SCOPE" | "RESOURCE" | "TECHNICAL" | "EXTERNAL" | "QUALITY",
       "mitigation": "Suggested mitigation strategy if discussed",
       "owner": "Person responsible for managing this risk if mentioned",
@@ -142,6 +153,7 @@ Guidelines:
 - Include relevant context in descriptions
 - Preserve exact quotes for traceability
 - Priority mapping: P1 = Critical/Urgent, P2 = High, P3 = Medium, P4 = Low
+- Likelihood scale: RARE (<10%), UNLIKELY (10-25%), POSSIBLE (25-50%), LIKELY (50-75%), ALMOST_CERTAIN (>75%)
 
 Return ONLY valid JSON, no additional text.`;
 };
@@ -158,15 +170,26 @@ export const RAID_EXTRACTION_TEXT_PROMPT = (
   projectName?: string,
   context?: string,
 ): string => {
+  // Sanitize user-provided content to prevent prompt injection
+  const safeText = escapePromptContent(text.slice(0, 3500), {
+    maxLength: 3500,
+  });
+  const safeProjectName = projectName
+    ? escapePromptContent(projectName, { maxLength: 200 })
+    : '';
+  const safeContext = context
+    ? escapePromptContent(context, { maxLength: 500 })
+    : '';
+
   return `Analyze the following project-related text and extract RAID items.
 
-${projectName ? `Project: ${projectName}` : ''}
-${context ? `Context: ${context}` : ''}
+${safeProjectName ? `Project: ${safeProjectName}` : ''}
+${safeContext ? `Context: ${safeContext}` : ''}
 
 TEXT TO ANALYZE:
-"""
-${text.slice(0, 3500)}
-"""
+'''
+${safeText}
+'''
 
 Extract and return a JSON object with this structure:
 {
@@ -175,7 +198,7 @@ Extract and return a JSON object with this structure:
       "title": "Brief risk title",
       "description": "Detailed description",
       "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
-      "likelihood": "HIGH" | "MEDIUM" | "LOW",
+      "likelihood": "RARE" | "UNLIKELY" | "POSSIBLE" | "LIKELY" | "ALMOST_CERTAIN",
       "category": "TIMELINE" | "BUDGET" | "SCOPE" | "RESOURCE" | "TECHNICAL" | "EXTERNAL" | "QUALITY",
       "mitigation": "Suggested mitigation if any",
       "owner": "Person responsible if mentioned",
@@ -223,7 +246,11 @@ Extract and return a JSON object with this structure:
   "summary": "Brief summary of findings"
 }
 
-Only include items with confidence >= 0.6. Return ONLY valid JSON.`;
+Guidelines:
+- Only include items with confidence >= 0.6
+- Likelihood scale: RARE (<10%), UNLIKELY (10-25%), POSSIBLE (25-50%), LIKELY (50-75%), ALMOST_CERTAIN (>75%)
+
+Return ONLY valid JSON.`;
 };
 
 /**
@@ -245,7 +272,10 @@ export const RAID_SUMMARY_PROMPT = (
   },
   projectName: string,
 ): string => {
-  return `Generate a brief executive summary of the RAID status for the "${projectName}" project based on these metrics:
+  // Sanitize project name to prevent prompt injection
+  const safeProjectName = escapePromptContent(projectName, { maxLength: 200 });
+
+  return `Generate a brief executive summary of the RAID status for the "${safeProjectName}" project based on these metrics:
 
 RAID Metrics:
 - Total Risks: ${raidData.riskCount} (${raidData.criticalRisks} critical/high severity)

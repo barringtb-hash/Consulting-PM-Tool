@@ -31,6 +31,10 @@
       "eslint --max-warnings=0 --no-error-on-unmatched-pattern"
     ]
   },
+  "overrides": {
+    "hono": "4.11.4",
+    "ioredis": "5.9.2"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "tsx": "^4.20.6"

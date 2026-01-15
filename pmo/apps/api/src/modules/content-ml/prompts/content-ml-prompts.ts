@@ -8,6 +8,7 @@
  */
 
 import type { BrandVoiceProfile, BrandVoiceTrainingInput } from '../types';
+import { escapePromptContent } from '../../../utils/prompt-sanitizer';
 
 // ============================================================================
 // System Prompts
@@ -168,22 +169,37 @@ Respond with a JSON object matching this exact schema:
 // ============================================================================
 
 /**
- * Format brand info for prompts
+ * Format brand info for prompts.
+ * All user-provided brand information is sanitized to prevent prompt injection.
  */
 export function formatBrandInfo(input: BrandVoiceTrainingInput): string {
-  let brandInfo = `Brand Name: ${input.brandName}
-Industry: ${input.industry}
-Target Audience: ${input.targetAudience}`;
+  // Sanitize all user-provided fields
+  const safeBrandName = escapePromptContent(input.brandName, {
+    maxLength: 200,
+  });
+  const safeIndustry = escapePromptContent(input.industry, { maxLength: 200 });
+  const safeTargetAudience = escapePromptContent(input.targetAudience, {
+    maxLength: 500,
+  });
+
+  let brandInfo = `Brand Name: ${safeBrandName}
+Industry: ${safeIndustry}
+Target Audience: ${safeTargetAudience}`;
 
   if (input.tonePreferences && input.tonePreferences.length > 0) {
-    brandInfo += `\nPreferred Tones: ${input.tonePreferences.join(', ')}`;
+    // Sanitize each tone preference
+    const safeTones = input.tonePreferences.map((t) =>
+      escapePromptContent(t, { maxLength: 50 }),
+    );
+    brandInfo += `\nPreferred Tones: ${safeTones.join(', ')}`;
   }
 
   return brandInfo;
 }
 
 /**
- * Format voice samples for prompts
+ * Format voice samples for prompts.
+ * Each sample is sanitized to prevent prompt injection.
  */
 export function formatVoiceSamples(samples: string[]): string {
   if (samples.length === 0) {
@@ -191,30 +207,57 @@ export function formatVoiceSamples(samples: string[]): string {
   }
 
   return samples
-    .map((sample, index) => `### Sample ${index + 1}\n${sample.trim()}\n`)
+    .map((sample, index) => {
+      // Sanitize each sample content
+      const safeSample = escapePromptContent(sample.trim(), {
+        maxLength: 2000,
+      });
+      return `--- Sample ${index + 1} ---\n${safeSample}\n`;
+    })
     .join('\n');
 }
 
 /**
- * Format brand voice profile for consistency check prompts
+ * Format brand voice profile for consistency check prompts.
+ * All vocabulary items and profile strings are sanitized to prevent prompt injection.
  */
 export function formatVoiceProfile(profile: BrandVoiceProfile): string {
-  return `Primary Tone: ${profile.primaryTone}
-Secondary Tones: ${profile.secondaryTones.join(', ')}
-Formality: ${profile.formality}
-Personality Traits: ${profile.personality.join(', ')}
+  // Sanitize all user-defined vocabulary items
+  const safePreferred = profile.vocabulary.preferred.map((w) =>
+    escapePromptContent(w, { maxLength: 100 }),
+  );
+  const safeAvoided = profile.vocabulary.avoided.map((w) =>
+    escapePromptContent(w, { maxLength: 100 }),
+  );
+  const safeIndustryTerms = profile.vocabulary.industryTerms.map((w) =>
+    escapePromptContent(w, { maxLength: 100 }),
+  );
+  const safePersonality = profile.personality.map((p) =>
+    escapePromptContent(p, { maxLength: 50 }),
+  );
+  const safeSecondaryTones = profile.secondaryTones.map((t) =>
+    escapePromptContent(t, { maxLength: 50 }),
+  );
+  const safeRhetoricDevices = profile.rhetoricDevices.map((d) =>
+    escapePromptContent(d, { maxLength: 50 }),
+  );
+
+  return `Primary Tone: ${escapePromptContent(profile.primaryTone, { maxLength: 50 })}
+Secondary Tones: ${safeSecondaryTones.join(', ')}
+Formality: ${escapePromptContent(profile.formality, { maxLength: 50 })}
+Personality Traits: ${safePersonality.join(', ')}
 
 Preferred Vocabulary:
-${profile.vocabulary.preferred.map((w) => `- ${w}`).join('\n')}
+${safePreferred.map((w) => `- ${w}`).join('\n')}
 
 Avoided Vocabulary:
-${profile.vocabulary.avoided.map((w) => `- ${w}`).join('\n')}
+${safeAvoided.map((w) => `- ${w}`).join('\n')}
 
 Industry Terms:
-${profile.vocabulary.industryTerms.map((w) => `- ${w}`).join('\n')}
+${safeIndustryTerms.map((w) => `- ${w}`).join('\n')}
 
-Sentence Style: ${profile.sentenceStyle}
-Rhetoric Devices: ${profile.rhetoricDevices.join(', ')}`;
+Sentence Style: ${escapePromptContent(profile.sentenceStyle, { maxLength: 50 })}
+Rhetoric Devices: ${safeRhetoricDevices.join(', ')}`;
 }
 
 /**
@@ -230,29 +273,37 @@ export function buildBrandVoiceTrainingPrompt(
 }
 
 /**
- * Build voice consistency check prompt
+ * Build voice consistency check prompt.
+ * Content to check is sanitized to prevent prompt injection.
  */
 export function buildVoiceConsistencyCheckPrompt(
   profile: BrandVoiceProfile,
   content: string,
 ): string {
+  // Sanitize the content being analyzed
+  const safeContent = escapePromptContent(content, { maxLength: 10000 });
+
   return VOICE_CONSISTENCY_CHECK_PROMPT.replace(
     '{voiceProfile}',
     formatVoiceProfile(profile),
-  ).replace('{content}', content);
+  ).replace('{content}', safeContent);
 }
 
 /**
- * Build voice improvement prompt
+ * Build voice improvement prompt.
+ * Content to improve is sanitized to prevent prompt injection.
  */
 export function buildVoiceImprovementPrompt(
   profile: BrandVoiceProfile,
   content: string,
 ): string {
+  // Sanitize the content being improved
+  const safeContent = escapePromptContent(content, { maxLength: 10000 });
+
   return VOICE_IMPROVEMENT_PROMPT.replace(
     '{voiceProfile}',
     formatVoiceProfile(profile),
-  ).replace('{content}', content);
+  ).replace('{content}', safeContent);
 }
 
 // ============================================================================
@@ -1349,6 +1400,7 @@ Always respond with valid JSON matching the requested schema.`;
 
 /**
  * Build a content generation prompt for a specific content type.
+ * All user-provided parameters are sanitized to prevent prompt injection.
  *
  * @param contentType - The type of content to generate (social_post, blog_post, email, etc.)
  * @param params - Key-value pairs to replace placeholders in the prompt
@@ -1370,12 +1422,13 @@ export function buildContentGenerationPrompt(
       : 'No specific brand voice provided. Use a professional, engaging tone.',
   );
 
-  // Replace all other placeholders
+  // Replace all other placeholders with sanitized values
   for (const [key, value] of Object.entries(params)) {
-    prompt = prompt.replace(
-      new RegExp(`\\{${key}\\}`, 'g'),
-      value || 'Not specified',
-    );
+    // Sanitize user-provided content to prevent prompt injection
+    const safeValue = value
+      ? escapePromptContent(value, { maxLength: 5000 })
+      : 'Not specified';
+    prompt = prompt.replace(new RegExp(`\\{${key}\\}`, 'g'), safeValue);
   }
 
   return prompt;
@@ -1383,6 +1436,7 @@ export function buildContentGenerationPrompt(
 
 /**
  * Build a platform optimization prompt for adapting content.
+ * All user-provided parameters are sanitized to prevent prompt injection.
  *
  * @param platform - The target platform (linkedin, twitter, instagram, facebook)
  * @param params - Key-value pairs to replace placeholders in the prompt
@@ -1403,11 +1457,12 @@ export function buildPlatformOptimizationPrompt(
       : 'No specific brand voice provided.',
   );
 
+  // Sanitize all user-provided parameters
   for (const [key, value] of Object.entries(params)) {
-    prompt = prompt.replace(
-      new RegExp(`\\{${key}\\}`, 'g'),
-      value || 'Not specified',
-    );
+    const safeValue = value
+      ? escapePromptContent(value, { maxLength: 5000 })
+      : 'Not specified';
+    prompt = prompt.replace(new RegExp(`\\{${key}\\}`, 'g'), safeValue);
   }
 
   return prompt;
@@ -1415,6 +1470,7 @@ export function buildPlatformOptimizationPrompt(
 
 /**
  * Build SEO analysis prompt.
+ * All user-provided parameters are sanitized to prevent prompt injection.
  *
  * @param params - Key-value pairs including title, content, targetKeywords, url, contentType
  * @returns The fully populated prompt string ready for LLM consumption
@@ -1422,11 +1478,12 @@ export function buildPlatformOptimizationPrompt(
 export function buildSeoAnalysisPrompt(params: Record<string, string>): string {
   let prompt: string = SEO_ANALYSIS_PROMPT;
 
+  // Sanitize all user-provided parameters
   for (const [key, value] of Object.entries(params)) {
-    prompt = prompt.replace(
-      new RegExp(`\\{${key}\\}`, 'g'),
-      value || 'Not specified',
-    );
+    const safeValue = value
+      ? escapePromptContent(value, { maxLength: 10000 })
+      : 'Not specified';
+    prompt = prompt.replace(new RegExp(`\\{${key}\\}`, 'g'), safeValue);
   }
 
   return prompt;
@@ -1434,6 +1491,7 @@ export function buildSeoAnalysisPrompt(params: Record<string, string>): string {
 
 /**
  * Build content ideas generation prompt.
+ * All user-provided parameters are sanitized to prevent prompt injection.
  *
  * @param params - Key-value pairs including brandName, industry, targetAudience, mainTopic, etc.
  * @param voiceProfile - Optional brand voice profile for consistency
@@ -1452,11 +1510,12 @@ export function buildContentIdeasPrompt(
       : 'No specific brand voice provided.',
   );
 
+  // Sanitize all user-provided parameters
   for (const [key, value] of Object.entries(params)) {
-    prompt = prompt.replace(
-      new RegExp(`\\{${key}\\}`, 'g'),
-      value || 'Not specified',
-    );
+    const safeValue = value
+      ? escapePromptContent(value, { maxLength: 5000 })
+      : 'Not specified';
+    prompt = prompt.replace(new RegExp(`\\{${key}\\}`, 'g'), safeValue);
   }
 
   return prompt;
@@ -1464,6 +1523,7 @@ export function buildContentIdeasPrompt(
 
 /**
  * Build content repurposing prompt.
+ * All user-provided parameters are sanitized to prevent prompt injection.
  *
  * @param params - Key-value pairs including title, originalType, content, targetFormats, etc.
  * @param voiceProfile - Optional brand voice profile for consistency
@@ -1482,11 +1542,12 @@ export function buildContentRepurposePrompt(
       : 'No specific brand voice provided.',
   );
 
+  // Sanitize all user-provided parameters
   for (const [key, value] of Object.entries(params)) {
-    prompt = prompt.replace(
-      new RegExp(`\\{${key}\\}`, 'g'),
-      value || 'Not specified',
-    );
+    const safeValue = value
+      ? escapePromptContent(value, { maxLength: 10000 })
+      : 'Not specified';
+    prompt = prompt.replace(new RegExp(`\\{${key}\\}`, 'g'), safeValue);
   }
 
   return prompt;
@@ -1494,6 +1555,7 @@ export function buildContentRepurposePrompt(
 
 /**
  * Build hashtag generation prompt.
+ * All user-provided parameters are sanitized to prevent prompt injection.
  *
  * @param params - Key-value pairs including content, platform, industry, targetAudience, goal, brandKeywords
  * @returns The fully populated prompt string ready for LLM consumption
@@ -1503,11 +1565,12 @@ export function buildHashtagGenerationPrompt(
 ): string {
   let prompt: string = HASHTAG_GENERATION_PROMPT;
 
+  // Sanitize all user-provided parameters
   for (const [key, value] of Object.entries(params)) {
-    prompt = prompt.replace(
-      new RegExp(`\\{${key}\\}`, 'g'),
-      value || 'Not specified',
-    );
+    const safeValue = value
+      ? escapePromptContent(value, { maxLength: 5000 })
+      : 'Not specified';
+    prompt = prompt.replace(new RegExp(`\\{${key}\\}`, 'g'), safeValue);
   }
 
   return prompt;
