@@ -221,6 +221,18 @@ interface ExtractRAIDResponse extends ExtractRAIDAPIResponse {
 }
 
 /**
+ * Normalize confidence value to 0-1 range
+ * Handles cases where LLM returns percentage (0-100) instead of decimal (0-1)
+ */
+function normalizeConfidence(value?: number): number {
+  if (value === undefined || value === null) return 0.7;
+  // If value is greater than 1, assume it's a percentage
+  if (value > 1) return Math.min(value / 100, 1);
+  // Clamp to valid range
+  return Math.max(0, Math.min(value, 1));
+}
+
+/**
  * Transform API response to include combined extractedItems array
  */
 function transformExtractResponse(
@@ -234,7 +246,7 @@ function transformExtractResponse(
       type: 'risk',
       title: risk.title,
       description: risk.description,
-      confidence: risk.confidence ?? 0.7,
+      confidence: normalizeConfidence(risk.confidence),
       sourceText: risk.sourceText,
       suggestedSeverity: mapSeverity(risk.impact),
     });
@@ -246,7 +258,7 @@ function transformExtractResponse(
       type: 'action-item',
       title: item.title,
       description: item.description,
-      confidence: item.confidence ?? 0.7,
+      confidence: normalizeConfidence(item.confidence),
       sourceText: item.sourceText,
       suggestedOwner: item.assigneeName,
       suggestedPriority: mapPriority(item.priority),
@@ -260,7 +272,7 @@ function transformExtractResponse(
       type: 'issue',
       title: issue.title,
       description: issue.description,
-      confidence: issue.confidence ?? 0.7,
+      confidence: normalizeConfidence(issue.confidence),
       sourceText: issue.sourceText,
       suggestedSeverity: mapSeverity(issue.severity),
     });
@@ -274,7 +286,7 @@ function transformExtractResponse(
       description: decision.description
         ? `${decision.description}${decision.rationale ? `\n\nRationale: ${decision.rationale}` : ''}`
         : decision.rationale,
-      confidence: decision.confidence ?? 0.7,
+      confidence: normalizeConfidence(decision.confidence),
       sourceText: decision.sourceText,
     });
   }
