@@ -228,6 +228,54 @@ router.put(
 );
 
 /**
+ * Update action item (PATCH alias)
+ */
+router.patch(
+  '/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid action item id' });
+      return;
+    }
+
+    const parsed = updateActionItemSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid action item data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const result = await actionItemService.update(id, parsed.data, req.userId);
+
+    if ('error' in result) {
+      if (result.error === 'not_found') {
+        res.status(404).json({ error: 'Action item not found' });
+        return;
+      }
+      if (result.error === 'forbidden') {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+      if (result.error === 'database_error') {
+        res.status(500).json({ error: 'Failed to update action item' });
+        return;
+      }
+    }
+
+    res.json(result);
+  },
+);
+
+/**
  * Delete action item
  */
 router.delete(

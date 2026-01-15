@@ -373,6 +373,63 @@ router.put(
 );
 
 /**
+ * Update risk (PATCH alias)
+ */
+router.patch(
+  '/:id',
+  async (req: AuthenticatedRequest<{ id: string }>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'Invalid risk id' });
+      return;
+    }
+
+    const parsed = updateRiskSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: 'Invalid risk data',
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const tenantId = hasTenantContext() ? getTenantId() : undefined;
+
+    try {
+      const existing = await prisma.projectRisk.findFirst({
+        where: { id, tenantId },
+        include: { project: true },
+      });
+
+      if (!existing) {
+        res.status(404).json({ error: 'Risk not found' });
+        return;
+      }
+
+      if (!hasProjectAccess(existing.project, req.userId)) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      const risk = await prisma.projectRisk.update({
+        where: { id },
+        data: parsed.data,
+      });
+
+      res.json({ risk });
+    } catch (error) {
+      console.error('Error updating risk:', error);
+      res.status(500).json({ error: 'Failed to update risk' });
+    }
+  },
+);
+
+/**
  * Delete risk
  */
 router.delete(
