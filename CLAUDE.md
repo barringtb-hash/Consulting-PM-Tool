@@ -239,6 +239,84 @@ POST /api/admin/modules/bulk
 4. **Navigation**: Sidebar dynamically shows only enabled modules
 5. **Lazy Loading**: Optional modules use `React.lazy()` for code splitting
 
+## RAID Module
+
+Location: `pmo/apps/api/src/modules/raid/`
+
+The RAID module provides comprehensive tracking for Risks, Action Items, Issues, and Decisions within projects. It includes AI-powered extraction from meeting notes.
+
+**Features:**
+- Risks: Track project risks with likelihood, severity, and mitigation plans
+- Action Items: Track tasks with priority (P0-P2), due dates, and status
+- Issues: Track current problems with severity and resolution tracking
+- Decisions: Track decisions with rationale and stakeholder information
+- AI Extraction: Extract RAID items from meeting notes with confidence scoring
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `risks.router.ts` | REST API for project risks |
+| `action-items.router.ts` | REST API for action items |
+| `decisions.router.ts` | REST API for decisions |
+| `project-issues.router.ts` | REST API for project issues |
+| `raid-extraction.router.ts` | AI-powered RAID extraction endpoints |
+| `services/raid-summary.service.ts` | Dashboard summary aggregation |
+| `services/raid-extraction.service.ts` | LLM-based extraction logic |
+
+**API Endpoints:**
+```
+# Risks
+GET    /api/raid/risks/projects/:projectId/risks   - List risks
+POST   /api/raid/risks/projects/:projectId/risks   - Create risk
+GET    /api/raid/risks/:id                         - Get risk
+PUT    /api/raid/risks/:id                         - Update risk
+DELETE /api/raid/risks/:id                         - Delete risk
+
+# Action Items
+GET    /api/raid/action-items/projects/:projectId/action-items   - List action items
+POST   /api/raid/action-items/projects/:projectId/action-items   - Create action item
+GET    /api/raid/action-items/:id                                - Get action item
+PATCH  /api/raid/action-items/:id                                - Update action item
+DELETE /api/raid/action-items/:id                                - Delete action item
+
+# Decisions
+GET    /api/raid/decisions/projects/:projectId/decisions   - List decisions
+POST   /api/raid/decisions/projects/:projectId/decisions   - Create decision
+GET    /api/raid/decisions/:id                             - Get decision
+PATCH  /api/raid/decisions/:id                             - Update decision
+DELETE /api/raid/decisions/:id                             - Delete decision
+
+# Issues
+GET    /api/raid/issues/projects/:projectId/issues   - List issues
+POST   /api/raid/issues/projects/:projectId/issues   - Create issue
+GET    /api/raid/issues/:id                          - Get issue
+PATCH  /api/raid/issues/:id                          - Update issue
+DELETE /api/raid/issues/:id                          - Delete issue
+
+# Extraction & Summary
+POST   /api/raid/extract/meetings/:meetingId           - Extract RAID from meeting
+POST   /api/raid/extract/projects/:projectId/accept    - Accept extracted items
+GET    /api/raid/extract/projects/:projectId/summary   - Get RAID summary
+```
+
+**Database Models:**
+- `ProjectRisk`: Risks with likelihood, severity, category, mitigation
+- `ActionItem`: Action items with priority, due date, assignee
+- `Decision`: Decisions with rationale, stakeholders, impact
+- `ProjectIssue`: Issues with severity, resolution, related risk
+
+**Frontend Components:**
+```
+pmo/apps/web/src/features/raid/
+├── index.ts                  # Barrel exports
+├── ProjectRAIDTab.tsx        # Main RAID Log tab component
+├── RAIDSummaryCards.tsx      # Summary statistics cards
+├── RAIDItemFormModal.tsx     # Create/edit RAID items
+├── RAIDExtractionModal.tsx   # Review AI-extracted items
+├── hooks/useRAIDData.ts      # React Query hooks
+└── types.ts                  # TypeScript interfaces
+```
+
 ## ML Modules
 
 The platform includes ML-powered features for predictive analytics and intelligent automation.

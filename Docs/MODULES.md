@@ -43,11 +43,13 @@ These modules cannot be disabled as they form the foundation of the platform:
 | `dashboard` | Dashboard | Main dashboard with metrics | `/dashboard` |
 | `tasks` | Tasks | Personal task management | `/tasks` |
 | `projects` | Projects | Project management with AI-powered insights, ML predictions, scheduling, and document generation | `/projects/:id` |
+| `raid` | RAID Log | Risks, Action Items, Issues, and Decisions tracking with AI extraction | `/projects/:id` (RAID Log tab) |
 
 > **Note**: The `projects` module now includes all AI/ML features (previously in `aiProjects` and `projectML` modules). AI features are accessible via tabs in the Project Dashboard:
 > - **AI Assistant**: Chat-based interface for project management assistance
 > - **AI Scheduling**: AI-powered auto-scheduling for project tasks
 > - **AI Documents**: AI-powered document generation (charters, SOWs, status reports, etc.)
+> - **RAID Log**: Track and manage Risks, Action Items, Issues, and Decisions with AI-powered extraction from meeting notes
 
 ### Legacy PMO Module (Deprecated)
 
