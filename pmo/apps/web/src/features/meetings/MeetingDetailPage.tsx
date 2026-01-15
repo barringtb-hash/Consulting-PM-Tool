@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 import { useProject } from '../../api/queries';
 import {
@@ -14,6 +15,13 @@ import { useProjectMilestones } from '../../hooks/milestones';
 import useRedirectOnUnauthorized from '../../auth/useRedirectOnUnauthorized';
 import MeetingFormModal, { type MeetingFormValues } from './MeetingFormModal';
 import { GenerateFromMeetingButton } from '../marketing';
+import { RAIDExtractionModal } from '../raid';
+import {
+  useExtractRAID,
+  useAcceptExtractedItems,
+} from '../raid/hooks/useRAIDData';
+import type { ExtractedRAIDItem } from '../raid/types';
+import { Button } from '../../ui/Button';
 
 interface DetailFormValues {
   notes: string;
@@ -100,6 +108,12 @@ function MeetingDetailPage(): JSX.Element {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // RAID extraction state
+  const [showRAIDModal, setShowRAIDModal] = useState(false);
+  const [extractedItems, setExtractedItems] = useState<ExtractedRAIDItem[]>([]);
+  const extractRAIDMutation = useExtractRAID();
+  const acceptExtractedItemsMutation = useAcceptExtractedItems();
 
   useRedirectOnUnauthorized(meetingQuery.error);
   useRedirectOnUnauthorized(projectQuery.error);
@@ -238,6 +252,66 @@ function MeetingDetailPage(): JSX.Element {
     }
   };
 
+  /**
+   * Extract RAID items from meeting notes using AI
+   */
+  const handleExtractRAID = async () => {
+    if (!meeting) {
+      return;
+    }
+
+    try {
+      const result = await extractRAIDMutation.mutateAsync({
+        meetingId: meeting.id,
+      });
+      if (result.extractedItems && result.extractedItems.length > 0) {
+        setExtractedItems(result.extractedItems);
+        setShowRAIDModal(true);
+      } else {
+        setToast('No RAID items found in meeting notes');
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to extract RAID items';
+      setDetailError(message);
+    }
+  };
+
+  /**
+   * Accept extracted RAID items and add them to the project RAID log
+   */
+  const handleAcceptRAIDItems = async (items: ExtractedRAIDItem[]) => {
+    if (!meeting) {
+      return;
+    }
+
+    try {
+      const result = await acceptExtractedItemsMutation.mutateAsync({
+        projectId: meeting.projectId,
+        items,
+      });
+      setShowRAIDModal(false);
+      setExtractedItems([]);
+
+      const successCount = result.created.length;
+      const failCount = result.failed.length;
+
+      if (failCount > 0) {
+        setToast(
+          `Added ${successCount} RAID item${successCount !== 1 ? 's' : ''}, ${failCount} failed`,
+        );
+      } else {
+        setToast(
+          `Added ${successCount} RAID item${successCount !== 1 ? 's' : ''} to project`,
+        );
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to save RAID items';
+      setDetailError(message);
+    }
+  };
+
   if (Number.isNaN(meetingId)) {
     return <p>Invalid meeting id</p>;
   }
@@ -342,10 +416,33 @@ function MeetingDetailPage(): JSX.Element {
           />
         </div>
         {detailError && <p role="alert">{detailError}</p>}
-        <div>
+        <div className="flex gap-3 items-center flex-wrap">
           <button type="submit" disabled={updateMeetingMutation.isPending}>
             Save notes
           </button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExtractRAID}
+            disabled={
+              extractRAIDMutation.isPending ||
+              (!detailValues.notes.trim() &&
+                !detailValues.decisions.trim() &&
+                !detailValues.risks.trim())
+            }
+          >
+            {extractRAIDMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Extracting...
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-4 h-4" />
+                Extract RAID Items
+              </>
+            )}
+          </Button>
         </div>
       </form>
 
@@ -512,6 +609,15 @@ function MeetingDetailPage(): JSX.Element {
           </form>
         </section>
       )}
+
+      <RAIDExtractionModal
+        isOpen={showRAIDModal}
+        onClose={() => setShowRAIDModal(false)}
+        extractedItems={extractedItems}
+        onAccept={handleAcceptRAIDItems}
+        isAccepting={acceptExtractedItemsMutation.isPending}
+        meetingTitle={meeting?.title}
+      />
     </section>
   );
 }

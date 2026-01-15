@@ -323,6 +323,14 @@ model User {
   smartReminders          SmartReminder[]          @relation("UserReminders")
   performanceMetrics      TeamPerformanceMetrics[] @relation("PerformanceMetrics")
 
+  // RAID tracking relations
+  actionItemsAssigned   ActionItem[]   @relation("ActionItemAssignee")
+  actionItemsOwned      ActionItem[]   @relation("ActionItemOwner")
+  decisionsCreated      Decision[]
+  projectIssuesReported ProjectIssue[] @relation("ProjectIssueReporter")
+  projectIssuesOwned    ProjectIssue[] @relation("ProjectIssueOwner")
+  projectIssuesResolved ProjectIssue[] @relation("ProjectIssueResolver")
+
   // Password reset tokens
   passwordResets PasswordReset[]
 }
@@ -550,6 +558,11 @@ model Project {
   projectRisks      ProjectRisk[]
   projectLessons    ProjectLesson[]
 
+  // RAID tracking relations
+  actionItems   ActionItem[]
+  decisions     Decision[]
+  projectIssues ProjectIssue[]
+
   @@index([status])
   @@index([renewalDate])
   @@index([healthStatus, renewalDate])
@@ -654,6 +667,9 @@ model Task {
   dependsOn     TaskDependency[] @relation("DependentTask")
   dependedBy    TaskDependency[] @relation("BlockingTask")
 
+  // RAID tracking - linked action item
+  linkedActionItem ActionItem?
+
   @@index([projectId, status, priority])
   @@index([ownerId, status])
   @@index([parentTaskId])
@@ -702,6 +718,11 @@ model Meeting {
   account           Account?           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   sourceTasks       Task[]
   marketingContents MarketingContent[]
+
+  // RAID tracking - extracted items from meetings
+  extractedActionItems ActionItem[]
+  extractedDecisions   Decision[]
+  extractedIssues      ProjectIssue[]
 
   @@index([projectId, date(sort: Desc)])
   @@index([category, date(sort: Desc)])
@@ -7562,6 +7583,11 @@ model Tenant {
   leadMLModels      LeadMLModel[]
   leadMLPredictions LeadMLPrediction[]
 
+  // RAID tracking relations
+  actionItems   ActionItem[]
+  decisions     Decision[]
+  projectIssues ProjectIssue[]
+
   @@index([slug])
   @@index([status])
 }
@@ -9737,9 +9763,11 @@ model ProjectRisk {
   title               String
   description         String
   severity            RiskSeverity
+  likelihood          RiskLikelihood @default(POSSIBLE)
   category            RiskCategory
   suggestedMitigation String?
   relatedQuote        String? // Exact quote from source
+  confidence          Float?
 
   status     RiskStatus @default(IDENTIFIED)
   resolvedAt DateTime?
@@ -9751,6 +9779,9 @@ model ProjectRisk {
   tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   resolver User?   @relation("RiskResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  // Issues that materialized from this risk
+  projectIssues ProjectIssue[]
 
   @@index([projectId, status])
   @@index([tenantId])
@@ -9788,6 +9819,240 @@ enum RiskStatus {
   MONITORING
   RESOLVED
   ACCEPTED
+}
+
+enum RiskLikelihood {
+  RARE
+  UNLIKELY
+  POSSIBLE
+  LIKELY
+  ALMOST_CERTAIN
+}
+
+enum ActionItemStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  CONVERTED_TO_TASK
+}
+
+enum DecisionImpact {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DecisionCategory {
+  TECHNICAL
+  SCOPE
+  TIMELINE
+  BUDGET
+  RESOURCE
+  PROCESS
+  PROJECT
+  STAKEHOLDER
+}
+
+enum DecisionStatus {
+  PENDING
+  ACTIVE
+  SUPERSEDED
+  REVOKED
+}
+
+enum ProjectIssueSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProjectIssueStatus {
+  OPEN
+  INVESTIGATING
+  IN_PROGRESS
+  BLOCKED
+  RESOLVED
+  CLOSED
+  WONT_FIX
+}
+
+enum RAIDSourceType {
+  MANUAL
+  MEETING
+  AI_EXTRACTED
+  IMPORTED
+}
+
+/**
+ * ActionItem - Action items from meetings (RAID tracking)
+ */
+model ActionItem {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Source tracking
+  sourceType      RAIDSourceType @default(MANUAL)
+  sourceMeetingId Int?
+
+  // Core fields
+  title       String
+  description String?
+
+  // Assignment
+  assigneeId   Int?
+  assigneeName String? // For external stakeholders
+  ownerId      Int?
+
+  // Status and priority
+  status   ActionItemStatus @default(OPEN)
+  priority Priority         @default(P1)
+
+  // Dates
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  // AI extraction metadata
+  sourceText String?
+  confidence Float?
+
+  // Task conversion
+  linkedTaskId Int? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceMeeting Meeting? @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  assignee      User?    @relation("ActionItemAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  owner         User?    @relation("ActionItemOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  linkedTask    Task?    @relation(fields: [linkedTaskId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([assigneeId, status])
+  @@index([tenantId])
+  @@index([dueDate])
+}
+
+/**
+ * Decision - Decisions from meetings (RAID tracking)
+ */
+model Decision {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Source tracking
+  sourceType      RAIDSourceType @default(MANUAL)
+  sourceMeetingId Int?
+
+  // Core decision data
+  title       String
+  description String
+  rationale   String?
+
+  // Stakeholders
+  madeById     Int?
+  madeByName   String?
+  stakeholders String[]
+
+  // Impact and categorization
+  impact   DecisionImpact   @default(MEDIUM)
+  category DecisionCategory @default(PROJECT)
+
+  // Status
+  status         DecisionStatus @default(ACTIVE)
+  supersededById Int?
+
+  // Dates
+  decisionDate  DateTime  @default(now())
+  effectiveDate DateTime?
+  reviewDate    DateTime?
+
+  // AI extraction metadata
+  sourceText String?
+  confidence Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceMeeting Meeting?   @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  madeBy        User?      @relation(fields: [madeById], references: [id], onDelete: SetNull)
+  supersededBy  Decision?  @relation("DecisionSupersedes", fields: [supersededById], references: [id], onDelete: SetNull)
+  supersedes    Decision[] @relation("DecisionSupersedes")
+
+  @@index([projectId, status])
+  @@index([tenantId])
+  @@index([category])
+}
+
+/**
+ * ProjectIssue - Current problems/issues (distinct from risks) - RAID tracking
+ */
+model ProjectIssue {
+  id        Int    @id @default(autoincrement())
+  tenantId  String
+  projectId Int
+
+  // Source tracking
+  sourceType      RAIDSourceType @default(MANUAL)
+  sourceMeetingId Int?
+
+  // Core issue data
+  title         String
+  description   String
+  affectedAreas String[]
+
+  // Impact assessment
+  severity ProjectIssueSeverity @default(MEDIUM)
+  impact   String?
+
+  // Ownership
+  reportedById   Int?
+  reportedByName String?
+  ownerId        Int?
+  resolvedById   Int?
+
+  // Escalation
+  escalationLevel Int @default(0)
+
+  // Resolution
+  status     ProjectIssueStatus @default(OPEN)
+  resolution String?
+  resolvedAt DateTime?
+
+  // Dates
+  identifiedDate       DateTime  @default(now())
+  targetResolutionDate DateTime?
+
+  // Links
+  relatedRiskId Int?
+
+  // AI extraction metadata
+  sourceText String?
+  confidence Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceMeeting Meeting?     @relation(fields: [sourceMeetingId], references: [id], onDelete: SetNull)
+  reportedBy    User?        @relation("ProjectIssueReporter", fields: [reportedById], references: [id], onDelete: SetNull)
+  owner         User?        @relation("ProjectIssueOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  resolvedBy    User?        @relation("ProjectIssueResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  relatedRisk   ProjectRisk? @relation(fields: [relatedRiskId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([ownerId, status])
+  @@index([tenantId])
+  @@index([severity])
 }
 
 /**

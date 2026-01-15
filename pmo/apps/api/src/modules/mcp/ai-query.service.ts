@@ -46,11 +46,29 @@ BUG TRACKING TOOLS:
 - add_issue_comment: Add a comment to an issue
 - assign_issue: Assign an issue to a user
 
+PROJECT AI TOOLS:
+- get_project_health: Get comprehensive AI-powered health analysis with score (0-100), risk factors, concerns, and recommendations
+- predict_project_health: ML-powered health prediction with confidence level and risk factors for a specified time window
+- get_smart_reminders: Get AI-generated reminders for upcoming deadlines, stale tasks, and project concerns
+- generate_project_schedule: Auto-schedule project tasks considering dependencies and team availability
+- generate_project_document: Generate project documents (charter, SOW, status report, executive summary, closure report)
+- extract_raid_from_meeting: Extract Risks, Action Items, Issues, and Decisions from meeting notes using AI
+- get_raid_summary: Get RAID item counts and status summary for a project
+- get_project_risks: Get all risks for a project with filtering options
+- get_project_documents: List all AI-generated documents for a project
+
 When answering questions:
 1. Use the appropriate tools to gather information
 2. Synthesize the data into a clear, helpful response
 3. Provide specific details and actionable insights
 4. If creating or updating data, confirm the action was successful
+
+When users ask about project health, status, or need proactive guidance:
+1. Use get_project_health for detailed analysis with health score
+2. Include relevant reminders when discussing project status using get_smart_reminders
+3. Proactively mention concerns if project shows risk indicators
+4. Suggest document generation when appropriate (e.g., weekly status reports)
+5. Use extract_raid_from_meeting after users discuss meetings to capture action items
 
 Be concise but thorough. Focus on providing value to busy consultants.`;
 
@@ -324,6 +342,40 @@ function extractSources(
           name: task.title,
         });
       }
+    }
+
+    // Extract project AI tool sources
+    if (
+      (toolName === 'get_project_health' ||
+        toolName === 'predict_project_health' ||
+        toolName === 'get_raid_summary' ||
+        toolName === 'get_project_risks' ||
+        toolName === 'get_project_documents') &&
+      data.projectId
+    ) {
+      sources?.push({
+        type: 'project',
+        id: data.projectId,
+        name: data.projectName || `Project ${data.projectId}`,
+      });
+    }
+
+    // Extract document sources
+    if (toolName === 'generate_project_document' && data.documentId) {
+      sources?.push({
+        type: 'project',
+        id: data.projectId,
+        name: data.title || `Document ${data.documentId}`,
+      });
+    }
+
+    // Extract RAID meeting sources
+    if (toolName === 'extract_raid_from_meeting' && data.meetingId) {
+      sources?.push({
+        type: 'meeting',
+        id: data.meetingId,
+        name: `Meeting ${data.meetingId}`,
+      });
     }
   } catch {
     // Ignore parsing errors

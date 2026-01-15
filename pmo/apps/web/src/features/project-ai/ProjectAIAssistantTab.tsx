@@ -272,7 +272,8 @@ export function ProjectAIAssistantTab({
             },
           ];
         });
-      } catch (_error) {
+      } catch (error) {
+        console.error('AI Assistant error:', error);
         setMessages((prev) => {
           const filtered = prev.filter((m) => !m.isLoading);
           return [
@@ -312,8 +313,9 @@ export function ProjectAIAssistantTab({
   const handleDismissReminder = async (reminderId: number) => {
     try {
       await dismissReminderMutation.mutateAsync(reminderId);
-      remindersQuery.refetch();
-    } catch (_error) {
+      await remindersQuery.refetch();
+    } catch (error) {
+      console.error('Failed to dismiss reminder:', error);
       showToast('Failed to dismiss reminder', 'error');
     }
   };
@@ -383,9 +385,11 @@ export function ProjectAIAssistantTab({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    aiStatusQuery.refetch();
-                    healthPredictionQuery.refetch();
+                  onClick={async () => {
+                    await Promise.all([
+                      aiStatusQuery.refetch(),
+                      healthPredictionQuery.refetch(),
+                    ]);
                   }}
                 >
                   <RefreshCw className="w-4 h-4" />

@@ -86,7 +86,8 @@ export function ProjectAIDocumentsTab({
           templateId,
         });
         showToast(`${doc.title} generated successfully`, 'success');
-        documentsQuery.refetch();
+        // Refetch documents list after successful generation
+        await documentsQuery.refetch();
       } catch (_error) {
         showToast('Failed to generate document', 'error');
       }
@@ -245,7 +246,16 @@ export function ProjectAIDocumentsTab({
                         size="sm"
                         variant="ghost"
                         onClick={() => {
-                          const blob = new Blob([doc.content], {
+                          // Validate content before creating blob
+                          const content = doc.content;
+                          if (!content || typeof content !== 'string') {
+                            showToast(
+                              'Document content is not available',
+                              'error',
+                            );
+                            return;
+                          }
+                          const blob = new Blob([content], {
                             type: 'text/plain;charset=utf-8',
                           });
                           const url = URL.createObjectURL(blob);
