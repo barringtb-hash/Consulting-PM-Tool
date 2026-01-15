@@ -17,6 +17,11 @@ import type {
   ProjectIssueFilters,
   EscalateIssueInput,
 } from '../validation/raid.schema';
+import type {
+  ProjectIssueStatus,
+  ProjectIssueSeverity,
+  Prisma,
+} from '@prisma/client';
 
 // =============================================================================
 // TYPES
@@ -163,48 +168,45 @@ export const listByProject = async (
   const offset = filters?.offset ?? 0;
 
   try {
-    const issues = await prisma
-      .$queryRawUnsafe<ProjectIssue[]>(
-        `
-      SELECT * FROM "ProjectIssue"
-      WHERE "projectId" = $1
-      ${filters?.status?.length ? `AND status = ANY($2::text[])` : ''}
-      ${filters?.severity?.length ? `AND severity = ANY($3::text[])` : ''}
-      ${filters?.ownerId ? `AND "ownerId" = $4` : ''}
-      ${filters?.escalated ? `AND "escalationLevel" > 0` : ''}
-      ORDER BY
-        CASE severity
-          WHEN 'CRITICAL' THEN 1
-          WHEN 'HIGH' THEN 2
-          WHEN 'MEDIUM' THEN 3
-          WHEN 'LOW' THEN 4
-        END,
-        "escalationLevel" DESC,
-        "createdAt" DESC
-      LIMIT $5 OFFSET $6
-    `,
-        projectId,
-        filters?.status ?? [],
-        filters?.severity ?? [],
-        filters?.ownerId ?? null,
-        limit,
-        offset,
-      )
-      .catch(() => []);
+    // Build where clause for Prisma with proper types
+    const where: Prisma.ProjectIssueWhereInput = {
+      projectId,
+    };
 
-    const countResult = await prisma
-      .$queryRawUnsafe<[{ count: bigint }]>(
-        `
-      SELECT COUNT(*) as count FROM "ProjectIssue"
-      WHERE "projectId" = $1
-    `,
-        projectId,
-      )
-      .catch(() => [{ count: BigInt(0) }]);
+    if (filters?.status?.length) {
+      where.status = { in: filters.status as ProjectIssueStatus[] };
+    }
+
+    if (filters?.severity?.length) {
+      where.severity = { in: filters.severity as ProjectIssueSeverity[] };
+    }
+
+    if (filters?.ownerId) {
+      where.ownerId = filters.ownerId;
+    }
+
+    if (filters?.escalated) {
+      where.escalationLevel = { gt: 0 };
+    }
+
+    // Use Prisma client for proper column mapping
+    const [issues, total] = await Promise.all([
+      prisma.projectIssue.findMany({
+        where,
+        orderBy: [
+          { severity: 'desc' }, // CRITICAL > HIGH > MEDIUM > LOW
+          { escalationLevel: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        take: limit,
+        skip: offset,
+      }),
+      prisma.projectIssue.count({ where }),
+    ]);
 
     return {
-      issues,
-      total: Number(countResult[0]?.count ?? 0),
+      issues: issues as unknown as ProjectIssue[],
+      total,
     };
   } catch (error) {
     console.error('Error listing issues:', error);
