@@ -17,34 +17,37 @@ import type {
   DecisionFilters,
   SupersedeDecisionInput,
 } from '../validation/raid.schema';
+import type { DecisionStatus, DecisionImpact, Prisma } from '@prisma/client';
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
 /**
- * Decision data shape returned from the service
+ * Decision data shape returned from the service.
+ * Matches the database schema for Decision table.
  */
 export interface Decision {
   id: number;
   tenantId: string | null;
   projectId: number;
+  sourceType: string;
+  sourceMeetingId: number | null;
   title: string;
-  description: string | null;
-  context: string | null;
+  description: string;
   rationale: string | null;
+  madeById: number | null;
+  madeByName: string | null;
+  stakeholders: string[];
   impact: string;
+  category: string;
   status: string;
-  decisionMakerId: number | null;
-  decisionMakerName: string | null;
-  decisionDate: Date | null;
+  supersededById: number | null;
+  decisionDate: Date;
   effectiveDate: Date | null;
   reviewDate: Date | null;
-  supersededById: number | null;
-  supersedingId: number | null;
-  sourceMeetingId: number | null;
   sourceText: string | null;
-  tags: string[];
+  confidence: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -158,43 +161,48 @@ export const listByProject = async (
   const offset = filters?.offset ?? 0;
 
   try {
-    const decisions = await prisma
-      .$queryRawUnsafe<Decision[]>(
-        `
-      SELECT * FROM "Decision"
-      WHERE project_id = $1
-      ${filters?.status?.length ? `AND status = ANY($2::text[])` : ''}
-      ${filters?.impact?.length ? `AND impact = ANY($3::text[])` : ''}
-      ${filters?.decisionMakerId ? `AND decision_maker_id = $4` : ''}
-      ${filters?.fromDate ? `AND decision_date >= $5` : ''}
-      ${filters?.toDate ? `AND decision_date <= $6` : ''}
-      ORDER BY decision_date DESC NULLS LAST, created_at DESC
-      LIMIT $7 OFFSET $8
-    `,
-        projectId,
-        filters?.status ?? [],
-        filters?.impact ?? [],
-        filters?.decisionMakerId ?? null,
-        filters?.fromDate ?? null,
-        filters?.toDate ?? null,
-        limit,
-        offset,
-      )
-      .catch(() => []);
+    // Build where clause for Prisma with proper types
+    const where: Prisma.DecisionWhereInput = {
+      projectId,
+    };
 
-    const countResult = await prisma
-      .$queryRawUnsafe<[{ count: bigint }]>(
-        `
-      SELECT COUNT(*) as count FROM "Decision"
-      WHERE project_id = $1
-    `,
-        projectId,
-      )
-      .catch(() => [{ count: BigInt(0) }]);
+    if (filters?.status?.length) {
+      where.status = { in: filters.status as DecisionStatus[] };
+    }
+
+    if (filters?.impact?.length) {
+      where.impact = { in: filters.impact as DecisionImpact[] };
+    }
+
+    if (filters?.madeById) {
+      where.madeById = filters.madeById;
+    }
+
+    if (filters?.fromDate) {
+      where.decisionDate = { gte: filters.fromDate };
+    }
+
+    if (filters?.toDate) {
+      where.decisionDate = {
+        ...(where.decisionDate as object),
+        lte: filters.toDate,
+      };
+    }
+
+    // Use Prisma client for proper column mapping
+    const [decisions, total] = await Promise.all([
+      prisma.decision.findMany({
+        where,
+        orderBy: [{ decisionDate: 'desc' }, { createdAt: 'desc' }],
+        take: limit,
+        skip: offset,
+      }),
+      prisma.decision.count({ where }),
+    ]);
 
     return {
-      decisions,
-      total: Number(countResult[0]?.count ?? 0),
+      decisions: decisions as unknown as Decision[],
+      total,
     };
   } catch (error) {
     console.error('Error listing decisions:', error);
@@ -222,42 +230,48 @@ export const create = async (
   const tenantId = hasTenantContext() ? getTenantId() : undefined;
 
   try {
-    const result = await prisma.$queryRawUnsafe<Decision[]>(
-      `
-      INSERT INTO "Decision" (
-        tenant_id, project_id, title, description, context, rationale,
-        impact, status, decision_maker_id, decision_maker_name,
-        decision_date, effective_date, review_date,
-        source_meeting_id, source_text, tags,
-        created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), NOW()
-      )
-      RETURNING *
-    `,
-      tenantId ?? null,
-      data.projectId,
-      data.title,
-      data.description ?? null,
-      data.context ?? null,
-      data.rationale ?? null,
-      data.impact ?? 'MEDIUM',
-      data.status ?? 'PENDING',
-      data.decisionMakerId ?? null,
-      data.decisionMakerName ?? null,
-      data.decisionDate ?? null,
-      data.effectiveDate ?? null,
-      data.reviewDate ?? null,
-      data.sourceMeetingId ?? null,
-      data.sourceText ?? null,
-      data.tags ?? [],
-    );
+    // Use Prisma client for proper column mapping
+    const result = await prisma.decision.create({
+      data: {
+        tenantId: tenantId ?? '',
+        projectId: data.projectId,
+        sourceType:
+          (data.sourceType as
+            | 'MANUAL'
+            | 'MEETING'
+            | 'AI_EXTRACTED'
+            | 'IMPORTED') ?? 'MANUAL',
+        sourceMeetingId: data.sourceMeetingId ?? null,
+        title: data.title,
+        description: data.description ?? '',
+        rationale: data.rationale ?? null,
+        madeById: data.madeById ?? null,
+        madeByName: data.madeByName ?? null,
+        stakeholders: data.stakeholders ?? [],
+        impact:
+          (data.impact as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL') ?? 'MEDIUM',
+        category:
+          (data.category as
+            | 'TECHNICAL'
+            | 'SCOPE'
+            | 'TIMELINE'
+            | 'BUDGET'
+            | 'RESOURCE'
+            | 'PROCESS'
+            | 'PROJECT'
+            | 'STAKEHOLDER') ?? 'PROJECT',
+        status:
+          (data.status as 'PENDING' | 'ACTIVE' | 'SUPERSEDED' | 'REVOKED') ??
+          'PENDING',
+        decisionDate: data.decisionDate ?? new Date(),
+        effectiveDate: data.effectiveDate ?? null,
+        reviewDate: data.reviewDate ?? null,
+        sourceText: data.sourceText ?? null,
+        confidence: data.confidence ?? null,
+      },
+    });
 
-    if (!result || result.length === 0) {
-      return { error: 'database_error' };
-    }
-
-    return { decision: result[0] };
+    return { decision: result as unknown as Decision };
   } catch (error) {
     console.error('Error creating decision:', error);
     return { error: 'database_error' };
@@ -312,77 +326,36 @@ export const update = async (
   }
 
   try {
-    const updates: string[] = [];
-    const values: unknown[] = [];
-    let paramIndex = 1;
+    // Build update data - use raw object to avoid Prisma type issues
+    const updateData: Record<string, unknown> = {};
 
-    if (data.title !== undefined) {
-      updates.push(`title = $${paramIndex++}`);
-      values.push(data.title);
-    }
-    if (data.description !== undefined) {
-      updates.push(`description = $${paramIndex++}`);
-      values.push(data.description);
-    }
-    if (data.context !== undefined) {
-      updates.push(`context = $${paramIndex++}`);
-      values.push(data.context);
-    }
-    if (data.rationale !== undefined) {
-      updates.push(`rationale = $${paramIndex++}`);
-      values.push(data.rationale);
-    }
-    if (data.impact !== undefined) {
-      updates.push(`impact = $${paramIndex++}`);
-      values.push(data.impact);
-    }
-    if (data.status !== undefined) {
-      updates.push(`status = $${paramIndex++}`);
-      values.push(data.status);
-    }
-    if (data.decisionMakerId !== undefined) {
-      updates.push(`decision_maker_id = $${paramIndex++}`);
-      values.push(data.decisionMakerId);
-    }
-    if (data.decisionMakerName !== undefined) {
-      updates.push(`decision_maker_name = $${paramIndex++}`);
-      values.push(data.decisionMakerName);
-    }
-    if (data.decisionDate !== undefined) {
-      updates.push(`decision_date = $${paramIndex++}`);
-      values.push(data.decisionDate);
-    }
-    if (data.effectiveDate !== undefined) {
-      updates.push(`effective_date = $${paramIndex++}`);
-      values.push(data.effectiveDate);
-    }
-    if (data.reviewDate !== undefined) {
-      updates.push(`review_date = $${paramIndex++}`);
-      values.push(data.reviewDate);
-    }
-    if (data.tags !== undefined) {
-      updates.push(`tags = $${paramIndex++}`);
-      values.push(data.tags);
-    }
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined)
+      updateData.description = data.description;
+    if (data.rationale !== undefined) updateData.rationale = data.rationale;
+    if (data.sourceType !== undefined) updateData.sourceType = data.sourceType;
+    if (data.impact !== undefined) updateData.impact = data.impact;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.madeById !== undefined) updateData.madeById = data.madeById;
+    if (data.madeByName !== undefined) updateData.madeByName = data.madeByName;
+    if (data.stakeholders !== undefined)
+      updateData.stakeholders = data.stakeholders;
+    if (data.decisionDate !== undefined)
+      updateData.decisionDate = data.decisionDate ?? undefined;
+    if (data.effectiveDate !== undefined)
+      updateData.effectiveDate = data.effectiveDate ?? undefined;
+    if (data.reviewDate !== undefined)
+      updateData.reviewDate = data.reviewDate ?? undefined;
+    if (data.sourceText !== undefined) updateData.sourceText = data.sourceText;
+    if (data.confidence !== undefined) updateData.confidence = data.confidence;
 
-    updates.push(`updated_at = NOW()`);
-    values.push(id);
+    const result = await prisma.decision.update({
+      where: { id },
+      data: updateData as Prisma.DecisionUpdateInput,
+    });
 
-    const result = await prisma.$queryRawUnsafe<Decision[]>(
-      `
-      UPDATE "Decision"
-      SET ${updates.join(', ')}
-      WHERE id = $${paramIndex}
-      RETURNING *
-    `,
-      ...values,
-    );
-
-    if (!result || result.length === 0) {
-      return { error: 'database_error' };
-    }
-
-    return { decision: result[0] };
+    return { decision: result as unknown as Decision };
   } catch (error) {
     console.error('Error updating decision:', error);
     return { error: 'database_error' };
@@ -538,10 +511,9 @@ export const getStatusCounts = async (
 
     const counts: Record<string, number> = {
       PENDING: 0,
-      APPROVED: 0,
-      REJECTED: 0,
+      ACTIVE: 0,
       SUPERSEDED: 0,
-      DEFERRED: 0,
+      REVOKED: 0,
     };
 
     for (const row of result) {
@@ -553,10 +525,9 @@ export const getStatusCounts = async (
     return {
       counts: {
         PENDING: 0,
-        APPROVED: 0,
-        REJECTED: 0,
+        ACTIVE: 0,
         SUPERSEDED: 0,
-        DEFERRED: 0,
+        REVOKED: 0,
       },
     };
   }
@@ -589,7 +560,7 @@ export const getPendingReviews = async (
       WHERE project_id = $1
       AND review_date IS NOT NULL
       AND review_date <= $2
-      AND status NOT IN ('SUPERSEDED', 'REJECTED')
+      AND status NOT IN ('SUPERSEDED', 'REVOKED')
       ORDER BY review_date ASC
     `,
       projectId,

@@ -35,13 +35,13 @@ export const ActionItemPriority = {
 
 /**
  * Decision status enum values
+ * Matches database enum: PENDING, ACTIVE, SUPERSEDED, REVOKED
  */
 export const DecisionStatus = {
   PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED',
+  ACTIVE: 'ACTIVE',
   SUPERSEDED: 'SUPERSEDED',
-  DEFERRED: 'DEFERRED',
+  REVOKED: 'REVOKED',
 } as const;
 
 /**
@@ -165,26 +165,42 @@ export const convertToTaskSchema = z.object({
 
 /**
  * Base schema for Decision fields
+ * Matches database schema for Decision table
  */
 const decisionBaseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
   description: z.string().max(2000, 'Description too long').optional(),
-  context: z.string().max(2000, 'Context too long').optional().nullable(),
   rationale: z.string().max(2000, 'Rationale too long').optional().nullable(),
+  sourceType: z
+    .enum(['MANUAL', 'MEETING', 'AI_EXTRACTED', 'IMPORTED'])
+    .default('MANUAL'),
+  sourceMeetingId: z.number().int().positive().optional().nullable(),
+  madeById: z.number().int().positive().optional().nullable(),
+  madeByName: z.string().max(255).optional().nullable(),
+  stakeholders: z.array(z.string().max(100)).max(20).optional(),
   impact: z.nativeEnum(DecisionImpact).default('MEDIUM'),
+  category: z
+    .enum([
+      'TECHNICAL',
+      'SCOPE',
+      'TIMELINE',
+      'BUDGET',
+      'RESOURCE',
+      'PROCESS',
+      'PROJECT',
+      'STAKEHOLDER',
+    ])
+    .default('PROJECT'),
   status: z.nativeEnum(DecisionStatus).default('PENDING'),
-  decisionMakerId: z.number().int().positive().optional().nullable(),
-  decisionMakerName: z.string().max(255).optional().nullable(),
   decisionDate: optionalDateSchema,
   effectiveDate: optionalDateSchema,
   reviewDate: optionalDateSchema,
-  sourceMeetingId: z.number().int().positive().optional().nullable(),
   sourceText: z
     .string()
     .max(1000, 'Source text too long')
     .optional()
     .nullable(),
-  tags: z.array(z.string().max(50)).max(10).optional(),
+  confidence: z.number().min(0).max(1).optional().nullable(),
 });
 
 /**
@@ -210,7 +226,21 @@ export const updateDecisionSchema = decisionBaseSchema
 export const decisionFiltersSchema = z.object({
   status: z.array(z.nativeEnum(DecisionStatus)).optional(),
   impact: z.array(z.nativeEnum(DecisionImpact)).optional(),
-  decisionMakerId: z.number().int().positive().optional(),
+  category: z
+    .array(
+      z.enum([
+        'TECHNICAL',
+        'SCOPE',
+        'TIMELINE',
+        'BUDGET',
+        'RESOURCE',
+        'PROCESS',
+        'PROJECT',
+        'STAKEHOLDER',
+      ]),
+    )
+    .optional(),
+  madeById: z.number().int().positive().optional(),
   fromDate: z.coerce.date().optional(),
   toDate: z.coerce.date().optional(),
   limit: z.number().int().positive().max(100).optional(),
