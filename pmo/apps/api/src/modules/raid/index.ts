@@ -73,7 +73,7 @@ export {
   escalateIssueSchema,
   ProjectIssueStatus,
   ProjectIssueSeverity,
-  ProjectIssueCategory,
+  RAIDSourceType,
 
   // Extraction schemas
   raidExtractionOptionsSchema,

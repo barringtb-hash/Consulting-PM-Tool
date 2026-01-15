@@ -59,10 +59,12 @@ export const DecisionImpact = {
  */
 export const ProjectIssueStatus = {
   OPEN: 'OPEN',
+  INVESTIGATING: 'INVESTIGATING',
   IN_PROGRESS: 'IN_PROGRESS',
+  BLOCKED: 'BLOCKED',
   RESOLVED: 'RESOLVED',
   CLOSED: 'CLOSED',
-  ESCALATED: 'ESCALATED',
+  WONT_FIX: 'WONT_FIX',
 } as const;
 
 /**
@@ -76,18 +78,13 @@ export const ProjectIssueSeverity = {
 } as const;
 
 /**
- * Project Issue category enum values
+ * RAID Source Type enum values
  */
-export const ProjectIssueCategory = {
-  TECHNICAL: 'TECHNICAL',
-  RESOURCE: 'RESOURCE',
-  SCOPE: 'SCOPE',
-  BUDGET: 'BUDGET',
-  TIMELINE: 'TIMELINE',
-  QUALITY: 'QUALITY',
-  COMMUNICATION: 'COMMUNICATION',
-  EXTERNAL: 'EXTERNAL',
-  OTHER: 'OTHER',
+export const RAIDSourceType = {
+  MANUAL: 'MANUAL',
+  MEETING: 'MEETING',
+  AI_EXTRACTED: 'AI_EXTRACTED',
+  IMPORTED: 'IMPORTED',
 } as const;
 
 // =============================================================================
@@ -234,34 +231,59 @@ export const supersedeDecisionSchema = z.object({
 
 /**
  * Base schema for Project Issue fields
+ *
+ * Fields match the Prisma ProjectIssue model:
+ * - sourceType: How the issue was created (MANUAL, MEETING, AI_EXTRACTED, IMPORTED)
+ * - affectedAreas: String array of affected areas
+ * - ownerId: User responsible for resolving the issue
+ * - identifiedDate: When the issue was identified
+ * - relatedRiskId: Optional link to a related risk
+ * - confidence: AI extraction confidence score (0-1)
  */
 const projectIssueBaseSchema = z.object({
+  // Core issue data
   title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
-  description: z.string().max(2000, 'Description too long').optional(),
+  description: z.string().max(2000, 'Description too long'),
+  affectedAreas: z.array(z.string().max(100)).max(20).optional().default([]),
+
+  // Source tracking
+  sourceType: z.nativeEnum(RAIDSourceType).default('MANUAL'),
+  sourceMeetingId: z.number().int().positive().optional().nullable(),
+
+  // Impact assessment
   severity: z.nativeEnum(ProjectIssueSeverity).default('MEDIUM'),
-  category: z.nativeEnum(ProjectIssueCategory).default('OTHER'),
-  status: z.nativeEnum(ProjectIssueStatus).default('OPEN'),
-  assigneeId: z.number().int().positive().optional().nullable(),
-  assigneeName: z.string().max(255).optional().nullable(),
-  reportedById: z.number().int().positive().optional().nullable(),
-  reportedByName: z.string().max(255).optional().nullable(),
-  reportedDate: optionalDateSchema,
-  targetResolutionDate: optionalDateSchema,
-  actualResolutionDate: optionalDateSchema,
-  resolution: z.string().max(2000, 'Resolution too long').optional().nullable(),
   impact: z
     .string()
     .max(1000, 'Impact description too long')
     .optional()
     .nullable(),
-  workaround: z.string().max(1000, 'Workaround too long').optional().nullable(),
-  sourceMeetingId: z.number().int().positive().optional().nullable(),
+
+  // Ownership
+  reportedById: z.number().int().positive().optional().nullable(),
+  reportedByName: z.string().max(255).optional().nullable(),
+  ownerId: z.number().int().positive().optional().nullable(),
+
+  // Escalation
+  escalationLevel: z.number().int().min(0).max(5).default(0),
+
+  // Resolution
+  status: z.nativeEnum(ProjectIssueStatus).default('OPEN'),
+  resolution: z.string().max(2000, 'Resolution too long').optional().nullable(),
+
+  // Dates
+  identifiedDate: optionalDateSchema,
+  targetResolutionDate: optionalDateSchema,
+
+  // Links
+  relatedRiskId: z.number().int().positive().optional().nullable(),
+
+  // AI extraction metadata
   sourceText: z
     .string()
     .max(1000, 'Source text too long')
     .optional()
     .nullable(),
-  escalationLevel: z.number().int().min(0).max(5).default(0),
+  confidence: z.number().min(0).max(1).optional().nullable(),
 });
 
 /**
@@ -287,9 +309,11 @@ export const updateProjectIssueSchema = projectIssueBaseSchema
 export const projectIssueFiltersSchema = z.object({
   status: z.array(z.nativeEnum(ProjectIssueStatus)).optional(),
   severity: z.array(z.nativeEnum(ProjectIssueSeverity)).optional(),
-  category: z.array(z.nativeEnum(ProjectIssueCategory)).optional(),
-  assigneeId: z.number().int().positive().optional(),
+  sourceType: z.array(z.nativeEnum(RAIDSourceType)).optional(),
+  ownerId: z.number().int().positive().optional(),
+  reportedById: z.number().int().positive().optional(),
   escalated: z.boolean().optional(),
+  hasRelatedRisk: z.boolean().optional(),
   limit: z.number().int().positive().max(100).optional(),
   offset: z.number().int().min(0).optional(),
 });

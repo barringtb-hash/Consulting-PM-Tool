@@ -23,44 +23,35 @@ import type {
 // =============================================================================
 
 /**
- * Project Issue data shape returned from the service
+ * Project Issue data shape returned from the service.
+ * Matches the database schema for ProjectIssue table.
  */
 export interface ProjectIssue {
   id: number;
   tenantId: string | null;
   projectId: number;
+  sourceType: string;
+  sourceMeetingId: number | null;
   title: string;
-  description: string | null;
+  description: string;
+  affectedAreas: string[];
   severity: string;
-  category: string;
+  impact: string | null;
   status: string;
-  assigneeId: number | null;
-  assigneeName: string | null;
   reportedById: number | null;
   reportedByName: string | null;
-  reportedDate: Date | null;
-  targetResolutionDate: Date | null;
-  actualResolutionDate: Date | null;
-  resolution: string | null;
-  impact: string | null;
-  workaround: string | null;
-  sourceMeetingId: number | null;
-  sourceText: string | null;
+  ownerId: number | null;
+  resolvedById: number | null;
   escalationLevel: number;
-  escalationHistory: EscalationEntry[];
+  resolution: string | null;
+  resolvedAt: Date | null;
+  identifiedDate: Date;
+  targetResolutionDate: Date | null;
+  relatedRiskId: number | null;
+  sourceText: string | null;
+  confidence: number | null;
   createdAt: Date;
   updatedAt: Date;
-}
-
-/**
- * Escalation history entry
- */
-interface EscalationEntry {
-  level: number;
-  escalatedAt: Date;
-  escalatedBy: number;
-  reason?: string;
-  escalateTo?: string;
 }
 
 /**
@@ -124,7 +115,7 @@ const findIssueWithAccess = async (id: number) => {
   const issue = await prisma.$queryRaw<ProjectIssue[]>`
     SELECT * FROM "ProjectIssue"
     WHERE id = ${id}
-    AND (tenant_id = ${tenantId} OR tenant_id IS NULL)
+    AND ("tenantId" = ${tenantId} OR "tenantId" IS NULL)
     LIMIT 1
   `.catch(() => null);
 
@@ -176,12 +167,11 @@ export const listByProject = async (
       .$queryRawUnsafe<ProjectIssue[]>(
         `
       SELECT * FROM "ProjectIssue"
-      WHERE project_id = $1
+      WHERE "projectId" = $1
       ${filters?.status?.length ? `AND status = ANY($2::text[])` : ''}
       ${filters?.severity?.length ? `AND severity = ANY($3::text[])` : ''}
-      ${filters?.category?.length ? `AND category = ANY($4::text[])` : ''}
-      ${filters?.assigneeId ? `AND assignee_id = $5` : ''}
-      ${filters?.escalated ? `AND escalation_level > 0` : ''}
+      ${filters?.ownerId ? `AND "ownerId" = $4` : ''}
+      ${filters?.escalated ? `AND "escalationLevel" > 0` : ''}
       ORDER BY
         CASE severity
           WHEN 'CRITICAL' THEN 1
@@ -189,15 +179,14 @@ export const listByProject = async (
           WHEN 'MEDIUM' THEN 3
           WHEN 'LOW' THEN 4
         END,
-        escalation_level DESC,
-        created_at DESC
-      LIMIT $6 OFFSET $7
+        "escalationLevel" DESC,
+        "createdAt" DESC
+      LIMIT $5 OFFSET $6
     `,
         projectId,
         filters?.status ?? [],
         filters?.severity ?? [],
-        filters?.category ?? [],
-        filters?.assigneeId ?? null,
+        filters?.ownerId ?? null,
         limit,
         offset,
       )
@@ -207,7 +196,7 @@ export const listByProject = async (
       .$queryRawUnsafe<[{ count: bigint }]>(
         `
       SELECT COUNT(*) as count FROM "ProjectIssue"
-      WHERE project_id = $1
+      WHERE "projectId" = $1
     `,
         projectId,
       )
@@ -246,35 +235,39 @@ export const create = async (
     const result = await prisma.$queryRawUnsafe<ProjectIssue[]>(
       `
       INSERT INTO "ProjectIssue" (
-        tenant_id, project_id, title, description, severity, category, status,
-        assignee_id, assignee_name, reported_by_id, reported_by_name,
-        reported_date, target_resolution_date, impact, workaround,
-        source_meeting_id, source_text, escalation_level, escalation_history,
-        created_at, updated_at
+        "tenantId", "projectId", "sourceType", "sourceMeetingId",
+        "title", "description", "affectedAreas", "severity", "impact", "status",
+        "reportedById", "reportedByName", "ownerId", "escalationLevel",
+        "identifiedDate", "targetResolutionDate", "relatedRiskId",
+        "sourceText", "confidence", "createdAt", "updatedAt"
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb, NOW(), NOW()
+        $1, $2, $3, $4,
+        $5, $6, $7::text[], $8, $9, $10,
+        $11, $12, $13, $14,
+        $15, $16, $17,
+        $18, $19, NOW(), NOW()
       )
       RETURNING *
     `,
       tenantId ?? null,
       data.projectId,
+      data.sourceType ?? 'MANUAL',
+      data.sourceMeetingId ?? null,
       data.title,
-      data.description ?? null,
+      data.description ?? '',
+      data.affectedAreas ?? [],
       data.severity ?? 'MEDIUM',
-      data.category ?? 'OTHER',
+      data.impact ?? null,
       data.status ?? 'OPEN',
-      data.assigneeId ?? null,
-      data.assigneeName ?? null,
       data.reportedById ?? userId,
       data.reportedByName ?? null,
-      data.reportedDate ?? new Date(),
-      data.targetResolutionDate ?? null,
-      data.impact ?? null,
-      data.workaround ?? null,
-      data.sourceMeetingId ?? null,
-      data.sourceText ?? null,
+      data.ownerId ?? null,
       data.escalationLevel ?? 0,
-      JSON.stringify([]),
+      data.identifiedDate ?? new Date(),
+      data.targetResolutionDate ?? null,
+      data.relatedRiskId ?? null,
+      data.sourceText ?? null,
+      data.confidence ?? null,
     );
 
     if (!result || result.length === 0) {
@@ -341,57 +334,67 @@ export const update = async (
     let paramIndex = 1;
 
     if (data.title !== undefined) {
-      updates.push(`title = $${paramIndex++}`);
+      updates.push(`"title" = $${paramIndex++}`);
       values.push(data.title);
     }
     if (data.description !== undefined) {
-      updates.push(`description = $${paramIndex++}`);
+      updates.push(`"description" = $${paramIndex++}`);
       values.push(data.description);
     }
+    if (data.affectedAreas !== undefined) {
+      updates.push(`"affectedAreas" = $${paramIndex++}::text[]`);
+      values.push(data.affectedAreas);
+    }
+    if (data.sourceType !== undefined) {
+      updates.push(`"sourceType" = $${paramIndex++}`);
+      values.push(data.sourceType);
+    }
     if (data.severity !== undefined) {
-      updates.push(`severity = $${paramIndex++}`);
+      updates.push(`"severity" = $${paramIndex++}`);
       values.push(data.severity);
     }
-    if (data.category !== undefined) {
-      updates.push(`category = $${paramIndex++}`);
-      values.push(data.category);
+    if (data.impact !== undefined) {
+      updates.push(`"impact" = $${paramIndex++}`);
+      values.push(data.impact);
     }
     if (data.status !== undefined) {
-      updates.push(`status = $${paramIndex++}`);
+      updates.push(`"status" = $${paramIndex++}`);
       values.push(data.status);
 
-      // Auto-set resolution date when resolved/closed
-      if (data.status === 'RESOLVED' || data.status === 'CLOSED') {
-        updates.push(`actual_resolution_date = $${paramIndex++}`);
+      // Auto-set resolution date when resolved/closed/wont_fix
+      if (
+        data.status === 'RESOLVED' ||
+        data.status === 'CLOSED' ||
+        data.status === 'WONT_FIX'
+      ) {
+        updates.push(`"resolvedAt" = $${paramIndex++}`);
         values.push(new Date());
+        updates.push(`"resolvedById" = $${paramIndex++}`);
+        values.push(userId);
       }
     }
-    if (data.assigneeId !== undefined) {
-      updates.push(`assignee_id = $${paramIndex++}`);
-      values.push(data.assigneeId);
-    }
-    if (data.assigneeName !== undefined) {
-      updates.push(`assignee_name = $${paramIndex++}`);
-      values.push(data.assigneeName);
+    if (data.ownerId !== undefined) {
+      updates.push(`"ownerId" = $${paramIndex++}`);
+      values.push(data.ownerId);
     }
     if (data.targetResolutionDate !== undefined) {
-      updates.push(`target_resolution_date = $${paramIndex++}`);
+      updates.push(`"targetResolutionDate" = $${paramIndex++}`);
       values.push(data.targetResolutionDate);
     }
     if (data.resolution !== undefined) {
-      updates.push(`resolution = $${paramIndex++}`);
+      updates.push(`"resolution" = $${paramIndex++}`);
       values.push(data.resolution);
     }
-    if (data.impact !== undefined) {
-      updates.push(`impact = $${paramIndex++}`);
-      values.push(data.impact);
+    if (data.relatedRiskId !== undefined) {
+      updates.push(`"relatedRiskId" = $${paramIndex++}`);
+      values.push(data.relatedRiskId);
     }
-    if (data.workaround !== undefined) {
-      updates.push(`workaround = $${paramIndex++}`);
-      values.push(data.workaround);
+    if (data.confidence !== undefined) {
+      updates.push(`"confidence" = $${paramIndex++}`);
+      values.push(data.confidence);
     }
 
-    updates.push(`updated_at = NOW()`);
+    updates.push(`"updatedAt" = NOW()`);
     values.push(id);
 
     const result = await prisma.$queryRawUnsafe<ProjectIssue[]>(
@@ -484,30 +487,20 @@ export const escalate = async (
   }
 
   const newLevel = currentLevel + 1;
-  const escalationEntry: EscalationEntry = {
-    level: newLevel,
-    escalatedAt: new Date(),
-    escalatedBy: userId,
-    reason: data.reason,
-    escalateTo: data.escalateTo,
-  };
 
   try {
-    const existingHistory = found.issue.escalationHistory ?? [];
-    const newHistory = [...existingHistory, escalationEntry];
-
+    // Note: The database doesn't have an escalation_history column,
+    // so we just update the escalation level. The reason and escalateTo
+    // are logged but not stored in a separate history field.
     const result = await prisma.$queryRawUnsafe<ProjectIssue[]>(
       `
       UPDATE "ProjectIssue"
-      SET escalation_level = $1,
-          status = 'ESCALATED',
-          escalation_history = $2::jsonb,
-          updated_at = NOW()
-      WHERE id = $3
+      SET "escalationLevel" = $1,
+          "updatedAt" = NOW()
+      WHERE id = $2
       RETURNING *
     `,
       newLevel,
-      JSON.stringify(newHistory),
       id,
     );
 
@@ -548,18 +541,21 @@ export const getStatusCounts = async (
       `
       SELECT status, COUNT(*) as count
       FROM "ProjectIssue"
-      WHERE project_id = $1
+      WHERE "projectId" = $1
       GROUP BY status
     `,
       projectId,
     );
 
+    // Match the database enum values from ProjectIssueStatus
     const counts: Record<string, number> = {
       OPEN: 0,
+      INVESTIGATING: 0,
       IN_PROGRESS: 0,
+      BLOCKED: 0,
       RESOLVED: 0,
       CLOSED: 0,
-      ESCALATED: 0,
+      WONT_FIX: 0,
     };
 
     for (const row of result) {
@@ -571,10 +567,12 @@ export const getStatusCounts = async (
     return {
       counts: {
         OPEN: 0,
+        INVESTIGATING: 0,
         IN_PROGRESS: 0,
+        BLOCKED: 0,
         RESOLVED: 0,
         CLOSED: 0,
-        ESCALATED: 0,
+        WONT_FIX: 0,
       },
     };
   }
@@ -606,8 +604,8 @@ export const getSeverityCounts = async (
       `
       SELECT severity, COUNT(*) as count
       FROM "ProjectIssue"
-      WHERE project_id = $1
-      AND status NOT IN ('RESOLVED', 'CLOSED')
+      WHERE "projectId" = $1
+      AND status NOT IN ('RESOLVED', 'CLOSED', 'WONT_FIX')
       GROUP BY severity
     `,
       projectId,
@@ -658,13 +656,13 @@ export const getCriticalIssues = async (
     const issues = await prisma.$queryRawUnsafe<ProjectIssue[]>(
       `
       SELECT * FROM "ProjectIssue"
-      WHERE project_id = $1
+      WHERE "projectId" = $1
       AND severity IN ('CRITICAL', 'HIGH')
-      AND status NOT IN ('RESOLVED', 'CLOSED')
+      AND status NOT IN ('RESOLVED', 'CLOSED', 'WONT_FIX')
       ORDER BY
         CASE severity WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 END,
-        escalation_level DESC,
-        created_at ASC
+        "escalationLevel" DESC,
+        "createdAt" ASC
     `,
       projectId,
     );
