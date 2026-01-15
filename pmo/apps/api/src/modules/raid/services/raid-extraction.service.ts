@@ -750,7 +750,7 @@ export const saveExtractedRisks = async (
           title: risk.title,
           description: risk.description,
           severity: risk.severity,
-          likelihood: risk.likelihood,
+          likelihood: mapToRiskLikelihood(risk.likelihood),
           category: mapToRiskCategory(risk.category),
           suggestedMitigation: risk.mitigation,
           relatedQuote: risk.sourceText,

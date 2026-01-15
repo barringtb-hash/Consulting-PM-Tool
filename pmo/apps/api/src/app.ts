@@ -265,6 +265,9 @@ export function createApp(): express.Express {
   app.use(
     helmet({
       // Content Security Policy - configured for React SPA
+      // Note: 'unsafe-inline' and 'unsafe-eval' are required for React/Vite development
+      // and some React libraries. In production, consider using nonces/hashes for scripts.
+      // TODO: Implement CSP nonces for stricter production security
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],

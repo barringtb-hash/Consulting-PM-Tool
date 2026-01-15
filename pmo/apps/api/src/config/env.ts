@@ -203,11 +203,18 @@ const jwtExpiresIn = getRequiredEnv(
   'Set to a valid duration (e.g., "1h", "7d", "30m")',
 );
 
-// Validate BCRYPT_SALT_ROUNDS (required, must be a number)
+// Validate BCRYPT_SALT_ROUNDS (required, must be a number between 10-14)
 const bcryptSaltRounds = getRequiredNumberEnv(
   'BCRYPT_SALT_ROUNDS',
   'Set to a number between 10-14 (e.g., 12)',
 );
+if (bcryptSaltRounds < 10 || bcryptSaltRounds > 14) {
+  validationErrors.push(
+    `BCRYPT_SALT_ROUNDS should be between 10-14 for security and performance.\n` +
+      `  Current value: ${bcryptSaltRounds}\n` +
+      `  Recommended: 12`,
+  );
+}
 
 // Validate PORT (optional, defaults to 4000, must be valid port number)
 const port = getValidatedPort();
