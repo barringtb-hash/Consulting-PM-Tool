@@ -281,6 +281,14 @@ router.post(
     // Validate request body
     const parsed = acceptExtractedItemsSchema.safeParse(req.body);
     if (!parsed.success) {
+      console.error(
+        '[RAID Accept] Validation failed:',
+        JSON.stringify(parsed.error.format(), null, 2),
+      );
+      console.error(
+        '[RAID Accept] Request body:',
+        JSON.stringify(req.body, null, 2),
+      );
       res.status(400).json({
         error: 'Invalid request data',
         details: parsed.error.format(),
