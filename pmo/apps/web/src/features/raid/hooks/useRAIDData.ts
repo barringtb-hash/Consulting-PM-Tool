@@ -201,7 +201,7 @@ interface ExtractedDecisionFromAPI {
   confidence?: number;
 }
 
-interface ExtractRAIDResponse {
+interface ExtractRAIDAPIResponse {
   meetingId?: number;
   projectId: number;
   risks: ExtractedRiskFromAPI[];
@@ -211,6 +211,113 @@ interface ExtractRAIDResponse {
   summary?: string;
   extractedAt: string;
   llmUsed: boolean;
+}
+
+/**
+ * Extended response type with combined extractedItems array
+ */
+interface ExtractRAIDResponse extends ExtractRAIDAPIResponse {
+  extractedItems: ExtractedRAIDItem[];
+}
+
+/**
+ * Transform API response to include combined extractedItems array
+ */
+function transformExtractResponse(
+  response: ExtractRAIDAPIResponse,
+): ExtractRAIDResponse {
+  const extractedItems: ExtractedRAIDItem[] = [];
+
+  // Transform risks
+  for (const risk of response.risks) {
+    extractedItems.push({
+      type: 'risk',
+      title: risk.title,
+      description: risk.description,
+      confidence: risk.confidence ?? 0.7,
+      sourceText: risk.sourceText,
+      suggestedSeverity: mapSeverity(risk.impact),
+    });
+  }
+
+  // Transform action items
+  for (const item of response.actionItems) {
+    extractedItems.push({
+      type: 'action-item',
+      title: item.title,
+      description: item.description,
+      confidence: item.confidence ?? 0.7,
+      sourceText: item.sourceText,
+      suggestedOwner: item.assigneeName,
+      suggestedPriority: mapPriority(item.priority),
+      suggestedDueDate: item.dueDate,
+    });
+  }
+
+  // Transform issues
+  for (const issue of response.issues) {
+    extractedItems.push({
+      type: 'issue',
+      title: issue.title,
+      description: issue.description,
+      confidence: issue.confidence ?? 0.7,
+      sourceText: issue.sourceText,
+      suggestedSeverity: mapSeverity(issue.severity),
+    });
+  }
+
+  // Transform decisions
+  for (const decision of response.decisions) {
+    extractedItems.push({
+      type: 'decision',
+      title: decision.title,
+      description: decision.description
+        ? `${decision.description}${decision.rationale ? `\n\nRationale: ${decision.rationale}` : ''}`
+        : decision.rationale,
+      confidence: decision.confidence ?? 0.7,
+      sourceText: decision.sourceText,
+    });
+  }
+
+  return {
+    ...response,
+    extractedItems,
+  };
+}
+
+/**
+ * Map API severity/impact string to typed Severity
+ */
+function mapSeverity(
+  value?: string,
+): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | undefined {
+  if (!value) return undefined;
+  const upper = value.toUpperCase();
+  if (
+    upper === 'CRITICAL' ||
+    upper === 'HIGH' ||
+    upper === 'MEDIUM' ||
+    upper === 'LOW'
+  ) {
+    return upper as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  }
+  return 'MEDIUM';
+}
+
+/**
+ * Map API priority string to typed Priority
+ */
+function mapPriority(
+  value?: string,
+): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | undefined {
+  if (!value) return undefined;
+  const upper = value.toUpperCase();
+  // Handle P1, P2, P3, P4 format
+  if (upper === 'P1' || upper === 'CRITICAL') return 'CRITICAL';
+  if (upper === 'P2' || upper === 'HIGH') return 'HIGH';
+  if (upper === 'P3' || upper === 'MEDIUM') return 'MEDIUM';
+  if (upper === 'P4' || upper === 'LOW') return 'LOW';
+  return 'MEDIUM';
 }
 
 // Extended timeout for LLM operations (60 seconds)
@@ -229,11 +336,13 @@ export function useExtractRAID(): UseMutationResult<
   return useMutation({
     mutationFn: async ({ meetingId }) => {
       // Use extended timeout for LLM extraction operations
-      return http.post<ExtractRAIDResponse>(
+      const response = await http.post<ExtractRAIDAPIResponse>(
         `/api/raid/extract/meetings/${meetingId}`,
         undefined,
         { timeout: LLM_TIMEOUT },
       );
+      // Transform to include combined extractedItems array
+      return transformExtractResponse(response);
     },
     onSuccess: () => {
       // Invalidate all RAID queries since extraction may add new items
