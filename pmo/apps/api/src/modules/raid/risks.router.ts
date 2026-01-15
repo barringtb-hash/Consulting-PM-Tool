@@ -22,6 +22,7 @@ import { tenantMiddleware } from '../../tenant/tenant.middleware';
 import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 import { prisma } from '../../prisma/client';
 import { hasProjectAccess } from '../../utils/project-access';
+import type { RiskStatus, RiskSeverity, RiskLikelihood } from '@prisma/client';
 
 const router = Router();
 
@@ -64,7 +65,7 @@ const createRiskSchema = z.object({
     .default('TECHNICAL'),
   suggestedMitigation: z.string().max(2000).optional(),
   sourceType: z
-    .enum(['MANUAL', 'MEETING_EXTRACTION', 'AI_ANALYSIS'])
+    .enum(['MANUAL', 'MEETING', 'TASK', 'MILESTONE', 'AI_DETECTED'])
     .default('MANUAL'),
   sourceId: z.number().optional(),
   relatedQuote: z.string().optional(),
@@ -157,18 +158,28 @@ router.get(
         offset: req.query.offset ? Number(req.query.offset) : undefined,
       });
 
-      const filters = filtersParsed.success ? filtersParsed.data : {};
+      const filters = filtersParsed.success
+        ? filtersParsed.data
+        : {
+            status: undefined as string[] | undefined,
+            severity: undefined as string[] | undefined,
+            likelihood: undefined as string[] | undefined,
+            limit: 50,
+            offset: 0,
+          };
 
       const risks = await prisma.projectRisk.findMany({
         where: {
           projectId,
           tenantId,
-          ...(filters.status?.length && { status: { in: filters.status } }),
+          ...(filters.status?.length && {
+            status: { in: filters.status as RiskStatus[] },
+          }),
           ...(filters.severity?.length && {
-            severity: { in: filters.severity },
+            severity: { in: filters.severity as RiskSeverity[] },
           }),
           ...(filters.likelihood?.length && {
-            likelihood: { in: filters.likelihood },
+            likelihood: { in: filters.likelihood as RiskLikelihood[] },
           }),
         },
         orderBy: [

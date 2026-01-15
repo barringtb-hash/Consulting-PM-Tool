@@ -18,6 +18,7 @@ import type {
   ActionItemFilters,
   ConvertToTaskInput,
 } from '../validation/raid.schema';
+import type { ActionItemStatus, Priority, Prisma } from '@prisma/client';
 
 // =============================================================================
 // TYPES
@@ -172,20 +173,19 @@ export const listByProject = async (
   if (filters?.overdue) {
     whereConditions.dueDate = { lt: new Date() };
     whereConditions.status = {
-      notIn: ['COMPLETED', 'CANCELLED', 'CONVERTED_TO_TASK'],
+      notIn: ['COMPLETED', 'CANCELLED', 'CONVERTED_TO_TASK'] as (
+        | 'OPEN'
+        | 'IN_PROGRESS'
+        | 'COMPLETED'
+        | 'CANCELLED'
+        | 'CONVERTED_TO_TASK'
+      )[],
     };
   }
 
   try {
-    // Build where clause for Prisma
-    const where: {
-      projectId: number;
-      tenantId?: string;
-      status?: { in: string[] } | { notIn: string[] };
-      priority?: { in: string[] };
-      assigneeId?: number;
-      dueDate?: { lt: Date };
-    } = {
+    // Build where clause for Prisma using properly typed conditions
+    const where: Prisma.ActionItemWhereInput = {
       projectId,
     };
 
@@ -194,11 +194,11 @@ export const listByProject = async (
     }
 
     if (filters?.status?.length) {
-      where.status = { in: filters.status };
+      where.status = { in: filters.status as ActionItemStatus[] };
     }
 
     if (filters?.priority?.length) {
-      where.priority = { in: filters.priority };
+      where.priority = { in: filters.priority as Priority[] };
     }
 
     if (filters?.assigneeId) {
@@ -207,7 +207,13 @@ export const listByProject = async (
 
     if (filters?.overdue) {
       where.dueDate = { lt: new Date() };
-      where.status = { notIn: ['COMPLETED', 'CANCELLED', 'CONVERTED_TO_TASK'] };
+      where.status = {
+        notIn: [
+          'COMPLETED',
+          'CANCELLED',
+          'CONVERTED_TO_TASK',
+        ] as ActionItemStatus[],
+      };
     }
 
     // Query using Prisma client for correct column mapping

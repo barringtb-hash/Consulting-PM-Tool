@@ -264,7 +264,7 @@ const ruleBasedExtraction = (
         actionItems.push({
           title: extractTitle(match[0]),
           description: match[0].trim(),
-          priority: 'P3',
+          priority: 'P2',
           assignee: extractName(sentence),
           sourceText: sentence.trim(),
           confidence: 0.65,
