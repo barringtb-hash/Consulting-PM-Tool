@@ -61,7 +61,7 @@ Project: ${projectName}
 
 MEETING NOTES:
 """
-${notes.slice(0, 6000)}
+${notes.slice(0, 3500)}
 """
 
 Extract and return a JSON object with the following structure:
@@ -165,7 +165,7 @@ ${context ? `Context: ${context}` : ''}
 
 TEXT TO ANALYZE:
 """
-${text.slice(0, 6000)}
+${text.slice(0, 3500)}
 """
 
 Extract and return a JSON object with this structure:

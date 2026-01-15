@@ -476,15 +476,21 @@ export const extractFromMeeting = async (
   // Try LLM extraction
   if (llmService.isAvailable()) {
     try {
+      // Truncate notes to ~3000 chars to speed up extraction
+      const truncatedNotes =
+        meeting.notes.length > 3000
+          ? meeting.notes.slice(0, 3000) + '\n...[truncated]'
+          : meeting.notes;
+
       const response = await llmService.completeWithSystem(
         RAID_EXTRACTION_SYSTEM_PROMPT,
         RAID_EXTRACTION_USER_PROMPT(
           meeting.title,
           meeting.project.name,
-          meeting.notes,
+          truncatedNotes,
           options,
         ),
-        { maxTokens: 3000, temperature: 0.2 },
+        { maxTokens: 2000, temperature: 0.2 },
       );
 
       const parsed = parseExtractionResponse(response.content);
@@ -554,10 +560,14 @@ export const extractFromText = async (
   // Try LLM extraction
   if (llmService.isAvailable()) {
     try {
+      // Truncate text to ~3000 chars to speed up extraction
+      const truncatedText =
+        text.length > 3000 ? text.slice(0, 3000) + '\n...[truncated]' : text;
+
       const response = await llmService.completeWithSystem(
         RAID_EXTRACTION_SYSTEM_PROMPT,
-        RAID_EXTRACTION_TEXT_PROMPT(text, project.name, context),
-        { maxTokens: 3000, temperature: 0.2 },
+        RAID_EXTRACTION_TEXT_PROMPT(truncatedText, project.name, context),
+        { maxTokens: 2000, temperature: 0.2 },
       );
 
       const parsed = parseExtractionResponse(response.content);

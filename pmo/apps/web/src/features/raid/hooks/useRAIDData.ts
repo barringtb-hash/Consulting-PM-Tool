@@ -213,6 +213,9 @@ interface ExtractRAIDResponse {
   llmUsed: boolean;
 }
 
+// Extended timeout for LLM operations (60 seconds)
+const LLM_TIMEOUT = 60000;
+
 /**
  * Extract RAID items from a meeting
  */
@@ -225,8 +228,11 @@ export function useExtractRAID(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ meetingId }) => {
+      // Use extended timeout for LLM extraction operations
       return http.post<ExtractRAIDResponse>(
         `/api/raid/extract/meetings/${meetingId}`,
+        undefined,
+        { timeout: LLM_TIMEOUT },
       );
     },
     onSuccess: () => {

@@ -36,6 +36,7 @@ interface LLMCompletionOptions {
   maxTokens?: number;
   temperature?: number;
   model?: string;
+  timeout?: number; // Timeout in milliseconds
 }
 
 interface LLMCompletionResult {
@@ -46,6 +47,9 @@ interface LLMCompletionResult {
     totalTokens: number;
   };
 }
+
+// Default timeout for LLM calls (25 seconds - fits within serverless limits)
+const DEFAULT_LLM_TIMEOUT = 25000;
 
 /**
  * LLM Service class providing AI completions
@@ -79,6 +83,13 @@ class LLMService {
     const model = options?.model || this.defaultModel;
     const maxTokens = options?.maxTokens || 1000;
     const temperature = options?.temperature ?? 0.7;
+    const timeout = options?.timeout ?? DEFAULT_LLM_TIMEOUT;
+
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeout);
 
     try {
       const response = await fetch(
@@ -95,6 +106,7 @@ class LLMService {
             max_tokens: maxTokens,
             temperature,
           }),
+          signal: controller.signal,
         },
       );
 
@@ -121,8 +133,13 @@ class LLMService {
           : undefined,
       };
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`LLM request timed out after ${timeout}ms`);
+      }
       console.error('LLM completion failed:', error);
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -141,6 +158,13 @@ class LLMService {
     const model = options?.model || this.defaultModel;
     const maxTokens = options?.maxTokens || 1000;
     const temperature = options?.temperature ?? 0.7;
+    const timeout = options?.timeout ?? DEFAULT_LLM_TIMEOUT;
+
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeout);
 
     try {
       const response = await fetch(
@@ -160,6 +184,7 @@ class LLMService {
             max_tokens: maxTokens,
             temperature,
           }),
+          signal: controller.signal,
         },
       );
 
@@ -186,8 +211,13 @@ class LLMService {
           : undefined,
       };
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`LLM request timed out after ${timeout}ms`);
+      }
       console.error('LLM completion failed:', error);
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 }
