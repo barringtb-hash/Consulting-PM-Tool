@@ -17,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   archiveClient,
@@ -43,6 +44,7 @@ export function useClients(
   return useQuery({
     queryKey: queryKeys.clients.list(filters),
     queryFn: () => fetchClients(filters),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -58,6 +60,7 @@ export function useClient(clientId?: number): UseQueryResult<Client, Error> {
       : queryKeys.clients.all,
     enabled: Boolean(clientId),
     queryFn: () => fetchClientById(clientId as number, true),
+    ...QUERY_CONFIG,
     initialData: () => {
       if (!clientId) {
         return undefined;

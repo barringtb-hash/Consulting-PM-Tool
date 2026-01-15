@@ -18,6 +18,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { invalidateRelatedModules } from '../moduleRegistry';
 import {
   isProjectDeleting,
@@ -57,6 +58,7 @@ export function useProjects(
   return useQuery({
     queryKey: queryKeys.projects.list(filters),
     queryFn: () => fetchProjects(filters),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -73,6 +75,7 @@ export function useProject(projectId?: number): UseQueryResult<Project, Error> {
     // Disable query if project is being deleted to prevent 404 refetch race conditions
     enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectById(projectId as number),
+    ...QUERY_CONFIG,
     initialData: () => {
       if (!projectId) {
         return undefined;
@@ -109,6 +112,7 @@ export function useProjectStatus(
     // Disable query if project is being deleted to prevent 404 refetch race conditions
     enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectStatus(projectId as number, rangeDays),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -124,6 +128,7 @@ export function useProjectMembers(
       : queryKeys.projects.all,
     enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectMembers(projectId as number),
+    ...QUERY_CONFIG,
   });
 }
 

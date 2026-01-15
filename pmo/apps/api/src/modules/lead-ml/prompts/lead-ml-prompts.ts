@@ -8,6 +8,7 @@
  */
 
 import type { LeadMLContext, ActivitySummary, LeadFeatures } from '../types';
+import { escapePromptContent } from '../../../utils/prompt-sanitizer';
 
 // ============================================================================
 // System Prompts
@@ -260,7 +261,8 @@ Respond with a JSON object matching this exact schema:
 // ============================================================================
 
 /**
- * Format lead profile for prompts
+ * Format lead profile for prompts.
+ * All user-provided string fields are sanitized to prevent prompt injection.
  */
 export function formatLeadProfile(lead: {
   id: number;
@@ -279,15 +281,34 @@ export function formatLeadProfile(lead: {
     (Date.now() - lead.createdAt.getTime()) / (1000 * 60 * 60 * 24),
   );
 
+  // Sanitize user-provided content to prevent prompt injection
+  const safeEmail = escapePromptContent(lead.email, { maxLength: 254 });
+  const safeName = escapePromptContent(lead.name || 'Unknown', {
+    maxLength: 200,
+  });
+  const safeCompany = escapePromptContent(lead.company || 'Unknown', {
+    maxLength: 200,
+  });
+  const safePhone = escapePromptContent(lead.phone || 'Not provided', {
+    maxLength: 50,
+  });
+  const safeTitle = escapePromptContent(lead.title || 'Unknown', {
+    maxLength: 200,
+  });
+  const safePipelineStage = escapePromptContent(
+    lead.pipelineStage || 'Not in pipeline',
+    { maxLength: 100 },
+  );
+
   return `Lead ID: ${lead.id}
-Email: ${lead.email}
-Name: ${lead.name || 'Unknown'}
-Company: ${lead.company || 'Unknown'}
-Phone: ${lead.phone || 'Not provided'}
-Title: ${lead.title || 'Unknown'}
+Email: ${safeEmail}
+Name: ${safeName}
+Company: ${safeCompany}
+Phone: ${safePhone}
+Title: ${safeTitle}
 Current Score: ${lead.score}
 Score Level: ${lead.scoreLevel}
-Pipeline Stage: ${lead.pipelineStage || 'Not in pipeline'}
+Pipeline Stage: ${safePipelineStage}
 Pipeline Value: ${lead.pipelineValue ? '$' + lead.pipelineValue.toLocaleString() : 'Not set'}
 Lead Age: ${leadAge} days`;
 }
@@ -330,7 +351,8 @@ Days Since Last Engagement: ${daysSinceEngagement ?? 'Never engaged'}`;
 }
 
 /**
- * Format activity summary for prompts
+ * Format activity summary for prompts.
+ * Activity type strings are sanitized to prevent prompt injection.
  */
 export function formatActivitySummary(activities: ActivitySummary[]): string {
   if (activities.length === 0) {
@@ -338,10 +360,11 @@ export function formatActivitySummary(activities: ActivitySummary[]): string {
   }
 
   return activities
-    .map(
-      (a) =>
-        `${a.type}: ${a.count} occurrences${a.lastOccurred ? `, last: ${a.lastOccurred.toISOString().split('T')[0]}` : ''}`,
-    )
+    .map((a) => {
+      // Sanitize the activity type which could come from user-defined events
+      const safeType = escapePromptContent(a.type, { maxLength: 100 });
+      return `${safeType}: ${a.count} occurrences${a.lastOccurred ? `, last: ${a.lastOccurred.toISOString().split('T')[0]}` : ''}`;
+    })
     .join('\n');
 }
 
@@ -380,7 +403,8 @@ export function formatFeatureAnalysis(features: LeadFeatures): string {
 }
 
 /**
- * Format score history for prompts
+ * Format score history for prompts.
+ * Reason strings are sanitized to prevent prompt injection.
  */
 export function formatScoreHistory(
   history: Array<{
@@ -396,15 +420,19 @@ export function formatScoreHistory(
 
   return history
     .slice(0, 10)
-    .map(
-      (h) =>
-        `${h.scoredAt.toISOString().split('T')[0]}: Score=${h.score} (${h.level})${h.reason ? ` - ${h.reason}` : ''}`,
-    )
+    .map((h) => {
+      // Sanitize reason which could contain user-provided data
+      const safeReason = h.reason
+        ? escapePromptContent(h.reason, { maxLength: 200 })
+        : '';
+      return `${h.scoredAt.toISOString().split('T')[0]}: Score=${h.score} (${h.level})${safeReason ? ` - ${safeReason}` : ''}`;
+    })
     .join('\n');
 }
 
 /**
- * Format sequence status for prompts
+ * Format sequence status for prompts.
+ * Sequence name is sanitized to prevent prompt injection.
  */
 export function formatSequenceStatus(
   sequenceInfo: {
@@ -418,7 +446,13 @@ export function formatSequenceStatus(
     return 'Not enrolled in any nurture sequence';
   }
 
-  return `Enrolled in: ${sequenceInfo.sequenceName || 'Unknown Sequence'}
+  // Sanitize sequence name which could be user-defined
+  const safeSequenceName = escapePromptContent(
+    sequenceInfo.sequenceName || 'Unknown Sequence',
+    { maxLength: 200 },
+  );
+
+  return `Enrolled in: ${safeSequenceName}
 Progress: Step ${sequenceInfo.currentStep ?? '?'} of ${sequenceInfo.totalSteps ?? '?'}`;
 }
 
@@ -464,7 +498,8 @@ Value: ${context.lead.pipelineValue ? '$' + context.lead.pipelineValue.toLocaleS
 }
 
 /**
- * Build priority ranking prompt for multiple leads
+ * Build priority ranking prompt for multiple leads.
+ * All user-provided lead data is sanitized to prevent prompt injection.
  */
 export function buildPriorityRankingPrompt(
   leads: Array<{
@@ -481,25 +516,37 @@ export function buildPriorityRankingPrompt(
   }>,
 ): string {
   const leadsData = leads
-    .map(
-      (l, i) =>
-        `${i + 1}. ID: ${l.id}
-   Email: ${l.email}
-   Name: ${l.name || 'Unknown'}
-   Company: ${l.company || 'Unknown'}
-   Title: ${l.title || 'Unknown'}
+    .map((l, i) => {
+      // Sanitize all user-provided fields
+      const safeEmail = escapePromptContent(l.email, { maxLength: 254 });
+      const safeName = escapePromptContent(l.name || 'Unknown', {
+        maxLength: 200,
+      });
+      const safeCompany = escapePromptContent(l.company || 'Unknown', {
+        maxLength: 200,
+      });
+      const safeTitle = escapePromptContent(l.title || 'Unknown', {
+        maxLength: 200,
+      });
+
+      return `${i + 1}. ID: ${l.id}
+   Email: ${safeEmail}
+   Name: ${safeName}
+   Company: ${safeCompany}
+   Title: ${safeTitle}
    Score: ${l.score} (${l.scoreLevel})
    Days Since Activity: ${l.daysSinceLastActivity}
    Total Activities: ${l.totalActivities}
-   Email Open Rate: ${(l.emailOpenRate * 100).toFixed(1)}%`,
-    )
+   Email Open Rate: ${(l.emailOpenRate * 100).toFixed(1)}%`;
+    })
     .join('\n\n');
 
   return PRIORITY_RANKING_PROMPT.replace('{leadsData}', leadsData);
 }
 
 /**
- * Build score explanation prompt
+ * Build score explanation prompt.
+ * Activity types are sanitized to prevent prompt injection.
  */
 export function buildScoreExplanationPrompt(
   context: LeadMLContext,
@@ -518,7 +565,11 @@ Total: ${context.lead.score}`;
 
   const activityHistory = context.recentActivities
     .slice(0, 20)
-    .map((a) => `${a.createdAt.toISOString().split('T')[0]}: ${a.type}`)
+    .map((a) => {
+      // Sanitize activity type which could come from user-defined events
+      const safeType = escapePromptContent(a.type, { maxLength: 100 });
+      return `${a.createdAt.toISOString().split('T')[0]}: ${safeType}`;
+    })
     .join('\n');
 
   return SCORE_EXPLANATION_PROMPT.replace(

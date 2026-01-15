@@ -17,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { invalidateRelatedModules, moduleRegistry } from '../moduleRegistry';
 import {
   archiveMarketingContent,
@@ -61,6 +62,7 @@ export function useMarketingContents(
     queryKey: queryKeys.marketing.list(query || {}),
     queryFn: () => fetchMarketingContents(query),
     enabled: isModuleEnabled,
+    ...QUERY_CONFIG,
   });
 }
 
@@ -78,6 +80,7 @@ export function useMarketingContent(
     queryKey: queryKeys.marketing.detail(contentId),
     queryFn: () => fetchMarketingContent(contentId!),
     enabled: !!contentId && isModuleEnabled,
+    ...QUERY_CONFIG,
   });
 }
 
@@ -95,6 +98,7 @@ export function useProjectMarketingContents(
     queryKey: queryKeys.marketing.byProject(projectId),
     queryFn: () => fetchProjectMarketingContents(projectId!),
     enabled: !!projectId && isModuleEnabled,
+    ...QUERY_CONFIG,
   });
 }
 

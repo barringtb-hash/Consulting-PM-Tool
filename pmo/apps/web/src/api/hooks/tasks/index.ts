@@ -14,6 +14,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { isProjectDeleting } from '../deletionTracker';
 import {
   TASK_PRIORITIES,
@@ -53,6 +54,7 @@ export function useProjectTasks(
     // Disable query if project is being deleted to prevent 404 refetch race conditions
     enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectTasks(projectId as number),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -66,6 +68,7 @@ export function useMyTasks(
     queryKey: [...queryKeys.tasks.myTasks(), ownerId],
     enabled: Boolean(ownerId),
     queryFn: () => fetchMyTasks(ownerId),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -79,6 +82,7 @@ export function useTaskWithSubtasks(
     queryKey: queryKeys.tasks.detail(taskId),
     enabled: Boolean(taskId),
     queryFn: () => fetchTaskWithSubtasks(taskId as number),
+    ...QUERY_CONFIG,
   });
 }
 

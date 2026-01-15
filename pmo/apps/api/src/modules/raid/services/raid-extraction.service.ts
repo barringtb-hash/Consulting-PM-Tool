@@ -11,6 +11,7 @@ import { prisma } from '../../../prisma/client';
 import { getTenantId, hasTenantContext } from '../../../tenant/tenant.context';
 import { hasProjectAccess } from '../../../utils/project-access';
 import { llmService } from '../../../services/llm.service';
+import { createChildLogger } from '../../../utils/logger';
 import {
   RAID_EXTRACTION_SYSTEM_PROMPT,
   RAID_EXTRACTION_USER_PROMPT,
@@ -19,8 +20,38 @@ import {
 import type { RAIDExtractionOptions } from '../validation/raid.schema';
 
 // =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/** Maximum character length for text truncation before LLM processing */
+const TEXT_TRUNCATION_LENGTH = 3000;
+
+/** Default confidence threshold for filtering extracted items (0.0 - 1.0) */
+const DEFAULT_CONFIDENCE_THRESHOLD = 0.6;
+
+/** Maximum character length for extracted item titles */
+const TITLE_MAX_LENGTH = 60;
+
+/** Character length at which to truncate title (before adding ellipsis) */
+const TITLE_TRUNCATE_AT = 57;
+
+/** Logger instance for RAID extraction service */
+const logger = createChildLogger({ module: 'raid-extraction' });
+
+// =============================================================================
 // TYPES
 // =============================================================================
+
+/**
+ * Valid RiskLikelihood enum values from Prisma schema.
+ * Represents probability scale from least to most likely.
+ */
+export type RiskLikelihood =
+  | 'RARE'
+  | 'UNLIKELY'
+  | 'POSSIBLE'
+  | 'LIKELY'
+  | 'ALMOST_CERTAIN';
 
 /**
  * Extracted risk from text
@@ -29,7 +60,7 @@ export interface ExtractedRisk {
   title: string;
   description: string;
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  likelihood: 'HIGH' | 'MEDIUM' | 'LOW';
+  likelihood: RiskLikelihood;
   category: string;
   mitigation?: string;
   owner?: string;
@@ -162,7 +193,7 @@ const parseExtractionResponse = (
     }
     return JSON.parse(jsonMatch[0]);
   } catch (error) {
-    console.error('Failed to parse extraction response:', error);
+    logger.error('Failed to parse extraction response', error);
     return null;
   }
 };
@@ -248,7 +279,7 @@ const ruleBasedExtraction = (
           title: extractTitle(sentence),
           description: sentence.trim(),
           severity,
-          likelihood: 'MEDIUM',
+          likelihood: 'POSSIBLE',
           category: inferCategory(sentence),
           sourceText: sentence.trim(),
           confidence: 0.7,
@@ -311,7 +342,9 @@ const ruleBasedExtraction = (
  */
 const extractTitle = (text: string): string => {
   const cleaned = text.trim().replace(/^[-:*]\s*/, '');
-  return cleaned.length > 60 ? cleaned.slice(0, 57) + '...' : cleaned;
+  return cleaned.length > TITLE_MAX_LENGTH
+    ? cleaned.slice(0, TITLE_TRUNCATE_AT) + '...'
+    : cleaned;
 };
 
 /**
@@ -471,15 +504,16 @@ export const extractFromMeeting = async (
     return { error: 'no_notes' };
   }
 
-  const confidenceThreshold = options?.confidenceThreshold ?? 0.6;
+  const confidenceThreshold =
+    options?.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
 
   // Try LLM extraction
   if (llmService.isAvailable()) {
     try {
-      // Truncate notes to ~3000 chars to speed up extraction
+      // Truncate notes to reduce LLM processing time
       const truncatedNotes =
-        meeting.notes.length > 3000
-          ? meeting.notes.slice(0, 3000) + '\n...[truncated]'
+        meeting.notes.length > TEXT_TRUNCATION_LENGTH
+          ? meeting.notes.slice(0, TEXT_TRUNCATION_LENGTH) + '\n...[truncated]'
           : meeting.notes;
 
       const response = await llmService.completeWithSystem(
@@ -515,7 +549,9 @@ export const extractFromMeeting = async (
         };
       }
     } catch (error) {
-      console.error('LLM extraction failed, falling back to rules:', error);
+      logger.error('LLM extraction failed, falling back to rules', error, {
+        meetingId: meeting.id,
+      });
     }
   }
 
@@ -555,14 +591,17 @@ export const extractFromText = async (
   }
 
   const { project } = projectAccessResult;
-  const confidenceThreshold = options?.confidenceThreshold ?? 0.6;
+  const confidenceThreshold =
+    options?.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
 
   // Try LLM extraction
   if (llmService.isAvailable()) {
     try {
-      // Truncate text to ~3000 chars to speed up extraction
+      // Truncate text to reduce LLM processing time
       const truncatedText =
-        text.length > 3000 ? text.slice(0, 3000) + '\n...[truncated]' : text;
+        text.length > TEXT_TRUNCATION_LENGTH
+          ? text.slice(0, TEXT_TRUNCATION_LENGTH) + '\n...[truncated]'
+          : text;
 
       const response = await llmService.completeWithSystem(
         RAID_EXTRACTION_SYSTEM_PROMPT,
@@ -591,7 +630,9 @@ export const extractFromText = async (
         };
       }
     } catch (error) {
-      console.error('LLM extraction failed, falling back to rules:', error);
+      logger.error('LLM extraction failed, falling back to rules', error, {
+        projectId,
+      });
     }
   }
 
@@ -648,6 +689,42 @@ export const mapToRiskCategory = (
 };
 
 /**
+ * Maps likelihood string to database enum.
+ *
+ * Handles both the simplified HIGH/MEDIUM/LOW values (for backward compatibility
+ * with older prompts or rule-based extraction) and the full schema values.
+ *
+ * @param likelihood - The likelihood string from extraction
+ * @returns Valid RiskLikelihood enum value
+ */
+export const mapToRiskLikelihood = (
+  likelihood: string | undefined,
+): RiskLikelihood => {
+  const likelihoodMap: Record<string, RiskLikelihood> = {
+    // Full schema values (case-insensitive mapping)
+    RARE: 'RARE',
+    UNLIKELY: 'UNLIKELY',
+    POSSIBLE: 'POSSIBLE',
+    LIKELY: 'LIKELY',
+    ALMOST_CERTAIN: 'ALMOST_CERTAIN',
+    // Simplified values for backward compatibility
+    LOW: 'UNLIKELY',
+    MEDIUM: 'POSSIBLE',
+    HIGH: 'LIKELY',
+    // Handle edge cases
+    VERY_HIGH: 'ALMOST_CERTAIN',
+    VERY_LOW: 'RARE',
+  };
+
+  if (!likelihood) {
+    return 'POSSIBLE';
+  }
+
+  const normalized = likelihood.toUpperCase().replace(/[\s-]/g, '_');
+  return likelihoodMap[normalized] || 'POSSIBLE';
+};
+
+/**
  * Saves extracted risks to the database
  *
  * @param projectId - The project ID
@@ -673,6 +750,7 @@ export const saveExtractedRisks = async (
           title: risk.title,
           description: risk.description,
           severity: risk.severity,
+          likelihood: risk.likelihood,
           category: mapToRiskCategory(risk.category),
           suggestedMitigation: risk.mitigation,
           relatedQuote: risk.sourceText,
@@ -683,7 +761,10 @@ export const saveExtractedRisks = async (
       });
       createdIds.push(created.id);
     } catch (error) {
-      console.error('Failed to save extracted risk:', error);
+      logger.error('Failed to save extracted risk', error, {
+        projectId,
+        riskTitle: risk.title,
+      });
     }
   }
 

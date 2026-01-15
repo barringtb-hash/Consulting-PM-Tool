@@ -14,6 +14,7 @@ import {
 } from '@tanstack/react-query';
 
 import { queryKeys } from '../queryKeys';
+import { QUERY_CONFIG } from '../queryConfig';
 import { isProjectDeleting } from '../deletionTracker';
 import {
   MILESTONE_STATUSES,
@@ -42,6 +43,7 @@ export function useProjectMilestones(
     // Disable query if project is being deleted to prevent 404 refetch race conditions
     enabled: Boolean(projectId) && !isProjectDeleting(projectId),
     queryFn: () => fetchProjectMilestones(projectId as number),
+    ...QUERY_CONFIG,
   });
 }
 
@@ -57,6 +59,7 @@ export function useMilestone(
       : queryKeys.milestones.all,
     enabled: Boolean(milestoneId),
     queryFn: () => fetchMilestone(milestoneId as number),
+    ...QUERY_CONFIG,
   });
 }
 

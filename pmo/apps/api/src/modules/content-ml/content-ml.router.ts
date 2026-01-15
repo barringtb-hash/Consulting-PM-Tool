@@ -60,54 +60,6 @@ function parseId(idParam: string | string[] | undefined): number | null {
   return isNaN(id) || id <= 0 ? null : id;
 }
 
-/**
- * Map service error codes to HTTP responses.
- * Reserved for future use when service layer is implemented.
- */
-function _handleServiceError(
-  res: Response,
-  error: { error: string; message?: string },
-): void {
-  const errorMap: Record<string, { status: number; message: string }> = {
-    not_found: { status: 404, message: 'Resource not found' },
-    config_not_found: { status: 404, message: 'Configuration not found' },
-    content_not_found: { status: 404, message: 'Content not found' },
-    idea_not_found: { status: 404, message: 'Content idea not found' },
-    voice_profile_not_found: {
-      status: 404,
-      message: 'Voice profile not found',
-    },
-    forbidden: { status: 403, message: 'Access denied' },
-    unauthorized: { status: 401, message: 'Unauthorized' },
-    invalid_samples: { status: 400, message: 'Invalid voice samples provided' },
-    insufficient_samples: {
-      status: 400,
-      message: 'Insufficient samples for voice training',
-    },
-    content_too_long: {
-      status: 400,
-      message: 'Content exceeds maximum length',
-    },
-    invalid_platform: { status: 400, message: 'Invalid platform specified' },
-    generation_failed: { status: 500, message: 'Content generation failed' },
-    analysis_failed: { status: 500, message: 'Analysis failed' },
-    api_error: { status: 502, message: 'External API error' },
-    rate_limited: { status: 429, message: 'Rate limit exceeded' },
-    tenant_required: { status: 400, message: 'Tenant context required' },
-    llm_error: { status: 502, message: 'Language model error' },
-  };
-
-  const errorInfo = errorMap[error.error] || {
-    status: 500,
-    message: error.message || 'Internal server error',
-  };
-
-  res.status(errorInfo.status).json({
-    error: error.error,
-    message: errorInfo.message,
-  });
-}
-
 // ============================================================================
 // Brand Voice Endpoints
 // ============================================================================
