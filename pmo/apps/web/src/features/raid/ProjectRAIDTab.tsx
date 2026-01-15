@@ -45,7 +45,9 @@ import {
   useUpdateRAIDItem,
   useDeleteRAIDItem,
   useAcceptExtractedItems,
+  useExtractRAID,
 } from './hooks/useRAIDData';
+import { useProjectMeetings } from '../../api/hooks/meetings';
 import type {
   RAIDFilter,
   RAIDItemType,
@@ -276,20 +278,24 @@ export function ProjectRAIDTab({
   const [editingItem, setEditingItem] = useState<RAIDItem | null>(null);
   const [addItemType, setAddItemType] = useState<RAIDItemType>('action-item');
 
-  // Mock extracted items for demo (replace with actual extraction results)
+  // Extraction state
   const [extractedItems, setExtractedItems] = useState<ExtractedRAIDItem[]>([]);
+  const [extractionMeetingTitle, setExtractionMeetingTitle] =
+    useState<string>('Recent Meeting');
 
   // Data fetching using hooks
   const actionItemsQuery = useActionItems(projectId);
   const decisionsQuery = useDecisions(projectId);
   const issuesQuery = useProjectIssues(projectId);
   const risksQuery = useProjectRisks(projectId);
+  const meetingsQuery = useProjectMeetings(projectId);
 
   // Mutations
   const createMutation = useCreateRAIDItem();
   const updateMutation = useUpdateRAIDItem();
   const deleteMutation = useDeleteRAIDItem();
   const acceptExtractedMutation = useAcceptExtractedItems();
+  const extractRAIDMutation = useExtractRAID();
 
   // Combine all items for display
   const allItems = useMemo((): RAIDItem[] => {
@@ -444,6 +450,136 @@ export function ProjectRAIDTab({
     risksQuery.refetch();
   };
 
+  const handleExtractFromMeeting = async (): Promise<void> => {
+    // Get the most recent meeting
+    const meetings = meetingsQuery.data;
+    if (!meetings || meetings.length === 0) {
+      // No meetings - show modal with empty state
+      setExtractedItems([]);
+      setExtractionMeetingTitle('No meetings available');
+      setShowExtractionModal(true);
+      return;
+    }
+
+    // Sort by date descending and get the most recent
+    const sortedMeetings = [...meetings].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+    const recentMeeting = sortedMeetings[0];
+
+    try {
+      // Call extraction API
+      const result = await extractRAIDMutation.mutateAsync({
+        meetingId: recentMeeting.id,
+      });
+
+      // Map the extraction response to ExtractedRAIDItem format
+      const items: ExtractedRAIDItem[] = [];
+
+      // Map risks
+      if (result.risks) {
+        items.push(
+          ...result.risks.map(
+            (r: {
+              title: string;
+              description?: string;
+              impact?: string;
+              likelihood?: string;
+              sourceText?: string;
+              confidence?: number;
+            }) => ({
+              type: 'risk' as const,
+              title: r.title,
+              description: r.description,
+              suggestedPriority: r.impact,
+              sourceText: r.sourceText,
+              confidence: r.confidence ?? 0.7,
+            }),
+          ),
+        );
+      }
+
+      // Map action items
+      if (result.actionItems) {
+        items.push(
+          ...result.actionItems.map(
+            (a: {
+              title: string;
+              description?: string;
+              assigneeName?: string;
+              priority?: string;
+              dueDate?: string;
+              sourceText?: string;
+              confidence?: number;
+            }) => ({
+              type: 'action-item' as const,
+              title: a.title,
+              description: a.description,
+              suggestedOwner: a.assigneeName,
+              suggestedPriority: a.priority,
+              suggestedDueDate: a.dueDate,
+              sourceText: a.sourceText,
+              confidence: a.confidence ?? 0.7,
+            }),
+          ),
+        );
+      }
+
+      // Map issues
+      if (result.issues) {
+        items.push(
+          ...result.issues.map(
+            (i: {
+              title: string;
+              description?: string;
+              severity?: string;
+              sourceText?: string;
+              confidence?: number;
+            }) => ({
+              type: 'issue' as const,
+              title: i.title,
+              description: i.description,
+              suggestedPriority: i.severity,
+              sourceText: i.sourceText,
+              confidence: i.confidence ?? 0.7,
+            }),
+          ),
+        );
+      }
+
+      // Map decisions
+      if (result.decisions) {
+        items.push(
+          ...result.decisions.map(
+            (d: {
+              title: string;
+              description?: string;
+              rationale?: string;
+              sourceText?: string;
+              confidence?: number;
+            }) => ({
+              type: 'decision' as const,
+              title: d.title,
+              description: d.description || d.rationale,
+              sourceText: d.sourceText,
+              confidence: d.confidence ?? 0.7,
+            }),
+          ),
+        );
+      }
+
+      setExtractedItems(items);
+      setExtractionMeetingTitle(recentMeeting.title || 'Recent Meeting');
+      setShowExtractionModal(true);
+    } catch (error) {
+      console.error('Failed to extract RAID items:', error);
+      // Show modal with error state
+      setExtractedItems([]);
+      setExtractionMeetingTitle(recentMeeting.title || 'Recent Meeting');
+      setShowExtractionModal(true);
+    }
+  };
+
   const filterButtons: Array<{
     value: RAIDFilter;
     label: string;
@@ -492,10 +628,13 @@ export function ProjectRAIDTab({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setShowExtractionModal(true)}
+            onClick={handleExtractFromMeeting}
+            disabled={extractRAIDMutation.isPending}
           >
             <Sparkles className="w-4 h-4 mr-1" />
-            Extract from Meeting
+            {extractRAIDMutation.isPending
+              ? 'Extracting...'
+              : 'Extract from Meeting'}
           </Button>
           <Button size="sm" onClick={() => handleAddItem()}>
             <Plus className="w-4 h-4 mr-1" />
@@ -642,7 +781,7 @@ export function ProjectRAIDTab({
         extractedItems={extractedItems}
         onAccept={handleAcceptExtracted}
         isAccepting={acceptExtractedMutation.isPending}
-        meetingTitle="Recent Meeting"
+        meetingTitle={extractionMeetingTitle}
       />
     </div>
   );

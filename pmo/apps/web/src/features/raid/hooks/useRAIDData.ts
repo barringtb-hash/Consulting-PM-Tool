@@ -166,9 +166,51 @@ interface ExtractRAIDPayload {
   meetingId: number;
 }
 
+interface ExtractedRiskFromAPI {
+  title: string;
+  description?: string;
+  impact?: string;
+  likelihood?: string;
+  sourceText?: string;
+  confidence?: number;
+}
+
+interface ExtractedActionItemFromAPI {
+  title: string;
+  description?: string;
+  assigneeName?: string;
+  priority?: string;
+  dueDate?: string;
+  sourceText?: string;
+  confidence?: number;
+}
+
+interface ExtractedIssueFromAPI {
+  title: string;
+  description?: string;
+  severity?: string;
+  sourceText?: string;
+  confidence?: number;
+}
+
+interface ExtractedDecisionFromAPI {
+  title: string;
+  description?: string;
+  rationale?: string;
+  sourceText?: string;
+  confidence?: number;
+}
+
 interface ExtractRAIDResponse {
-  extractedItems: ExtractedRAIDItem[];
-  meetingTitle?: string;
+  meetingId?: number;
+  projectId: number;
+  risks: ExtractedRiskFromAPI[];
+  actionItems: ExtractedActionItemFromAPI[];
+  issues: ExtractedIssueFromAPI[];
+  decisions: ExtractedDecisionFromAPI[];
+  summary?: string;
+  extractedAt: string;
+  llmUsed: boolean;
 }
 
 /**
