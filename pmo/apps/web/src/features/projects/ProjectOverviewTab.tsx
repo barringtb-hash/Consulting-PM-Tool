@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import {
   Calendar,
@@ -11,6 +11,10 @@ import {
   Flag,
   MessageSquare,
   ListTodo,
+  Brain,
+  ChevronDown,
+  ChevronUp,
+  Users,
 } from 'lucide-react';
 import { useClient, useProjectStatus } from '../../api/queries';
 import { type Project } from '../../api/projects';
@@ -18,6 +22,13 @@ import { Card, CardBody, CardHeader } from '../../ui/Card';
 import { ProjectStatusPill } from '../../components/ProjectStatusPill';
 import { Badge } from '../../ui/Badge';
 import { EMPTY_STATES, formatStatus } from '../../utils/typography';
+import {
+  useSuccessPrediction,
+  useRiskForecast,
+  useTimelinePrediction,
+  useResourceOptimization,
+  useMLStatus,
+} from '../../hooks/useProjectML';
 
 interface ProjectOverviewTabProps {
   project: Project;
@@ -172,6 +183,256 @@ function EmptyState({
   );
 }
 
+// ============================================================================
+// ML Insights Components
+// ============================================================================
+
+interface MLStatCardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  status: 'good' | 'warning' | 'critical' | 'neutral';
+  icon: React.ReactNode;
+  isLoading?: boolean;
+}
+
+/**
+ * ML Stat Card - Displays a single ML metric with status-based styling
+ */
+function MLStatCard({
+  title,
+  value,
+  subtitle,
+  status,
+  icon,
+  isLoading,
+}: MLStatCardProps): JSX.Element {
+  const statusColors = {
+    good: 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10',
+    warning:
+      'border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10',
+    critical:
+      'border-rose-200 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-900/10',
+    neutral:
+      'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10',
+  };
+
+  if (isLoading) {
+    return (
+      <div className="animate-pulse h-24 bg-neutral-200 dark:bg-neutral-700 rounded-lg" />
+    );
+  }
+
+  return (
+    <div className={`p-4 rounded-lg border ${statusColors[status]}`}>
+      <div className="flex items-center gap-2 mb-2">
+        {icon}
+        <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+          {title}
+        </span>
+      </div>
+      <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+        {value}
+      </div>
+      {subtitle && (
+        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface MLInsightsSectionProps {
+  projectId: number;
+}
+
+/**
+ * ML Insights Section - Collapsible section displaying AI-powered project metrics
+ *
+ * Shows success likelihood, risk level, timeline prediction, and workload balance
+ * using data from ML prediction hooks.
+ */
+function MLInsightsSection({ projectId }: MLInsightsSectionProps): JSX.Element {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  // Fetch ML status to check if ML is available
+  const { data: mlStatus, isLoading: statusLoading } = useMLStatus();
+
+  // Fetch ML predictions
+  const { data: successData, isLoading: successLoading } =
+    useSuccessPrediction(projectId);
+  const { data: riskData, isLoading: riskLoading } = useRiskForecast(projectId);
+  const { data: timelineData, isLoading: timelineLoading } =
+    useTimelinePrediction(projectId);
+  const { data: resourceData, isLoading: resourceLoading } =
+    useResourceOptimization(projectId);
+
+  const isLoading =
+    statusLoading ||
+    successLoading ||
+    riskLoading ||
+    timelineLoading ||
+    resourceLoading;
+
+  // If ML is not available, show a minimal message
+  if (!statusLoading && !mlStatus?.available) {
+    return (
+      <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-900/10">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+              AI Insights
+            </span>
+          </div>
+        </CardHeader>
+        <CardBody className="pt-0">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            ML features require configuration. Contact your administrator to
+            enable AI-powered insights.
+          </p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  // Compute display values from the data
+  // Use nullish coalescing (??) to handle undefined/null values and avoid NaN
+  const successPercent = successData
+    ? Math.round(
+        (successData.overallSuccessProbability ??
+          successData.probability ??
+          0) * 100,
+      )
+    : null;
+
+  const riskLevel = riskData?.overallRiskLevel?.toUpperCase() || null;
+
+  // Handle undefined daysVariance by defaulting to null for the whole expression
+  const timelineVariance = timelineData?.daysVariance;
+  const timelineStatus =
+    timelineData && timelineVariance !== undefined
+      ? timelineVariance === 0
+        ? 'On Track'
+        : timelineVariance < 0
+          ? `${Math.abs(timelineVariance)}d early`
+          : `${timelineVariance}d late`
+      : null;
+
+  const workloadScore =
+    resourceData?.workloadBalance?.interpretation?.toUpperCase() || null;
+
+  /**
+   * Determine status color based on success percentage
+   */
+  const getSuccessStatus = (
+    percent: number | null,
+  ): 'good' | 'warning' | 'critical' | 'neutral' => {
+    if (percent === null) return 'neutral';
+    if (percent >= 70) return 'good';
+    if (percent >= 50) return 'warning';
+    return 'critical';
+  };
+
+  /**
+   * Determine status color based on risk level
+   */
+  const getRiskStatus = (
+    level: string | null,
+  ): 'good' | 'warning' | 'critical' | 'neutral' => {
+    if (level === null) return 'neutral';
+    if (level === 'LOW') return 'good';
+    if (level === 'MEDIUM') return 'warning';
+    return 'critical';
+  };
+
+  /**
+   * Determine status color based on timeline variance
+   */
+  const getTimelineStatus = (
+    data: typeof timelineData,
+  ): 'good' | 'warning' | 'critical' | 'neutral' => {
+    if (!data || data.daysVariance === undefined) return 'neutral';
+    if (data.daysVariance <= 0) return 'good';
+    if (data.daysVariance <= 7) return 'warning';
+    return 'critical';
+  };
+
+  /**
+   * Determine status color based on workload score
+   */
+  const getWorkloadStatus = (
+    score: string | null,
+  ): 'good' | 'warning' | 'critical' | 'neutral' => {
+    if (score === null) return 'neutral';
+    if (score === 'EXCELLENT' || score === 'GOOD') return 'good';
+    if (score === 'FAIR') return 'warning';
+    return 'critical';
+  };
+
+  return (
+    <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-900/10">
+      <CardHeader>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <div className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+              AI Insights
+            </span>
+          </div>
+          {isExpanded ? (
+            <ChevronUp className="h-5 w-5 text-neutral-500" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-neutral-500" />
+          )}
+        </button>
+      </CardHeader>
+      {isExpanded && (
+        <CardBody className="pt-0">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MLStatCard
+              title="Success"
+              value={successPercent !== null ? `${successPercent}%` : '-'}
+              subtitle="Likelihood"
+              status={getSuccessStatus(successPercent)}
+              icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
+              isLoading={isLoading}
+            />
+            <MLStatCard
+              title="Risk"
+              value={riskLevel || '-'}
+              subtitle="Level"
+              status={getRiskStatus(riskLevel)}
+              icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
+              isLoading={isLoading}
+            />
+            <MLStatCard
+              title="Timeline"
+              value={timelineStatus || '-'}
+              subtitle="Prediction"
+              status={getTimelineStatus(timelineData)}
+              icon={<Clock className="h-4 w-4 text-blue-500" />}
+              isLoading={isLoading}
+            />
+            <MLStatCard
+              title="Workload"
+              value={workloadScore || '-'}
+              subtitle="Balance"
+              status={getWorkloadStatus(workloadScore)}
+              icon={<Users className="h-4 w-4 text-violet-500" />}
+              isLoading={isLoading}
+            />
+          </div>
+        </CardBody>
+      )}
+    </Card>
+  );
+}
+
 // Skeleton loader for info section
 function InfoSectionSkeleton(): JSX.Element {
   return (
@@ -322,6 +583,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
           variant={blockedTasks > 0 ? 'rose' : 'neutral'}
         />
       </div>
+
+      {/* AI/ML Insights Section */}
+      <MLInsightsSection projectId={project.id} />
 
       {/* Overdue Tasks Alert */}
       {statusData && statusData.overdueTasks.length > 0 && (

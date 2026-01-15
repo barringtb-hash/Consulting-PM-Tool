@@ -118,6 +118,8 @@ import { tenantAdminRouter } from './admin';
 import auditRouter from './routes/audit.routes';
 // Tenant Health Routes
 import tenantHealthRouter from './routes/tenant-health.routes';
+// RAID Module
+import raidRouter from './modules/raid/raid.router';
 // AI Monitoring Routes
 import aiMonitoringRouter from './modules/ai-monitoring/ai-monitoring.routes';
 // Monitoring Assistant Routes
@@ -442,6 +444,10 @@ export function createApp(): express.Express {
   // ============ AUDIT ROUTES ============
   // Audit logs for tracking sensitive operations
   app.use('/api/audit', auditRouter);
+
+  // ============ RAID ROUTES ============
+  // RAID (Risks, Action Items, Issues, Decisions) management for projects
+  app.use('/api/raid', raidRouter);
 
   // ============ TENANT HEALTH ROUTES ============
   // Tenant health monitoring and metrics

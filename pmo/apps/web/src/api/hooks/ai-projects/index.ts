@@ -368,16 +368,23 @@ async function fetchHealthPrediction(
     throw error;
   }
   const json = await res.json();
-  const apiData = json.data || json;
+  const apiData = json?.data ?? json ?? {};
+
+  // Safely extract properties with defensive guards
+  const predictedHealth = apiData?.predictedHealth;
+  const confidence = apiData?.confidence ?? 0;
+  const riskFactors = apiData?.riskFactors;
+  const recommendations = apiData?.recommendations;
+  const predictedAt = apiData?.predictedAt;
 
   // Normalize API response to match expected interface
   return {
     projectId,
-    predictedHealthScore: mapHealthToScore(apiData.predictedHealth),
-    confidenceLevel: Math.round((apiData.confidence ?? 0) * 100),
-    riskLevel: mapHealthToRiskLevel(apiData.predictedHealth),
-    factors: Array.isArray(apiData.riskFactors)
-      ? apiData.riskFactors.map(
+    predictedHealthScore: mapHealthToScore(predictedHealth),
+    confidenceLevel: Math.round(confidence * 100),
+    riskLevel: mapHealthToRiskLevel(predictedHealth),
+    factors: Array.isArray(riskFactors)
+      ? riskFactors.map(
           (rf: {
             factor?: string;
             weight?: number;
@@ -385,22 +392,20 @@ async function fetchHealthPrediction(
             threshold?: number;
             description?: string;
           }) => ({
-            name: rf.factor || '',
-            impact: Math.round((rf.weight ?? 0) * 100),
+            name: rf?.factor || '',
+            impact: Math.round((rf?.weight ?? 0) * 100),
             direction:
-              (rf.currentValue ?? 0) >= (rf.threshold ?? 0)
+              (rf?.currentValue ?? 0) >= (rf?.threshold ?? 0)
                 ? ('positive' as const)
                 : ('negative' as const),
-            description: rf.description || '',
+            description: rf?.description || '',
           }),
         )
       : [],
-    recommendations: Array.isArray(apiData.recommendations)
-      ? apiData.recommendations.map(
-          (rec: { action?: string }) => rec.action || '',
-        )
+    recommendations: Array.isArray(recommendations)
+      ? recommendations.map((rec: { action?: string }) => rec?.action || '')
       : [],
-    predictedAt: apiData.predictedAt || new Date().toISOString(),
+    predictedAt: predictedAt || new Date().toISOString(),
   };
 }
 

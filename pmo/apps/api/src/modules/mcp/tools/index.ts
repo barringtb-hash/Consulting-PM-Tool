@@ -1,13 +1,14 @@
 /**
  * MCP Tools Index
  *
- * Aggregates all CRM MCP tools
+ * Aggregates all CRM MCP tools including AI-powered project tools
  */
 
 import { accountTools, executeAccountTool } from './accounts.tools';
 import { projectTools, executeProjectTool } from './projects.tools';
 import { meetingTools, executeMeetingTool } from './meetings.tools';
 import { bugTrackingTools, executeBugTrackingTool } from './bug-tracking.tools';
+import { projectAITools, executeProjectAITool } from './project-ai.tools';
 
 /**
  * All available CRM MCP tools
@@ -17,6 +18,7 @@ export const allTools = [
   ...projectTools,
   ...meetingTools,
   ...bugTrackingTools,
+  ...projectAITools,
 ];
 
 /**
@@ -26,6 +28,7 @@ const accountToolNames = new Set(accountTools.map((t) => t.name));
 const projectToolNames = new Set(projectTools.map((t) => t.name));
 const meetingToolNames = new Set(meetingTools.map((t) => t.name));
 const bugTrackingToolNames = new Set(bugTrackingTools.map((t) => t.name));
+const projectAIToolNames = new Set(projectAITools.map((t) => t.name));
 
 /**
  * Execute a tool by name
@@ -53,6 +56,10 @@ export async function executeTool(
     return executeBugTrackingTool(toolName, args);
   }
 
+  if (projectAIToolNames.has(toolName)) {
+    return executeProjectAITool(toolName, args);
+  }
+
   return {
     content: [{ type: 'text', text: `Unknown tool: ${toolName}` }],
     isError: true,
@@ -66,4 +73,10 @@ export function getTool(toolName: string) {
   return allTools.find((t) => t.name === toolName);
 }
 
-export { accountTools, projectTools, meetingTools, bugTrackingTools };
+export {
+  accountTools,
+  projectTools,
+  meetingTools,
+  bugTrackingTools,
+  projectAITools,
+};

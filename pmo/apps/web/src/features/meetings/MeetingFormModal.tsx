@@ -12,6 +12,7 @@ export interface MeetingFormValues {
   notes: string;
   decisions: string;
   risks: string;
+  autoExtractRAID?: boolean;
 }
 
 interface MeetingFormModalProps {
@@ -22,6 +23,8 @@ interface MeetingFormModalProps {
   onCancel: () => void;
   isSubmitting?: boolean;
   error?: string | null;
+  /** Show the auto-extract RAID items option (default: false) */
+  showAutoExtractOption?: boolean;
 }
 
 function MeetingFormModal({
@@ -32,6 +35,7 @@ function MeetingFormModal({
   onCancel,
   isSubmitting,
   error,
+  showAutoExtractOption = false,
 }: MeetingFormModalProps): JSX.Element | null {
   const [values, setValues] = useState<MeetingFormValues>(initialValues);
 
@@ -126,6 +130,25 @@ function MeetingFormModal({
           rows={3}
           placeholder="Identified risks or concerns..."
         />
+
+        {showAutoExtractOption && (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={values.autoExtractRAID ?? false}
+              onChange={(event) =>
+                setValues((prev) => ({
+                  ...prev,
+                  autoExtractRAID: event.target.checked,
+                }))
+              }
+              className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-700 dark:focus:ring-primary-400"
+            />
+            <span className="text-sm text-neutral-700 dark:text-neutral-300">
+              Auto-extract RAID items after saving
+            </span>
+          </label>
+        )}
 
         {error && (
           <p

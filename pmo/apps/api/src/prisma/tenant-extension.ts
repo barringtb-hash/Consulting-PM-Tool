@@ -115,6 +115,38 @@ function needsTenantFiltering(model: string): boolean {
 }
 
 /**
+ * Check if the query already has a tenantId filter applied.
+ * This prevents double-filtering when services explicitly add tenantId.
+ */
+function hasExistingTenantFilter(
+  where: Record<string, unknown> | undefined,
+): boolean {
+  if (!where) return false;
+
+  // Check for direct tenantId filter
+  if ('tenantId' in where) return true;
+
+  // Check for tenantId in OR/AND clauses
+  if (Array.isArray(where.OR)) {
+    for (const clause of where.OR) {
+      if (clause && typeof clause === 'object' && 'tenantId' in clause) {
+        return true;
+      }
+    }
+  }
+
+  if (Array.isArray(where.AND)) {
+    for (const clause of where.AND) {
+      if (clause && typeof clause === 'object' && 'tenantId' in clause) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Create a Prisma-compatible "record not found" error.
  * This error will be caught by existing error handlers that check for P2025.
  */
@@ -147,14 +179,26 @@ export function createTenantExtension(baseClient: PrismaClient) {
     query: {
       $allModels: {
         async findMany({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
+          if (
+            needsTenantFiltering(model) &&
+            hasTenantContext() &&
+            !hasExistingTenantFilter(args.where as Record<string, unknown>)
+          ) {
+            // Add tenantId filter for tenant isolation
+            // Skip if query already has tenantId filter (service explicitly added it)
             args.where = { ...args.where, tenantId: getTenantId() };
           }
           return query(args);
         },
 
         async findFirst({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
+          if (
+            needsTenantFiltering(model) &&
+            hasTenantContext() &&
+            !hasExistingTenantFilter(args.where as Record<string, unknown>)
+          ) {
+            // Add tenantId filter for tenant isolation
+            // Skip if query already has tenantId filter (service explicitly added it)
             args.where = { ...args.where, tenantId: getTenantId() };
           }
           return query(args);
@@ -179,21 +223,33 @@ export function createTenantExtension(baseClient: PrismaClient) {
         },
 
         async count({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
+          if (
+            needsTenantFiltering(model) &&
+            hasTenantContext() &&
+            !hasExistingTenantFilter(args.where as Record<string, unknown>)
+          ) {
             args.where = { ...args.where, tenantId: getTenantId() };
           }
           return query(args);
         },
 
         async aggregate({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
+          if (
+            needsTenantFiltering(model) &&
+            hasTenantContext() &&
+            !hasExistingTenantFilter(args.where as Record<string, unknown>)
+          ) {
             args.where = { ...args.where, tenantId: getTenantId() };
           }
           return query(args);
         },
 
         async groupBy({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
+          if (
+            needsTenantFiltering(model) &&
+            hasTenantContext() &&
+            !hasExistingTenantFilter(args.where as Record<string, unknown>)
+          ) {
             args.where = { ...args.where, tenantId: getTenantId() };
           }
           return query(args);
@@ -266,7 +322,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
         },
 
         async updateMany({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
+          if (
+            needsTenantFiltering(model) &&
+            hasTenantContext() &&
+            !hasExistingTenantFilter(args.where as Record<string, unknown>)
+          ) {
             args.where = { ...args.where, tenantId: getTenantId() };
           }
           return query(args);
@@ -317,7 +377,11 @@ export function createTenantExtension(baseClient: PrismaClient) {
         },
 
         async deleteMany({ model, args, query }) {
-          if (needsTenantFiltering(model) && hasTenantContext()) {
+          if (
+            needsTenantFiltering(model) &&
+            hasTenantContext() &&
+            !hasExistingTenantFilter(args.where as Record<string, unknown>)
+          ) {
             args.where = { ...args.where, tenantId: getTenantId() };
           }
           return query(args);
