@@ -7,7 +7,10 @@ import {
   getAllUsers,
   getUserById,
   updateUser,
+  getUsersByTenant,
+  isUserInTenant,
 } from '../services/user.service';
+import { getTenantId, hasTenantContext } from '../tenant/tenant.context';
 import { adminResetPassword } from '../auth/password-reset.service';
 import { createUserSchema, updateUserSchema } from '../validation/user.schema';
 import { adminResetPasswordSchema } from '../validation/password-reset.schema';
@@ -114,14 +117,39 @@ router.post(
 /**
  * GET /api/users
  * Get all users (Admin only)
+ * SUPER_ADMIN can see all users across all tenants
+ * Regular ADMIN can only see users in their own tenant
  */
 router.get(
   '/',
   requireAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const users = await getAllUsers();
-      res.json(users);
+      // Check if caller is a SUPER_ADMIN (platform-level admin)
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: { role: true },
+      });
+
+      const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+      // SUPER_ADMIN can see all users across all tenants
+      if (isSuperAdmin) {
+        const users = await getAllUsers();
+        res.json(users);
+        return;
+      }
+
+      // For non-SUPER_ADMIN, filter by tenant
+      if (hasTenantContext()) {
+        const tenantId = getTenantId();
+        const users = await getUsersByTenant(tenantId);
+        res.json(users);
+        return;
+      }
+
+      // No tenant context - return empty array for security
+      res.json([]);
     } catch (err: unknown) {
       console.error('Error fetching users:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -132,6 +160,8 @@ router.get(
 /**
  * GET /api/users/:id
  * Get a user by ID (Admin only)
+ * SUPER_ADMIN can view any user
+ * Regular ADMIN can only view users in their own tenant
  */
 router.get(
   '/:id',
@@ -152,6 +182,25 @@ router.get(
         return;
       }
 
+      // Check if caller is a SUPER_ADMIN (platform-level admin)
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: { role: true },
+      });
+
+      const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+      // For non-SUPER_ADMIN, verify the user is in the same tenant
+      if (!isSuperAdmin && hasTenantContext()) {
+        const tenantId = getTenantId();
+        const userInTenant = await isUserInTenant(id, tenantId);
+
+        if (!userInTenant) {
+          res.status(404).json({ error: 'User not found' });
+          return;
+        }
+      }
+
       res.json(user);
     } catch (err: unknown) {
       console.error('Error fetching user:', err);
@@ -164,6 +213,8 @@ router.get(
  * PUT /api/users/:id
  * Update a user (Admin only)
  * Note: Only Super Admins can promote users to Super Admin
+ * SUPER_ADMIN can update any user
+ * Regular ADMIN can only update users in their own tenant
  */
 router.put(
   '/:id',
@@ -195,14 +246,27 @@ router.put(
         return;
       }
 
+      // Check if caller is a SUPER_ADMIN (platform-level admin)
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: { role: true },
+      });
+
+      const isCallerSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+      // For non-SUPER_ADMIN, verify the user is in the same tenant
+      if (!isCallerSuperAdmin && hasTenantContext()) {
+        const tenantId = getTenantId();
+        const userInTenant = await isUserInTenant(id, tenantId);
+
+        if (!userInTenant) {
+          res.status(404).json({ error: 'User not found' });
+          return;
+        }
+      }
+
       // Check permissions for Super Admin role changes
       if (validation.data.role) {
-        const currentUser = await prisma.user.findUnique({
-          where: { id: req.userId },
-          select: { role: true },
-        });
-
-        const isCallerSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
         const isTargetSuperAdmin = userBeforeUpdate.role === 'SUPER_ADMIN';
 
         // Only Super Admins can promote users to Super Admin
@@ -280,6 +344,8 @@ router.put(
 /**
  * DELETE /api/users/:id
  * Delete a user (Admin only)
+ * SUPER_ADMIN can delete any user
+ * Regular ADMIN can only delete users in their own tenant
  */
 router.delete(
   '/:id',
@@ -304,6 +370,25 @@ router.delete(
       if (!userToDelete) {
         res.status(404).json({ error: 'User not found' });
         return;
+      }
+
+      // Check if caller is a SUPER_ADMIN (platform-level admin)
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: { role: true },
+      });
+
+      const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+      // For non-SUPER_ADMIN, verify the user is in the same tenant
+      if (!isSuperAdmin && hasTenantContext()) {
+        const tenantId = getTenantId();
+        const userInTenant = await isUserInTenant(id, tenantId);
+
+        if (!userInTenant) {
+          res.status(404).json({ error: 'User not found' });
+          return;
+        }
       }
 
       await deleteUser(id);
@@ -349,6 +434,8 @@ router.delete(
  * POST /api/users/:id/reset-password
  * Reset a user's password (Admin only)
  * Super Admins can reset any password, Admins cannot reset Super Admin passwords
+ * SUPER_ADMIN can reset any user's password
+ * Regular ADMIN can only reset passwords for users in their own tenant
  */
 router.post(
   '/:id/reset-password',
@@ -382,6 +469,25 @@ router.post(
       if (!targetUser) {
         res.status(404).json({ error: 'User not found' });
         return;
+      }
+
+      // Check if caller is a SUPER_ADMIN (platform-level admin)
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.userId },
+        select: { role: true },
+      });
+
+      const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
+      // For non-SUPER_ADMIN, verify the user is in the same tenant
+      if (!isSuperAdmin && hasTenantContext()) {
+        const tenantId = getTenantId();
+        const userInTenant = await isUserInTenant(id, tenantId);
+
+        if (!userInTenant) {
+          res.status(404).json({ error: 'User not found' });
+          return;
+        }
       }
 
       const result = await adminResetPassword(

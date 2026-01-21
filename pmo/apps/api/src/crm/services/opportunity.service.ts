@@ -8,7 +8,7 @@
 
 import { Prisma, CRMLeadSource } from '@prisma/client';
 import { prisma } from '../../prisma/client';
-import { getTenantId } from '../../tenant/tenant.context';
+import { getTenantId, hasTenantContext } from '../../tenant/tenant.context';
 
 // ============================================================================
 // TYPES
@@ -118,7 +118,29 @@ export async function createOpportunity(input: CreateOpportunityInput) {
     });
 
     // Add contacts if provided
+    // SECURITY: Validate all contacts belong to tenant before creating associations
+    // This prevents cross-tenant data linkage attacks where an attacker could
+    // associate contacts from another tenant with their opportunities
     if (input.contactIds && input.contactIds.length > 0) {
+      const validContacts = await tx.cRMContact.findMany({
+        where: {
+          id: { in: input.contactIds },
+          tenantId,
+        },
+        select: { id: true },
+      });
+
+      const validContactIds = new Set(validContacts.map((c) => c.id));
+      const invalidContactIds = input.contactIds.filter(
+        (id) => !validContactIds.has(id),
+      );
+
+      if (invalidContactIds.length > 0) {
+        throw new Error(
+          `Contact(s) not found or access denied: ${invalidContactIds.join(', ')}`,
+        );
+      }
+
       await tx.opportunityContact.createMany({
         data: input.contactIds.map((contactId, index) => ({
           opportunityId: opportunity.id,
@@ -591,7 +613,11 @@ export async function deleteOpportunity(id: number) {
 // ============================================================================
 
 /**
- * Add contact to opportunity.
+ * Add a contact to an opportunity.
+ *
+ * SECURITY: Validates that both the opportunity and contact belong to the
+ * current tenant before creating the association. This prevents cross-tenant
+ * data linkage attacks.
  */
 export async function addContactToOpportunity(
   opportunityId: number,
@@ -599,6 +625,29 @@ export async function addContactToOpportunity(
   role?: string,
   isPrimary?: boolean,
 ) {
+  // Verify tenant context exists
+  if (!hasTenantContext()) {
+    throw new Error('Tenant context required for this operation');
+  }
+
+  const tenantId = getTenantId();
+
+  // Verify opportunity belongs to tenant
+  const opportunity = await prisma.opportunity.findFirst({
+    where: { id: opportunityId, tenantId },
+  });
+  if (!opportunity) {
+    throw new Error('Opportunity not found or access denied');
+  }
+
+  // Verify contact belongs to tenant
+  const contact = await prisma.cRMContact.findFirst({
+    where: { id: contactId, tenantId },
+  });
+  if (!contact) {
+    throw new Error('Contact not found or access denied');
+  }
+
   return prisma.opportunityContact.create({
     data: {
       opportunityId,
@@ -621,12 +670,31 @@ export async function addContactToOpportunity(
 }
 
 /**
- * Remove contact from opportunity.
+ * Remove a contact from an opportunity.
+ *
+ * SECURITY: Validates that the opportunity belongs to the current tenant
+ * before removing the contact association. This prevents unauthorized
+ * modification of cross-tenant opportunity data.
  */
 export async function removeContactFromOpportunity(
   opportunityId: number,
   contactId: number,
 ) {
+  // Verify tenant context exists
+  if (!hasTenantContext()) {
+    throw new Error('Tenant context required for this operation');
+  }
+
+  const tenantId = getTenantId();
+
+  // Verify opportunity belongs to tenant before allowing removal
+  const opportunity = await prisma.opportunity.findFirst({
+    where: { id: opportunityId, tenantId },
+  });
+  if (!opportunity) {
+    throw new Error('Opportunity not found or access denied');
+  }
+
   return prisma.opportunityContact.delete({
     where: {
       opportunityId_contactId: {

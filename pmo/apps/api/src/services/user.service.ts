@@ -190,3 +190,53 @@ function sanitizeUser(user: {
   const { passwordHash, ...safeUser } = user;
   return safeUser;
 }
+
+/**
+ * Get all users in a specific tenant.
+ * Returns users who are members of the given tenant via the TenantUser table.
+ * @param tenantId - The ID of the tenant to filter users by
+ * @returns Array of users belonging to the specified tenant
+ */
+export async function getUsersByTenant(tenantId: string): Promise<SafeUser[]> {
+  const tenantUsers = await prisma.tenantUser.findMany({
+    where: { tenantId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          passwordHash: true,
+          role: true,
+          timezone: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
+
+  return tenantUsers.map((tu) => sanitizeUser(tu.user));
+}
+
+/**
+ * Check if a user is a member of a specific tenant.
+ * @param userId - The ID of the user to check
+ * @param tenantId - The ID of the tenant to check membership for
+ * @returns True if the user is a member of the tenant, false otherwise
+ */
+export async function isUserInTenant(
+  userId: number,
+  tenantId: string,
+): Promise<boolean> {
+  const membership = await prisma.tenantUser.findUnique({
+    where: {
+      tenantId_userId: {
+        tenantId,
+        userId,
+      },
+    },
+  });
+
+  return membership !== null;
+}
