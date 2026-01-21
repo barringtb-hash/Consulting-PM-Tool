@@ -597,7 +597,7 @@ describe('Comprehensive Tenant Isolation UAT', () => {
         const result = await withTenant(tenantAlpha, async () => {
           return prisma.account.updateMany({
             where: { name: { startsWith: 'UpdateMany Test' } },
-            data: { description: 'Updated from Alpha' },
+            data: { industry: 'Updated from Alpha' },
           });
         });
 
@@ -608,7 +608,7 @@ describe('Comprehensive Tenant Isolation UAT', () => {
         const betaAccount = await testPrisma.account.findFirst({
           where: { name: 'UpdateMany Test Beta' },
         });
-        expect(betaAccount?.description).not.toBe('Updated from Alpha');
+        expect(betaAccount?.industry).not.toBe('Updated from Alpha');
 
         // Cleanup
         await testPrisma.account.deleteMany({

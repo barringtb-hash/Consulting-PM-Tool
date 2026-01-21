@@ -14,73 +14,45 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PublishingPlatform } from '../../src/modules/social-publishing/types';
 
-// Define mocks before vi.mock calls
-const mockPrismaClient = {
-  socialPublishingConfig: {
-    findUnique: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
+// Use vi.hoisted to ensure mocks are available during module factory execution
+const { mockPrisma, mockAdapterFunctions } = vi.hoisted(() => ({
+  mockPrisma: {
+    socialPublishingConfig: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    socialMediaPost: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    publishingHistory: {
+      findMany: vi.fn(),
+      createMany: vi.fn(),
+      update: vi.fn(),
+    },
   },
-  socialMediaPost: {
-    findUnique: vi.fn(),
-    findFirst: vi.fn(),
-    findMany: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
+  mockAdapterFunctions: {
+    publish: vi.fn(),
+    schedulePost: vi.fn(),
+    deletePost: vi.fn(),
+    getConnectedPlatforms: vi.fn(),
+    getPostMetrics: vi.fn(),
+    validateCredentials: vi.fn(),
   },
-  publishingHistory: {
-    findMany: vi.fn(),
-    createMany: vi.fn(),
-    update: vi.fn(),
-  },
-};
+}));
 
-const mockAdapter = {
-  name: 'ayrshare',
-  publish: vi.fn(),
-  schedulePost: vi.fn(),
-  deletePost: vi.fn(),
-  getConnectedPlatforms: vi.fn(),
-  getPostMetrics: vi.fn(),
-  validateCredentials: vi.fn(),
-};
-
-// Mock modules - must be at top level with factory functions not using external vars
+// Mock prisma client with both named and default exports
 vi.mock('../../src/prisma/client', () => {
   return {
-    prisma: {
-      socialPublishingConfig: {
-        findUnique: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn(),
-      },
-      socialMediaPost: {
-        findUnique: vi.fn(),
-        findFirst: vi.fn(),
-        findMany: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-      },
-      publishingHistory: {
-        findMany: vi.fn(),
-        createMany: vi.fn(),
-        update: vi.fn(),
-      },
-    },
+    prisma: mockPrisma,
+    default: mockPrisma,
   };
 });
-
-// Shared mock adapter instance - will be updated in beforeEach
-const mockAdapterFunctions = {
-  publish: vi.fn(),
-  schedulePost: vi.fn(),
-  deletePost: vi.fn(),
-  getConnectedPlatforms: vi.fn(),
-  getPostMetrics: vi.fn(),
-  validateCredentials: vi.fn(),
-};
 
 vi.mock(
   '../../src/modules/social-publishing/adapters/unified/ayrshare.adapter',
@@ -103,12 +75,8 @@ vi.mock(
 
 // Import after mocks
 import * as socialPublishingService from '../../src/modules/social-publishing/services/social-publishing.service';
-import { prisma } from '../../src/prisma/client';
 
 describe('SocialPublishingService', () => {
-  // Get mocked prisma client
-  const mockPrisma = vi.mocked(prisma);
-
   // Access the mock adapter functions
   const mockAdapterInstance = mockAdapterFunctions;
 
