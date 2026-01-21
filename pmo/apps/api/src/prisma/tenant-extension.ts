@@ -25,10 +25,9 @@ const TENANT_SCOPED_MODELS = new Set([
   'CRMContact',
   'Opportunity',
   'OpportunityContact',
-  'OpportunityLineItem',
   'OpportunityStageHistory',
   'Pipeline',
-  'PipelineStage',
+  'SalesPipelineStage',
   'CRMActivity',
 
   // Notifications & Integrations
@@ -40,7 +39,7 @@ const TENANT_SCOPED_MODELS = new Set([
   'UsageEvent',
   'UsageSummary',
 
-  // Legacy PMO models (tenant-scoped)
+  // Legacy PMO models
   'Client',
   'Contact',
   'Project',
@@ -52,6 +51,45 @@ const TENANT_SCOPED_MODELS = new Set([
   'Campaign',
   'InboundLead',
 
+  // Project Management Extended
+  'ProjectMember',
+  'ProjectAIAsset',
+  'ProjectBudgetForecast',
+  'ProjectDigestConfig',
+  'ProjectLesson',
+  'ProjectScopeBaseline',
+  'ScopeChangeAlert',
+  'SmartReminder',
+  'TaskAssignee',
+  'TaskDependency',
+  'TaskDurationLearning',
+
+  // Documents
+  'Document',
+  'ProjectDocument',
+
+  // RAID Module
+  'ActionItem',
+  'Decision',
+  'ProjectRisk',
+  'ProjectIssue',
+
+  // Bug Tracking
+  'Issue',
+  'IssueAttachment',
+  'IssueComment',
+  'IssueLabel',
+  'BugTrackingApiKey',
+  'ErrorLog',
+
+  // ML/Predictions
+  'AccountMLPrediction',
+  'LeadMLModel',
+  'LeadMLPrediction',
+  'LeadTrainingData',
+  'ProjectMLPrediction',
+  'ProjectHealthPrediction',
+
   // Finance Tracking
   'ExpenseCategory',
   'Budget',
@@ -61,14 +99,68 @@ const TENANT_SCOPED_MODELS = new Set([
   'FinanceAlert',
   'FinanceInsight',
   'FinanceConfig',
+  'PaymentTransaction',
+
+  // Infrastructure Monitoring
+  'Anomaly',
+  'InfrastructureMetric',
+  'SlowQueryLog',
 
   // AI Monitoring
   'AIUsageEvent',
   'AIUsageSummary',
 
+  // Customer Success
+  'CustomerHealthScore',
+  'SuccessPlan',
+  'CTA',
+  'Playbook',
+  'SuccessTask',
+  'CTATask',
+  'AccountHealthScoreHistory',
+  'HealthScoreHistory',
+  'ClientEngagementScore',
+
+  // Content/Marketing
+  'BrandProfile',
+  'BrandAsset',
+  'ContentFeedback',
+  'ContentIdea',
+  'ContentScheduleHistory',
+  'ContentScheduleQueue',
+  'Product',
+  'ProductDescription',
+
+  // Social Publishing
+  'SocialMediaPost',
+  'SocialPublishingConfig',
+  'PublishingConnection',
+  'PublishingHistory',
+
+  // Scheduling Extended
+  'Shift',
+  'TeamAvailability',
+  'OptimalTimeConfiguration',
+  'TeamPerformanceMetrics',
+
+  // Inventory
+  'InventoryForecast',
+
   // Reports & Audit
   'SavedReport',
   'AuditLog',
+
+  // Feature Flags & Module Config
+  'FeatureFlag',
+  'TenantModule',
+  'TenantModuleConfig',
+
+  // Tenant Management
+  'PasswordReset',
+  'TenantUser',
+  'TenantDomain',
+  'TenantBranding',
+  'TenantHealthMetrics',
 
   // Phase 1 AI Tool Configs
   'ChatbotConfig',
@@ -89,20 +181,12 @@ const TENANT_SCOPED_MODELS = new Set([
   'PredictiveMaintenanceConfig',
   'RevenueManagementConfig',
   'SafetyMonitorConfig',
-
-  // Customer Success
-  'CustomerHealthScore',
-  'SuccessPlan',
-  'CTA',
-  'Playbook',
 ]);
 
 // Models that have tenantId but are accessed via parent relations
 // These don't need direct filtering as they're always accessed through parent
 const TENANT_INHERITED_MODELS = new Set([
-  'PipelineStage', // Accessed via Pipeline
   'OpportunityContact', // Accessed via Opportunity
-  'OpportunityLineItem', // Accessed via Opportunity
   'OpportunityStageHistory', // Accessed via Opportunity
   'SyncLog', // Accessed via Integration
 ]);

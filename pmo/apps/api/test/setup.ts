@@ -88,8 +88,19 @@ beforeAll(async () => {
     );
   }
 
-  const prismaModule = await import('../src/prisma/client');
-  prismaClient = prismaModule.default ?? prismaModule.prisma;
+  try {
+    const prismaModule = await import('../src/prisma/client');
+    // Handle both default export and named export, and handle mocked modules
+    // that may not have $disconnect
+    const client = prismaModule.default ?? prismaModule.prisma;
+    if (client && typeof client.$disconnect === 'function') {
+      prismaClient = client;
+    }
+  } catch (error) {
+    // Some tests mock the prisma client without proper default export
+    // In these cases, we skip the global prisma setup
+    console.warn('Prisma client import failed (likely mocked):', error);
+  }
 });
 
 // NOTE: We intentionally do NOT run any cleanup in beforeEach.

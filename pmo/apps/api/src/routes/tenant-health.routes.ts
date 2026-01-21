@@ -7,6 +7,7 @@
 import { Router, Response } from 'express';
 import { requireAuth, AuthenticatedRequest } from '../auth/auth.middleware';
 import { requireAdmin } from '../auth/auth.middleware';
+import { requireTenant, TenantRequest } from '../tenant/tenant.middleware';
 import * as tenantHealthService from '../services/tenant-health.service';
 
 const router = Router();
@@ -18,9 +19,11 @@ const router = Router();
 router.get(
   '/',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
     try {
-      const health = await tenantHealthService.getTenantHealth();
+      const tenantId = req.tenantContext!.tenantId;
+      const health = await tenantHealthService.getTenantHealth(tenantId);
       return res.json({ data: health });
     } catch (error) {
       console.error('Error getting tenant health:', error);
@@ -41,11 +44,13 @@ router.get(
 router.get(
   '/history',
   requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
+  requireTenant,
+  async (req: TenantRequest, res: Response) => {
     try {
+      const tenantId = req.tenantContext!.tenantId;
       const days = parseInt(req.query.days as string) || 30;
       const history = await tenantHealthService.getHealthHistory(
-        undefined,
+        tenantId,
         days,
       );
       return res.json({ data: history });
@@ -68,7 +73,8 @@ router.get(
 router.get(
   '/plan-limits',
   requireAuth,
-  async (_req: AuthenticatedRequest, res: Response) => {
+  requireTenant,
+  async (_req: TenantRequest, res: Response) => {
     try {
       return res.json({ data: tenantHealthService.PLAN_LIMITS });
     } catch (error) {
