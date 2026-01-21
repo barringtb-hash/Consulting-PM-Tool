@@ -17,6 +17,7 @@ import { PublishingPlatform } from '../../src/modules/social-publishing/types';
 // Use vi.hoisted to ensure mocks are available during module factory execution
 const { mockPrisma, mockAdapterFunctions } = vi.hoisted(() => ({
   mockPrisma: {
+    $disconnect: vi.fn(),
     socialPublishingConfig: {
       findUnique: vi.fn(),
       create: vi.fn(),

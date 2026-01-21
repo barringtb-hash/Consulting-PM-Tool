@@ -88,6 +88,21 @@ export async function createOpportunity(input: CreateOpportunityInput) {
       : null;
 
   return prisma.$transaction(async (tx) => {
+    // SECURITY: Validate account belongs to tenant before creating opportunity
+    // This prevents cross-tenant data linkage attacks where an attacker could
+    // create opportunities linked to accounts from another tenant
+    const account = await tx.account.findFirst({
+      where: {
+        id: input.accountId,
+        tenantId,
+      },
+      select: { id: true },
+    });
+
+    if (!account) {
+      throw new Error(`Account not found or access denied: ${input.accountId}`);
+    }
+
     // Create opportunity
     const opportunity = await tx.opportunity.create({
       data: {
