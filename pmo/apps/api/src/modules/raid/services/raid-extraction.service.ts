@@ -648,6 +648,40 @@ export const mapToRiskCategory = (
 };
 
 /**
+ * Maps risk likelihood string to database enum
+ */
+export const mapToRiskLikelihood = (
+  likelihood: string | undefined,
+): 'RARE' | 'UNLIKELY' | 'POSSIBLE' | 'LIKELY' | 'ALMOST_CERTAIN' => {
+  if (!likelihood) {
+    return 'POSSIBLE';
+  }
+
+  const upper = likelihood.toUpperCase();
+
+  const likelihoodMap: Record<
+    string,
+    'RARE' | 'UNLIKELY' | 'POSSIBLE' | 'LIKELY' | 'ALMOST_CERTAIN'
+  > = {
+    // Full values
+    RARE: 'RARE',
+    UNLIKELY: 'UNLIKELY',
+    POSSIBLE: 'POSSIBLE',
+    LIKELY: 'LIKELY',
+    ALMOST_CERTAIN: 'ALMOST_CERTAIN',
+    // Simplified values
+    LOW: 'UNLIKELY',
+    MEDIUM: 'POSSIBLE',
+    HIGH: 'LIKELY',
+    // Edge cases
+    VERY_LOW: 'RARE',
+    VERY_HIGH: 'ALMOST_CERTAIN',
+  };
+
+  return likelihoodMap[upper] || 'POSSIBLE';
+};
+
+/**
  * Saves extracted risks to the database
  *
  * @param projectId - The project ID
