@@ -1,6 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Edit,
+  FileText,
+  Loader2,
+  MessageSquare,
+  Trash2,
+  Users,
+  Sparkles,
+  CheckSquare,
+  FolderKanban,
+} from 'lucide-react';
 
 import { useProject } from '../../api/queries';
 import {
@@ -22,6 +35,12 @@ import {
 } from '../raid/hooks/useRAIDData';
 import type { ExtractedRAIDItem } from '../raid/types';
 import { Button } from '../../ui/Button';
+import { Textarea } from '../../ui/Textarea';
+import { Input } from '../../ui/Input';
+import { Card, CardBody, CardHeader } from '../../ui/Card';
+import { Badge } from '../../ui/Badge';
+import { Modal } from '../../ui/Modal';
+import { Select } from '../../ui/Select';
 
 interface DetailFormValues {
   notes: string;
@@ -313,167 +332,326 @@ function MeetingDetailPage(): JSX.Element {
   };
 
   if (Number.isNaN(meetingId)) {
-    return <p>Invalid meeting id</p>;
+    return (
+      <div className="page-content">
+        <Card className="border-danger-200 dark:border-danger-800">
+          <CardBody>
+            <p className="text-danger-600 dark:text-danger-400">
+              Invalid meeting ID
+            </p>
+          </CardBody>
+        </Card>
+      </div>
+    );
   }
 
   if (meetingQuery.isLoading) {
-    return <p>Loading meeting...</p>;
+    return (
+      <div className="page-content flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center gap-3 text-neutral-600 dark:text-neutral-400">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Loading meeting...</span>
+        </div>
+      </div>
+    );
   }
 
   if (meetingQuery.error) {
     return (
-      <p role="alert">Unable to load meeting: {meetingQuery.error.message}</p>
+      <div className="page-content">
+        <Card className="border-danger-200 dark:border-danger-800">
+          <CardBody>
+            <p role="alert" className="text-danger-600 dark:text-danger-400">
+              Unable to load meeting: {meetingQuery.error.message}
+            </p>
+          </CardBody>
+        </Card>
+      </div>
     );
   }
 
   if (!meeting) {
-    return <p>Meeting not found</p>;
+    return (
+      <div className="page-content">
+        <Card>
+          <CardBody>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Meeting not found
+            </p>
+          </CardBody>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <section aria-label="meeting-detail" onMouseUp={handleSelectionChange}>
-      <header className="section-header">
-        <div>
-          <p>
-            <Link to={`/projects/${meeting.projectId}`}>
-              &larr; Back to project
-            </Link>
-          </p>
-          <h1>{meeting.title}</h1>
-          <p>
-            {meeting.date.toLocaleDateString()} at {meeting.time}
-          </p>
-          <p>
-            <strong>Attendees:</strong>{' '}
-            {meeting.attendees.length > 0
-              ? meeting.attendees.join(', ')
-              : 'Not specified'}
-          </p>
-          {projectQuery.data && (
-            <p>
-              <strong>Project:</strong> {projectQuery.data.name}
-            </p>
-          )}
+    <div className="page-content" onMouseUp={handleSelectionChange}>
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 bg-success-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-in-right">
+          <CheckSquare className="w-5 h-5" />
+          {toast}
         </div>
-        <div className="card__actions">
-          <button type="button" onClick={() => setShowEditModal(true)}>
-            Edit meeting
-          </button>
-          <button type="button" onClick={handleDelete}>
-            Delete meeting
-          </button>
-          {projectQuery.data && (
-            <GenerateFromMeetingButton
-              meetingId={meeting.id}
-              meetingTitle={meeting.title}
-              projectId={meeting.projectId}
-              clientId={projectQuery.data.clientId}
+      )}
+
+      {/* Header */}
+      <div className="mb-6">
+        <Link
+          to={`/projects/${meeting.projectId}`}
+          className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400 mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to project
+        </Link>
+
+        <Card>
+          <CardBody>
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/50">
+                    <MessageSquare className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {meeting.title}
+                    </h1>
+                    {projectQuery.data && (
+                      <Link
+                        to={`/projects/${meeting.projectId}`}
+                        className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-primary-600 dark:hover:text-primary-400"
+                      >
+                        <span className="flex items-center gap-1">
+                          <FolderKanban className="w-3.5 h-3.5" />
+                          {projectQuery.data.name}
+                        </span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                    <Calendar className="w-4 h-4" />
+                    <span>{meeting.date.toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                    <Clock className="w-4 h-4" />
+                    <span>{meeting.time}</span>
+                  </div>
+                  {meeting.attendees.length > 0 && (
+                    <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                      <Users className="w-4 h-4" />
+                      <span>
+                        {meeting.attendees.length} attendee
+                        {meeting.attendees.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {meeting.attendees.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {meeting.attendees.map((attendee, idx) => (
+                      <Badge key={idx} variant="secondary">
+                        {attendee}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEditModal(true)}
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="text-danger-600 hover:text-danger-700 hover:border-danger-300 dark:text-danger-400 dark:hover:text-danger-300"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </Button>
+                {projectQuery.data && (
+                  <GenerateFromMeetingButton
+                    meetingId={meeting.id}
+                    meetingTitle={meeting.title}
+                    projectId={meeting.projectId}
+                    clientId={projectQuery.data.clientId}
+                  />
+                )}
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Meeting Notes Form */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+              <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Meeting Content
+            </h2>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <form onSubmit={handleSaveDetails} className="space-y-6">
+            <Textarea
+              label="Notes"
+              id="meeting-notes"
+              value={detailValues.notes}
+              onChange={(event) =>
+                setDetailValues((prev) => ({
+                  ...prev,
+                  notes: event.target.value,
+                }))
+              }
+              rows={8}
+              placeholder="Enter meeting notes, discussion points, and key takeaways..."
             />
-          )}
-        </div>
-      </header>
 
-      {toast && <div className="toast">{toast}</div>}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Textarea
+                label="Decisions"
+                id="meeting-decisions"
+                value={detailValues.decisions}
+                onChange={(event) =>
+                  setDetailValues((prev) => ({
+                    ...prev,
+                    decisions: event.target.value,
+                  }))
+                }
+                rows={5}
+                placeholder="List key decisions made during the meeting..."
+              />
 
-      <form onSubmit={handleSaveDetails} className="stack">
-        <div>
-          <label htmlFor="meeting-notes">Notes</label>
-          <textarea
-            id="meeting-notes"
-            value={detailValues.notes}
-            onChange={(event) =>
-              setDetailValues((prev) => ({
-                ...prev,
-                notes: event.target.value,
-              }))
-            }
-          />
-        </div>
-        <div>
-          <label htmlFor="meeting-decisions">Decisions</label>
-          <textarea
-            id="meeting-decisions"
-            value={detailValues.decisions}
-            onChange={(event) =>
-              setDetailValues((prev) => ({
-                ...prev,
-                decisions: event.target.value,
-              }))
-            }
-          />
-        </div>
-        <div>
-          <label htmlFor="meeting-risks">Risks</label>
-          <textarea
-            id="meeting-risks"
-            value={detailValues.risks}
-            onChange={(event) =>
-              setDetailValues((prev) => ({
-                ...prev,
-                risks: event.target.value,
-              }))
-            }
-          />
-        </div>
-        {detailError && <p role="alert">{detailError}</p>}
-        <div className="flex gap-3 items-center flex-wrap">
-          <button type="submit" disabled={updateMeetingMutation.isPending}>
-            Save notes
-          </button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleExtractRAID}
-            disabled={
-              extractRAIDMutation.isPending ||
-              (!detailValues.notes.trim() &&
-                !detailValues.decisions.trim() &&
-                !detailValues.risks.trim())
-            }
-          >
-            {extractRAIDMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Extracting...
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="w-4 h-4" />
-                Extract RAID Items
-              </>
+              <Textarea
+                label="Risks"
+                id="meeting-risks"
+                value={detailValues.risks}
+                onChange={(event) =>
+                  setDetailValues((prev) => ({
+                    ...prev,
+                    risks: event.target.value,
+                  }))
+                }
+                rows={5}
+                placeholder="Document any identified risks or concerns..."
+              />
+            </div>
+
+            {detailError && (
+              <div className="p-3 rounded-lg bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800">
+                <p
+                  role="alert"
+                  className="text-sm text-danger-600 dark:text-danger-400"
+                >
+                  {detailError}
+                </p>
+              </div>
             )}
-          </Button>
-        </div>
-      </form>
 
-      <section aria-label="selection-actions" className="stack">
-        <h2>Create task from selection</h2>
-        <p>
-          Highlight text in the notes, decisions, or risks above and use the
-          button below to convert it into a task.
-        </p>
-        <div className="card">
-          <p>
-            <strong>Selected text:</strong>{' '}
-            {selectionText || 'Select text to enable task creation'}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setShowTaskModal(true);
-              setTaskFormValues((prev) => ({
-                ...prev,
-                title: selectionText,
-                description: selectionText,
-              }));
-            }}
-            disabled={!selectionText}
-          >
-            Create task from selection
-          </button>
-        </div>
-      </section>
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+              <Button type="submit" disabled={updateMeetingMutation.isPending}>
+                {updateMeetingMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Notes'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExtractRAID}
+                disabled={
+                  extractRAIDMutation.isPending ||
+                  (!detailValues.notes.trim() &&
+                    !detailValues.decisions.trim() &&
+                    !detailValues.risks.trim())
+                }
+              >
+                {extractRAIDMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Extracting...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Extract RAID Items
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
 
+      {/* Create Task from Selection */}
+      <Card className="border-emerald-200 dark:border-emerald-800">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
+              <CheckSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Create Task from Selection
+              </h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Highlight text in the notes above and convert it to a task
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                Selected text:
+              </p>
+              <p className="text-neutral-900 dark:text-neutral-100 min-h-[40px]">
+                {selectionText || (
+                  <span className="text-neutral-400 dark:text-neutral-500 italic">
+                    Select text from the meeting content to enable task creation
+                  </span>
+                )}
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setShowTaskModal(true);
+                setTaskFormValues((prev) => ({
+                  ...prev,
+                  title: selectionText,
+                  description: selectionText,
+                }));
+              }}
+              disabled={!selectionText}
+              variant="outline"
+            >
+              <CheckSquare className="w-4 h-4" />
+              Create Task from Selection
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Edit Meeting Modal */}
       <MeetingFormModal
         isOpen={showEditModal}
         heading="Edit meeting"
@@ -484,131 +662,152 @@ function MeetingDetailPage(): JSX.Element {
         error={detailError}
       />
 
-      {showTaskModal && (
-        <section aria-label="task-from-selection" className="task-modal">
-          <h3>Create task from selection</h3>
-          <form onSubmit={handleCreateTask}>
-            <div>
-              <label htmlFor="task-title">Title</label>
-              <input
-                id="task-title"
-                value={taskFormValues.title}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    title: event.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="task-description">Description</label>
-              <textarea
-                id="task-description"
-                value={taskFormValues.description}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <label htmlFor="task-status">Status</label>
-              <select
-                id="task-status"
-                value={taskFormValues.status}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    status: event.target
-                      .value as (typeof TASK_STATUSES)[number],
-                  }))
-                }
+      {/* Create Task Modal */}
+      <Modal
+        isOpen={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+        title="Create Task from Selection"
+        size="medium"
+      >
+        <form onSubmit={handleCreateTask} className="space-y-4">
+          <Input
+            label="Title"
+            id="task-title"
+            value={taskFormValues.title}
+            onChange={(event) =>
+              setTaskFormValues((prev) => ({
+                ...prev,
+                title: event.target.value,
+              }))
+            }
+            required
+            placeholder="Enter task title"
+          />
+
+          <Textarea
+            label="Description"
+            id="task-description"
+            value={taskFormValues.description}
+            onChange={(event) =>
+              setTaskFormValues((prev) => ({
+                ...prev,
+                description: event.target.value,
+              }))
+            }
+            rows={3}
+            placeholder="Enter task description"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Status"
+              id="task-status"
+              value={taskFormValues.status}
+              onChange={(event) =>
+                setTaskFormValues((prev) => ({
+                  ...prev,
+                  status: event.target.value as (typeof TASK_STATUSES)[number],
+                }))
+              }
+            >
+              {TASK_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status.replace('_', ' ')}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              label="Priority"
+              id="task-priority"
+              value={taskFormValues.priority}
+              onChange={(event) =>
+                setTaskFormValues((prev) => ({
+                  ...prev,
+                  priority: event.target
+                    .value as TaskFromSelectionFormValues['priority'],
+                }))
+              }
+            >
+              <option value="">Unassigned</option>
+              {TASK_PRIORITIES.map((priority) => (
+                <option key={priority} value={priority}>
+                  {priority}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Due Date"
+              id="task-due-date"
+              type="date"
+              value={taskFormValues.dueDate}
+              onChange={(event) =>
+                setTaskFormValues((prev) => ({
+                  ...prev,
+                  dueDate: event.target.value,
+                }))
+              }
+            />
+
+            <Select
+              label="Milestone"
+              id="task-milestone"
+              value={taskFormValues.milestoneId}
+              onChange={(event) =>
+                setTaskFormValues((prev) => ({
+                  ...prev,
+                  milestoneId: event.target.value,
+                }))
+              }
+            >
+              <option value="">Unassigned</option>
+              {(milestonesQuery.data ?? []).map((milestone) => (
+                <option key={milestone.id} value={milestone.id}>
+                  {milestone.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {taskError && (
+            <div className="p-3 rounded-lg bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800">
+              <p
+                role="alert"
+                className="text-sm text-danger-600 dark:text-danger-400"
               >
-                {TASK_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
+                {taskError}
+              </p>
             </div>
-            <div>
-              <label htmlFor="task-priority">Priority</label>
-              <select
-                id="task-priority"
-                value={taskFormValues.priority}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    priority: event.target
-                      .value as TaskFromSelectionFormValues['priority'],
-                  }))
-                }
-              >
-                <option value="">Unassigned</option>
-                {TASK_PRIORITIES.map((priority) => (
-                  <option key={priority} value={priority}>
-                    {priority}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="task-due-date">Due date</label>
-              <input
-                id="task-due-date"
-                type="date"
-                value={taskFormValues.dueDate}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    dueDate: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <label htmlFor="task-milestone">Milestone</label>
-              <select
-                id="task-milestone"
-                value={taskFormValues.milestoneId}
-                onChange={(event) =>
-                  setTaskFormValues((prev) => ({
-                    ...prev,
-                    milestoneId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Unassigned</option>
-                {(milestonesQuery.data ?? []).map((milestone) => (
-                  <option key={milestone.id} value={milestone.id}>
-                    {milestone.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {taskError && <p role="alert">{taskError}</p>}
-            <div>
-              <button
-                type="submit"
-                disabled={createTaskFromSelectionMutation.isPending}
-              >
-                Create task
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowTaskModal(false)}
-                disabled={createTaskFromSelectionMutation.isPending}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowTaskModal(false)}
+              disabled={createTaskFromSelectionMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={createTaskFromSelectionMutation.isPending}
+            >
+              {createTaskFromSelectionMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Task'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <RAIDExtractionModal
         isOpen={showRAIDModal}
@@ -618,7 +817,7 @@ function MeetingDetailPage(): JSX.Element {
         isAccepting={acceptExtractedItemsMutation.isPending}
         meetingTitle={meeting?.title}
       />
-    </section>
+    </div>
   );
 }
 

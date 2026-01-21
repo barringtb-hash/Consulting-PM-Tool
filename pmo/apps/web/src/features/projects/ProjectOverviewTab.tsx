@@ -156,6 +156,122 @@ function SectionHeader({
   );
 }
 
+// Helper to parse and format meeting content (risks, decisions, etc.)
+interface ParsedContentItem {
+  label?: string;
+  content: string;
+}
+
+function parseContentItems(text: string): ParsedContentItem[] {
+  if (!text || text.trim() === '') return [];
+
+  // First, try splitting by newlines
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  // If we have multiple lines, process each
+  if (lines.length > 1) {
+    return lines.map((line) => {
+      // Check for label patterns like "Risk:", "Mitigation:", "Decision 1:", etc.
+      const labelMatch = line.match(
+        /^(Risk|Mitigation|Decision\s*\d*|Action|Issue|Note|Item\s*\d*):\s*/i,
+      );
+      if (labelMatch) {
+        return {
+          label: labelMatch[1].trim(),
+          content: line.slice(labelMatch[0].length).trim(),
+        };
+      }
+      // Check for bullet points
+      const bulletMatch = line.match(/^[-•*]\s+/);
+      if (bulletMatch) {
+        return { content: line.slice(bulletMatch[0].length).trim() };
+      }
+      // Check for numbered items like "1.", "2)", etc.
+      const numberedMatch = line.match(/^\d+[.)]\s*/);
+      if (numberedMatch) {
+        return { content: line.slice(numberedMatch[0].length).trim() };
+      }
+      return { content: line };
+    });
+  }
+
+  // Single line - try to split by patterns
+  const patterns = [
+    /(?=Risk:\s*)/gi,
+    /(?=Mitigation:\s*)/gi,
+    /(?=Decision\s*\d*:\s*)/gi,
+  ];
+
+  let segments = [text];
+  for (const pattern of patterns) {
+    const newSegments: string[] = [];
+    for (const segment of segments) {
+      newSegments.push(...segment.split(pattern).filter(Boolean));
+    }
+    segments = newSegments;
+  }
+
+  if (segments.length > 1) {
+    return segments.map((segment) => {
+      const trimmed = segment.trim();
+      const labelMatch = trimmed.match(
+        /^(Risk|Mitigation|Decision\s*\d*):\s*/i,
+      );
+      if (labelMatch) {
+        return {
+          label: labelMatch[1].trim(),
+          content: trimmed.slice(labelMatch[0].length).trim(),
+        };
+      }
+      return { content: trimmed };
+    });
+  }
+
+  // Fallback: return as single item
+  return [{ content: text.trim() }];
+}
+
+// Component to display formatted content items
+interface FormattedContentListProps {
+  items: ParsedContentItem[];
+  variant: 'amber' | 'violet';
+}
+
+function FormattedContentList({
+  items,
+  variant,
+}: FormattedContentListProps): JSX.Element {
+  const labelStyles = {
+    amber:
+      'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50',
+    violet:
+      'text-violet-700 dark:text-violet-300 bg-violet-100 dark:bg-violet-900/50',
+  };
+
+  return (
+    <ul className="space-y-2">
+      {items.map((item, idx) => (
+        <li
+          key={idx}
+          className="text-sm text-neutral-800 dark:text-neutral-200 pl-3 border-l-2 border-neutral-200 dark:border-neutral-700"
+        >
+          {item.label && (
+            <span
+              className={`inline-block text-xs font-medium px-1.5 py-0.5 rounded mr-2 ${labelStyles[variant]}`}
+            >
+              {item.label}
+            </span>
+          )}
+          <span className="whitespace-pre-wrap">{item.content}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // Empty state component
 interface EmptyStateProps {
   icon: React.ReactNode;
@@ -901,18 +1017,14 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 <CardBody>
                   <div className="space-y-4">
                     {statusData.recentRisks.map((risk, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex-shrink-0">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-neutral-900 dark:text-neutral-100">
-                            {risk.snippet}
-                          </p>
-                          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-                            From meeting on {formatDate(risk.date)}
-                          </p>
-                        </div>
+                      <div key={idx} className="space-y-2">
+                        <FormattedContentList
+                          items={parseContentItems(risk.snippet)}
+                          variant="amber"
+                        />
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 pl-3">
+                          From meeting on {formatDate(risk.date)}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -932,18 +1044,14 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
                 <CardBody>
                   <div className="space-y-4">
                     {statusData.recentDecisions.map((decision, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/50 flex-shrink-0">
-                          <MessageSquare className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-neutral-900 dark:text-neutral-100">
-                            {decision.snippet}
-                          </p>
-                          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-                            From meeting on {formatDate(decision.date)}
-                          </p>
-                        </div>
+                      <div key={idx} className="space-y-2">
+                        <FormattedContentList
+                          items={parseContentItems(decision.snippet)}
+                          variant="violet"
+                        />
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 pl-3">
+                          From meeting on {formatDate(decision.date)}
+                        </p>
                       </div>
                     ))}
                   </div>
