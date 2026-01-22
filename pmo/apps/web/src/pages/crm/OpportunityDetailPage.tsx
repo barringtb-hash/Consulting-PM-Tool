@@ -12,7 +12,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import {
   Building2,
   DollarSign,
@@ -27,6 +27,9 @@ import {
   User,
   MoreVertical,
   AlertCircle,
+  Calculator,
+  FileText,
+  FileSignature,
 } from 'lucide-react';
 
 import {
@@ -48,6 +51,25 @@ import { PageHeader } from '../../ui/PageHeader';
 import { Textarea } from '../../ui/Textarea';
 import { useToast } from '../../ui/Toast';
 import { EMPTY_STATES } from '../../utils/typography';
+
+// Proposal components
+import { CostEstimateTab } from '../../features/opportunity-proposals/components/CostEstimateTab';
+import { SOWTab } from '../../features/opportunity-proposals/components/SOWTab';
+import { ContractTab } from '../../features/opportunity-proposals/components/ContractTab';
+
+// Tab type
+type OpportunityTab = 'overview' | 'estimates' | 'documents' | 'contracts';
+
+const TABS: Array<{
+  id: OpportunityTab;
+  label: string;
+  icon: React.ElementType;
+}> = [
+  { id: 'overview', label: 'Overview', icon: Building2 },
+  { id: 'estimates', label: 'Estimates', icon: Calculator },
+  { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'contracts', label: 'Contracts', icon: FileSignature },
+];
 
 // Avatar background color palette for contacts
 const AVATAR_COLORS = [
@@ -303,6 +325,13 @@ function OpportunityDetailPage(): JSX.Element {
   );
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Tab navigation
+  const activeTab = (searchParams.get('tab') as OpportunityTab) || 'overview';
+  const setActiveTab = (tab: OpportunityTab) => {
+    setSearchParams({ tab });
+  };
 
   const opportunityQuery = useOpportunity(opportunityId);
   const updateOpportunity = useUpdateOpportunity(opportunityId ?? 0);
@@ -577,587 +606,651 @@ function OpportunityDetailPage(): JSX.Element {
         </div>
       </PageHeader>
 
-      <div className="page-content space-y-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-success-100 dark:bg-success-900/30 rounded-lg">
-                <DollarSign className="h-5 w-5 text-success-600 dark:text-success-400" />
-              </div>
-              <div>
-                <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Amount
-                </dt>
-                <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  {formatCurrency(opportunity.amount)}
-                </dd>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-              </div>
-              <div>
-                <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Weighted Value
-                </dt>
-                <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  {formatCurrency(opportunity.weightedAmount)}
-                </dd>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
-                <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div>
-                <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Expected Close
-                </dt>
-                <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  {formatDate(opportunity.expectedCloseDate)}
-                </dd>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                <Building2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div>
-                <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Activities
-                </dt>
-                <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-                  {opportunity._count?.activities ?? 0}
-                </dd>
-              </div>
-            </div>
-          </Card>
+      {/* Tab Navigation */}
+      <div className="border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <div className="container-padding">
+          <nav className="flex gap-1 -mb-px" aria-label="Tabs">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    isActive
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Opportunity Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Opportunity Details</CardTitle>
-              </CardHeader>
-              <CardBody>
-                {isEditing ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Name
-                      </label>
-                      <Input
-                        value={editForm.name ?? ''}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                          Amount
-                        </label>
-                        <Input
-                          type="number"
-                          value={editForm.amount ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              amount: e.target.value
-                                ? Number(e.target.value)
-                                : undefined,
-                            }))
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                          Probability (%)
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={editForm.probability ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              probability: e.target.value
-                                ? Number(e.target.value)
-                                : undefined,
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Expected Close Date
-                      </label>
-                      <Input
-                        type="date"
-                        value={
-                          editForm.expectedCloseDate
-                            ? new Date(editForm.expectedCloseDate)
-                                .toISOString()
-                                .split('T')[0]
-                            : ''
-                        }
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            expectedCloseDate: e.target.value || undefined,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Description
-                      </label>
-                      <Textarea
-                        value={editForm.description ?? ''}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            description: e.target.value,
-                          }))
-                        }
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Next Step
-                      </label>
-                      <Input
-                        value={editForm.nextStep ?? ''}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            nextStep: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                      <Button variant="secondary" onClick={handleCancelEdit}>
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleSaveEdit}
-                        disabled={updateOpportunity.isPending}
-                      >
-                        {updateOpportunity.isPending
-                          ? 'Saving...'
-                          : 'Save Changes'}
-                      </Button>
-                    </div>
+      <div className="page-content space-y-6">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-success-100 dark:bg-success-900/30 rounded-lg">
+                    <DollarSign className="h-5 w-5 text-success-600 dark:text-success-400" />
                   </div>
-                ) : (
-                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="sm:col-span-2">
-                      <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Description
-                      </dt>
-                      <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100">
-                        {opportunity.description || 'Not provided'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Amount
-                      </dt>
-                      <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                        {formatCurrency(opportunity.amount)}
-                        {opportunity.currency && (
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                            ({opportunity.currency})
-                          </span>
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Probability
-                      </dt>
-                      <dd className="mt-1">
-                        <ProbabilityIndicator
-                          probability={opportunity.probability}
-                        />
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Expected Close
-                      </dt>
-                      <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
-                        {formatDate(opportunity.expectedCloseDate)}
-                      </dd>
-                    </div>
-                    {opportunity.actualCloseDate && (
-                      <div>
-                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                          Actual Close
-                        </dt>
-                        <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
-                          {formatDate(opportunity.actualCloseDate)}
-                        </dd>
-                      </div>
-                    )}
-                    <div>
-                      <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Lead Source
-                      </dt>
-                      <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100">
-                        {opportunity.leadSource || 'Not provided'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Created
-                      </dt>
-                      <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100">
-                        {formatDate(opportunity.createdAt)}
-                      </dd>
-                    </div>
-                    {opportunity.nextStep && (
-                      <div className="sm:col-span-2">
-                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                          Next Step
-                        </dt>
-                        <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                          <ArrowRight className="h-4 w-4 text-primary-500" />
-                          {opportunity.nextStep}
-                        </dd>
-                      </div>
-                    )}
-                    {isLost && opportunity.lostReason && (
-                      <div className="sm:col-span-2">
-                        <dt className="text-sm text-neutral-500 dark:text-neutral-400">
-                          Lost Reason
-                        </dt>
-                        <dd className="mt-1 font-medium text-danger-600 dark:text-danger-400">
-                          {opportunity.lostReason}
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
-                )}
-              </CardBody>
-            </Card>
-
-            {/* Account Information */}
-            {opportunity.account && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Account</CardTitle>
-                    <Link to={`/crm/accounts/${opportunity.account.id}`}>
-                      <Button variant="secondary" size="sm">
-                        View Account
-                      </Button>
-                    </Link>
-                  </div>
-                </CardHeader>
-                <CardBody>
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
-                      <Building2 className="h-6 w-6 text-neutral-600 dark:text-neutral-400" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
-                        {opportunity.account.name}
-                      </div>
-                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        {opportunity.account.type}
-                      </div>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-
-            {/* Contacts with avatars */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Contacts</CardTitle>
-              </CardHeader>
-              <CardBody>
-                {opportunity.contacts && opportunity.contacts.length > 0 ? (
-                  <div className="space-y-3">
-                    {opportunity.contacts.map((oc) => {
-                      const initials = getInitials(
-                        oc.contact.firstName,
-                        oc.contact.lastName,
-                      );
-                      const avatarColor = getAvatarColor(
-                        `${oc.contact.firstName}${oc.contact.lastName}`,
-                      );
-                      return (
-                        <Link
-                          key={oc.contact.id}
-                          to={`/crm/contacts/${oc.contact.id}`}
-                          className="flex items-center gap-3 p-3 -mx-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
-                        >
-                          {/* Avatar with initials */}
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-full ${avatarColor} text-white font-medium text-sm`}
-                          >
-                            {initials}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                              {oc.contact.firstName} {oc.contact.lastName}
-                              {oc.isPrimary && (
-                                <Badge variant="primary" size="sm">
-                                  Primary
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                              {oc.contact.jobTitle ||
-                                oc.contact.email ||
-                                'No details'}
-                            </div>
-                            {oc.role && (
-                              <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
-                                Role: {oc.role}
-                              </div>
-                            )}
-                          </div>
-                          <User className="h-4 w-4 text-neutral-400 flex-shrink-0" />
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <User className="h-8 w-8 mx-auto text-neutral-300 dark:text-neutral-600 mb-2" />
-                    <p className="text-neutral-500 dark:text-neutral-400">
-                      {EMPTY_STATES.noContacts}
-                    </p>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardBody className="space-y-3">
-                {isOpen && (
-                  <>
-                    {/* Stage Selector */}
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                        Move to Stage
-                      </label>
-                      <select
-                        value={opportunity.stage?.id ?? ''}
-                        onChange={(e) => {
-                          const stageId = Number(e.target.value);
-                          if (stageId && stageId !== opportunity.stage?.id) {
-                            handleMoveToStage(stageId);
-                          }
-                        }}
-                        disabled={moveToStage.isPending}
-                        className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
-                      >
-                        {availableStages.map((stage) => (
-                          <option key={stage.id} value={stage.id}>
-                            {stage.name} ({stage.probability}%)
-                          </option>
-                        ))}
-                      </select>
-                      {moveToStage.isPending && (
-                        <p className="text-xs text-neutral-500 mt-1">
-                          Updating stage...
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3 mt-3 space-y-2">
-                      <Button
-                        variant="primary"
-                        className="w-full justify-center bg-success-600 hover:bg-success-700"
-                        onClick={handleMarkWon}
-                        disabled={markWon.isPending}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        {markWon.isPending ? 'Marking...' : 'Mark as Won'}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        className="w-full justify-center"
-                        onClick={() => setShowLostDialog(true)}
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Mark as Lost
-                      </Button>
-                    </div>
-
-                    <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3">
-                      <Button
-                        variant="secondary"
-                        className="w-full justify-center text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20"
-                        onClick={handleDelete}
-                        disabled={deleteOpportunity.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {deleteOpportunity.isPending
-                          ? 'Deleting...'
-                          : 'Delete Opportunity'}
-                      </Button>
-                    </div>
-                  </>
-                )}
-                {!isOpen && (
-                  <div className="text-center py-4">
-                    <div
-                      className={`inline-flex items-center justify-center h-12 w-12 rounded-full mb-3 ${
-                        isWon
-                          ? 'bg-success-100 dark:bg-success-900/30'
-                          : 'bg-danger-100 dark:bg-danger-900/30'
-                      }`}
-                    >
-                      {isWon ? (
-                        <CheckCircle className="h-6 w-6 text-success-600 dark:text-success-400" />
-                      ) : (
-                        <XCircle className="h-6 w-6 text-danger-600 dark:text-danger-400" />
-                      )}
-                    </div>
-                    <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                      This opportunity is {isWon ? 'won' : 'lost'}
-                    </p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                      Closed on {formatDate(opportunity.actualCloseDate)}
-                    </p>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-
-            {/* Timeline / Stage History */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Timeline</CardTitle>
-              </CardHeader>
-              <CardBody>
-                <div className="relative">
-                  {/* Timeline line */}
-                  <div className="absolute left-3 top-3 bottom-3 w-0.5 bg-neutral-200 dark:bg-neutral-700" />
-
-                  <div className="space-y-4">
-                    {/* Created event */}
-                    <div className="relative flex gap-3">
-                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center z-10">
-                        <div className="h-2 w-2 rounded-full bg-primary-500" />
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          Opportunity Created
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {formatDate(opportunity.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Stage history count indicator */}
-                    {(opportunity._count?.stageHistory ?? 0) > 0 && (
-                      <div className="relative flex gap-3">
-                        <div className="flex-shrink-0 h-6 w-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center z-10">
-                          <div className="h-2 w-2 rounded-full bg-neutral-400" />
-                        </div>
-                        <div className="flex-1 min-w-0 pt-0.5">
-                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                            Stage Changes
-                          </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {opportunity._count?.stageHistory} stage updates
-                            recorded
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Last update */}
-                    <div className="relative flex gap-3">
-                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center z-10">
-                        <div className="h-2 w-2 rounded-full bg-neutral-400" />
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          Last Updated
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {formatDate(opportunity.updatedAt)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Current stage */}
-                    <div className="relative flex gap-3">
-                      <div
-                        className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center z-10 ${
-                          isWon
-                            ? 'bg-success-100 dark:bg-success-900/30'
-                            : isLost
-                              ? 'bg-danger-100 dark:bg-danger-900/30'
-                              : 'bg-primary-100 dark:bg-primary-900/30'
-                        }`}
-                      >
-                        <div
-                          className={`h-2 w-2 rounded-full ${
-                            isWon
-                              ? 'bg-success-500'
-                              : isLost
-                                ? 'bg-danger-500'
-                                : 'bg-primary-500'
-                          }`}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          Current Stage: {opportunity.stage?.name ?? 'Unknown'}
-                        </p>
-                        {opportunity.expectedCloseDate && isOpen && (
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Expected close:{' '}
-                            {formatDate(opportunity.expectedCloseDate)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Amount
+                    </dt>
+                    <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                      {formatCurrency(opportunity.amount)}
+                    </dd>
                   </div>
                 </div>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                  </div>
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Weighted Value
+                    </dt>
+                    <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                      {formatCurrency(opportunity.weightedAmount)}
+                    </dd>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
+                    <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Expected Close
+                    </dt>
+                    <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                      {formatDate(opportunity.expectedCloseDate)}
+                    </dd>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                    <Building2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Activities
+                    </dt>
+                    <dd className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                      {opportunity._count?.activities ?? 0}
+                    </dd>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Details */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Opportunity Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Opportunity Details</CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Name
+                          </label>
+                          <Input
+                            value={editForm.name ?? ''}
+                            onChange={(e) =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                name: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                              Amount
+                            </label>
+                            <Input
+                              type="number"
+                              value={editForm.amount ?? ''}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  amount: e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                              Probability (%)
+                            </label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={editForm.probability ?? ''}
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  probability: e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Expected Close Date
+                          </label>
+                          <Input
+                            type="date"
+                            value={
+                              editForm.expectedCloseDate
+                                ? new Date(editForm.expectedCloseDate)
+                                    .toISOString()
+                                    .split('T')[0]
+                                : ''
+                            }
+                            onChange={(e) =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                expectedCloseDate: e.target.value || undefined,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Description
+                          </label>
+                          <Textarea
+                            value={editForm.description ?? ''}
+                            onChange={(e) =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                description: e.target.value,
+                              }))
+                            }
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Next Step
+                          </label>
+                          <Input
+                            value={editForm.nextStep ?? ''}
+                            onChange={(e) =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                nextStep: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                          <Button
+                            variant="secondary"
+                            onClick={handleCancelEdit}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleSaveEdit}
+                            disabled={updateOpportunity.isPending}
+                          >
+                            {updateOpportunity.isPending
+                              ? 'Saving...'
+                              : 'Save Changes'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
+                          <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Description
+                          </dt>
+                          <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100">
+                            {opportunity.description || 'Not provided'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Amount
+                          </dt>
+                          <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                            {formatCurrency(opportunity.amount)}
+                            {opportunity.currency && (
+                              <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                                ({opportunity.currency})
+                              </span>
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Probability
+                          </dt>
+                          <dd className="mt-1">
+                            <ProbabilityIndicator
+                              probability={opportunity.probability}
+                            />
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Expected Close
+                          </dt>
+                          <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                            {formatDate(opportunity.expectedCloseDate)}
+                          </dd>
+                        </div>
+                        {opportunity.actualCloseDate && (
+                          <div>
+                            <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                              Actual Close
+                            </dt>
+                            <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                              {formatDate(opportunity.actualCloseDate)}
+                            </dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Lead Source
+                          </dt>
+                          <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100">
+                            {opportunity.leadSource || 'Not provided'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Created
+                          </dt>
+                          <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100">
+                            {formatDate(opportunity.createdAt)}
+                          </dd>
+                        </div>
+                        {opportunity.nextStep && (
+                          <div className="sm:col-span-2">
+                            <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                              Next Step
+                            </dt>
+                            <dd className="mt-1 font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                              <ArrowRight className="h-4 w-4 text-primary-500" />
+                              {opportunity.nextStep}
+                            </dd>
+                          </div>
+                        )}
+                        {isLost && opportunity.lostReason && (
+                          <div className="sm:col-span-2">
+                            <dt className="text-sm text-neutral-500 dark:text-neutral-400">
+                              Lost Reason
+                            </dt>
+                            <dd className="mt-1 font-medium text-danger-600 dark:text-danger-400">
+                              {opportunity.lostReason}
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+                    )}
+                  </CardBody>
+                </Card>
+
+                {/* Account Information */}
+                {opportunity.account && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>Account</CardTitle>
+                        <Link to={`/crm/accounts/${opportunity.account.id}`}>
+                          <Button variant="secondary" size="sm">
+                            View Account
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+                          <Building2 className="h-6 w-6 text-neutral-600 dark:text-neutral-400" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
+                            {opportunity.account.name}
+                          </div>
+                          <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {opportunity.account.type}
+                          </div>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* Contacts with avatars */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Contacts</CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    {opportunity.contacts && opportunity.contacts.length > 0 ? (
+                      <div className="space-y-3">
+                        {opportunity.contacts.map((oc) => {
+                          const initials = getInitials(
+                            oc.contact.firstName,
+                            oc.contact.lastName,
+                          );
+                          const avatarColor = getAvatarColor(
+                            `${oc.contact.firstName}${oc.contact.lastName}`,
+                          );
+                          return (
+                            <Link
+                              key={oc.contact.id}
+                              to={`/crm/contacts/${oc.contact.id}`}
+                              className="flex items-center gap-3 p-3 -mx-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                            >
+                              {/* Avatar with initials */}
+                              <div
+                                className={`flex h-10 w-10 items-center justify-center rounded-full ${avatarColor} text-white font-medium text-sm`}
+                              >
+                                {initials}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                                  {oc.contact.firstName} {oc.contact.lastName}
+                                  {oc.isPrimary && (
+                                    <Badge variant="primary" size="sm">
+                                      Primary
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+                                  {oc.contact.jobTitle ||
+                                    oc.contact.email ||
+                                    'No details'}
+                                </div>
+                                {oc.role && (
+                                  <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
+                                    Role: {oc.role}
+                                  </div>
+                                )}
+                              </div>
+                              <User className="h-4 w-4 text-neutral-400 flex-shrink-0" />
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <User className="h-8 w-8 mx-auto text-neutral-300 dark:text-neutral-600 mb-2" />
+                        <p className="text-neutral-500 dark:text-neutral-400">
+                          {EMPTY_STATES.noContacts}
+                        </p>
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Actions</CardTitle>
+                  </CardHeader>
+                  <CardBody className="space-y-3">
+                    {isOpen && (
+                      <>
+                        {/* Stage Selector */}
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                            Move to Stage
+                          </label>
+                          <select
+                            value={opportunity.stage?.id ?? ''}
+                            onChange={(e) => {
+                              const stageId = Number(e.target.value);
+                              if (
+                                stageId &&
+                                stageId !== opportunity.stage?.id
+                              ) {
+                                handleMoveToStage(stageId);
+                              }
+                            }}
+                            disabled={moveToStage.isPending}
+                            className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
+                          >
+                            {availableStages.map((stage) => (
+                              <option key={stage.id} value={stage.id}>
+                                {stage.name} ({stage.probability}%)
+                              </option>
+                            ))}
+                          </select>
+                          {moveToStage.isPending && (
+                            <p className="text-xs text-neutral-500 mt-1">
+                              Updating stage...
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3 mt-3 space-y-2">
+                          <Button
+                            variant="primary"
+                            className="w-full justify-center bg-success-600 hover:bg-success-700"
+                            onClick={handleMarkWon}
+                            disabled={markWon.isPending}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            {markWon.isPending ? 'Marking...' : 'Mark as Won'}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="w-full justify-center"
+                            onClick={() => setShowLostDialog(true)}
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Mark as Lost
+                          </Button>
+                        </div>
+
+                        <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3">
+                          <Button
+                            variant="secondary"
+                            className="w-full justify-center text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20"
+                            onClick={handleDelete}
+                            disabled={deleteOpportunity.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {deleteOpportunity.isPending
+                              ? 'Deleting...'
+                              : 'Delete Opportunity'}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {!isOpen && (
+                      <div className="text-center py-4">
+                        <div
+                          className={`inline-flex items-center justify-center h-12 w-12 rounded-full mb-3 ${
+                            isWon
+                              ? 'bg-success-100 dark:bg-success-900/30'
+                              : 'bg-danger-100 dark:bg-danger-900/30'
+                          }`}
+                        >
+                          {isWon ? (
+                            <CheckCircle className="h-6 w-6 text-success-600 dark:text-success-400" />
+                          ) : (
+                            <XCircle className="h-6 w-6 text-danger-600 dark:text-danger-400" />
+                          )}
+                        </div>
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                          This opportunity is {isWon ? 'won' : 'lost'}
+                        </p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                          Closed on {formatDate(opportunity.actualCloseDate)}
+                        </p>
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+
+                {/* Timeline / Stage History */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Timeline</CardTitle>
+                  </CardHeader>
+                  <CardBody>
+                    <div className="relative">
+                      {/* Timeline line */}
+                      <div className="absolute left-3 top-3 bottom-3 w-0.5 bg-neutral-200 dark:bg-neutral-700" />
+
+                      <div className="space-y-4">
+                        {/* Created event */}
+                        <div className="relative flex gap-3">
+                          <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center z-10">
+                            <div className="h-2 w-2 rounded-full bg-primary-500" />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                              Opportunity Created
+                            </p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {formatDate(opportunity.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Stage history count indicator */}
+                        {(opportunity._count?.stageHistory ?? 0) > 0 && (
+                          <div className="relative flex gap-3">
+                            <div className="flex-shrink-0 h-6 w-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center z-10">
+                              <div className="h-2 w-2 rounded-full bg-neutral-400" />
+                            </div>
+                            <div className="flex-1 min-w-0 pt-0.5">
+                              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                Stage Changes
+                              </p>
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                {opportunity._count?.stageHistory} stage updates
+                                recorded
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Last update */}
+                        <div className="relative flex gap-3">
+                          <div className="flex-shrink-0 h-6 w-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center z-10">
+                            <div className="h-2 w-2 rounded-full bg-neutral-400" />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                              Last Updated
+                            </p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {formatDate(opportunity.updatedAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Current stage */}
+                        <div className="relative flex gap-3">
+                          <div
+                            className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center z-10 ${
+                              isWon
+                                ? 'bg-success-100 dark:bg-success-900/30'
+                                : isLost
+                                  ? 'bg-danger-100 dark:bg-danger-900/30'
+                                  : 'bg-primary-100 dark:bg-primary-900/30'
+                            }`}
+                          >
+                            <div
+                              className={`h-2 w-2 rounded-full ${
+                                isWon
+                                  ? 'bg-success-500'
+                                  : isLost
+                                    ? 'bg-danger-500'
+                                    : 'bg-primary-500'
+                              }`}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                              Current Stage:{' '}
+                              {opportunity.stage?.name ?? 'Unknown'}
+                            </p>
+                            {opportunity.expectedCloseDate && isOpen && (
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                Expected close:{' '}
+                                {formatDate(opportunity.expectedCloseDate)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Estimates Tab */}
+        {activeTab === 'estimates' && opportunityId && (
+          <CostEstimateTab
+            opportunityId={opportunityId}
+            opportunityName={opportunity.name}
+            opportunityDescription={opportunity.description ?? undefined}
+          />
+        )}
+
+        {/* Documents (SOW) Tab */}
+        {activeTab === 'documents' && opportunityId && (
+          <SOWTab
+            opportunityId={opportunityId}
+            opportunityName={opportunity.name}
+          />
+        )}
+
+        {/* Contracts Tab */}
+        {activeTab === 'contracts' && opportunityId && (
+          <ContractTab
+            opportunityId={opportunityId}
+            opportunityName={opportunity.name}
+            accountId={opportunity.accountId ?? undefined}
+          />
+        )}
       </div>
 
       {/* Lost Dialog */}

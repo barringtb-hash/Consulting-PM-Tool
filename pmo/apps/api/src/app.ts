@@ -97,6 +97,13 @@ import contactRouter from './crm/routes/contact.routes';
 import opportunityRouter from './crm/routes/opportunity.routes';
 import activityRouter from './crm/routes/activity.routes';
 import playbookRouter from './crm/routes/playbook.routes';
+// Opportunity Proposals (Cost Estimates, SOWs, Contracts)
+import {
+  costEstimateRouter,
+  sowRouter,
+  contractsRouter,
+  contractsPublicRouter,
+} from './modules/opportunity-proposals';
 // Customer Success ML Routes
 import { customerSuccessMLRouter } from './modules/customer-success-ml';
 // Project ML Routes
@@ -419,6 +426,7 @@ export function createApp(): express.Express {
   app.use('/api', healthRouter); // Health check endpoint at /api/healthz
   app.use('/api', featureFlagsRouter); // Module discovery & feature flags API (public endpoints)
   app.use('/api/public', publicLeadsRouter); // Public lead submission for external website forms
+  app.use('/api/public', contractsPublicRouter); // Public contract viewing and signing
 
   // Protected routes (require authentication)
   app.use('/api/clients', clientsRouter);
@@ -472,6 +480,10 @@ export function createApp(): express.Express {
   app.use('/api/crm/opportunities', opportunityRouter);
   app.use('/api/crm/activities', activityRouter);
   app.use('/api/crm/playbooks', playbookRouter);
+  // Opportunity Proposals (Cost Estimates, SOWs, Contracts)
+  app.use('/api/crm', costEstimateRouter);
+  app.use('/api/crm', sowRouter);
+  app.use('/api/crm', contractsRouter);
 
   // ============ CUSTOMER SUCCESS ML ROUTES ============
   // ML-powered predictions and insights for Customer Success

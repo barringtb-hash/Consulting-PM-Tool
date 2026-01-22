@@ -317,6 +317,101 @@ pmo/apps/web/src/features/raid/
 └── types.ts                  # TypeScript interfaces
 ```
 
+## Opportunity Proposals Module
+
+Location: `pmo/apps/api/src/modules/opportunity-proposals/`
+
+The Opportunity Proposals module provides comprehensive proposal management for CRM opportunities, including cost estimates, statements of work (SOW), and contracts with e-signature support.
+
+**Features:**
+- Cost Estimates: Create and manage detailed cost estimates with line items
+- AI Estimation: AI-powered estimate generation from opportunity details
+- SOW Generation: AI-powered Statement of Work document creation
+- Contract Management: Full contract lifecycle with versioning
+- E-Signatures: Digital signature support with signature pad component
+- Public Signing: Token-based public access for contract signing
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `cost-estimate.router.ts` | REST API for cost estimates and line items |
+| `sow.router.ts` | REST API for Statement of Work documents |
+| `contracts.router.ts` | REST API for contract management |
+| `contracts-public.router.ts` | Public API for contract signing |
+| `services/cost-estimate.service.ts` | Estimate CRUD and calculations |
+| `services/ai-estimate-generator.service.ts` | AI-powered estimate generation |
+| `services/sow-generator.service.ts` | SOW document generation |
+| `services/contract.service.ts` | Contract lifecycle management |
+| `services/contract-signing.service.ts` | E-signature workflow |
+
+**API Endpoints:**
+```
+# Cost Estimates
+GET    /api/crm/opportunities/:opportunityId/estimates           - List estimates
+POST   /api/crm/opportunities/:opportunityId/estimates           - Create estimate
+POST   /api/crm/opportunities/:opportunityId/estimates/generate  - AI generate estimate
+GET    /api/crm/opportunities/:opportunityId/estimates/:id       - Get estimate
+PATCH  /api/crm/opportunities/:opportunityId/estimates/:id       - Update estimate
+DELETE /api/crm/opportunities/:opportunityId/estimates/:id       - Delete estimate
+POST   /api/crm/opportunities/:opportunityId/estimates/:id/approve - Approve estimate
+POST   /api/crm/opportunities/:opportunityId/estimates/:id/clone   - Clone estimate
+
+# Line Items
+POST   /api/crm/opportunities/:opportunityId/estimates/:id/items      - Add line item
+PATCH  /api/crm/opportunities/:opportunityId/estimates/:id/items/:itemId - Update item
+DELETE /api/crm/opportunities/:opportunityId/estimates/:id/items/:itemId - Delete item
+
+# SOW
+GET    /api/crm/opportunities/:opportunityId/sows           - List SOWs
+POST   /api/crm/opportunities/:opportunityId/sows           - Create SOW
+POST   /api/crm/opportunities/:opportunityId/sows/generate  - AI generate SOW
+GET    /api/crm/opportunities/:opportunityId/sows/:id       - Get SOW
+PATCH  /api/crm/opportunities/:opportunityId/sows/:id       - Update SOW
+DELETE /api/crm/opportunities/:opportunityId/sows/:id       - Delete SOW
+POST   /api/crm/opportunities/:opportunityId/sows/:id/approve - Approve SOW
+
+# Contracts
+GET    /api/crm/opportunities/:opportunityId/contracts           - List contracts
+POST   /api/crm/opportunities/:opportunityId/contracts           - Create contract
+POST   /api/crm/opportunities/:opportunityId/contracts/generate  - Generate from SOW
+GET    /api/crm/opportunities/:opportunityId/contracts/:id       - Get contract
+PATCH  /api/crm/opportunities/:opportunityId/contracts/:id       - Update contract
+POST   /api/crm/opportunities/:opportunityId/contracts/:id/send  - Send for signing
+POST   /api/crm/opportunities/:opportunityId/contracts/:id/share - Create share link
+
+# Public Contract Signing
+GET    /api/contracts/public/:token         - Get contract by share token
+POST   /api/contracts/public/:token/sign    - Sign contract
+```
+
+**Database Models:**
+- `OpportunityCostEstimate`: Cost estimates with type, status, totals
+- `EstimateLineItem`: Individual line items with category, quantity, pricing
+- `OpportunitySOW`: Statement of Work documents with content sections
+- `OpportunityContract`: Contracts with lifecycle status and signatures
+
+**Frontend Components:**
+```
+pmo/apps/web/src/features/opportunity-proposals/
+├── index.ts                           # Barrel exports
+├── types.ts                           # TypeScript interfaces
+├── components/
+│   ├── CostEstimateTab.tsx           # Main estimates tab
+│   ├── SOWTab.tsx                    # Main SOW tab
+│   ├── ContractTab.tsx               # Main contracts tab
+│   ├── EstimateFormModal.tsx         # Create/edit estimate form
+│   ├── AIEstimateModal.tsx           # AI generation modal
+│   ├── SOWEditor.tsx                 # SOW document editor
+│   ├── SOWGeneratorModal.tsx         # AI SOW generation
+│   ├── ContractGeneratorModal.tsx    # Contract generation from SOW
+│   ├── ContractSharingModal.tsx      # Share link modal
+│   └── SignaturePad.tsx              # E-signature component
+└── hooks/
+    ├── useCostEstimates.ts           # Estimate React Query hooks
+    ├── useSOWs.ts                    # SOW React Query hooks
+    └── useContracts.ts               # Contract React Query hooks
+```
+
 ## ML Modules
 
 The platform includes ML-powered features for predictive analytics and intelligent automation.
