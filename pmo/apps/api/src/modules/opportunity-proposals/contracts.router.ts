@@ -36,24 +36,30 @@ const contractTypeEnum = z.enum([
   'CONSULTING_AGREEMENT',
   'RETAINER_AGREEMENT',
   'AMENDMENT',
+  'OTHER',
 ]);
 
 const contractStatusEnum = z.enum([
   'DRAFT',
+  'PENDING_REVIEW',
+  'APPROVED',
+  'SENT',
   'PENDING_SIGNATURE',
   'PARTIALLY_SIGNED',
   'SIGNED',
-  'ACTIVE',
-  'EXPIRED',
+  'FULLY_SIGNED',
   'VOIDED',
+  'EXPIRED',
   'TERMINATED',
 ]);
 
 const signatureMethodEnum = z.enum([
+  'ELECTRONIC',
+  'DIGITAL',
+  'WET_INK',
+  'CLICK_WRAP',
   'TYPED_NAME',
   'DRAWN',
-  'UPLOAD',
-  'EXTERNAL',
 ]);
 
 const createContractSchema = z.object({

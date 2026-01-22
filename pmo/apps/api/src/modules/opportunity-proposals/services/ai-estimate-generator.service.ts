@@ -213,7 +213,7 @@ class AIEstimateGeneratorService {
       data: {
         aiGenerated: true,
         aiConfidence: aiResult.confidence,
-        aiNotes: JSON.stringify({
+        aiRationale: JSON.stringify({
           assumptions: aiResult.assumptions,
           risks: aiResult.risks,
           recommendations: aiResult.recommendations,

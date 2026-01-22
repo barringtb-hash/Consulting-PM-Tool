@@ -331,6 +331,16 @@ model User {
   projectIssuesOwned    ProjectIssue[] @relation("ProjectIssueOwner")
   projectIssuesResolved ProjectIssue[] @relation("ProjectIssueResolver")
 
+  // Opportunity Proposals relations
+  estimatesCreated  OpportunityCostEstimate[] @relation("EstimateCreatedBy")
+  estimatesApproved OpportunityCostEstimate[] @relation("EstimateApprovedBy")
+  estimatesRejected OpportunityCostEstimate[] @relation("EstimateRejectedBy")
+  sowsCreated       OpportunitySOW[]          @relation("SOWCreatedBy")
+  sowsApproved      OpportunitySOW[]          @relation("SOWApprovedBy")
+  contractsCreated  OpportunityContract[]     @relation("ContractCreatedBy")
+  contractsSent     OpportunityContract[]     @relation("ContractSentBy")
+  contractsVoided   OpportunityContract[]     @relation("ContractVoidedBy")
+
   // Password reset tokens
   passwordResets PasswordReset[]
 }
@@ -7588,6 +7598,11 @@ model Tenant {
   decisions     Decision[]
   projectIssues ProjectIssue[]
 
+  // Opportunity Proposals relations
+  costEstimates OpportunityCostEstimate[]
+  sows          OpportunitySOW[]
+  contracts     OpportunityContract[]
+
   @@index([slug])
   @@index([status])
 }
@@ -7771,6 +7786,9 @@ model Account {
   // AI Projects Module relations
   engagementScores ClientEngagementScore[]
 
+  // Opportunity Proposals relations
+  contracts OpportunityContract[]
+
   @@index([tenantId, type])
   @@index([tenantId, ownerId])
   @@index([tenantId, archived])
@@ -7933,6 +7951,11 @@ model Opportunity {
 
   // Finance Tracking relations
   expenses Expense[]
+
+  // Opportunity Proposals relations
+  costEstimates OpportunityCostEstimate[]
+  sows          OpportunitySOW[]
+  contracts     OpportunityContract[]
 
   @@index([tenantId, status])
   @@index([tenantId, ownerId])
@@ -10256,6 +10279,77 @@ enum LeadPredictionStatus {
   INVALIDATED
 }
 
+// ============================================================================
+// OPPORTUNITY PROPOSALS ENUMS
+// ============================================================================
+
+enum EstimateType {
+  FIXED_PRICE
+  TIME_AND_MATERIALS
+  RETAINER
+  HYBRID
+}
+
+enum EstimateStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum LineItemCategory {
+  LABOR
+  DELIVERABLE
+  EXPENSE
+  THIRD_PARTY
+  CONTINGENCY
+  DISCOUNT
+}
+
+enum SOWStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum ContractType {
+  MSA
+  SOW
+  MSA_WITH_SOW
+  NDA
+  CONSULTING_AGREEMENT
+  RETAINER_AGREEMENT
+  AMENDMENT
+  OTHER
+}
+
+enum ContractStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  SENT
+  PENDING_SIGNATURE
+  PARTIALLY_SIGNED
+  SIGNED
+  FULLY_SIGNED
+  VOIDED
+  EXPIRED
+  TERMINATED
+}
+
+enum SignatureMethod {
+  ELECTRONIC
+  DIGITAL
+  WET_INK
+  CLICK_WRAP
+  TYPED_NAME
+  DRAWN
+}
+
 /**
  * LeadTrainingData - Historical lead data snapshots for ML training
  */
@@ -10378,4 +10472,285 @@ model LeadMLPrediction {
   @@index([tenantId, leadId])
   @@index([predictionType, status])
   @@index([validUntil])
+}
+
+// ============================================================================
+// OPPORTUNITY PROPOSALS MODELS
+// ============================================================================
+
+/**
+ * OpportunityCostEstimate - Cost estimates for opportunities
+ */
+model OpportunityCostEstimate {
+  id            Int    @id @default(autoincrement())
+  tenantId      String
+  opportunityId Int
+  createdById   Int
+  approvedById  Int?
+  rejectedById  Int?
+
+  name         String
+  version      Int            @default(1)
+  estimateType EstimateType   @default(FIXED_PRICE)
+  status       EstimateStatus @default(DRAFT)
+
+  // Validity period
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  // Pricing
+  subtotal        Decimal  @default(0) @db.Decimal(15, 2)
+  discountPercent Decimal? @db.Decimal(5, 2)
+  discountAmount  Decimal  @default(0) @db.Decimal(15, 2)
+  taxRate         Decimal? @db.Decimal(5, 2)
+  taxAmount       Decimal  @default(0) @db.Decimal(15, 2)
+  total           Decimal  @default(0) @db.Decimal(15, 2)
+  currency        String   @default("USD")
+
+  // Notes
+  notes           String?
+  internalNotes   String?
+  assumptions     Json?
+  rejectionReason String?
+
+  // AI generation metadata
+  aiGenerated  Boolean @default(false)
+  aiConfidence Float?
+  aiRationale  String?
+
+  approvedAt DateTime?
+  rejectedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  opportunity Opportunity        @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdBy   User               @relation("EstimateCreatedBy", fields: [createdById], references: [id])
+  approvedBy  User?              @relation("EstimateApprovedBy", fields: [approvedById], references: [id])
+  rejectedBy  User?              @relation("EstimateRejectedBy", fields: [rejectedById], references: [id])
+  lineItems   EstimateLineItem[]
+  sows        OpportunitySOW[]
+
+  @@index([tenantId, opportunityId])
+  @@index([status])
+}
+
+/**
+ * EstimateLineItem - Individual line items in a cost estimate
+ */
+model EstimateLineItem {
+  id         Int @id @default(autoincrement())
+  estimateId Int
+
+  category    LineItemCategory
+  phase       String?
+  name        String
+  description String?
+
+  // Pricing
+  unitType  String? @default("unit")
+  quantity  Decimal @db.Decimal(10, 2)
+  unitPrice Decimal @db.Decimal(15, 2)
+  total     Decimal @db.Decimal(15, 2)
+
+  // For labor items
+  role           String?
+  hourlyRate     Decimal? @db.Decimal(10, 2)
+  estimatedHours Decimal? @db.Decimal(10, 2)
+
+  // AI metadata
+  aiGenerated  Boolean @default(false)
+  aiConfidence Float?
+  aiRationale  String?
+
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  estimate OpportunityCostEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+
+  @@index([estimateId, sortOrder])
+}
+
+/**
+ * OpportunitySOW - Statement of Work documents
+ */
+model OpportunitySOW {
+  id            Int    @id @default(autoincrement())
+  tenantId      String
+  opportunityId Int
+  estimateId    Int?
+  createdById   Int
+  approvedById  Int?
+
+  name    String
+  version Int       @default(1)
+  status  SOWStatus @default(DRAFT)
+
+  // Content (JSON with markdown and sections)
+  content        Json
+  generatedBy    String @default("MANUAL") // AI, TEMPLATE, MANUAL
+  clientSnapshot Json? // Snapshot of client info at generation time
+
+  // Validity period
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  approvedAt DateTime?
+  sentAt     DateTime?
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  tenant      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  opportunity Opportunity              @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  estimate    OpportunityCostEstimate? @relation(fields: [estimateId], references: [id], onDelete: SetNull)
+  createdBy   User                     @relation("SOWCreatedBy", fields: [createdById], references: [id])
+  approvedBy  User?                    @relation("SOWApprovedBy", fields: [approvedById], references: [id])
+  contracts   OpportunityContract[]
+
+  @@index([tenantId, opportunityId])
+  @@index([status])
+}
+
+/**
+ * OpportunityContract - Contracts for opportunities
+ */
+model OpportunityContract {
+  id            Int    @id @default(autoincrement())
+  tenantId      String
+  opportunityId Int
+  accountId     Int
+  sowId         Int?
+  createdById   Int
+  sentById      Int?
+  voidedById    Int?
+
+  contractNumber String?
+  type           ContractType
+  title          String
+  status         ContractStatus @default(DRAFT)
+  version        Int            @default(1)
+
+  // Content (JSON with markdown and sections)
+  content    Json?
+  templateId String?
+
+  // Financial terms
+  totalValue   Decimal? @db.Decimal(15, 2)
+  currency     String   @default("USD")
+  paymentTerms String?
+
+  // Contract dates
+  effectiveDate  DateTime?
+  expirationDate DateTime?
+  signedAt       DateTime?
+  sentAt         DateTime?
+  voidedAt       DateTime?
+  voidReason     String?
+
+  // Auto-renewal
+  autoRenewal  Boolean @default(false)
+  renewalTerms String?
+
+  // Signature configuration
+  signatureMethod SignatureMethod @default(ELECTRONIC)
+  requiresWitness Boolean         @default(false)
+
+  // Share link for external signing
+  shareToken     String?   @unique
+  shareExpiresAt DateTime?
+  sharePassword  String?
+  shareViewed    Boolean   @default(false)
+  shareViewedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  opportunity Opportunity         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  account     Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  sow         OpportunitySOW?     @relation(fields: [sowId], references: [id], onDelete: SetNull)
+  createdBy   User                @relation("ContractCreatedBy", fields: [createdById], references: [id])
+  sentBy      User?               @relation("ContractSentBy", fields: [sentById], references: [id])
+  voidedBy    User?               @relation("ContractVoidedBy", fields: [voidedById], references: [id])
+  signatures  ContractSignature[]
+  auditLogs   ContractAuditLog[]
+
+  @@index([tenantId, opportunityId])
+  @@index([shareToken])
+  @@index([status])
+}
+
+/**
+ * ContractSignature - Signatures on contracts
+ */
+model ContractSignature {
+  id         Int @id @default(autoincrement())
+  contractId Int
+
+  // Signer info
+  signerName    String
+  signerEmail   String
+  signerTitle   String?
+  signerCompany String?
+  signerType    String  @default("CLIENT") // CLIENT, CONSULTANT, WITNESS, CLIENT_PRIMARY, CLIENT_SECONDARY
+
+  // Token for signature request
+  signToken      String?   @unique
+  tokenExpiresAt DateTime?
+  status         String    @default("PENDING") // PENDING, VIEWED, SIGNED, DECLINED, EXPIRED
+
+  // Signature data
+  signatureData Json? // Signature data object with type, typedName, drawnSignature, etc.
+  signedAt      DateTime?
+  ipAddress     String?
+  userAgent     String?
+
+  // Viewing/Declining tracking
+  viewedAt      DateTime?
+  declinedAt    DateTime?
+  declineReason String?
+
+  // Order and status
+  signatureOrder Int       @default(0)
+  isRequired     Boolean   @default(true)
+  reminderSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contract OpportunityContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId, signatureOrder])
+  @@index([signToken])
+}
+
+/**
+ * ContractAuditLog - Audit trail for contract actions
+ */
+model ContractAuditLog {
+  id         Int @id @default(autoincrement())
+  contractId Int
+
+  action     String // CREATED, UPDATED, SENT, VIEWED, SIGNED, DECLINED, VOIDED, EXPIRED, DOWNLOADED, SHARE_LINK_GENERATED, SHARE_LINK_ACCESSED
+  actorType  String // user, system, signer
+  actorId    Int?
+  actorName  String?
+  actorEmail String?
+
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  contract OpportunityContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@index([action])
+  @@index([createdAt])
 }

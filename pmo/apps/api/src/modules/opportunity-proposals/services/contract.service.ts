@@ -165,6 +165,12 @@ const CONTRACT_SECTIONS: Record<ContractType, { id: string; title: string }[]> =
       { id: 'effect', title: 'Effect of Amendment' },
       { id: 'signatures', title: 'Signatures' },
     ],
+    OTHER: [
+      { id: 'parties', title: 'Parties' },
+      { id: 'terms', title: 'Terms and Conditions' },
+      { id: 'general', title: 'General Provisions' },
+      { id: 'signatures', title: 'Signatures' },
+    ],
   };
 
 // ============================================================================
@@ -177,7 +183,7 @@ class ContractService {
    */
   private async generateContractNumber(tenantId: string): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await prisma.contract.count({
+    const count = await prisma.opportunityContract.count({
       where: {
         tenantId,
         contractNumber: { startsWith: `CTR-${year}` },
@@ -206,7 +212,7 @@ class ContractService {
   async createContract(input: CreateContractInput) {
     const contractNumber = await this.generateContractNumber(input.tenantId);
 
-    const contract = await prisma.contract.create({
+    const contract = await prisma.opportunityContract.create({
       data: {
         opportunityId: input.opportunityId,
         accountId: input.accountId,
@@ -239,12 +245,12 @@ class ContractService {
    * Get all contracts for an opportunity
    */
   async getContractsByOpportunity(opportunityId: number, tenantId: string) {
-    const contracts = await prisma.contract.findMany({
+    const contracts = await prisma.opportunityContract.findMany({
       where: { opportunityId, tenantId },
       include: {
         createdBy: { select: { id: true, name: true, email: true } },
         account: { select: { id: true, name: true } },
-        signatureRequests: {
+        signatures: {
           select: {
             id: true,
             signerName: true,
@@ -263,7 +269,7 @@ class ContractService {
    * Get a single contract by ID
    */
   async getContractById(id: number, tenantId: string) {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: { id, tenantId },
       include: {
         createdBy: { select: { id: true, name: true, email: true } },
@@ -290,7 +296,7 @@ class ContractService {
             content: true,
           },
         },
-        signatureRequests: {
+        signatures: {
           orderBy: { signatureOrder: 'asc' },
         },
         auditLogs: {
@@ -311,7 +317,7 @@ class ContractService {
     tenantId: string,
     input: UpdateContractInput,
   ) {
-    const current = await prisma.contract.findFirst({
+    const current = await prisma.opportunityContract.findFirst({
       where: { id, tenantId },
     });
 
@@ -319,7 +325,7 @@ class ContractService {
       throw new Error('Contract not found');
     }
 
-    const contract = await prisma.contract.update({
+    const contract = await prisma.opportunityContract.update({
       where: { id },
       data: {
         title: input.title,
@@ -350,7 +356,7 @@ class ContractService {
    * Delete a contract
    */
   async deleteContract(id: number, tenantId: string) {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: { id, tenantId },
     });
 
@@ -362,7 +368,7 @@ class ContractService {
       throw new Error('Cannot delete a signed contract');
     }
 
-    await prisma.contract.delete({
+    await prisma.opportunityContract.delete({
       where: { id },
     });
 
@@ -432,7 +438,7 @@ class ContractService {
     // Create the contract
     const contractNumber = await this.generateContractNumber(input.tenantId);
 
-    const contract = await prisma.contract.create({
+    const contract = await prisma.opportunityContract.create({
       data: {
         opportunityId: input.opportunityId,
         accountId: input.accountId,
@@ -473,7 +479,7 @@ class ContractService {
     tenantId: string,
     input: ShareLinkInput,
   ) {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: { id: contractId, tenantId },
     });
 
@@ -492,7 +498,7 @@ class ContractService {
       sharePassword = Buffer.from(input.password).toString('base64');
     }
 
-    const updated = await prisma.contract.update({
+    const updated = await prisma.opportunityContract.update({
       where: { id: contractId },
       data: {
         shareToken,
@@ -538,7 +544,7 @@ class ContractService {
         | 'WITNESS';
     }[],
   ) {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: { id: contractId, tenantId },
     });
 
@@ -559,7 +565,7 @@ class ContractService {
       const tokenExpiresAt = new Date();
       tokenExpiresAt.setDate(tokenExpiresAt.getDate() + 30);
 
-      const request = await prisma.signatureRequest.create({
+      const request = await prisma.contractSignature.create({
         data: {
           contractId,
           signerType: signer.signerType,
@@ -577,7 +583,7 @@ class ContractService {
     }
 
     // Update contract status
-    await prisma.contract.update({
+    await prisma.opportunityContract.update({
       where: { id: contractId },
       data: {
         status: 'PENDING_SIGNATURE',
@@ -606,7 +612,7 @@ class ContractService {
     voidedById: number,
     reason?: string,
   ) {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: { id: contractId, tenantId },
     });
 
@@ -614,7 +620,7 @@ class ContractService {
       throw new Error('Contract not found');
     }
 
-    const updated = await prisma.contract.update({
+    const updated = await prisma.opportunityContract.update({
       where: { id: contractId },
       data: {
         status: 'VOIDED',
@@ -625,7 +631,7 @@ class ContractService {
     });
 
     // Expire all pending signature requests
-    await prisma.signatureRequest.updateMany({
+    await prisma.contractSignature.updateMany({
       where: { contractId, status: 'PENDING' },
       data: { status: 'EXPIRED' },
     });
@@ -643,7 +649,7 @@ class ContractService {
    */
   async getAuditLog(contractId: number, tenantId: string) {
     // Verify contract belongs to tenant
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: { id: contractId, tenantId },
     });
 
@@ -737,6 +743,7 @@ class ContractService {
       CONSULTING_AGREEMENT: 'Consulting Agreement',
       RETAINER_AGREEMENT: 'Retainer Agreement',
       AMENDMENT: 'Contract Amendment',
+      OTHER: 'Other Contract',
     };
     return names[type] || type;
   }

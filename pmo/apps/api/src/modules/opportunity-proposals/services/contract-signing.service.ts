@@ -38,7 +38,7 @@ export interface DeclineContractInput {
 
 export interface PublicContractView {
   id: number;
-  contractNumber: string;
+  contractNumber?: string;
   title: string;
   type: string;
   status: string;
@@ -75,14 +75,14 @@ class ContractSigningService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<PublicContractView | null> {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: {
         shareToken,
         shareExpiresAt: { gt: new Date() },
       },
       include: {
         account: { select: { name: true } },
-        signatureRequests: {
+        signatures: {
           select: {
             signerName: true,
             signerEmail: true,
@@ -99,12 +99,11 @@ class ContractSigningService {
 
     // Mark as viewed if first time
     if (!contract.shareViewed) {
-      await prisma.contract.update({
+      await prisma.opportunityContract.update({
         where: { id: contract.id },
         data: {
           shareViewed: true,
           shareViewedAt: new Date(),
-          viewedAt: new Date(),
         },
       });
 
@@ -125,7 +124,7 @@ class ContractSigningService {
 
     return {
       id: contract.id,
-      contractNumber: contract.contractNumber,
+      contractNumber: contract.contractNumber ?? undefined,
       title: contract.title,
       type: contract.type,
       status: contract.status,
@@ -157,7 +156,7 @@ class ContractSigningService {
       signedAt?: Date;
     };
   } | null> {
-    const signatureRequest = await prisma.signatureRequest.findFirst({
+    const signatureRequest = await prisma.contractSignature.findFirst({
       where: {
         signToken,
         tokenExpiresAt: { gt: new Date() },
@@ -180,7 +179,7 @@ class ContractSigningService {
 
     // Log the view if first time
     if (!signatureRequest.viewedAt) {
-      await prisma.signatureRequest.update({
+      await prisma.contractSignature.update({
         where: { id: signatureRequest.id },
         data: {
           viewedAt: new Date(),
@@ -203,7 +202,7 @@ class ContractSigningService {
     return {
       contract: {
         id: contract.id,
-        contractNumber: contract.contractNumber,
+        contractNumber: contract.contractNumber ?? undefined,
         title: contract.title,
         type: contract.type,
         status: contract.status,
@@ -235,7 +234,7 @@ class ContractSigningService {
     contractNumber?: string;
   }> {
     // Find the signature request
-    const signatureRequest = await prisma.signatureRequest.findFirst({
+    const signatureRequest = await prisma.contractSignature.findFirst({
       where: {
         signToken: input.signToken,
         tokenExpiresAt: { gt: new Date() },
@@ -254,14 +253,14 @@ class ContractSigningService {
     }
 
     // Update signature request
-    await prisma.signatureRequest.update({
+    await prisma.contractSignature.update({
       where: { id: signatureRequest.id },
       data: {
         status: 'SIGNED',
         signatureData: input.signatureData,
         signedAt: new Date(),
-        signedIpAddress: input.ipAddress,
-        signedUserAgent: input.userAgent,
+        ipAddress: input.ipAddress,
+        userAgent: input.userAgent,
       },
     });
 
@@ -281,7 +280,7 @@ class ContractSigningService {
     );
 
     // Check if all signatures are complete
-    const allSignatures = await prisma.signatureRequest.findMany({
+    const allSignatures = await prisma.contractSignature.findMany({
       where: { contractId: signatureRequest.contractId },
     });
 
@@ -289,7 +288,7 @@ class ContractSigningService {
 
     if (allSigned) {
       // Update contract status
-      await prisma.contract.update({
+      await prisma.opportunityContract.update({
         where: { id: signatureRequest.contractId },
         data: {
           status: 'SIGNED',
@@ -300,7 +299,7 @@ class ContractSigningService {
       // Check if at least one has signed (partially signed)
       const someSigned = allSignatures.some((s) => s.status === 'SIGNED');
       if (someSigned) {
-        await prisma.contract.update({
+        await prisma.opportunityContract.update({
           where: { id: signatureRequest.contractId },
           data: {
             status: 'PARTIALLY_SIGNED',
@@ -314,7 +313,7 @@ class ContractSigningService {
       message: allSigned
         ? 'Contract fully signed'
         : 'Signature recorded. Waiting for other parties.',
-      contractNumber: signatureRequest.contract.contractNumber,
+      contractNumber: signatureRequest.contract.contractNumber ?? undefined,
     };
   }
 
@@ -325,7 +324,7 @@ class ContractSigningService {
     success: boolean;
     message: string;
   }> {
-    const signatureRequest = await prisma.signatureRequest.findFirst({
+    const signatureRequest = await prisma.contractSignature.findFirst({
       where: {
         signToken: input.signToken,
         tokenExpiresAt: { gt: new Date() },
@@ -344,7 +343,7 @@ class ContractSigningService {
     }
 
     // Update signature request
-    await prisma.signatureRequest.update({
+    await prisma.contractSignature.update({
       where: { id: signatureRequest.id },
       data: {
         status: 'DECLINED',
@@ -381,7 +380,7 @@ class ContractSigningService {
     shareToken: string,
     password: string,
   ): Promise<boolean> {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: {
         shareToken,
         shareExpiresAt: { gt: new Date() },
@@ -402,7 +401,7 @@ class ContractSigningService {
    * Check if a contract requires a password
    */
   async requiresPassword(shareToken: string): Promise<boolean> {
-    const contract = await prisma.contract.findFirst({
+    const contract = await prisma.opportunityContract.findFirst({
       where: {
         shareToken,
         shareExpiresAt: { gt: new Date() },
@@ -429,7 +428,7 @@ class ContractSigningService {
       declinedAt?: Date;
     }[];
   }> {
-    const signatures = await prisma.signatureRequest.findMany({
+    const signatures = await prisma.contractSignature.findMany({
       where: { contractId },
       orderBy: { signatureOrder: 'asc' },
     });
@@ -464,7 +463,7 @@ class ContractSigningService {
     signatureRequestId: number,
     tenantId: string,
   ): Promise<{ success: boolean; message: string }> {
-    const request = await prisma.signatureRequest.findFirst({
+    const request = await prisma.contractSignature.findFirst({
       where: { id: signatureRequestId },
       include: {
         contract: { select: { tenantId: true } },
@@ -483,7 +482,7 @@ class ContractSigningService {
     const newExpiry = new Date();
     newExpiry.setDate(newExpiry.getDate() + 30);
 
-    await prisma.signatureRequest.update({
+    await prisma.contractSignature.update({
       where: { id: signatureRequestId },
       data: {
         tokenExpiresAt: newExpiry,

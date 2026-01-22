@@ -29,11 +29,11 @@ router.use(requireAuth, tenantMiddleware);
 
 const sowStatusEnum = z.enum([
   'DRAFT',
-  'IN_REVIEW',
+  'PENDING_REVIEW',
   'APPROVED',
   'SENT',
-  'SIGNED',
-  'EXPIRED',
+  'ACCEPTED',
+  'REJECTED',
 ]);
 
 const createSOWSchema = z.object({
