@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "prebuild": "cd ../.. && npx prisma generate --schema ./prisma/schema.prisma",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "build:with-migrate": "npm run build && npm run db:migrate",
     "build:production": "npm run build",
