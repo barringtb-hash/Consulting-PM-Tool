@@ -171,9 +171,7 @@ import {
   setupScheduledPostScanning,
   triggerScheduledPostScan,
   getScheduledPostScanStatus,
-  scheduledPostScanQueue,
 } from '../../src/modules/social-publishing/workers/scheduled-post.worker';
-import { Worker } from 'bullmq';
 
 describe('Publish Worker', () => {
   beforeEach(() => {

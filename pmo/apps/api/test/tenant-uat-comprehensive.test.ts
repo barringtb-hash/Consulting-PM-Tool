@@ -14,7 +14,7 @@
  * 7. Bulk Operation Tests
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app';
 import { signToken } from '../src/auth/jwt';
@@ -26,7 +26,6 @@ import {
   addUserToTenant,
   createDefaultPipeline,
   createTestAccount,
-  createTestOpportunity,
   withTenant,
   getTestPrisma,
   disconnectTestPrisma,
@@ -620,7 +619,7 @@ describe('Comprehensive Tenant Isolation UAT', () => {
     describe('BULK-007: deleteMany with broader criteria', () => {
       it('should not delete cross-tenant data', async () => {
         // Create accounts in both tenants
-        const alphaAccount = await testPrisma.account.create({
+        await testPrisma.account.create({
           data: {
             tenantId: tenantAlpha.id,
             name: 'DeleteMany Test Alpha',
