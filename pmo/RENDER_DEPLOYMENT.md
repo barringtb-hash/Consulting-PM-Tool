@@ -24,10 +24,14 @@ This error occurs when Render's Root Directory is set to `pmo/apps/api` instead 
 If you can't change the root directory, use this build command instead:
 
 ```bash
-cd ../.. && npm install && cd apps/api && npx prisma generate && npx prisma migrate deploy && npm run build
+cd ../.. && npm install --include=dev && npx prisma generate --schema ./prisma/schema.prisma && cd apps/api && npm run prisma:migrate:deploy && npm run build
 ```
 
-This navigates to the workspace root for npm install, ensuring proper dependency hoisting.
+This navigates to the workspace root for npm install and prisma generate, ensuring:
+
+1. Proper dependency hoisting with dev dependencies for TypeScript types
+2. Prisma client is generated with the correct schema path
+3. Migrations are deployed before building
 
 ---
 
@@ -41,16 +45,22 @@ The migration `20251123211300_add_marketing_content_enhancements` failed in the 
 
 Update your Render build command to use the migration script that handles failed migrations:
 
-**Current command:**
+**Old (broken) command:**
 
 ```bash
 npm install --ignore-scripts && npx prisma generate && npx prisma migrate deploy && npm run build
 ```
 
-**New command:**
+**New (correct) command:**
 
 ```bash
-npm install --ignore-scripts && npx prisma generate && cd apps/api && npm run prisma:migrate:deploy && cd ../.. && npm run build
+bash scripts/render-build.sh
+```
+
+Or if you prefer a single-line command:
+
+```bash
+npm install --include=dev && npx prisma generate --schema ./prisma/schema.prisma && npm run prisma:migrate:deploy && npm run build --workspace pmo-api
 ```
 
 This uses the `scripts/deploy-migrations.sh` script which automatically:
@@ -91,7 +101,7 @@ If you have access to the Render shell, you can manually resolve the migration:
 If the above doesn't work, you can temporarily update the build command to handle the specific migration:
 
 ```bash
-npm install --ignore-scripts && npx prisma generate && (npx prisma migrate resolve --applied "20251123211300_add_marketing_content_enhancements" || true) && npx prisma migrate deploy && npm run build
+npm install --include=dev && npx prisma generate --schema ./prisma/schema.prisma && (npx prisma migrate resolve --applied "MIGRATION_NAME_HERE" --schema ./prisma/schema.prisma || true) && npx prisma migrate deploy --schema ./prisma/schema.prisma && npm run build --workspace pmo-api
 ```
 
 ## Understanding the Issue
