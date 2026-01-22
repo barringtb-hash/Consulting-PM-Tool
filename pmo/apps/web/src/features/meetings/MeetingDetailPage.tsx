@@ -385,7 +385,11 @@ function MeetingDetailPage(): JSX.Element {
   }
 
   return (
-    <div className="page-content" onMouseUp={handleSelectionChange}>
+    <div
+      className="page-content"
+      onMouseUp={handleSelectionChange}
+      aria-label="meeting-detail"
+    >
       {/* Toast notification */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-success-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-in-right">
