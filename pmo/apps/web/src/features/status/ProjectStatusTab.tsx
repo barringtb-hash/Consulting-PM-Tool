@@ -734,7 +734,7 @@ export function ProjectStatusTab({ projectId }: ProjectStatusTabProps) {
                         <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-neutral-900 dark:text-neutral-100">
+                        <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
                           {risk.snippet}
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
@@ -766,7 +766,7 @@ export function ProjectStatusTab({ projectId }: ProjectStatusTabProps) {
                         <MessageSquare className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-neutral-900 dark:text-neutral-100">
+                        <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
                           {decision.snippet}
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">

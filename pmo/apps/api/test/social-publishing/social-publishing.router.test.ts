@@ -11,8 +11,7 @@
  * - Input transformation logic
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { z } from 'zod';
+import { describe, it, expect } from 'vitest';
 
 // Import validation schemas directly (these don't have external dependencies)
 import {
