@@ -70,6 +70,7 @@ The CRM module provides full customer relationship management capabilities:
 | `opportunities` | Opportunities | Sales pipeline and deal management | `/crm/opportunities`, `/crm/opportunities/:id` |
 | `activities` | Activities | Unified activity timeline (calls, emails, meetings) | `/crm/activities` |
 | `pipeline` | Pipeline | Sales pipeline visualization (Kanban) | `/sales/pipeline` |
+| `opportunity-proposals` | Proposals | Cost estimates, SOWs, and contracts for opportunities | `/crm/opportunities/:id` (Estimates, Documents, Contracts tabs) |
 
 **CRM API Endpoints:**
 - `GET/POST /api/crm/accounts` - Account management
