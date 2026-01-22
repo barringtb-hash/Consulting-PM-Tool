@@ -119,6 +119,7 @@ const BookingManagementPage = lazy(() =>
     default: m.BookingManagementPage,
   })),
 );
+const ContractSignPage = lazy(() => import('./pages/public/ContractSignPage'));
 
 // Phase 1 AI Tools pages
 const ChatbotPage = lazy(() => import('./pages/ai-tools/ChatbotPage'));
@@ -358,6 +359,21 @@ function App(): JSX.Element {
               }
             >
               <BookingManagementPage />
+            </Suspense>
+          }
+        />
+        {/* Public contract signing page (no auth required) */}
+        <Route
+          path="/contracts/sign/:shareToken"
+          element={
+            <Suspense
+              fallback={
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              }
+            >
+              <ContractSignPage />
             </Suspense>
           }
         />
