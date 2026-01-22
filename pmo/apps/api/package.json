@@ -7,6 +7,7 @@
     "build": "NODE_OPTIONS='--max-old-space-size=4096' tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "build:with-migrate": "npm run build && npm run db:migrate",
     "build:production": "npm run build",
+    "build:render": "cd ../.. && npm install --include=dev && npx prisma generate --schema ./prisma/schema.prisma && cd apps/api && npm run prisma:migrate:deploy && npm run build",
     "start": "node dist/apps/api/src/index.js",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run",

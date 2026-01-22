@@ -21,7 +21,13 @@ This error occurs when Render's Root Directory is set to `pmo/apps/api` instead 
 
 ### Alternative: If You Must Use apps/api as Root Directory
 
-If you can't change the root directory, use this build command instead:
+If you can't change the root directory to `pmo`, use this build command:
+
+```bash
+npm run build:render
+```
+
+Or the expanded version:
 
 ```bash
 cd ../.. && npm install --include=dev && npx prisma generate --schema ./prisma/schema.prisma && cd apps/api && npm run prisma:migrate:deploy && npm run build
@@ -32,6 +38,8 @@ This navigates to the workspace root for npm install and prisma generate, ensuri
 1. Proper dependency hoisting with dev dependencies for TypeScript types
 2. Prisma client is generated with the correct schema path
 3. Migrations are deployed before building
+
+**IMPORTANT**: If your Render Root Directory is `pmo/apps/api`, you MUST use `npm run build:render` as the build command, NOT `npm run build`.
 
 ---
 
